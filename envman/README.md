@@ -1,2 +1,1 @@
 # envman
-Environment variable manager
