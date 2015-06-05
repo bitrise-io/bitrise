@@ -1,23 +1,23 @@
 package main
 
-import (	
-	"fmt"
+import (
 	"errors"
-	"os"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/gkiki90/envman/pathutil"
-	"github.com/gkiki90/envman/envutil"
 	"code.google.com/p/go.crypto/ssh/terminal"
+	"github.com/bitrise-io/envman/envutil"
+	"github.com/bitrise-io/envman/pathutil"
 	"github.com/codegangsta/cli"
 )
 
 var stdinValue string
 var extMap = map[string]bool{
-	".sh" : true,
-	".go" : true,
+	".sh": true,
+	".go": true,
 }
 
 func loadEnvlist() (envutil.EnvListYMLStruct, error) {
@@ -53,7 +53,7 @@ func updateOrAddToEnvlist(envList envutil.EnvListYMLStruct, newEnvStruct envutil
 	var newEnvList []envutil.EnvYMLStruct
 	for i := range envList.Envlist {
 		oldEnvStruct := envList.Envlist[i]
-		if oldEnvStruct.Key ==  newEnvStruct.Key {
+		if oldEnvStruct.Key == newEnvStruct.Key {
 			alreadyUsedKey = true
 			newEnvList = append(newEnvList, newEnvStruct)
 		} else {
@@ -99,7 +99,7 @@ func addCommand(c *cli.Context) {
 	}
 
 	// Add or update envlist
-	newEnvStruct := envutil.EnvYMLStruct{ envKey, envValue }
+	newEnvStruct := envutil.EnvYMLStruct{envKey, envValue}
 	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
@@ -125,7 +125,7 @@ func exportCommand(c *cli.Context) {
 	for i := range envlist.Envlist {
 		env := envlist.Envlist[i]
 		if os.Getenv(env.Key) == "" {
-			os.Setenv(env.Key, env.Value)	
+			os.Setenv(env.Key, env.Value)
 		}
 	}
 
@@ -140,9 +140,9 @@ func runCommand(c *cli.Context) {
 	doArgs := c.Args()[1:]
 
 	cmdToSend := CommandModel{
-		Command: doCommand,
+		Command:      doCommand,
 		Environments: doCmdEnvs,
-		Argumentums: doArgs,
+		Argumentums:  doArgs,
 	}
 
 	executeCmd(cmdToSend)
@@ -161,7 +161,7 @@ func getCommandEnvironments() []EnvironmentKeyValue {
 	}
 	if len(envlist.Envlist) == 0 {
 		fmt.Println("Empty environemt variable list")
-	
+
 		return cmdEnvs
 	}
 
@@ -192,64 +192,64 @@ func visit(path string, f os.FileInfo, err error) error {
 
 		fmt.Println(s)
 	}
-  	
-  	return nil
-} 
+
+	return nil
+}
 
 func get_envCommand(c *cli.Context) {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-    if err != nil {
-        fmt.Print("Failed to read path, err: %s", err)
-    }
+	if err != nil {
+		fmt.Print("Failed to read path, err: %s", err)
+	}
 
 	err = filepath.Walk(dir, visit)
-  	fmt.Printf("filepath.Walk() returned %v\n", err)
+	fmt.Printf("filepath.Walk() returned %v\n", err)
 }
 
 func main() {
 	// Read piped data
-	if ! terminal.IsTerminal(0) {
-        bytes, err := ioutil.ReadAll(os.Stdin)
-        if err != nil {
-        	fmt.Print("Failed to read stdin, err: %s", err)
-        }
-        stdinValue = string(bytes)
-    } 
+	if !terminal.IsTerminal(0) {
+		bytes, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Print("Failed to read stdin, err: %s", err)
+		}
+		stdinValue = string(bytes)
+	}
 
-    // Parse cl 
+	// Parse cl
 	app := cli.NewApp()
 	app.Name = "envman"
 	app.Usage = "Environment varaibale manager."
-	app.Commands = []cli.Command {
+	app.Commands = []cli.Command{
 		{
 			Name: "add",
-			Flags: []cli.Flag {
-				cli.StringFlag {
-			    Name: "key",
-			    Value: "",
-			  },
-			  cli.StringFlag {
-			    Name: "value",
-			    Value: "",
-			  },
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "key",
+					Value: "",
+				},
+				cli.StringFlag{
+					Name:  "value",
+					Value: "",
+				},
 			},
 			Action: addCommand,
 		},
 		{
-			Name: "print",
+			Name:   "print",
 			Action: exportCommand,
 		},
 		{
-			Name: "env",
+			Name:   "env",
 			Action: exportCommand,
 		},
 		{
-			Name: "run",
+			Name:            "run",
 			SkipFlagParsing: true,
-			Action: runCommand,
+			Action:          runCommand,
 		},
 		{
-			Name: "get_env",
+			Name:   "get_env",
 			Action: get_envCommand,
 		},
 	}
