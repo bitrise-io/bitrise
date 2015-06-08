@@ -12,7 +12,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const envMapName string = "environments.yml"
+const envMapName string = ".envstore.yml"
 
 var envmanDir string = pathutil.UserHomeDir() + "/.envman/"
 
@@ -43,7 +43,6 @@ func loadEnvMapOrCreate() (envMap, error) {
 	environments, err := loadEnvMap()
 	if err != nil {
 		if err != (errors.New("No environemt variable list found")) {
-			//return envListYMLStruct{}, err
 			fmt.Println("Error: %s", err)
 		}
 
@@ -106,14 +105,7 @@ func addCommand(c *cli.Context) {
 
 	// Add or update envlist
 	newEnv := envMap{key: value}
-
-	fmt.Println("New env: ", newEnv)
-	fmt.Println("Old envs: ", environments)
-
 	environments, err = updateOrAddToEnvlist(environments, newEnv)
-
-	//	newEnvStruct := envYMLStruct{envKey, envValue}
-	//	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
 		return
