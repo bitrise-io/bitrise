@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -12,13 +13,15 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const envMapName string = "environments.yml"
+const (
+	envMapName string = "environments.yml"
+)
 
-var envmanDir string = pathutil.UserHomeDir() + "/.envman/"
-
-var envMapPath string = envmanDir + envMapName
-
-var stdinValue string
+var (
+	envmanDir  string = pathutil.UserHomeDir() + "/.envman/"
+	envMapPath string = envmanDir + envMapName
+	stdinValue string
+)
 
 func createEnvmanDir() error {
 	path := envmanDir
@@ -32,7 +35,7 @@ func createEnvmanDir() error {
 func loadEnvMap() (envMap, error) {
 	environments, err := readEnvMapFromFile(envMapPath)
 	if err != nil {
-		fmt.Println("Failed to read envlist, err: %s", err)
+		fmt.Println("Failed to read envlist, err:", err)
 		return envMap{}, err
 	}
 
@@ -49,7 +52,7 @@ func loadEnvMapOrCreate() (envMap, error) {
 
 		err := createEnvmanDir()
 		if err != nil {
-			fmt.Println("Failed to create envlist, err: %s", err)
+			fmt.Println("Failed to create envlist, err:%s", err)
 			return envMap{}, err
 		}
 	}
@@ -72,7 +75,7 @@ func updateOrAddToEnvlist(environments envMap, newEnv envMap) (envMap, error) {
 
 	err := writeEnvMapToFile(envMapPath, newEnvironments)
 	if err != nil {
-		fmt.Println("Failed to create store envlist, err: %s", err)
+		fmt.Println("Failed to create store envlist, err:%s", err)
 	}
 
 	return newEnvironments, nil
@@ -89,19 +92,16 @@ func addCommand(c *cli.Context) {
 
 	// Validate input
 	if key == "" {
-		fmt.Println("Invalid environment variable key")
-		return
+		log.Fatalln("Invalid environment variable key")
 	}
 	if value == "" {
-		fmt.Println("Invalid environment variable value")
-		return
+		log.Fatalln("Invalid environment variable value")
 	}
 
 	// Load envlist, or create if not exist
 	environments, err := loadEnvMapOrCreate()
 	if err != nil {
-		fmt.Println("Failed to load envlist, err: %s", err)
-		return
+		log.Fatalln("Failed to load envlist, err:", err)
 	}
 
 	// Add or update envlist
@@ -115,8 +115,7 @@ func addCommand(c *cli.Context) {
 	//	newEnvStruct := envYMLStruct{envKey, envValue}
 	//	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
-		fmt.Println("Failed to create store envlist, err: %s", err)
-		return
+		log.Fatalln("Failed to create store envlist, err:", err)
 	}
 	fmt.Println("New env list: ", environments)
 
@@ -127,17 +126,17 @@ func exportCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
 
 	if err != nil {
-		fmt.Println("Failed to export environemt variable list, err: %s", err)
-		return
+		log.Fatalln("Failed to export environemt variable list, err:", err)
 	}
 	if len(environments) == 0 {
-		fmt.Println("Empty environemt variable list")
-		return
+		log.Fatalln("Empty environemt variable list")
 	}
 
 	for key, value := range environments {
 		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
+			if err := os.Setenv(key, value); err != nil {
+				log.Fatalln("Failed to set environment:", err)
+			}
 		}
 	}
 
@@ -147,7 +146,7 @@ func exportCommand(c *cli.Context) {
 func runCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		fmt.Println("Failed to export environemt variable list, err: %s", err)
+		log.Fatalln("Failed to export environemt variable list, err:", err)
 	}
 
 	doCmdEnvs := environments
@@ -170,7 +169,7 @@ func main() {
 	if !terminal.IsTerminal(0) {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			fmt.Print("Failed to read stdin, err: %s", err)
+			log.Fatalln("Failed to read stdin, err:", err)
 		}
 		stdinValue = string(bytes)
 	}
