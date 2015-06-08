@@ -8,44 +8,58 @@ import (
 	"strings"
 
 	"code.google.com/p/go.crypto/ssh/terminal"
-	"github.com/bitrise-io/envman/envutil"
-	"github.com/bitrise-io/envman/pathutil"
+	"github.com/bitrise-io/go-pathutil"
 	"github.com/codegangsta/cli"
 )
 
+const envlistName string = "environment_variables.yml"
+
+var envmanDir string = pathutil.UserHomeDir() + "/.envman/"
+
+var envlistPath string = envmanDir + envlistName
+
 var stdinValue string
 
-func loadEnvlist() (envutil.EnvListYMLStruct, error) {
-	envlist, err := envutil.ReadEnvListFromFile(pathutil.EnvlistPath)
+func createEnvmanDir() error {
+	path := envmanDir
+	exist, _ := pathutil.IsPathExists(path)
+	if exist {
+		return nil
+	}
+	return os.MkdirAll(path, 0755)
+}
+
+func loadEnvlist() (envListYMLStruct, error) {
+	envlist, err := readEnvListFromFile(envlistPath)
 	if err != nil {
 		fmt.Println("Failed to read envlist, err: %s", err)
-		return envutil.EnvListYMLStruct{}, err
+		return envListYMLStruct{}, err
 	}
 
 	return envlist, nil
 }
 
-func loadEnvlistOrCreate() (envutil.EnvListYMLStruct, error) {
+func loadEnvlistOrCreate() (envListYMLStruct, error) {
 	envlist, err := loadEnvlist()
 	if err != nil {
 		if err != (errors.New("No environemt variable list found")) {
-			//return envutil.EnvListYMLStruct{}, err
+			//return envListYMLStruct{}, err
 			fmt.Println("Error: %s", err)
 		}
 
-		err := pathutil.CreateEnvmanDir()
+		err := createEnvmanDir()
 		if err != nil {
 			fmt.Println("Failed to create envlist, err: %s", err)
-			return envutil.EnvListYMLStruct{}, err
+			return envListYMLStruct{}, err
 		}
 	}
 
 	return envlist, nil
 }
 
-func updateOrAddToEnvlist(envList envutil.EnvListYMLStruct, newEnvStruct envutil.EnvYMLStruct) (envutil.EnvListYMLStruct, error) {
+func updateOrAddToEnvlist(envList envListYMLStruct, newEnvStruct envYMLStruct) (envListYMLStruct, error) {
 	alreadyUsedKey := false
-	var newEnvList []envutil.EnvYMLStruct
+	var newEnvList []envYMLStruct
 	for i := range envList.Envlist {
 		oldEnvStruct := envList.Envlist[i]
 		if oldEnvStruct.Key == newEnvStruct.Key {
@@ -59,7 +73,7 @@ func updateOrAddToEnvlist(envList envutil.EnvListYMLStruct, newEnvStruct envutil
 		newEnvList = append(newEnvList, newEnvStruct)
 	}
 	envList.Envlist = newEnvList
-	err := envutil.WriteEnvListToFile(pathutil.EnvlistPath, envList)
+	err := writeEnvListToFile(envlistPath, envList)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
 	}
@@ -94,7 +108,7 @@ func addCommand(c *cli.Context) {
 	}
 
 	// Add or update envlist
-	newEnvStruct := envutil.EnvYMLStruct{envKey, envValue}
+	newEnvStruct := envYMLStruct{envKey, envValue}
 	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
@@ -134,7 +148,7 @@ func runCommand(c *cli.Context) {
 	doCommand := c.Args()[0]
 	doArgs := c.Args()[1:]
 
-	cmdToSend := CommandModel{
+	cmdToSend := commandModel{
 		Command:      doCommand,
 		Environments: doCmdEnvs,
 		Argumentums:  doArgs,
@@ -145,8 +159,8 @@ func runCommand(c *cli.Context) {
 	return
 }
 
-func getCommandEnvironments() []EnvironmentKeyValue {
-	cmdEnvs := []EnvironmentKeyValue{}
+func getCommandEnvironments() []environmentKeyValue {
+	cmdEnvs := []environmentKeyValue{}
 
 	envlist, err := loadEnvlist()
 
@@ -162,7 +176,7 @@ func getCommandEnvironments() []EnvironmentKeyValue {
 
 	for i := range envlist.Envlist {
 		env := envlist.Envlist[i]
-		cmdEnvItem := EnvironmentKeyValue{
+		cmdEnvItem := environmentKeyValue{
 			Key:   env.Key,
 			Value: os.Getenv(env.Key),
 		}
