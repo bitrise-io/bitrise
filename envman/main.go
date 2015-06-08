@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,18 +20,15 @@ var envMapPath string = envmanDir + envMapName
 var stdinValue string
 
 func createEnvmanDir() error {
-	path := envmanDir
-	exist, _ := pathutil.IsPathExists(path)
-	if exist {
+	if exist, _ := pathutil.IsPathExists(envmanDir); exist {
 		return nil
 	}
-	return os.MkdirAll(path, 0755)
+	return os.MkdirAll(envmanDir, 0755)
 }
 
 func loadEnvMap() (envMap, error) {
 	environments, err := readEnvMapFromFile(envMapPath)
 	if err != nil {
-		fmt.Println("Failed to read envlist, err: %s", err)
 		return envMap{}, err
 	}
 
@@ -42,13 +38,9 @@ func loadEnvMap() (envMap, error) {
 func loadEnvMapOrCreate() (envMap, error) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		if err != (errors.New("No environemt variable list found")) {
-			fmt.Println("Error: %s", err)
-		}
-
 		err := createEnvmanDir()
 		if err != nil {
-			fmt.Println("Failed to create envlist, err: %s", err)
+			fmt.Println("Failed to create environment variables, err: %s", err)
 			return envMap{}, err
 		}
 	}
@@ -71,7 +63,7 @@ func updateOrAddToEnvlist(environments envMap, newEnv envMap) (envMap, error) {
 
 	err := writeEnvMapToFile(envMapPath, newEnvironments)
 	if err != nil {
-		fmt.Println("Failed to create store envlist, err: %s", err)
+		fmt.Println("Failed to store environment variable, err: %s", err)
 	}
 
 	return newEnvironments, nil
@@ -115,22 +107,16 @@ func addCommand(c *cli.Context) {
 	return
 }
 
-func exportCommand(c *cli.Context) {
+func printCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
-
 	if err != nil {
-		fmt.Println("Failed to export environemt variable list, err: %s", err)
+		fmt.Println("Failed to load environemt variable list, err: %s", err)
 		return
 	}
 	if len(environments) == 0 {
 		fmt.Println("Empty environemt variable list")
-		return
-	}
-
-	for key, value := range environments {
-		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
-		}
+	} else {
+		fmt.Println(environments)
 	}
 
 	return
@@ -188,11 +174,7 @@ func main() {
 		},
 		{
 			Name:   "print",
-			Action: exportCommand,
-		},
-		{
-			Name:   "env",
-			Action: exportCommand,
+			Action: printCommand,
 		},
 		{
 			Name:            "run",
