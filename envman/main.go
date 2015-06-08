@@ -146,7 +146,6 @@ func exportCommand(c *cli.Context) {
 
 func runCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
-
 	if err != nil {
 		fmt.Println("Failed to export environemt variable list, err: %s", err)
 	}
