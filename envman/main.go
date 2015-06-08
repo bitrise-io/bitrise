@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,9 +12,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const (
-	envMapName string = "environments.yml"
-)
+const envMapName string = ".envstore.yml"
 
 var (
 	envmanDir  string = pathutil.UserHomeDir() + "/.envman/"
@@ -24,18 +21,15 @@ var (
 )
 
 func createEnvmanDir() error {
-	path := envmanDir
-	exist, _ := pathutil.IsPathExists(path)
-	if exist {
+	if exist, _ := pathutil.IsPathExists(envmanDir); exist {
 		return nil
 	}
-	return os.MkdirAll(path, 0755)
+	return os.MkdirAll(envmanDir, 0755)
 }
 
 func loadEnvMap() (envMap, error) {
 	environments, err := readEnvMapFromFile(envMapPath)
 	if err != nil {
-		fmt.Println("Failed to read envlist, err:", err)
 		return envMap{}, err
 	}
 
@@ -45,11 +39,6 @@ func loadEnvMap() (envMap, error) {
 func loadEnvMapOrCreate() (envMap, error) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		if err != (errors.New("No environemt variable list found")) {
-			//return envListYMLStruct{}, err
-			fmt.Println("Error: %s", err)
-		}
-
 		err := createEnvmanDir()
 		if err != nil {
 			fmt.Println("Failed to create envlist, err:%s", err)
@@ -106,14 +95,7 @@ func addCommand(c *cli.Context) {
 
 	// Add or update envlist
 	newEnv := envMap{key: value}
-
-	fmt.Println("New env: ", newEnv)
-	fmt.Println("Old envs: ", environments)
-
 	environments, err = updateOrAddToEnvlist(environments, newEnv)
-
-	//	newEnvStruct := envYMLStruct{envKey, envValue}
-	//	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
 		log.Fatalln("Failed to create store envlist, err:", err)
 	}
@@ -122,22 +104,15 @@ func addCommand(c *cli.Context) {
 	return
 }
 
-func exportCommand(c *cli.Context) {
+func printCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
-
 	if err != nil {
 		log.Fatalln("Failed to export environemt variable list, err:", err)
 	}
 	if len(environments) == 0 {
-		log.Fatalln("Empty environemt variable list")
-	}
-
-	for key, value := range environments {
-		if os.Getenv(key) == "" {
-			if err := os.Setenv(key, value); err != nil {
-				log.Fatalln("Failed to set environment:", err)
-			}
-		}
+		fmt.Println("Empty environemt variable list")
+	} else {
+		fmt.Println(environments)
 	}
 
 	return
@@ -153,7 +128,7 @@ func runCommand(c *cli.Context) {
 	doCommand := c.Args()[0]
 	doArgs := c.Args()[1:]
 
-	cmdToSend := commandStruct{
+	cmdToSend := commandModel{
 		Command:      doCommand,
 		Environments: doCmdEnvs,
 		Argumentums:  doArgs,
@@ -195,11 +170,7 @@ func main() {
 		},
 		{
 			Name:   "print",
-			Action: exportCommand,
-		},
-		{
-			Name:   "env",
-			Action: exportCommand,
+			Action: printCommand,
 		},
 		{
 			Name:            "run",
