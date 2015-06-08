@@ -20,10 +20,6 @@ var (
 	stdinValue string
 )
 
-var envMapPath string = envmanDir + envMapName
-
-var stdinValue string
-
 func createEnvmanDir() error {
 	if exist, _ := pathutil.IsPathExists(envmanDir); exist {
 		return nil
