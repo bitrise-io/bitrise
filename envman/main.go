@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"code.google.com/p/go.crypto/ssh/terminal"
@@ -177,35 +176,6 @@ func getCommandEnvironments() []EnvironmentKeyValue {
 	return cmdEnvs
 }
 
-func visit(path string, f os.FileInfo, err error) error {
-	ext := filepath.Ext(path)
-	if extMap[ext] {
-		fmt.Printf("Visited: %s\n", path)
-
-		bytes, err := ioutil.ReadFile(path)
-		if err != nil {
-			fmt.Println("Error reading file, err: %v", err)
-			return err
-		}
-
-		s := string(bytes)
-
-		fmt.Println(s)
-	}
-
-	return nil
-}
-
-func get_envCommand(c *cli.Context) {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		fmt.Print("Failed to read path, err: %s", err)
-	}
-
-	err = filepath.Walk(dir, visit)
-	fmt.Printf("filepath.Walk() returned %v\n", err)
-}
-
 func main() {
 	// Read piped data
 	if !terminal.IsTerminal(0) {
@@ -247,10 +217,6 @@ func main() {
 			Name:            "run",
 			SkipFlagParsing: true,
 			Action:          runCommand,
-		},
-		{
-			Name:   "get_env",
-			Action: get_envCommand,
 		},
 	}
 
