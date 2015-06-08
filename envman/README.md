@@ -11,6 +11,7 @@
 
 ## TODO
 
+- multi ENV file handling
 - better progress feedback:
   - present the file path the env is saved into for `add` command
 - better command error handling
