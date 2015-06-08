@@ -14,10 +14,6 @@ import (
 )
 
 var stdinValue string
-var extMap = map[string]bool{
-	".sh": true,
-	".go": true,
-}
 
 func loadEnvlist() (envutil.EnvListYMLStruct, error) {
 	envlist, err := envutil.ReadEnvListFromFile(pathutil.EnvlistPath)
