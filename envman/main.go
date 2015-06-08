@@ -100,8 +100,6 @@ func addCommand(c *cli.Context) {
 		log.Fatalln("Failed to create store envlist, err:", err)
 	}
 	fmt.Println("New env list: ", environments)
-
-	return
 }
 
 func printCommand(c *cli.Context) {
@@ -114,8 +112,6 @@ func printCommand(c *cli.Context) {
 	} else {
 		fmt.Println(environments)
 	}
-
-	return
 }
 
 func runCommand(c *cli.Context) {
@@ -135,8 +131,6 @@ func runCommand(c *cli.Context) {
 	}
 
 	executeCmd(cmdToSend)
-
-	return
 }
 
 func main() {
