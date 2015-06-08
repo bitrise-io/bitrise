@@ -11,7 +11,11 @@
 
 ## TODO
 
+- `init`: create an empty .envstore file into the current directory
 - multi ENV file handling
+  - with an arg: `-envstore=path/to/envstore/file.yml` : use this file
+  - if there's a .envstore file in the current dir use that one
+  - if neither is present: use `$HOME/.envman/.envstore`
 - check Go standard package errors (ex: `os.Setenv`)
 - expand environment variables **on read** (not at store)
 - better progress feedback:
