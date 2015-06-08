@@ -12,11 +12,11 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const envlistName string = "environment_variables.yml"
+const envMapName string = "environments.yml"
 
 var envmanDir string = pathutil.UserHomeDir() + "/.envman/"
 
-var envlistPath string = envmanDir + envlistName
+var envMapPath string = envmanDir + envMapName
 
 var stdinValue string
 
@@ -29,18 +29,18 @@ func createEnvmanDir() error {
 	return os.MkdirAll(path, 0755)
 }
 
-func loadEnvlist() (envListYMLStruct, error) {
-	envlist, err := readEnvListFromFile(envlistPath)
+func loadEnvMap() (envMap, error) {
+	environments, err := readEnvMapFromFile(envMapPath)
 	if err != nil {
 		fmt.Println("Failed to read envlist, err: %s", err)
-		return envListYMLStruct{}, err
+		return envMap{}, err
 	}
 
-	return envlist, nil
+	return environments, nil
 }
 
-func loadEnvlistOrCreate() (envListYMLStruct, error) {
-	envlist, err := loadEnvlist()
+func loadEnvMapOrCreate() (envMap, error) {
+	environments, err := loadEnvMap()
 	if err != nil {
 		if err != (errors.New("No environemt variable list found")) {
 			//return envListYMLStruct{}, err
@@ -50,91 +50,94 @@ func loadEnvlistOrCreate() (envListYMLStruct, error) {
 		err := createEnvmanDir()
 		if err != nil {
 			fmt.Println("Failed to create envlist, err: %s", err)
-			return envListYMLStruct{}, err
+			return envMap{}, err
 		}
 	}
 
-	return envlist, nil
+	return environments, nil
 }
 
-func updateOrAddToEnvlist(envList envListYMLStruct, newEnvStruct envYMLStruct) (envListYMLStruct, error) {
-	alreadyUsedKey := false
-	var newEnvList []envYMLStruct
-	for i := range envList.Envlist {
-		oldEnvStruct := envList.Envlist[i]
-		if oldEnvStruct.Key == newEnvStruct.Key {
-			alreadyUsedKey = true
-			newEnvList = append(newEnvList, newEnvStruct)
-		} else {
-			newEnvList = append(newEnvList, oldEnvStruct)
-		}
+func updateOrAddToEnvlist(environments envMap, newEnv envMap) (envMap, error) {
+	fmt.Println(environments, newEnv)
+
+	newEnvironments := make(envMap)
+
+	for key, value := range environments {
+		newEnvironments[key] = value
 	}
-	if alreadyUsedKey == false {
-		newEnvList = append(newEnvList, newEnvStruct)
+
+	for key, value := range newEnv {
+		newEnvironments[key] = value
 	}
-	envList.Envlist = newEnvList
-	err := writeEnvListToFile(envlistPath, envList)
+
+	err := writeEnvMapToFile(envMapPath, newEnvironments)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
 	}
 
-	return envList, nil
+	return newEnvironments, nil
 }
 
 func addCommand(c *cli.Context) {
-	envKey := c.String("key")
-	envValue := c.String("value")
+	key := c.String("key")
+	value := c.String("value")
 	if stdinValue != "" {
-		envValue = stdinValue
+		value = stdinValue
 	}
 
-	envValue = strings.Replace(envValue, "\n", "", -1)
+	value = strings.Replace(value, "\n", "", -1)
 
 	// Validate input
-	if envKey == "" {
+	if key == "" {
 		fmt.Println("Invalid environment variable key")
 		return
 	}
-	if envValue == "" {
+	if value == "" {
 		fmt.Println("Invalid environment variable value")
 		return
 	}
 
 	// Load envlist, or create if not exist
-	envlist, err := loadEnvlistOrCreate()
+	environments, err := loadEnvMapOrCreate()
 	if err != nil {
 		fmt.Println("Failed to load envlist, err: %s", err)
 		return
 	}
 
 	// Add or update envlist
-	newEnvStruct := envYMLStruct{envKey, envValue}
-	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
+	newEnv := envMap{key: value}
+
+	fmt.Println("New env: ", newEnv)
+	fmt.Println("Old envs: ", environments)
+
+	environments, err = updateOrAddToEnvlist(environments, newEnv)
+
+	//	newEnvStruct := envYMLStruct{envKey, envValue}
+	//	newEnvList, err := updateOrAddToEnvlist(envlist, newEnvStruct)
 	if err != nil {
 		fmt.Println("Failed to create store envlist, err: %s", err)
 		return
 	}
-	fmt.Println("New env list: ", newEnvList)
+	fmt.Println("New env list: ", environments)
 
 	return
 }
 
 func exportCommand(c *cli.Context) {
-	envlist, err := loadEnvlist()
+	environments, err := loadEnvMap()
 
 	if err != nil {
 		fmt.Println("Failed to export environemt variable list, err: %s", err)
 		return
 	}
-	if len(envlist.Envlist) == 0 {
+	if len(environments) == 0 {
 		fmt.Println("Empty environemt variable list")
 		return
 	}
 
-	for i := range envlist.Envlist {
-		env := envlist.Envlist[i]
-		if os.Getenv(env.Key) == "" {
-			os.Setenv(env.Key, env.Value)
+	for key, value := range environments {
+		if os.Getenv(key) == "" {
+			os.Setenv(key, value)
 		}
 	}
 
@@ -142,13 +145,17 @@ func exportCommand(c *cli.Context) {
 }
 
 func runCommand(c *cli.Context) {
-	exportCommand(c)
+	environments, err := loadEnvMap()
 
-	doCmdEnvs := getCommandEnvironments()
+	if err != nil {
+		fmt.Println("Failed to export environemt variable list, err: %s", err)
+	}
+
+	doCmdEnvs := environments
 	doCommand := c.Args()[0]
 	doArgs := c.Args()[1:]
 
-	cmdToSend := commandModel{
+	cmdToSend := commandStruct{
 		Command:      doCommand,
 		Environments: doCmdEnvs,
 		Argumentums:  doArgs,
@@ -157,33 +164,6 @@ func runCommand(c *cli.Context) {
 	executeCmd(cmdToSend)
 
 	return
-}
-
-func getCommandEnvironments() []environmentKeyValue {
-	cmdEnvs := []environmentKeyValue{}
-
-	envlist, err := loadEnvlist()
-
-	if err != nil {
-		fmt.Println("Failed to export environemt variable list, err: %s", err)
-		return cmdEnvs
-	}
-	if len(envlist.Envlist) == 0 {
-		fmt.Println("Empty environemt variable list")
-
-		return cmdEnvs
-	}
-
-	for i := range envlist.Envlist {
-		env := envlist.Envlist[i]
-		cmdEnvItem := environmentKeyValue{
-			Key:   env.Key,
-			Value: os.Getenv(env.Key),
-		}
-		cmdEnvs = append(cmdEnvs, cmdEnvItem)
-	}
-
-	return cmdEnvs
 }
 
 func main() {
