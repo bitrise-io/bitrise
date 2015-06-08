@@ -104,21 +104,19 @@ func addCommand(c *cli.Context) {
 func printCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		log.Fatalln("Failed to export environemt variable list, err:", err)
+		log.Fatalln("Failed to export environment variable list, err:", err)
 	}
 	if len(environments) == 0 {
-		fmt.Println("Empty environemt variable list")
+		fmt.Println("Empty environment variable list")
 	} else {
 		fmt.Println(environments)
 	}
-
-	return
 }
 
 func runCommand(c *cli.Context) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		log.Fatalln("Failed to export environemt variable list, err:", err)
+		log.Fatalln("Failed to export environment variable list, err:", err)
 	}
 
 	doCmdEnvs := environments
@@ -132,8 +130,6 @@ func runCommand(c *cli.Context) {
 	}
 
 	executeCmd(cmdToSend)
-
-	return
 }
 
 func main() {
