@@ -154,7 +154,7 @@ func runCommand(c *cli.Context) {
 	doCommand := c.Args()[0]
 	doArgs := c.Args()[1:]
 
-	cmdToSend := commandStruct{
+	cmdToSend := commandModel{
 		Command:      doCommand,
 		Environments: doCmdEnvs,
 		Argumentums:  doArgs,
