@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,7 +13,9 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const envMapName string = ".envstore.yml"
+const (
+	envMapName string = ".envstore.yml"
+)
 
 var (
 	envmanDir  string = pathutil.UserHomeDir() + "/.envman/"
@@ -21,7 +24,11 @@ var (
 )
 
 func createEnvmanDir() error {
-	if exist, _ := pathutil.IsPathExists(envmanDir); exist {
+	exist, err := pathutil.IsPathExists(envmanDir)
+	if err != nil {
+		return err
+	}
+	if exist {
 		return nil
 	}
 	return os.MkdirAll(envmanDir, 0755)
@@ -39,25 +46,19 @@ func loadEnvMap() (envMap, error) {
 func loadEnvMapOrCreate() (envMap, error) {
 	environments, err := loadEnvMap()
 	if err != nil {
-		err := createEnvmanDir()
-		if err != nil {
-			fmt.Println("Failed to create envlist, err:%s", err)
-			return envMap{}, err
+		if err == errors.New("No environemt variable list found") {
+			err = createEnvmanDir()
 		}
+		return envMap{}, err
 	}
-
 	return environments, nil
 }
 
 func updateOrAddToEnvlist(environments envMap, newEnv envMap) (envMap, error) {
-	fmt.Println(environments, newEnv)
-
 	newEnvironments := make(envMap)
-
 	for key, value := range environments {
 		newEnvironments[key] = value
 	}
-
 	for key, value := range newEnv {
 		newEnvironments[key] = value
 	}
@@ -76,7 +77,6 @@ func addCommand(c *cli.Context) {
 	if stdinValue != "" {
 		value = stdinValue
 	}
-
 	value = strings.Replace(value, "\n", "", -1)
 
 	// Validate input
@@ -87,7 +87,7 @@ func addCommand(c *cli.Context) {
 		log.Fatalln("Invalid environment variable value")
 	}
 
-	// Load envlist, or create if not exist
+	// Load envs, or create if not exist
 	environments, err := loadEnvMapOrCreate()
 	if err != nil {
 		log.Fatalln("Failed to load envlist, err:", err)
@@ -99,9 +99,6 @@ func addCommand(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("Failed to create store envlist, err:", err)
 	}
-	fmt.Println("New env list: ", environments)
-
-	return
 }
 
 func printCommand(c *cli.Context) {
