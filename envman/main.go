@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"code.google.com/p/go.crypto/ssh/terminal"
-	"github.com/bitrise-io/envman/pathutil"
+	"github.com/bitrise-io/go-pathutil"
 	"github.com/codegangsta/cli"
 )
 
@@ -26,7 +26,7 @@ func createEnvmanDir() error {
 	if exist {
 		return nil
 	}
-	return pathutil.CreateDir(path)
+	return os.MkdirAll(path, 0755)
 }
 
 func loadEnvlist() (envListYMLStruct, error) {
