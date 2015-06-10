@@ -6,7 +6,10 @@
 - manage your environment-sets : use different ENVs for different projects
 
 
-## How?
+## How? - Use cases
+
+- multi PATH handling: you have `packer` in your `$HOME` dir, in a bin subdir and terraform in another
+  - create an envman `.envset` to include these in your `$PATH`
 
 
 ## TODO
@@ -27,3 +30,6 @@
 - better help texts
 - **print**: should work for empty as well
 - clear : empty the store
+- `env [bash/fish]` : exports ENVs in a bash/fish compatible format
+  - for bash it prints `export KEY=value` statements
+  - which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
