@@ -27,3 +27,4 @@
 - better help texts
 - **print**: should work for empty as well
 - ~~clear : empty the store~~
+- use "github.com/Sirupsen/logrus" for logging
