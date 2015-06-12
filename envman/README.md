@@ -33,3 +33,9 @@
 - `env [bash/fish]` : exports ENVs in a bash/fish compatible format
   - for bash it prints `export KEY=value` statements
   - which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
+
+
+## Develop & Test in Docker
+
+* Build: `docker build -t envman .`
+* Run: `docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-dev envman /bin/bash`
