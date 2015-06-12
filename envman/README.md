@@ -54,7 +54,7 @@ VARIABLES:
 
 OPTIONS:
 
-	--path 			Envman's working path. This is a file path with format {SOME_DIR/envstore.yml}
+	--path 			Envman's working path. This is file path, with format {SOME_DIR/envstore.yml}
 
 					* Notes:
 						- ENVMAN_WORK_PATH
