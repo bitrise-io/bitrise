@@ -39,3 +39,8 @@
 
 * Build: `docker build -t envman .`
 * Run: `docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-dev envman /bin/bash`
+
+Or use the included scripts:
+
+* To build&run: `bash _scripts/docker_build_and_run.sh`
+* Once it's built you can just run it: `bash _scripts/docker_run.sh`
