@@ -129,5 +129,3 @@ COMMANDS:
 
   
   	help		Shows a list of commands or help for one command
-  - for bash it prints `export KEY=value` statements
-  - which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
