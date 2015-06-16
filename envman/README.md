@@ -35,6 +35,17 @@
 	- which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
 
 
+## Develop & Test in Docker
+
+* Build: `docker build -t envman .`
+* Run: `docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-dev envman /bin/bash`
+
+Or use the included scripts:
+
+* To build&run: `bash _scripts/docker_build_and_run.sh`
+* Once it's built you can just run it: `bash _scripts/docker_run.sh`
+
+
 ###################################################################################################################
 ## USAGE
 ###################################################################################################################
@@ -118,3 +129,5 @@ COMMANDS:
 
   
   	help		Shows a list of commands or help for one command
+  - for bash it prints `export KEY=value` statements
+  - which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
