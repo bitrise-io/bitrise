@@ -44,3 +44,12 @@ Or use the included scripts:
 
 * To build&run: `bash _scripts/docker_build_and_run.sh`
 * Once it's built you can just run it: `bash _scripts/docker_run.sh`
+
+With `docker-compose`:
+
+```
+docker-compose run --rm app command to run
+```
+
+For example to print `envman`'s help you can
+run: `docker-compose run --rm app envman --help`
