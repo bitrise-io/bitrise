@@ -12,29 +12,6 @@
 	- create an envman `.envset` to include these in your `$PATH`
 
 
-## TODO
-
-- ~~`init`: create an empty .envstore file into the current directory~~
-- ~~move CLI commands to separate files, one for each command
-	- like in [https://github.com/docker/swarm](https://github.com/docker/swarm)~~
-- ~~multi ENV file handling~~
-	- with an arg: `-envstore=path/to/envstore/file.yml` : use this file
-	- if there's a .envstore file in the current dir use that one
-	- if neither is present: use `$HOME/.envman/.envstore`
-- ~~check Go standard package errors (ex: `os.Setenv`) [!!!os.Setenv removed!!!]~~
-- expand environment variables **on read** (not at store)
-- ~~better progress feedback:~~
-	- present the file path the env is saved into for `add` command
-- ~~better command error handling~~
-- ~~store ENVs as Map, not as Slice/array~~
-- better help texts
-- **print**: should work for empty as well
-- ~~clear : empty the store~~
-- `env [bash/fish]` : exports ENVs in a bash/fish compatible format
-	- for bash it prints `export KEY=value` statements
-	- which can be run like this: `$(envman env bash)` to import the ENVs into the current ENV session
-
-
 ## Develop & Test in Docker
 
 * Build: `docker build -t envman .`
@@ -45,11 +22,37 @@ Or use the included scripts:
 * To build&run: `bash _scripts/docker_build_and_run.sh`
 * Once it's built you can just run it: `bash _scripts/docker_run.sh`
 
-With `docker-compose`:
+
+## USAGE IN RUBY 
+
+### Add environment variable through envman
 
 ```
-docker-compose run --rm app command to run
+system( "envman add --key SOME_KEY --value SOME_VALUE" )
 ```
 
-For example to print `envman`'s help you can
-run: `docker-compose run --rm app envman --help`
+
+### Add environment variable through envman, with piped add
+
+```
+IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
+	f.write(SOME_VALUE) 
+    f.close_write
+    f.read 
+}
+```
+
+### Let envman to read environment value from file
+
+```
+require 'tempfile'
+
+file = Tempfile.new('FILE_NAME')
+file.write(SOME_VALUE)
+file.rewind
+
+system( "envman add --key SOME_KEY --valuefile #{file.path}" )
+
+file.close
+file.unlink
+```
