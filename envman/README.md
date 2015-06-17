@@ -23,26 +23,26 @@ Or use the included scripts:
 * Once it's built you can just run it: `bash _scripts/docker_run.sh`
 
 
-## USAGE IN RUBY 
+## Usage example: Ruby
 
-### Add environment variable through envman
+### Add environment variable with `--value` flag
 
 ```
 system( "envman add --key SOME_KEY --value SOME_VALUE" )
 ```
 
 
-### Add environment variable through envman, with piped add
+### Add environment variable from an input stream
 
 ```
 IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
-	f.write(SOME_VALUE) 
+    f.write(SOME_VALUE) 
     f.close_write
     f.read 
 }
 ```
 
-### Let envman to read environment value from file
+### Add environment variable with a value file
 
 ```
 require 'tempfile'
