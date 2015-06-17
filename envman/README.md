@@ -49,10 +49,9 @@ require 'tempfile'
 
 file = Tempfile.new('FILE_NAME')
 file.write(SOME_VALUE)
-file.rewind
+file.close
 
 system( "envman add --key SOME_KEY --valuefile #{file.path}" )
 
-file.close
-file.unlink
+file.unlink # removes the file
 ```
