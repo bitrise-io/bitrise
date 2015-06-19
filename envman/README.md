@@ -23,35 +23,104 @@ Or use the included scripts:
 * Once it's built you can just run it: `bash _scripts/docker_run.sh`
 
 
-## Usage example: Ruby
+---
+# USAGE IN RUBY 
 
-### Add environment variable with `--value` flag
+### Add environment variable through envman
 
 ```
 system( "envman add --key SOME_KEY --value SOME_VALUE" )
 ```
 
-
-### Add environment variable from an input stream
+### Add environment variable through envman, with piped add
 
 ```
 IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
-    f.write(SOME_VALUE) 
-    f.close_write
-    f.read 
+f.write(SOME_VALUE) 
+	f.close_write
+	f.read 
 }
 ```
 
-### Add environment variable with a value file
+### Let envman to read environment value from file
 
 ```
 require 'tempfile'
 
-file = Tempfile.new('FILE_NAME')
+file = Tempfile.new('SOME_FILE_NAME')
 file.write(SOME_VALUE)
-file.close
+file.rewind
 
 system( "envman add --key SOME_KEY --valuefile #{file.path}" )
 
-file.unlink # removes the file
+file.close
+file.unlink 
 ```
+  
+---
+# USAGE IN GO 
+
+### Add environment variable through envman
+
+```
+import "os/exec"
+
+cmd := "envman add --key SOME_KEY --value SOME_VALUE"
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+   // Handle error
+}
+```
+
+### Add environment variable through envman, with piped add
+
+```
+import "os/exec"
+
+cmd := "echo SOME_VALUE | envman add --key SOME_KEY"
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+	// Handle error
+}
+```
+
+### Let envman to read environment value from file
+
+```
+import (
+	"os/exec"
+	"fmt"
+)
+
+cmd := fmt.Sprintf("envman add --key SOME_KEY --valuefile %v", SOME_FILE_PATH)
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+	// Handle error
+}
+```
+
+---
+# USAGE IN BASH 
+
+### Add environment variable through envman
+
+```
+envman add --key SOME_KEY --value SOME_VALUE
+```
+
+### Add environment variable through envman, with piped add
+
+```
+echo SOME_VALUE | envman add --key SOME_KEY
+```
+
+### Let envman to read environment value from file
+
+```
+envman add --key SOME_KEY --valuefile SOME_FILE_PATH
+```
+  
+---
