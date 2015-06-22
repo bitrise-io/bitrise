@@ -31,7 +31,7 @@ Or use the included scripts:
 ### Add environment variable with `--value` flag
 
 ```
-system( "envman add --key SOME_KEY --value SOME_VALUE" )
+system( "envman add --key SOME_KEY --value SOME_VALUE --expand false" )
 ```
 
 ### Add environment variable from an input stream
@@ -80,7 +80,7 @@ if err != nil {
 ```
 import "os/exec"
 
-cmd := "echo SOME_VALUE | envman add --key SOME_KEY"
+cmd := "echo SOME_VALUE | envman add --key SOME_KEY" --expand false
 c := exec.Command("bash", "-c", cmd)
 err := c.Run()
 if err != nil {
@@ -122,7 +122,7 @@ echo SOME_VALUE | envman add --key SOME_KEY
 ### Add environment variable with a value file
 
 ```
-envman add --key SOME_KEY --valuefile SOME_FILE_PATH
+envman add --key SOME_KEY --valuefile SOME_FILE_PATH --expand false
 ```
   
 ---
