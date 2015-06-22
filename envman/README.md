@@ -25,22 +25,22 @@ Or use the included scripts:
 * Once it's built you can just run it: `bash _scripts/docker_run.sh`
 
 
+---
 ## Usage example: Ruby
 
 ### Add environment variable with `--value` flag
 
 ```
-system( "envman add --key SOME_KEY --value SOME_VALUE" )
+system( "envman add --key SOME_KEY --value 'some value' --expand false" )
 ```
-
 
 ### Add environment variable from an input stream
 
 ```
 IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
-    f.write(SOME_VALUE) 
-    f.close_write
-    f.read 
+	f.write('some value') 
+	f.close_write
+	f.read 
 }
 ```
 
@@ -49,11 +49,79 @@ IO.popen('envman add --key SOME_KEY', 'r+') {|f|
 ```
 require 'tempfile'
 
-file = Tempfile.new('FILE_NAME')
-file.write(SOME_VALUE)
+file = Tempfile.new('SOME_FILE_NAME')
+file.write('some value')
 file.close
 
 system( "envman add --key SOME_KEY --valuefile #{file.path}" )
 
-file.unlink # removes the file
+file.unlink 
 ```
+  
+---
+## Usage exmale: GO 
+
+### Add environment variable with `--value` flag
+
+```
+import "os/exec"
+
+cmd := "envman add --key SOME_KEY --value 'some value'"
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+   // Handle error
+}
+```
+
+### Add environment variable from an input stream
+
+```
+import "os/exec"
+
+cmd := "echo 'some value' | envman add --key SOME_KEY --expand false"
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+	// Handle error
+}
+```
+
+### Add environment variable with a value file
+
+```
+import (
+	"os/exec"
+	"fmt"
+)
+
+cmd := fmt.Sprintf("envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value")
+c := exec.Command("bash", "-c", cmd)
+err := c.Run()
+if err != nil {
+	// Handle error
+}
+```
+
+---
+## Usage exmaple: Bash
+
+### Add environment variable with `--value` flag
+
+```
+envman add --key SOME_KEY --value 'some value'
+```
+
+### Add environment variable from an input stream
+
+```
+echo "some value" | envman add --key SOME_KEY
+```
+
+### Add environment variable with a value file
+
+```
+envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --expand false
+```
+  
+---
