@@ -4,7 +4,7 @@
 
 - connect tools with each other : one tool saves an ENV, the other uses it (input & output)
 - manage your environment-sets : use different ENVs for different projects
-- complex environment values : if you want to store a complex input as ENV (for example a change log text/summary), `envman` makes this easy, you don't have to encode the value so that when you call bash's `export KEY=value` it will store your value as you intended. You can just give `envman` the value as it is through a `-valuefile` option or as an input stream (or just edit the related `.envstore` file manually), no encoding required.
+- complex environment values : if you want to store a complex input as ENV (for example a change log text/summary), `envman` makes this easy, you don't have to encode the value so that when you call bash's `export KEY=value` it will store your value as you intended. You can just give `envman` the value as it is through a `--valuefile` option or as an input stream (or just edit the related `.envstore` file manually), no encoding required.
 - switch between environment sets : if you work on multiple projects where each one requires different environments you can manage this with `envman`
 
 
@@ -59,7 +59,7 @@ file.unlink
 ```
   
 ---
-## Usage exmale: GO 
+## Usage exmaple: GO 
 
 ### Add environment variable with `--value` flag
 
