@@ -28,7 +28,7 @@ Or use the included scripts:
 ---
 ## Usage example: Ruby
 
-### Add environment variable with '--value' flag
+### Add environment variable with `--value` flag
 
 ```
 system( "envman add --key SOME_KEY --value 'some value' --expand false" )
@@ -61,7 +61,7 @@ file.unlink
 ---
 ## Usage exmale: GO 
 
-### Add environment variable with '--value' flag
+### Add environment variable with `--value` flag
 
 ```
 import "os/exec"
@@ -106,7 +106,7 @@ if err != nil {
 ---
 ## Usage exmaple: Bash
 
-### Add environment variable with '--value' flag
+### Add environment variable with `--value` flag
 
 ```
 envman add --key SOME_KEY --value 'some value'
