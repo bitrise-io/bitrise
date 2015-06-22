@@ -31,7 +31,7 @@ Or use the included scripts:
 ### Add environment variable with `--value` flag
 
 ```
-system( "envman add --key SOME_KEY --value \"some value\" --expand false" )
+system( "envman add --key SOME_KEY --value 'some value' --expand false" )
 ```
 
 ### Add environment variable from an input stream
@@ -50,7 +50,7 @@ IO.popen('envman add --key SOME_KEY', 'r+') {|f|
 require 'tempfile'
 
 file = Tempfile.new('SOME_FILE_NAME')
-file.write(\"some value\")
+file.write("some value")
 file.rewind
 
 system( "envman add --key SOME_KEY --valuefile #{file.path}" )
@@ -96,7 +96,7 @@ import (
 	"fmt"
 )
 
-cmd := fmt.Sprintf("envman add --key SOME_KEY --valuefile %v", SOME_FILE_PATH)
+cmd := fmt.Sprintf("envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value")
 c := exec.Command("bash", "-c", cmd)
 err := c.Run()
 if err != nil {
@@ -122,7 +122,7 @@ echo "some value" | envman add --key SOME_KEY
 ### Add environment variable with a value file
 
 ```
-envman add --key SOME_KEY --valuefile SOME_FILE_PATH --expand false
+envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --expand false
 ```
   
 ---
