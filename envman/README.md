@@ -28,7 +28,7 @@ Or use the included scripts:
 ---
 ## Usage example: Ruby
 
-### Add environment variable with `--value` flag
+### Add environment variable with '--value' flag
 
 ```
 system( "envman add --key SOME_KEY --value 'some value' --expand false" )
@@ -38,7 +38,7 @@ system( "envman add --key SOME_KEY --value 'some value' --expand false" )
 
 ```
 IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
-	f.write(\"some value\") 
+	f.write('some value') 
 	f.close_write
 	f.read 
 }
@@ -50,7 +50,7 @@ IO.popen('envman add --key SOME_KEY', 'r+') {|f|
 require 'tempfile'
 
 file = Tempfile.new('SOME_FILE_NAME')
-file.write("some value")
+file.write('some value')
 file.rewind
 
 system( "envman add --key SOME_KEY --valuefile #{file.path}" )
@@ -62,12 +62,12 @@ file.unlink
 ---
 ## Usage exmale: GO 
 
-### Add environment variable with `--value` flag
+### Add environment variable with '--value' flag
 
 ```
 import "os/exec"
 
-cmd := "envman add --key SOME_KEY --value \"some value\""
+cmd := "envman add --key SOME_KEY --value 'some value'"
 c := exec.Command("bash", "-c", cmd)
 err := c.Run()
 if err != nil {
@@ -80,7 +80,7 @@ if err != nil {
 ```
 import "os/exec"
 
-cmd := "echo \"some value\" | envman add --key SOME_KEY" --expand false
+cmd := "echo 'some value' | envman add --key SOME_KEY --expand false"
 c := exec.Command("bash", "-c", cmd)
 err := c.Run()
 if err != nil {
@@ -107,10 +107,10 @@ if err != nil {
 ---
 ## Usage exmaple: Bash
 
-### Add environment variable with `--value` flag
+### Add environment variable with '--value' flag
 
 ```
-envman add --key SOME_KEY --value "some value"
+envman add --key SOME_KEY --value 'some value'
 ```
 
 ### Add environment variable from an input stream
