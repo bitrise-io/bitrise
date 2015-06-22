@@ -26,25 +26,25 @@ Or use the included scripts:
 
 
 ---
-# USAGE IN RUBY 
+## Usage example: Ruby
 
-### Add environment variable through envman
+### Add environment variable with `--value` flag
 
 ```
 system( "envman add --key SOME_KEY --value SOME_VALUE" )
 ```
 
-### Add environment variable through envman, with piped add
+### Add environment variable from an input stream
 
 ```
 IO.popen('envman add --key SOME_KEY', 'r+') {|f| 
-f.write(SOME_VALUE) 
+	f.write(SOME_VALUE) 
 	f.close_write
 	f.read 
 }
 ```
 
-### Let envman to read environment value from file
+### Add environment variable with a value file
 
 ```
 require 'tempfile'
@@ -60,9 +60,9 @@ file.unlink
 ```
   
 ---
-# USAGE IN GO 
+## Usage exmale: GO 
 
-### Add environment variable through envman
+### Add environment variable with `--value` flag
 
 ```
 import "os/exec"
@@ -75,7 +75,7 @@ if err != nil {
 }
 ```
 
-### Add environment variable through envman, with piped add
+### Add environment variable from an input stream
 
 ```
 import "os/exec"
@@ -88,7 +88,7 @@ if err != nil {
 }
 ```
 
-### Let envman to read environment value from file
+### Add environment variable with a value file
 
 ```
 import (
@@ -105,21 +105,21 @@ if err != nil {
 ```
 
 ---
-# USAGE IN BASH 
+## Usage exmaple: Bash
 
-### Add environment variable through envman
+### Add environment variable with `--value` flag
 
 ```
 envman add --key SOME_KEY --value SOME_VALUE
 ```
 
-### Add environment variable through envman, with piped add
+### Add environment variable from an input stream
 
 ```
 echo SOME_VALUE | envman add --key SOME_KEY
 ```
 
-### Let envman to read environment value from file
+### Add environment variable with a value file
 
 ```
 envman add --key SOME_KEY --valuefile SOME_FILE_PATH
