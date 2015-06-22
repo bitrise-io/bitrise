@@ -59,7 +59,7 @@ file.unlink
 ```
   
 ---
-## Usage exmaple: GO 
+## Usage example: Go
 
 ### Add environment variable with `--value` flag
 
@@ -104,7 +104,7 @@ if err != nil {
 ```
 
 ---
-## Usage exmaple: Bash
+## Usage example: Bash
 
 ### Add environment variable with `--value` flag
 
