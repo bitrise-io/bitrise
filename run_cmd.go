@@ -5,6 +5,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func setupCmd(c *cli.Context) {
+func runCmd(c *cli.Context) {
 	log.Error("Not Yet Implemented!")
 }

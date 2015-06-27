@@ -37,6 +37,11 @@ func run() {
 			Value: "info",
 			Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 		},
+		cli.BoolFlag{
+			Name:  "tool" + ", " + "ci" + ", " + "quiet" + ", " + "q",
+			Usage: "If true it indicates that we're used by another tool so don't require any user input!",
+			EnvVar: "CI",
+		},
 	}
 	app.Commands = commands
 
