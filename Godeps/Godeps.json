@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/bitrise-io/bitrise-cli",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.2-15-g93a1736",
+			"Rev": "93a1736895ca25a01a739e0394bf7f672299a27d"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-113-g55b8924",
+			"Rev": "55b8924c2b7c0bbaa1e6518b9d1b3f5c971482a7"
+		}
+	]
+}
