@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,29 +33,35 @@ func parseStepYml(pth string) (StepJsonStruct, error) {
 		return StepJsonStruct{}, err
 	}
 
-	inputsJson := make([]InputJsonStruct, len(stepYml.Inputs))
-	for _, inputYml := range stepYml.Inputs {
-		inputJson := InputJsonStruct{
-			MappedTo:          inputYml.MappedTo,
-			Title:             inputYml.Title,
-			Description:       inputYml.Description,
-			Value:             inputYml.Value,
-			ValueOptions:      inputYml.ValueOptions,
-			IsRequired:        inputYml.IsRequired,
-			IsExpand:          inputYml.IsExpand,
-			IsDontChangeValue: inputYml.IsDontChangeValue,
+	var inputsJson []*InputJsonStruct
+	if len(stepYml.Inputs) > 0 {
+		inputsJson = make([]*InputJsonStruct, len(stepYml.Inputs))
+		for i, inputYml := range stepYml.Inputs {
+			inputJson := InputJsonStruct{
+				MappedTo:          inputYml.MappedTo,
+				Title:             inputYml.Title,
+				Description:       inputYml.Description,
+				Value:             inputYml.Value,
+				ValueOptions:      inputYml.ValueOptions,
+				IsRequired:        inputYml.IsRequired,
+				IsExpand:          inputYml.IsExpand,
+				IsDontChangeValue: inputYml.IsDontChangeValue,
+			}
+			inputsJson[i] = &inputJson
 		}
-		inputsJson = append(inputsJson, inputJson)
 	}
 
-	outputsJson := make([]OutputJsonStruct, len(stepYml.Outputs))
-	for _, outputYml := range stepYml.Outputs {
-		outputJson := OutputJsonStruct{
-			MappedTo:    outputYml.MappedTo,
-			Title:       outputYml.Title,
-			Description: outputYml.Description,
+	var outputsJson []*OutputJsonStruct
+	if len(stepYml.Outputs) > 0 {
+		outputsJson = make([]*OutputJsonStruct, len(stepYml.Outputs))
+		for i, outputYml := range stepYml.Outputs {
+			outputJson := OutputJsonStruct{
+				MappedTo:    outputYml.MappedTo,
+				Title:       outputYml.Title,
+				Description: outputYml.Description,
+			}
+			outputsJson[i] = &outputJson
 		}
-		outputsJson = append(outputsJson, outputJson)
 	}
 
 	stepJson := StepJsonStruct{
@@ -74,10 +81,26 @@ func parseStepYml(pth string) (StepJsonStruct, error) {
 	return stepJson, nil
 }
 
+// version is string like x.y.z
+// true if version2 is greater then version1
+func isVersionGrater(version1, version2 string) bool {
+	version1Slice := strings.Split(version1, ".")
+	version2Slice := strings.Split(version2, ".")
+
+	for i, num := range version1Slice {
+		num1, _ := strconv.ParseInt(num, 0, 64)
+		num2, _ := strconv.ParseInt(version2Slice[i], 0, 64)
+		if num2 > num1 {
+			return true
+		}
+	}
+	return false
+}
+
 func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := StepCollectionJsonStruct{
 		FormatVersion:        FORMAT_VERSION,
-		GeneratedAtTimeStamp: time.Now().String(),
+		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        STEPLIB_SOURCE,
 	}
 
@@ -91,27 +114,15 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 			components := strings.Split(truncatedPath, "/")
 			if len(components) == 4 {
 				name := components[1]
-				if name != "activate-ssh-key" {
-					return nil
-				}
-
 				version := components[2]
-				//yml := components[3]
 
 				currentStep, _ := parseStepYml(path)
 				currentStep.Id = name
 				currentStep.StepLibSource = STEPLIB_SOURCE
 				currentStep.VersionTag = version
 
-				fmt.Println(fmt.Sprintf("Adding step:%s version:%s", currentStep.Id, currentStep.VersionTag))
-
 				var currentStepGroup StepGroupJsonStruct
-
-				fmt.Println(fmt.Sprintf("Versions count:", len(stepHash[name].Versions)))
-
 				if len(stepHash[name].Versions) > 0 {
-					fmt.Println(fmt.Sprintf("Versions count > 0, appending step"))
-
 					// Step Group already created -> new version of step
 					currentStepGroup = stepHash[name]
 
@@ -123,9 +134,10 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 					currentStepGroup.Versions = versions
 
 					// TODO! decide if latest
-					currentStepGroup.Latest = currentStep
+					if isVersionGrater(currentStepGroup.Latest.VersionTag, currentStep.VersionTag) {
+						currentStepGroup.Latest = currentStep
+					}
 				} else {
-					fmt.Println(fmt.Sprintf("Versions count == 0, creating step group"))
 					// Create Step Group
 					currentStepGroup = StepGroupJsonStruct{}
 
@@ -134,6 +146,8 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 					currentStepGroup.Versions = versions
 					currentStepGroup.Latest = currentStep
 				}
+
+				currentStepGroup.Id = name
 
 				stepHash[name] = currentStepGroup
 			} else {
