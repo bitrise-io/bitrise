@@ -21,7 +21,7 @@ const (
 	FORMAT_VERSION string = "0.9.0"
 )
 
-func parseStepYml(pth string) (StepJsonStruct, error) {
+func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
 		return StepJsonStruct{}, err
@@ -33,50 +33,10 @@ func parseStepYml(pth string) (StepJsonStruct, error) {
 		return StepJsonStruct{}, err
 	}
 
-	var inputsJson []*InputJsonStruct
-	if len(stepYml.Inputs) > 0 {
-		inputsJson = make([]*InputJsonStruct, len(stepYml.Inputs))
-		for i, inputYml := range stepYml.Inputs {
-			inputJson := InputJsonStruct{
-				MappedTo:          inputYml.MappedTo,
-				Title:             inputYml.Title,
-				Description:       inputYml.Description,
-				Value:             inputYml.Value,
-				ValueOptions:      inputYml.ValueOptions,
-				IsRequired:        inputYml.IsRequired,
-				IsExpand:          inputYml.IsExpand,
-				IsDontChangeValue: inputYml.IsDontChangeValue,
-			}
-			inputsJson[i] = &inputJson
-		}
-	}
-
-	var outputsJson []*OutputJsonStruct
-	if len(stepYml.Outputs) > 0 {
-		outputsJson = make([]*OutputJsonStruct, len(stepYml.Outputs))
-		for i, outputYml := range stepYml.Outputs {
-			outputJson := OutputJsonStruct{
-				MappedTo:    outputYml.MappedTo,
-				Title:       outputYml.Title,
-				Description: outputYml.Description,
-			}
-			outputsJson[i] = &outputJson
-		}
-	}
-
-	stepJson := StepJsonStruct{
-		Name:                stepYml.Name,
-		Description:         stepYml.Description,
-		Website:             stepYml.Website,
-		ForkUrl:             stepYml.ForkUrl,
-		Source:              stepYml.Source,
-		HostOsTags:          stepYml.HostOsTags,
-		ProjectTypeTags:     stepYml.ProjectTypeTags,
-		TypeTags:            stepYml.TypeTags,
-		IsRequiresAdminUser: stepYml.IsRequiresAdminUser,
-		Inputs:              inputsJson,
-		Outputs:             outputsJson,
-	}
+	stepJson := convertToStepJsonStruct(stepYml)
+	stepJson.Id = id
+	stepJson.VersionTag = version
+	stepJson.StepLibSource = STEPLIB_SOURCE
 
 	return stepJson, nil
 }
@@ -95,6 +55,32 @@ func isVersionGrater(version1, version2 string) bool {
 		}
 	}
 	return false
+}
+
+func addStepToStepGroup(step StepJsonStruct, stepGroup StepGroupJsonStruct) StepGroupJsonStruct {
+	var newStepGroup StepGroupJsonStruct
+	if len(stepGroup.Versions) > 0 {
+		// Step Group already created -> new version of step
+		newStepGroup = stepGroup
+
+		if isVersionGrater(newStepGroup.Latest.VersionTag, step.VersionTag) {
+			newStepGroup.Latest = step
+		}
+	} else {
+		// Create Step Group
+		newStepGroup = StepGroupJsonStruct{}
+		newStepGroup.Latest = step
+	}
+
+	versions := make([]StepJsonStruct, len(newStepGroup.Versions))
+	for idx, step := range newStepGroup.Versions {
+		versions[idx] = step
+	}
+	versions = append(versions, step)
+	newStepGroup.Versions = versions
+
+	newStepGroup.Id = step.Id
+	return newStepGroup
 }
 
 func generateFormattedJSONForStepsSpec() ([]byte, error) {
@@ -116,38 +102,8 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 				name := components[1]
 				version := components[2]
 
-				currentStep, _ := parseStepYml(path)
-				currentStep.Id = name
-				currentStep.StepLibSource = STEPLIB_SOURCE
-				currentStep.VersionTag = version
-
-				var currentStepGroup StepGroupJsonStruct
-				if len(stepHash[name].Versions) > 0 {
-					// Step Group already created -> new version of step
-					currentStepGroup = stepHash[name]
-
-					versions := make([]StepJsonStruct, len(currentStepGroup.Versions))
-					for idx, step := range currentStepGroup.Versions {
-						versions[idx] = step
-					}
-					versions = append(versions, currentStep)
-					currentStepGroup.Versions = versions
-
-					// TODO! decide if latest
-					if isVersionGrater(currentStepGroup.Latest.VersionTag, currentStep.VersionTag) {
-						currentStepGroup.Latest = currentStep
-					}
-				} else {
-					// Create Step Group
-					currentStepGroup = StepGroupJsonStruct{}
-
-					versions := make([]StepJsonStruct, 1)
-					versions[0] = currentStep
-					currentStepGroup.Versions = versions
-					currentStepGroup.Latest = currentStep
-				}
-
-				currentStepGroup.Id = name
+				currentStep, _ := parseStepYml(path, name, version)
+				currentStepGroup := addStepToStepGroup(currentStep, stepHash[name])
 
 				stepHash[name] = currentStepGroup
 			} else {
@@ -186,7 +142,6 @@ func writeStepSpecToFile() error {
 		}
 	}
 
-	//file, err := os.Create(pth)
 	file, err := os.OpenFile(pth, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err

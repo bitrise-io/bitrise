@@ -2,7 +2,11 @@ package main
 
 import ()
 
-// Json
+//
+// Models
+//
+
+// - Json
 type InputJsonStruct struct {
 	MappedTo          *string   `json:"mapped_to,omitempty"`
 	Title             *string   `json:"title,omitempty"`
@@ -52,7 +56,7 @@ type StepCollectionJsonStruct struct {
 	SteplibSource        string       `json:"steplib_source"`
 }
 
-// YML
+// - YML
 type InputYmlStruct struct {
 	MappedTo          *string   `yaml:"mapped_to,omitempty"`
 	Title             *string   `yaml:"title,omitempty"`
@@ -84,9 +88,74 @@ type StepYmlStruct struct {
 	Outputs             []*OutputYmlStruct `yaml:"outputs,omitempty"`
 }
 
-type StepCollectionYmlStruct struct {
-	FormatVersion        string          `yaml:"format_version"`
-	GeneratedAtTimeStamp string          `yaml:"generated_at_timestamp"`
-	Steps                []StepYmlStruct `yaml:"steps"`
-	SteplibSource        string          `yaml:"steplib_source"`
+//
+// Converters
+//
+func convertToInputJsonStruct(inputYml InputYmlStruct) InputJsonStruct {
+	inputJson := InputJsonStruct{
+		MappedTo:          inputYml.MappedTo,
+		Title:             inputYml.Title,
+		Description:       inputYml.Description,
+		Value:             inputYml.Value,
+		ValueOptions:      inputYml.ValueOptions,
+		IsRequired:        inputYml.IsRequired,
+		IsExpand:          inputYml.IsExpand,
+		IsDontChangeValue: inputYml.IsDontChangeValue,
+	}
+	return inputJson
+}
+
+func convertToInputJsonSructSlice(inputYmlSlice []*InputYmlStruct) []*InputJsonStruct {
+	if len(inputYmlSlice) > 0 {
+		inputJsonSlice := make([]*InputJsonStruct, len(inputYmlSlice))
+		for i, inputYml := range inputYmlSlice {
+			inputJson := convertToInputJsonStruct(*inputYml)
+			inputJsonSlice[i] = &inputJson
+		}
+		return inputJsonSlice
+	}
+	return []*InputJsonStruct{}
+}
+
+func convertToOutputJsonStruct(outputYml OutputYmlStruct) OutputJsonStruct {
+	outputJson := OutputJsonStruct{
+		MappedTo:    outputYml.MappedTo,
+		Title:       outputYml.Title,
+		Description: outputYml.Description,
+	}
+	return outputJson
+}
+
+func convertToOutputJsonSructSlice(outputYmlSlice []*OutputYmlStruct) []*OutputJsonStruct {
+	if len(outputYmlSlice) > 0 {
+		outputJsonSlice := make([]*OutputJsonStruct, len(outputYmlSlice))
+		for i, outputYml := range outputYmlSlice {
+			outputJson := convertToOutputJsonStruct(*outputYml)
+			outputJsonSlice[i] = &outputJson
+		}
+		return outputJsonSlice
+	}
+	return []*OutputJsonStruct{}
+}
+
+func convertToStepJsonStruct(stepYml StepYmlStruct) StepJsonStruct {
+	inputsJson := convertToInputJsonSructSlice(stepYml.Inputs)
+
+	outputsJson := convertToOutputJsonSructSlice(stepYml.Outputs)
+
+	stepJson := StepJsonStruct{
+		Name:                stepYml.Name,
+		Description:         stepYml.Description,
+		Website:             stepYml.Website,
+		ForkUrl:             stepYml.ForkUrl,
+		Source:              stepYml.Source,
+		HostOsTags:          stepYml.HostOsTags,
+		ProjectTypeTags:     stepYml.ProjectTypeTags,
+		TypeTags:            stepYml.TypeTags,
+		IsRequiresAdminUser: stepYml.IsRequiresAdminUser,
+		Inputs:              inputsJson,
+		Outputs:             outputsJson,
+	}
+
+	return stepJson
 }
