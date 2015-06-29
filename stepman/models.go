@@ -56,6 +56,18 @@ type StepCollectionJsonStruct struct {
 	SteplibSource        string       `json:"steplib_source"`
 }
 
+func (stepCollection StepCollectionJsonStruct) GetStep(id, version string) (bool, StepJsonStruct) {
+	versions := stepCollection.Steps[id].Versions
+	if len(versions) > 0 {
+		for _, step := range versions {
+			if step.VersionTag == version {
+				return true, step
+			}
+		}
+	}
+	return false, StepJsonStruct{}
+}
+
 // - YML
 type InputYmlStruct struct {
 	MappedTo          *string   `yaml:"mapped_to,omitempty"`

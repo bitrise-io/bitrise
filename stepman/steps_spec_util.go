@@ -48,8 +48,18 @@ func isVersionGrater(version1, version2 string) bool {
 	version2Slice := strings.Split(version2, ".")
 
 	for i, num := range version1Slice {
-		num1, _ := strconv.ParseInt(num, 0, 64)
-		num2, _ := strconv.ParseInt(version2Slice[i], 0, 64)
+		num1, err1 := strconv.ParseInt(num, 0, 64)
+		if err1 != nil {
+			fmt.Errorf("Failed to parse int: %s", err1)
+			return false
+		}
+
+		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
+		if err2 != nil {
+			fmt.Errorf("Failed to parse int: %s", err2)
+			return false
+		}
+
 		if num2 > num1 {
 			return true
 		}
@@ -77,8 +87,8 @@ func addStepToStepGroup(step StepJsonStruct, stepGroup StepGroupJsonStruct) Step
 		versions[idx] = step
 	}
 	versions = append(versions, step)
-	newStepGroup.Versions = versions
 
+	newStepGroup.Versions = versions
 	newStepGroup.Id = step.Id
 	return newStepGroup
 }
@@ -95,17 +105,24 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	stepsSpecDir := pathutil.UserHomeDir() + STEPS_DIR
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(path, stepsSpecDir, "", -1)
-		match, _ := regexp.MatchString("([a-z]+).yml", truncatedPath)
+		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
+		if matchErr != nil {
+			return matchErr
+		}
+
 		if match {
 			components := strings.Split(truncatedPath, "/")
 			if len(components) == 4 {
 				name := components[1]
 				version := components[2]
 
-				currentStep, _ := parseStepYml(path, name, version)
-				currentStepGroup := addStepToStepGroup(currentStep, stepHash[name])
+				step, parseErr := parseStepYml(path, name, version)
+				if parseErr != nil {
+					return parseErr
+				}
+				stepGroup := addStepToStepGroup(step, stepHash[name])
 
-				stepHash[name] = currentStepGroup
+				stepHash[name] = stepGroup
 			} else {
 				fmt.Println("Path:", truncatedPath)
 				fmt.Println("Legth:", len(components))
@@ -117,19 +134,25 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 	collection.Steps = stepHash
 
-	b, err := json.Marshal(collection)
+	bytes, err := json.Marshal(collection)
 	if err != nil {
 		fmt.Println("error:", err)
 		return []byte{}, err
 	}
 
-	return b, nil
+	return bytes, nil
 }
 
 func writeStepSpecToFile() error {
 	pth := pathutil.UserHomeDir() + STEP_SPEC_DIR
 
-	if exist, _ := pathutil.IsPathExists(pth); exist == false {
+	exist, err := pathutil.IsPathExists(pth)
+	if err != nil {
+		fmt.Errorf("Failed to check path: %s", err)
+		return err
+	}
+
+	if exist == false {
 		dir, _ := path.Split(pth)
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
@@ -146,7 +169,12 @@ func writeStepSpecToFile() error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			fmt.Errorf("Failed to close file: %s", err)
+		}
+	}()
 
 	jsonContBytes, err := generateFormattedJSONForStepsSpec()
 	if err != nil {
@@ -159,4 +187,19 @@ func writeStepSpecToFile() error {
 	}
 
 	return nil
+}
+
+func readStepSpec() (StepCollectionJsonStruct, error) {
+	pth := pathutil.UserHomeDir() + STEP_SPEC_DIR
+	file, err := os.Open(pth)
+	if err != nil {
+		return StepCollectionJsonStruct{}, err
+	}
+
+	var stepCollection StepCollectionJsonStruct
+	parser := json.NewDecoder(file)
+	if err = parser.Decode(&stepCollection); err != nil {
+		return StepCollectionJsonStruct{}, err
+	}
+	return stepCollection, err
 }

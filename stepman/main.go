@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	_ "os"
 
 	"github.com/bitrise-io/go-pathutil"
 )
@@ -10,22 +12,15 @@ const (
 	STEP_COLLECTION_GIT string = "https://github.com/steplib/steplib.git"
 	STEP_COLLECTION_DIR string = "/.stepMan/step_collection"
 	STEPS_DIR           string = "/.stepMan/step_collection/steps"
-	STEP_SPEC_DIR       string = "/.stepMan/step_spec/step_spec.json"
+
+	STEP_SPEC_DIR string = "/.stepMan/step_spec/step_spec.json"
+
+	STEP_CACHE_DIR string = "/.stepMan/step_cache/"
 )
 
 // Interface commands
 func doUpdateCommand(stepsSpecDir string) error {
-	isStorePathExists, err := pathutil.IsPathExists(stepsSpecDir)
-	if err != nil {
-		return err
-	}
-	if isStorePathExists == false {
-		fmt.Println("StepsSpec path does not exist, do clone")
-		return cloneStepsSpecs(stepsSpecDir)
-	}
-
-	fmt.Println("StepsSpec path exist, do pull")
-	return pullStepsSpec(stepsSpecDir)
+	return doGitUpdate(STEP_COLLECTION_GIT, stepsSpecDir)
 }
 
 func doGenerateStepsSpec() error {
@@ -34,6 +29,23 @@ func doGenerateStepsSpec() error {
 		return err
 	}
 	return nil
+}
+
+func doActivateStep(id, version, pth string) error {
+	stepCollection, err := readStepSpec()
+	if err != nil {
+		return err
+	}
+
+	exist, step := stepCollection.GetStep(id, version)
+	if exist {
+		git := step.Source["git"]
+		pth := pathutil.UserHomeDir() + STEP_CACHE_DIR + id + "/" + version + "/"
+
+		return doGitUpdate(git, pth)
+	} else {
+		return errors.New(fmt.Sprintf("Step: %s - (%s) dos not exist", id, version))
+	}
 }
 
 func main() {
@@ -52,5 +64,13 @@ func main() {
 	err = doGenerateStepsSpec()
 	if err != nil {
 		fmt.Println("Failed to write spec:", err)
+	}
+
+	stepId := "activate-ssh-key"
+	stepVersion := "1.0.0"
+	pth := STEP_CACHE_DIR
+	err = doActivateStep(stepId, stepVersion, pth)
+	if err != nil {
+		fmt.Println(err)
 	}
 }
