@@ -1,6 +1,8 @@
 package main
 
-import ()
+import (
+	"github.com/bitrise-io/go-pathutil"
+)
 
 //
 // Models
@@ -54,18 +56,6 @@ type StepCollectionJsonStruct struct {
 	GeneratedAtTimeStamp int64        `json:"generated_at_timestamp"`
 	Steps                StepJsonHash `json:"steps"`
 	SteplibSource        string       `json:"steplib_source"`
-}
-
-func (stepCollection StepCollectionJsonStruct) GetStep(id, version string) (bool, StepJsonStruct) {
-	versions := stepCollection.Steps[id].Versions
-	if len(versions) > 0 {
-		for _, step := range versions {
-			if step.VersionTag == version {
-				return true, step
-			}
-		}
-	}
-	return false, StepJsonStruct{}
 }
 
 // - YML
@@ -170,4 +160,26 @@ func convertToStepJsonStruct(stepYml StepYmlStruct) StepJsonStruct {
 	}
 
 	return stepJson
+}
+
+//
+// Struct methods
+//
+func (stepCollection StepCollectionJsonStruct) GetStep(id, version string) (bool, StepJsonStruct) {
+	versions := stepCollection.Steps[id].Versions
+	if len(versions) > 0 {
+		for _, step := range versions {
+			if step.VersionTag == version {
+				return true, step
+			}
+		}
+	}
+	return false, StepJsonStruct{}
+}
+
+func (step StepJsonStruct) Download() error {
+	git := step.Source["git"]
+	pth := pathutil.UserHomeDir() + STEP_CACHE_DIR + step.Id + "/" + step.VersionTag + "/"
+
+	return doGitUpdate(git, pth)
 }

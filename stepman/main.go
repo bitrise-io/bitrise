@@ -39,10 +39,7 @@ func doActivateStep(id, version, pth string) error {
 
 	exist, step := stepCollection.GetStep(id, version)
 	if exist {
-		git := step.Source["git"]
-		pth := pathutil.UserHomeDir() + STEP_CACHE_DIR + id + "/" + version + "/"
-
-		return doGitUpdate(git, pth)
+		return step.Download()
 	} else {
 		return errors.New(fmt.Sprintf("Step: %s - (%s) dos not exist", id, version))
 	}
