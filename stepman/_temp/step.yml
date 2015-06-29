@@ -1,0 +1,30 @@
+---
+name: Activate RSA private SSH key
+description: |
+  Saves the provided **RSA private SSH key** to file
+  and then loads it into the user's ssh-agent with `ssh-add`.
+
+  **The key should not have a passphrase** (should have an empty passphrase).
+
+  *Warning: the provided key will overwrite an existing key at
+  the provided path (if another key at the path already exists).*
+
+  It will start the ssh-agent if it can't connect to the agent.
+website: https://github.com/bitrise-io/steps-activate-ssh-key
+source:
+  git: https://github.com/bitrise-io/steps-activate-ssh-key.git
+host_os_tags:
+  - osx-10.9
+type_tags:
+  - ssh
+is_requires_admin_user: false
+
+inputs:
+  - title: |
+      SSH private key in RSA format
+    mapped_to: SSH_RSA_PUBLIC_KEY
+    is_expand: false
+  - title: |
+      (Optional) path to save the private key. Default is: $HOME/.ssh/steplib_ssh_step_id_rsa
+    mapped_to: SSH_KEY_SAVE_PATH
+    is_expand: true
