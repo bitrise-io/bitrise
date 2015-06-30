@@ -3,33 +3,29 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/go-pathutil"
 	"github.com/bitrise-io/stepman/git"
 	"github.com/bitrise-io/stepman/paths"
-	"github.com/bitrise-io/stepman/step_util"
+	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
 func setup(c *cli.Context) {
 	fmt.Println("Setup")
 
-	stepsSpecDir := pathutil.UserHomeDir() + paths.STEP_COLLECTION_DIR
-	exists, err := pathutil.IsPathExists(stepsSpecDir)
+	err := paths.SetupCurrentRouting()
 	if err != nil {
-		fmt.Println("Failed to update Stepman:", err)
-		return
-	}
-	if exists == true {
-		fmt.Println("Stepman already initialized")
+		fmt.Println("Failed to setup routing:", err)
 		return
 	}
 
-	err = git.DoGitClone(paths.STEP_COLLECTION_GIT, stepsSpecDir)
+	pth := paths.GetCurrentStepCollectionPath()
+
+	err = git.DoGitClone(paths.STEP_COLLECTION_GIT, pth)
 	if err != nil {
 		fmt.Println("Failed to initialize Stepman:", err)
 		return
 	}
-	err = step_util.WriteStepSpecToFile()
+	err = stepman.WriteStepSpecToFile()
 	if err != nil {
 		fmt.Println("Failed to initialize Stepman:", err)
 		return

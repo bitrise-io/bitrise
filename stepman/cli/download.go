@@ -3,14 +3,13 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/stepman/step_util"
+	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
 func download(c *cli.Context) {
 	fmt.Println("Download")
 
-	//collection := c.String(COLLECTION_KEY)
 	id := c.String(ID_KEY)
 	if id == "" {
 		fmt.Println("Missing step id")
@@ -23,7 +22,7 @@ func download(c *cli.Context) {
 		return
 	}
 
-	stepCollection, err := step_util.ReadStepSpec()
+	stepCollection, err := stepman.ReadStepSpec()
 	if err != nil {
 		return
 	}

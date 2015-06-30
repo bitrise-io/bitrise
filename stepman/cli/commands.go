@@ -22,9 +22,8 @@ var (
 			Usage:     "",
 			Action:    download,
 			Flags: []cli.Flag{
-				flCollection,
 				flId,
-				flVersions,
+				flVersion,
 			},
 		},
 		{
@@ -32,6 +31,11 @@ var (
 			ShortName: "a",
 			Usage:     "",
 			Action:    activate,
+			Flags: []cli.Flag{
+				flId,
+				flVersion,
+				flPath,
+			},
 		},
 	}
 )

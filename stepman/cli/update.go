@@ -12,8 +12,8 @@ import (
 func update(c *cli.Context) {
 	fmt.Println("Update")
 
-	stepsSpecDir := pathutil.UserHomeDir() + paths.STEP_COLLECTION_DIR
-	exists, err := pathutil.IsPathExists(stepsSpecDir)
+	stepCollectionPath := paths.GetCurrentStepCollectionPath()
+	exists, err := pathutil.IsPathExists(stepCollectionPath)
 	if err != nil {
 		fmt.Println("Failed to update Stepman:", err)
 		return
@@ -23,7 +23,7 @@ func update(c *cli.Context) {
 		return
 	}
 
-	err = git.DoGitPull(stepsSpecDir)
+	err = git.DoGitPull(stepCollectionPath)
 	if err != nil {
 		fmt.Println("Failed tp update Stepman:", err)
 		return
