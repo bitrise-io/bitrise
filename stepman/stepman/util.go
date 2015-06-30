@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-pathutil"
-	"github.com/bitrise-io/stepman/paths"
 	"gopkg.in/yaml.v2"
 )
 
@@ -36,13 +35,13 @@ func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
 	stepJson := convertToStepJsonStruct(stepYml)
 	stepJson.Id = id
 	stepJson.VersionTag = version
-	stepJson.StepLibSource = paths.STEPLIB_SOURCE
+	stepJson.StepLibSource = STEPLIB_SOURCE
 
 	return stepJson, nil
 }
 
 // version is string like x.y.z
-// true if version2 is greater then version1
+// true if version 2 is greater then version 1
 func isVersionGrater(version1, version2 string) bool {
 	version1Slice := strings.Split(version1, ".")
 	version2Slice := strings.Split(version2, ".")
@@ -97,12 +96,12 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := StepCollectionJsonStruct{
 		FormatVersion:        FORMAT_VERSION,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        paths.STEPLIB_SOURCE,
+		SteplibSource:        STEPLIB_SOURCE,
 	}
 
 	stepHash := StepJsonHash{}
 
-	stepsSpecDir := paths.GetCurrentStepCollectionPath() + "steps/"
+	stepsSpecDir := GetCurrentStepCollectionPath()
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(path, stepsSpecDir, "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
@@ -112,9 +111,9 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 		if match {
 			components := strings.Split(truncatedPath, "/")
-			if len(components) == 3 {
-				name := components[0]
-				version := components[1]
+			if len(components) == 4 {
+				name := components[1]
+				version := components[2]
 
 				step, parseErr := parseStepYml(path, name, version)
 				if parseErr != nil {
@@ -144,7 +143,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 }
 
 func WriteStepSpecToFile() error {
-	pth := paths.GetCurrentStepSpecPath()
+	pth := GetCurrentStepSpecPath()
 
 	exist, err := pathutil.IsPathExists(pth)
 	if err != nil {
@@ -190,7 +189,7 @@ func WriteStepSpecToFile() error {
 }
 
 func ReadStepSpec() (StepCollectionJsonStruct, error) {
-	pth := paths.GetCurrentStepSpecPath()
+	pth := GetCurrentStepSpecPath()
 	file, err := os.Open(pth)
 	if err != nil {
 		return StepCollectionJsonStruct{}, err

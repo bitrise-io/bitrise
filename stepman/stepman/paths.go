@@ -1,11 +1,10 @@
-package paths
+package stepman
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	_ "strconv"
 	"time"
 
 	"github.com/bitrise-io/go-pathutil"

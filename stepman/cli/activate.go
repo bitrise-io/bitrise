@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/go-pathutil"
-	"github.com/bitrise-io/stepman/git"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -54,5 +53,5 @@ func activate(c *cli.Context) {
 
 	srcFolder := pth
 	destFolder := path
-	git.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
+	stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
 }

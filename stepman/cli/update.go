@@ -4,15 +4,14 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/go-pathutil"
-	"github.com/bitrise-io/stepman/git"
-	"github.com/bitrise-io/stepman/paths"
+	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
 func update(c *cli.Context) {
 	fmt.Println("Update")
 
-	stepCollectionPath := paths.GetCurrentStepCollectionPath()
+	stepCollectionPath := stepman.GetCurrentStepCollectionPath()
 	exists, err := pathutil.IsPathExists(stepCollectionPath)
 	if err != nil {
 		fmt.Println("Failed to update Stepman:", err)
@@ -23,7 +22,7 @@ func update(c *cli.Context) {
 		return
 	}
 
-	err = git.DoGitPull(stepCollectionPath)
+	err = stepman.DoGitPull(stepCollectionPath)
 	if err != nil {
 		fmt.Println("Failed tp update Stepman:", err)
 		return

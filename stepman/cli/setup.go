@@ -3,8 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/stepman/git"
-	"github.com/bitrise-io/stepman/paths"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -12,15 +10,15 @@ import (
 func setup(c *cli.Context) {
 	fmt.Println("Setup")
 
-	err := paths.SetupCurrentRouting()
+	err := stepman.SetupCurrentRouting()
 	if err != nil {
 		fmt.Println("Failed to setup routing:", err)
 		return
 	}
 
-	pth := paths.GetCurrentStepCollectionPath()
+	pth := stepman.GetCurrentStepCollectionPath()
 
-	err = git.DoGitClone(paths.STEP_COLLECTION_GIT, pth)
+	err = stepman.DoGitClone(stepman.STEP_COLLECTION_GIT, pth)
 	if err != nil {
 		fmt.Println("Failed to initialize Stepman:", err)
 		return

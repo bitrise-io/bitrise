@@ -1,9 +1,6 @@
 package stepman
 
-import (
-	"github.com/bitrise-io/stepman/git"
-	"github.com/bitrise-io/stepman/paths"
-)
+import ()
 
 //
 // Models
@@ -182,9 +179,9 @@ func (step StepJsonStruct) Download() error {
 	gitSource := step.Source["git"]
 	pth := step.Path()
 
-	return git.DoGitUpdate(gitSource, pth)
+	return DoGitUpdate(gitSource, pth)
 }
 
 func (step StepJsonStruct) Path() string {
-	return paths.GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
+	return GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
 }
