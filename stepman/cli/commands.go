@@ -14,21 +14,18 @@ var (
 			Name:      "update",
 			ShortName: "u",
 			Usage:     "",
-			/*
-				Flags: []cli.Flag{
-					flKey,
-					flValue,
-					flValueFile,
-					flIsExpand,
-				},
-			*/
-			Action: update,
+			Action:    update,
 		},
 		{
 			Name:      "download",
 			ShortName: "d",
 			Usage:     "",
 			Action:    download,
+			Flags: []cli.Flag{
+				flCollection,
+				flId,
+				flVersions,
+			},
 		},
 		{
 			Name:      "activate",

@@ -7,5 +7,5 @@ import (
 )
 
 func activate(c *cli.Context) {
-	fmt.Println("Activate")
+	fmt.Println("Activate -- Coming soon")
 }

@@ -189,7 +189,7 @@ func WriteStepSpecToFile() error {
 	return nil
 }
 
-func readStepSpec() (StepCollectionJsonStruct, error) {
+func ReadStepSpec() (StepCollectionJsonStruct, error) {
 	pth := pathutil.UserHomeDir() + paths.STEP_SPEC_DIR
 	file, err := os.Open(pth)
 	if err != nil {

@@ -19,18 +19,20 @@ func setup(c *cli.Context) {
 		fmt.Println("Failed to update Stepman:", err)
 		return
 	}
-	if exists == false {
-		err := git.DoGitClone(paths.STEP_COLLECTION_GIT, stepsSpecDir)
-		if err != nil {
-			fmt.Println("Failed to initialize Stepman:", err)
-			return
-		}
-		err = step_util.WriteStepSpecToFile()
-		if err != nil {
-			fmt.Println("Failed to initialize Stepman:", err)
-		}
-		fmt.Println("Stepman initialized")
-	} else {
+	if exists == true {
 		fmt.Println("Stepman already initialized")
+		return
 	}
+
+	err = git.DoGitClone(paths.STEP_COLLECTION_GIT, stepsSpecDir)
+	if err != nil {
+		fmt.Println("Failed to initialize Stepman:", err)
+		return
+	}
+	err = step_util.WriteStepSpecToFile()
+	if err != nil {
+		fmt.Println("Failed to initialize Stepman:", err)
+		return
+	}
+	fmt.Println("Stepman initialized")
 }
