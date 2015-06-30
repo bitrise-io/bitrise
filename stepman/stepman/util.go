@@ -40,7 +40,7 @@ func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
 	return stepJson, nil
 }
 
-// version is string like x.y.z
+// semantic version (X.Y.Z)
 // true if version 2 is greater then version 1
 func isVersionGrater(version1, version2 string) bool {
 	version1Slice := strings.Split(version1, ".")
@@ -150,7 +150,6 @@ func WriteStepSpecToFile() error {
 		fmt.Errorf("Failed to check path: %s", err)
 		return err
 	}
-
 	if exist == false {
 		dir, _ := path.Split(pth)
 		err := os.MkdirAll(dir, 0777)

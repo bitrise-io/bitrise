@@ -1,7 +1,6 @@
 package cli
 
 import (
-	_ "errors"
 	"fmt"
 	"os"
 	"path"
@@ -25,7 +24,6 @@ func before(c *cli.Context) error {
 		if stepman.CollectionPath == "" {
 			stepman.CollectionPath = stepman.STEP_COLLECTION_GIT
 		}
-		//return errors.New("No collection path specified")
 	}
 	return nil
 }

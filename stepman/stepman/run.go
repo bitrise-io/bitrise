@@ -13,8 +13,8 @@ func RunCommand(name string, args ...string) error {
 	return cmd.Run()
 }
 
-func RunCommandInDir(workingDir, commandName string, args ...string) error {
-	cmd := exec.Command(commandName, args...)
-	cmd.Dir = workingDir
+func RunCommandInDir(dir, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
 	return cmd.Run()
 }
