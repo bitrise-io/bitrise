@@ -1,7 +1,9 @@
-package main
+package step_util
 
 import (
 	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/stepman/git"
+	"github.com/bitrise-io/stepman/paths"
 )
 
 //
@@ -178,8 +180,8 @@ func (stepCollection StepCollectionJsonStruct) GetStep(id, version string) (bool
 }
 
 func (step StepJsonStruct) Download() error {
-	git := step.Source["git"]
-	pth := pathutil.UserHomeDir() + STEP_CACHE_DIR + step.Id + "/" + step.VersionTag + "/"
+	gitSource := step.Source["git"]
+	pth := pathutil.UserHomeDir() + paths.STEP_CACHE_DIR + step.Id + "/" + step.VersionTag + "/"
 
-	return doGitUpdate(git, pth)
+	return git.DoGitUpdate(gitSource, pth)
 }

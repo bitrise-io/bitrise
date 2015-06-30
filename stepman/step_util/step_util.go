@@ -1,4 +1,4 @@
-package main
+package step_util
 
 import (
 	"encoding/json"
@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/stepman/paths"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	STEPLIB_SOURCE string = "https://github.com/steplib/steplib"
 	FORMAT_VERSION string = "0.9.0"
 )
 
@@ -36,7 +36,7 @@ func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
 	stepJson := convertToStepJsonStruct(stepYml)
 	stepJson.Id = id
 	stepJson.VersionTag = version
-	stepJson.StepLibSource = STEPLIB_SOURCE
+	stepJson.StepLibSource = paths.STEPLIB_SOURCE
 
 	return stepJson, nil
 }
@@ -97,12 +97,12 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := StepCollectionJsonStruct{
 		FormatVersion:        FORMAT_VERSION,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        STEPLIB_SOURCE,
+		SteplibSource:        paths.STEPLIB_SOURCE,
 	}
 
 	stepHash := StepJsonHash{}
 
-	stepsSpecDir := pathutil.UserHomeDir() + STEPS_DIR
+	stepsSpecDir := pathutil.UserHomeDir() + paths.STEPS_DIR
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(path, stepsSpecDir, "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
@@ -143,8 +143,8 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	return bytes, nil
 }
 
-func writeStepSpecToFile() error {
-	pth := pathutil.UserHomeDir() + STEP_SPEC_DIR
+func WriteStepSpecToFile() error {
+	pth := pathutil.UserHomeDir() + paths.STEP_SPEC_DIR
 
 	exist, err := pathutil.IsPathExists(pth)
 	if err != nil {
@@ -190,7 +190,7 @@ func writeStepSpecToFile() error {
 }
 
 func readStepSpec() (StepCollectionJsonStruct, error) {
-	pth := pathutil.UserHomeDir() + STEP_SPEC_DIR
+	pth := pathutil.UserHomeDir() + paths.STEP_SPEC_DIR
 	file, err := os.Open(pth)
 	if err != nil {
 		return StepCollectionJsonStruct{}, err
