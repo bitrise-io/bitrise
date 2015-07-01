@@ -20,6 +20,8 @@ const (
 	FORMAT_VERSION string = "0.9.0"
 )
 
+var DebugMode bool
+
 func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
@@ -133,7 +135,12 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 	collection.Steps = stepHash
 
-	bytes, err := json.Marshal(collection)
+	var bytes []byte
+	if DebugMode == true {
+		bytes, err = json.MarshalIndent(collection, "", "\t")
+	} else {
+		bytes, err = json.Marshal(collection)
+	}
 	if err != nil {
 		fmt.Println("error:", err)
 		return []byte{}, err

@@ -7,6 +7,10 @@ const (
 	COLLECTION_KEY          string = "collection"
 	C_KEY                   string = "c"
 
+	DEBUG_ENV_KEY string = "STEPMAN_DEBUG"
+	DEBUG_KEY     string = "debug"
+	D_KEY         string = "d"
+
 	ID_KEY string = "id"
 	I_KEY  string = "i"
 
@@ -19,6 +23,12 @@ const (
 
 var (
 	// App flags
+	flDebug = cli.StringFlag{
+		Name:   DEBUG_KEY + ", " + D_KEY,
+		Value:  "false",
+		EnvVar: DEBUG_ENV_KEY,
+		Usage:  "Debug mode.",
+	}
 	flCollection = cli.StringFlag{
 		Name:   COLLECTION_KEY + ", " + C_KEY,
 		Value:  "",
@@ -26,6 +36,7 @@ var (
 		Usage:  "Collection of step.",
 	}
 	flags = []cli.Flag{
+		flDebug,
 		flCollection,
 	}
 	// Command flags
