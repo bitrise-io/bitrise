@@ -25,3 +25,7 @@ godep go install
 go get github.com/kisielk/errcheck
 go install github.com/kisielk/errcheck
 errcheck -asserts=true -blank=true ./...
+
+#
+# ==> DONE - OK
+#

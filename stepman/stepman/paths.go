@@ -171,17 +171,29 @@ func SetupCurrentRouting() error {
 }
 
 func GetCurrentStepSpecPath() string {
-	route, _ := getRoute(CollectionPath)
+	route, err := getRoute(CollectionPath)
+	if err != nil {
+		fmt.Println("Failed to generate current step spec path:", err)
+		return ""
+	}
 	return CollectionsDir + route.getFirstValue() + "/spec/spec.json"
 }
 
 func GetCurrentStepCahceDir() string {
-	route, _ := getRoute(CollectionPath)
+	route, err := getRoute(CollectionPath)
+	if err != nil {
+		fmt.Println("Failed to generate current step spec path:", err)
+		return ""
+	}
 	return CollectionsDir + route.getFirstValue() + "/cache/"
 }
 
 func GetCurrentStepCollectionPath() string {
-	route, _ := getRoute(CollectionPath)
+	route, err := getRoute(CollectionPath)
+	if err != nil {
+		fmt.Println("Failed to generate current step spec path:", err)
+		return ""
+	}
 	return CollectionsDir + route.getFirstValue() + "/collection/"
 }
 

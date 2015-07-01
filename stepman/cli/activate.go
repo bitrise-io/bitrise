@@ -51,7 +51,10 @@ func activate(c *cli.Context) {
 	}
 	if exist == false {
 		fmt.Println("Step dos not exist, download it")
-		step.Download()
+		err = step.Download()
+		if err != nil {
+			fmt.Println("Failed to download step:", err)
+		}
 	}
 
 	// Copy to specified path
@@ -71,5 +74,8 @@ func activate(c *cli.Context) {
 		}
 	}
 
-	stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
+	err = stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
+	if err != nil {
+		fmt.Printf("Failed to copy step:", err)
+	}
 }
