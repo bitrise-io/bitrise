@@ -10,8 +10,8 @@ const (
 	ID_KEY string = "id"
 	I_KEY  string = "i"
 
-	VERSION_KEY string = "tag"
-	V_KEY       string = "t"
+	VERSION_KEY string = "version"
+	V_KEY       string = "v"
 
 	PATH_KEY string = "path"
 	P_KEY    string = "p"

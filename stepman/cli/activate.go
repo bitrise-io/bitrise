@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/bitrise-io/go-pathutil"
 	"github.com/bitrise-io/stepman/stepman"
@@ -9,8 +10,9 @@ import (
 )
 
 func activate(c *cli.Context) {
-	fmt.Println("Activate -- Coming soon")
+	fmt.Println("Activate")
 
+	// Input validation
 	id := c.String(ID_KEY)
 	if id == "" {
 		fmt.Println("Missing step id")
@@ -29,6 +31,7 @@ func activate(c *cli.Context) {
 		return
 	}
 
+	// Get step
 	stepCollection, err := stepman.ReadStepSpec()
 	if err != nil {
 		return
@@ -51,7 +54,22 @@ func activate(c *cli.Context) {
 		step.Download()
 	}
 
+	// Copy to specified path
 	srcFolder := pth
 	destFolder := path
+
+	exist, err = pathutil.IsPathExists(destFolder)
+	if err != nil {
+		fmt.Printf("Failed to check path:", err)
+		return
+	}
+	if exist == false {
+		err = os.MkdirAll(destFolder, 0777)
+		if err != nil {
+			fmt.Printf("Failed to create path:", err)
+			return
+		}
+	}
+
 	stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
 }
