@@ -133,7 +133,8 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 	collection.Steps = stepHash
 
-	bytes, err := json.Marshal(collection)
+	bytes, err := json.MarshalIndent(collection, "", "\t")
+	//bytes, err := json.Marshal(collection)
 	if err != nil {
 		fmt.Println("error:", err)
 		return []byte{}, err

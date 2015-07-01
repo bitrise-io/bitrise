@@ -111,7 +111,8 @@ func writeRouteMapToFile(routeMap RouteMap) error {
 		}
 	}()
 
-	bytes, err := json.Marshal(routeMap)
+	bytes, err := json.MarshalIndent(routeMap, "", "\t")
+	//bytes, err := json.Marshal(routeMap)
 	if err != nil {
 		fmt.Println("error:", err)
 		return err
