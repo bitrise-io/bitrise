@@ -6,6 +6,15 @@
 			"ImportPath": "github.com/bitrise-io/go-pathutil",
 			"Comment": "1.1.0-5-g4cf3c1e",
 			"Rev": "4cf3c1e53cf8195bd0a40ddec6a880b4c7774249"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-129-gb6d983e",
+			"Rev": "b6d983e02c46cb7b979ec35d11b8d0b0c9574a9e"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "49c95bdc21843256fb6c4e0d370a05f24a0bf213"
 		}
 	]
 }
