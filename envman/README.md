@@ -1,5 +1,7 @@
 # envman
 
+**Technology Preview:** this repository is still under active development, breaking changes are expected.
+
 ## Who and for what?
 
 - connect tools with each other : one tool saves an ENV, the other uses it (input & output)
