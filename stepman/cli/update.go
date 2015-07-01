@@ -27,5 +27,12 @@ func update(c *cli.Context) {
 		fmt.Println("Failed tp update Stepman:", err)
 		return
 	}
+
+	err = stepman.WriteStepSpecToFile()
+	if err != nil {
+		fmt.Println("Failed to initialize Stepman:", err)
+		return
+	}
+
 	fmt.Println("Stepman updated")
 }
