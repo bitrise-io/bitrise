@@ -1,12 +1,4 @@
 # stepman
-Step collection manager
 
-
-~/.stepman
-  - spec_repo -> git clone
-  - step_cache -> download the steps here
-  - data -> store JSON here
-
-  ### Required tools
-  - git
+**Technology Preview:** this repository is still under active development, breaking changes are expected.
   
