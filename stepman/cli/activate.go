@@ -43,7 +43,7 @@ func activate(c *cli.Context) {
 		return
 	}
 
-	pth := step.Path()
+	pth := stepman.GetStepPath(step)
 	exist, err = pathutil.IsPathExists(pth)
 	if err != nil {
 		fmt.Printf("Failed to check path:", err)
@@ -51,7 +51,7 @@ func activate(c *cli.Context) {
 	}
 	if exist == false {
 		fmt.Println("Step dos not exist, download it")
-		err = step.Download()
+		err = stepman.DownloadStep(step)
 		if err != nil {
 			fmt.Println("Failed to download step:", err)
 		}
