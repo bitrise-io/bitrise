@@ -627,6 +627,23 @@ func TestAppCommandNotFound(t *testing.T) {
 	expect(t, subcommandRun, false)
 }
 
+func TestGlobalFlag(t *testing.T) {
+	var globalFlag string
+	var globalFlagSet bool
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		cli.StringFlag{Name: "global, g", Usage: "global"},
+	}
+	app.Action = func(c *cli.Context) {
+		globalFlag = c.GlobalString("global")
+		globalFlagSet = c.GlobalIsSet("global")
+	}
+	app.Run([]string{"command", "-g", "foo"})
+	expect(t, globalFlag, "foo")
+	expect(t, globalFlagSet, true)
+
+}
+
 func TestGlobalFlagsInSubcommands(t *testing.T) {
 	subcommandRun := false
 	parentFlag := false
@@ -714,6 +731,67 @@ func TestApp_Run_CommandWithSubcommandHasHelpTopic(t *testing.T) {
 			if !strings.Contains(output, shouldContain) {
 				t.Errorf("want help to contain %q, did not: \n%q", shouldContain, output)
 			}
+		}
+	}
+}
+
+func TestApp_Run_Help(t *testing.T) {
+	var helpArguments = [][]string{{"boom", "--help"}, {"boom", "-h"}, {"boom", "help"}}
+
+	for _, args := range helpArguments {
+		buf := new(bytes.Buffer)
+
+		t.Logf("==> checking with arguments %v", args)
+
+		app := cli.NewApp()
+		app.Name = "boom"
+		app.Usage = "make an explosive entrance"
+		app.Writer = buf
+		app.Action = func(c *cli.Context) {
+			buf.WriteString("boom I say!")
+		}
+
+		err := app.Run(args)
+		if err != nil {
+			t.Error(err)
+		}
+
+		output := buf.String()
+		t.Logf("output: %q\n", buf.Bytes())
+
+		if !strings.Contains(output, "boom - make an explosive entrance") {
+			t.Errorf("want help to contain %q, did not: \n%q", "boom - make an explosive entrance", output)
+		}
+	}
+}
+
+func TestApp_Run_Version(t *testing.T) {
+	var versionArguments = [][]string{{"boom", "--version"}, {"boom", "-v"}}
+
+	for _, args := range versionArguments {
+		buf := new(bytes.Buffer)
+
+		t.Logf("==> checking with arguments %v", args)
+
+		app := cli.NewApp()
+		app.Name = "boom"
+		app.Usage = "make an explosive entrance"
+		app.Version = "0.1.0"
+		app.Writer = buf
+		app.Action = func(c *cli.Context) {
+			buf.WriteString("boom I say!")
+		}
+
+		err := app.Run(args)
+		if err != nil {
+			t.Error(err)
+		}
+
+		output := buf.String()
+		t.Logf("output: %q\n", buf.Bytes())
+
+		if !strings.Contains(output, "0.1.0") {
+			t.Errorf("want version to contain %q, did not: \n%q", "0.1.0", output)
 		}
 	}
 }
