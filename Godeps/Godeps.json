@@ -4,13 +4,13 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.2-15-g93a1736",
-			"Rev": "93a1736895ca25a01a739e0394bf7f672299a27d"
+			"Comment": "v0.8.2-20-gab7e46e",
+			"Rev": "ab7e46ea22bd379e660230844f96d20f1dabc21a"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-113-g55b8924",
-			"Rev": "55b8924c2b7c0bbaa1e6518b9d1b3f5c971482a7"
+			"Comment": "1.2.0-129-gb6d983e",
+			"Rev": "b6d983e02c46cb7b979ec35d11b8d0b0c9574a9e"
 		}
 	]
 }
