@@ -33,7 +33,7 @@ func download(c *cli.Context) {
 		return
 	}
 
-	err = step.Download()
+	err = stepman.DownloadStep(step)
 	if err != nil {
 		fmt.Println("Failed to download step")
 	}
