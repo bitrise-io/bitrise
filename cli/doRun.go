@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 
 	log "github.com/Sirupsen/logrus"
@@ -40,27 +41,49 @@ func getWorkFlowPathInCurrentFolder() (string, error) {
 	return workFlowName, nil
 }
 
-func activateSteps(workFlow bitrise.WorkFlowJsonStruct) error {
+func activateAndRunSteps(workFlow bitrise.WorkFlowJsonStruct) error {
 	for _, step := range workFlow.Steps {
 		stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
-		activateCmd := fmt.Sprintf("stepman activate -i %s -v %s -p %s", step.Id, step.VersionTag, stepDir)
-		err := bitrise.RunBashComman(activateCmd)
+
+		err := bitrise.RunStepmanActivate(step.Id, step.VersionTag, stepDir)
 		if err != nil {
-			log.Errorln("Failed to execute cmd:", activateCmd)
+			log.Errorln("Failed to run stepman activate")
 			return err
 		}
 
 		log.Infof("Step activated: %s (%s)", step.Id, step.VersionTag)
 
-		stepCmd := "step.sh"
-		err = bitrise.RunBashCommanInDir(stepDir, stepCmd)
-		if err != nil {
-			log.Errorln("Failed to execute cmd:", stepCmd)
-			return err
-		}
-
-		log.Infof("Step executed: %s (%s)", step.Id, step.VersionTag)
+		runStep(step)
 	}
+	return nil
+}
+
+func runStep(step bitrise.StepJsonStruct) error {
+	// Add step envs
+	for _, input := range step.Inputs {
+		if input.Value != nil {
+			err := bitrise.RunEnvmanAdd(*input.MappedTo, *input.Value)
+
+			if step.Id == "hipchat" && *input.MappedTo == "HIPCHAT_MESSAGE" {
+				log.Info("!!!!!!!!!!!Message:", *input.Value)
+			}
+
+			if err != nil {
+				log.Errorln("Failed to run envman add")
+				return err
+			}
+		}
+	}
+
+	stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
+	cmd := fmt.Sprintf("bash %sstep.sh", stepDir)
+	err := bitrise.RunEnvmanRun(cmd)
+	if err != nil {
+		log.Errorln("Failed to run envman run")
+		return err
+	}
+
+	log.Infof("Step executed: %s (%s)", step.Id, step.VersionTag)
 	return nil
 }
 
@@ -80,13 +103,21 @@ func doRun(c *cli.Context) {
 		workFlowJsonPath = "./" + workFlowName
 	}
 
+	os.Setenv("ENVMAN_ENVSTORE_PATH", "/Users/godrei/develop/bitrise/bitrise-cli-test/envstore.yml")
+	err := bitrise.RunEnvmanInit()
+	if err != nil {
+		log.Error("Failed to run envman init")
+		return
+	}
+
+	// Run work flow
 	workFlow, err := bitrise.ReadWorkFlowJson(workFlowJsonPath)
 	if err != nil {
 		log.Errorln("Failed to read work flow:", err)
 		return
 	}
 
-	err = activateSteps(workFlow)
+	err = activateAndRunSteps(workFlow)
 	if err != nil {
 		log.Errorln("Failed to activate steps:", err)
 		return

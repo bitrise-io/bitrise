@@ -13,7 +13,7 @@
       "website": "https://github.com/bitrise-io/steps-random-quote",
       "fork_url": "https://github.com/bitrise-io/steps-random-quote",
       "source": {
-        "git": "https://github.com/bitrise-io/steps-random-quote.git"
+        "git": "https://github.com/gkiki90/steps-random-quote.git"
       },
       "host_os_tags": [
         "osx-10.9"
