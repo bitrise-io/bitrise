@@ -51,9 +51,7 @@ func RunPipedEnvmanAdd(key, value string) error {
 }
 
 func RunEnvmanAdd(key, value string) error {
-	//argsString := fmt.Sprintf("add -k %s -v %s", key, value)
 	args := []string{"add", "-k", key, "-v", value}
-	//args := strings.Split(fmt.Sprintf("add -k %s -v %s", key, value), " ")
 	return RunCommand("envman", args...)
 }
 
