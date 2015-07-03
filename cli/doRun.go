@@ -42,7 +42,7 @@ func getWorkFlowPathInCurrentFolder() (string, error) {
 	return workFlowName, nil
 }
 
-func activateAndRunSteps(workFlow models.WorkFlowJsonStruct) error {
+func activateAndRunSteps(workFlow models.WorkFlowModel) error {
 	for _, step := range workFlow.Steps {
 		stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
 
@@ -59,7 +59,7 @@ func activateAndRunSteps(workFlow models.WorkFlowJsonStruct) error {
 	return nil
 }
 
-func runStep(step models.StepJsonStruct) error {
+func runStep(step models.StepModel) error {
 	// Add step envs
 	for _, input := range step.Inputs {
 		if input.Value != nil {
