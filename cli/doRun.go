@@ -63,7 +63,7 @@ func runStep(step models.StepModel) error {
 	// Add step envs
 	for _, input := range step.Inputs {
 		if input.Value != nil {
-			err := bitrise.RunPipedEnvmanAdd(*input.MappedTo, *input.Value)
+			err := bitrise.RunEnvmanAdd(*input.MappedTo, *input.Value)
 			if err != nil {
 				log.Errorln("Failed to run envman add")
 				return err
@@ -72,7 +72,8 @@ func runStep(step models.StepModel) error {
 	}
 
 	stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
-	cmd := fmt.Sprintf("bash %sstep.sh", stepDir)
+	stepCmd := fmt.Sprintf("%sstep.sh", stepDir)
+	cmd := []string{"bash", stepCmd}
 	err := bitrise.RunEnvmanRun(cmd)
 	if err != nil {
 		log.Errorln("Failed to run envman run")
@@ -99,6 +100,7 @@ func doRun(c *cli.Context) {
 		workFlowJsonPath = "./" + workFlowName
 	}
 
+	// Envman setup
 	os.Setenv("ENVMAN_ENVSTORE_PATH", "/Users/godrei/develop/bitrise/bitrise-cli-test/envstore.yml")
 	os.Setenv("BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH", "/Users/godrei/develop/bitrise/bitrise-cli-test/formout.md")
 	err := bitrise.RunEnvmanInit()
