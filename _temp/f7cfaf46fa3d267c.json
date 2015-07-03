@@ -1,0 +1,147 @@
+{
+  "format_version": "0.9.0",
+  "environments": [
+
+  ],
+  "steps": [
+    {
+      "id": "random-quote",
+      "steplib_source": "https://github.com/bitrise-io/bitrise-step-collection",
+      "version_tag": "2.0.0",
+      "name": "Random Quote",
+      "description": "Prints a random quote and saves it into the `$RANDOM_QUOTE`\nenvironment variable (appends to the *~/.bash_profile*).\n\nUses the [http://www.iheartquotes.com](http://www.iheartquotes.com) API.\n",
+      "website": "https://github.com/bitrise-io/steps-random-quote",
+      "fork_url": "https://github.com/bitrise-io/steps-random-quote",
+      "source": {
+        "git": "https://github.com/gkiki90/steps-random-quote.git"
+      },
+      "host_os_tags": [
+        "osx-10.9"
+      ],
+      "project_type_tags": [
+
+      ],
+      "type_tags": [
+        "funny",
+        "reward",
+        "generator"
+      ],
+      "is_requires_admin_user": false,
+      "is_always_run": false,
+      "inputs": [
+
+      ],
+      "outputs": [
+        {
+          "title": "A random quote\n",
+          "description": "",
+          "mapped_to": "RANDOM_QUOTE"
+        }
+      ],
+      "log_highlights": [
+
+      ],
+      "icon_url_256": "https://bitrise-stepcollection-assets.s3.amazonaws.com/random-quote/assets/icon_256.png",
+      "title": "Random Quote",
+      "position_in_workflow": 0
+    },
+    {
+      "id": "hipchat",
+      "steplib_source": "https://github.com/bitrise-io/bitrise-step-collection",
+      "version_tag": "1.1.6",
+      "name": "Send HipChat message",
+      "description": "Send a HipChat message to a room.\n\nThis Step requires a HipChat account.\nTo sign up on HipChat for free, [click here](https://www.hipchat.com/sign_up).\n\nYou can get your HipChat auth token\nin **Account settings > API access**.\n*If you do not have an auth token, select Create token*, at the bottom.\n\nYou can get the *room id* of any HipChat room by selecting *Rooms > Summary > API ID*.\n",
+      "website": "https://github.com/bitrise-io/steps-hipchat",
+      "fork_url": "https://github.com/bitrise-io/steps-hipchat",
+      "source": {
+        "git": "https://github.com/bitrise-io/steps-hipchat.git"
+      },
+      "host_os_tags": [
+        "osx-10.9"
+      ],
+      "project_type_tags": [
+
+      ],
+      "type_tags": [
+        "IM",
+        "notification"
+      ],
+      "is_requires_admin_user": false,
+      "is_always_run": false,
+      "inputs": [
+        {
+          "title": "HipChat Auth Token\n",
+          "description": "",
+          "mapped_to": "HIPCHAT_TOKEN",
+          "is_expand": false,
+          "is_required": false,
+          "value_options": [
+
+          ],
+          "value": "bdc1e69771a78e80f873f9ed5134e3",
+          "is_dont_change_value": false
+        },
+        {
+          "title": "HipChat RoomID\n",
+          "description": "",
+          "mapped_to": "HIPCHAT_ROOMID",
+          "is_expand": false,
+          "is_required": false,
+          "value_options": [
+
+          ],
+          "value": "1517181",
+          "is_dont_change_value": false
+        },
+        {
+          "title": "From Name (max 15 characters)\n",
+          "description": "",
+          "mapped_to": "HIPCHAT_FROMNAME",
+          "is_expand": false,
+          "is_required": false,
+          "value_options": [
+
+          ],
+          "value": "Bitrise-cli",
+          "is_dont_change_value": false
+        },
+        {
+          "title": "Message Color - options:\n\n * yellow (default)\n * red\n * green\n * purple\n * gray\n * random\n",
+          "description": "",
+          "mapped_to": "HIPCHAT_MESSAGE_COLOR",
+          "is_expand": false,
+          "is_required": false,
+          "value_options": [
+
+          ],
+          "value": "green",
+          "is_dont_change_value": false
+        },
+        {
+          "title": "Message\n",
+          "description": "",
+          "mapped_to": "HIPCHAT_MESSAGE",
+          "is_expand": true,
+          "is_required": false,
+          "value_options": [
+
+          ],
+          "value": "This is bitrise-cli test: $RANDOM_QUOTE",
+          "is_dont_change_value": false
+        }
+      ],
+      "outputs": [
+
+      ],
+      "log_highlights": [
+
+      ],
+      "icon_url_256": "https://bitrise-stepcollection-assets.s3.amazonaws.com/hipchat/assets/icon_256.png",
+      "title": "Send HipChat message",
+      "position_in_workflow": 1
+    }
+  ],
+  "meta": {
+    "COMMENT": "Exported from Bitrise.io"
+  }
+}

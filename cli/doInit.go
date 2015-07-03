@@ -5,6 +5,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func runCmd(c *cli.Context) {
-	log.Error("Not Yet Implemented!")
+func doInit(c *cli.Context) {
+	log.Info("Init -- Coming soon!")
 }
