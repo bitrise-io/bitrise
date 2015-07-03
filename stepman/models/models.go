@@ -1,10 +1,4 @@
-package stepman
-
-import ()
-
-//
-// Models
-//
+package models
 
 // - Json
 type InputJsonStruct struct {
@@ -54,6 +48,12 @@ type StepCollectionJsonStruct struct {
 	GeneratedAtTimeStamp int64        `json:"generated_at_timestamp"`
 	Steps                StepJsonHash `json:"steps"`
 	SteplibSource        string       `json:"steplib_source"`
+}
+
+type WorkFlowJsonStruct struct {
+	FormatVersion string           `json:"format_version"`
+	Environments  []string         `json:"environments"`
+	Steps         []StepJsonStruct `json:"steps"`
 }
 
 // - YML
@@ -138,7 +138,7 @@ func convertToOutputJsonSructSlice(outputYmlSlice []*OutputYmlStruct) []*OutputJ
 	return []*OutputJsonStruct{}
 }
 
-func convertToStepJsonStruct(stepYml StepYmlStruct) StepJsonStruct {
+func ConvertToStepJsonStruct(stepYml StepYmlStruct) StepJsonStruct {
 	inputsJson := convertToInputJsonSructSlice(stepYml.Inputs)
 
 	outputsJson := convertToOutputJsonSructSlice(stepYml.Outputs)
@@ -173,15 +173,4 @@ func (stepCollection StepCollectionJsonStruct) GetStep(id, version string) (bool
 		}
 	}
 	return false, StepJsonStruct{}
-}
-
-func (step StepJsonStruct) Download() error {
-	gitSource := step.Source["git"]
-	pth := step.Path()
-
-	return DoGitUpdate(gitSource, pth)
-}
-
-func (step StepJsonStruct) Path() string {
-	return GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
 }

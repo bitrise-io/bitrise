@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,19 +23,19 @@ const (
 
 var DebugMode bool
 
-func parseStepYml(pth, id, version string) (StepJsonStruct, error) {
+func parseStepYml(pth, id, version string) (models.StepJsonStruct, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return StepJsonStruct{}, err
+		return models.StepJsonStruct{}, err
 	}
 
-	var stepYml StepYmlStruct
+	var stepYml models.StepYmlStruct
 	err = yaml.Unmarshal(bytes, &stepYml)
 	if err != nil {
-		return StepJsonStruct{}, err
+		return models.StepJsonStruct{}, err
 	}
 
-	stepJson := convertToStepJsonStruct(stepYml)
+	stepJson := models.ConvertToStepJsonStruct(stepYml)
 	stepJson.Id = id
 	stepJson.VersionTag = version
 	stepJson.StepLibSource = STEPLIB_SOURCE
@@ -68,8 +69,8 @@ func isVersionGrater(version1, version2 string) bool {
 	return false
 }
 
-func addStepToStepGroup(step StepJsonStruct, stepGroup StepGroupJsonStruct) StepGroupJsonStruct {
-	var newStepGroup StepGroupJsonStruct
+func addStepToStepGroup(step models.StepJsonStruct, stepGroup models.StepGroupJsonStruct) models.StepGroupJsonStruct {
+	var newStepGroup models.StepGroupJsonStruct
 	if len(stepGroup.Versions) > 0 {
 		// Step Group already created -> new version of step
 		newStepGroup = stepGroup
@@ -79,11 +80,11 @@ func addStepToStepGroup(step StepJsonStruct, stepGroup StepGroupJsonStruct) Step
 		}
 	} else {
 		// Create Step Group
-		newStepGroup = StepGroupJsonStruct{}
+		newStepGroup = models.StepGroupJsonStruct{}
 		newStepGroup.Latest = step
 	}
 
-	versions := make([]StepJsonStruct, len(newStepGroup.Versions))
+	versions := make([]models.StepJsonStruct, len(newStepGroup.Versions))
 	for idx, step := range newStepGroup.Versions {
 		versions[idx] = step
 	}
@@ -95,13 +96,13 @@ func addStepToStepGroup(step StepJsonStruct, stepGroup StepGroupJsonStruct) Step
 }
 
 func generateFormattedJSONForStepsSpec() ([]byte, error) {
-	collection := StepCollectionJsonStruct{
+	collection := models.StepCollectionJsonStruct{
 		FormatVersion:        FORMAT_VERSION,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        STEPLIB_SOURCE,
 	}
 
-	stepHash := StepJsonHash{}
+	stepHash := models.StepJsonHash{}
 
 	stepsSpecDir := GetCurrentStepCollectionPath()
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
@@ -194,17 +195,28 @@ func WriteStepSpecToFile() error {
 	return nil
 }
 
-func ReadStepSpec() (StepCollectionJsonStruct, error) {
+func ReadStepSpec() (models.StepCollectionJsonStruct, error) {
 	pth := GetCurrentStepSpecPath()
 	file, err := os.Open(pth)
 	if err != nil {
-		return StepCollectionJsonStruct{}, err
+		return models.StepCollectionJsonStruct{}, err
 	}
 
-	var stepCollection StepCollectionJsonStruct
+	var stepCollection models.StepCollectionJsonStruct
 	parser := json.NewDecoder(file)
 	if err = parser.Decode(&stepCollection); err != nil {
-		return StepCollectionJsonStruct{}, err
+		return models.StepCollectionJsonStruct{}, err
 	}
 	return stepCollection, err
+}
+
+func DownloadStep(step models.StepJsonStruct) error {
+	gitSource := step.Source["git"]
+	pth := GetStepPath(step)
+
+	return DoGitUpdate(gitSource, pth)
+}
+
+func GetStepPath(step models.StepJsonStruct) string {
+	return GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
 }
