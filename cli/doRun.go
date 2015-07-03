@@ -63,12 +63,7 @@ func runStep(step models.StepModel) error {
 	// Add step envs
 	for _, input := range step.Inputs {
 		if input.Value != nil {
-			err := bitrise.RunEnvmanAdd(*input.MappedTo, *input.Value)
-
-			if step.Id == "hipchat" && *input.MappedTo == "HIPCHAT_MESSAGE" {
-				log.Info("!!!!!!!!!!!Message:", *input.Value)
-			}
-
+			err := bitrise.RunPipedEnvmanAdd(*input.MappedTo, *input.Value)
 			if err != nil {
 				log.Errorln("Failed to run envman add")
 				return err
