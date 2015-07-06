@@ -73,8 +73,7 @@ func addRoute(route RouteMap) error {
 
 	routeMap[route.getFirstKey()] = route[route.getFirstKey()]
 
-	err = writeRouteMapToFile(routeMap)
-	if err != nil {
+	if err := writeRouteMapToFile(routeMap); err != nil {
 		return err
 	}
 
@@ -89,13 +88,11 @@ func generateRoute(source string) RouteMap {
 }
 
 func writeRouteMapToFile(routeMap RouteMap) error {
-	exist, err := pathutil.IsPathExists(stepManDir)
-	if err != nil {
+
+	if exist, err := pathutil.IsPathExists(stepManDir); err != nil {
 		return err
-	}
-	if exist == false {
-		err := os.MkdirAll(stepManDir, 0777)
-		if err != nil {
+	} else if exist == false {
+		if err := os.MkdirAll(stepManDir, 0777); err != nil {
 			return err
 		}
 	}
@@ -112,25 +109,21 @@ func writeRouteMapToFile(routeMap RouteMap) error {
 	}()
 
 	bytes, err := json.MarshalIndent(routeMap, "", "\t")
-	//bytes, err := json.Marshal(routeMap)
 	if err != nil {
 		fmt.Println("error:", err)
 		return err
 	}
 
-	_, err = file.Write(bytes)
-	if err != nil {
+	if _, err := file.Write(bytes); err != nil {
 		return err
 	}
 	return nil
 }
 
 func readRouteMap() (RouteMap, error) {
-	exist, err := pathutil.IsPathExists(routeFilePath)
-	if err != nil {
+	if exist, err := pathutil.IsPathExists(routeFilePath); err != nil {
 		return RouteMap{}, err
-	}
-	if exist == false {
+	} else if exist == false {
 		return RouteMap{}, nil
 	}
 
@@ -141,7 +134,7 @@ func readRouteMap() (RouteMap, error) {
 
 	var routeMap RouteMap
 	parser := json.NewDecoder(file)
-	if err = parser.Decode(&routeMap); err != nil {
+	if err := parser.Decode(&routeMap); err != nil {
 		return RouteMap{}, err
 	}
 	return routeMap, nil
@@ -149,13 +142,10 @@ func readRouteMap() (RouteMap, error) {
 
 // Interface
 func CreateStepManDirIfNeeded() error {
-	exist, err := pathutil.IsPathExists(stepManDir)
-	if err != nil {
+	if exist, err := pathutil.IsPathExists(stepManDir); err != nil {
 		return err
-	}
-	if exist == false {
-		err := os.MkdirAll(stepManDir, 0777)
-		if err != nil {
+	} else if exist == false {
+		if os.MkdirAll(stepManDir, 0777); err != nil {
 			return err
 		}
 	}
@@ -172,30 +162,30 @@ func SetupCurrentRouting() error {
 }
 
 func GetCurrentStepSpecPath() string {
-	route, err := getRoute(CollectionPath)
-	if err != nil {
+	if route, err := getRoute(CollectionPath); err != nil {
 		fmt.Println("Failed to generate current step spec path:", err)
 		return ""
+	} else {
+		return CollectionsDir + route.getFirstValue() + "/spec/spec.json"
 	}
-	return CollectionsDir + route.getFirstValue() + "/spec/spec.json"
 }
 
 func GetCurrentStepCahceDir() string {
-	route, err := getRoute(CollectionPath)
-	if err != nil {
+	if route, err := getRoute(CollectionPath); err != nil {
 		fmt.Println("Failed to generate current step spec path:", err)
 		return ""
+	} else {
+		return CollectionsDir + route.getFirstValue() + "/cache/"
 	}
-	return CollectionsDir + route.getFirstValue() + "/cache/"
 }
 
 func GetCurrentStepCollectionPath() string {
-	route, err := getRoute(CollectionPath)
-	if err != nil {
+	if route, err := getRoute(CollectionPath); err != nil {
 		fmt.Println("Failed to generate current step spec path:", err)
 		return ""
+	} else {
+		return CollectionsDir + route.getFirstValue() + "/collection/"
 	}
-	return CollectionsDir + route.getFirstValue() + "/collection/"
 }
 
 // Life cycle

@@ -44,15 +44,12 @@ func activate(c *cli.Context) {
 	}
 
 	pth := stepman.GetStepPath(step)
-	exist, err = pathutil.IsPathExists(pth)
-	if err != nil {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		fmt.Printf("Failed to check path:", err)
 		return
-	}
-	if exist == false {
+	} else if exist == false {
 		fmt.Println("Step dos not exist, download it")
-		err = stepman.DownloadStep(step)
-		if err != nil {
+		if err := stepman.DownloadStep(step); err != nil {
 			fmt.Println("Failed to download step:", err)
 		}
 	}
@@ -61,21 +58,17 @@ func activate(c *cli.Context) {
 	srcFolder := pth
 	destFolder := path
 
-	exist, err = pathutil.IsPathExists(destFolder)
-	if err != nil {
+	if exist, err = pathutil.IsPathExists(destFolder); err != nil {
 		fmt.Printf("Failed to check path:", err)
 		return
-	}
-	if exist == false {
-		err = os.MkdirAll(destFolder, 0777)
-		if err != nil {
+	} else if exist == false {
+		if err := os.MkdirAll(destFolder, 0777); err != nil {
 			fmt.Printf("Failed to create path:", err)
 			return
 		}
 	}
 
-	err = stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...)
-	if err != nil {
+	if err = stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...); err != nil {
 		fmt.Printf("Failed to copy step:", err)
 	}
 }

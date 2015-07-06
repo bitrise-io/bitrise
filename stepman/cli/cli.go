@@ -34,8 +34,8 @@ func before(c *cli.Context) error {
 	if debugString == "" {
 		debugString = "false"
 	}
-	stepman.DebugMode, err = strconv.ParseBool(debugString)
-	if err != nil {
+
+	if stepman.DebugMode, err = strconv.ParseBool(debugString); err != nil {
 		fmt.Println("Failed to parse debug mode flag:", err)
 		stepman.DebugMode = false
 	}
