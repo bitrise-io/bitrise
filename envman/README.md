@@ -172,10 +172,11 @@ envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --e
 
 
 ### TODO
-- path envvar fix!
-- expand pathutil, with envman related path methods! (envStorePathInCurrentDir)
-- TEST: if any path contains a whitespace (ex: space) character
-- validate path (exist? is file? os.Stat, fileInfo)
+- ~~ path envvar fix! ~~
+- ~~ expand pathutil, with envman related path methods! (envStorePathInCurrentDir) ~~
+- ~~ TEST: if any path contains a whitespace (ex: space) character ~~
+- ~~ validate path (exist? is file? os.Stat, fileInfo) ~~
   - if does not exists: OK
   - if exists: check if it's a dir (fail if dir, OK if file)
   - think about
+- ~~ convertToEnvModelArray, ... as class method! ~~
