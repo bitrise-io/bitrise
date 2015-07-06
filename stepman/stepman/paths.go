@@ -145,7 +145,7 @@ func CreateStepManDirIfNeeded() error {
 	if exist, err := pathutil.IsPathExists(stepManDir); err != nil {
 		return err
 	} else if exist == false {
-		if os.MkdirAll(stepManDir, 0777); err != nil {
+		if err := os.MkdirAll(stepManDir, 0777); err != nil {
 			return err
 		}
 	}
