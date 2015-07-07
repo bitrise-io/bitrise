@@ -7,12 +7,15 @@ import (
 	"os"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil"
 )
 
 const (
-	STEPLIB_SOURCE      string = "https://github.com/steplib/steplib"
-	STEP_COLLECTION_GIT string = "https://github.com/steplib/steplib.git"
+	OPEN_STEPLIB_URL     string = "https://github.com/steplib/steplib"
+	OPEN_STEPLIB_GIT     string = "https://github.com/steplib/steplib.git"
+	VERIFIED_STEPLIB_URL string = "https://github.com/bitrise-io/bitrise-step-collection"
+	VERIFIED_STEPLIB_GIT string = "https://github.com/bitrise-io/bitrise-step-collection.git"
 
 	STEPMAN_DIR            string = "/.stepman/"
 	ROUTING_PTH_SUFFIX     string = "routing.json"
@@ -102,15 +105,14 @@ func writeRouteMapToFile(routeMap RouteMap) error {
 		return err
 	}
 	defer func() {
-		err := file.Close()
-		if err != nil {
-			fmt.Println("Failed to close file: %s", err)
+		if err := file.Close(); err != nil {
+			log.Error("[STEPMAN] - Failed to close file:", err)
 		}
 	}()
 
 	bytes, err := json.MarshalIndent(routeMap, "", "\t")
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err
 	}
 
@@ -163,7 +165,7 @@ func SetupCurrentRouting() error {
 
 func GetCurrentStepSpecPath() string {
 	if route, err := getRoute(CollectionPath); err != nil {
-		fmt.Println("Failed to generate current step spec path:", err)
+		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
 		return CollectionsDir + route.getFirstValue() + "/spec/spec.json"
@@ -172,7 +174,7 @@ func GetCurrentStepSpecPath() string {
 
 func GetCurrentStepCahceDir() string {
 	if route, err := getRoute(CollectionPath); err != nil {
-		fmt.Println("Failed to generate current step spec path:", err)
+		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
 		return CollectionsDir + route.getFirstValue() + "/cache/"
@@ -181,7 +183,7 @@ func GetCurrentStepCahceDir() string {
 
 func GetCurrentStepCollectionPath() string {
 	if route, err := getRoute(CollectionPath); err != nil {
-		fmt.Println("Failed to generate current step spec path:", err)
+		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
 		return CollectionsDir + route.getFirstValue() + "/collection/"

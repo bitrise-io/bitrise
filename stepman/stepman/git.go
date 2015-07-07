@@ -1,9 +1,9 @@
 package stepman
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil"
 )
 
@@ -19,11 +19,11 @@ func DoGitUpdate(git, pth string) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if exists == false {
-		fmt.Println("Git path does not exist, do clone")
+		log.Info("[STEPMAN] - Git path does not exist, do clone")
 		return DoGitClone(git, pth)
 	}
 
-	fmt.Println("Git path exist, do pull")
+	log.Info("[STEPMAN] - Git path exist, do pull")
 	return DoGitPull(pth)
 }
 

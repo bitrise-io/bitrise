@@ -1,34 +1,33 @@
 package cli
 
 import (
-	"fmt"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
 func update(c *cli.Context) {
-	fmt.Println("Update")
+	log.Info("[STEPMAN] - Update")
 
 	stepCollectionPath := stepman.GetCurrentStepCollectionPath()
 	if exists, err := pathutil.IsPathExists(stepCollectionPath); err != nil {
-		fmt.Println("Failed to update Stepman:", err)
+		log.Error("[STEPMAN] - Failed to check path:", err)
 		return
 	} else if exists == false {
-		fmt.Println("Stepman is not initialized")
+		log.Error("[STEPMAN] - Not initialized")
 		return
 	}
 
 	if err := stepman.DoGitPull(stepCollectionPath); err != nil {
-		fmt.Println("Failed tp update Stepman:", err)
+		log.Error("[STEPMAN] - Failed to do git update:", err)
 		return
 	}
 
 	if err := stepman.WriteStepSpecToFile(); err != nil {
-		fmt.Println("Failed to initialize Stepman:", err)
+		log.Error("[STEPMAN] - Failed to save step spec:", err)
 		return
 	}
 
-	fmt.Println("Stepman updated")
+	log.Info("[STEPMAN] - Updated")
 }

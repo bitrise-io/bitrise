@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"strconv"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -23,7 +23,7 @@ func before(c *cli.Context) error {
 	}
 	// TODO! remove default path
 	if stepman.CollectionPath == "" {
-		stepman.CollectionPath = stepman.STEP_COLLECTION_GIT
+		stepman.CollectionPath = stepman.OPEN_STEPLIB_GIT
 	}
 
 	// Debug mode
@@ -36,7 +36,7 @@ func before(c *cli.Context) error {
 	}
 
 	if stepman.DebugMode, err = strconv.ParseBool(debugString); err != nil {
-		fmt.Println("Failed to parse debug mode flag:", err)
+		log.Error("[STEPMAN] - Failed to parse debug mode flag:", err)
 		stepman.DebugMode = false
 	}
 
@@ -59,6 +59,6 @@ func Run() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		fmt.Println("Stepman finished:", err)
+		log.Error("[STEPMAN] - Stepman finished:", err)
 	}
 }
