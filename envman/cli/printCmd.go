@@ -14,12 +14,16 @@ func printEnvs() error {
 		return err
 	}
 
-	for _, eModel := range environments {
-		envString := "- " + eModel.Key + ": " + eModel.Value
-		fmt.Println(envString)
-		if eModel.IsExpand == false {
-			expandString := "  " + "isExpand" + ": " + "false"
-			fmt.Println(expandString)
+	if len(environments) == 0 {
+		log.Info("[ENVMAN] - Empty envstore")
+	} else {
+		for _, eModel := range environments {
+			envString := "- " + eModel.Key + ": " + eModel.Value
+			fmt.Println(envString)
+			if eModel.IsExpand == false {
+				expandString := "  " + "isExpand" + ": " + "false"
+				fmt.Println(expandString)
+			}
 		}
 	}
 
@@ -27,9 +31,9 @@ func printEnvs() error {
 }
 
 func printCmd(c *cli.Context) {
-	log.Info("Work path:", envman.CurrentEnvStoreFilePath)
+	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := printEnvs(); err != nil {
-		log.Fatal("Failed to print:", err)
+		log.Fatal("[ENVMAN] - Failed to print:", err)
 	}
 }

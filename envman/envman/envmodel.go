@@ -44,17 +44,17 @@ func (eMap EnvMapItem) convertToEnvModel() EnvModel {
 			eModel.Value = value
 		}
 	}
-	eModel.IsExpand = IsExpand(eMap[IS_EXPAND_KEY])
+	eModel.IsExpand = ParseBool(eMap[IS_EXPAND_KEY])
 	return eModel
 }
 
-func IsExpand(s string) bool {
+func ParseBool(s string) bool {
 	if s == "" {
 		return true
 	} else {
 		expand, err := strconv.ParseBool(s)
 		if err != nil {
-			log.Errorln("isExpand: Failed to parse input:", err)
+			log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
 			return true
 		}
 		return expand

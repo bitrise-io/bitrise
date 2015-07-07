@@ -44,7 +44,7 @@ func before(c *cli.Context) error {
 	envman.CurrentEnvStoreFilePath = c.String(PATH_KEY)
 	if envman.CurrentEnvStoreFilePath == "" {
 		if path, err := envStorePathInCurrentDir(); err != nil {
-			log.Fatal("Failed to set envman work path in current dir:", err)
+			log.Fatal("[ENVMAN] - Failed to set envman work path in current dir:", err)
 		} else {
 			envman.CurrentEnvStoreFilePath = path
 		}
@@ -59,7 +59,7 @@ func Run() {
 	// Read piped data
 	if isPipedData() {
 		if bytes, err := ioutil.ReadAll(os.Stdin); err != nil {
-			log.Error("Failed to read stdin:", err)
+			log.Error("[ENVMAN] - Failed to read stdin:", err)
 		} else if len(bytes) > 0 {
 			stdinValue = string(bytes)
 		}
@@ -80,6 +80,6 @@ func Run() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal("Envman finished:", err)
+		log.Fatal("[ENVMAN] - Finished:", err)
 	}
 }
