@@ -17,13 +17,13 @@ func before(c *cli.Context) error {
 	}
 
 	// StepSpec collection path
-	stepman.CollectionPath = c.String(COLLECTION_KEY)
-	if stepman.CollectionPath == "" {
-		stepman.CollectionPath = os.Getenv(COLLECTION_PATH_ENV_KEY)
+	stepman.CollectionUri = c.String(COLLECTION_KEY)
+	if stepman.CollectionUri == "" {
+		stepman.CollectionUri = os.Getenv(COLLECTION_PATH_ENV_KEY)
 	}
 	// TODO! remove default path
-	if stepman.CollectionPath == "" {
-		stepman.CollectionPath = stepman.OPEN_STEPLIB_GIT
+	if stepman.CollectionUri == "" {
+		stepman.CollectionUri = stepman.OPEN_STEPLIB_GIT
 	}
 
 	// Debug mode

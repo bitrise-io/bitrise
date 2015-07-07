@@ -17,30 +17,30 @@ const (
 	VERIFIED_STEPLIB_URL string = "https://github.com/bitrise-io/bitrise-step-collection"
 	VERIFIED_STEPLIB_GIT string = "https://github.com/bitrise-io/bitrise-step-collection.git"
 
-	STEPMAN_DIR            string = "/.stepman/"
-	ROUTING_PTH_SUFFIX     string = "routing.json"
-	COLLECTIONS_DIR_SUFFIX string = "step_collections/"
+	STEPMAN_DIRNAME     string = ".stepman"
+	ROUTING_FILENAME    string = "routing.json"
+	COLLECTIONS_DIRNAME string = "step_collections"
 )
 
 var (
-	stepManDir    string
-	routeFilePath string
+	stepManDirPath  string
+	routingFilePath string
 
-	CollectionPath string
+	CollectionUri string
 
-	CollectionsDir string
+	CollectionsDirPath string
 )
 
 type RouteMap map[string]string
 
-func (route RouteMap) getFirstKey() string {
+func (route RouteMap) getSingleKey() string {
 	for key, _ := range route {
 		return key
 	}
 	return ""
 }
 
-func (route RouteMap) getFirstValue() string {
+func (route RouteMap) getSingleValue() string {
 	for _, value := range route {
 		return value
 	}
@@ -70,11 +70,11 @@ func addRoute(route RouteMap) error {
 		return err
 	}
 
-	if routeMap[route.getFirstKey()] != "" {
+	if routeMap[route.getSingleKey()] != "" {
 		return errors.New("Route already exist for source")
 	}
 
-	routeMap[route.getFirstKey()] = route[route.getFirstKey()]
+	routeMap[route.getSingleKey()] = route[route.getSingleKey()]
 
 	if err := writeRouteMapToFile(routeMap); err != nil {
 		return err
@@ -92,15 +92,15 @@ func generateRoute(source string) RouteMap {
 
 func writeRouteMapToFile(routeMap RouteMap) error {
 
-	if exist, err := pathutil.IsPathExists(stepManDir); err != nil {
+	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
 	} else if exist == false {
-		if err := os.MkdirAll(stepManDir, 0777); err != nil {
+		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
 			return err
 		}
 	}
 
-	file, err := os.OpenFile(routeFilePath, os.O_RDWR|os.O_CREATE, 0666)
+	file, err := os.OpenFile(routingFilePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
@@ -123,13 +123,13 @@ func writeRouteMapToFile(routeMap RouteMap) error {
 }
 
 func readRouteMap() (RouteMap, error) {
-	if exist, err := pathutil.IsPathExists(routeFilePath); err != nil {
+	if exist, err := pathutil.IsPathExists(routingFilePath); err != nil {
 		return RouteMap{}, err
 	} else if exist == false {
 		return RouteMap{}, nil
 	}
 
-	file, e := os.Open(routeFilePath)
+	file, e := os.Open(routingFilePath)
 	if e != nil {
 		return RouteMap{}, e
 	}
@@ -144,10 +144,10 @@ func readRouteMap() (RouteMap, error) {
 
 // Interface
 func CreateStepManDirIfNeeded() error {
-	if exist, err := pathutil.IsPathExists(stepManDir); err != nil {
+	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
 	} else if exist == false {
-		if err := os.MkdirAll(stepManDir, 0777); err != nil {
+		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
 			return err
 		}
 	}
@@ -155,44 +155,44 @@ func CreateStepManDirIfNeeded() error {
 }
 
 func SetupCurrentRouting() error {
-	if CollectionPath == "" {
+	if CollectionUri == "" {
 		return errors.New("No collection path defined")
 	}
 
-	route := generateRoute(CollectionPath)
+	route := generateRoute(CollectionUri)
 	return addRoute(route)
 }
 
 func GetCurrentStepSpecPath() string {
-	if route, err := getRoute(CollectionPath); err != nil {
+	if route, err := getRoute(CollectionUri); err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
-		return CollectionsDir + route.getFirstValue() + "/spec/spec.json"
+		return CollectionsDirPath + route.getSingleValue() + "/spec/spec.json"
 	}
 }
 
 func GetCurrentStepCahceDir() string {
-	if route, err := getRoute(CollectionPath); err != nil {
+	if route, err := getRoute(CollectionUri); err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
-		return CollectionsDir + route.getFirstValue() + "/cache/"
+		return CollectionsDirPath + route.getSingleValue() + "/cache/"
 	}
 }
 
 func GetCurrentStepCollectionPath() string {
-	if route, err := getRoute(CollectionPath); err != nil {
+	if route, err := getRoute(CollectionUri); err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	} else {
-		return CollectionsDir + route.getFirstValue() + "/collection/"
+		return CollectionsDirPath + route.getSingleValue() + "/collection/"
 	}
 }
 
 // Life cycle
 func init() {
-	stepManDir = pathutil.UserHomeDir() + STEPMAN_DIR
-	routeFilePath = stepManDir + ROUTING_PTH_SUFFIX
-	CollectionsDir = stepManDir + COLLECTIONS_DIR_SUFFIX
+	stepManDirPath = pathutil.UserHomeDir() + "/" + STEPMAN_DIRNAME + "/"
+	routingFilePath = stepManDirPath + ROUTING_FILENAME
+	CollectionsDirPath = stepManDirPath + COLLECTIONS_DIRNAME + "/"
 }
