@@ -2,7 +2,6 @@ package stepman
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
@@ -36,7 +36,7 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 
 	stepJson.Id = id
 	stepJson.VersionTag = version
-	stepJson.StepLibSource = STEPLIB_SOURCE
+	stepJson.StepLibSource = OPEN_STEPLIB_URL
 
 	return stepJson, nil
 }
@@ -50,13 +50,13 @@ func isVersionGrater(version1, version2 string) bool {
 	for i, num := range version1Slice {
 		num1, err1 := strconv.ParseInt(num, 0, 64)
 		if err1 != nil {
-			fmt.Errorf("Failed to parse int: %s", err1)
+			log.Error("[STEPMAN] - Failed to parse int:", err1)
 			return false
 		}
 
 		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
 		if err2 != nil {
-			fmt.Errorf("Failed to parse int: %s", err2)
+			log.Error("[STEPMAN] - Failed to parse int:", err2)
 			return false
 		}
 
@@ -97,7 +97,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:        FORMAT_VERSION,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        STEPLIB_SOURCE,
+		SteplibSource:        OPEN_STEPLIB_URL,
 	}
 
 	stepHash := models.StepHash{}
@@ -124,15 +124,15 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 				stepHash[name] = stepGroup
 			} else {
-				fmt.Println("Path:", truncatedPath)
-				fmt.Println("Legth:", len(components))
+				log.Debug("[STEPMAN] - Path:", truncatedPath)
+				log.Debug("[STEPMAN] - Legth:", len(components))
 			}
 		}
 
 		return err
 	})
 	if err != nil {
-		fmt.Println("Failed to walk through path:", err)
+		log.Error("[STEPMAN] - Failed to walk through path:", err)
 	}
 
 	collection.Steps = stepHash
@@ -144,7 +144,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 		bytes, err = json.Marshal(collection)
 	}
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return []byte{}, err
 	}
 
@@ -155,7 +155,7 @@ func WriteStepSpecToFile() error {
 	pth := GetCurrentStepSpecPath()
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		fmt.Errorf("Failed to check path: %s", err)
+		log.Error("[STEPMAN] - Failed to check path:", err)
 		return err
 	} else if exist == false {
 		dir, _ := path.Split(pth)
@@ -177,7 +177,7 @@ func WriteStepSpecToFile() error {
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			fmt.Errorf("Failed to close file: %s", err)
+			log.Error("[STEPMAN] - Failed to close file:", err)
 		}
 	}()
 

@@ -1,30 +1,29 @@
 package cli
 
 import (
-	"fmt"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
 func setup(c *cli.Context) {
-	fmt.Println("Setup")
+	log.Info("[STEPMAN] - Setup")
 
 	if err := stepman.SetupCurrentRouting(); err != nil {
-		fmt.Println("Failed to setup routing:", err)
+		log.Error("[STEPMAN] - Failed to setup routing:", err)
 		return
 	}
 
 	pth := stepman.GetCurrentStepCollectionPath()
-	if err := stepman.DoGitClone(stepman.STEP_COLLECTION_GIT, pth); err != nil {
-		fmt.Println("Failed to initialize Stepman:", err)
+	if err := stepman.DoGitClone(stepman.OPEN_STEPLIB_GIT, pth); err != nil {
+		log.Error("[STEPMAN] - Failed to get step spec path:", err)
 		return
 	}
 
 	if err := stepman.WriteStepSpecToFile(); err != nil {
-		fmt.Println("Failed to initialize Stepman:", err)
+		log.Error("[STEPMAN] - Failed to save step spec:", err)
 		return
 	}
 
-	fmt.Println("Stepman initialized")
+	log.Info("[STEPMAN] - Initialized")
 }
