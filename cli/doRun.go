@@ -54,7 +54,11 @@ func activateAndRunSteps(workFlow models.WorkFlowModel) error {
 
 		log.Infof("Step activated: %s (%s)", step.Id, step.VersionTag)
 
-		runStep(step)
+		err = runStep(step)
+		if err != nil {
+			log.Errorln("Failed to run step")
+			return err
+		}
 	}
 	return nil
 }
@@ -101,9 +105,19 @@ func doRun(c *cli.Context) {
 	}
 
 	// Envman setup
-	os.Setenv("ENVMAN_ENVSTORE_PATH", "/Users/godrei/develop/bitrise/bitrise-cli-test/envstore.yml")
-	os.Setenv("BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH", "/Users/godrei/develop/bitrise/bitrise-cli-test/formout.md")
-	err := bitrise.RunEnvmanInit()
+	err := os.Setenv(ENVSTORE_PATH_ENV_KEY, ENVSTORE_PATH)
+	if err != nil {
+		log.Errorln("Failed to add env:", err)
+		return
+	}
+
+	err = os.Setenv(FORMATTED_OUTPUT_PATH_ENV_KEY, FORMATTED_OUTPUT_PATH)
+	if err != nil {
+		log.Errorln("Failed to add env:", err)
+		return
+	}
+
+	err = bitrise.RunEnvmanInit()
 	if err != nil {
 		log.Error("Failed to run envman init")
 		return
