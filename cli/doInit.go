@@ -17,7 +17,10 @@ func doInit(c *cli.Context) {
 		Environments:  []string{},
 		Steps:         []models.StepModel{},
 	}
-	SaveToFile("./bitrise.json", workflowModel)
+
+	if err := SaveToFile("./bitrise.json", workflowModel); err != nil {
+		log.Fatalln("Failed to init:", err)
+	}
 	os.Exit(1)
 }
 
@@ -29,7 +32,11 @@ func SaveToFile(pth string, workflowModel models.WorkflowModel) error {
 	if file, err := os.Create(pth); err != nil {
 		return err
 	} else {
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				log.Fatalln("[BITRISE] - Failed to close file:", err)
+			}
+		}()
 
 		if jsonContBytes, err := GenerateNonFormattedJSON(workflowModel); err != nil {
 			return err
