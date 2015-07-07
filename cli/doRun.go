@@ -11,8 +11,8 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func activateAndRunSteps(workFlow models.WorkFlowModel) error {
-	for _, step := range workFlow.Steps {
+func activateAndRunSteps(workflow models.WorkflowModel) error {
+	for _, step := range workflow.Steps {
 		stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
 
 		if err := bitrise.RunStepmanActivate(step.Id, step.VersionTag, stepDir); err != nil {
@@ -58,8 +58,8 @@ func doRun(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Run")
 
 	// Input validation
-	workFlowJsonPath := c.String(PATH_KEY)
-	if workFlowJsonPath == "" {
+	workflowJsonPath := c.String(PATH_KEY)
+	if workflowJsonPath == "" {
 		log.Infoln("[BITRISE_CLI] - Workflow json path not defined, try search in current folder")
 
 		if exist, err := pathutil.IsPathExists("./bitrise.json"); err != nil {
@@ -67,7 +67,7 @@ func doRun(c *cli.Context) {
 		} else if !exist {
 			log.Fatalln("No workflow json found")
 		}
-		workFlowJsonPath = "./bitrise.json"
+		workflowJsonPath = "./bitrise.json"
 	}
 
 	// Envman setup
@@ -84,10 +84,10 @@ func doRun(c *cli.Context) {
 	}
 
 	// Run work flow
-	if workFlow, err := bitrise.ReadWorkFlowJson(workFlowJsonPath); err != nil {
+	if workflow, err := bitrise.ReadWorkflowJson(workflowJsonPath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to read work flow:", err)
 	} else {
-		if err := activateAndRunSteps(workFlow); err != nil {
+		if err := activateAndRunSteps(workflow); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
 		}
 	}
