@@ -3,11 +3,11 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
-	CI_ENV_KEY     string = "CI"
-	TOOL_KEY       string = "tool"
-	CI_KEY         string = "ci"
-	QUIT_KEY       string = "quite"
-	QUIT_KEY_SHORT string = "q"
+	CI_ENV_KEY      string = "CI"
+	TOOL_KEY        string = "tool"
+	CI_KEY          string = "ci"
+	QUIET_KEY       string = "quiet"
+	QUIET_KEY_SHORT string = "q"
 
 	LOG_LEVEL_KEY       string = "loglevel"
 	LOG_LEVEL_KEY_SHORT string = "l"
@@ -33,7 +33,7 @@ var (
 		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 	}
 	flTool = cli.BoolFlag{
-		Name:   TOOL_KEY + ", " + CI_KEY + ", " + QUIT_KEY + ", " + QUIT_KEY_SHORT,
+		Name:   TOOL_KEY + ", " + CI_KEY + ", " + QUIET_KEY + ", " + QUIET_KEY_SHORT,
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
 		EnvVar: CI_ENV_KEY,
 	}
