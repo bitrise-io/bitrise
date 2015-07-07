@@ -108,7 +108,7 @@ func WriteEnvMapToFile(pth string, envs []EnvModel) error {
 	} else {
 		defer func() {
 			if err := file.Close(); err != nil {
-				log.Fatalln("Failed to close file:", err)
+				log.Fatalln("[ENVMAN] - Failed to close file:", err)
 			}
 		}()
 

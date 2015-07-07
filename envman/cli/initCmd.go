@@ -7,11 +7,11 @@ import (
 )
 
 func initCmd(c *cli.Context) {
-	log.Info("Work path:", envman.CurrentEnvStoreFilePath)
+	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := envman.InitAtPath(envman.CurrentEnvStoreFilePath); err != nil {
-		log.Fatal(err)
+		log.Fatal("[ENVMAN] - Failed to init at path:", err)
 	}
 
-	log.Info("Envman initialized")
+	log.Info("[ENVMAN] - Initialized")
 }
