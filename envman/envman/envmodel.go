@@ -54,7 +54,7 @@ func IsExpand(s string) bool {
 	} else {
 		expand, err := strconv.ParseBool(s)
 		if err != nil {
-			log.Errorln("isExpand: Failed to parse input:", err)
+			log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
 			return true
 		}
 		return expand

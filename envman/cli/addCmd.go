@@ -41,7 +41,7 @@ func loadValueFromFile(pth string) (string, error) {
 }
 
 func addCmd(c *cli.Context) {
-	log.Info("Work path:", envman.CurrentEnvStoreFilePath)
+	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KEY_KEY)
 	expand := envman.IsExpand(c.String(EXPAND_KEY))
@@ -53,19 +53,19 @@ func addCmd(c *cli.Context) {
 		value = c.String(VALUE_KEY)
 	} else if c.String(VALUE_FILE_KEY) != "" {
 		if v, err := loadValueFromFile(c.String(VALUE_FILE_KEY)); err != nil {
-			log.Fatal("Failed to read file value: ", err)
+			log.Fatal("[ENVMAN] - Failed to read file value: ", err)
 		} else {
 			value = v
 		}
 	}
 
 	if err := addEnv(key, value, expand); err != nil {
-		log.Fatal("Failed to add env:", err)
+		log.Fatal("[ENVMAN] - Failed to add env:", err)
 	}
 
-	log.Info("Env added")
+	log.Info("[ENVMAN] - Env added")
 
 	if err := printEnvs(); err != nil {
-		log.Fatal("Failed to print:", err)
+		log.Fatal("[ENVMAN] - Failed to print:", err)
 	}
 }
