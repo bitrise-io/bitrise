@@ -14,7 +14,7 @@ export PATH="$PATH:$GOPATH/bin"
 set -v
 
 # Install depenecies
-go get github.com/tools/godep
+go get -u github.com/tools/godep
 go install github.com/tools/godep
 godep restore
 
@@ -22,8 +22,11 @@ godep restore
 godep go install
 
 # Check for unhandled errors
-go get github.com/kisielk/errcheck
+go get -u github.com/kisielk/errcheck
 go install github.com/kisielk/errcheck
+
+# Go lint
+go get -u github.com/golang/lint/golint
 
 bash "${THIS_SCRIPT_DIR}/test.sh"
 
