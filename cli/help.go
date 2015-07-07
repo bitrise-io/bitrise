@@ -22,14 +22,4 @@ COMMANDS:
 COMMAND HELP: {{.Name}} COMMAND --help/-h
 
 `
-
-	cli.HelpFlag = cli.BoolFlag{
-		Name:  "help, h",
-		Usage: "Show help.",
-	}
-
-	cli.VersionFlag = cli.BoolFlag{
-		Name:  "version, v",
-		Usage: "Print the version.",
-	}
 }

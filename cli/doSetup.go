@@ -13,5 +13,5 @@ const (
 )
 
 func doSetup(c *cli.Context) {
-	log.Info("Setup -- Coming soon!")
+	log.Info("[BITRISE_CLI] - Setup -- Coming soon!")
 }
