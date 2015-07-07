@@ -33,8 +33,8 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 func runStep(step models.StepModel) error {
 	// Add step envs
 	for _, input := range step.Inputs {
-		if input.Value != nil {
-			if err := bitrise.RunEnvmanAdd(*input.MappedTo, *input.Value); err != nil {
+		if input.Value != "" {
+			if err := bitrise.RunEnvmanAdd(input.MappedTo, input.Value); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}

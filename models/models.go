@@ -4,10 +4,10 @@ package models
 // Models
 //
 type InputModel struct {
-	MappedTo          *string   `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	MappedTo          string    `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title             *string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       *string   `json:"description,omitempty" yaml:"description,omitempty"`
-	Value             *string   `json:"value,omitempty" yaml:"value,omitempty"`
+	Value             string    `json:"value,omitempty" yaml:"value,omitempty"`
 	ValueOptions      *[]string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 	IsRequired        *bool     `json:"is_required,omitempty" yaml:"is_required,omitempty"`
 	IsExpand          *bool     `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
@@ -15,7 +15,7 @@ type InputModel struct {
 }
 
 type OutputModel struct {
-	MappedTo    *string `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	MappedTo    string  `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Description *string `json:"description,omitempty" yaml:"description,omitempty"`
 }
@@ -53,9 +53,9 @@ type StepCollectionModel struct {
 }
 
 type WorkflowModel struct {
-	FormatVersion string      `json:"format_version"`
-	Environments  []string    `json:"environments"`
-	Steps         []StepModel `json:"steps"`
+	FormatVersion string       `json:"format_version"`
+	Environments  []InputModel `json:"environments"`
+	Steps         []StepModel  `json:"steps"`
 }
 
 //
