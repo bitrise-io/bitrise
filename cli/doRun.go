@@ -1,42 +1,15 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"regexp"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	"github.com/bitrise-io/bitrise-cli/models"
+	"github.com/bitrise-io/go-pathutil"
 	"github.com/codegangsta/cli"
 )
-
-func getWorkFlowPathInCurrentFolder() (string, error) {
-	fileInfos, err := ioutil.ReadDir("./")
-	if err != nil {
-		return "", err
-	}
-
-	matches := 0
-	workFlowName := ""
-	for _, fileInfo := range fileInfos {
-		if match, err := regexp.MatchString("([a-z]+).json", fileInfo.Name()); err != nil {
-			return "", err
-		} else if match {
-			matches = matches + 1
-			workFlowName = fileInfo.Name()
-		}
-	}
-
-	if matches == 0 {
-		return "", errors.New("No workflow json found")
-	} else if matches > 1 {
-		return "", errors.New("More then one possible workflow json found")
-	}
-	return workFlowName, nil
-}
 
 func activateAndRunSteps(workFlow models.WorkFlowModel) error {
 	for _, step := range workFlow.Steps {
@@ -89,38 +62,33 @@ func doRun(c *cli.Context) {
 	if workFlowJsonPath == "" {
 		log.Infoln("[BITRISE_CLI] - Workflow json path not defined, try search in current folder")
 
-		if workFlowName, err := getWorkFlowPathInCurrentFolder(); err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to find workflow json:", err)
-			return
-		} else {
-			workFlowJsonPath = "./" + workFlowName
+		if exist, err := pathutil.IsPathExists("./bitrise.json"); err != nil {
+			log.Fatalln("Failed to check path:", err)
+		} else if !exist {
+			log.Fatalln("No workflow json found")
 		}
+		workFlowJsonPath = "./bitrise.json"
 	}
 
 	// Envman setup
 	if err := os.Setenv(ENVSTORE_PATH_ENV_KEY, ENVSTORE_PATH); err != nil {
-		log.Errorln("[BITRISE_CLI] - Failed to add env:", err)
-		return
+		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
 	if err := os.Setenv(FORMATTED_OUTPUT_PATH_ENV_KEY, FORMATTED_OUTPUT_PATH); err != nil {
-		log.Errorln("[BITRISE_CLI] - Failed to add env:", err)
-		return
+		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
 	if err := bitrise.RunEnvmanInit(); err != nil {
-		log.Error("[BITRISE_CLI] - Failed to run envman init")
-		return
+		log.Fatalln("[BITRISE_CLI] - Failed to run envman init")
 	}
 
 	// Run work flow
 	if workFlow, err := bitrise.ReadWorkFlowJson(workFlowJsonPath); err != nil {
-		log.Errorln("[BITRISE_CLI] - Failed to read work flow:", err)
-		return
+		log.Fatalln("[BITRISE_CLI] - Failed to read work flow:", err)
 	} else {
 		if err := activateAndRunSteps(workFlow); err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to activate steps:", err)
-			return
+			log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
 		}
 	}
 }
