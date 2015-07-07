@@ -44,7 +44,7 @@ func addCmd(c *cli.Context) {
 	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KEY_KEY)
-	expand := envman.IsExpand(c.String(EXPAND_KEY))
+	expand := envman.ParseBool(c.String(EXPAND_KEY))
 	var value string
 
 	if stdinValue != "" {
