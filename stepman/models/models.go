@@ -1,8 +1,6 @@
 package models
 
-//
 // Models
-//
 type InputModel struct {
 	MappedTo          *string   `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title             *string   `json:"title,omitempty" yaml:"title,omitempty"`
@@ -58,9 +56,7 @@ type WorkFlowModel struct {
 	Steps         []StepModel `json:"steps"`
 }
 
-//
 // Struct methods
-//
 func (stepCollection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
 	versions := stepCollection.Steps[id].Versions
 	if len(versions) > 0 {

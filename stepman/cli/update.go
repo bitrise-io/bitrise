@@ -12,24 +12,20 @@ func update(c *cli.Context) {
 	fmt.Println("Update")
 
 	stepCollectionPath := stepman.GetCurrentStepCollectionPath()
-	exists, err := pathutil.IsPathExists(stepCollectionPath)
-	if err != nil {
+	if exists, err := pathutil.IsPathExists(stepCollectionPath); err != nil {
 		fmt.Println("Failed to update Stepman:", err)
 		return
-	}
-	if exists == false {
+	} else if exists == false {
 		fmt.Println("Stepman is not initialized")
 		return
 	}
 
-	err = stepman.DoGitPull(stepCollectionPath)
-	if err != nil {
+	if err := stepman.DoGitPull(stepCollectionPath); err != nil {
 		fmt.Println("Failed tp update Stepman:", err)
 		return
 	}
 
-	err = stepman.WriteStepSpecToFile()
-	if err != nil {
+	if err := stepman.WriteStepSpecToFile(); err != nil {
 		fmt.Println("Failed to initialize Stepman:", err)
 		return
 	}

@@ -30,10 +30,10 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 	}
 
 	var stepJson models.StepModel
-	err = yaml.Unmarshal(bytes, &stepJson)
-	if err != nil {
+	if err := yaml.Unmarshal(bytes, &stepJson); err != nil {
 		return models.StepModel{}, err
 	}
+
 	stepJson.Id = id
 	stepJson.VersionTag = version
 	stepJson.StepLibSource = STEPLIB_SOURCE
@@ -131,6 +131,9 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 
 		return err
 	})
+	if err != nil {
+		fmt.Println("Failed to walk through path:", err)
+	}
 
 	collection.Steps = stepHash
 
@@ -151,12 +154,10 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 func WriteStepSpecToFile() error {
 	pth := GetCurrentStepSpecPath()
 
-	exist, err := pathutil.IsPathExists(pth)
-	if err != nil {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		fmt.Errorf("Failed to check path: %s", err)
 		return err
-	}
-	if exist == false {
+	} else if exist == false {
 		dir, _ := path.Split(pth)
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
