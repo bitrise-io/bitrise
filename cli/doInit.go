@@ -49,9 +49,17 @@ func SaveToFile(pth string, workflowModel models.WorkflowModel) error {
 
 		if jsonContBytes, err := GenerateNonFormattedJSON(workflowModel); err != nil {
 			return err
-		} else if _, err := file.Write(jsonContBytes); err != nil {
-			return err
+		} else {
+			if _, err := file.Write(jsonContBytes); err != nil {
+				return err
+			}
+			log.Println()
+			log.Infoln("=> Init success!")
+			log.Infoln("File created at path:", pth)
+			log.Infoln("With the content:")
+			log.Infoln(string(jsonContBytes))
 		}
+
 		return nil
 	}
 }
