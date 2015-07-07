@@ -3,10 +3,11 @@ package cli
 import (
 	"encoding/json"
 	"errors"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/models"
 	"github.com/codegangsta/cli"
-	"os"
 )
 
 func doInit(c *cli.Context) {
