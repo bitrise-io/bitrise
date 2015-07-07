@@ -7,15 +7,24 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/models"
+	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
 )
 
 func doInit(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Init -- Work-in-progress!")
+
+	projectName, err := goinp.AskForString("Enter the PROJECT_NAME")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	workflowModel := models.WorkflowModel{
 		FormatVersion: "0.9.0",
-		Environments:  []string{},
-		Steps:         []models.StepModel{},
+		Environments: []models.InputModel{
+			models.InputModel{MappedTo: "PROJECT_NAME", Value: projectName},
+		},
+		Steps: []models.StepModel{},
 	}
 
 	if err := SaveToFile("./bitrise.json", workflowModel); err != nil {
