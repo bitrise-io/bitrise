@@ -3,6 +3,7 @@ package cli
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"os"
 )
 
 const (
@@ -14,4 +15,5 @@ const (
 
 func doSetup(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Setup -- Coming soon!")
+	os.Exit(1)
 }
