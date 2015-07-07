@@ -9,16 +9,15 @@ import (
 )
 
 func befor(c *cli.Context) error {
-
 	levelString := c.String(LOG_LEVEL_KEY)
 	if levelString == "" {
 		log.SetLevel(log.DebugLevel)
 	} else {
-		level, err := log.ParseLevel(levelString)
-		if err != nil {
+		if level, err := log.ParseLevel(levelString); err != nil {
 			return err
+		} else {
+			log.SetLevel(level)
 		}
-		log.SetLevel(level)
 	}
 	return nil
 }

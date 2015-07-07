@@ -1,8 +1,6 @@
 package bitrise
 
 import (
-	_ "fmt"
-	_ "io"
 	"os"
 	"os/exec"
 	"strings"
@@ -40,7 +38,6 @@ func RunEnvmanAdd(key, value string) error {
 func RunEnvmanRun(cmd []string) error {
 	args := []string{"run"}
 	args = append(args, cmd...)
-
 	return RunCommand("envman", args...)
 }
 

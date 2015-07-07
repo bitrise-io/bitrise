@@ -10,14 +10,13 @@ import (
 func ReadWorkFlowJson(pth string) (models.WorkFlowModel, error) {
 	var workflow models.WorkFlowModel
 
-	file, err := os.Open(pth)
-	if err != nil {
+	if file, err := os.Open(pth); err != nil {
 		return models.WorkFlowModel{}, err
-	}
-
-	parser := json.NewDecoder(file)
-	if err = parser.Decode(&workflow); err != nil {
-		return models.WorkFlowModel{}, err
+	} else {
+		parser := json.NewDecoder(file)
+		if err = parser.Decode(&workflow); err != nil {
+			return models.WorkFlowModel{}, err
+		}
 	}
 
 	return workflow, nil
