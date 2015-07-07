@@ -8,6 +8,11 @@
 			"Rev": "ab7e46ea22bd379e660230844f96d20f1dabc21a"
 		},
 		{
+			"ImportPath": "github.com/bitrise-io/go-pathutil",
+			"Comment": "1.1.0-5-g4cf3c1e",
+			"Rev": "4cf3c1e53cf8195bd0a40ddec6a880b4c7774249"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-129-gb6d983e",
 			"Rev": "b6d983e02c46cb7b979ec35d11b8d0b0c9574a9e"

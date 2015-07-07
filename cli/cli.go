@@ -8,17 +8,16 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func befor(c *cli.Context) error {
-
+func before(c *cli.Context) error {
 	levelString := c.String(LOG_LEVEL_KEY)
 	if levelString == "" {
 		log.SetLevel(log.DebugLevel)
 	} else {
-		level, err := log.ParseLevel(levelString)
-		if err != nil {
+		if level, err := log.ParseLevel(levelString); err != nil {
 			return err
+		} else {
+			log.SetLevel(level)
 		}
-		log.SetLevel(level)
 	}
 	return nil
 }
@@ -33,7 +32,7 @@ func Run() {
 	app.Author = ""
 	app.Email = ""
 
-	app.Before = befor
+	app.Before = before
 
 	app.Flags = flags
 	app.Commands = commands

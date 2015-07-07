@@ -6,5 +6,5 @@ import (
 )
 
 func doInit(c *cli.Context) {
-	log.Info("Init -- Coming soon!")
+	log.Info("[BITRISE_CLI] - Init -- Coming soon!")
 }

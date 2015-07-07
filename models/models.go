@@ -52,7 +52,7 @@ type StepCollectionModel struct {
 	SteplibSource        string   `json:"steplib_source"`
 }
 
-type WorkFlowModel struct {
+type WorkflowModel struct {
 	FormatVersion string      `json:"format_version"`
 	Environments  []string    `json:"environments"`
 	Steps         []StepModel `json:"steps"`
