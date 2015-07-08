@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,7 +10,23 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func exportWorkflowEnvironments(workflow models.WorkflowModel) error {
+	log.Info("[BITRISE_CLI] - Exporting workflow environments")
+
+	for _, env := range workflow.Environments {
+		if env.Value != "" {
+			if err := bitrise.RunEnvmanAdd(env.MappedTo, env.Value); err != nil {
+				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func activateAndRunSteps(workflow models.WorkflowModel) error {
+	log.Info("[BITRISE_CLI] - Activating and running steps")
+
 	for _, step := range workflow.Steps {
 		stepDir := "./steps/" + step.ID + "/" + step.VersionTag + "/"
 
@@ -35,6 +50,8 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 }
 
 func runStep(step models.StepModel) error {
+	log.Infof("[BITRISE_CLI] - Running step: %s (%s)", step.ID, step.VersionTag)
+
 	// Add step envs
 	for _, input := range step.Inputs {
 		if input.Value != "" {
@@ -46,10 +63,11 @@ func runStep(step models.StepModel) error {
 	}
 
 	stepDir := "./steps/" + step.ID + "/" + step.VersionTag + "/"
-	stepCmd := fmt.Sprintf("%sstep.sh", stepDir)
+	//stepCmd := fmt.Sprintf("%sstep.sh", stepDir)
+	stepCmd := "step.sh"
 	cmd := []string{"bash", stepCmd}
 
-	if err := bitrise.RunEnvmanRun(cmd); err != nil {
+	if err := bitrise.RunEnvmanRunInDir(stepDir, cmd); err != nil {
 		log.Errorln("[BITRISE_CLI] - Failed to run envman run")
 		return err
 	}
@@ -91,6 +109,10 @@ func doRun(c *cli.Context) {
 	if workflow, err := bitrise.ReadWorkflowJSON(workflowJSONPath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to read work flow:", err)
 	} else {
+		if err := exportWorkflowEnvironments(workflow); err != nil {
+			log.Fatalln("[BITRISE_CLI] - Failed to export environments:", err)
+		}
+
 		if err := activateAndRunSteps(workflow); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
 		}

@@ -52,6 +52,13 @@ func RunEnvmanRun(cmd []string) error {
 	return RunCommand("envman", args...)
 }
 
+// RunEnvmanRunInDir ...
+func RunEnvmanRunInDir(dir string, cmd []string) error {
+	args := []string{"run"}
+	args = append(args, cmd...)
+	return RunCommandInDir(dir, "envman", args...)
+}
+
 // ------------------
 // --- Common
 
@@ -61,5 +68,15 @@ func RunCommand(name string, args ...string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// RunCommandInDir ...
+func RunCommandInDir(dir, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
 	return cmd.Run()
 }
