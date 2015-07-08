@@ -7,12 +7,13 @@ import (
 )
 
 // Stepman
-func RunStepmanSetup() error {
-	return RunCommand("stepman", "setup")
+func RunStepmanSetup(collection string) error {
+	args := []string{"-d", "true", "-c", collection, "setup"}
+	return RunCommand("stepman", args...)
 }
 
-func RunStepmanActivate(stepId, stepVersion, dir string) error {
-	args := []string{"activate", "-i", stepId, "-v", stepVersion, "-p", dir}
+func RunStepmanActivate(collection, stepId, stepVersion, dir string) error {
+	args := []string{"-d", "true", "-c", collection, "activate", "-i", stepId, "-v", stepVersion, "-p", dir}
 	return RunCommand("stepman", args...)
 }
 

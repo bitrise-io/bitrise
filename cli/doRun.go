@@ -15,7 +15,11 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 	for _, step := range workflow.Steps {
 		stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
 
-		if err := bitrise.RunStepmanActivate(step.Id, step.VersionTag, stepDir); err != nil {
+		if err := bitrise.RunStepmanSetup(step.StepLibSource); err != nil {
+			log.Error("Failed to setup stepman:", err)
+		}
+
+		if err := bitrise.RunStepmanActivate(step.StepLibSource, step.Id, step.VersionTag, stepDir); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			return err
 		}
@@ -63,9 +67,9 @@ func doRun(c *cli.Context) {
 		log.Infoln("[BITRISE_CLI] - Workflow json path not defined, try search in current folder")
 
 		if exist, err := pathutil.IsPathExists("./bitrise.json"); err != nil {
-			log.Fatalln("Failed to check path:", err)
+			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
-			log.Fatalln("No workflow json found")
+			log.Fatalln("[BITRISE_CLI] - No workflow json found")
 		}
 		workflowJsonPath = "./bitrise.json"
 	}
