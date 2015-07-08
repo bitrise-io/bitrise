@@ -13,7 +13,7 @@ import (
 
 func activateAndRunSteps(workflow models.WorkflowModel) error {
 	for _, step := range workflow.Steps {
-		stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
+		stepDir := "./steps/" + step.ID + "/" + step.VersionTag + "/"
 
 		if err := bitrise.RunStepmanSetup(step.StepLibSource); err != nil {
 			log.Error("Failed to setup stepman:", err)
@@ -24,7 +24,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			return err
 		}
 
-		log.Infof("[BITRISE_CLI] - Step activated: %s (%s)", step.Id, step.VersionTag)
+		log.Infof("[BITRISE_CLI] - Step activated: %s (%s)", step.ID, step.VersionTag)
 
 		if err := runStep(step); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run step")
@@ -37,15 +37,15 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 func runStep(step models.StepModel) error {
 	// Add step envs
 	for _, input := range step.Inputs {
-		if input.Value != nil {
-			if err := bitrise.RunEnvmanAdd(*input.MappedTo, *input.Value); err != nil {
+		if input.Value != "" {
+			if err := bitrise.RunEnvmanAdd(input.MappedTo, input.Value); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
 		}
 	}
 
-	stepDir := "./steps/" + step.Id + "/" + step.VersionTag + "/"
+	stepDir := "./steps/" + step.ID + "/" + step.VersionTag + "/"
 	stepCmd := fmt.Sprintf("%sstep.sh", stepDir)
 	cmd := []string{"bash", stepCmd}
 
@@ -54,7 +54,7 @@ func runStep(step models.StepModel) error {
 		return err
 	}
 
-	log.Infof("[BITRISE_CLI] - Step executed: %s (%s)", step.Id, step.VersionTag)
+	log.Infof("[BITRISE_CLI] - Step executed: %s (%s)", step.ID, step.VersionTag)
 	return nil
 }
 
@@ -62,24 +62,24 @@ func doRun(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Run")
 
 	// Input validation
-	workflowJsonPath := c.String(PATH_KEY)
-	if workflowJsonPath == "" {
-		log.Infoln("[BITRISE_CLI] - Workflow json path not defined, try search in current folder")
+	workflowJSONPath := c.String(PATH_KEY)
+	if workflowJSONPath == "" {
+		log.Infoln("[BITRISE_CLI] - Workflow path not defined, searching for bitrise.json in current folder...")
 
 		if exist, err := pathutil.IsPathExists("./bitrise.json"); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
 			log.Fatalln("[BITRISE_CLI] - No workflow json found")
 		}
-		workflowJsonPath = "./bitrise.json"
+		workflowJSONPath = "./bitrise.json"
 	}
 
 	// Envman setup
-	if err := os.Setenv(ENVSTORE_PATH_ENV_KEY, ENVSTORE_PATH); err != nil {
+	if err := os.Setenv(EnvstorePathEnvKey, EnvstorePath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
-	if err := os.Setenv(FORMATTED_OUTPUT_PATH_ENV_KEY, FORMATTED_OUTPUT_PATH); err != nil {
+	if err := os.Setenv(FormattedOutputPathEnvKey, FormattedOutputPath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
@@ -88,7 +88,7 @@ func doRun(c *cli.Context) {
 	}
 
 	// Run work flow
-	if workflow, err := bitrise.ReadWorkflowJson(workflowJsonPath); err != nil {
+	if workflow, err := bitrise.ReadWorkflowJSON(workflowJSONPath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to read work flow:", err)
 	} else {
 		if err := activateAndRunSteps(workflow); err != nil {

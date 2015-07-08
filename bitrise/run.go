@@ -17,11 +17,15 @@ func RunStepmanActivate(collection, stepId, stepVersion, dir string) error {
 	return RunCommand("stepman", args...)
 }
 
-// Envman
+// ------------------
+// --- Envman
+
+// RunEnvmanInit ...
 func RunEnvmanInit() error {
 	return RunCommand("envman", "init")
 }
 
+// RunPipedEnvmanAdd ...
 func RunPipedEnvmanAdd(key, value string) error {
 	args := []string{"add", "-k", key}
 	envman := exec.Command("envman", args...)
@@ -31,18 +35,23 @@ func RunPipedEnvmanAdd(key, value string) error {
 	return envman.Run()
 }
 
+// RunEnvmanAdd ...
 func RunEnvmanAdd(key, value string) error {
 	args := []string{"add", "-k", key, "-v", value}
 	return RunCommand("envman", args...)
 }
 
+// RunEnvmanRun ...
 func RunEnvmanRun(cmd []string) error {
 	args := []string{"run"}
 	args = append(args, cmd...)
 	return RunCommand("envman", args...)
 }
 
-// Common
+// ------------------
+// --- Common
+
+// RunCommand ...
 func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin

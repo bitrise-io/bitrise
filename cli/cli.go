@@ -13,15 +13,16 @@ func before(c *cli.Context) error {
 	if levelString == "" {
 		log.SetLevel(log.DebugLevel)
 	} else {
-		if level, err := log.ParseLevel(levelString); err != nil {
+		level, err := log.ParseLevel(levelString)
+		if err != nil {
 			return err
-		} else {
-			log.SetLevel(level)
 		}
+		log.SetLevel(level)
 	}
 	return nil
 }
 
+// Run ...
 func Run() {
 	// Parse cl
 	app := cli.NewApp()

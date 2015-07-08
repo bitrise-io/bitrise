@@ -7,16 +7,18 @@ import (
 	"github.com/bitrise-io/bitrise-cli/models"
 )
 
-func ReadWorkflowJson(pth string) (models.WorkflowModel, error) {
+// ReadWorkflowJSON ...
+func ReadWorkflowJSON(pth string) (models.WorkflowModel, error) {
 	var workflow models.WorkflowModel
 
-	if file, err := os.Open(pth); err != nil {
+	file, err := os.Open(pth)
+	if err != nil {
 		return models.WorkflowModel{}, err
-	} else {
-		parser := json.NewDecoder(file)
-		if err = parser.Decode(&workflow); err != nil {
-			return models.WorkflowModel{}, err
-		}
+	}
+
+	parser := json.NewDecoder(file)
+	if err = parser.Decode(&workflow); err != nil {
+		return models.WorkflowModel{}, err
 	}
 
 	return workflow, nil
