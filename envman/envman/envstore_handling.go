@@ -11,9 +11,11 @@ import (
 )
 
 var (
+	// CurrentEnvStoreFilePath ...
 	CurrentEnvStoreFilePath string
 )
 
+// InitAtPath ...
 func InitAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
@@ -25,26 +27,29 @@ func InitAtPath(pth string) error {
 	return nil
 }
 
+// LoadEnvMap ...
 func LoadEnvMap() ([]EnvModel, error) {
-	if envsYML, err := readEnvMapFromFile(CurrentEnvStoreFilePath); err != nil {
+	envsYML, err := readEnvMapFromFile(CurrentEnvStoreFilePath)
+	if err != nil {
 		return []EnvModel{}, err
-	} else {
-		return envsYML.convertToEnvModelArray(), nil
 	}
+	return envsYML.convertToEnvModelArray(), nil
 }
 
+// LoadEnvMapOrCreate ...
 func LoadEnvMapOrCreate() ([]EnvModel, error) {
-	if envModels, err := LoadEnvMap(); err != nil {
+	envModels, err := LoadEnvMap()
+	if err != nil {
 		if err.Error() == "No environment variable list found" {
 			err = InitAtPath(CurrentEnvStoreFilePath)
 			return []EnvModel{}, err
 		}
 		return []EnvModel{}, err
-	} else {
-		return envModels, nil
 	}
+	return envModels, nil
 }
 
+// UpdateOrAddToEnvlist ...
 func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel) ([]EnvModel, error) {
 	var newEnvs []EnvModel
 	exist := false
@@ -70,53 +75,53 @@ func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel) ([]EnvModel, error) {
 }
 
 func readEnvMapFromFile(pth string) (envsYMLModel, error) {
-
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return envsYMLModel{}, err
 	} else if isExists == false {
 		return envsYMLModel{}, errors.New("No environment variable list found")
 	}
 
-	if bytes, err := ioutil.ReadFile(pth); err != nil {
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
 		return envsYMLModel{}, err
-	} else {
-		var envsModel envsYMLModel
-		if err := yaml.Unmarshal(bytes, &envsModel); err != nil {
-			return envsYMLModel{}, err
-		}
-
-		return envsModel, nil
 	}
+	var envsModel envsYMLModel
+	if err := yaml.Unmarshal(bytes, &envsModel); err != nil {
+		return envsYMLModel{}, err
+	}
+
+	return envsModel, nil
 }
 
 func generateFormattedYMLForEnvModels(envs []EnvModel) ([]byte, error) {
 	envYML := convertToEnvsYMLModel(envs)
-	if bytes, err := yaml.Marshal(envYML); err != nil {
+	bytes, err := yaml.Marshal(envYML)
+	if err != nil {
 		return []byte{}, err
-	} else {
-		return bytes, nil
 	}
+	return bytes, nil
 }
 
+// WriteEnvMapToFile ...
 func WriteEnvMapToFile(pth string, envs []EnvModel) error {
 	if pth == "" {
 		return errors.New("No path provided")
 	}
 
-	if file, err := os.Create(pth); err != nil {
+	file, err := os.Create(pth)
+	if err != nil {
 		return err
-	} else {
-		defer func() {
-			if err := file.Close(); err != nil {
-				log.Fatalln("[ENVMAN] - Failed to close file:", err)
-			}
-		}()
-
-		if jsonContBytes, err := generateFormattedYMLForEnvModels(envs); err != nil {
-			return err
-		} else if _, err := file.Write(jsonContBytes); err != nil {
-			return err
-		}
-		return nil
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Fatalln("[ENVMAN] - Failed to close file:", err)
+		}
+	}()
+
+	if jsonContBytes, err := generateFormattedYMLForEnvModels(envs); err != nil {
+		return err
+	} else if _, err := file.Write(jsonContBytes); err != nil {
+		return err
+	}
+	return nil
 }

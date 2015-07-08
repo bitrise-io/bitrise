@@ -3,41 +3,49 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
-	PATH_KEY       string = "path"
-	PATH_KEY_SHORT string = "p"
+	// PathKey ...
+	PathKey      string = "path"
+	pathKeyShort string = "p"
 
-	LOG_LEVEL_KEY       string = "log-level"
-	LOG_LEVEL_KEY_SHORT string = "l"
+	// LogLevelKey ...
+	LogLevelKey      string = "log-level"
+	logLevelKeyShort string = "l"
 
-	KEY_KEY       string = "key"
-	KEY_KEY_SHORT string = "k"
+	// KeyKey ...
+	KeyKey       string = "key"
+	keyKeyShortT string = "k"
 
-	VALUE_KEY       string = "value"
-	VALUE_KEY_SHORT string = "v"
+	// ValueKey ...
+	ValueKey      string = "value"
+	valueKeyShort string = "v"
 
-	VALUE_FILE_KEY       string = "valuefile"
-	VALUE_FILE_KEY_SHORT string = "f"
+	// ValueFileKey ...
+	ValueFileKey      string = "valuefile"
+	valueFileKeyShort string = "f"
 
-	EXPAND_KEY       string = "expand"
-	EXPAND_KEY_SHORT string = "e"
+	// ExpandKey ...
+	ExpandKey      string = "expand"
+	expandKeyShort string = "e"
 
-	HELP_KEY       string = "help"
-	HELP_KEY_SHORT string = "h"
+	// HelpKey ...
+	HelpKey      string = "help"
+	helpKeyShort string = "h"
 
-	VERSION_KEY       string = "version"
-	VERSION_KEY_SHORT string = "v"
+	// VersionKey ...
+	VersionKey      string = "version"
+	versionKeyShort string = "v"
 )
 
 var (
 	// App flags
 	flPath = cli.StringFlag{
-		Name:   PATH_KEY + ", " + PATH_KEY_SHORT,
+		Name:   PathKey + ", " + pathKeyShort,
 		EnvVar: "ENVMAN_ENVSTORE_PATH",
 		Value:  "",
 		Usage:  "Path of the envstore.",
 	}
 	flLogLevel = cli.StringFlag{
-		Name:  LOG_LEVEL_KEY + ", " + LOG_LEVEL_KEY_SHORT,
+		Name:  LogLevelKey + ", " + logLevelKeyShort,
 		Value: "info",
 		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 	}
@@ -48,22 +56,22 @@ var (
 
 	// Command flags
 	flKey = cli.StringFlag{
-		Name:  KEY_KEY + ", " + KEY_KEY_SHORT,
+		Name:  KeyKey + ", " + keyKeyShortT,
 		Value: "",
 		Usage: "Key of the environment variable. Empty string (\"\") is NOT accepted.",
 	}
 	flValue = cli.StringFlag{
-		Name:  VALUE_KEY + ", " + VALUE_KEY_SHORT,
+		Name:  ValueKey + ", " + valueKeyShort,
 		Value: "",
 		Usage: "Value of the environment variable. Empty string is accepted.",
 	}
 	flValueFile = cli.StringFlag{
-		Name:  VALUE_FILE_KEY + ", " + VALUE_FILE_KEY_SHORT,
+		Name:  ValueFileKey + ", " + valueFileKeyShort,
 		Value: "",
 		Usage: "Path of a file which contains the environment variable's value to be stored.",
 	}
 	flIsExpand = cli.StringFlag{
-		Name:  EXPAND_KEY + ", " + EXPAND_KEY_SHORT,
+		Name:  ExpandKey + ", " + expandKeyShort,
 		Value: "true",
 		Usage: "If true, replaces ${var} or $var in the string according to the values of the current environment variables.",
 	}
@@ -72,12 +80,12 @@ var (
 func init() {
 	// Override default help and version flags
 	cli.HelpFlag = cli.BoolFlag{
-		Name:  HELP_KEY + ", " + HELP_KEY_SHORT,
+		Name:  HelpKey + ", " + helpKeyShort,
 		Usage: "Show help.",
 	}
 
 	cli.VersionFlag = cli.BoolFlag{
-		Name:  VERSION_KEY + ", " + VERSION_KEY_SHORT,
+		Name:  VersionKey + ", " + versionKeyShort,
 		Usage: "Print the version.",
 	}
 }
