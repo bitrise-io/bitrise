@@ -62,7 +62,7 @@ func doRun(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Run")
 
 	// Input validation
-	workflowJSONPath := c.String(PATH_KEY)
+	workflowJSONPath := c.String(PathKey)
 	if workflowJSONPath == "" {
 		log.Infoln("[BITRISE_CLI] - Workflow path not defined, searching for bitrise.json in current folder...")
 
