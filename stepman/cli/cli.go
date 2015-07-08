@@ -17,19 +17,18 @@ func before(c *cli.Context) error {
 	}
 
 	// StepSpec collection path
-	stepman.CollectionUri = c.String(COLLECTION_KEY)
-	if stepman.CollectionUri == "" {
-		stepman.CollectionUri = os.Getenv(COLLECTION_PATH_ENV_KEY)
+	stepman.CollectionURI = c.String(CollectionKey)
+	if stepman.CollectionURI == "" {
+		stepman.CollectionURI = os.Getenv(CollectionPathEnvKey)
 	}
-	// TODO! remove default path
-	if stepman.CollectionUri == "" {
-		stepman.CollectionUri = stepman.OPEN_STEPLIB_GIT
+	if stepman.CollectionURI == "" {
+		log.Fatalln("[STEPMAN] - No step collection specified")
 	}
 
 	// Debug mode
-	debugString := c.String(DEBUG_KEY)
+	debugString := c.String(DebugKey)
 	if debugString == "" {
-		debugString = os.Getenv(DEBUG_ENV_KEY)
+		debugString = os.Getenv(DebugEnvKey)
 	}
 	if debugString == "" {
 		debugString = "false"
@@ -43,8 +42,8 @@ func before(c *cli.Context) error {
 	return nil
 }
 
+// Run ...
 func Run() {
-	// Parse cl
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Step manager"

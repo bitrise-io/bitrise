@@ -22,7 +22,7 @@ var (
 			Usage:     "",
 			Action:    download,
 			Flags: []cli.Flag{
-				flId,
+				flID,
 				flVersion,
 			},
 		},
@@ -32,7 +32,7 @@ var (
 			Usage:     "",
 			Action:    activate,
 			Flags: []cli.Flag{
-				flId,
+				flID,
 				flVersion,
 				flPath,
 			},

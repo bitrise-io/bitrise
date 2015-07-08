@@ -5,6 +5,7 @@ import (
 	"os/exec"
 )
 
+// RunCommand ...
 func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
@@ -13,6 +14,7 @@ func RunCommand(name string, args ...string) error {
 	return cmd.Run()
 }
 
+// RunCommandInDir ...
 func RunCommandInDir(dir, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
