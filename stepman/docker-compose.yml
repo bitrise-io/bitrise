@@ -1,0 +1,4 @@
+app:
+  build: .
+  volumes:
+    - .:/go/src/github.com/bitrise-io/stepman

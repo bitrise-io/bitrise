@@ -13,20 +13,22 @@ export PATH="$PATH:$GOPATH/bin"
 
 set -v
 
-# Install depenecies
-go get github.com/tools/godep
+# Install dependencies
+go get -u github.com/tools/godep
 go install github.com/tools/godep
 godep restore
 
-# Intsall stepman
-godep go install
+# Intsall
+go install
 
 # Check for unhandled errors
-go get github.com/kisielk/errcheck
+go get -u github.com/kisielk/errcheck
 go install github.com/kisielk/errcheck
-errcheck -asserts=true -blank=true ./...
 
-go test -v ./...
+# Go lint
+go get -u github.com/golang/lint/golint
+
+bash "${THIS_SCRIPT_DIR}/test.sh"
 
 #
 # ==> DONE - OK
