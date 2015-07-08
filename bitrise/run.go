@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ------------------
 // --- Stepman
 
 // RunStepmanSetup ...
@@ -19,6 +20,7 @@ func RunStepmanActivate(stepID, stepVersion, dir string) error {
 	return RunCommand("stepman", args...)
 }
 
+// ------------------
 // --- Envman
 
 // RunEnvmanInit ...
@@ -49,6 +51,7 @@ func RunEnvmanRun(cmd []string) error {
 	return RunCommand("envman", args...)
 }
 
+// ------------------
 // --- Common
 
 // RunCommand ...
