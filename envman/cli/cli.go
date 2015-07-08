@@ -41,7 +41,7 @@ func before(c *cli.Context) error {
 
 	// Befor parsing cli, and running command
 	// we need to decide wich path will be used by envman
-	envman.CurrentEnvStoreFilePath = c.String(PATH_KEY)
+	envman.CurrentEnvStoreFilePath = c.String(PathKey)
 	if envman.CurrentEnvStoreFilePath == "" {
 		if path, err := envStorePathInCurrentDir(); err != nil {
 			log.Fatal("[ENVMAN] - Failed to set envman work path in current dir:", err)

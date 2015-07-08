@@ -5,6 +5,7 @@ import (
 	"os/exec"
 )
 
+// CommandModel ...
 type CommandModel struct {
 	Command      string
 	Argumentums  []string
@@ -32,6 +33,7 @@ func commandEnvs(envs []EnvModel) ([]string, error) {
 	return os.Environ(), nil
 }
 
+// ExecuteCmd ...
 func ExecuteCmd(commandToRun CommandModel) error {
 	cmdEnvs, err := commandEnvs(commandToRun.Environments)
 	if err != nil {
