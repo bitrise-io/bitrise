@@ -6,14 +6,18 @@ import (
 	"strings"
 )
 
-// Stepman
+// ------------------
+// --- Stepman
+
+// RunStepmanSetup ...
 func RunStepmanSetup(collection string) error {
 	args := []string{"-d", "true", "-c", collection, "setup"}
 	return RunCommand("stepman", args...)
 }
 
-func RunStepmanActivate(collection, stepId, stepVersion, dir string) error {
-	args := []string{"-d", "true", "-c", collection, "activate", "-i", stepId, "-v", stepVersion, "-p", dir}
+// RunStepmanActivate ...
+func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
+	args := []string{"-d", "true", "-c", collection, "activate", "-i", stepID, "-v", stepVersion, "-p", dir}
 	return RunCommand("stepman", args...)
 }
 

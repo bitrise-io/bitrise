@@ -19,7 +19,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			log.Error("Failed to setup stepman:", err)
 		}
 
-		if err := bitrise.RunStepmanActivate(step.StepLibSource, step.Id, step.VersionTag, stepDir); err != nil {
+		if err := bitrise.RunStepmanActivate(step.StepLibSource, step.ID, step.VersionTag, stepDir); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			return err
 		}
