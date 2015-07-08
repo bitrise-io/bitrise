@@ -60,7 +60,7 @@ func doRun(c *cli.Context) {
 	// Input validation
 	workflowJSONPath := c.String(PATH_KEY)
 	if workflowJSONPath == "" {
-		log.Infoln("[BITRISE_CLI] - Workflow json path not defined, try search in current folder")
+		log.Infoln("[BITRISE_CLI] - Workflow path not defined, searching for bitrise.json in current folder...")
 
 		if exist, err := pathutil.IsPathExists("./bitrise.json"); err != nil {
 			log.Fatalln("Failed to check path:", err)
