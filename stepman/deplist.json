@@ -1,0 +1,8 @@
+{
+	"deps": [
+		{
+			"url": "https://github.com/bitrise-io/go_dev_scripts.git",
+			"store_path": "_scripts"
+		}
+	]
+}
