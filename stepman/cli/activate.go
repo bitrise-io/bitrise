@@ -34,6 +34,7 @@ func activate(c *cli.Context) {
 	// Get step
 	stepCollection, err := stepman.ReadStepSpec()
 	if err != nil {
+		log.Fatalln("[STEPMAN] - Failed to read steps spec")
 		return
 	}
 

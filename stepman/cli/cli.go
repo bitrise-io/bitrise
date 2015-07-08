@@ -21,9 +21,8 @@ func before(c *cli.Context) error {
 	if stepman.CollectionUri == "" {
 		stepman.CollectionUri = os.Getenv(COLLECTION_PATH_ENV_KEY)
 	}
-	// TODO! remove default path
 	if stepman.CollectionUri == "" {
-		stepman.CollectionUri = stepman.OPEN_STEPLIB_GIT
+		log.Fatalln("[STEPMAN] - No step collection specified")
 	}
 
 	// Debug mode
