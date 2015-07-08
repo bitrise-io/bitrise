@@ -18,9 +18,11 @@ import (
 )
 
 const (
-	FORMAT_VERSION string = "0.9.0"
+	// FormatVersion ...
+	FormatVersion string = "0.9.0"
 )
 
+// DebugMode ...
 var DebugMode bool
 
 func parseStepYml(pth, id, version string) (models.StepModel, error) {
@@ -29,16 +31,16 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 		return models.StepModel{}, err
 	}
 
-	var stepJson models.StepModel
-	if err := yaml.Unmarshal(bytes, &stepJson); err != nil {
+	var stepJSON models.StepModel
+	if err := yaml.Unmarshal(bytes, &stepJSON); err != nil {
 		return models.StepModel{}, err
 	}
 
-	stepJson.Id = id
-	stepJson.VersionTag = version
-	stepJson.StepLibSource = OPEN_STEPLIB_URL
+	stepJSON.Id = id
+	stepJSON.VersionTag = version
+	stepJSON.StepLibSource = CollectionUri
 
-	return stepJson, nil
+	return stepJSON, nil
 }
 
 // semantic version (X.Y.Z)
@@ -95,7 +97,7 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 
 func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := models.StepCollectionModel{
-		FormatVersion:        FORMAT_VERSION,
+		FormatVersion:        FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        OPEN_STEPLIB_URL,
 	}
@@ -151,6 +153,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	return bytes, nil
 }
 
+// WriteStepSpecToFile ...
 func WriteStepSpecToFile() error {
 	pth := GetCurrentStepSpecPath()
 
@@ -194,6 +197,7 @@ func WriteStepSpecToFile() error {
 	return nil
 }
 
+// ReadStepSpec ...
 func ReadStepSpec() (models.StepCollectionModel, error) {
 	pth := GetCurrentStepSpecPath()
 	file, err := os.Open(pth)
@@ -209,6 +213,7 @@ func ReadStepSpec() (models.StepCollectionModel, error) {
 	return stepCollection, err
 }
 
+// DownloadStep ...
 func DownloadStep(step models.StepModel) error {
 	gitSource := step.Source["git"]
 	pth := GetStepPath(step)
@@ -216,6 +221,7 @@ func DownloadStep(step models.StepModel) error {
 	return DoGitUpdate(gitSource, pth)
 }
 
+// GetStepPath ...
 func GetStepPath(step models.StepModel) string {
 	return GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
 }
