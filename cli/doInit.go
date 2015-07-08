@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise-cli/models"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
-	"os"
 )
 
 func doInit(c *cli.Context) {
