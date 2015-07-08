@@ -51,26 +51,10 @@ func LoadEnvMapOrCreate() ([]EnvModel, error) {
 
 // UpdateOrAddToEnvlist ...
 func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel) ([]EnvModel, error) {
-	var newEnvs []EnvModel
-	exist := false
-
-	for _, eModel := range envs {
-		if eModel.Key == env.Key {
-			exist = true
-			newEnvs = append(newEnvs, env)
-		} else {
-			newEnvs = append(newEnvs, eModel)
-		}
-	}
-
-	if exist == false {
-		newEnvs = append(newEnvs, env)
-	}
-
+	newEnvs := append(envs, env)
 	if err := WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvs); err != nil {
 		return []EnvModel{}, err
 	}
-
 	return newEnvs, nil
 }
 
