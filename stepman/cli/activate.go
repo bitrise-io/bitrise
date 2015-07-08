@@ -13,19 +13,19 @@ func activate(c *cli.Context) {
 	log.Info("[STEPMAN] - Activate")
 
 	// Input validation
-	id := c.String(ID_KEY)
+	id := c.String(IDKey)
 	if id == "" {
 		log.Error("[STEPMAN] - Missing step id")
 		return
 	}
 
-	version := c.String(VERSION_KEY)
+	version := c.String(VersionKey)
 	if version == "" {
 		log.Error("[STEPMAN] - Missing step version")
 		return
 	}
 
-	path := c.String(PATH_KEY)
+	path := c.String(PathKey)
 	if path == "" {
 		log.Error("[STEPMAN] - Missing destination path")
 		return

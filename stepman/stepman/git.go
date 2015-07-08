@@ -7,14 +7,17 @@ import (
 	"github.com/bitrise-io/go-pathutil"
 )
 
+// DoGitPull ...
 func DoGitPull(pth string) error {
 	return RunCommandInDir(pth, "git", []string{"pull"}...)
 }
 
+// DoGitClone ...
 func DoGitClone(git, pth string) error {
 	return RunCommand("git", []string{"clone", "--recursive", git, pth}...)
 }
 
+// DoGitUpdate ...
 func DoGitUpdate(git, pth string) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err

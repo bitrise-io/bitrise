@@ -12,29 +12,30 @@ import (
 )
 
 const (
-	OPEN_STEPLIB_URL     string = "https://github.com/steplib/steplib"
-	OPEN_STEPLIB_GIT     string = "https://github.com/steplib/steplib.git"
-	VERIFIED_STEPLIB_URL string = "https://github.com/bitrise-io/bitrise-step-collection"
-	VERIFIED_STEPLIB_GIT string = "https://github.com/bitrise-io/bitrise-step-collection.git"
-
-	STEPMAN_DIRNAME     string = ".stepman"
-	ROUTING_FILENAME    string = "routing.json"
-	COLLECTIONS_DIRNAME string = "step_collections"
+	// StepmanDirname ...
+	StepmanDirname string = ".stepman"
+	// RoutingFilename ...
+	RoutingFilename string = "routing.json"
+	// CollectionsDirname ...
+	CollectionsDirname string = "step_collections"
 )
 
 var (
 	stepManDirPath  string
 	routingFilePath string
 
-	CollectionUri string
+	// CollectionURI ...
+	CollectionURI string
 
+	// CollectionsDirPath ...
 	CollectionsDirPath string
 )
 
+// RouteMap ...
 type RouteMap map[string]string
 
 func (route RouteMap) getSingleKey() string {
-	for key, _ := range route {
+	for key := range route {
 		return key
 	}
 	return ""
@@ -65,18 +66,18 @@ func getRoute(source string) (RouteMap, error) {
 }
 
 func addRoute(route RouteMap) error {
-	routeMap, err := readRouteMap()
+	RouteMap, err := readRouteMap()
 	if err != nil {
 		return err
 	}
 
-	if routeMap[route.getSingleKey()] != "" {
+	if RouteMap[route.getSingleKey()] != "" {
 		return errors.New("Route already exist for source")
 	}
 
-	routeMap[route.getSingleKey()] = route[route.getSingleKey()]
+	RouteMap[route.getSingleKey()] = route[route.getSingleKey()]
 
-	if err := writeRouteMapToFile(routeMap); err != nil {
+	if err := writeRouteMapToFile(RouteMap); err != nil {
 		return err
 	}
 
@@ -90,7 +91,7 @@ func generateRoute(source string) RouteMap {
 	}
 }
 
-func writeRouteMapToFile(routeMap RouteMap) error {
+func writeRouteMapToFile(RouteMap RouteMap) error {
 
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
@@ -110,7 +111,7 @@ func writeRouteMapToFile(routeMap RouteMap) error {
 		}
 	}()
 
-	bytes, err := json.MarshalIndent(routeMap, "", "\t")
+	bytes, err := json.MarshalIndent(RouteMap, "", "\t")
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err
@@ -142,7 +143,7 @@ func readRouteMap() (RouteMap, error) {
 	return routeMap, nil
 }
 
-// Interface
+// CreateStepManDirIfNeeded ...
 func CreateStepManDirIfNeeded() error {
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
@@ -154,45 +155,49 @@ func CreateStepManDirIfNeeded() error {
 	return nil
 }
 
+// SetupCurrentRouting ...
 func SetupCurrentRouting() error {
-	if CollectionUri == "" {
+	if CollectionURI == "" {
 		return errors.New("No collection path defined")
 	}
 
-	route := generateRoute(CollectionUri)
+	route := generateRoute(CollectionURI)
 	return addRoute(route)
 }
 
+// GetCurrentStepSpecPath ...
 func GetCurrentStepSpecPath() string {
-	if route, err := getRoute(CollectionUri); err != nil {
+	route, err := getRoute(CollectionURI)
+	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
-	} else {
-		return CollectionsDirPath + route.getSingleValue() + "/spec/spec.json"
 	}
+	return CollectionsDirPath + route.getSingleValue() + "/spec/spec.json"
 }
 
+// GetCurrentStepCahceDir ...
 func GetCurrentStepCahceDir() string {
-	if route, err := getRoute(CollectionUri); err != nil {
+	route, err := getRoute(CollectionURI)
+	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
-	} else {
-		return CollectionsDirPath + route.getSingleValue() + "/cache/"
 	}
+	return CollectionsDirPath + route.getSingleValue() + "/cache/"
 }
 
+// GetCurrentStepCollectionPath ...
 func GetCurrentStepCollectionPath() string {
-	if route, err := getRoute(CollectionUri); err != nil {
+	route, err := getRoute(CollectionURI)
+	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
-	} else {
-		return CollectionsDirPath + route.getSingleValue() + "/collection/"
 	}
+	return CollectionsDirPath + route.getSingleValue() + "/collection/"
 }
 
 // Life cycle
 func init() {
-	stepManDirPath = pathutil.UserHomeDir() + "/" + STEPMAN_DIRNAME + "/"
-	routingFilePath = stepManDirPath + ROUTING_FILENAME
-	CollectionsDirPath = stepManDirPath + COLLECTIONS_DIRNAME + "/"
+	stepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname + "/"
+	routingFilePath = stepManDirPath + RoutingFilename
+	CollectionsDirPath = stepManDirPath + CollectionsDirname + "/"
 }

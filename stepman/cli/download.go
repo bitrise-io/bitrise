@@ -9,13 +9,13 @@ import (
 func download(c *cli.Context) {
 	log.Info("[STEPMAN] - Download")
 
-	id := c.String(ID_KEY)
+	id := c.String(IDKey)
 	if id == "" {
 		log.Error("[STEPMAN] - Missing step id")
 		return
 	}
 
-	version := c.String(VERSION_KEY)
+	version := c.String(VersionKey)
 	if version == "" {
 		log.Error("[STEPMAN] - Missing step version")
 		return
@@ -29,7 +29,7 @@ func download(c *cli.Context) {
 
 	exist, step := stepCollection.GetStep(id, version)
 	if exist == false {
-		log.Error("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
+		log.Errorf("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
 		return
 	}
 

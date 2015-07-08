@@ -15,7 +15,7 @@ func setup(c *cli.Context) {
 	}
 
 	pth := stepman.GetCurrentStepCollectionPath()
-	if err := stepman.DoGitClone(stepman.CollectionUri, pth); err != nil {
+	if err := stepman.DoGitClone(stepman.CollectionURI, pth); err != nil {
 		log.Error("[STEPMAN] - Failed to get step spec path:", err)
 		return
 	}

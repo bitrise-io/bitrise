@@ -36,9 +36,9 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 		return models.StepModel{}, err
 	}
 
-	stepJSON.Id = id
+	stepJSON.ID = id
 	stepJSON.VersionTag = version
-	stepJSON.StepLibSource = CollectionUri
+	stepJSON.StepLibSource = CollectionURI
 
 	return stepJSON, nil
 }
@@ -91,7 +91,7 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	versions = append(versions, step)
 
 	newStepGroup.Versions = versions
-	newStepGroup.Id = step.Id
+	newStepGroup.ID = step.ID
 	return newStepGroup
 }
 
@@ -99,7 +99,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:        FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        OPEN_STEPLIB_URL,
+		SteplibSource:        CollectionURI,
 	}
 
 	stepHash := models.StepHash{}
@@ -223,5 +223,5 @@ func DownloadStep(step models.StepModel) error {
 
 // GetStepPath ...
 func GetStepPath(step models.StepModel) string {
-	return GetCurrentStepCahceDir() + step.Id + "/" + step.VersionTag + "/"
+	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
 }
