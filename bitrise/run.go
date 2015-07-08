@@ -6,21 +6,27 @@ import (
 	"strings"
 )
 
-// Stepman
+// --- Stepman
+
+// RunStepmanSetup ...
 func RunStepmanSetup() error {
 	return RunCommand("stepman", "setup")
 }
 
-func RunStepmanActivate(stepId, stepVersion, dir string) error {
-	args := []string{"activate", "-i", stepId, "-v", stepVersion, "-p", dir}
+// RunStepmanActivate ...
+func RunStepmanActivate(stepID, stepVersion, dir string) error {
+	args := []string{"activate", "-i", stepID, "-v", stepVersion, "-p", dir}
 	return RunCommand("stepman", args...)
 }
 
-// Envman
+// --- Envman
+
+// RunEnvmanInit ...
 func RunEnvmanInit() error {
 	return RunCommand("envman", "init")
 }
 
+// RunPipedEnvmanAdd ...
 func RunPipedEnvmanAdd(key, value string) error {
 	args := []string{"add", "-k", key}
 	envman := exec.Command("envman", args...)
@@ -30,18 +36,22 @@ func RunPipedEnvmanAdd(key, value string) error {
 	return envman.Run()
 }
 
+// RunEnvmanAdd ...
 func RunEnvmanAdd(key, value string) error {
 	args := []string{"add", "-k", key, "-v", value}
 	return RunCommand("envman", args...)
 }
 
+// RunEnvmanRun ...
 func RunEnvmanRun(cmd []string) error {
 	args := []string{"run"}
 	args = append(args, cmd...)
 	return RunCommand("envman", args...)
 }
 
-// Common
+// --- Common
+
+// RunCommand ...
 func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
