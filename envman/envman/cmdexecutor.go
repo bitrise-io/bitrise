@@ -3,6 +3,8 @@ package envman
 import (
 	"os"
 	"os/exec"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // CommandModel ...
@@ -45,6 +47,8 @@ func ExecuteCmd(commandToRun CommandModel) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = cmdEnvs
+
+	log.Info("Command to execute:", cmd)
 
 	return cmd.Run()
 }
