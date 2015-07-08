@@ -13,13 +13,13 @@ export PATH="$PATH:$GOPATH/bin"
 
 set -v
 
-# Install depenecies
+# Install dependencies
 go get -u github.com/tools/godep
 go install github.com/tools/godep
 godep restore
 
-# Intsall stepman
-godep go install
+# Intsall
+go install
 
 # Check for unhandled errors
 go get -u github.com/kisielk/errcheck
