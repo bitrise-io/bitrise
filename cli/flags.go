@@ -3,57 +3,62 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
-	CI_ENV_KEY      string = "CI"
-	TOOL_KEY        string = "tool"
-	CI_KEY          string = "ci"
-	QUIET_KEY       string = "quiet"
-	QUIET_KEY_SHORT string = "q"
+	// CIEnvKey ...
+	CIEnvKey string = "CI"
+	// CIKey ...
+	CIKey string = "ci"
+	cKey  string = "c"
 
-	LOG_LEVEL_KEY       string = "loglevel"
-	LOG_LEVEL_KEY_SHORT string = "l"
+	// LogLevelKey ...
+	LogLevelKey      string = "loglevel"
+	logLevelKeyShort string = "l"
 
-	ID_KEY       string = "id"
-	ID_KEY_SHORT string = "i"
+	// IDKey ...
+	IDKey      string = "id"
+	idKeyShort string = "i"
 
-	VERSION_KEY       string = "version"
-	VERSION_KEY_SHORT string = "v"
+	// VersionKey ...
+	VersionKey      string = "version"
+	versionKeyShort string = "v"
 
-	PATH_KEY       string = "path"
-	PATH_KEY_SHORT string = "p"
+	// PathKey ...
+	PathKey      string = "path"
+	pathKeyShort string = "p"
 
-	HELP_KEY       string = "help"
-	HELP_KEY_SHORT string = "h"
+	// HelpKey ...
+	HelpKey      string = "help"
+	helpKeyShort string = "h"
 )
 
 var (
 	// App flags
 	flLogLevel = cli.StringFlag{
-		Name:  LOG_LEVEL_KEY + ", " + LOG_LEVEL_KEY_SHORT,
+		Name:  LogLevelKey + ", " + logLevelKeyShort,
 		Value: "info",
 		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 	}
 	flTool = cli.BoolFlag{
-		Name:   TOOL_KEY + ", " + CI_KEY + ", " + QUIET_KEY + ", " + QUIET_KEY_SHORT,
+		Name:   CIKey + ", " + cKey,
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
-		EnvVar: CI_ENV_KEY,
+		EnvVar: CIEnvKey,
 	}
 	flags = []cli.Flag{
 		flLogLevel,
 		flTool,
 	}
 	// Command flags
-	flId = cli.StringFlag{
-		Name:  ID_KEY + ", " + ID_KEY_SHORT,
+	flID = cli.StringFlag{
+		Name:  IDKey + ", " + idKeyShort,
 		Value: "",
 		Usage: "Step id.",
 	}
 	flVersion = cli.StringFlag{
-		Name:  VERSION_KEY + ", " + VERSION_KEY_SHORT,
+		Name:  VersionKey + ", " + versionKeyShort,
 		Value: "",
 		Usage: "Step version.",
 	}
 	flPath = cli.StringFlag{
-		Name:  PATH_KEY + ", " + PATH_KEY_SHORT,
+		Name:  PathKey + ", " + pathKeyShort,
 		Value: "",
 		Usage: "Path where the step will copied.",
 	}
@@ -62,12 +67,12 @@ var (
 func init() {
 	// Override default help and version flags
 	cli.HelpFlag = cli.BoolFlag{
-		Name:  HELP_KEY + ", " + HELP_KEY_SHORT,
+		Name:  HelpKey + ", " + helpKeyShort,
 		Usage: "Show help.",
 	}
 
 	cli.VersionFlag = cli.BoolFlag{
-		Name:  VERSION_KEY + ", " + VERSION_KEY_SHORT,
+		Name:  VersionKey + ", " + versionKeyShort,
 		Usage: "Print the version.",
 	}
 }

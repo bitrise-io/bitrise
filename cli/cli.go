@@ -9,7 +9,7 @@ import (
 )
 
 func before(c *cli.Context) error {
-	levelString := c.String(LOG_LEVEL_KEY)
+	levelString := c.String(LogLevelKey)
 	if levelString == "" {
 		log.SetLevel(log.DebugLevel)
 	} else {

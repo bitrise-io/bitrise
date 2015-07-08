@@ -10,13 +10,14 @@ import (
 // --- Stepman
 
 // RunStepmanSetup ...
-func RunStepmanSetup() error {
-	return RunCommand("stepman", "setup")
+func RunStepmanSetup(collection string) error {
+	args := []string{"-d", "true", "-c", collection, "setup"}
+	return RunCommand("stepman", args...)
 }
 
 // RunStepmanActivate ...
-func RunStepmanActivate(stepID, stepVersion, dir string) error {
-	args := []string{"activate", "-i", stepID, "-v", stepVersion, "-p", dir}
+func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
+	args := []string{"-d", "true", "-c", collection, "activate", "-i", stepID, "-v", stepVersion, "-p", dir}
 	return RunCommand("stepman", args...)
 }
 
