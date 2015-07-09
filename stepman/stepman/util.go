@@ -3,6 +3,7 @@ package stepman
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -21,8 +22,9 @@ import (
 )
 
 const (
-	// FormatVersion ...
-	FormatVersion string = "0.9.0"
+	formatVersion       string = "0.9.0"
+	downloadLocationZIP string = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/steps/"
+	downloadLocationGIT string = "source/git"
 )
 
 // DebugMode ...
@@ -44,6 +46,57 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 	stepJSON.StepLibSource = CollectionURI
 
 	return stepJSON, nil
+}
+
+// ParseStepCollection ...
+func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return models.StepCollectionModel{}, err
+	}
+
+	var stepCollection models.StepCollectionModel
+	if err := yaml.Unmarshal(bytes, &stepCollection); err != nil {
+		return models.StepCollectionModel{}, err
+	}
+	return stepCollection, nil
+}
+
+// DownloadStep ...
+func DownloadStep(collection models.StepCollectionModel, step models.StepModel) error {
+	downloadLocations := collection.GetdownloadLocations(step)
+
+	success := false
+	for _, downloadLocationMap := range downloadLocations {
+		for key, value := range downloadLocationMap {
+			switch key {
+			case "zip":
+				if err := DownloadAndUnZIP(value, GetStepPath(step)); err != nil {
+					log.Error("Failed to download step.zip:", err)
+					break
+				}
+				success = true
+			case "git":
+				if err := DoGitUpdate(value, GetStepPath(step)); err != nil {
+					log.Error("Failed to clone step:", err)
+					break
+				}
+				success = true
+			default:
+				log.Error("[STEPMAN] - Invalid download location")
+			}
+		}
+	}
+
+	if !success {
+		return errors.New("Failed to download step")
+	}
+	return nil
+}
+
+// GetStepPath ...
+func GetStepPath(step models.StepModel) string {
+	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
 }
 
 // semantic version (X.Y.Z)
@@ -98,11 +151,12 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	return newStepGroup
 }
 
-func generateFormattedJSONForStepsSpec() ([]byte, error) {
+func generateFormattedJSONForStepsSpec(lastCollection models.StepCollectionModel) ([]byte, error) {
 	collection := models.StepCollectionModel{
-		FormatVersion:        FormatVersion,
+		FormatVersion:        lastCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        CollectionURI,
+		DownloadLocations:    lastCollection.DownloadLocations,
 	}
 
 	stepHash := models.StepHash{}
@@ -143,11 +197,11 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection.Steps = stepHash
 
 	var bytes []byte
-	if DebugMode == true {
-		bytes, err = json.MarshalIndent(collection, "", "\t")
-	} else {
-		bytes, err = json.Marshal(collection)
-	}
+	// if DebugMode == true {
+	bytes, err = json.MarshalIndent(collection, "", "\t")
+	// } else {
+	// 	bytes, err = json.Marshal(collection)
+	// }
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return []byte{}, err
@@ -157,7 +211,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile() error {
+func WriteStepSpecToFile(lastCollection models.StepCollectionModel) error {
 	pth := GetCurrentStepSpecPath()
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
@@ -187,7 +241,7 @@ func WriteStepSpecToFile() error {
 		}
 	}()
 
-	jsonContBytes, err := generateFormattedJSONForStepsSpec()
+	jsonContBytes, err := generateFormattedJSONForStepsSpec(lastCollection)
 	if err != nil {
 		return err
 	}
@@ -216,12 +270,8 @@ func ReadStepSpec() (models.StepCollectionModel, error) {
 	return stepCollection, err
 }
 
-// DownloadStep ...
-func DownloadStep(step models.StepModel) error {
-	primarySource := step.PrimaryDownloadLocation()
-	log.Info("Primary source:", primarySource)
-
-	destPath := GetStepPath(step)
+// DownloadAndUnZIP ...
+func DownloadAndUnZIP(url, pth string) error {
 	filePath := os.TempDir() + "step.zip"
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -234,7 +284,7 @@ func DownloadStep(step models.StepModel) error {
 		return os.Remove(filePath)
 	}()
 
-	response, err := http.Get(primarySource)
+	response, err := http.Get(url)
 	if err != nil {
 		return err
 	}
@@ -248,13 +298,10 @@ func DownloadStep(step models.StepModel) error {
 			return err
 		}
 
-		return unzip(filePath, destPath)
+		return unzip(filePath, pth)
 	}
-	log.Info("Failed to download step.zip:", response.StatusCode)
-
-	gitSource := step.Source["git"]
-	pth := GetStepPath(step)
-	return DoGitUpdate(gitSource, pth)
+	errorMsg := "Failed to download step.zip from: " + url
+	return errors.New(errorMsg)
 }
 
 func unzip(src, dest string) error {
@@ -313,9 +360,4 @@ func unzip(src, dest string) error {
 	}
 
 	return nil
-}
-
-// GetStepPath ...
-func GetStepPath(step models.StepModel) string {
-	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
 }

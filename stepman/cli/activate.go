@@ -32,13 +32,13 @@ func activate(c *cli.Context) {
 	}
 
 	// Get step
-	stepCollection, err := stepman.ReadStepSpec()
+	collection, err := stepman.ReadStepSpec()
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec")
 		return
 	}
 
-	exist, step := stepCollection.GetStep(id, version)
+	exist, step := collection.GetStep(id, version)
 	if exist == false {
 		log.Errorf("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
 		return
@@ -50,7 +50,7 @@ func activate(c *cli.Context) {
 		return
 	} else if exist == false {
 		log.Info("[STEPMAN] - Step dos not exist, download it")
-		if err := stepman.DownloadStep(step); err != nil {
+		if err := stepman.DownloadStep(collection, step); err != nil {
 			log.Error("[STEPMAN] - Failed to download step:", err)
 		}
 	}
