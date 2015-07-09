@@ -1,5 +1,7 @@
 package models
 
+const primaryDownloadLocationBaseURL string = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/steps"
+
 // -------------------
 // --- Models
 
@@ -56,6 +58,7 @@ type StepCollectionModel struct {
 	GeneratedAtTimeStamp int64    `json:"generated_at_timestamp"`
 	Steps                StepHash `json:"steps"`
 	SteplibSource        string   `json:"steplib_source"`
+	DownloadLocations    []string `json:"download_locations"`
 }
 
 // WorkFlowModel ...
@@ -79,4 +82,9 @@ func (stepCollection StepCollectionModel) GetStep(id, version string) (bool, Ste
 		}
 	}
 	return false, StepModel{}
+}
+
+// PrimaryDownloadLocation ...
+func (step StepModel) PrimaryDownloadLocation() string {
+	return primaryDownloadLocationBaseURL + "/" + step.ID + "/" + step.VersionTag + "/step.zip"
 }
