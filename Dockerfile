@@ -4,19 +4,24 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git mercurial golang
 
-RUN mkdir /go
-RUN mkdir /go/bin
-RUN mkdir -p /go/src/github.com/bitrise-io/bitrise-cli
-RUN export GOPATH=/go
+# From the official Golang Dockerfile
+#  https://github.com/docker-library/golang/blob/master/1.4/Dockerfile
+RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
 ENV GOPATH /go
-RUN export PATH=$PATH:$GOPATH/bin
-ENV PATH $PATH:$GOPATH/bin
+ENV PATH /go/bin:$PATH
 
-WORKDIR /go/src/github.com/bitrise-io/bitrise-cli
-
+RUN mkdir -p /go/src/github.com/bitrise-io/bitrise-cli
 COPY . /go/src/github.com/bitrise-io/bitrise-cli
 
-RUN go get ./...
+WORKDIR /go/src/github.com/bitrise-io/bitrise-cli
+# godep
+RUN go get -u github.com/tools/godep
+RUN go install github.com/tools/godep
+RUN godep restore
+# install
 RUN go install
+
+# include _temp/bin in the PATH
+ENV PATH /go/src/github.com/bitrise-io/bitrise-cli/_temp/bin:$PATH
 
 CMD bitrise-cli --version

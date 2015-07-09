@@ -2,7 +2,7 @@
 	"dep_locks": [
 		{
 			"url": "https://github.com/bitrise-io/go_dev_scripts.git",
-			"revision": "8a232ca0577cedad8031178c5bc9c559c2ee2cdd"
+			"revision": "da9d1875110f84d1aa64cfd6ab9a42f701adfda4"
 		}
 	]
 }
