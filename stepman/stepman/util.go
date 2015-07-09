@@ -277,19 +277,23 @@ func DownloadAndUnZIP(url, pth string) error {
 	if err != nil {
 		return err
 	}
-	defer func() error {
+	defer func() {
 		if err := file.Close(); err != nil {
-			return err
+			log.Fatal("Failed to close file:", err)
 		}
-		return os.Remove(filePath)
+		if err := os.Remove(filePath); err != nil {
+			log.Fatal("Failed to remove file:", err)
+		}
 	}()
 
 	response, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	defer func() error {
-		return response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.Fatal("Failed to close response body:", err)
+		}
 	}()
 
 	if response.StatusCode == http.StatusOK {
@@ -311,11 +315,13 @@ func unzip(src, dest string) error {
 	}
 	defer func() {
 		if err := r.Close(); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 
-	os.MkdirAll(dest, 0755)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return err
+	}
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extractAndWriteFile := func(f *zip.File) error {
@@ -325,14 +331,16 @@ func unzip(src, dest string) error {
 		}
 		defer func() {
 			if err := rc.Close(); err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}()
 
 		path := filepath.Join(dest, f.Name)
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.Mode())
+			if err := os.MkdirAll(path, f.Mode()); err != nil {
+				return err
+			}
 		} else {
 			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
