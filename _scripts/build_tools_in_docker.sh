@@ -10,12 +10,12 @@ CONFIG_tool_bin_path="${REPO_ROOT_DIR}/_temp/bin"
 echo " (i) CONFIG_tool_bin_path: ${CONFIG_tool_bin_path}"
 
 if [ ! -d "${ENVMAN_REPO_DIR_PATH}" ] ; then
-    echo "[!] ENVMAN_REPO_DIR_PATH not defined - required!"
+    echo "[!] ENVMAN_REPO_DIR_PATH not defined or not a dir - required!"
     exit 1
 fi
 
 if [ ! -d "${STEPMAN_REPO_DIR_PATH}" ] ; then
-    echo "[!] STEPMAN_REPO_DIR_PATH not defined - required!"
+    echo "[!] STEPMAN_REPO_DIR_PATH not defined or not a dir - required!"
     exit 1
 fi
 
