@@ -3,8 +3,12 @@
 set -e
 
 THIS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "${THIS_SCRIPT_DIR}/.."
+if [ -z "${REPO_ROOT_DIR}" ] ; then
+    export REPO_ROOT_DIR="${THIS_SCRIPT_DIR}/.."
+fi
 
+echo "=> Switching to REPO_ROOT_DIR: ${REPO_ROOT_DIR}"
+cd "${REPO_ROOT_DIR}"
 export PATH="$PATH:$GOPATH/bin"
 
 #
