@@ -4,7 +4,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
 // DoGitPull ...
