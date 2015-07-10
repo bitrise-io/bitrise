@@ -4,13 +4,13 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.2-20-gab7e46e",
-			"Rev": "ab7e46ea22bd379e660230844f96d20f1dabc21a"
+			"Comment": "v0.8.3-3-g07d998d",
+			"Rev": "07d998d174c4e2dc90e2f1989a20724220bca1ff"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-pathutil",
-			"Comment": "1.1.0-5-g4cf3c1e",
-			"Rev": "4cf3c1e53cf8195bd0a40ddec6a880b4c7774249"
+			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
+			"Comment": "1.1.0-8-g4138b83",
+			"Rev": "4138b83cf2e60179274b49e35f0bde353e062e76"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -18,8 +18,8 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-129-gb6d983e",
-			"Rev": "b6d983e02c46cb7b979ec35d11b8d0b0c9574a9e"
+			"Comment": "1.2.0-135-gf998261",
+			"Rev": "f9982619ccace7df963bb7f6d1de3a6f014ff709"
 		}
 	]
 }
