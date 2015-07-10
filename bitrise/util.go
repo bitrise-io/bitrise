@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/bitrise-io/bitrise-cli/models"
+	models "github.com/bitrise-io/bitrise-cli/models/models_0_9_0"
 )
 
 // ReadWorkflowJSON ...
