@@ -34,48 +34,30 @@ var (
 // RouteMap ...
 type RouteMap map[string]string
 
-func (route RouteMap) getSingleKey() string {
-	for key := range route {
-		return key
-	}
-	return ""
-}
-
-func (route RouteMap) getSingleValue() string {
-	for _, value := range route {
-		return value
-	}
-	return ""
-}
-
-func getRoute(source string) (RouteMap, error) {
+func getAlias(source string) (string, error) {
 	routeMap, err := readRouteMap()
 	if err != nil {
-		return RouteMap{}, err
+		return "", err
 	}
 
 	if routeMap[source] == "" {
-		return RouteMap{}, errors.New("No route found for source")
+		return "", errors.New("No route found for source")
 	}
 
-	r := RouteMap{
-		source: routeMap[source],
-	}
-
-	return r, nil
+	return routeMap[source], nil
 }
 
-func addRoute(route RouteMap) error {
+func addRoute(source, alias string) error {
 	RouteMap, err := readRouteMap()
 	if err != nil {
 		return err
 	}
 
-	if RouteMap[route.getSingleKey()] != "" {
+	if RouteMap[source] != "" {
 		return errors.New("Route already exist for source")
 	}
 
-	RouteMap[route.getSingleKey()] = route[route.getSingleKey()]
+	RouteMap[source] = alias
 
 	if err := writeRouteMapToFile(RouteMap); err != nil {
 		return err
@@ -84,15 +66,11 @@ func addRoute(route RouteMap) error {
 	return nil
 }
 
-func generateRoute(source string) RouteMap {
-	timeStamp := fmt.Sprintf("%v", time.Now().Unix())
-	return RouteMap{
-		source: timeStamp,
-	}
+func generateFolderAlias(source string) string {
+	return fmt.Sprintf("%v", time.Now().Unix())
 }
 
 func writeRouteMapToFile(RouteMap RouteMap) error {
-
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
 	} else if exist == false {
@@ -161,38 +139,38 @@ func SetupCurrentRouting() error {
 		return errors.New("No collection path defined")
 	}
 
-	route := generateRoute(CollectionURI)
-	return addRoute(route)
+	alias := generateFolderAlias(CollectionURI)
+	return addRoute(CollectionURI, alias)
 }
 
 // GetCurrentStepSpecPath ...
 func GetCurrentStepSpecPath() string {
-	route, err := getRoute(CollectionURI)
+	alias, err := getAlias(CollectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + route.getSingleValue() + "/spec/spec.json"
+	return CollectionsDirPath + alias + "/spec/spec.json"
 }
 
 // GetCurrentStepCacheDir ...
 func GetCurrentStepCacheDir() string {
-	route, err := getRoute(CollectionURI)
+	alias, err := getAlias(CollectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + route.getSingleValue() + "/cache/"
+	return CollectionsDirPath + alias + "/cache/"
 }
 
 // GetCurrentStepCollectionPath ...
 func GetCurrentStepCollectionPath() string {
-	route, err := getRoute(CollectionURI)
+	alias, err := getAlias(CollectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + route.getSingleValue() + "/collection/"
+	return CollectionsDirPath + alias + "/collection/"
 }
 
 // Life cycle
