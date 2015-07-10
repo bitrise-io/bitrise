@@ -1,3 +1,4 @@
 _temp/
 bitrise.json
 bitrise-cli
+bitrise.yml
