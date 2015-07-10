@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/codegangsta/cli"
 )
 
