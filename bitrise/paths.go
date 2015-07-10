@@ -1,5 +1,12 @@
 package bitrise
 
+import (
+	"path"
+	"path/filepath"
+
+	log "github.com/Sirupsen/logrus"
+)
+
 var (
 	// EnvstorePath ...
 	EnvstorePath string
@@ -15,6 +22,15 @@ const (
 )
 
 func init() {
-	EnvstorePath = "./envstore.yml"
-	FormattedOutputPath = "./formout.md"
+	envstorePath, err := filepath.Abs(path.Join("./", "envstore.yml"))
+	if err != nil {
+		log.Fatal("Failed to set envstore path:", err)
+	}
+	EnvstorePath = envstorePath
+
+	formoutPath, e := filepath.Abs(path.Join("./", "formout.md"))
+	if e != nil {
+		log.Fatal("Failed to set formatted output path:", e)
+	}
+	FormattedOutputPath = formoutPath
 }
