@@ -11,7 +11,3 @@ func doSetup(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Setup -- Coming soon!")
 	os.Exit(1)
 }
-
-func init() {
-
-}
