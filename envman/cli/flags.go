@@ -23,9 +23,17 @@ const (
 	ValueFileKey      string = "valuefile"
 	valueFileKeyShort string = "f"
 
-	// ExpandKey ...
-	ExpandKey      string = "expand"
-	expandKeyShort string = "e"
+	// NoExpandKey ...
+	NoExpandKey      string = "no-expand"
+	noExpandKeyShort string = "n"
+
+	// AppendKey ...
+	AppendKey      string = "append"
+	appendKeyShort string = "a"
+
+	// ToolKey ...
+	ToolKey      string = "tool"
+	toolKeyShort string = "t"
 
 	// HelpKey ...
 	HelpKey      string = "help"
@@ -49,9 +57,15 @@ var (
 		Value: "info",
 		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 	}
+	flTool = cli.BoolFlag{
+		Name:   ToolKey + ", " + toolKeyShort,
+		EnvVar: "ENVMAN_TOOLMODE",
+		Usage:  "If true, envman will NOT ask for user inputs.",
+	}
 	flags = []cli.Flag{
 		flPath,
 		flLogLevel,
+		flTool,
 	}
 
 	// Command flags
@@ -70,10 +84,13 @@ var (
 		Value: "",
 		Usage: "Path of a file which contains the environment variable's value to be stored.",
 	}
-	flIsExpand = cli.StringFlag{
-		Name:  ExpandKey + ", " + expandKeyShort,
-		Value: "true",
-		Usage: "If true, replaces ${var} or $var in the string according to the values of the current environment variables.",
+	flNoExpand = cli.BoolFlag{
+		Name:  NoExpandKey + ", " + noExpandKeyShort,
+		Usage: "If flag is set, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.",
+	}
+	flAppend = cli.BoolFlag{
+		Name:  AppendKey + ", " + appendKeyShort,
+		Usage: "If flag is set, new env will append to envstore, otherwise if env exist with specified key, will replaced.",
 	}
 )
 
