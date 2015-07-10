@@ -2,8 +2,6 @@ package models
 
 import log "github.com/Sirupsen/logrus"
 
-const downloadLocationZIPBaseURL = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/"
-
 // -------------------
 // --- Models
 
@@ -86,14 +84,14 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 	return false, StepModel{}
 }
 
-// GetdownloadLocations ...
-func (collection StepCollectionModel) GetdownloadLocations(step StepModel) []map[string]string {
+// GetDownloadLocations ...
+func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []map[string]string {
 	locations := []map[string]string{}
 	for _, downloadLocation := range collection.DownloadLocations {
-		for key := range downloadLocation {
+		for key, value := range downloadLocation {
 			switch key {
 			case "zip":
-				url := downloadLocationZIPBaseURL + "steps/" + step.ID + "/" + step.VersionTag + "/step.zip"
+				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
 				locations = append(locations, map[string]string{key: url})
 			case "git":
 				locations = append(locations, step.Source)
