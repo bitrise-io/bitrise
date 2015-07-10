@@ -1,4 +1,4 @@
-package models1
+package models
 
 // ----------------------------
 // --- Models
