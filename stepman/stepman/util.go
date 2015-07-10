@@ -348,8 +348,7 @@ func unzip(src, dest string) error {
 				}
 			}()
 
-			_, err = io.Copy(f, rc)
-			if err != nil {
+			if _, err = io.Copy(f, rc); err != nil {
 				return err
 			}
 		}
@@ -357,11 +356,9 @@ func unzip(src, dest string) error {
 	}
 
 	for _, f := range r.File {
-		err := extractAndWriteFile(f)
-		if err != nil {
+		if err := extractAndWriteFile(f); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
