@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// IsRelativePath ...
 func IsRelativePath(pth string) bool {
 	if strings.HasPrefix(pth, "./") {
 		return true
@@ -24,6 +25,7 @@ func IsRelativePath(pth string) bool {
 	return true
 }
 
+// IsPathExists ...
 func IsPathExists(pth string) (bool, error) {
 	if pth == "" {
 		return false, errors.New("No path provided")
@@ -38,7 +40,7 @@ func IsPathExists(pth string) (bool, error) {
 	return false, err
 }
 
-// Expands ENV vars and the ~ character
+// AbsPath expands ENV vars and the ~ character
 //	then call Go's Abs
 func AbsPath(pth string) (string, error) {
 	if pth == "" {
@@ -50,6 +52,12 @@ func AbsPath(pth string) (string, error) {
 	return filepath.Abs(os.ExpandEnv(pth))
 }
 
+// CurrentWorkingDirectoryAbsolutePath ...
+func CurrentWorkingDirectoryAbsolutePath() (string, error) {
+	return filepath.Abs("./")
+}
+
+// UserHomeDir ...
 func UserHomeDir() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
