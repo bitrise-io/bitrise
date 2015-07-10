@@ -1,14 +1,14 @@
 package models
 
-// ----------------------------
+// -------------------
 // --- Models
 
 // InputModel ...
 type InputModel struct {
-	MappedTo          string    `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	MappedTo          *string   `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title             *string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       *string   `json:"description,omitempty" yaml:"description,omitempty"`
-	Value             string    `json:"value,omitempty" yaml:"value,omitempty"`
+	Value             *string   `json:"value,omitempty" yaml:"value,omitempty"`
 	ValueOptions      *[]string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 	IsRequired        *bool     `json:"is_required,omitempty" yaml:"is_required,omitempty"`
 	IsExpand          *bool     `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
@@ -17,7 +17,7 @@ type InputModel struct {
 
 // OutputModel ...
 type OutputModel struct {
-	MappedTo    string  `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	MappedTo    *string `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Description *string `json:"description,omitempty" yaml:"description,omitempty"`
 }
@@ -52,25 +52,26 @@ type StepHash map[string]StepGroupModel
 
 // StepCollectionModel ...
 type StepCollectionModel struct {
-	FormatVersion        string   `json:"format_version"`
-	GeneratedAtTimeStamp int64    `json:"generated_at_timestamp"`
-	Steps                StepHash `json:"steps"`
-	SteplibSource        string   `json:"steplib_source"`
+	FormatVersion        string              `json:"format_version" yaml:"format_version"`
+	GeneratedAtTimeStamp int64               `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
+	Steps                StepHash            `json:"steps" yaml:"steps"`
+	SteplibSource        string              `json:"steplib_source" yaml:"steplib_source"`
+	DownloadLocations    []map[string]string `json:"download_locations" yaml:"download_locations"`
 }
 
-// WorkflowModel ...
-type WorkflowModel struct {
-	FormatVersion string       `json:"format_version"`
-	Environments  []InputModel `json:"environments"`
-	Steps         []StepModel  `json:"steps"`
+// WorkFlowModel ...
+type WorkFlowModel struct {
+	FormatVersion string      `json:"format_version"`
+	Environments  []string    `json:"environments"`
+	Steps         []StepModel `json:"steps"`
 }
 
-// ----------------------------
+// -------------------
 // --- Struct methods
 
 // GetStep ...
-func (stepCollection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
-	versions := stepCollection.Steps[id].Versions
+func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
+	versions := collection.Steps[id].Versions
 	if len(versions) > 0 {
 		for _, step := range versions {
 			if step.VersionTag == version {

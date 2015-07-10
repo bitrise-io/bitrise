@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
-	"github.com/bitrise-io/bitrise-cli/models"
+	models "github.com/bitrise-io/bitrise-cli/models/models_0_9_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/codegangsta/cli"
 )
