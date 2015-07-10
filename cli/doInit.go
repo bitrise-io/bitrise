@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -100,12 +99,4 @@ func generateYAML(v interface{}) ([]byte, error) {
 		return []byte{}, err
 	}
 	return bytes, nil
-}
-
-func generateNonFormattedJSON(v interface{}) ([]byte, error) {
-	jsonContBytes, err := json.Marshal(v)
-	if err != nil {
-		return []byte{}, err
-	}
-	return jsonContBytes, nil
 }
