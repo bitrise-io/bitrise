@@ -21,19 +21,19 @@ func download(c *cli.Context) {
 		return
 	}
 
-	stepCollection, err := stepman.ReadStepSpec()
+	collection, err := stepman.ReadStepSpec()
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to read step spec:", err)
 		return
 	}
 
-	exist, step := stepCollection.GetStep(id, version)
+	exist, step := collection.GetStep(id, version)
 	if exist == false {
 		log.Errorf("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
 		return
 	}
 
-	if err := stepman.DownloadStep(step); err != nil {
+	if err := stepman.DownloadStep(collection, step); err != nil {
 		log.Error("[STEPMAN] - Failed to download step")
 	}
 }

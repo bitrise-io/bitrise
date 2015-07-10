@@ -20,7 +20,14 @@ func setup(c *cli.Context) {
 		return
 	}
 
-	if err := stepman.WriteStepSpecToFile(); err != nil {
+	specPth := pth + "steplib.yml"
+	collection, err := stepman.ParseStepCollection(specPth)
+	if err != nil {
+		log.Error("[STEPMAN] - Failed to read step spec:", err)
+		return
+	}
+
+	if err := stepman.WriteStepSpecToFile(collection); err != nil {
 		log.Error("[STEPMAN] - Failed to save step spec:", err)
 		return
 	}

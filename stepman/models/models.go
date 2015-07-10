@@ -1,5 +1,9 @@
 package models
 
+import log "github.com/Sirupsen/logrus"
+
+const downloadLocationZIPBaseURL = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/"
+
 // -------------------
 // --- Models
 
@@ -52,10 +56,11 @@ type StepHash map[string]StepGroupModel
 
 // StepCollectionModel ...
 type StepCollectionModel struct {
-	FormatVersion        string   `json:"format_version"`
-	GeneratedAtTimeStamp int64    `json:"generated_at_timestamp"`
-	Steps                StepHash `json:"steps"`
-	SteplibSource        string   `json:"steplib_source"`
+	FormatVersion        string              `json:"format_version" yaml:"format_version"`
+	GeneratedAtTimeStamp int64               `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
+	Steps                StepHash            `json:"steps" yaml:"steps"`
+	SteplibSource        string              `json:"steplib_source" yaml:"steplib_source"`
+	DownloadLocations    []map[string]string `json:"download_locations" yaml:"download_locations"`
 }
 
 // WorkFlowModel ...
@@ -69,8 +74,8 @@ type WorkFlowModel struct {
 // --- Struct methods
 
 // GetStep ...
-func (stepCollection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
-	versions := stepCollection.Steps[id].Versions
+func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
+	versions := collection.Steps[id].Versions
 	if len(versions) > 0 {
 		for _, step := range versions {
 			if step.VersionTag == version {
@@ -79,4 +84,23 @@ func (stepCollection StepCollectionModel) GetStep(id, version string) (bool, Ste
 		}
 	}
 	return false, StepModel{}
+}
+
+// GetdownloadLocations ...
+func (collection StepCollectionModel) GetdownloadLocations(step StepModel) []map[string]string {
+	locations := []map[string]string{}
+	for _, downloadLocation := range collection.DownloadLocations {
+		for key := range downloadLocation {
+			switch key {
+			case "zip":
+				url := downloadLocationZIPBaseURL + "steps/" + step.ID + "/" + step.VersionTag + "/step.zip"
+				locations = append(locations, map[string]string{key: url})
+			case "git":
+				locations = append(locations, step.Source)
+			default:
+				log.Error("[STEPMAN] - Invalid download location")
+			}
+		}
+	}
+	return locations
 }

@@ -10,8 +10,8 @@ import (
 func update(c *cli.Context) {
 	log.Info("[STEPMAN] - Update")
 
-	stepCollectionPath := stepman.GetCurrentStepCollectionPath()
-	if exists, err := pathutil.IsPathExists(stepCollectionPath); err != nil {
+	pth := stepman.GetCurrentStepCollectionPath()
+	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		log.Error("[STEPMAN] - Failed to check path:", err)
 		return
 	} else if exists == false {
@@ -19,12 +19,19 @@ func update(c *cli.Context) {
 		return
 	}
 
-	if err := stepman.DoGitPull(stepCollectionPath); err != nil {
+	if err := stepman.DoGitPull(pth); err != nil {
 		log.Error("[STEPMAN] - Failed to do git update:", err)
 		return
 	}
 
-	if err := stepman.WriteStepSpecToFile(); err != nil {
+	specPth := pth + "steplib.yml"
+	collection, err := stepman.ParseStepCollection(specPth)
+	if err != nil {
+		log.Error("[STEPMAN] - Failed to read step spec:", err)
+		return
+	}
+
+	if err := stepman.WriteStepSpecToFile(collection); err != nil {
 		log.Error("[STEPMAN] - Failed to save step spec:", err)
 		return
 	}
