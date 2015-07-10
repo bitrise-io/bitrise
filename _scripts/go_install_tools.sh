@@ -6,9 +6,6 @@ THIS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export REPO_ROOT_DIR="${THIS_SCRIPT_DIR}/.."
 cd "${REPO_ROOT_DIR}"
 
-CONFIG_tool_bin_path="${REPO_ROOT_DIR}/_temp/bin"
-echo " (i) CONFIG_tool_bin_path: ${CONFIG_tool_bin_path}"
-
 if [ ! -d "${ENVMAN_REPO_DIR_PATH}" ] ; then
     echo "[!] ENVMAN_REPO_DIR_PATH not defined or not a dir - required!"
     exit 1
@@ -21,16 +18,18 @@ fi
 
 set -v
 
-mkdir -p "${CONFIG_tool_bin_path}"
-
-# build envman
+# go install envman
 cd "${ENVMAN_REPO_DIR_PATH}"
-docker-compose run --rm app go build -o bin-envman
-mv ./bin-envman "${CONFIG_tool_bin_path}/envman"
+godep restore
+go install
 
-# build stepman
+# go install stepman
 cd "${STEPMAN_REPO_DIR_PATH}"
-docker-compose run --rm app go build -o bin-stepman
-mv ./bin-stepman "${CONFIG_tool_bin_path}/stepman"
+godep restore
+go install
+
+# godep restore for bitrise-cli
+cd "${REPO_ROOT_DIR}"
+godep restore
 
 # => DONE [OK]
