@@ -175,8 +175,8 @@ func GetCurrentStepSpecPath() string {
 	return CollectionsDirPath + route.getSingleValue() + "/spec/spec.json"
 }
 
-// GetCurrentStepCahceDir ...
-func GetCurrentStepCahceDir() string {
+// GetCurrentStepCacheDir ...
+func GetCurrentStepCacheDir() string {
 	route, err := getRoute(CollectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)

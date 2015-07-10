@@ -21,12 +21,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	formatVersion       string = "0.9.0"
-	downloadLocationZIP string = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/steps/"
-	downloadLocationGIT string = "source/git"
-)
-
 // DebugMode ...
 var DebugMode bool
 
@@ -64,7 +58,7 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 
 // DownloadStep ...
 func DownloadStep(collection models.StepCollectionModel, step models.StepModel) error {
-	downloadLocations := collection.GetdownloadLocations(step)
+	downloadLocations := collection.GetDownloadLocations(step)
 
 	success := false
 	for _, downloadLocationMap := range downloadLocations {
@@ -95,8 +89,9 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 }
 
 // GetStepPath ...
+// cach is cool
 func GetStepPath(step models.StepModel) string {
-	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
+	return GetCurrentStepCacheDir() + step.ID + "/" + step.VersionTag + "/"
 }
 
 // semantic version (X.Y.Z)
@@ -151,12 +146,12 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	return newStepGroup
 }
 
-func generateFormattedJSONForStepsSpec(lastCollection models.StepCollectionModel) ([]byte, error) {
+func generateFormattedJSONForStepsSpec(templateCollection models.StepCollectionModel) ([]byte, error) {
 	collection := models.StepCollectionModel{
-		FormatVersion:        lastCollection.FormatVersion,
+		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        CollectionURI,
-		DownloadLocations:    lastCollection.DownloadLocations,
+		DownloadLocations:    templateCollection.DownloadLocations,
 	}
 
 	stepHash := models.StepHash{}
@@ -211,7 +206,7 @@ func generateFormattedJSONForStepsSpec(lastCollection models.StepCollectionModel
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile(lastCollection models.StepCollectionModel) error {
+func WriteStepSpecToFile(templateCollection models.StepCollectionModel) error {
 	pth := GetCurrentStepSpecPath()
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
@@ -241,7 +236,7 @@ func WriteStepSpecToFile(lastCollection models.StepCollectionModel) error {
 		}
 	}()
 
-	jsonContBytes, err := generateFormattedJSONForStepsSpec(lastCollection)
+	jsonContBytes, err := generateFormattedJSONForStepsSpec(templateCollection)
 	if err != nil {
 		return err
 	}
@@ -296,16 +291,17 @@ func DownloadAndUnZIP(url, pth string) error {
 		}
 	}()
 
-	if response.StatusCode == http.StatusOK {
-		log.Info("Successfully downloaded step.zip")
-		if _, err := io.Copy(file, response.Body); err != nil {
-			return err
-		}
-
-		return unzip(filePath, pth)
+	if response.StatusCode != http.StatusOK {
+		errorMsg := "Failed to download step.zip from: " + url
+		return errors.New(errorMsg)
 	}
-	errorMsg := "Failed to download step.zip from: " + url
-	return errors.New(errorMsg)
+
+	log.Info("Successfully downloaded step.zip")
+	if _, err := io.Copy(file, response.Body); err != nil {
+		return err
+	}
+
+	return unzip(filePath, pth)
 }
 
 func unzip(src, dest string) error {
@@ -348,7 +344,7 @@ func unzip(src, dest string) error {
 			}
 			defer func() {
 				if err := f.Close(); err != nil {
-					panic(err)
+					log.Fatal(err)
 				}
 			}()
 
