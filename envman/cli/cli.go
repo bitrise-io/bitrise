@@ -32,6 +32,13 @@ func envStorePathInCurrentDir() (string, error) {
 	return filepath.Abs(path.Join("./", defaultEnvStoreName))
 }
 
+func parseTool(c *cli.Context) bool {
+	if c.IsSet(ToolKey) {
+		return c.Bool(ToolKey)
+	}
+	return false
+}
+
 func before(c *cli.Context) error {
 	if level, err := log.ParseLevel(c.String("log-level")); err != nil {
 		log.Fatal(err.Error())
@@ -49,6 +56,12 @@ func before(c *cli.Context) error {
 			envman.CurrentEnvStoreFilePath = path
 		}
 	}
+
+	envman.ToolMode = parseTool(c)
+	if envman.ToolMode {
+		log.Info("[ENVMAN] - Tool mode on")
+	}
+
 	return nil
 }
 

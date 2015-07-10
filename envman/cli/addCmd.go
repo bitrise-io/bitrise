@@ -9,7 +9,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func addEnv(key string, value string, expand bool) error {
+func addEnv(key string, value string, expand, replace bool) error {
 	// Validate input
 	if key == "" {
 		return errors.New("Key is not specified, required.")
@@ -23,7 +23,7 @@ func addEnv(key string, value string, expand bool) error {
 
 	// Add or update envlist
 	newEnv := envman.EnvModel{Key: key, Value: value, IsExpand: expand}
-	if _, err = envman.UpdateOrAddToEnvlist(environments, newEnv); err != nil {
+	if _, err = envman.UpdateOrAddToEnvlist(environments, newEnv, replace); err != nil {
 		return err
 	}
 
@@ -40,13 +40,28 @@ func loadValueFromFile(pth string) (string, error) {
 	return str, nil
 }
 
+func parseExpand(c *cli.Context) bool {
+	if c.IsSet(NoExpandKey) {
+		return !c.Bool(NoExpandKey)
+	}
+	return true
+}
+
+func parseReplace(c *cli.Context) bool {
+	if c.IsSet(AppendKey) {
+		return !c.Bool(AppendKey)
+	}
+	return true
+}
+
 func addCmd(c *cli.Context) {
 	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
-	expand := envman.ParseBool(c.String(ExpandKey))
-	var value string
+	expand := parseExpand(c)
+	replace := parseReplace(c)
 
+	var value string
 	if stdinValue != "" {
 		value = stdinValue
 	} else if c.IsSet(ValueKey) {
@@ -59,7 +74,7 @@ func addCmd(c *cli.Context) {
 		}
 	}
 
-	if err := addEnv(key, value, expand); err != nil {
+	if err := addEnv(key, value, expand, replace); err != nil {
 		log.Fatal("[ENVMAN] - Failed to add env:", err)
 	}
 

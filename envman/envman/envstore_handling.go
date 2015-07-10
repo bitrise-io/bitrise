@@ -7,12 +7,16 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/goinp/goinp"
 	"gopkg.in/yaml.v2"
 )
 
 var (
 	// CurrentEnvStoreFilePath ...
 	CurrentEnvStoreFilePath string
+
+	// ToolMode ...
+	ToolMode bool
 )
 
 // InitAtPath ...
@@ -23,6 +27,9 @@ func InitAtPath(pth string) error {
 		if err := WriteEnvMapToFile(pth, []EnvModel{}); err != nil {
 			return err
 		}
+	} else {
+		errorMsg := "Path already exist: " + pth
+		return errors.New(errorMsg)
 	}
 	return nil
 }
@@ -50,8 +57,54 @@ func LoadEnvMapOrCreate() ([]EnvModel, error) {
 }
 
 // UpdateOrAddToEnvlist ...
-func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel) ([]EnvModel, error) {
-	newEnvs := append(envs, env)
+func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel, replace bool) ([]EnvModel, error) {
+	var newEnvs []EnvModel
+	exist := false
+
+	if replace {
+		match := 0
+		for _, eModel := range envs {
+			if eModel.Key == env.Key {
+				match = match + 1
+			}
+		}
+		if match > 1 {
+			if ToolMode {
+				errorMsg := "   More then one env exist with key '" + env.Key + "'"
+				return []EnvModel{}, errors.New(errorMsg)
+			}
+			msg := "   More then one env exist with key '" + env.Key + "' replace all/append ['replace/append'] ?"
+			answer, err := goinp.AskForString(msg)
+			if err != nil {
+				return []EnvModel{}, err
+			}
+
+			switch answer {
+			case "replace":
+				break
+			case "append":
+				replace = false
+				break
+			default:
+				errorMsg := "Failed to parse answer: '" + answer + "' use ['replace/append']!"
+				return []EnvModel{}, errors.New(errorMsg)
+			}
+		}
+	}
+
+	for _, eModel := range envs {
+		if replace && eModel.Key == env.Key {
+			exist = true
+			newEnvs = append(newEnvs, env)
+		} else {
+			newEnvs = append(newEnvs, eModel)
+		}
+	}
+
+	if exist == false {
+		newEnvs = append(newEnvs, env)
+	}
+
 	if err := WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvs); err != nil {
 		return []EnvModel{}, err
 	}

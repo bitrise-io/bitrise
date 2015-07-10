@@ -2,6 +2,7 @@ package envman
 
 import (
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -47,22 +48,30 @@ func (eMap EnvMapItem) convertToEnvModel() EnvModel {
 			eModel.Value = value
 		}
 	}
-	eModel.IsExpand = ParseBool(eMap[IsExpandKey])
+	eModel.IsExpand = ParseBool(eMap[IsExpandKey], true)
 	return eModel
 }
 
 // ParseBool ...
-func ParseBool(s string) bool {
+func ParseBool(s string, defaultValue bool) bool {
 	if s == "" {
-		return true
+		return defaultValue
 	}
 
-	expand, err := strconv.ParseBool(s)
-	if err != nil {
-		log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
+	lowercased := strings.ToLower(s)
+	if lowercased == "yes" || lowercased == "y" {
 		return true
 	}
-	return expand
+	if lowercased == "no" || lowercased == "n" {
+		return false
+	}
+
+	value, err := strconv.ParseBool(s)
+	if err != nil {
+		log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
+		return defaultValue
+	}
+	return value
 }
 
 // Convert envModel array to envsYMLModel
