@@ -1,8 +1,12 @@
 package stepman
 
 import (
+	"archive/zip"
 	"encoding/json"
+	"errors"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,8 +22,9 @@ import (
 )
 
 const (
-	// FormatVersion ...
-	FormatVersion string = "0.9.0"
+	formatVersion       string = "0.9.0"
+	downloadLocationZIP string = "https://bitrise-steps-spec-downloads-test.s3.amazonaws.com/steps/"
+	downloadLocationGIT string = "source/git"
 )
 
 // DebugMode ...
@@ -41,6 +46,57 @@ func parseStepYml(pth, id, version string) (models.StepModel, error) {
 	stepJSON.StepLibSource = CollectionURI
 
 	return stepJSON, nil
+}
+
+// ParseStepCollection ...
+func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return models.StepCollectionModel{}, err
+	}
+
+	var stepCollection models.StepCollectionModel
+	if err := yaml.Unmarshal(bytes, &stepCollection); err != nil {
+		return models.StepCollectionModel{}, err
+	}
+	return stepCollection, nil
+}
+
+// DownloadStep ...
+func DownloadStep(collection models.StepCollectionModel, step models.StepModel) error {
+	downloadLocations := collection.GetdownloadLocations(step)
+
+	success := false
+	for _, downloadLocationMap := range downloadLocations {
+		for key, value := range downloadLocationMap {
+			switch key {
+			case "zip":
+				if err := DownloadAndUnZIP(value, GetStepPath(step)); err != nil {
+					log.Error("Failed to download step.zip:", err)
+					break
+				}
+				success = true
+			case "git":
+				if err := DoGitUpdate(value, GetStepPath(step)); err != nil {
+					log.Error("Failed to clone step:", err)
+					break
+				}
+				success = true
+			default:
+				log.Error("[STEPMAN] - Invalid download location")
+			}
+		}
+	}
+
+	if !success {
+		return errors.New("Failed to download step")
+	}
+	return nil
+}
+
+// GetStepPath ...
+func GetStepPath(step models.StepModel) string {
+	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
 }
 
 // semantic version (X.Y.Z)
@@ -95,11 +151,12 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	return newStepGroup
 }
 
-func generateFormattedJSONForStepsSpec() ([]byte, error) {
+func generateFormattedJSONForStepsSpec(lastCollection models.StepCollectionModel) ([]byte, error) {
 	collection := models.StepCollectionModel{
-		FormatVersion:        FormatVersion,
+		FormatVersion:        lastCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        CollectionURI,
+		DownloadLocations:    lastCollection.DownloadLocations,
 	}
 
 	stepHash := models.StepHash{}
@@ -140,11 +197,11 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 	collection.Steps = stepHash
 
 	var bytes []byte
-	if DebugMode == true {
-		bytes, err = json.MarshalIndent(collection, "", "\t")
-	} else {
-		bytes, err = json.Marshal(collection)
-	}
+	// if DebugMode == true {
+	bytes, err = json.MarshalIndent(collection, "", "\t")
+	// } else {
+	// 	bytes, err = json.Marshal(collection)
+	// }
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return []byte{}, err
@@ -154,7 +211,7 @@ func generateFormattedJSONForStepsSpec() ([]byte, error) {
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile() error {
+func WriteStepSpecToFile(lastCollection models.StepCollectionModel) error {
 	pth := GetCurrentStepSpecPath()
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
@@ -184,7 +241,7 @@ func WriteStepSpecToFile() error {
 		}
 	}()
 
-	jsonContBytes, err := generateFormattedJSONForStepsSpec()
+	jsonContBytes, err := generateFormattedJSONForStepsSpec(lastCollection)
 	if err != nil {
 		return err
 	}
@@ -213,15 +270,102 @@ func ReadStepSpec() (models.StepCollectionModel, error) {
 	return stepCollection, err
 }
 
-// DownloadStep ...
-func DownloadStep(step models.StepModel) error {
-	gitSource := step.Source["git"]
-	pth := GetStepPath(step)
+// DownloadAndUnZIP ...
+func DownloadAndUnZIP(url, pth string) error {
+	filePath := os.TempDir() + "step.zip"
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Fatal("Failed to close file:", err)
+		}
+		if err := os.Remove(filePath); err != nil {
+			log.Fatal("Failed to remove file:", err)
+		}
+	}()
 
-	return DoGitUpdate(gitSource, pth)
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.Fatal("Failed to close response body:", err)
+		}
+	}()
+
+	if response.StatusCode == http.StatusOK {
+		log.Info("Successfully downloaded step.zip")
+		if _, err := io.Copy(file, response.Body); err != nil {
+			return err
+		}
+
+		return unzip(filePath, pth)
+	}
+	errorMsg := "Failed to download step.zip from: " + url
+	return errors.New(errorMsg)
 }
 
-// GetStepPath ...
-func GetStepPath(step models.StepModel) string {
-	return GetCurrentStepCahceDir() + step.ID + "/" + step.VersionTag + "/"
+func unzip(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := r.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return err
+	}
+
+	// Closure to address file descriptors issue with all the deferred .Close() methods
+	extractAndWriteFile := func(f *zip.File) error {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := rc.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		path := filepath.Join(dest, f.Name)
+
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(path, f.Mode()); err != nil {
+				return err
+			}
+		} else {
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for _, f := range r.File {
+		err := extractAndWriteFile(f)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
