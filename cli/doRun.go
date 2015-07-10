@@ -93,11 +93,11 @@ func doRun(c *cli.Context) {
 	}
 
 	// Envman setup
-	if err := os.Setenv(EnvstorePathEnvKey, EnvstorePath); err != nil {
+	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.EnvstorePath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
-	if err := os.Setenv(FormattedOutputPathEnvKey, FormattedOutputPath); err != nil {
+	if err := os.Setenv(bitrise.FormattedOutputPathEnvKey, bitrise.FormattedOutputPath); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
