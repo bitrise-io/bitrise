@@ -14,17 +14,25 @@ import (
 func doInit(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Init -- Work-in-progress!")
 
-	projectName, err := goinp.AskForString("Enter the PROJECT_NAME")
-	if err != nil {
+	projectSettingsEnvs := []models.InputModel{}
+
+	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
+	} else {
+		projectSettingsEnvs = append(projectSettingsEnvs,
+			models.InputModel{MappedTo: "BITRISE_PROJECT_TITLE", Value: val})
+	}
+	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
+		log.Fatalln(err)
+	} else {
+		projectSettingsEnvs = append(projectSettingsEnvs,
+			models.InputModel{MappedTo: "BITRISE_DEV_BRANCH", Value: val})
 	}
 
 	workflowModel := models.WorkflowModel{
-		FormatVersion: "0.9.0",
-		Environments: []models.InputModel{
-			models.InputModel{MappedTo: "PROJECT_NAME", Value: projectName},
-		},
-		Steps: []models.StepModel{},
+		FormatVersion: "0.9.0", // TODO: move this into a project config file!
+		Environments:  projectSettingsEnvs,
+		Steps:         []models.StepModel{},
 	}
 
 	if err := SaveToFile("./bitrise.json", workflowModel); err != nil {
