@@ -29,20 +29,14 @@ func RunEnvmanInit() error {
 	return RunCommand("envman", "init")
 }
 
-// RunPipedEnvmanAdd ...
-func RunPipedEnvmanAdd(key, value string) error {
+// RunEnvmanAdd ...
+func RunEnvmanAdd(key, value string) error {
 	args := []string{"add", "-k", key}
 	envman := exec.Command("envman", args...)
 	envman.Stdin = strings.NewReader(value)
 	envman.Stdout = os.Stdout
 	envman.Stderr = os.Stderr
 	return envman.Run()
-}
-
-// RunEnvmanAdd ...
-func RunEnvmanAdd(key, value string) error {
-	args := []string{"add", "-k", key, "-v", value}
-	return RunCommand("envman", args...)
 }
 
 // RunEnvmanRun ...
@@ -64,11 +58,7 @@ func RunEnvmanRunInDir(dir string, cmd []string) error {
 
 // RunCommand ...
 func RunCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return RunCommandInDir("", name, args...)
 }
 
 // RunCommandInDir ...
@@ -77,6 +67,8 @@ func RunCommandInDir(dir, name string, args ...string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Dir = dir
+	if dir != "" {
+		cmd.Dir = dir
+	}
 	return cmd.Run()
 }
