@@ -1,5 +1,7 @@
 package models
 
+import "errors"
+
 // -------------------
 // --- Models
 
@@ -27,9 +29,9 @@ type OutputModel struct {
 
 // StepModel ...
 type StepModel struct {
-	ID                  string                 `json:"id"`
-	StepLibSource       string                 `json:"steplib_source"`
-	VersionTag          string                 `json:"version_tag"`
+	ID                  string                 `json:"id" yaml:"id"`
+	SteplibSource       string                 `json:"steplib_source" yaml:"steplib_source"`
+	VersionTag          string                 `json:"version_tag" yaml:"version_tag"`
 	Name                string                 `json:"name" yaml:"name"`
 	Description         *string                `json:"description,omitempty" yaml:"description,omitempty"`
 	Website             string                 `json:"website" yaml:"website"`
@@ -38,7 +40,7 @@ type StepModel struct {
 	HostOsTags          *[]string              `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     *[]string              `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            *[]string              `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser *bool                  `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	IsRequiresAdminUser bool                   `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
 	Inputs              []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs             []*OutputModel         `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
@@ -53,6 +55,9 @@ type StepGroupModel struct {
 // StepHash ...
 type StepHash map[string]StepGroupModel
 
+// StepListItem ...
+type StepListItem map[string]StepModel
+
 // StepCollectionModel ...
 type StepCollectionModel struct {
 	FormatVersion        string              `json:"format_version" yaml:"format_version"`
@@ -64,8 +69,8 @@ type StepCollectionModel struct {
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	Environments []string    `json:"environments"`
-	Steps        []StepModel `json:"steps"`
+	Environments []EnvironmentItemModel `json:"environments"`
+	Steps        []StepListItem         `json:"steps"`
 }
 
 // AppModel ...
@@ -94,4 +99,25 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 		}
 	}
 	return false, StepModel{}
+}
+
+// GetKeyValue ...
+func (envItem EnvironmentItemModel) GetKeyValue() (string, string, error) {
+	for key, value := range envItem {
+		if key != "is_expand" {
+			return key, value, nil
+		}
+	}
+	return "", "", errors.New("No key value found.")
+}
+
+// GetStepIDStepDataPair ...
+func (stepListItm StepListItem) GetStepIDStepDataPair() (string, StepModel, error) {
+	if len(stepListItm) > 1 {
+		return "", StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
+	}
+	for key, value := range stepListItm {
+		return key, value, nil
+	}
+	return "", StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
