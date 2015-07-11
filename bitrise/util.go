@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
-	"github.com/viktorbenei/depman/pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
 // ReadWorkflowJSON ...
