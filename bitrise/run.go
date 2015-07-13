@@ -26,7 +26,8 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
 
 // RunEnvmanInit ...
 func RunEnvmanInit() error {
-	return RunCommand("envman", "init")
+	args := []string{"init", "-c"}
+	return RunCommand("envman", args...)
 }
 
 // RunEnvmanAdd ...
