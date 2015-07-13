@@ -4,7 +4,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -35,23 +35,21 @@ func activate(c *cli.Context) {
 	collection, err := stepman.ReadStepSpec()
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec")
-		return
 	}
 
 	exist, step := collection.GetStep(id, version)
 	if exist == false {
-		log.Errorf("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
-		return
+		log.Fatalf("[STEPMAN] - Step: %s - (%s) dos not exist", id, version)
 	}
 
 	pth := stepman.GetStepPath(step)
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		log.Error("[STEPMAN] - Failed to check path:", err)
+		log.Fatal("[STEPMAN] - Failed to check path:", err)
 		return
 	} else if exist == false {
 		log.Info("[STEPMAN] - Step dos not exist, download it")
 		if err := stepman.DownloadStep(collection, step); err != nil {
-			log.Error("[STEPMAN] - Failed to download step:", err)
+			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}
 
@@ -60,16 +58,14 @@ func activate(c *cli.Context) {
 	destFolder := path
 
 	if exist, err = pathutil.IsPathExists(destFolder); err != nil {
-		log.Error("[STEPMAN] - Failed to check path:", err)
-		return
+		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if exist == false {
 		if err := os.MkdirAll(destFolder, 0777); err != nil {
-			log.Error("[STEPMAN] - Failed to create path:", err)
-			return
+			log.Fatal("[STEPMAN] - Failed to create path:", err)
 		}
 	}
 
 	if err = stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...); err != nil {
-		log.Error("[STEPMAN] - Failed to copy step:", err)
+		log.Fatal("[STEPMAN] - Failed to copy step:", err)
 	}
 }

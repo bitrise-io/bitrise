@@ -16,7 +16,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
 )
@@ -71,7 +71,7 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 				}
 				success = true
 			case "git":
-				if err := DoGitUpdate(value, GetStepPath(step)); err != nil {
+				if err := DoGitClone(value, GetStepPath(step)); err != nil {
 					log.Error("Failed to clone step:", err)
 					break
 				}
