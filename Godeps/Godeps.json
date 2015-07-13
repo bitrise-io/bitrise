@@ -14,7 +14,7 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
-			"Rev": "ad0c973226afeabc918d20bfecc7a041a0f19d27"
+			"Rev": "28962e1f8282be10be34b01b0f7efe614c8656eb"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",

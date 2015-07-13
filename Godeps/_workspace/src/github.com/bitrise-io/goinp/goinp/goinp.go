@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+// AskForStringFromReader ...
 func AskForStringFromReader(messageToPrint string, inputReader io.Reader) (string, error) {
 	scanner := bufio.NewScanner(inputReader)
 	fmt.Printf("%s : ", messageToPrint)
@@ -20,10 +21,12 @@ func AskForStringFromReader(messageToPrint string, inputReader io.Reader) (strin
 	return "", errors.New("Failed to get input - scanner failed.")
 }
 
+// AskForString ...
 func AskForString(messageToPrint string) (string, error) {
 	return AskForStringFromReader(messageToPrint, os.Stdin)
 }
 
+// AskForIntFromReader ...
 func AskForIntFromReader(messageToPrint string, inputReader io.Reader) (int64, error) {
 	userInputStr, err := AskForStringFromReader(messageToPrint, inputReader)
 	if err != nil {
@@ -32,15 +35,17 @@ func AskForIntFromReader(messageToPrint string, inputReader io.Reader) (int64, e
 	return strconv.ParseInt(userInputStr, 10, 64)
 }
 
+// AskForInt ...
 func AskForInt(messageToPrint string) (int64, error) {
 	return AskForIntFromReader(messageToPrint, os.Stdin)
 }
 
-func AskForBoolFromReader(messageToPrint string, inputReader io.Reader) (bool, error) {
-	userInputStr, err := AskForStringFromReader(messageToPrint, inputReader)
-	if err != nil {
-		return false, err
+// ParseBool ...
+func ParseBool(userInputStr string) (bool, error) {
+	if userInputStr == "" {
+		return false, errors.New("No string to parse")
 	}
+
 	lowercased := strings.ToLower(userInputStr)
 	if lowercased == "yes" || lowercased == "y" {
 		return true, nil
@@ -51,6 +56,17 @@ func AskForBoolFromReader(messageToPrint string, inputReader io.Reader) (bool, e
 	return strconv.ParseBool(lowercased)
 }
 
+// AskForBoolFromReader ...
+func AskForBoolFromReader(messageToPrint string, inputReader io.Reader) (bool, error) {
+	userInputStr, err := AskForStringFromReader(messageToPrint, inputReader)
+	if err != nil {
+		return false, err
+	}
+
+	return ParseBool(userInputStr)
+}
+
+// AskForBool ...
 func AskForBool(messageToPrint string) (bool, error) {
 	return AskForBoolFromReader(messageToPrint, os.Stdin)
 }
