@@ -8,7 +8,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
 const (
@@ -33,6 +33,19 @@ var (
 
 // RouteMap ...
 type RouteMap map[string]string
+
+// RootExistForCurrentCollection ...
+func RootExistForCurrentCollection() (bool, error) {
+	RouteMap, err := readRouteMap()
+	if err != nil {
+		return false, err
+	}
+
+	if RouteMap[CollectionURI] != "" {
+		return true, nil
+	}
+	return false, nil
+}
 
 func getAlias(source string) (string, error) {
 	routeMap, err := readRouteMap()

@@ -9,6 +9,12 @@ import (
 func setup(c *cli.Context) {
 	log.Info("[STEPMAN] - Setup")
 
+	if exist, err := stepman.RootExistForCurrentCollection(); err != nil {
+		log.Error("[STEPMAN] - Failed to check routing:", err)
+	} else if exist {
+		return
+	}
+
 	if err := stepman.SetupCurrentRouting(); err != nil {
 		log.Error("[STEPMAN] - Failed to setup routing:", err)
 		return
