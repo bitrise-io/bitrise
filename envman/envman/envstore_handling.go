@@ -19,6 +19,18 @@ var (
 	ToolMode bool
 )
 
+// ClearPathIfExist ...
+func ClearPathIfExist(pth string) error {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if exist {
+		if err := os.RemoveAll(pth); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // InitAtPath ...
 func InitAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {

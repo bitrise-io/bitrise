@@ -35,6 +35,10 @@ const (
 	ToolKey      string = "tool"
 	toolKeyShort string = "t"
 
+	// ClearKey ....
+	ClearKey      string = "clear"
+	clearKeyShort string = "c"
+
 	// HelpKey ...
 	HelpKey      string = "help"
 	helpKeyShort string = "h"
@@ -91,6 +95,10 @@ var (
 	flAppend = cli.BoolFlag{
 		Name:  AppendKey + ", " + appendKeyShort,
 		Usage: "If flag is set, new env will append to envstore, otherwise if env exist with specified key, will replaced.",
+	}
+	flClear = cli.BoolFlag{
+		Name:  ClearKey + ", " + clearKeyShort,
+		Usage: "If flag is set, 'envman init' removes envstore if exist.",
 	}
 )
 
