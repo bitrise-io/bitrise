@@ -82,7 +82,6 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 				}
 			default:
 				log.Error("[STEPMAN] - Invalid download location")
-				break
 			}
 		}
 	}
