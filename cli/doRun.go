@@ -50,7 +50,8 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 			return err
 		}
 		if envValue != "" {
-			if err := bitrise.RunEnvmanAdd(envKey, envValue); err != nil {
+			expand := bitrise.ParseBool(env["is_expand"], true)
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, !expand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -106,7 +107,8 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 			return err
 		}
 		if envValue != "" {
-			if err := bitrise.RunEnvmanAdd(envKey, envValue); err != nil {
+			expand := bitrise.ParseBool(input["is_expand"], true)
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -138,7 +140,7 @@ func doRun(c *cli.Context) {
 		if exist, err := pathutil.IsPathExists("./" + defaultBitriseConfigFileName); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
-			log.Fatalln("[BITRISE_CLI] - No workflow json found")
+			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
 		}
 		bitriseConfigPath = "./" + defaultBitriseConfigFileName
 	}

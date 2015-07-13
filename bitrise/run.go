@@ -31,8 +31,12 @@ func RunEnvmanInit() error {
 }
 
 // RunEnvmanAdd ...
-func RunEnvmanAdd(key, value string) error {
+func RunEnvmanAdd(key, value string, noExpand bool) error {
 	args := []string{"add", "-k", key}
+	if noExpand {
+		args = []string{"add", "-k", key, "-n"}
+	}
+
 	envman := exec.Command("envman", args...)
 	envman.Stdin = strings.NewReader(value)
 	envman.Stdout = os.Stdout
