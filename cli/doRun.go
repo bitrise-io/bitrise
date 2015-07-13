@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
 )
 
@@ -50,7 +51,16 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 			return err
 		}
 		if envValue != "" {
-			if err := bitrise.RunEnvmanAdd(envKey, envValue); err != nil {
+			expand := true
+			if env["is_expand"] != "" {
+				boolValue, err := goinp.ParseBool(env["is_expand"])
+				if err != nil {
+					log.Error("Failed to parse bool:", err)
+					return err
+				}
+				expand = boolValue
+			}
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -74,7 +84,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Running Step: %#v", step)
+		log.Infof("[BITRISE_CLI] - Running Step: %#v", step)
 		stepDir := "./steps/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
@@ -106,7 +116,16 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 			return err
 		}
 		if envValue != "" {
-			if err := bitrise.RunEnvmanAdd(envKey, envValue); err != nil {
+			expand := true
+			if input["is_expand"] != "" {
+				boolValue, err := goinp.ParseBool(input["is_expand"])
+				if err != nil {
+					log.Error("Failed to parse bool:", err)
+					return err
+				}
+				expand = boolValue
+			}
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -138,7 +157,7 @@ func doRun(c *cli.Context) {
 		if exist, err := pathutil.IsPathExists("./" + defaultBitriseConfigFileName); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
-			log.Fatalln("[BITRISE_CLI] - No workflow json found")
+			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
 		}
 		bitriseConfigPath = "./" + defaultBitriseConfigFileName
 	}
@@ -169,9 +188,9 @@ func doRun(c *cli.Context) {
 	}
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
-		log.Fatalln("Specified Workflow (" + workflowToRunName + ") does not exist!")
+		log.Fatalln("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!")
 	}
-	log.Infoln("Running Workflow:", workflowToRunName)
+	log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRunName)
 
 	// App level environment
 	if err := exportEnvironmentsList(bitriseConfig.App.Environments); err != nil {
