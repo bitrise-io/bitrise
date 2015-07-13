@@ -1,5 +1,7 @@
 # Bitrise CLI
 
+[![Join the chat at https://gitter.im/bitrise-io/bitrise-cli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bitrise-io/bitrise-cli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 **Technology Preview:** this repository is still under active development, breaking changes are expected and feedback is greatly appreciated!
 
 Bitrise (offline) CLI
