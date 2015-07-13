@@ -44,6 +44,11 @@ func doInit(c *cli.Context) {
 			models.EnvironmentItemModel{"BITRISE_DEV_BRANCH": val, "is_expand": "no"})
 	}
 
+	// TODO:
+	//  generate a couple of base steps
+	//  * timestamp gen
+	//  * bash script
+
 	bitriseConf := models.BitriseConfigModel{
 		FormatVersion: "1.0.0", // TODO: move this into a project config file!
 		App: models.AppModel{
