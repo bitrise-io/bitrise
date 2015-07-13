@@ -60,13 +60,21 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 func DownloadStep(collection models.StepCollectionModel, step models.StepModel) error {
 	downloadLocations := collection.GetDownloadLocations(step)
 
+	stepPth := GetStepPath(step)
+	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
+		return err
+	} else if exist {
+		log.Info("[STEPMAN] - Step already downloaded")
+		return nil
+	}
+
 	success := false
 	for _, downloadLocationMap := range downloadLocations {
 		for key, value := range downloadLocationMap {
 			switch key {
 			case "zip":
 				log.Info("[STEPMAN] - Downloading step from:", value)
-				if err := DownloadAndUnZIP(value, GetStepPath(step)); err != nil {
+				if err := DownloadAndUnZIP(value, stepPth); err != nil {
 					log.Error("[STEPMAN] - Failed to download step.zip:", err)
 				} else {
 					success = true
@@ -74,7 +82,7 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 				}
 			case "git":
 				log.Info("[STEPMAN] - Git clone step from:", value)
-				if err := DoGitClone(value, GetStepPath(step)); err != nil {
+				if err := DoGitClone(value, stepPth); err != nil {
 					log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", value, err)
 				} else {
 					success = true

@@ -15,20 +15,17 @@ func activate(c *cli.Context) {
 	// Input validation
 	id := c.String(IDKey)
 	if id == "" {
-		log.Error("[STEPMAN] - Missing step id")
-		return
+		log.Fatal("[STEPMAN] - Missing step id")
 	}
 
 	version := c.String(VersionKey)
 	if version == "" {
-		log.Error("[STEPMAN] - Missing step version")
-		return
+		log.Fatal("[STEPMAN] - Missing step version")
 	}
 
 	path := c.String(PathKey)
 	if path == "" {
-		log.Error("[STEPMAN] - Missing destination path")
-		return
+		log.Fatal("[STEPMAN] - Missing destination path")
 	}
 
 	// Get step
@@ -45,7 +42,6 @@ func activate(c *cli.Context) {
 	pth := stepman.GetStepPath(step)
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
-		return
 	} else if exist == false {
 		log.Info("[STEPMAN] - Step dos not exist, download it")
 		if err := stepman.DownloadStep(collection, step); err != nil {
