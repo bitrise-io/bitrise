@@ -65,19 +65,24 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 		for key, value := range downloadLocationMap {
 			switch key {
 			case "zip":
+				log.Info("[STEPMAN] - Downloading step from:", value)
 				if err := DownloadAndUnZIP(value, GetStepPath(step)); err != nil {
-					log.Error("Failed to download step.zip:", err)
-					break
+					log.Error("[STEPMAN] - Failed to download step.zip:", err)
+				} else {
+					success = true
+					return nil
 				}
-				success = true
 			case "git":
+				log.Info("[STEPMAN] - Git clone step from:", value)
 				if err := DoGitClone(value, GetStepPath(step)); err != nil {
-					log.Error("Failed to clone step:", err)
-					break
+					log.Error("[STEPMAN] - Failed to clone step:", err)
+				} else {
+					success = true
+					return nil
 				}
-				success = true
 			default:
 				log.Error("[STEPMAN] - Invalid download location")
+				break
 			}
 		}
 	}
