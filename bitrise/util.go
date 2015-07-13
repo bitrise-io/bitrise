@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
@@ -57,26 +54,4 @@ func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	}
 
 	return bitriseConfig, nil
-}
-
-// ParseBool ...
-func ParseBool(s string, defaultValue bool) bool {
-	if s == "" {
-		return defaultValue
-	}
-
-	lowercased := strings.ToLower(s)
-	if lowercased == "yes" || lowercased == "y" {
-		return true
-	}
-	if lowercased == "no" || lowercased == "n" {
-		return false
-	}
-
-	value, err := strconv.ParseBool(s)
-	if err != nil {
-		log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
-		return defaultValue
-	}
-	return value
 }

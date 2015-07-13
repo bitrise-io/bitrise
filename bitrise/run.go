@@ -11,13 +11,13 @@ import (
 
 // RunStepmanSetup ...
 func RunStepmanSetup(collection string) error {
-	args := []string{"-d", "true", "-c", collection, "setup"}
+	args := []string{"--debug", "--collection", collection, "setup"}
 	return RunCommand("stepman", args...)
 }
 
 // RunStepmanActivate ...
 func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
-	args := []string{"-d", "true", "-c", collection, "activate", "-i", stepID, "-v", stepVersion, "-p", dir}
+	args := []string{"--debug", "--collection", collection, "activate", "--id", stepID, "--version", stepVersion, "--path", dir}
 	return RunCommand("stepman", args...)
 }
 
@@ -26,15 +26,15 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
 
 // RunEnvmanInit ...
 func RunEnvmanInit() error {
-	args := []string{"init", "-c"}
+	args := []string{"init", "--clear"}
 	return RunCommand("envman", args...)
 }
 
 // RunEnvmanAdd ...
-func RunEnvmanAdd(key, value string, noExpand bool) error {
-	args := []string{"add", "-k", key}
-	if noExpand {
-		args = []string{"add", "-k", key, "-n"}
+func RunEnvmanAdd(key, value string, expand bool) error {
+	args := []string{"add", "--key", key}
+	if !expand {
+		args = []string{"add", "--key", key, "--no-expand"}
 	}
 
 	envman := exec.Command("envman", args...)
