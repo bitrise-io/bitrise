@@ -171,9 +171,9 @@ func doRun(c *cli.Context) {
 	}
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
-		log.Fatalln("Specified Workflow (" + workflowToRunName + ") does not exist!")
+		log.Fatalln("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!")
 	}
-	log.Infoln("Running Workflow:", workflowToRunName)
+	log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRunName)
 
 	// App level environment
 	if err := exportEnvironmentsList(bitriseConfig.App.Environments); err != nil {
