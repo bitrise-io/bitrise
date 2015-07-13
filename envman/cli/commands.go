@@ -9,11 +9,15 @@ var (
 			ShortName: "i",
 			Usage:     "Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.",
 			Action:    initCmd,
+			Flags: []cli.Flag{
+				flClear,
+			},
 		},
 		{
 			Name:      "add",
 			ShortName: "a",
 			Usage:     "Add new, or update an exist environment variable.",
+			Action:    addCmd,
 			Flags: []cli.Flag{
 				flKey,
 				flValue,
@@ -21,7 +25,6 @@ var (
 				flNoExpand,
 				flAppend,
 			},
-			Action: addCmd,
 		},
 		{
 			Name:      "clear",

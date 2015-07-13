@@ -6,7 +6,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	"gopkg.in/yaml.v2"
 )
@@ -18,6 +18,18 @@ var (
 	// ToolMode ...
 	ToolMode bool
 )
+
+// ClearPathIfExist ...
+func ClearPathIfExist(pth string) error {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if exist {
+		if err := os.RemoveAll(pth); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // InitAtPath ...
 func InitAtPath(pth string) error {
