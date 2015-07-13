@@ -72,7 +72,7 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 				success = true
 			case "git":
 				if err := DoGitUpdate(value, GetStepPath(step)); err != nil {
-					log.Error("Failed to clone step:", err)
+					log.Error("Failed to clone step ("+value+"):", err)
 					break
 				}
 				success = true
