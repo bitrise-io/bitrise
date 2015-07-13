@@ -3,12 +3,18 @@ package cli
 import (
 	"os"
 	"path"
-	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
+
+func parseDebug(c *cli.Context) bool {
+	if c.IsSet(DebugKey) {
+		return c.Bool(DebugKey)
+	}
+	return false
+}
 
 func before(c *cli.Context) error {
 	err := stepman.CreateStepManDirIfNeeded()
@@ -26,19 +32,7 @@ func before(c *cli.Context) error {
 	}
 
 	// Debug mode
-	debugString := c.String(DebugKey)
-	if debugString == "" {
-		debugString = os.Getenv(DebugEnvKey)
-	}
-	if debugString == "" {
-		debugString = "false"
-	}
-
-	if stepman.DebugMode, err = strconv.ParseBool(debugString); err != nil {
-		log.Error("[STEPMAN] - Failed to parse debug mode flag:", err)
-		stepman.DebugMode = false
-	}
-
+	stepman.DebugMode = parseDebug(c)
 	return nil
 }
 

@@ -9,27 +9,30 @@ import (
 func setup(c *cli.Context) {
 	log.Info("[STEPMAN] - Setup")
 
-	if err := stepman.SetupCurrentRouting(); err != nil {
-		log.Error("[STEPMAN] - Failed to setup routing:", err)
+	if exist, err := stepman.RootExistForCurrentCollection(); err != nil {
+		log.Fatal("[STEPMAN] - Failed to check routing:", err)
+	} else if exist {
+		log.Info("[STEPMAN] - Alreday setup")
 		return
+	}
+
+	if err := stepman.SetupCurrentRouting(); err != nil {
+		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 
 	pth := stepman.GetCurrentStepCollectionPath()
 	if err := stepman.DoGitClone(stepman.CollectionURI, pth); err != nil {
-		log.Error("[STEPMAN] - Failed to get step spec path:", err)
-		return
+		log.Fatal("[STEPMAN] - Failed to get step spec path:", err)
 	}
 
 	specPth := pth + "steplib.yml"
 	collection, err := stepman.ParseStepCollection(specPth)
 	if err != nil {
-		log.Error("[STEPMAN] - Failed to read step spec:", err)
-		return
+		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
 
 	if err := stepman.WriteStepSpecToFile(collection); err != nil {
-		log.Error("[STEPMAN] - Failed to save step spec:", err)
-		return
+		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
 	}
 
 	log.Info("[STEPMAN] - Initialized")

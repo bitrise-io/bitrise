@@ -34,9 +34,8 @@ const (
 
 var (
 	// App flags
-	flDebug = cli.StringFlag{
+	flDebug = cli.BoolFlag{
 		Name:   DebugKey + ", " + debugKeyShort,
-		Value:  "false",
 		EnvVar: DebugEnvKey,
 		Usage:  "Debug mode.",
 	}
