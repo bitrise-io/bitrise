@@ -75,7 +75,7 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 			case "git":
 				log.Info("[STEPMAN] - Git clone step from:", value)
 				if err := DoGitClone(value, GetStepPath(step)); err != nil {
-					log.Error("[STEPMAN] - Failed to clone step:", err)
+					log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", value, err)
 				} else {
 					success = true
 					return nil
