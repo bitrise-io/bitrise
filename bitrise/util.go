@@ -40,7 +40,7 @@ func NewErrorf(format string, a ...interface{}) error {
 func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseConfigModel{}, err
-	} else if isExists == false {
+	} else if !isExists {
 		return models.BitriseConfigModel{}, NewErrorf("No file found at path", pth)
 	}
 

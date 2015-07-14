@@ -24,7 +24,7 @@ func doInit(c *cli.Context) {
 		ask := fmt.Sprintf("A config file already exists at %s - do you want to overwrite it?", bitriseConfigFileRelPath)
 		if val, err := goinp.AskForBool(ask); err != nil {
 			log.Fatalln("Error:", err)
-		} else if val == false {
+		} else if !val {
 			log.Infoln("Init canceled, existing file won't be overwritten.")
 			os.Exit(0)
 		}
