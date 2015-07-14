@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // ------------------
@@ -11,13 +13,15 @@ import (
 
 // RunStepmanSetup ...
 func RunStepmanSetup(collection string) error {
-	args := []string{"--debug", "--collection", collection, "setup"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "--collection", collection, "setup"}
 	return RunCommand("stepman", args...)
 }
 
 // RunStepmanActivate ...
 func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
-	args := []string{"--debug", "--collection", collection, "activate", "--id", stepID, "--version", stepVersion, "--path", dir}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "--collection", collection, "activate", "--id", stepID, "--version", stepVersion, "--path", dir}
 	return RunCommand("stepman", args...)
 }
 
@@ -26,15 +30,17 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
 
 // RunEnvmanInit ...
 func RunEnvmanInit() error {
-	args := []string{"init", "--clear"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "init", "--clear"}
 	return RunCommand("envman", args...)
 }
 
 // RunEnvmanAdd ...
 func RunEnvmanAdd(key, value string, expand bool) error {
-	args := []string{"add", "--key", key}
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "add", "--key", key}
 	if !expand {
-		args = []string{"add", "--key", key, "--no-expand"}
+		args = []string{"--loglevel", logLevel, "add", "--key", key, "--no-expand"}
 	}
 
 	envman := exec.Command("envman", args...)
@@ -44,18 +50,18 @@ func RunEnvmanAdd(key, value string, expand bool) error {
 	return envman.Run()
 }
 
-// RunEnvmanRun ...
-func RunEnvmanRun(cmd []string) error {
-	args := []string{"run"}
-	args = append(args, cmd...)
-	return RunCommand("envman", args...)
-}
-
 // RunEnvmanRunInDir ...
 func RunEnvmanRunInDir(dir string, cmd []string) error {
-	args := []string{"run"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "run"}
 	args = append(args, cmd...)
 	return RunCommandInDir(dir, "envman", args...)
+}
+
+// RunEnvmanRun ...
+func RunEnvmanRun(cmd []string) error {
+	return RunEnvmanRunInDir("", cmd)
+
 }
 
 // ------------------

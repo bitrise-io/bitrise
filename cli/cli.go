@@ -9,16 +9,17 @@ import (
 )
 
 func before(c *cli.Context) error {
-	levelString := c.String(LogLevelKey)
-	if levelString == "" {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		level, err := log.ParseLevel(levelString)
-		if err != nil {
-			return err
-		}
-		log.SetLevel(level)
+	// Log level
+	level, err := log.ParseLevel(c.String(LogLevelKey))
+	if err != nil {
+		return err
 	}
+
+	if err := os.Setenv(LogLevelEnvKey, level.String()); err != nil {
+		log.Fatal("Failed to set log level env:", err)
+	}
+	log.SetLevel(level)
+
 	return nil
 }
 

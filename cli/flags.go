@@ -9,6 +9,8 @@ const (
 	CIKey string = "ci"
 	cKey  string = "c"
 
+	// LogLevelEnvKey ...
+	LogLevelEnvKey string = "LOGLEVEL"
 	// LogLevelKey ...
 	LogLevelKey      string = "loglevel"
 	logLevelKeyShort string = "l"
@@ -33,9 +35,10 @@ const (
 var (
 	// App flags
 	flLogLevel = cli.StringFlag{
-		Name:  LogLevelKey + ", " + logLevelKeyShort,
-		Value: "info",
-		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
+		Name:   LogLevelKey + ", " + logLevelKeyShort,
+		Value:  "info",
+		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
+		EnvVar: LogLevelEnvKey,
 	}
 	flTool = cli.BoolFlag{
 		Name:   CIKey + ", " + cKey,
