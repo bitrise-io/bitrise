@@ -35,7 +35,7 @@ func ClearPathIfExist(pth string) error {
 func InitAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
-	} else if exist == false {
+	} else if !exist {
 		if err := WriteEnvMapToFile(pth, []EnvModel{}); err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel, replace bool) ([]EnvMod
 		}
 	}
 
-	if exist == false {
+	if !exist {
 		newEnvs = append(newEnvs, env)
 	}
 
@@ -126,7 +126,7 @@ func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel, replace bool) ([]EnvMod
 func readEnvMapFromFile(pth string) (envsYMLModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return envsYMLModel{}, err
-	} else if isExists == false {
+	} else if !isExists {
 		return envsYMLModel{}, errors.New("No environment variable list found")
 	}
 

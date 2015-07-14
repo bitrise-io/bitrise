@@ -88,7 +88,7 @@ func convertToEnvsYMLModel(eModels []EnvModel) envsYMLModel {
 
 func (eModel EnvModel) convertToEnvMap() EnvMapItem {
 	eMap := make(EnvMapItem)
-	if eModel.IsExpand == false {
+	if !eModel.IsExpand {
 		eMap[IsExpandKey] = FalseKey
 	}
 	eMap[eModel.Key] = eModel.Value
