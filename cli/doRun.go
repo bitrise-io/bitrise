@@ -85,7 +85,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			return err
 		}
 		log.Infof("[BITRISE_CLI] - Running Step: %#v", step)
-		stepDir := "./steps/" + stepIDData.ID + "/" + stepIDData.Version + "/"
+		stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
 			log.Error("Failed to setup stepman:", err)
@@ -132,7 +132,7 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 		}
 	}
 
-	stepDir := "./steps/" + stepIDData.ID + "/" + stepIDData.Version + "/"
+	stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 	stepCmd := "step.sh"
 	cmd := []string{"bash", stepCmd}
 
@@ -147,6 +147,11 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 
 func doRun(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Run")
+
+	// Cleanup workdir
+	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
+		log.Fatal("Failed to cleanup bitrise work dir:", err)
+	}
 
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
