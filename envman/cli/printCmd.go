@@ -20,7 +20,7 @@ func printEnvs() error {
 		for _, eModel := range environments {
 			envString := "- " + eModel.Key + ": " + eModel.Value
 			fmt.Println(envString)
-			if eModel.IsExpand == false {
+			if !eModel.IsExpand {
 				expandString := "  " + "isExpand" + ": " + "false"
 				fmt.Println(expandString)
 			}
