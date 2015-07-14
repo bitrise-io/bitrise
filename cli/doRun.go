@@ -133,7 +133,6 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 	}
 
 	stepDir := "./steps/" + stepIDData.ID + "/" + stepIDData.Version + "/"
-	//stepCmd := fmt.Sprintf("%sstep.sh", stepDir)
 	stepCmd := "step.sh"
 	cmd := []string{"bash", stepCmd}
 

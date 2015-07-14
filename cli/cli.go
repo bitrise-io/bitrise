@@ -8,17 +8,29 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func before(c *cli.Context) error {
-	levelString := c.String(LogLevelKey)
-	if levelString == "" {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		level, err := log.ParseLevel(levelString)
-		if err != nil {
-			return err
-		}
-		log.SetLevel(level)
+func parseLogLevelString(c *cli.Context) string {
+	if c.IsSet(LogLevelKey) {
+		return c.String(LogLevelKey)
 	}
+	return log.DebugLevel.String()
+}
+
+func parseLogLevel(c *cli.Context) (log.Level, error) {
+	return log.ParseLevel(c.String(LogLevelKey))
+}
+
+func before(c *cli.Context) error {
+	// Log level
+	if err := os.Setenv(LogLevelEnvKey, parseLogLevelString(c)); err != nil {
+		log.Fatal("Faild to set log level env:", err)
+	}
+
+	if logLevel, err := log.ParseLevel(parseLogLevelString(c)); err != nil {
+		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
+	} else {
+		log.SetLevel(logLevel)
+	}
+
 	return nil
 }
 
