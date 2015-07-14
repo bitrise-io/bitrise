@@ -16,6 +16,13 @@ func parseDebug(c *cli.Context) bool {
 	return false
 }
 
+func parseLogLevel(c *cli.Context) (log.Level, error) {
+	if c.IsSet(LogLevelKey) {
+		return log.ParseLevel(c.String(LogLevelKey))
+	}
+	return log.DebugLevel, nil
+}
+
 func before(c *cli.Context) error {
 	err := stepman.CreateStepManDirIfNeeded()
 	if err != nil {
@@ -33,6 +40,13 @@ func before(c *cli.Context) error {
 
 	// Debug mode
 	stepman.DebugMode = parseDebug(c)
+
+	// Log level
+	if logLevel, err := parseLogLevel(c); err != nil {
+		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
+	} else {
+		log.SetLevel(logLevel)
+	}
 	return nil
 }
 
