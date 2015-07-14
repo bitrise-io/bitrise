@@ -39,16 +39,9 @@ func parseTool(c *cli.Context) bool {
 	return false
 }
 
-func parseLogLevel(c *cli.Context) (log.Level, error) {
-	if c.IsSet(LogLevelKey) {
-		return log.ParseLevel(c.String(LogLevelKey))
-	}
-	return log.DebugLevel, nil
-}
-
 func before(c *cli.Context) error {
 	// Log level
-	if logLevel, err := parseLogLevel(c); err != nil {
+	if logLevel, err := log.ParseLevel(c.String(LogLevelKey)); err != nil {
 		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
 	} else {
 		log.SetLevel(logLevel)
@@ -75,8 +68,6 @@ func before(c *cli.Context) error {
 
 // Run the Envman CLI.
 func Run() {
-	log.SetLevel(log.DebugLevel)
-
 	// Read piped data
 	if isPipedData() {
 		if bytes, err := ioutil.ReadAll(os.Stdin); err != nil {

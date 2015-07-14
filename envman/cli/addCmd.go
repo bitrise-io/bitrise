@@ -40,6 +40,28 @@ func loadValueFromFile(pth string) (string, error) {
 	return str, nil
 }
 
+func logEnvs() error {
+	environments, err := envman.LoadEnvMap()
+	if err != nil {
+		return err
+	}
+
+	if len(environments) == 0 {
+		log.Info("[ENVMAN] - Empty envstore")
+	} else {
+		for _, eModel := range environments {
+			envString := "- " + eModel.Key + ": " + eModel.Value
+			log.Infoln(envString)
+			if eModel.IsExpand == false {
+				expandString := "  " + "isExpand" + ": " + "false"
+				log.Infoln(expandString)
+			}
+		}
+	}
+
+	return nil
+}
+
 func parseExpand(c *cli.Context) bool {
 	if c.IsSet(NoExpandKey) {
 		return !c.Bool(NoExpandKey)
@@ -80,7 +102,7 @@ func addCmd(c *cli.Context) {
 
 	log.Info("[ENVMAN] - Env added")
 
-	if err := printEnvs(); err != nil {
+	if err := logEnvs(); err != nil {
 		log.Fatal("[ENVMAN] - Failed to print:", err)
 	}
 }
