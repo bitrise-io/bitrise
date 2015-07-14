@@ -21,7 +21,7 @@ func DoGitClone(git, pth string) error {
 func DoGitUpdate(git, pth string) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
-	} else if exists == false {
+	} else if !exists {
 		log.Info("[STEPMAN] - Git path does not exist, do clone")
 		return DoGitClone(git, pth)
 	}

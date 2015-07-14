@@ -25,7 +25,7 @@ func download(c *cli.Context) {
 	}
 
 	exist, step := collection.GetStep(id, version)
-	if exist == false {
+	if !exist {
 		log.Fatalf("[STEPMAN] - Step: %s (v%s) failed to download from every avaiable download location.", id, version)
 	}
 

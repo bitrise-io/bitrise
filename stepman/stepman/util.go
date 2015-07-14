@@ -224,7 +224,7 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Error("[STEPMAN] - Failed to check path:", err)
 		return err
-	} else if exist == false {
+	} else if !exist {
 		dir, _ := path.Split(pth)
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {

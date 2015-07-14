@@ -86,7 +86,7 @@ func generateFolderAlias(source string) string {
 func writeRouteMapToFile(RouteMap RouteMap) error {
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
-	} else if exist == false {
+	} else if !exist {
 		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func writeRouteMapToFile(RouteMap RouteMap) error {
 func readRouteMap() (RouteMap, error) {
 	if exist, err := pathutil.IsPathExists(routingFilePath); err != nil {
 		return RouteMap{}, err
-	} else if exist == false {
+	} else if !exist {
 		return RouteMap{}, nil
 	}
 
@@ -138,7 +138,7 @@ func readRouteMap() (RouteMap, error) {
 func CreateStepManDirIfNeeded() error {
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
-	} else if exist == false {
+	} else if !exist {
 		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
 			return err
 		}
