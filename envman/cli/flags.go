@@ -7,8 +7,10 @@ const (
 	PathKey      string = "path"
 	pathKeyShort string = "p"
 
+	// LogLevelEnvKey ...
+	LogLevelEnvKey string = "LOGLEVEL"
 	// LogLevelKey ...
-	LogLevelKey      string = "log-level"
+	LogLevelKey      string = "loglevel"
 	logLevelKeyShort string = "l"
 
 	// KeyKey ...
@@ -50,16 +52,17 @@ const (
 
 var (
 	// App flags
+	flLogLevel = cli.StringFlag{
+		Name:   LogLevelKey + ", " + logLevelKeyShort,
+		Value:  "info",
+		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
+		EnvVar: LogLevelEnvKey,
+	}
 	flPath = cli.StringFlag{
 		Name:   PathKey + ", " + pathKeyShort,
 		EnvVar: "ENVMAN_ENVSTORE_PATH",
 		Value:  "",
 		Usage:  "Path of the envstore.",
-	}
-	flLogLevel = cli.StringFlag{
-		Name:  LogLevelKey + ", " + logLevelKeyShort,
-		Value: "info",
-		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
 	}
 	flTool = cli.BoolFlag{
 		Name:   ToolKey + ", " + toolKeyShort,
@@ -67,8 +70,8 @@ var (
 		Usage:  "If true, envman will NOT ask for user inputs.",
 	}
 	flags = []cli.Flag{
-		flPath,
 		flLogLevel,
+		flPath,
 		flTool,
 	}
 
