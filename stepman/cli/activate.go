@@ -35,14 +35,14 @@ func activate(c *cli.Context) {
 	}
 
 	exist, step := collection.GetStep(id, version)
-	if exist == false {
+	if !exist {
 		log.Fatalf("[STEPMAN] - Failed to activate Step: %s (v%s), does not exist in local cache.", id, version)
 	}
 
 	pth := stepman.GetStepPath(step)
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
-	} else if exist == false {
+	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
 		if err := stepman.DownloadStep(collection, step); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
@@ -55,7 +55,7 @@ func activate(c *cli.Context) {
 
 	if exist, err = pathutil.IsPathExists(destFolder); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
-	} else if exist == false {
+	} else if !exist {
 		if err := os.MkdirAll(destFolder, 0777); err != nil {
 			log.Fatal("[STEPMAN] - Failed to create path:", err)
 		}

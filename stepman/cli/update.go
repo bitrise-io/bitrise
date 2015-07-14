@@ -13,7 +13,7 @@ func update(c *cli.Context) {
 	pth := stepman.GetCurrentStepCollectionPath()
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
-	} else if exists == false {
+	} else if !exists {
 		log.Fatal("[STEPMAN] - Not initialized")
 	}
 
