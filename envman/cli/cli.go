@@ -39,11 +39,19 @@ func parseTool(c *cli.Context) bool {
 	return false
 }
 
+func parseLogLevel(c *cli.Context) (log.Level, error) {
+	if c.IsSet(LogLevelKey) {
+		return log.ParseLevel(c.String(LogLevelKey))
+	}
+	return log.DebugLevel, nil
+}
+
 func before(c *cli.Context) error {
-	if level, err := log.ParseLevel(c.String("log-level")); err != nil {
-		log.Fatal(err.Error())
+	// Log level
+	if logLevel, err := parseLogLevel(c); err != nil {
+		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
 	} else {
-		log.SetLevel(level)
+		log.SetLevel(logLevel)
 	}
 
 	// Befor parsing cli, and running command
