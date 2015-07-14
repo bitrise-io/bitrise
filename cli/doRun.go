@@ -148,6 +148,11 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 func doRun(c *cli.Context) {
 	log.Info("[BITRISE_CLI] - Run")
 
+	// Cleanup workdir
+	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
+		log.Fatal("Failed to cleanup bitrise work dir:", err)
+	}
+
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" {
