@@ -12,7 +12,7 @@ func setup(c *cli.Context) {
 	if exist, err := stepman.RootExistForCurrentCollection(); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check routing:", err)
 	} else if exist {
-		log.Info("[STEPMAN] - Alreday setup")
+		log.Info("[STEPMAN] - Nothing to setup, everything's ready.")
 		return
 	}
 
