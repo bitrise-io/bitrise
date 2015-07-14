@@ -40,7 +40,7 @@ func CleanupBitriseWorkPath() error {
 }
 
 func initBitriseWorkPaths() error {
-	bitriseWorkDirPath, err := filepath.Abs(path.Join("./", ".bitrise"))
+	bitriseWorkDirPath, err := filepath.Abs("./.bitrise")
 	if err != nil {
 		return err
 	}
@@ -53,9 +53,9 @@ func initBitriseWorkPaths() error {
 	}
 	BitriseWorkDirPath = bitriseWorkDirPath
 
-	bitriseWorkStepsDirPath, err1 := filepath.Abs(path.Join(BitriseWorkDirPath, "steps"))
-	if err1 != nil {
-		return err1
+	bitriseWorkStepsDirPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "steps"))
+	if err != nil {
+		return err
 	}
 	if exist, err := pathutil.IsPathExists(bitriseWorkStepsDirPath); err != nil {
 		return err
@@ -74,15 +74,15 @@ func init() {
 		log.Fatal("Failed to init bitrise paths:", err)
 	}
 
-	envstorePath, err2 := filepath.Abs(path.Join(BitriseWorkDirPath, "envstore.yml"))
-	if err2 != nil {
-		log.Fatal("Failed to set envstore path:", err2)
+	envstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "envstore.yml"))
+	if err != nil {
+		log.Fatal("Failed to set envstore path:", err)
 	}
 	EnvstorePath = envstorePath
 
-	formoutPath, err3 := filepath.Abs(path.Join(BitriseWorkDirPath, "formout.md"))
-	if err3 != nil {
-		log.Fatal("Failed to set formatted output path:", err3)
+	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formout.md"))
+	if err != nil {
+		log.Fatal("Failed to set formatted output path:", err)
 	}
 	FormattedOutputPath = formoutPath
 }
