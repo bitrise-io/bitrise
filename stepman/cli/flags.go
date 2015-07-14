@@ -15,8 +15,10 @@ const (
 	DebugKey      string = "debug"
 	debugKeyShort string = "d"
 
+	// LogLevelEnvKey ...
+	LogLevelEnvKey string = "LOGLEVEL"
 	// LogLevelKey ...
-	LogLevelKey      string = "log-level"
+	LogLevelKey      string = "loglevel"
 	logLevelKeyShort string = "l"
 
 	// IDKey ...
@@ -39,9 +41,10 @@ const (
 var (
 	// App flags
 	flLogLevel = cli.StringFlag{
-		Name:  LogLevelKey + ", " + logLevelKeyShort,
-		Value: "info",
-		Usage: "Log level (options: debug, info, warn, error, fatal, panic).",
+		Name:   LogLevelKey + ", " + logLevelKeyShort,
+		Value:  "info",
+		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
+		EnvVar: LogLevelEnvKey,
 	}
 	flDebug = cli.BoolFlag{
 		Name:   DebugKey + ", " + debugKeyShort,
