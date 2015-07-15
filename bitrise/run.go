@@ -77,7 +77,7 @@ func RunEnvmanEnvstoreTest(pth string) error {
 
 // RunCopy ...
 func RunCopy(src, dst string) error {
-	cpCmd := exec.Command("cp", "-rf", src, dst)
+	cpCmd := exec.Command("cp", src, dst)
 	return cpCmd.Run()
 }
 
