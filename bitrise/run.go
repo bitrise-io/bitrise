@@ -14,14 +14,14 @@ import (
 // RunStepmanSetup ...
 func RunStepmanSetup(collection string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "--collection", collection, "setup"}
+	args := []string{"--debug", "--loglevel", logLevel, "setup", "--collection", collection}
 	return RunCommand("stepman", args...)
 }
 
 // RunStepmanActivate ...
 func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "--collection", collection, "activate", "--id", stepID, "--version", stepVersion, "--path", dir}
+	args := []string{"--debug", "--loglevel", logLevel, "activate", "--collection", collection, "--id", stepID, "--version", stepVersion, "--path", dir}
 	return RunCommand("stepman", args...)
 }
 
