@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultBitriseConfigFileName = "bitrise.yml"
-	defaultInventoryFileName     = "inventory.yml"
+	defaultInventoryFileName     = ".bitrise.secrects.yml"
 )
 
 var (
@@ -182,17 +182,28 @@ func doRun(c *cli.Context) {
 	inventoryPath = c.String(InventoryKey)
 	if inventoryPath == "" {
 		log.Infoln("[BITRISE_CLI] - Inventory path not defined, searching for " + defaultInventoryFileName + " in current folder...")
+		inventoryPath = bitrise.CurrentDir + "/" + defaultInventoryFileName
 
-		if exist, err := pathutil.IsPathExists("./" + defaultInventoryFileName); err != nil {
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
-			log.Infoln("[BITRISE_CLI] - No inventory yml found")
+			log.Error("[BITRISE_CLI] - No inventory yml found")
+			inventoryPath = ""
 		}
 	} else {
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
 			log.Fatalln("[BITRISE_CLI] - No inventory yml found")
+		}
+	}
+	if inventoryPath != "" {
+		if err := bitrise.RunEnvmanEnvstoreTest(inventoryPath); err != nil {
+			log.Fatal("Invalid invetory format:", err)
+		}
+
+		if err := bitrise.RunCopy(inventoryPath, bitrise.EnvstorePath); err != nil {
+			log.Fatal("Failed to copy inventory:", err)
 		}
 	}
 
@@ -211,8 +222,10 @@ func doRun(c *cli.Context) {
 		log.Fatalln("[BITRISE_CLI] - Failed to add env:", err)
 	}
 
-	if err := bitrise.RunEnvmanInit(); err != nil {
-		log.Fatalln("[BITRISE_CLI] - Failed to run envman init")
+	if inventoryPath == "" {
+		if err := bitrise.RunEnvmanInit(); err != nil {
+			log.Fatalln("[BITRISE_CLI] - Failed to run envman init")
+		}
 	}
 
 	// Run work flow
