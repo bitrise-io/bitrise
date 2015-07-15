@@ -191,7 +191,7 @@ func doRun(c *cli.Context) {
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
-			log.Error("[BITRISE_CLI] - No inventory yml found")
+			log.Debugln("[BITRISE_CLI] - No inventory yml found")
 			inventoryPath = ""
 		}
 	} else {
@@ -212,10 +212,12 @@ func doRun(c *cli.Context) {
 	}
 
 	// Workflow selection
+	workflowToRunName := ""
 	if len(c.Args()) < 1 {
-		log.Fatalln("No workfow specified!")
+		log.Infoln("No workfow specified!")
+	} else {
+		workflowToRunName = c.Args()[0]
 	}
-	workflowToRunName := c.Args()[0]
 
 	// Envman setup
 	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.EnvstorePath); err != nil {
@@ -237,6 +239,18 @@ func doRun(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to read Workflow:", err)
 	}
+
+	// check workflow
+	if workflowToRunName == "" {
+		// no workflow specified
+		//  list all the available ones and then exit
+		log.Infoln("The following workflows are available:")
+		for wfName := range bitriseConfig.Workflows {
+			log.Infoln(" * " + wfName)
+		}
+		os.Exit(1)
+	}
+
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
 		log.Fatalln("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!")
