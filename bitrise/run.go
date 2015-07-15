@@ -31,7 +31,7 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir string) error {
 // RunEnvmanInit ...
 func RunEnvmanInit() error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "init", "--clear"}
+	args := []string{"--loglevel", logLevel, "init"}
 	return RunCommand("envman", args...)
 }
 
@@ -61,11 +61,25 @@ func RunEnvmanRunInDir(dir string, cmd []string) error {
 // RunEnvmanRun ...
 func RunEnvmanRun(cmd []string) error {
 	return RunEnvmanRunInDir("", cmd)
+}
 
+// RunEnvmanEnvstoreTest ...
+func RunEnvmanEnvstoreTest(pth string) error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", pth, "print"}
+	cmd := exec.Command("envman", args...)
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // ------------------
 // --- Common
+
+// RunCopy ...
+func RunCopy(src, dst string) error {
+	args := []string{src, dst}
+	return RunCommand("cp", args...)
+}
 
 // RunCommand ...
 func RunCommand(name string, args ...string) error {
