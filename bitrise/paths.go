@@ -18,6 +18,8 @@ var (
 	BitriseWorkDirPath string
 	// BitriseWorkStepsDirPath ...
 	BitriseWorkStepsDirPath string
+	// CurrentDir ...
+	CurrentDir string
 )
 
 const (
@@ -85,4 +87,10 @@ func init() {
 		log.Fatal("Failed to set formatted output path:", err)
 	}
 	FormattedOutputPath = formoutPath
+
+	currentDir, err := filepath.Abs("./")
+	if err != nil {
+		log.Fatal("Failed to set current dir:", err)
+	}
+	CurrentDir = currentDir
 }

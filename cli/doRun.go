@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -144,15 +143,10 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 		}
 	}
 
-	currentDir, err := filepath.Abs("./")
-	if err != nil {
-		return err
-	}
-	log.Info("WorkDir:", currentDir)
 	stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	if err := bitrise.RunEnvmanRunInDir(currentDir, cmd); err != nil {
+	if err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd); err != nil {
 		log.Errorln("[BITRISE_CLI] - Failed to run envman run")
 		return err
 	}
