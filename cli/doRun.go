@@ -15,10 +15,12 @@ import (
 
 const (
 	defaultBitriseConfigFileName = "bitrise.yml"
+	defaultInventoryFileName     = "inventory.yml"
 )
 
 var (
-	failedSteps []string
+	failedSteps   []string
+	inventoryPath string
 )
 
 // StepIDData ...
@@ -26,6 +28,13 @@ type StepIDData struct {
 	ID            string
 	Version       string
 	SteplibSource string
+}
+
+func isBuildFailed() bool {
+	if len(failedSteps) > 0 {
+		return true
+	}
+	return false
 }
 
 func createStepIDDataFromString(s string) (StepIDData, error) {
@@ -110,13 +119,6 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 	return nil
 }
 
-func isBuildFailed() bool {
-	if len(failedSteps) > 0 {
-		return true
-	}
-	return false
-}
-
 func runStep(step models.StepModel, stepIDData StepIDData) error {
 	log.Infof("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
 
@@ -175,6 +177,23 @@ func doRun(c *cli.Context) {
 			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
 		}
 		bitriseConfigPath = "./" + defaultBitriseConfigFileName
+	}
+
+	inventoryPath = c.String(InventoryKey)
+	if inventoryPath == "" {
+		log.Infoln("[BITRISE_CLI] - Inventory path not defined, searching for " + defaultInventoryFileName + " in current folder...")
+
+		if exist, err := pathutil.IsPathExists("./" + defaultInventoryFileName); err != nil {
+			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
+		} else if !exist {
+			log.Infoln("[BITRISE_CLI] - No inventory yml found")
+		}
+	} else {
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
+			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
+		} else if !exist {
+			log.Fatalln("[BITRISE_CLI] - No inventory yml found")
+		}
 	}
 
 	// Workflow selection
