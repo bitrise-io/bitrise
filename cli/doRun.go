@@ -55,7 +55,7 @@ func createStepIDDataFromString(s string) (StepIDData, error) {
 }
 
 func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
-	log.Info("[BITRISE_CLI] - Exporting workflow environments")
+	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
 		envKey, envValue, err := env.GetKeyValue()
@@ -83,9 +83,9 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 }
 
 func activateAndRunSteps(workflow models.WorkflowModel) error {
-	log.Info("[BITRISE_CLI] - Activating and running steps")
+	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
-	for _, stepListItm := range workflow.Steps {
+	for idx, stepListItm := range workflow.Steps {
 		// TODO: first arg should be 'stepCompositeID'
 		//  which can contain the step-collection, step-id, version, etc.
 		//  in one string!
@@ -97,7 +97,11 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("[BITRISE_CLI] - Running Step: %#v", workflowStep)
+		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
+
+		log.Infoln("")
+		log.Infof("========== (%d) %s ==========", idx, workflowStep.Name)
+		log.Infoln("")
 		stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
@@ -108,7 +112,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			failedSteps = append(failedSteps, compositeStepIDStr)
 		} else {
-			log.Infof("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
+			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 			if err := runStep(workflowStep, stepIDData); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
@@ -120,7 +124,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 }
 
 func runStep(step models.StepModel, stepIDData StepIDData) error {
-	log.Infof("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
+	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 	// Add step envs
 	for _, input := range step.Inputs {
@@ -153,12 +157,12 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 		return err
 	}
 
-	log.Infof("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.ID, stepIDData.Version)
+	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.ID, stepIDData.Version)
 	return nil
 }
 
 func doRun(c *cli.Context) {
-	log.Info("[BITRISE_CLI] - Run")
+	log.Debugln("[BITRISE_CLI] - Run")
 
 	// Cleanup
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
@@ -169,7 +173,7 @@ func doRun(c *cli.Context) {
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" {
-		log.Infoln("[BITRISE_CLI] - Workflow path not defined, searching for " + defaultBitriseConfigFileName + " in current folder...")
+		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + defaultBitriseConfigFileName + " in current folder...")
 
 		if exist, err := pathutil.IsPathExists("./" + defaultBitriseConfigFileName); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
@@ -181,7 +185,7 @@ func doRun(c *cli.Context) {
 
 	inventoryPath = c.String(InventoryKey)
 	if inventoryPath == "" {
-		log.Infoln("[BITRISE_CLI] - Inventory path not defined, searching for " + defaultInventoryFileName + " in current folder...")
+		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + defaultInventoryFileName + " in current folder...")
 		inventoryPath = bitrise.CurrentDir + "/" + defaultInventoryFileName
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
@@ -254,5 +258,7 @@ func doRun(c *cli.Context) {
 		log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
 	}
 
-	log.Info("Failed steps:", failedSteps)
+	log.Debugln("Failed steps:", failedSteps)
+	log.Infoln("")
+	log.Infoln("DONE - Congrats!!")
 }
