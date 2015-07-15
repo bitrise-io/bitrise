@@ -26,5 +26,7 @@ workflows:
                set -v
                set -e
                bash ./_scripts/go_install_tools.sh
+               godep restore
+               go install
              is_expand: no
            - GENERIC_SCRIPT_RUNNER_BIN: /bin/bash
