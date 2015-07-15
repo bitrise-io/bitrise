@@ -8,15 +8,13 @@ app:
 workflows:
   install:
     steps:
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script@2.0.0:
          inputs:
-           - GENERIC_SCRIPT_RUNNER_CONTENT: |
+           - content: |
                #!/bin/bash
                set -v
                set -e
                go install
-             is_expand: no
-           - GENERIC_SCRIPT_RUNNER_BIN: /bin/bash
   go-install-tools:
     steps:
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:
