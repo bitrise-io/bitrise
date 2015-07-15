@@ -24,7 +24,7 @@ func update(c *cli.Context) {
 		log.Info("[STEPMAN] - No step collection specified, update all")
 		collectionURIs = stepman.GetAllSetpCollectionPath()
 	} else {
-		collectionURIs = append(collectionURIs, collectionURI)
+		collectionURIs = []string{collectionURI}
 	}
 
 	for _, URI := range collectionURIs {
