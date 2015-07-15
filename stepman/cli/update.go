@@ -22,9 +22,9 @@ func update(c *cli.Context) {
 
 	if collectionURI == "" {
 		log.Info("[STEPMAN] - No step collection specified, update all")
-		collectionURIs = stepman.GetAllSetpCollectionPath()
+		collectionURIs = stepman.GetAllStepCollectionPath()
 	} else {
-		collectionURIs = append(collectionURIs, collectionURI)
+		collectionURIs = []string{collectionURI}
 	}
 
 	for _, URI := range collectionURIs {

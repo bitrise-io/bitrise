@@ -184,7 +184,7 @@ func GetStepCollectionPath(collectionURI string) string {
 }
 
 // GetAllSetpCollectionPath ...
-func GetAllSetpCollectionPath() []string {
+func GetAllStepCollectionPath() []string {
 	routeMap, err := readRouteMap()
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to read step specs path:", err)
