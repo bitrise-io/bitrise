@@ -27,5 +27,5 @@ func initCmd(c *cli.Context) {
 		log.Fatal("[ENVMAN] - Failed to init at path:", err)
 	}
 
-	log.Info("[ENVMAN] - Initialized")
+	log.Debugln("[ENVMAN] - Initialized")
 }
