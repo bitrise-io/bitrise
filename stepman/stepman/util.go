@@ -16,30 +16,30 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
-	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
 )
 
 // DebugMode ...
 var DebugMode bool
 
-func parseStepYml(pth, id, version string) (models.StepModel, error) {
+func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
 		return models.StepModel{}, err
 	}
 
-	var stepJSON models.StepModel
-	if err := yaml.Unmarshal(bytes, &stepJSON); err != nil {
+	var stepModel models.StepModel
+	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
 		return models.StepModel{}, err
 	}
 
-	stepJSON.ID = id
-	stepJSON.VersionTag = version
-	stepJSON.StepLibSource = CollectionURI
+	stepModel.ID = id
+	stepModel.VersionTag = version
+	stepModel.SteplibSource = collectionURI
 
-	return stepJSON, nil
+	return stepModel, nil
 }
 
 // ParseStepCollection ...
@@ -56,11 +56,30 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 	return stepCollection, nil
 }
 
-// DownloadStep ...
-func DownloadStep(collection models.StepCollectionModel, step models.StepModel) error {
-	downloadLocations := collection.GetDownloadLocations(step)
+// GetDownloadLocations ...
+func getDownloadLocations(step models.StepModel, collection models.StepCollectionModel) []map[string]string {
+	locations := []map[string]string{}
+	for _, downloadLocation := range collection.DownloadLocations {
+		for key, value := range downloadLocation {
+			switch key {
+			case "zip":
+				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
+				locations = append(locations, map[string]string{key: url})
+			case "git":
+				locations = append(locations, step.Source)
+			default:
+				log.Error("[STEPMAN] - Invalid download location")
+			}
+		}
+	}
+	return locations
+}
 
-	stepPth := GetStepPath(step)
+// DownloadStep ...
+func DownloadStep(step models.StepModel, collection models.StepCollectionModel) error {
+	downloadLocations := getDownloadLocations(step, collection)
+
+	stepPth := GetStepPath(collection.SteplibSource, step)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
@@ -102,8 +121,8 @@ func DownloadStep(collection models.StepCollectionModel, step models.StepModel) 
 
 // GetStepPath ...
 // cach is cool
-func GetStepPath(step models.StepModel) string {
-	return GetCurrentStepCacheDir() + step.ID + "/" + step.VersionTag + "/"
+func GetStepPath(collectionURI string, step models.StepModel) string {
+	return GetStepCacheDir(collectionURI) + step.ID + "/" + step.VersionTag + "/"
 }
 
 // semantic version (X.Y.Z)
@@ -158,17 +177,17 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	return newStepGroup
 }
 
-func generateFormattedJSONForStepsSpec(templateCollection models.StepCollectionModel) ([]byte, error) {
+func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        CollectionURI,
+		SteplibSource:        collectionURI,
 		DownloadLocations:    templateCollection.DownloadLocations,
 	}
 
 	stepHash := models.StepHash{}
 
-	stepsSpecDir := GetCurrentStepCollectionPath()
+	stepsSpecDir := GetStepCollectionPath(collectionURI)
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(path, stepsSpecDir, "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
@@ -182,7 +201,7 @@ func generateFormattedJSONForStepsSpec(templateCollection models.StepCollectionM
 				name := components[1]
 				version := components[2]
 
-				step, parseErr := parseStepYml(path, name, version)
+				step, parseErr := parseStepYml(collectionURI, path, name, version)
 				if parseErr != nil {
 					return parseErr
 				}
@@ -218,8 +237,8 @@ func generateFormattedJSONForStepsSpec(templateCollection models.StepCollectionM
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile(templateCollection models.StepCollectionModel) error {
-	pth := GetCurrentStepSpecPath()
+func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCollectionModel) error {
+	pth := GetStepSpecPath(collectionURI)
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Error("[STEPMAN] - Failed to check path:", err)
@@ -248,7 +267,7 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel) error {
 		}
 	}()
 
-	jsonContBytes, err := generateFormattedJSONForStepsSpec(templateCollection)
+	jsonContBytes, err := generateFormattedJSONForStepsSpec(collectionURI, templateCollection)
 	if err != nil {
 		return err
 	}
@@ -262,8 +281,8 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel) error {
 }
 
 // ReadStepSpec ...
-func ReadStepSpec() (models.StepCollectionModel, error) {
-	pth := GetCurrentStepSpecPath()
+func ReadStepSpec(collectionURI string) (models.StepCollectionModel, error) {
+	pth := GetStepSpecPath(collectionURI)
 	file, err := os.Open(pth)
 	if err != nil {
 		return models.StepCollectionModel{}, err

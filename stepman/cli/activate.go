@@ -13,6 +13,14 @@ func activate(c *cli.Context) {
 	log.Info("[STEPMAN] - Activate")
 
 	// Input validation
+	collectionURI := c.String(CollectionKey)
+	if collectionURI == "" {
+		collectionURI = os.Getenv(CollectionPathEnvKey)
+	}
+	if collectionURI == "" {
+		log.Fatalln("[STEPMAN] - No step collection specified")
+	}
+
 	id := c.String(IDKey)
 	if id == "" {
 		log.Fatal("[STEPMAN] - Missing step id")
@@ -29,7 +37,7 @@ func activate(c *cli.Context) {
 	}
 
 	// Get step
-	collection, err := stepman.ReadStepSpec()
+	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec")
 	}
@@ -39,12 +47,12 @@ func activate(c *cli.Context) {
 		log.Fatalf("[STEPMAN] - Failed to activate Step: %s (v%s), does not exist in local cache.", id, version)
 	}
 
-	pth := stepman.GetStepPath(step)
+	pth := stepman.GetStepPath(collectionURI, step)
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
-		if err := stepman.DownloadStep(collection, step); err != nil {
+		if err := stepman.DownloadStep(step, collection); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}

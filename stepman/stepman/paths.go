@@ -24,9 +24,6 @@ var (
 	stepManDirPath  string
 	routingFilePath string
 
-	// CollectionURI ...
-	CollectionURI string
-
 	// CollectionsDirPath ...
 	CollectionsDirPath string
 )
@@ -34,14 +31,14 @@ var (
 // RouteMap ...
 type RouteMap map[string]string
 
-// RootExistForCurrentCollection ...
-func RootExistForCurrentCollection() (bool, error) {
+// RootExistForCollection ...
+func RootExistForCollection(collectionURI string) (bool, error) {
 	RouteMap, err := readRouteMap()
 	if err != nil {
 		return false, err
 	}
 
-	if RouteMap[CollectionURI] != "" {
+	if RouteMap[collectionURI] != "" {
 		return true, nil
 	}
 	return false, nil
@@ -146,19 +143,19 @@ func CreateStepManDirIfNeeded() error {
 	return nil
 }
 
-// SetupCurrentRouting ...
-func SetupCurrentRouting() error {
-	if CollectionURI == "" {
+// SetupRouting ...
+func SetupRouting(collectionURI string) error {
+	if collectionURI == "" {
 		return errors.New("No collection path defined")
 	}
 
-	alias := generateFolderAlias(CollectionURI)
-	return addRoute(CollectionURI, alias)
+	alias := generateFolderAlias(collectionURI)
+	return addRoute(collectionURI, alias)
 }
 
-// GetCurrentStepSpecPath ...
-func GetCurrentStepSpecPath() string {
-	alias, err := getAlias(CollectionURI)
+// GetStepSpecPath ...
+func GetStepSpecPath(collectionURI string) string {
+	alias, err := getAlias(collectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
@@ -166,9 +163,9 @@ func GetCurrentStepSpecPath() string {
 	return CollectionsDirPath + alias + "/spec/spec.json"
 }
 
-// GetCurrentStepCacheDir ...
-func GetCurrentStepCacheDir() string {
-	alias, err := getAlias(CollectionURI)
+// GetStepCacheDir ...
+func GetStepCacheDir(collectionURI string) string {
+	alias, err := getAlias(collectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
@@ -176,9 +173,9 @@ func GetCurrentStepCacheDir() string {
 	return CollectionsDirPath + alias + "/cache/"
 }
 
-// GetCurrentStepCollectionPath ...
-func GetCurrentStepCollectionPath() string {
-	alias, err := getAlias(CollectionURI)
+// GetStepCollectionPath ...
+func GetStepCollectionPath(collectionURI string) string {
+	alias, err := getAlias(collectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""

@@ -51,18 +51,17 @@ var (
 		EnvVar: DebugEnvKey,
 		Usage:  "Debug mode.",
 	}
+	flags = []cli.Flag{
+		flDebug,
+		flLogLevel,
+	}
+	// Command flags
 	flCollection = cli.StringFlag{
 		Name:   CollectionKey + ", " + collectionKeyShort,
 		Value:  "",
 		EnvVar: CollectionPathEnvKey,
 		Usage:  "Collection of step.",
 	}
-	flags = []cli.Flag{
-		flDebug,
-		flCollection,
-		flLogLevel,
-	}
-	// Command flags
 	flID = cli.StringFlag{
 		Name:  IDKey + ", " + idKeyShort,
 		Value: "",

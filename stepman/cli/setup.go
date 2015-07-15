@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
@@ -9,19 +11,28 @@ import (
 func setup(c *cli.Context) {
 	log.Info("[STEPMAN] - Setup")
 
-	if exist, err := stepman.RootExistForCurrentCollection(); err != nil {
+	// StepSpec collection path
+	collectionURI := c.String(CollectionKey)
+	if collectionURI == "" {
+		collectionURI = os.Getenv(CollectionPathEnvKey)
+	}
+	if collectionURI == "" {
+		log.Fatalln("[STEPMAN] - No step collection specified")
+	}
+
+	if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check routing:", err)
 	} else if exist {
 		log.Info("[STEPMAN] - Nothing to setup, everything's ready.")
 		return
 	}
 
-	if err := stepman.SetupCurrentRouting(); err != nil {
+	if err := stepman.SetupRouting(collectionURI); err != nil {
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 
-	pth := stepman.GetCurrentStepCollectionPath()
-	if err := stepman.DoGitClone(stepman.CollectionURI, pth); err != nil {
+	pth := stepman.GetStepCollectionPath(collectionURI)
+	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to get step spec path:", err)
 	}
 
@@ -31,7 +42,7 @@ func setup(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
 
-	if err := stepman.WriteStepSpecToFile(collection); err != nil {
+	if err := stepman.WriteStepSpecToFile(collectionURI, collection); err != nil {
 		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
 	}
 
