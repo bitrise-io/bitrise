@@ -14,7 +14,7 @@ func parseClear(c *cli.Context) bool {
 }
 
 func initCmd(c *cli.Context) {
-	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	clear := parseClear(c)
 	if clear {

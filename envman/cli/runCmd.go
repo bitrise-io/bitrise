@@ -7,7 +7,7 @@ import (
 )
 
 func runCmd(c *cli.Context) {
-	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if len(c.Args()) > 0 {
 		doCmdEnvs, err := envman.LoadEnvMap()
@@ -28,13 +28,13 @@ func runCmd(c *cli.Context) {
 			Argumentums:  doArgs,
 		}
 
-		log.Info("[ENVMAN] - Executing command:", cmdToExecute)
+		log.Debugln("[ENVMAN] - Executing command:", cmdToExecute)
 
 		if err := envman.ExecuteCmd(cmdToExecute); err != nil {
 			log.Fatal("[ENVMAN] - Failed to execute command:", err)
 		}
 
-		log.Info("[ENVMAN] - Command executed")
+		log.Debugln("[ENVMAN] - Command executed")
 	} else {
 		log.Fatal("[ENVMAN] - No command specified")
 	}

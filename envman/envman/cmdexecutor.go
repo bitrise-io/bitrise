@@ -48,7 +48,7 @@ func ExecuteCmd(commandToRun CommandModel) error {
 	cmd.Stderr = os.Stderr
 	cmd.Env = cmdEnvs
 
-	log.Info("Command to execute:", cmd)
+	log.Debugln("Command to execute:", cmd)
 
 	return cmd.Run()
 }

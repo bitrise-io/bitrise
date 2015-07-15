@@ -51,10 +51,10 @@ func logEnvs() error {
 	} else {
 		for _, eModel := range environments {
 			envString := "- " + eModel.Key + ": " + eModel.Value
-			log.Infoln(envString)
+			log.Debugln(envString)
 			if eModel.IsExpand == false {
 				expandString := "  " + "isExpand" + ": " + "false"
-				log.Infoln(expandString)
+				log.Debugln(expandString)
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func parseReplace(c *cli.Context) bool {
 }
 
 func addCmd(c *cli.Context) {
-	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
 	expand := parseExpand(c)
@@ -100,7 +100,7 @@ func addCmd(c *cli.Context) {
 		log.Fatal("[ENVMAN] - Failed to add env:", err)
 	}
 
-	log.Info("[ENVMAN] - Env added")
+	log.Debugln("[ENVMAN] - Env added")
 
 	if err := logEnvs(); err != nil {
 		log.Fatal("[ENVMAN] - Failed to print:", err)

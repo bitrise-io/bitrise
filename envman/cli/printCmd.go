@@ -31,7 +31,7 @@ func printEnvs() error {
 }
 
 func printCmd(c *cli.Context) {
-	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := printEnvs(); err != nil {
 		log.Fatal("[ENVMAN] - Failed to print:", err)
