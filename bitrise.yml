@@ -6,6 +6,7 @@ app:
   - BITRISE_DEV_BRANCH: master
     is_expand: "no"
 workflows:
+
   install:
     steps:
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script@2.0.0:
@@ -15,6 +16,7 @@ workflows:
                set -v
                set -e
                go install
+
   go-install-tools:
     steps:
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:

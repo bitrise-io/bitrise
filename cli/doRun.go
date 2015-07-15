@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultBitriseConfigFileName = "bitrise.yml"
-	defaultInventoryFileName     = ".bitrise.secrects.yml"
+	defaultInventoryFileName     = ".bitrise.secrets.yml"
 )
 
 var (
