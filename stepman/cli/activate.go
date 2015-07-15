@@ -10,7 +10,7 @@ import (
 )
 
 func activate(c *cli.Context) {
-	log.Info("[STEPMAN] - Activate")
+	log.Debugln("[STEPMAN] - Activate")
 
 	// Input validation
 	id := c.String(IDKey)
