@@ -36,6 +36,8 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Missing destination path")
 	}
 
+	copyYML := c.String(CopyYMLKey)
+
 	// Get step
 	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
@@ -47,8 +49,8 @@ func activate(c *cli.Context) {
 		log.Fatalf("[STEPMAN] - Failed to activate Step: %s (v%s), does not exist in local cache.", id, version)
 	}
 
-	pth := stepman.GetStepPath(collectionURI, step)
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
+	stepDir := stepman.GetStepPath(collectionURI, step)
+	if exist, err := pathutil.IsPathExists(stepDir); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
@@ -58,18 +60,32 @@ func activate(c *cli.Context) {
 	}
 
 	// Copy to specified path
-	srcFolder := pth
+	srcFolder := stepDir
 	destFolder := path
 
 	if exist, err = pathutil.IsPathExists(destFolder); err != nil {
-		log.Fatal("[STEPMAN] - Failed to check path:", err)
+		log.Fatalln("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		if err := os.MkdirAll(destFolder, 0777); err != nil {
-			log.Fatal("[STEPMAN] - Failed to create path:", err)
+			log.Fatalln("[STEPMAN] - Failed to create path:", err)
 		}
 	}
 
-	if err = stepman.RunCommand("cp", []string{"-rf", srcFolder, destFolder}...); err != nil {
-		log.Fatal("[STEPMAN] - Failed to copy step:", err)
+	if err = stepman.RunCopyDir(srcFolder, destFolder); err != nil {
+		log.Fatalln("[STEPMAN] - Failed to copy step:", err)
+	}
+
+	// Copy step.yml to specified path
+	if copyYML != "" {
+		if exist, err = pathutil.IsPathExists(copyYML); err != nil {
+			log.Fatalln("[STEPMAN] - Failed to check path:", err)
+		} else if exist {
+			log.Fatalln("[STEPMAN] - Copy yml destination path exist")
+		}
+
+		stepYMLSrc := stepDir + "/step.yml"
+		if err = stepman.RunCopyFile(stepYMLSrc, copyYML); err != nil {
+			log.Fatalln("[STEPMAN] - Failed to copy step.yml:", err)
+		}
 	}
 }

@@ -177,10 +177,26 @@ func GetStepCacheDir(collectionURI string) string {
 func GetStepCollectionPath(collectionURI string) string {
 	alias, err := getAlias(collectionURI)
 	if err != nil {
-		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
+		log.Error("[STEPMAN] - Failed to read step spec path:", err)
 		return ""
 	}
 	return CollectionsDirPath + alias + "/collection/"
+}
+
+// GetAllSetpCollectionPath ...
+func GetAllSetpCollectionPath() []string {
+	routeMap, err := readRouteMap()
+	if err != nil {
+		log.Error("[STEPMAN] - Failed to read step specs path:", err)
+		return []string{}
+	}
+
+	sources := []string{}
+	for source := range routeMap {
+		sources = append(sources, source)
+	}
+
+	return sources
 }
 
 // Life cycle

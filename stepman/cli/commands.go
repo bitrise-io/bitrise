@@ -43,6 +43,7 @@ var (
 				flID,
 				flVersion,
 				flPath,
+				flCopyYML,
 			},
 		},
 	}

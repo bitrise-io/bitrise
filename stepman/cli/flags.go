@@ -33,6 +33,10 @@ const (
 	PathKey      string = "path"
 	pathKeyShort string = "p"
 
+	// CopyYMLKey ...
+	CopyYMLKey      string = "copyyml"
+	copyYMLKeyShort string = "y"
+
 	// HelpKey ...
 	HelpKey      string = "help"
 	helpKeyShort string = "h"
@@ -76,6 +80,11 @@ var (
 		Name:  PathKey + ", " + pathKeyShort,
 		Value: "",
 		Usage: "Path where the step will copied.",
+	}
+	flCopyYML = cli.StringFlag{
+		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
+		Value: "",
+		Usage: "",
 	}
 )
 

@@ -5,6 +5,18 @@ import (
 	"os/exec"
 )
 
+// RunCopyFile ...
+func RunCopyFile(src, dst string) error {
+	args := []string{src, dst}
+	return RunCommand("cp", args...)
+}
+
+// RunCopyDir ...
+func RunCopyDir(src, dst string) error {
+	args := []string{"-r", src, dst}
+	return RunCommand("cp", args...)
+}
+
 // RunCommand ...
 func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)

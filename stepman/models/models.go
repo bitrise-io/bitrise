@@ -27,7 +27,7 @@ type OutputModel struct {
 // StepModel ...
 type StepModel struct {
 	ID                  string            `json:"id"`
-	StepLibSource       string            `json:"steplib_source"`
+	SteplibSource       string            `json:"steplib_source"`
 	VersionTag          string            `json:"version_tag"`
 	Name                string            `json:"name" yaml:"name"`
 	Description         *string           `json:"description,omitempty" yaml:"description,omitempty"`

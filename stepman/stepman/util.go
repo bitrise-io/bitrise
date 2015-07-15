@@ -16,8 +16,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
 )
 
