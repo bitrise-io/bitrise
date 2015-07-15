@@ -30,15 +30,6 @@ func before(c *cli.Context) error {
 		return err
 	}
 
-	// StepSpec collection path
-	stepman.CollectionURI = c.String(CollectionKey)
-	if stepman.CollectionURI == "" {
-		stepman.CollectionURI = os.Getenv(CollectionPathEnvKey)
-	}
-	if stepman.CollectionURI == "" {
-		log.Fatalln("[STEPMAN] - No step collection specified")
-	}
-
 	// Debug mode
 	stepman.DebugMode = parseDebug(c)
 	return nil

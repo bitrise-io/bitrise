@@ -33,6 +33,10 @@ const (
 	PathKey      string = "path"
 	pathKeyShort string = "p"
 
+	// CopyYMLKey ...
+	CopyYMLKey      string = "copyyml"
+	copyYMLKeyShort string = "y"
+
 	// HelpKey ...
 	HelpKey      string = "help"
 	helpKeyShort string = "h"
@@ -51,18 +55,17 @@ var (
 		EnvVar: DebugEnvKey,
 		Usage:  "Debug mode.",
 	}
+	flags = []cli.Flag{
+		flDebug,
+		flLogLevel,
+	}
+	// Command flags
 	flCollection = cli.StringFlag{
 		Name:   CollectionKey + ", " + collectionKeyShort,
 		Value:  "",
 		EnvVar: CollectionPathEnvKey,
 		Usage:  "Collection of step.",
 	}
-	flags = []cli.Flag{
-		flDebug,
-		flCollection,
-		flLogLevel,
-	}
-	// Command flags
 	flID = cli.StringFlag{
 		Name:  IDKey + ", " + idKeyShort,
 		Value: "",
@@ -77,6 +80,11 @@ var (
 		Name:  PathKey + ", " + pathKeyShort,
 		Value: "",
 		Usage: "Path where the step will copied.",
+	}
+	flCopyYML = cli.StringFlag{
+		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
+		Value: "",
+		Usage: "",
 	}
 )
 
