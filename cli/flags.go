@@ -27,6 +27,10 @@ const (
 	PathKey      string = "path"
 	pathKeyShort string = "p"
 
+	// InventoryKey ...
+	InventoryKey      string = "inventory"
+	inventoryShortKey string = "i"
+
 	// HelpKey ...
 	HelpKey      string = "help"
 	helpKeyShort string = "h"
@@ -64,6 +68,11 @@ var (
 		Name:  PathKey + ", " + pathKeyShort,
 		Value: "",
 		Usage: "Path where the step will copied.",
+	}
+	flInventory = cli.StringFlag{
+		Name:  InventoryKey + ", " + inventoryShortKey,
+		Value: "",
+		Usage: "",
 	}
 )
 
