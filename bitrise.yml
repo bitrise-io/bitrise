@@ -1,0 +1,30 @@
+format_version: 1.0.0
+app:
+  environments:
+  - BITRISE_PROJECT_TITLE: BitriseCLI
+    is_expand: "no"
+  - BITRISE_DEV_BRANCH: master
+    is_expand: "no"
+workflows:
+  install:
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:
+         inputs:
+           - GENERIC_SCRIPT_RUNNER_CONTENT: |
+               #!/bin/bash
+               set -v
+               set -e
+               go install
+             is_expand: no
+           - GENERIC_SCRIPT_RUNNER_BIN: /bin/bash
+  go-install-tools:
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:
+         inputs:
+           - GENERIC_SCRIPT_RUNNER_CONTENT: |
+               #!/bin/bash
+               set -v
+               set -e
+               bash ./_scripts/go_install_tools.sh
+             is_expand: no
+           - GENERIC_SCRIPT_RUNNER_BIN: /bin/bash
