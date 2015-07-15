@@ -23,6 +23,7 @@ var (
 			Action:    doRun,
 			Flags: []cli.Flag{
 				flPath,
+				flInventory,
 			},
 		},
 	}
