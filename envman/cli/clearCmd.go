@@ -25,7 +25,7 @@ func clearEnvs() error {
 }
 
 func clearCmd(c *cli.Context) {
-	log.Info("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := clearEnvs(); err != nil {
 		log.Fatal("[ENVMAN] - Failed to clear EnvStore:", err)
