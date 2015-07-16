@@ -128,13 +128,23 @@ func (environmentYMLItem EnvironmentYMLItemModel) InputModel() InputModel {
 			continue
 		}
 
+		var ok bool
 		switch key {
 		case "title":
-			inputModel.Title = value.(string)
+			inputModel.Title, ok = value.(string)
+			if ok == false {
+				log.Fatal("Failed to cast")
+			}
 		case "description":
-			inputModel.Description = value.(string)
+			inputModel.Description, ok = value.(string)
+			if ok == false {
+				log.Fatal("Failed to cast")
+			}
 		case "value_options":
-			inputModel.ValueOptions = value.([]string)
+			inputModel.ValueOptions, ok = value.([]string)
+			if ok == false {
+				log.Fatal("Failed to cast")
+			}
 		case "is_required":
 			boolValue := parseBool(value, false)
 			inputModel.IsRequired = &boolValue
@@ -146,7 +156,10 @@ func (environmentYMLItem EnvironmentYMLItemModel) InputModel() InputModel {
 			inputModel.IsDontChangeValue = &boolValue
 		default:
 			inputModel.MappedTo = key
-			inputModel.Value = value.(string)
+			inputModel.Value, ok = value.(string)
+			if ok == false {
+				log.Fatal("Failed to cast")
+			}
 		}
 	}
 	return inputModel
@@ -250,14 +263,21 @@ func (bitriseConfigYML BitriseConfigYMLModel) BitriseConfigModel() BitriseConfig
 func parseBool(stringOrBool interface{}, defaultValue bool) bool {
 	boolValue := defaultValue
 	var err error
+	var ok bool
 	switch t := stringOrBool.(type) {
 	case string:
-		stringValue := stringOrBool.(string)
+		stringValue, ok := stringOrBool.(string)
+		if ok == false {
+			log.Fatal("Failed to cast")
+		}
 		if boolValue, err = goinp.ParseBool(stringValue); err != nil {
 			log.Fatal("Failed to parse bool:", err)
 		}
 	case bool:
-		boolValue = stringOrBool.(bool)
+		boolValue, ok = stringOrBool.(bool)
+		if ok == false {
+			log.Fatal("Failed to cast")
+		}
 	default:
 		log.Fatal("Failed to parse bool, type:", t)
 	}
