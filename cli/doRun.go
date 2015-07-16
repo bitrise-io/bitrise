@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -14,8 +15,10 @@ import (
 )
 
 const (
-	defaultBitriseConfigFileName = "bitrise.yml"
-	defaultInventoryFileName     = ".bitrise.secrets.yml"
+	// DefaultBitriseConfigFileName ...
+	DefaultBitriseConfigFileName = "bitrise.yml"
+	// DefaultSecretsFileName ...
+	DefaultSecretsFileName = ".bitrise.secrets.yml"
 )
 
 var (
@@ -99,9 +102,9 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		}
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
-		log.Infoln("")
+		fmt.Println()
 		log.Infof("========== (%d) %s ==========", idx, workflowStep.Name)
-		log.Infoln("")
+		fmt.Println()
 		stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
@@ -173,20 +176,20 @@ func doRun(c *cli.Context) {
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" {
-		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + defaultBitriseConfigFileName + " in current folder...")
+		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
 
-		if exist, err := pathutil.IsPathExists("./" + defaultBitriseConfigFileName); err != nil {
+		if exist, err := pathutil.IsPathExists("./" + DefaultBitriseConfigFileName); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
 		} else if !exist {
 			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
 		}
-		bitriseConfigPath = "./" + defaultBitriseConfigFileName
+		bitriseConfigPath = "./" + DefaultBitriseConfigFileName
 	}
 
 	inventoryPath = c.String(InventoryKey)
 	if inventoryPath == "" {
-		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + defaultInventoryFileName + " in current folder...")
-		inventoryPath = bitrise.CurrentDir + "/" + defaultInventoryFileName
+		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
+		inventoryPath = bitrise.CurrentDir + "/" + DefaultSecretsFileName
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			log.Fatalln("[BITRISE_CLI] - Failed to check path:", err)
