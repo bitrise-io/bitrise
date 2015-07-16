@@ -46,7 +46,7 @@ func RemoveFile(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if exist {
-		if err := os.RemoveAll(pth); err != nil {
+		if err := os.Remove(pth); err != nil {
 			return err
 		}
 	}
