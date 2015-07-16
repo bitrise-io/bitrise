@@ -95,5 +95,6 @@ func RunCommandInDir(dir, name string, args ...string) error {
 	if dir != "" {
 		cmd.Dir = dir
 	}
+	log.Debugln("Run command: $", cmd)
 	return cmd.Run()
 }
