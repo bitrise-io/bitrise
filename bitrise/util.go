@@ -1,34 +1,15 @@
 package bitrise
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"gopkg.in/yaml.v2"
 
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
-
-// ReadWorkflowJSON ...
-func ReadWorkflowJSON(pth string) (models.WorkflowModel, error) {
-	var workflow models.WorkflowModel
-
-	file, err := os.Open(pth)
-	if err != nil {
-		return models.WorkflowModel{}, err
-	}
-
-	parser := json.NewDecoder(file)
-	if err = parser.Decode(&workflow); err != nil {
-		return models.WorkflowModel{}, err
-	}
-
-	return workflow, nil
-}
 
 // NewErrorf ...
 func NewErrorf(format string, a ...interface{}) error {
@@ -48,10 +29,10 @@ func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	if err != nil {
 		return models.BitriseConfigModel{}, err
 	}
-	var bitriseConfig models.BitriseConfigModel
-	if err := yaml.Unmarshal(bytes, &bitriseConfig); err != nil {
+	var bitriseConfigYML models.BitriseConfigYMLModel
+	if err := yaml.Unmarshal(bytes, &bitriseConfigYML); err != nil {
 		return models.BitriseConfigModel{}, err
 	}
 
-	return bitriseConfig, nil
+	return bitriseConfigYML.BitriseConfigModel(), nil
 }

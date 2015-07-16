@@ -30,18 +30,20 @@ func doInit(c *cli.Context) {
 		}
 	}
 
-	projectSettingsEnvs := []models.EnvironmentItemModel{}
+	projectSettingsEnvs := []models.InputModel{}
 	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectSettingsEnvs = append(projectSettingsEnvs,
-			models.EnvironmentItemModel{"BITRISE_PROJECT_TITLE": val, "is_expand": "no"})
+		projectTitleEnv := models.InputModel{MappedTo: "BITRISE_PROJECT_TITLE", Value: val}
+		*projectTitleEnv.IsExpand = false
+		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
 	}
 	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectSettingsEnvs = append(projectSettingsEnvs,
-			models.EnvironmentItemModel{"BITRISE_DEV_BRANCH": val, "is_expand": "no"})
+		devBranchEnv := models.InputModel{MappedTo: "BITRISE_DEV_BRANCH", Value: val}
+		*devBranchEnv.IsExpand = false
+		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
 	}
 
 	// TODO:

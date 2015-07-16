@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
-	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
 )
 
@@ -54,26 +53,14 @@ func createStepIDDataFromString(s string) (StepIDData, error) {
 	}, nil
 }
 
-func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
+func exportEnvironmentsList(envsList []models.InputModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
-		envKey, envValue, err := env.GetKeyValue()
-		if err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to get environment key-value pair from env:", env)
-			return err
-		}
+		envKey := env.MappedTo
+		envValue := env.Value
 		if envValue != "" {
-			expand := true
-			if env["is_expand"] != "" {
-				boolValue, err := goinp.ParseBool(env["is_expand"])
-				if err != nil {
-					log.Error("Failed to parse bool:", err)
-					return err
-				}
-				expand = boolValue
-			}
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, *env.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -129,21 +116,11 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 
 	// Add step envs
 	for _, input := range step.Inputs {
-		envKey, envValue, err := input.GetKeyValue()
-		if err != nil {
-			return err
-		}
+		envKey := input.MappedTo
+		envValue := input.Value
 		if envValue != "" {
-			expand := true
-			if input["is_expand"] != "" {
-				boolValue, err := goinp.ParseBool(input["is_expand"])
-				if err != nil {
-					log.Error("Failed to parse bool:", err)
-					return err
-				}
-				expand = boolValue
-			}
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
+			log.Info("Input:", input)
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, *input.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
