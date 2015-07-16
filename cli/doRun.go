@@ -108,13 +108,13 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			if specStep, err := bitrise.ReadSpecStep(stepYMLPth); err != nil {
 				log.Fatal("Failed to read spec step:", err)
 			} else {
-				workflowStep = bitrise.MergeSpecStep(specStep, workflowStep)
+				specStep.MergeWith(workflowStep)
 
 				if err := bitrise.RemoveFile(stepYMLPth); err != nil {
 					log.Fatal("Failed to remove step yml:", err)
 				}
 
-				if err := runStep(workflowStep, stepIDData); err != nil {
+				if err := runStep(specStep, stepIDData); err != nil {
 					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
 					failedSteps = append(failedSteps, compositeStepIDStr)
 				}

@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/goinp/goinp"
 )
 
@@ -22,7 +21,7 @@ type StepYMLModel struct {
 	Description         string                    `json:"description,omitempty" yaml:"description,omitempty"`
 	Website             string                    `json:"website" yaml:"website"`
 	ForkURL             string                    `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              map[string]string         `json:"source" yaml:"source"`
+	Source              StepSourceModel           `json:"source" yaml:"source"`
 	HostOsTags          []string                  `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string                  `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string                  `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
@@ -67,22 +66,27 @@ type InputModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
+// StepSourceModel ...
+type StepSourceModel struct {
+	Git string `json:"git" yaml:"git"`
+}
+
 // StepModel ...
 type StepModel struct {
-	ID                  string            `json:"id" yaml:"id"`
-	SteplibSource       string            `json:"steplib_source" yaml:"steplib_source"`
-	VersionTag          string            `json:"version_tag" yaml:"version_tag"`
-	Name                string            `json:"name" yaml:"name"`
-	Description         string            `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string            `json:"website" yaml:"website"`
-	ForkURL             string            `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              map[string]string `json:"source" yaml:"source"`
-	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string          `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser bool              `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []InputModel      `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []InputModel      `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	ID                  string          `json:"id" yaml:"id"`
+	SteplibSource       string          `json:"steplib_source" yaml:"steplib_source"`
+	VersionTag          string          `json:"version_tag" yaml:"version_tag"`
+	Name                string          `json:"name" yaml:"name"`
+	Description         string          `json:"description,omitempty" yaml:"description,omitempty"`
+	Website             string          `json:"website" yaml:"website"`
+	ForkURL             string          `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
+	Source              StepSourceModel `json:"source" yaml:"source"`
+	HostOsTags          []string        `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     []string        `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            []string        `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	IsRequiresAdminUser bool            `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	Inputs              []InputModel    `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []InputModel    `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 // StepListItem ...
@@ -120,168 +124,274 @@ func (stepListItm StepListItem) GetStepIDStepDataPair() (string, StepModel, erro
 	return "", StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
 
-// InputModel ...
-func (environmentYMLItem EnvironmentYMLItemModel) InputModel() InputModel {
+// ToInputModel ...
+func (environmentYMLItem EnvironmentYMLItemModel) ToInputModel() (InputModel, error) {
 	inputModel := defaultInputModel()
 	for key, value := range environmentYMLItem {
-		if value == nil {
-			continue
-		}
-
 		var ok bool
 		switch key {
 		case "title":
 			inputModel.Title, ok = value.(string)
 			if ok == false {
-				log.Fatal("Failed to cast")
+				return InputModel{}, errors.New("Failed to cast title")
 			}
 		case "description":
 			inputModel.Description, ok = value.(string)
 			if ok == false {
-				log.Fatal("Failed to cast")
+				return InputModel{}, errors.New("Failed to cast description")
 			}
 		case "value_options":
 			inputModel.ValueOptions, ok = value.([]string)
 			if ok == false {
-				log.Fatal("Failed to cast")
+				return InputModel{}, errors.New("Failed to cast value_options")
 			}
 		case "is_required":
-			boolValue := parseBool(value, false)
+			boolValue, err := parseBoolWithDefault(value, false)
+			if err != nil {
+				return InputModel{}, err
+			}
 			inputModel.IsRequired = &boolValue
 		case "is_expand":
-			boolValue := parseBool(value, true)
+			boolValue, err := parseBoolWithDefault(value, true)
+			if err != nil {
+				return InputModel{}, err
+			}
 			inputModel.IsExpand = &boolValue
 		case "is_dont_change_value":
-			boolValue := parseBool(value, false)
+			boolValue, err := parseBoolWithDefault(value, false)
+			if err != nil {
+				return InputModel{}, err
+			}
 			inputModel.IsDontChangeValue = &boolValue
 		default:
 			inputModel.MappedTo = key
 			inputModel.Value, ok = value.(string)
 			if ok == false {
-				log.Fatal("Failed to cast")
+				return InputModel{}, errors.New("Failed to cast value")
 			}
 		}
 	}
-	return inputModel
+	return inputModel, nil
 }
 
-// StepModel ...
-func (stepYML StepYMLModel) StepModel() StepModel {
+// ToStepModel ...
+func (stepYML StepYMLModel) ToStepModel() (StepModel, error) {
 	inputs := []InputModel{}
 	for _, envYMLItem := range stepYML.Inputs {
-		input := envYMLItem.InputModel()
+		input, err := envYMLItem.ToInputModel()
+		if err != nil {
+			return StepModel{}, err
+		}
 		inputs = append(inputs, input)
 	}
 
 	outputs := []InputModel{}
 	for _, envYMLItem := range stepYML.Outputs {
-		output := envYMLItem.InputModel()
+		output, err := envYMLItem.ToInputModel()
+		if err != nil {
+			return StepModel{}, err
+		}
 		outputs = append(outputs, output)
 	}
 
-	step := StepModel{}
-	step.ID = stepYML.ID
-	step.SteplibSource = stepYML.SteplibSource
-	step.VersionTag = stepYML.VersionTag
-	step.Name = stepYML.Name
-	step.Description = stepYML.Description
-	step.Website = stepYML.Website
-	step.ForkURL = stepYML.ForkURL
-	step.Source = stepYML.Source
-	step.HostOsTags = stepYML.HostOsTags
-	step.ProjectTypeTags = stepYML.ProjectTypeTags
-	step.TypeTags = stepYML.TypeTags
-	step.IsRequiresAdminUser = stepYML.IsRequiresAdminUser
-	step.Inputs = inputs
-	step.Outputs = outputs
+	step := StepModel{
+		ID:                  stepYML.ID,
+		SteplibSource:       stepYML.SteplibSource,
+		VersionTag:          stepYML.VersionTag,
+		Name:                stepYML.Name,
+		Description:         stepYML.Description,
+		Website:             stepYML.Website,
+		ForkURL:             stepYML.ForkURL,
+		Source:              stepYML.Source,
+		HostOsTags:          stepYML.HostOsTags,
+		ProjectTypeTags:     stepYML.ProjectTypeTags,
+		TypeTags:            stepYML.TypeTags,
+		IsRequiresAdminUser: stepYML.IsRequiresAdminUser,
+		Inputs:              inputs,
+		Outputs:             outputs,
+	}
 
-	return step
+	return step, nil
 }
 
-// StepListItem ...
-func (stepListYMLItem StepListYMLItem) StepListItem() StepListItem {
+// ToStepListItem ...
+func (stepListYMLItem StepListYMLItem) ToStepListItem() (StepListItem, error) {
 	stepListItem := StepListItem{}
 	for key, value := range stepListYMLItem {
-		stepModel := value.StepModel()
+		stepModel, err := value.ToStepModel()
+		if err != nil {
+			return StepListItem{}, err
+		}
 		stepListItem[key] = stepModel
 	}
-	return stepListItem
+	return stepListItem, nil
 }
 
-// WorkflowModel ...
-func (workflowYMLModel WorkflowYMLModel) WorkflowModel() WorkflowModel {
+// ToWorkflowModel ...
+func (workflowYMLModel WorkflowYMLModel) ToWorkflowModel() (WorkflowModel, error) {
 	environments := []InputModel{}
 	for _, envYML := range workflowYMLModel.Environments {
-		input := envYML.InputModel()
+		input, err := envYML.ToInputModel()
+		if err != nil {
+			return WorkflowModel{}, err
+		}
 		environments = append(environments, input)
 	}
 
 	steps := []StepListItem{}
 	for _, stepListItemYML := range workflowYMLModel.Steps {
-		stepListItem := stepListItemYML.StepListItem()
+		stepListItem, err := stepListItemYML.ToStepListItem()
+		if err != nil {
+			return WorkflowModel{}, err
+		}
 		steps = append(steps, stepListItem)
 	}
 
-	workflow := WorkflowModel{}
-	workflow.Environments = environments
-	workflow.Steps = steps
+	workflow := WorkflowModel{
+		Environments: environments,
+		Steps:        steps,
+	}
 
-	return workflow
+	return workflow, nil
 }
 
-// AppModel ...
-func (appYml AppYMLModel) AppModel() AppModel {
+// ToAppModel ...
+func (appYml AppYMLModel) ToAppModel() (AppModel, error) {
 	environments := []InputModel{}
 	for _, envYML := range appYml.Environments {
-		input := envYML.InputModel()
+		input, err := envYML.ToInputModel()
+		if err != nil {
+			return AppModel{}, err
+		}
 		environments = append(environments, input)
 	}
 
-	appModel := AppModel{}
-	appModel.Environments = environments
-	return appModel
+	appModel := AppModel{
+		Environments: environments,
+	}
+	return appModel, nil
 }
 
-// BitriseConfigModel ...
-func (bitriseConfigYML BitriseConfigYMLModel) BitriseConfigModel() BitriseConfigModel {
+// ToBitriseConfigModel ...
+func (bitriseConfigYML BitriseConfigYMLModel) ToBitriseConfigModel() (BitriseConfigModel, error) {
 	workflows := map[string]WorkflowModel{}
 	for key, value := range bitriseConfigYML.Workflows {
-		workflow := value.WorkflowModel()
+		workflow, err := value.ToWorkflowModel()
+		if err != nil {
+			return BitriseConfigModel{}, err
+		}
 		workflows[key] = workflow
 	}
 
-	config := BitriseConfigModel{}
-	config.FormatVersion = bitriseConfigYML.FormatVersion
-	config.App = bitriseConfigYML.App.AppModel()
-	config.Workflows = workflows
-	return config
+	app, err := bitriseConfigYML.App.ToAppModel()
+	if err != nil {
+		return BitriseConfigModel{}, err
+	}
+
+	config := BitriseConfigModel{
+		FormatVersion: bitriseConfigYML.FormatVersion,
+		App:           app,
+		Workflows:     workflows,
+	}
+
+	return config, nil
 }
 
 // -------------------
 // --- Util
 
-func parseBool(stringOrBool interface{}, defaultValue bool) bool {
+// MergeWith ...
+func (specStep *StepModel) MergeWith(workflowStep StepModel) {
+	specStep.ID = mergeString(specStep.ID, workflowStep.ID)
+	specStep.SteplibSource = mergeString(specStep.SteplibSource, workflowStep.SteplibSource)
+	specStep.VersionTag = mergeString(specStep.VersionTag, workflowStep.VersionTag)
+	specStep.Name = mergeString(specStep.Name, workflowStep.Name)
+	specStep.Description = mergeString(specStep.Description, workflowStep.Description)
+	specStep.Website = mergeString(specStep.Website, workflowStep.Website)
+	specStep.ForkURL = mergeString(specStep.ForkURL, workflowStep.ForkURL)
+	specStep.Source = mergeStepSourceModel(specStep.Source, workflowStep.Source)
+	specStep.HostOsTags = mergeStringSlice(specStep.HostOsTags, workflowStep.HostOsTags)
+	specStep.ProjectTypeTags = mergeStringSlice(specStep.ProjectTypeTags, workflowStep.ProjectTypeTags)
+	specStep.TypeTags = mergeStringSlice(specStep.TypeTags, workflowStep.TypeTags)
+	specStep.IsRequiresAdminUser = workflowStep.IsRequiresAdminUser
+	specStep.Inputs = mergeInputModels(specStep.Inputs, workflowStep.Inputs)
+	specStep.Outputs = mergeInputModels(specStep.Outputs, workflowStep.Outputs)
+}
+
+func mergeBoolPtr(reference, override *bool) *bool {
+	if override != nil {
+		return override
+	}
+	return reference
+}
+
+func (reference *InputModel) mergeInputModel(override InputModel) {
+	reference.MappedTo = mergeString(reference.MappedTo, override.MappedTo)
+	reference.Title = mergeString(reference.Title, override.Title)
+	reference.Description = mergeString(reference.Description, override.Description)
+	reference.Value = mergeString(reference.Value, override.Value)
+	reference.ValueOptions = mergeStringSlice(reference.ValueOptions, override.ValueOptions)
+	reference.IsRequired = mergeBoolPtr(reference.IsRequired, override.IsRequired)
+	reference.IsExpand = mergeBoolPtr(reference.IsExpand, override.IsExpand)
+	reference.IsDontChangeValue = mergeBoolPtr(reference.IsDontChangeValue, override.IsDontChangeValue)
+}
+
+func mergeInputModels(reference, override []InputModel) []InputModel {
+	for idx, referenceInput := range reference {
+		for _, overrideInput := range override {
+			if referenceInput.MappedTo == overrideInput.MappedTo {
+				referenceInput.mergeInputModel(overrideInput)
+				reference[idx] = referenceInput
+			}
+		}
+	}
+	return reference
+}
+
+func mergeStringSlice(reference, override []string) []string {
+	if len(override) > 0 {
+		return override
+	}
+	return reference
+}
+
+func mergeStepSourceModel(reference, override StepSourceModel) StepSourceModel {
+	if override.Git != "" {
+		return override
+	}
+	return reference
+}
+
+func mergeString(reference, override string) string {
+	if override != "" {
+		return override
+	}
+	return reference
+}
+
+func parseBoolWithDefault(stringOrBool interface{}, defaultValue bool) (bool, error) {
+	if stringOrBool == nil {
+		return defaultValue, nil
+	}
+
 	boolValue := defaultValue
 	var err error
 	var ok bool
-	switch t := stringOrBool.(type) {
+	switch stringOrBool.(type) {
 	case string:
-		stringValue, ok := stringOrBool.(string)
-		if ok == false {
-			log.Fatal("Failed to cast")
-		}
-		if boolValue, err = goinp.ParseBool(stringValue); err != nil {
-			log.Fatal("Failed to parse bool:", err)
+		if stringValue, ok := stringOrBool.(string); ok == false {
+			return defaultValue, errors.New("Failed to cast to string")
+		} else if boolValue, err = goinp.ParseBool(stringValue); err != nil {
+			return defaultValue, errors.New("Failed to parse bool")
 		}
 	case bool:
-		boolValue, ok = stringOrBool.(bool)
-		if ok == false {
-			log.Fatal("Failed to cast")
+		if boolValue, ok = stringOrBool.(bool); ok == false {
+			return defaultValue, errors.New("Failed to cast to bool")
 		}
 	default:
-		log.Fatal("Failed to parse bool, type:", t)
+		return defaultValue, errors.New("Failed to parse: Unknown type")
 	}
-	return boolValue
+	return boolValue, nil
 }
 
 func defaultInputModel() InputModel {
