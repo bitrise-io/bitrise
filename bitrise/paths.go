@@ -41,6 +41,18 @@ func CleanupBitriseWorkPath() error {
 	return initBitriseWorkPaths()
 }
 
+// RemoveFile ...
+func RemoveFile(pth string) error {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if exist {
+		if err := os.RemoveAll(pth); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := filepath.Abs("./.bitrise")
 	if err != nil {
