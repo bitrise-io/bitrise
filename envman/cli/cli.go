@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -66,6 +67,10 @@ func before(c *cli.Context) error {
 	return nil
 }
 
+func printVersion(c *cli.Context) {
+	fmt.Fprintf(c.App.Writer, "%v\n", c.App.Version)
+}
+
 // Run the Envman CLI.
 func Run() {
 	// Read piped data
@@ -78,10 +83,12 @@ func Run() {
 	}
 
 	// Parse cl
+	cli.VersionPrinter = printVersion
+
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Environment variable manager"
-	app.Version = "0.0.7"
+	app.Version = "0.9.1"
 
 	app.Author = ""
 	app.Email = ""
