@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	models "github.com/bitrise-io/bitrise-cli/models/models_1_1_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
@@ -19,8 +19,8 @@ func NewErrorf(format string, a ...interface{}) error {
 	return errors.New(errStr)
 }
 
-// ReadBitriseConfigYML ...
-func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
+// ReadBitriseConfig ...
+func ReadBitriseConfig(pth string) (models.BitriseConfigModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseConfigModel{}, err
 	} else if !isExists {
@@ -31,12 +31,12 @@ func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	if err != nil {
 		return models.BitriseConfigModel{}, err
 	}
-	var bitriseConfigYML models.BitriseConfigYMLModel
-	if err := yaml.Unmarshal(bytes, &bitriseConfigYML); err != nil {
+	var bitriseConfigFile models.BitriseConfigFileModel
+	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
 		return models.BitriseConfigModel{}, err
 	}
 
-	return bitriseConfigYML.ToBitriseConfigModel()
+	return bitriseConfigFile.ToBitriseConfigModel()
 }
 
 // ReadSpecStep ...

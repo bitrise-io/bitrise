@@ -8,7 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	models "github.com/bitrise-io/bitrise-cli/models/models_1_1_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
@@ -48,9 +48,9 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		projectTitleEnv := models.EnvironmentItemModel{
-			MappedTo: "BITRISE_PROJECT_TITLE",
+			Key:      "BITRISE_PROJECT_TITLE",
 			Value:    val,
-			IsExpand: &defaultExpand,
+			IsExpand: defaultExpand,
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
 	}
@@ -58,9 +58,9 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		devBranchEnv := models.EnvironmentItemModel{
-			MappedTo: "BITRISE_DEV_BRANCH",
+			Key:      "BITRISE_DEV_BRANCH",
 			Value:    val,
-			IsExpand: &defaultExpand,
+			IsExpand: defaultExpand,
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
 	}
