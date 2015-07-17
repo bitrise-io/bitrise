@@ -80,18 +80,18 @@ func TestConvertBitriseConfig(t *testing.T) {
 
 	stepList := StepListItemFile{
 		"Step1": StepFileModel{
-            ID: "id",
-            SteplibSource :"steplib",
-            Source              StepSourceModel{
-                Git: "gitmit",
-            },
-            HostOsTags          []string                   `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-            ProjectTypeTags     []string                   `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-            TypeTags            []string                   `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-            IsRequiresAdminUser bool                       `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-            Inputs              []EnvironmentItemFileModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-            Outputs             []EnvironmentItemFileModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-        },
+			ID:            "id",
+			SteplibSource: "steplib",
+			Source: StepSourceModel{
+				Git: "https://git/url",
+			},
+			HostOsTags:          []string{"osx"},
+			ProjectTypeTags:     []string{"ios"},
+			TypeTags:            []string{"some-cat"},
+			IsRequiresAdminUser: true,
+			Inputs:              []EnvironmentItemFileModel{},
+			Outputs:             []EnvironmentItemFileModel{},
+		},
 	}
 
 	workflowFileMap := map[string]WorkflowFileModel{
