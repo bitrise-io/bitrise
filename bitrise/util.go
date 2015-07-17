@@ -13,6 +13,12 @@ import (
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
+// NewError ...
+func NewError(a ...interface{}) error {
+	errStr := fmt.Sprint(a...)
+	return errors.New(errStr)
+}
+
 // NewErrorf ...
 func NewErrorf(format string, a ...interface{}) error {
 	errStr := fmt.Sprintf(format, a...)
