@@ -56,7 +56,7 @@ func createStepIDDataFromString(s string) (StepIDData, error) {
 	}, nil
 }
 
-func exportEnvironmentsList(envsList []models.InputModel) error {
+func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {

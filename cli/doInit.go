@@ -43,11 +43,11 @@ func doInit(c *cli.Context) {
 	}
 
 	defaultExpand := true
-	projectSettingsEnvs := []models.InputModel{}
+	projectSettingsEnvs := []models.EnvironmentItemModel{}
 	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectTitleEnv := models.InputModel{
+		projectTitleEnv := models.EnvironmentItemModel{
 			MappedTo: "BITRISE_PROJECT_TITLE",
 			Value:    val,
 			IsExpand: &defaultExpand,
@@ -57,7 +57,7 @@ func doInit(c *cli.Context) {
 	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		devBranchEnv := models.InputModel{
+		devBranchEnv := models.EnvironmentItemModel{
 			MappedTo: "BITRISE_DEV_BRANCH",
 			Value:    val,
 			IsExpand: &defaultExpand,
