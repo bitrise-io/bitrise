@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_1_0"
+	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
