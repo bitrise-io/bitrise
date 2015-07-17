@@ -1,7 +1,6 @@
 package bitrise
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,23 +12,6 @@ import (
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
-
-// ReadWorkflowJSON ...
-func ReadWorkflowJSON(pth string) (models.WorkflowModel, error) {
-	var workflow models.WorkflowModel
-
-	file, err := os.Open(pth)
-	if err != nil {
-		return models.WorkflowModel{}, err
-	}
-
-	parser := json.NewDecoder(file)
-	if err = parser.Decode(&workflow); err != nil {
-		return models.WorkflowModel{}, err
-	}
-
-	return workflow, nil
-}
 
 // NewErrorf ...
 func NewErrorf(format string, a ...interface{}) error {
@@ -49,12 +31,32 @@ func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	if err != nil {
 		return models.BitriseConfigModel{}, err
 	}
-	var bitriseConfig models.BitriseConfigModel
-	if err := yaml.Unmarshal(bytes, &bitriseConfig); err != nil {
+	var bitriseConfigYML models.BitriseConfigYMLModel
+	if err := yaml.Unmarshal(bytes, &bitriseConfigYML); err != nil {
 		return models.BitriseConfigModel{}, err
 	}
 
-	return bitriseConfig, nil
+	return bitriseConfigYML.ToBitriseConfigModel()
+}
+
+// ReadSpecStep ...
+func ReadSpecStep(pth string) (models.StepModel, error) {
+	if isExists, err := pathutil.IsPathExists(pth); err != nil {
+		return models.StepModel{}, err
+	} else if !isExists {
+		return models.StepModel{}, NewErrorf("No file found at path", pth)
+	}
+
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return models.StepModel{}, err
+	}
+	var specStep models.StepModel
+	if err := yaml.Unmarshal(bytes, &specStep); err != nil {
+		return models.StepModel{}, err
+	}
+
+	return specStep, nil
 }
 
 // WriteStringToFile ...

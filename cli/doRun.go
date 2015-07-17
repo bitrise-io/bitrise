@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
-	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
 )
 
@@ -61,22 +60,10 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
-		envKey, envValue, err := env.GetKeyValue()
-		if err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to get environment key-value pair from env:", env)
-			return err
-		}
+		envKey := env.MappedTo
+		envValue := env.Value
 		if envValue != "" {
-			expand := true
-			if env["is_expand"] != "" {
-				boolValue, err := goinp.ParseBool(env["is_expand"])
-				if err != nil {
-					log.Error("Failed to parse bool:", err)
-					return err
-				}
-				expand = boolValue
-			}
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, *env.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -111,15 +98,26 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			log.Error("Failed to setup stepman:", err)
 		}
 
-		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir); err != nil {
+		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
+		if err := bitrise.RemoveFile(stepYMLPth); err != nil {
+			log.Fatal("Failed to remove step yml:", err)
+		}
+
+		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			failedSteps = append(failedSteps, compositeStepIDStr)
 		} else {
 			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
 
-			if err := runStep(workflowStep, stepIDData); err != nil {
-				log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
-				failedSteps = append(failedSteps, compositeStepIDStr)
+			if specStep, err := bitrise.ReadSpecStep(stepYMLPth); err != nil {
+				log.Fatal("Failed to read spec step:", err)
+			} else {
+				specStep.MergeWith(workflowStep)
+
+				if err := runStep(specStep, stepIDData); err != nil {
+					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
+					failedSteps = append(failedSteps, compositeStepIDStr)
+				}
 			}
 		}
 	}
@@ -131,21 +129,11 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 
 	// Add step envs
 	for _, input := range step.Inputs {
-		envKey, envValue, err := input.GetKeyValue()
-		if err != nil {
-			return err
-		}
+		envKey := input.MappedTo
+		envValue := input.Value
 		if envValue != "" {
-			expand := true
-			if input["is_expand"] != "" {
-				boolValue, err := goinp.ParseBool(input["is_expand"])
-				if err != nil {
-					log.Error("Failed to parse bool:", err)
-					return err
-				}
-				expand = boolValue
-			}
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, expand); err != nil {
+			log.Info("Input:", input)
+			if err := bitrise.RunEnvmanAdd(envKey, envValue, *input.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
