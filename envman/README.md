@@ -9,6 +9,17 @@
 - complex environment values : if you want to store a complex input as ENV (for example a change log text/summary), `envman` makes this easy, you don't have to encode the value so that when you call bash's `export KEY=value` it will store your value as you intended. You can just give `envman` the value as it is through a `--valuefile` option or as an input stream (or just edit the related `.envstore` file manually), no encoding required.
 - switch between environment sets : if you work on multiple projects where each one requires different environments you can manage this with `envman`
 
+## Install
+
+To install `envman`, run the following commands (in a bash shell):
+```
+curl -L https://github.com/bitrise-io/envman/releases/download/0.9.1/envman-`uname -s`-`uname -m` > /usr/local/bin/envman
+```
+Then:
+```
+chmod +x /usr/local/bin/envman
+```
+
 
 ## How? - Use cases
 
