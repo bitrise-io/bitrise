@@ -54,8 +54,8 @@ type BitriseConfigYMLModel struct {
 // -------------------
 // --- Models
 
-// InputModel ...
-type InputModel struct {
+// EnvironmentItemModel ...
+type EnvironmentItemModel struct {
 	MappedTo          string   `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
 	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       string   `json:"description,omitempty" yaml:"description,omitempty"`
@@ -73,20 +73,20 @@ type StepSourceModel struct {
 
 // StepModel ...
 type StepModel struct {
-	ID                  string          `json:"id" yaml:"id"`
-	SteplibSource       string          `json:"steplib_source" yaml:"steplib_source"`
-	VersionTag          string          `json:"version_tag" yaml:"version_tag"`
-	Name                string          `json:"name" yaml:"name"`
-	Description         string          `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string          `json:"website" yaml:"website"`
-	ForkURL             string          `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              StepSourceModel `json:"source" yaml:"source"`
-	HostOsTags          []string        `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string        `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string        `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser bool            `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []InputModel    `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []InputModel    `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	ID                  string                 `json:"id" yaml:"id"`
+	SteplibSource       string                 `json:"steplib_source" yaml:"steplib_source"`
+	VersionTag          string                 `json:"version_tag" yaml:"version_tag"`
+	Name                string                 `json:"name" yaml:"name"`
+	Description         string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Website             string                 `json:"website" yaml:"website"`
+	ForkURL             string                 `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
+	Source              StepSourceModel        `json:"source" yaml:"source"`
+	HostOsTags          []string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     []string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            []string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	IsRequiresAdminUser bool                   `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	Inputs              []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 // StepListItem ...
@@ -94,13 +94,13 @@ type StepListItem map[string]StepModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	Environments []InputModel   `json:"environments"`
-	Steps        []StepListItem `json:"steps"`
+	Environments []EnvironmentItemModel `json:"environments"`
+	Steps        []StepListItem         `json:"steps"`
 }
 
 // AppModel ...
 type AppModel struct {
-	Environments []InputModel `json:"environments" yaml:"environments"`
+	Environments []EnvironmentItemModel `json:"environments" yaml:"environments"`
 }
 
 // BitriseConfigModel ...
@@ -124,50 +124,50 @@ func (stepListItm StepListItem) GetStepIDStepDataPair() (string, StepModel, erro
 	return "", StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
 
-// ToInputModel ...
-func (environmentYMLItem EnvironmentYMLItemModel) ToInputModel() (InputModel, error) {
-	inputModel := defaultInputModel()
+// ToEnvironmentItemModel ...
+func (environmentYMLItem EnvironmentYMLItemModel) ToEnvironmentItemModel() (EnvironmentItemModel, error) {
+	inputModel := defaultEnvironmentItemModel()
 	for key, value := range environmentYMLItem {
 		var ok bool
 		switch key {
 		case "title":
 			inputModel.Title, ok = value.(string)
 			if ok == false {
-				return InputModel{}, errors.New("Failed to cast title")
+				return EnvironmentItemModel{}, errors.New("Failed to cast title")
 			}
 		case "description":
 			inputModel.Description, ok = value.(string)
 			if ok == false {
-				return InputModel{}, errors.New("Failed to cast description")
+				return EnvironmentItemModel{}, errors.New("Failed to cast description")
 			}
 		case "value_options":
 			inputModel.ValueOptions, ok = value.([]string)
 			if ok == false {
-				return InputModel{}, errors.New("Failed to cast value_options")
+				return EnvironmentItemModel{}, errors.New("Failed to cast value_options")
 			}
 		case "is_required":
 			boolValue, err := parseBoolWithDefault(value, false)
 			if err != nil {
-				return InputModel{}, err
+				return EnvironmentItemModel{}, err
 			}
 			inputModel.IsRequired = &boolValue
 		case "is_expand":
 			boolValue, err := parseBoolWithDefault(value, true)
 			if err != nil {
-				return InputModel{}, err
+				return EnvironmentItemModel{}, err
 			}
 			inputModel.IsExpand = &boolValue
 		case "is_dont_change_value":
 			boolValue, err := parseBoolWithDefault(value, false)
 			if err != nil {
-				return InputModel{}, err
+				return EnvironmentItemModel{}, err
 			}
 			inputModel.IsDontChangeValue = &boolValue
 		default:
 			inputModel.MappedTo = key
 			inputModel.Value, ok = value.(string)
 			if ok == false {
-				return InputModel{}, errors.New("Failed to cast value")
+				return EnvironmentItemModel{}, errors.New("Failed to cast value")
 			}
 		}
 	}
@@ -176,18 +176,18 @@ func (environmentYMLItem EnvironmentYMLItemModel) ToInputModel() (InputModel, er
 
 // ToStepModel ...
 func (stepYML StepYMLModel) ToStepModel() (StepModel, error) {
-	inputs := []InputModel{}
+	inputs := []EnvironmentItemModel{}
 	for _, envYMLItem := range stepYML.Inputs {
-		input, err := envYMLItem.ToInputModel()
+		input, err := envYMLItem.ToEnvironmentItemModel()
 		if err != nil {
 			return StepModel{}, err
 		}
 		inputs = append(inputs, input)
 	}
 
-	outputs := []InputModel{}
+	outputs := []EnvironmentItemModel{}
 	for _, envYMLItem := range stepYML.Outputs {
-		output, err := envYMLItem.ToInputModel()
+		output, err := envYMLItem.ToEnvironmentItemModel()
 		if err != nil {
 			return StepModel{}, err
 		}
@@ -229,9 +229,9 @@ func (stepListYMLItem StepListYMLItem) ToStepListItem() (StepListItem, error) {
 
 // ToWorkflowModel ...
 func (workflowYMLModel WorkflowYMLModel) ToWorkflowModel() (WorkflowModel, error) {
-	environments := []InputModel{}
+	environments := []EnvironmentItemModel{}
 	for _, envYML := range workflowYMLModel.Environments {
-		input, err := envYML.ToInputModel()
+		input, err := envYML.ToEnvironmentItemModel()
 		if err != nil {
 			return WorkflowModel{}, err
 		}
@@ -257,9 +257,9 @@ func (workflowYMLModel WorkflowYMLModel) ToWorkflowModel() (WorkflowModel, error
 
 // ToAppModel ...
 func (appYml AppYMLModel) ToAppModel() (AppModel, error) {
-	environments := []InputModel{}
+	environments := []EnvironmentItemModel{}
 	for _, envYML := range appYml.Environments {
-		input, err := envYML.ToInputModel()
+		input, err := envYML.ToEnvironmentItemModel()
 		if err != nil {
 			return AppModel{}, err
 		}
@@ -314,8 +314,8 @@ func (specStep *StepModel) MergeWith(workflowStep StepModel) {
 	specStep.ProjectTypeTags = mergeStringSlice(specStep.ProjectTypeTags, workflowStep.ProjectTypeTags)
 	specStep.TypeTags = mergeStringSlice(specStep.TypeTags, workflowStep.TypeTags)
 	specStep.IsRequiresAdminUser = workflowStep.IsRequiresAdminUser
-	specStep.Inputs = mergeInputModels(specStep.Inputs, workflowStep.Inputs)
-	specStep.Outputs = mergeInputModels(specStep.Outputs, workflowStep.Outputs)
+	specStep.Inputs = mergeEnvironmentItemModels(specStep.Inputs, workflowStep.Inputs)
+	specStep.Outputs = mergeEnvironmentItemModels(specStep.Outputs, workflowStep.Outputs)
 }
 
 func mergeBoolPtr(reference, override *bool) *bool {
@@ -325,7 +325,7 @@ func mergeBoolPtr(reference, override *bool) *bool {
 	return reference
 }
 
-func (reference *InputModel) mergeInputModel(override InputModel) {
+func (reference *EnvironmentItemModel) mergeEnvironmentItemModel(override EnvironmentItemModel) {
 	reference.MappedTo = mergeString(reference.MappedTo, override.MappedTo)
 	reference.Title = mergeString(reference.Title, override.Title)
 	reference.Description = mergeString(reference.Description, override.Description)
@@ -336,11 +336,11 @@ func (reference *InputModel) mergeInputModel(override InputModel) {
 	reference.IsDontChangeValue = mergeBoolPtr(reference.IsDontChangeValue, override.IsDontChangeValue)
 }
 
-func mergeInputModels(reference, override []InputModel) []InputModel {
+func mergeEnvironmentItemModels(reference, override []EnvironmentItemModel) []EnvironmentItemModel {
 	for idx, referenceInput := range reference {
 		for _, overrideInput := range override {
 			if referenceInput.MappedTo == overrideInput.MappedTo {
-				referenceInput.mergeInputModel(overrideInput)
+				referenceInput.mergeEnvironmentItemModel(overrideInput)
 				reference[idx] = referenceInput
 			}
 		}
@@ -394,11 +394,11 @@ func parseBoolWithDefault(stringOrBool interface{}, defaultValue bool) (bool, er
 	return boolValue, nil
 }
 
-func defaultInputModel() InputModel {
+func defaultEnvironmentItemModel() EnvironmentItemModel {
 	defaultString := ""
 	defaultFalse := false
 	defaultTrue := true
-	inputModel := InputModel{
+	inputModel := EnvironmentItemModel{
 		MappedTo:          defaultString,
 		Title:             defaultString,
 		Description:       defaultString,
