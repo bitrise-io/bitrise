@@ -132,7 +132,7 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 		envKey := input.MappedTo
 		envValue := input.Value
 		if envValue != "" {
-			log.Info("Input:", input)
+			log.Debugln("Input:", input)
 			if err := bitrise.RunEnvmanAdd(envKey, envValue, *input.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
