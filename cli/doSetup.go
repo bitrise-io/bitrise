@@ -40,8 +40,6 @@ func doSetup(c *cli.Context) {
 	log.Infoln("* follow the guide")
 	fmt.Println()
 	log.Infoln("That's all :)")
-
-	os.Exit(1)
 }
 
 func checkProgramInstalledPath(clcommand string) (string, error) {
@@ -75,7 +73,13 @@ func checkIsHomebrewInstalled() error {
 		log.Infoln("Once the installation of brew is finished you can call the bitrise setup again.")
 		return err
 	}
+	verStr, err := bitrise.RunCommandAndReturnStdout("brew", "--version")
+	if err != nil {
+		log.Infoln("")
+		return errors.New("Failed to get version")
+	}
 	log.Infoln(" * [OK] Homebrew :", progInstallPth)
+	log.Infoln("        version :", verStr)
 	return nil
 }
 
@@ -99,6 +103,7 @@ func checkIsAnsibleInstalled() error {
 			return errors.New("Ansible not found and install was not initiated.")
 		}
 
+		// Install
 		log.Infoln("$ brew update --verbose")
 		if err := bitrise.RunCommand("brew", "update", "--verbose"); err != nil {
 			return err
@@ -118,11 +123,42 @@ func checkIsAnsibleInstalled() error {
 func checkIsEnvmanInstalled() error {
 	progInstallPth, err := checkProgramInstalledPath("envman")
 	if err != nil {
+		installCmdLines := []string{
+			"curl -L https://github.com/bitrise-io/envman/releases/download/0.9.1/envman-`uname -s`-`uname -m` > /usr/local/bin/envman",
+			"chmod +x /usr/local/bin/envman",
+		}
+		officialGitHubURL := "https://github.com/bitrise-io/envman"
+		fmt.Println()
+		log.Warnln("Envman was not found.")
+		log.Infoln("You can find more information on envman's official GitHub page:", officialGitHubURL)
+		fmt.Println()
+		log.Infoln("You can install envman by running:")
+		fmt.Println(strings.Join(installCmdLines, "\n"))
+		fmt.Println()
+		isInstall, err := goinp.AskForBool("Would you like to install envman automatically?")
+		if err != nil {
+			return err
+		}
+		if !isInstall {
+			return errors.New("envman not found and install was not initiated")
+		}
+
+		// Install
+		log.Infoln("Running script:")
+		if err := bitrise.RunBashCommandLines(installCmdLines); err != nil {
+			return err
+		}
+
+		// just check again
+		return checkIsEnvmanInstalled()
+	}
+	verStr, err := bitrise.RunCommandAndReturnStdout("envman", "-version")
+	if err != nil {
 		log.Infoln("")
-		log.Infoln("envman was not found.")
-		return errors.New("envman was not found")
+		return errors.New("Failed to get version")
 	}
 	log.Infoln(" * [OK] envman :", progInstallPth)
+	log.Infoln("        version :", verStr)
 	return nil
 }
 
@@ -133,7 +169,13 @@ func checkIsStepmanInstalled() error {
 		log.Infoln("stepman was not found.")
 		return errors.New("stepman was not found")
 	}
+	verStr, err := bitrise.RunCommandAndReturnStdout("stepman", "-version")
+	if err != nil {
+		log.Infoln("")
+		return errors.New("Failed to get version")
+	}
 	log.Infoln(" * [OK] stepman :", progInstallPth)
+	log.Infoln("        version :", verStr)
 	return nil
 }
 
@@ -143,14 +185,14 @@ func doSetupOnOSX() error {
 	if err := checkIsHomebrewInstalled(); err != nil {
 		return errors.New("Homebrew failed to install")
 	}
-	if err := checkIsAnsibleInstalled(); err != nil {
-		return errors.New("Ansible failed to install")
-	}
+	// if err := checkIsAnsibleInstalled(); err != nil {
+	// 	return errors.New("Ansible failed to install")
+	// }
 	if err := checkIsEnvmanInstalled(); err != nil {
-		return errors.New("Envman failed to install")
+		return bitrise.NewError("Envman failed to install:", err)
 	}
 	if err := checkIsStepmanInstalled(); err != nil {
-		return errors.New("Stepman failed to install")
+		return bitrise.NewError("Stepman failed to install:", err)
 	}
 	log.Infoln("All the required tools are installed!")
 	return nil

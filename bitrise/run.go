@@ -75,6 +75,30 @@ func RunEnvmanEnvstoreTest(pth string) error {
 // ------------------
 // --- Common
 
+// RunCommandAndReturnStdout ..
+func RunCommandAndReturnStdout(cmdName string, cmdArgs ...string) (string, error) {
+	cmd := exec.Command(cmdName, cmdArgs...)
+	cmd.Stderr = os.Stderr
+	outBytes, err := cmd.Output()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
+}
+
+// RunBashCommand ...
+func RunBashCommand(cmdStr string) error {
+	return RunCommand("bash", "-c", cmdStr)
+}
+
+// RunBashCommandLines ...
+func RunBashCommandLines(cmdLines []string) error {
+	for _, aLine := range cmdLines {
+		if err := RunCommand("bash", "-c", aLine); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // RunCopy ...
 func RunCopy(src, dst string) error {
 	args := []string{src, dst}
