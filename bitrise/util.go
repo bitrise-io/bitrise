@@ -25,8 +25,8 @@ func NewErrorf(format string, a ...interface{}) error {
 	return errors.New(errStr)
 }
 
-// ReadBitriseConfigYML ...
-func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
+// ReadBitriseConfig ...
+func ReadBitriseConfig(pth string) (models.BitriseConfigModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseConfigModel{}, err
 	} else if !isExists {
@@ -37,12 +37,12 @@ func ReadBitriseConfigYML(pth string) (models.BitriseConfigModel, error) {
 	if err != nil {
 		return models.BitriseConfigModel{}, err
 	}
-	var bitriseConfigYML models.BitriseConfigYMLModel
-	if err := yaml.Unmarshal(bytes, &bitriseConfigYML); err != nil {
+	var bitriseConfigFile models.BitriseConfigFileModel
+	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
 		return models.BitriseConfigModel{}, err
 	}
 
-	return bitriseConfigYML.ToBitriseConfigModel()
+	return bitriseConfigFile.ToBitriseConfigModel()
 }
 
 // ReadSpecStep ...

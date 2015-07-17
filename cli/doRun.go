@@ -60,10 +60,8 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
-		envKey := env.MappedTo
-		envValue := env.Value
-		if envValue != "" {
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, *env.IsExpand); err != nil {
+		if env.Value != "" {
+			if err := bitrise.RunEnvmanAdd(env.Key, env.Value, env.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -129,11 +127,9 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 
 	// Add step envs
 	for _, input := range step.Inputs {
-		envKey := input.MappedTo
-		envValue := input.Value
-		if envValue != "" {
-			log.Debugln("Input:", input)
-			if err := bitrise.RunEnvmanAdd(envKey, envValue, *input.IsExpand); err != nil {
+		if input.Value != "" {
+			log.Info("Input:", input)
+			if err := bitrise.RunEnvmanAdd(input.Key, input.Value, input.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -226,7 +222,7 @@ func doRun(c *cli.Context) {
 	}
 
 	// Run work flow
-	bitriseConfig, err := bitrise.ReadBitriseConfigYML(bitriseConfigPath)
+	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 	if err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to read Workflow:", err)
 	}

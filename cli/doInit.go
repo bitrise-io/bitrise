@@ -48,9 +48,9 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		projectTitleEnv := models.EnvironmentItemModel{
-			MappedTo: "BITRISE_PROJECT_TITLE",
+			Key:      "BITRISE_PROJECT_TITLE",
 			Value:    val,
-			IsExpand: &defaultExpand,
+			IsExpand: defaultExpand,
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
 	}
@@ -58,9 +58,9 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		devBranchEnv := models.EnvironmentItemModel{
-			MappedTo: "BITRISE_DEV_BRANCH",
+			Key:      "BITRISE_DEV_BRANCH",
 			Value:    val,
-			IsExpand: &defaultExpand,
+			IsExpand: defaultExpand,
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
 	}
