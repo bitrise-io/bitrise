@@ -99,6 +99,10 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		}
 
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
+		if err := bitrise.RemoveFile(stepYMLPth); err != nil {
+			log.Fatal("Failed to remove step yml:", err)
+		}
+
 		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			failedSteps = append(failedSteps, compositeStepIDStr)
@@ -109,10 +113,6 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 				log.Fatal("Failed to read spec step:", err)
 			} else {
 				specStep.MergeWith(workflowStep)
-
-				if err := bitrise.RemoveFile(stepYMLPth); err != nil {
-					log.Fatal("Failed to remove step yml:", err)
-				}
 
 				if err := runStep(specStep, stepIDData); err != nil {
 					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
