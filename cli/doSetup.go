@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -18,12 +19,28 @@ func doSetup(c *cli.Context) {
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
 	case "darwin":
-		doSetupOnOSX()
+		if err := doSetupOnOSX(); err != nil {
+			log.Fatalln("Setup failed:", err)
+		}
 	case "linux":
-		doSetupOnLinux()
+		if err := doSetupOnLinux(); err != nil {
+			log.Fatalln("Setup failed:", err)
+		}
 	default:
 		log.Fatalln("Sorry, unsupported platform :(")
 	}
+
+	// guide
+	fmt.Println()
+	log.Infoln("We're ready to rock!!")
+	fmt.Println()
+	log.Infoln("To start using bitrise-cli:")
+	log.Infoln("* cd into your project's directory (if you're not there already)")
+	log.Infoln("* call: bitrise-cli init")
+	log.Infoln("* follow the guide")
+	fmt.Println()
+	log.Infoln("That's all :)")
+
 	os.Exit(1)
 }
 
@@ -120,25 +137,25 @@ func checkIsStepmanInstalled() error {
 	return nil
 }
 
-func doSetupOnOSX() {
+func doSetupOnOSX() error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
 	if err := checkIsHomebrewInstalled(); err != nil {
-		log.Fatalln("Failed:", err)
+		return errors.New("Homebrew failed to install")
 	}
 	if err := checkIsAnsibleInstalled(); err != nil {
-		log.Fatalln("Failed:", err)
+		return errors.New("Ansible failed to install")
 	}
 	if err := checkIsEnvmanInstalled(); err != nil {
-		log.Fatalln("Failed:", err)
+		return errors.New("Envman failed to install")
 	}
 	if err := checkIsStepmanInstalled(); err != nil {
-		log.Fatalln("Failed:", err)
+		return errors.New("Stepman failed to install")
 	}
 	log.Infoln("All the required tools are installed!")
-	log.Infoln("We're ready to rock!!")
+	return nil
 }
 
-func doSetupOnLinux() {
-	log.Infoln("[BITRISE_CLI] - doSetupOnLinux -- Coming soon!")
+func doSetupOnLinux() error {
+	return errors.New("doSetupOnLinux -- Coming soon")
 }
