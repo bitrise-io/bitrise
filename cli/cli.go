@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -23,13 +24,19 @@ func before(c *cli.Context) error {
 	return nil
 }
 
+func printVersion(c *cli.Context) {
+	fmt.Fprintf(c.App.Writer, "%v\n", c.App.Version)
+}
+
 // Run ...
 func Run() {
 	// Parse cl
+	cli.VersionPrinter = printVersion
+
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = "0.0.1"
+	app.Version = "0.9.1"
 
 	app.Author = ""
 	app.Email = ""
