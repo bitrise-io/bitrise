@@ -48,7 +48,7 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		projectTitleEnv := models.EnvironmentItemModel{
-			Key:      "BITRISE_PROJECT_TITLE",
+			EnvKey:   "BITRISE_PROJECT_TITLE",
 			Value:    val,
 			IsExpand: defaultExpand,
 		}
@@ -58,7 +58,7 @@ func doInit(c *cli.Context) {
 		log.Fatalln(err)
 	} else {
 		devBranchEnv := models.EnvironmentItemModel{
-			Key:      "BITRISE_DEV_BRANCH",
+			EnvKey:   "BITRISE_DEV_BRANCH",
 			Value:    val,
 			IsExpand: defaultExpand,
 		}
@@ -143,7 +143,7 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 }
 
 func saveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
-	confModel, err := bitriseConf.ToBitriseConfigModel()
+	confModel := bitriseConf.ToBitriseConfigSerializeModel()
 	contBytes, err := generateYAML(confModel)
 	if err != nil {
 		return err

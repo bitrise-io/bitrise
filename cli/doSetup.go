@@ -189,10 +189,10 @@ func doSetupOnOSX() error {
 	// 	return errors.New("Ansible failed to install")
 	// }
 	if err := checkIsEnvmanInstalled(); err != nil {
-		return bitrise.NewError("Envman failed to install:", err)
+		return errors.New(fmt.Sprint("Envman failed to install:", err))
 	}
 	if err := checkIsStepmanInstalled(); err != nil {
-		return bitrise.NewError("Stepman failed to install:", err)
+		return errors.New(fmt.Sprint("Stepman failed to install:", err))
 	}
 	log.Infoln("All the required tools are installed!")
 	return nil

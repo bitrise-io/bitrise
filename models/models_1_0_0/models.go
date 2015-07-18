@@ -22,7 +22,7 @@ const (
 
 // EnvironmentItemModel ...
 type EnvironmentItemModel struct {
-	Key               string
+	EnvKey            string `yaml:"env_key"`
 	Value             string
 	Title             string
 	Description       string
@@ -71,36 +71,36 @@ type BitriseDataModel struct {
 // -------------------
 // --- Converters
 
-// ToBitriseConfigModel ...
-func (brDataModel BitriseDataModel) ToBitriseConfigModel() (BitriseConfigModel, error) {
-	workflowConfs := map[string]WorkflowConfigModel{}
+// ToBitriseConfigSerializeModel ...
+func (brDataModel BitriseDataModel) ToBitriseConfigSerializeModel() BitriseConfigSerializeModel {
+	workflowConfs := map[string]WorkflowSerializeModel{}
 	for key, aWorkflow := range brDataModel.Workflows {
-		workflowConfs[key] = aWorkflow.ToWorkflowConfigModel()
+		workflowConfs[key] = aWorkflow.ToWorkflowSerializeModel()
 	}
 
-	appConf := brDataModel.App.ToAppConfigModel()
+	appConf := brDataModel.App.ToAppSerializeModel()
 
-	config := BitriseConfigModel{
+	config := BitriseConfigSerializeModel{
 		FormatVersion: brDataModel.FormatVersion,
 		App:           appConf,
 		Workflows:     workflowConfs,
 	}
 
-	return config, nil
+	return config
 }
 
-// ToStepConfigModel ...
-func (step StepModel) ToStepConfigModel() StepConfigModel {
-	confInputs := []EnvironmentItemConfigModel{}
+// ToStepSerializeModel ...
+func (step StepModel) ToStepSerializeModel() StepSerializeModel {
+	confInputs := []EnvironmentItemSerializeModel{}
 	for _, itm := range step.Inputs {
-		confInputs = append(confInputs, itm.ToEnvironmentItemConfigModel())
+		confInputs = append(confInputs, itm.ToEnvironmentItemSerializeModel())
 	}
-	confOutputs := []EnvironmentItemConfigModel{}
+	confOutputs := []EnvironmentItemSerializeModel{}
 	for _, itm := range step.Outputs {
-		confOutputs = append(confOutputs, itm.ToEnvironmentItemConfigModel())
+		confOutputs = append(confOutputs, itm.ToEnvironmentItemSerializeModel())
 	}
 
-	return StepConfigModel{
+	return StepSerializeModel{
 		Name:                step.Name,
 		Description:         step.Description,
 		Website:             step.Website,
@@ -113,67 +113,6 @@ func (step StepModel) ToStepConfigModel() StepConfigModel {
 		Inputs:              confInputs,
 		Outputs:             confOutputs,
 	}
-}
-
-// ToWorkflowConfigModel ...
-func (wfModel WorkflowModel) ToWorkflowConfigModel() WorkflowConfigModel {
-	// // WorkflowConfigModel ...
-	// type WorkflowConfigModel struct {
-	// 	Environments []EnvironmentItemConfigModel `json:"environments"`
-	// 	Steps        []StepListItemConfigModel    `json:"steps"`
-	// }
-	//
-	// type StepListItemConfigModel map[string]StepConfigModel
-
-	environments := []EnvironmentItemConfigModel{}
-	for _, env := range wfModel.Environments {
-		environments = append(environments, env.ToEnvironmentItemConfigModel())
-	}
-
-	steps := []StepListItemConfigModel{}
-	for _, stepListFile := range wfModel.Steps {
-		stepList := StepListItemConfigModel{}
-		for key, aStep := range stepListFile {
-			stepList[key] = aStep.ToStepConfigModel()
-		}
-		steps = append(steps, stepList)
-	}
-
-	worflow := WorkflowConfigModel{
-		Environments: environments,
-		Steps:        steps,
-	}
-
-	return worflow
-}
-
-// ToEnvironmentItemConfigModel ...
-func (envItm EnvironmentItemModel) ToEnvironmentItemConfigModel() EnvironmentItemConfigModel {
-	return EnvironmentItemConfigModel{
-		envItm.Key: envItm.Value,
-		OptionsKey: EnvironmentItemOptionsConfigModel{
-			Title:             envItm.Title,
-			Description:       envItm.Description,
-			ValueOptions:      envItm.ValueOptions,
-			IsRequired:        &envItm.IsRequired,
-			IsExpand:          &envItm.IsExpand,
-			IsDontChangeValue: &envItm.IsDontChangeValue,
-		},
-	}
-}
-
-// ToAppConfigModel ...
-func (appData AppModel) ToAppConfigModel() AppConfigModel {
-	environments := []EnvironmentItemConfigModel{}
-	for _, envItm := range appData.Environments {
-		environments = append(environments, envItm.ToEnvironmentItemConfigModel())
-	}
-
-	app := AppConfigModel{
-		Environments: environments,
-	}
-
-	return app
 }
 
 // -------------------
@@ -213,28 +152,27 @@ func mergeBoolPtr(reference, override *bool) *bool {
 	return reference
 }
 
-func (envItm *EnvironmentItemModel) mergeEnvironmentItemModel(override EnvironmentItemModel) {
-	*envItm = EnvironmentItemModel{
-		Value:             mergeString(envItm.Value, override.Value),
-		Title:             mergeString(envItm.Title, override.Title),
-		Description:       mergeString(envItm.Description, override.Description),
-		ValueOptions:      mergeStringSlice(envItm.ValueOptions, override.ValueOptions),
-		IsRequired:        override.IsRequired,
-		IsExpand:          override.IsExpand,
-		IsDontChangeValue: override.IsDontChangeValue,
-	}
+// MergeWith ...
+func (envItm *EnvironmentItemModel) MergeWith(override EnvironmentItemModel) {
+	envItm.Value = mergeString(envItm.Value, override.Value)
+	envItm.Title = mergeString(envItm.Title, override.Title)
+	envItm.Description = mergeString(envItm.Description, override.Description)
+	envItm.ValueOptions = mergeStringSlice(envItm.ValueOptions, override.ValueOptions)
+	envItm.IsRequired = override.IsRequired
+	envItm.IsExpand = override.IsExpand
+	envItm.IsDontChangeValue = override.IsDontChangeValue
 }
 
-func mergeEnvironmentItemModels(reference, override []EnvironmentItemModel) ([]EnvironmentItemModel, error) {
-	for idx, referenceEnv := range reference {
-		for _, overrideEnv := range override {
-			if referenceEnv.Key == overrideEnv.Key {
-				referenceEnv.mergeEnvironmentItemModel(overrideEnv)
-				reference[idx] = referenceEnv
+func mergeEnvironmentItemModels(refItem, overwItem []EnvironmentItemModel) ([]EnvironmentItemModel, error) {
+	for idx, aRefItm := range refItem {
+		for _, aOverwItem := range overwItem {
+			if aRefItm.EnvKey == aOverwItem.EnvKey {
+				aRefItm.MergeWith(aOverwItem)
+				refItem[idx] = aRefItm
 			}
 		}
 	}
-	return reference, nil
+	return refItem, nil
 }
 
 func mergeStringSlice(reference, override []string) []string {
@@ -281,18 +219,4 @@ func parseBoolWithDefault(stringOrBool interface{}, defaultValue bool) (bool, er
 		return defaultValue, errors.New("Failed to parse: Unknown type")
 	}
 	return boolValue, nil
-}
-
-func defaultEnvironmentItemModel() EnvironmentItemModel {
-	env := EnvironmentItemModel{
-		Key:               "",
-		Value:             "",
-		Title:             "",
-		Description:       "",
-		ValueOptions:      []string{},
-		IsRequired:        DefaultIsRequired,
-		IsExpand:          DefaultIsExpand,
-		IsDontChangeValue: DefaultIsDontChangeValue,
-	}
-	return env
 }
