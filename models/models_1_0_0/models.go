@@ -34,9 +34,6 @@ type EnvironmentItemModel struct {
 
 // StepModel ...
 type StepModel struct {
-	ID                  string
-	SteplibSource       string
-	VersionTag          string
 	Name                string
 	Description         string
 	Website             string
@@ -64,42 +61,147 @@ type AppModel struct {
 	Environments []EnvironmentItemModel
 }
 
-// BitriseConfigModel ...
-type BitriseConfigModel struct {
+// BitriseDataModel ...
+type BitriseDataModel struct {
 	FormatVersion string
 	App           AppModel
 	Workflows     map[string]WorkflowModel
 }
 
 // -------------------
+// --- Converters
+
+// ToBitriseConfigModel ...
+func (brDataModel BitriseDataModel) ToBitriseConfigModel() (BitriseConfigModel, error) {
+	workflowConfs := map[string]WorkflowConfigModel{}
+	for key, aWorkflow := range brDataModel.Workflows {
+		workflowConfs[key] = aWorkflow.ToWorkflowConfigModel()
+	}
+
+	appConf := brDataModel.App.ToAppConfigModel()
+
+	config := BitriseConfigModel{
+		FormatVersion: brDataModel.FormatVersion,
+		App:           appConf,
+		Workflows:     workflowConfs,
+	}
+
+	return config, nil
+}
+
+// ToStepConfigModel ...
+func (step StepModel) ToStepConfigModel() StepConfigModel {
+	confInputs := []EnvironmentItemConfigModel{}
+	for _, itm := range step.Inputs {
+		confInputs = append(confInputs, itm.ToEnvironmentItemConfigModel())
+	}
+	confOutputs := []EnvironmentItemConfigModel{}
+	for _, itm := range step.Outputs {
+		confOutputs = append(confOutputs, itm.ToEnvironmentItemConfigModel())
+	}
+
+	return StepConfigModel{
+		Name:                step.Name,
+		Description:         step.Description,
+		Website:             step.Website,
+		ForkURL:             step.ForkURL,
+		Source:              step.Source,
+		HostOsTags:          step.HostOsTags,
+		ProjectTypeTags:     step.ProjectTypeTags,
+		TypeTags:            step.TypeTags,
+		IsRequiresAdminUser: step.IsRequiresAdminUser,
+		Inputs:              confInputs,
+		Outputs:             confOutputs,
+	}
+}
+
+// ToWorkflowConfigModel ...
+func (wfModel WorkflowModel) ToWorkflowConfigModel() WorkflowConfigModel {
+	// // WorkflowConfigModel ...
+	// type WorkflowConfigModel struct {
+	// 	Environments []EnvironmentItemConfigModel `json:"environments"`
+	// 	Steps        []StepListItemConfigModel    `json:"steps"`
+	// }
+	//
+	// type StepListItemConfigModel map[string]StepConfigModel
+
+	environments := []EnvironmentItemConfigModel{}
+	for _, env := range wfModel.Environments {
+		environments = append(environments, env.ToEnvironmentItemConfigModel())
+	}
+
+	steps := []StepListItemConfigModel{}
+	for _, stepListFile := range wfModel.Steps {
+		stepList := StepListItemConfigModel{}
+		for key, aStep := range stepListFile {
+			stepList[key] = aStep.ToStepConfigModel()
+		}
+		steps = append(steps, stepList)
+	}
+
+	worflow := WorkflowConfigModel{
+		Environments: environments,
+		Steps:        steps,
+	}
+
+	return worflow
+}
+
+// ToEnvironmentItemConfigModel ...
+func (envItm EnvironmentItemModel) ToEnvironmentItemConfigModel() EnvironmentItemConfigModel {
+	return EnvironmentItemConfigModel{
+		envItm.Key: envItm.Value,
+		OptionsKey: EnvironmentItemOptionsConfigModel{
+			Title:             envItm.Title,
+			Description:       envItm.Description,
+			ValueOptions:      envItm.ValueOptions,
+			IsRequired:        &envItm.IsRequired,
+			IsExpand:          &envItm.IsExpand,
+			IsDontChangeValue: &envItm.IsDontChangeValue,
+		},
+	}
+}
+
+// ToAppConfigModel ...
+func (appData AppModel) ToAppConfigModel() AppConfigModel {
+	environments := []EnvironmentItemConfigModel{}
+	for _, envItm := range appData.Environments {
+		environments = append(environments, envItm.ToEnvironmentItemConfigModel())
+	}
+
+	app := AppConfigModel{
+		Environments: environments,
+	}
+
+	return app
+}
+
+// -------------------
 // --- Util
 
 // MergeWith ...
-func (specStep *StepModel) MergeWith(workflowStep StepModel) error {
-	specStep.ID = mergeString(specStep.ID, workflowStep.ID)
-	specStep.SteplibSource = mergeString(specStep.SteplibSource, workflowStep.SteplibSource)
-	specStep.VersionTag = mergeString(specStep.VersionTag, workflowStep.VersionTag)
-	specStep.Name = mergeString(specStep.Name, workflowStep.Name)
-	specStep.Description = mergeString(specStep.Description, workflowStep.Description)
-	specStep.Website = mergeString(specStep.Website, workflowStep.Website)
-	specStep.ForkURL = mergeString(specStep.ForkURL, workflowStep.ForkURL)
-	specStep.Source = mergeStepSourceModel(specStep.Source, workflowStep.Source)
-	specStep.HostOsTags = mergeStringSlice(specStep.HostOsTags, workflowStep.HostOsTags)
-	specStep.ProjectTypeTags = mergeStringSlice(specStep.ProjectTypeTags, workflowStep.ProjectTypeTags)
-	specStep.TypeTags = mergeStringSlice(specStep.TypeTags, workflowStep.TypeTags)
-	specStep.IsRequiresAdminUser = workflowStep.IsRequiresAdminUser
+func (step *StepModel) MergeWith(workflowStep StepModel) error {
+	step.Name = mergeString(step.Name, workflowStep.Name)
+	step.Description = mergeString(step.Description, workflowStep.Description)
+	step.Website = mergeString(step.Website, workflowStep.Website)
+	step.ForkURL = mergeString(step.ForkURL, workflowStep.ForkURL)
+	step.Source = mergeStepSourceModel(step.Source, workflowStep.Source)
+	step.HostOsTags = mergeStringSlice(step.HostOsTags, workflowStep.HostOsTags)
+	step.ProjectTypeTags = mergeStringSlice(step.ProjectTypeTags, workflowStep.ProjectTypeTags)
+	step.TypeTags = mergeStringSlice(step.TypeTags, workflowStep.TypeTags)
+	step.IsRequiresAdminUser = workflowStep.IsRequiresAdminUser
 
-	inputs, err := mergeEnvironmentItemModels(specStep.Inputs, workflowStep.Inputs)
+	inputs, err := mergeEnvironmentItemModels(step.Inputs, workflowStep.Inputs)
 	if err != nil {
 		return err
 	}
-	specStep.Inputs = inputs
+	step.Inputs = inputs
 
-	outputs, err := mergeEnvironmentItemModels(specStep.Outputs, workflowStep.Outputs)
+	outputs, err := mergeEnvironmentItemModels(step.Outputs, workflowStep.Outputs)
 	if err != nil {
 		return err
 	}
-	specStep.Outputs = outputs
+	step.Outputs = outputs
 
 	return nil
 }
@@ -111,12 +213,12 @@ func mergeBoolPtr(reference, override *bool) *bool {
 	return reference
 }
 
-func (env *EnvironmentItemModel) mergeEnvironmentItemModel(override EnvironmentItemModel) {
-	*env = EnvironmentItemModel{
-		Value:             mergeString(env.Value, override.Value),
-		Title:             mergeString(env.Title, override.Title),
-		Description:       mergeString(env.Description, override.Description),
-		ValueOptions:      mergeStringSlice(env.ValueOptions, override.ValueOptions),
+func (envItm *EnvironmentItemModel) mergeEnvironmentItemModel(override EnvironmentItemModel) {
+	*envItm = EnvironmentItemModel{
+		Value:             mergeString(envItm.Value, override.Value),
+		Title:             mergeString(envItm.Title, override.Title),
+		Description:       mergeString(envItm.Description, override.Description),
+		ValueOptions:      mergeStringSlice(envItm.ValueOptions, override.ValueOptions),
 		IsRequired:        override.IsRequired,
 		IsExpand:          override.IsExpand,
 		IsDontChangeValue: override.IsDontChangeValue,

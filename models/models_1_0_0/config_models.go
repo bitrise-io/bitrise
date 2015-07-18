@@ -5,8 +5,8 @@ import "errors"
 // -------------------
 // --- File models
 
-// EnvironmentItemOptionsFileModel ...
-type EnvironmentItemOptionsFileModel struct {
+// EnvironmentItemOptionsConfigModel ...
+type EnvironmentItemOptionsConfigModel struct {
 	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       string   `json:"description,omitempty" yaml:"description,omitempty"`
 	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
@@ -15,58 +15,55 @@ type EnvironmentItemOptionsFileModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
-// EnvironmentItemFileModel ...
-type EnvironmentItemFileModel map[string]interface{}
+// EnvironmentItemConfigModel ...
+type EnvironmentItemConfigModel map[string]interface{}
 
 // StepSourceModel ...
 type StepSourceModel struct {
 	Git string `json:"git" yaml:"git"`
 }
 
-// StepFileModel ...
-type StepFileModel struct {
-	ID                  string                     `json:"id" yaml:"id"`
-	SteplibSource       string                     `json:"steplib_source" yaml:"steplib_source"`
-	VersionTag          string                     `json:"version_tag" yaml:"version_tag"`
-	Name                string                     `json:"name" yaml:"name"`
-	Description         string                     `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string                     `json:"website" yaml:"website"`
-	ForkURL             string                     `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              StepSourceModel            `json:"source" yaml:"source"`
-	HostOsTags          []string                   `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string                   `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string                   `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser bool                       `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []EnvironmentItemFileModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []EnvironmentItemFileModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+// StepConfigModel ...
+type StepConfigModel struct {
+	Name                string                       `json:"name" yaml:"name"`
+	Description         string                       `json:"description,omitempty" yaml:"description,omitempty"`
+	Website             string                       `json:"website" yaml:"website"`
+	ForkURL             string                       `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
+	Source              StepSourceModel              `json:"source" yaml:"source"`
+	HostOsTags          []string                     `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     []string                     `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            []string                     `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	IsRequiresAdminUser bool                         `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	Inputs              []EnvironmentItemConfigModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []EnvironmentItemConfigModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
-// StepListItemFile ...
-type StepListItemFile map[string]StepFileModel
+// StepListItemConfigModel ...
+type StepListItemConfigModel map[string]StepConfigModel
 
-// WorkflowFileModel ...
-type WorkflowFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments"`
-	Steps        []StepListItemFile         `json:"steps"`
+// WorkflowConfigModel ...
+type WorkflowConfigModel struct {
+	Environments []EnvironmentItemConfigModel `json:"environments"`
+	Steps        []StepListItemConfigModel    `json:"steps"`
 }
 
-// AppFileModel ...
-type AppFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments" yaml:"environments"`
+// AppConfigModel ...
+type AppConfigModel struct {
+	Environments []EnvironmentItemConfigModel `json:"environments" yaml:"environments"`
 }
 
-// BitriseConfigFileModel ...
-type BitriseConfigFileModel struct {
-	FormatVersion string                       `json:"format_version" yaml:"format_version"`
-	App           AppFileModel                 `json:"app" yaml:"app"`
-	Workflows     map[string]WorkflowFileModel `json:"workflows" yaml:"workflows"`
+// BitriseConfigModel ...
+type BitriseConfigModel struct {
+	FormatVersion string                         `json:"format_version" yaml:"format_version"`
+	App           AppConfigModel                 `json:"app" yaml:"app"`
+	Workflows     map[string]WorkflowConfigModel `json:"workflows" yaml:"workflows"`
 }
 
 // -------------------
 // --- Struct methods
 
 // GetKeyValuePair ...
-func (envFile EnvironmentItemFileModel) GetKeyValuePair() (string, string, error) {
+func (envFile EnvironmentItemConfigModel) GetKeyValuePair() (string, string, error) {
 	if len(envFile) < 3 {
 		for key, value := range envFile {
 			if key != OptionsKey {
@@ -82,15 +79,15 @@ func (envFile EnvironmentItemFileModel) GetKeyValuePair() (string, string, error
 }
 
 // GetOptions ...
-func (envFile EnvironmentItemFileModel) GetOptions() (EnvironmentItemOptionsFileModel, error) {
+func (envFile EnvironmentItemConfigModel) GetOptions() (EnvironmentItemOptionsConfigModel, error) {
 	value, found := envFile[OptionsKey]
 	if !found {
-		return EnvironmentItemOptionsFileModel{}, nil
+		return EnvironmentItemOptionsConfigModel{}, nil
 	}
 
-	options, ok := value.(EnvironmentItemOptionsFileModel)
+	options, ok := value.(EnvironmentItemOptionsConfigModel)
 	if !ok {
-		return EnvironmentItemOptionsFileModel{}, errors.New("Invalid options")
+		return EnvironmentItemOptionsConfigModel{}, errors.New("Invalid options")
 	}
 
 	return options, nil
@@ -108,7 +105,7 @@ func (stepListItm StepListItem) GetStepIDStepDataPair() (string, StepModel, erro
 }
 
 // ToEnvironmentItemModel ...
-func (envFile EnvironmentItemFileModel) ToEnvironmentItemModel() (EnvironmentItemModel, error) {
+func (envFile EnvironmentItemConfigModel) ToEnvironmentItemModel() (EnvironmentItemModel, error) {
 	key, value, err := envFile.GetKeyValuePair()
 	if err != nil {
 		return EnvironmentItemModel{}, err
@@ -149,7 +146,7 @@ func (envFile EnvironmentItemFileModel) ToEnvironmentItemModel() (EnvironmentIte
 }
 
 // ToStepModel ...
-func (stepFile StepFileModel) ToStepModel() (StepModel, error) {
+func (stepFile StepConfigModel) ToStepModel() (StepModel, error) {
 	inputs := []EnvironmentItemModel{}
 	for _, envFile := range stepFile.Inputs {
 		env, err := envFile.ToEnvironmentItemModel()
@@ -169,9 +166,6 @@ func (stepFile StepFileModel) ToStepModel() (StepModel, error) {
 	}
 
 	step := StepModel{
-		ID:                  stepFile.ID,
-		SteplibSource:       stepFile.SteplibSource,
-		VersionTag:          stepFile.VersionTag,
 		Name:                stepFile.Name,
 		Description:         stepFile.Description,
 		Website:             stepFile.Website,
@@ -189,7 +183,7 @@ func (stepFile StepFileModel) ToStepModel() (StepModel, error) {
 }
 
 // ToWorkflowModel ...
-func (workflowFile WorkflowFileModel) ToWorkflowModel() (WorkflowModel, error) {
+func (workflowFile WorkflowConfigModel) ToWorkflowModel() (WorkflowModel, error) {
 	environments := []EnvironmentItemModel{}
 	for _, envFile := range workflowFile.Environments {
 		env, err := envFile.ToEnvironmentItemModel()
@@ -221,9 +215,9 @@ func (workflowFile WorkflowFileModel) ToWorkflowModel() (WorkflowModel, error) {
 }
 
 // ToAppModel ...
-func (appFile AppFileModel) ToAppModel() (AppModel, error) {
+func (appConfig AppConfigModel) ToAppModel() (AppModel, error) {
 	environments := []EnvironmentItemModel{}
-	for _, envFile := range appFile.Environments {
+	for _, envFile := range appConfig.Environments {
 		env, err := envFile.ToEnvironmentItemModel()
 		if err != nil {
 			return AppModel{}, err
@@ -238,24 +232,24 @@ func (appFile AppFileModel) ToAppModel() (AppModel, error) {
 	return app, nil
 }
 
-// ToBitriseConfigModel ...
-func (configFile BitriseConfigFileModel) ToBitriseConfigModel() (BitriseConfigModel, error) {
+// ToBitriseDataModel ...
+func (confModel BitriseConfigModel) ToBitriseDataModel() (BitriseDataModel, error) {
 	workflows := map[string]WorkflowModel{}
-	for key, workflowFile := range configFile.Workflows {
+	for key, workflowFile := range confModel.Workflows {
 		workfow, err := workflowFile.ToWorkflowModel()
 		if err != nil {
-			return BitriseConfigModel{}, err
+			return BitriseDataModel{}, err
 		}
 		workflows[key] = workfow
 	}
 
-	app, err := configFile.App.ToAppModel()
+	app, err := confModel.App.ToAppModel()
 	if err != nil {
-		return BitriseConfigModel{}, err
+		return BitriseDataModel{}, err
 	}
 
-	config := BitriseConfigModel{
-		FormatVersion: configFile.FormatVersion,
+	config := BitriseDataModel{
+		FormatVersion: confModel.FormatVersion,
 		App:           app,
 		Workflows:     workflows,
 	}

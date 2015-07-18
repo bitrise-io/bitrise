@@ -26,23 +26,23 @@ func NewErrorf(format string, a ...interface{}) error {
 }
 
 // ReadBitriseConfig ...
-func ReadBitriseConfig(pth string) (models.BitriseConfigModel, error) {
+func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	} else if !isExists {
-		return models.BitriseConfigModel{}, NewErrorf("No file found at path", pth)
+		return models.BitriseDataModel{}, NewErrorf("No file found at path", pth)
 	}
 
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	}
-	var bitriseConfigFile models.BitriseConfigFileModel
+	var bitriseConfigFile models.BitriseConfigModel
 	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	}
 
-	return bitriseConfigFile.ToBitriseConfigModel()
+	return bitriseConfigFile.ToBitriseDataModel()
 }
 
 // ReadSpecStep ...

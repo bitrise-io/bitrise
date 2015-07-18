@@ -70,7 +70,7 @@ func doInit(c *cli.Context) {
 	//  * timestamp gen
 	//  * bash script - hello world
 
-	bitriseConf := models.BitriseConfigModel{
+	bitriseConf := models.BitriseDataModel{
 		FormatVersion: "1.0.0", // TODO: move this into a project config file!
 		App: models.AppModel{
 			Environments: projectSettingsEnvs,
@@ -142,8 +142,9 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 	return true, nil
 }
 
-func saveConfigToFile(pth string, bitriseConf models.BitriseConfigModel) error {
-	contBytes, err := generateYAML(bitriseConf)
+func saveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
+	confModel, err := bitriseConf.ToBitriseConfigModel()
+	contBytes, err := generateYAML(confModel)
 	if err != nil {
 		return err
 	}

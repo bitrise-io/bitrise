@@ -5,8 +5,8 @@ import (
 )
 
 /*
-// EnvironmentItemOptionsFileModel ...
-type EnvironmentItemOptionsFileModel struct {
+// EnvironmentItemOptionsConfigModel ...
+type EnvironmentItemOptionsConfigModel struct {
 	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       string   `json:"description,omitempty" yaml:"description,omitempty"`
 	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
@@ -15,16 +15,16 @@ type EnvironmentItemOptionsFileModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
-// EnvironmentItemFileModel ...
-type EnvironmentItemFileModel map[string]interface{}
+// EnvironmentItemConfigModel ...
+type EnvironmentItemConfigModel map[string]interface{}
 
 // StepSourceModel ...
 type StepSourceModel struct {
 	Git string `json:"git" yaml:"git"`
 }
 
-// StepFileModel ...
-type StepFileModel struct {
+// StepConfigModel ...
+type StepConfigModel struct {
 	ID                  string                     `json:"id" yaml:"id"`
 	SteplibSource       string                     `json:"steplib_source" yaml:"steplib_source"`
 	VersionTag          string                     `json:"version_tag" yaml:"version_tag"`
@@ -37,29 +37,29 @@ type StepFileModel struct {
 	ProjectTypeTags     []string                   `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string                   `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
 	IsRequiresAdminUser bool                       `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []EnvironmentItemFileModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []EnvironmentItemFileModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	Inputs              []EnvironmentItemConfigModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []EnvironmentItemConfigModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
-// StepListItemFile ...
-type StepListItemFile map[string]StepFileModel
+// StepListItemConfigModel ...
+type StepListItemConfigModel map[string]StepConfigModel
 
-// WorkflowFileModel ...
-type WorkflowFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments"`
-	Steps        []StepListItemFile         `json:"steps"`
+// WorkflowConfigModel ...
+type WorkflowConfigModel struct {
+	Environments []EnvironmentItemConfigModel `json:"environments"`
+	Steps        []StepListItemConfigModel         `json:"steps"`
 }
 
-// AppFileModel ...
-type AppFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments" yaml:"environments"`
+// AppConfigModel ...
+type AppConfigModel struct {
+	Environments []EnvironmentItemConfigModel `json:"environments" yaml:"environments"`
 }
 
-// BitriseConfigFileModel ...
-type BitriseConfigFileModel struct {
+// BitriseConfigModel ...
+type BitriseConfigModel struct {
 	FormatVersion string                       `json:"format_version" yaml:"format_version"`
-	App           AppFileModel                 `json:"app" yaml:"app"`
-	Workflows     map[string]WorkflowFileModel `json:"workflows" yaml:"workflows"`
+	App           AppConfigModel                 `json:"app" yaml:"app"`
+	Workflows     map[string]WorkflowConfigModel `json:"workflows" yaml:"workflows"`
 }
 */
 
@@ -67,9 +67,9 @@ func TestConvertBitriseConfig(t *testing.T) {
 	defaultTrue := true
 	defaultFale := false
 
-	appEnv := EnvironmentItemFileModel{
+	appEnv := EnvironmentItemConfigModel{
 		"TEST_KEY": "test value",
-		"opts": EnvironmentItemOptionsFileModel{
+		"opts": EnvironmentItemOptionsConfigModel{
 			Title:        "title",
 			Description:  "descr",
 			ValueOptions: []string{"1tes", "w"},
@@ -78,10 +78,8 @@ func TestConvertBitriseConfig(t *testing.T) {
 		},
 	}
 
-	stepList := StepListItemFile{
-		"Step1": StepFileModel{
-			ID:            "id",
-			SteplibSource: "steplib",
+	stepList := StepListItemConfigModel{
+		"https://git/url::step-id@1.2.3": StepConfigModel{
 			Source: StepSourceModel{
 				Git: "https://git/url",
 			},
@@ -89,23 +87,23 @@ func TestConvertBitriseConfig(t *testing.T) {
 			ProjectTypeTags:     []string{"ios"},
 			TypeTags:            []string{"some-cat"},
 			IsRequiresAdminUser: true,
-			Inputs:              []EnvironmentItemFileModel{},
-			Outputs:             []EnvironmentItemFileModel{},
+			Inputs:              []EnvironmentItemConfigModel{},
+			Outputs:             []EnvironmentItemConfigModel{},
 		},
 	}
 
-	workflowFileMap := map[string]WorkflowFileModel{
-		"test": WorkflowFileModel{
-			Environments: []EnvironmentItemFileModel{appEnv},
-			Steps:        []StepListItemFile{stepList},
+	workflowFileMap := map[string]WorkflowConfigModel{
+		"test": WorkflowConfigModel{
+			Environments: []EnvironmentItemConfigModel{appEnv},
+			Steps:        []StepListItemConfigModel{stepList},
 		},
 	}
 
-	appFile := AppFileModel{
-		Environments: []EnvironmentItemFileModel{appEnv},
+	appFile := AppConfigModel{
+		Environments: []EnvironmentItemConfigModel{appEnv},
 	}
 
-	configFile := BitriseConfigFileModel{
+	configFile := BitriseConfigModel{
 		FormatVersion: "0.0.1",
 		App:           appFile,
 		Workflows:     workflowFileMap,
