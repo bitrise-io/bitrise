@@ -73,12 +73,12 @@ type WorkFlowModel struct {
 
 // GetStep ...
 func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
+	log.Debugln("-> GetStep")
 	versions := collection.Steps[id].Versions
-	if len(versions) > 0 {
-		for _, step := range versions {
-			if step.VersionTag == version {
-				return true, step
-			}
+	for _, step := range versions {
+		log.Debugf(" Iterating... itm: %#v\n", step)
+		if step.VersionTag == version {
+			return true, step
 		}
 	}
 	return false, StepModel{}
