@@ -7,7 +7,7 @@ import log "github.com/Sirupsen/logrus"
 
 // InputModel ...
 type InputModel struct {
-	MappedTo          *string   `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	EnvKey            *string   `json:"env_key,omitempty" yaml:"env_key,omitempty"`
 	Title             *string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       *string   `json:"description,omitempty" yaml:"description,omitempty"`
 	Value             *string   `json:"value,omitempty" yaml:"value,omitempty"`
@@ -19,7 +19,7 @@ type InputModel struct {
 
 // OutputModel ...
 type OutputModel struct {
-	MappedTo    *string `json:"mapped_to,omitempty" yaml:"mapped_to,omitempty"`
+	EnvKey      *string `json:"env_key,omitempty" yaml:"env_key,omitempty"`
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Description *string `json:"description,omitempty" yaml:"description,omitempty"`
 }
