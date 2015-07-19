@@ -298,5 +298,48 @@ func TestConvertBitriseConfig(t *testing.T) {
 }
 
 func TestParseFromInterfaceMap(t *testing.T) {
-	t.Log("EnvironmentItemOptionsSerializeModel::TestParseFromInterfaceMap - IMPLEMENT!")
+	envKey := "HIPCHAT_MESSAGE_COLOR"
+	envTitle := "Message Color"
+	envValueOptions := []string{"yellow", "red", "green", "purple", "gray", "random"}
+	envValue := "yellow"
+	envIsExpand := false
+	envIsRequired := false
+
+	serializedEnvItem := EnvironmentItemSerializeModel{
+		envKey: envValue,
+		"opts": EnvironmentItemOptionsSerializeModel{
+			Title:        envTitle,
+			ValueOptions: envValueOptions,
+			IsExpand:     &envIsExpand,
+			IsRequired:   &envIsRequired,
+		},
+	}
+
+	envItem, err := serializedEnvItem.ToEnvironmentItemModel()
+	if err != nil {
+		t.Error("Failed to convert Environment serialize model to data model: ", err)
+	}
+
+	if envItem.EnvKey != envKey {
+		t.Errorf("Environment (EnvKey) incorrectly converted to: %#v\n", envItem.EnvKey)
+	}
+	if envItem.Title != envTitle {
+		t.Errorf("Environment (Title) incorrectly converted to: %#v\n", envItem.Title)
+	}
+	if envItem.IsExpand != envIsExpand {
+		t.Errorf("Environment (IsExpand) incorrectly converted to: %#v\n", envItem.IsExpand)
+	}
+	if envItem.IsRequired != envIsRequired {
+		t.Errorf("Environment (IsRequired) incorrectly converted to: %#v\n", envItem.IsRequired)
+	}
+	if envItem.IsDontChangeValue != DefaultIsDontChangeValue {
+		t.Errorf("Environment (IsDontChangeValue) incorrectly converted to: %#v\n", envItem.IsDontChangeValue)
+	}
+	for idx, option := range envItem.ValueOptions {
+		opt := envValueOptions[idx]
+		if opt != option {
+			t.Errorf("Environment (value_options) incorrectly converted to: %#v\n", envItem.ValueOptions)
+		}
+	}
+	t.Logf("finalEnvironmentItemModel: %#v\n", envItem)
 }
