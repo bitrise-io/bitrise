@@ -22,7 +22,7 @@ const (
 
 // EnvironmentItemModel ...
 type EnvironmentItemModel struct {
-	EnvKey            string `yaml:"env_key"`
+	EnvKey            string
 	Value             string
 	Title             string
 	Description       string

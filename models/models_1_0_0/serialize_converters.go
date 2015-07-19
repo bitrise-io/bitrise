@@ -37,6 +37,43 @@ func (stepFile StepSerializeModel) ToStepModel() (StepModel, error) {
 	return step, nil
 }
 
+// ToStepModel ...
+func (stepFile StepYMLSerializedModel) ToStepModel() (StepModel, error) {
+	inputs := []EnvironmentItemModel{}
+	for _, envFile := range stepFile.Inputs {
+		env, err := envFile.ToEnvironmentItemModel()
+		if err != nil {
+			return StepModel{}, err
+		}
+		inputs = append(inputs, env)
+	}
+
+	outputs := []EnvironmentItemModel{}
+	for _, envFile := range stepFile.Outputs {
+		env, err := envFile.ToEnvironmentItemModel()
+		if err != nil {
+			return StepModel{}, err
+		}
+		outputs = append(outputs, env)
+	}
+
+	step := StepModel{
+		Name:                stepFile.Name,
+		Description:         stepFile.Description,
+		Website:             stepFile.Website,
+		ForkURL:             stepFile.ForkURL,
+		Source:              stepFile.Source,
+		HostOsTags:          stepFile.HostOsTags,
+		ProjectTypeTags:     stepFile.ProjectTypeTags,
+		TypeTags:            stepFile.TypeTags,
+		IsRequiresAdminUser: stepFile.IsRequiresAdminUser,
+		Inputs:              inputs,
+		Outputs:             outputs,
+	}
+
+	return step, nil
+}
+
 // ToWorkflowModel ...
 func (workflowFile WorkflowSerializeModel) ToWorkflowModel() (WorkflowModel, error) {
 	environments := []EnvironmentItemModel{}
@@ -142,6 +179,42 @@ func (wfModel WorkflowModel) ToWorkflowSerializeModel() WorkflowSerializeModel {
 	}
 
 	return worflow
+}
+
+// ToEnvironmentItemModel ...
+func (envFile EnvironmentItemYMLSerializedModel) ToEnvironmentItemModel() (EnvironmentItemModel, error) {
+	isRequired := DefaultIsRequired
+	if envFile.IsRequired != nil {
+		isRequired = *envFile.IsRequired
+	}
+
+	isExpand := DefaultIsExpand
+	if envFile.IsExpand != nil {
+		isExpand = *envFile.IsExpand
+	}
+
+	isDontChnageValue := DefaultIsDontChangeValue
+	if envFile.IsDontChangeValue != nil {
+		isDontChnageValue = *envFile.IsDontChangeValue
+	}
+
+	key := envFile.EnvKey
+	if key == "" {
+		key = envFile.MappedTo
+	}
+
+	env := EnvironmentItemModel{
+		EnvKey:            key,
+		Value:             envFile.Value,
+		Title:             envFile.Title,
+		Description:       envFile.Description,
+		ValueOptions:      envFile.ValueOptions,
+		IsRequired:        isRequired,
+		IsExpand:          isExpand,
+		IsDontChangeValue: isDontChnageValue,
+	}
+
+	return env, nil
 }
 
 // ToEnvironmentItemModel ...

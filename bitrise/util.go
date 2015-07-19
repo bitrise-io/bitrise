@@ -46,12 +46,12 @@ func ReadSpecStep(pth string) (models.StepModel, error) {
 	if err != nil {
 		return models.StepModel{}, err
 	}
-	var specStep models.StepModel
-	if err := yaml.Unmarshal(bytes, &specStep); err != nil {
+	var stepYML models.StepYMLSerializedModel
+	if err := yaml.Unmarshal(bytes, &stepYML); err != nil {
 		return models.StepModel{}, err
 	}
 
-	return specStep, nil
+	return stepYML.ToStepModel()
 }
 
 // WriteStringToFile ...
