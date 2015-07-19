@@ -61,7 +61,7 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 
 	for _, env := range envsList {
 		if env.Value != "" {
-			if err := bitrise.RunEnvmanAdd(env.Key, env.Value, env.IsExpand); err != nil {
+			if err := bitrise.RunEnvmanAdd(env.EnvKey, env.Value, env.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -90,7 +90,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		fmt.Println()
 		log.Infof("========== (%d) %s ==========", idx, workflowStep.Name)
 		fmt.Println()
-		stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
+		stepDir := bitrise.BitriseWorkStepsDirPath + "/step_src"
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
 			log.Error("Failed to setup stepman:", err)
@@ -98,7 +98,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 		if err := bitrise.RemoveFile(stepYMLPth); err != nil {
-			log.Fatal("Failed to remove step yml:", err)
+			return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 		}
 
 		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
@@ -107,15 +107,19 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		} else {
 			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
 
-			if specStep, err := bitrise.ReadSpecStep(stepYMLPth); err != nil {
-				log.Fatal("Failed to read spec step:", err)
-			} else {
-				specStep.MergeWith(workflowStep)
+			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
+			log.Debugf("Spec read from YML: %#v\n", specStep)
+			if err != nil {
+				return err
+			}
 
-				if err := runStep(specStep, stepIDData); err != nil {
-					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
-					failedSteps = append(failedSteps, compositeStepIDStr)
-				}
+			if err := specStep.MergeWith(workflowStep); err != nil {
+				return err
+			}
+
+			if err := runStep(specStep, stepIDData); err != nil {
+				log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
+				failedSteps = append(failedSteps, compositeStepIDStr)
 			}
 		}
 	}
@@ -128,15 +132,15 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 	// Add step envs
 	for _, input := range step.Inputs {
 		if input.Value != "" {
-			log.Info("Input:", input)
-			if err := bitrise.RunEnvmanAdd(input.Key, input.Value, input.IsExpand); err != nil {
+			log.Debugf("Input: %#v\n", input)
+			if err := bitrise.RunEnvmanAdd(input.EnvKey, input.Value, input.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
 		}
 	}
 
-	stepDir := bitrise.BitriseWorkStepsDirPath + "/" + stepIDData.ID + "/" + stepIDData.Version + "/"
+	stepDir := bitrise.BitriseWorkStepsDirPath + "/step_src"
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
 	if err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd); err != nil {

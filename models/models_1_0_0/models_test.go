@@ -2,116 +2,301 @@ package models
 
 import (
 	"testing"
+
+	"gopkg.in/yaml.v2"
 )
 
-/*
-// EnvironmentItemOptionsFileModel ...
-type EnvironmentItemOptionsFileModel struct {
-	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
-	Description       string   `json:"description,omitempty" yaml:"description,omitempty"`
-	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
-	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
-	IsExpand          *bool    `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
-	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
+var (
+	defaultTrue  = true
+	defaultFalse = false
+)
+
+func TestMergeWith(t *testing.T) {
+	stepData := StepModel{
+		Name:        "name 1",
+		Description: "desc 1",
+		Website:     "web/1",
+		ForkURL:     "fork/1",
+		Source: StepSourceModel{
+			Git: "https://git.url",
+		},
+		HostOsTags:          []string{"osx"},
+		ProjectTypeTags:     []string{"ios"},
+		TypeTags:            []string{"test"},
+		IsRequiresAdminUser: true,
+		Inputs: []EnvironmentItemModel{
+			EnvironmentItemModel{
+				EnvKey: "KEY_1",
+				Value:  "Value 1",
+			},
+			EnvironmentItemModel{
+				EnvKey: "KEY_2",
+				Value:  "Value 2",
+			},
+		},
+		Outputs: []EnvironmentItemModel{},
+	}
+	stepDiffToMerge := StepModel{
+		Name: "name 2",
+		Inputs: []EnvironmentItemModel{
+			EnvironmentItemModel{
+				EnvKey: "KEY_2",
+				Value:  "Value 2 CHANGED",
+			},
+		},
+	}
+
+	t.Logf("-> stepData: %#v\n", stepData)
+	t.Logf("-> stepDiffToMerge: %#v\n", stepDiffToMerge)
+
+	if err := stepData.MergeWith(stepDiffToMerge); err != nil {
+		t.Error("Failed to convert: ", err)
+	}
+
+	t.Logf("-> MERGED Step Data: %#v\n", stepData)
+
+	if stepData.Name != "name 2" {
+		t.Error("step.Name incorrectly converted")
+	}
+
+	//
+	t.Logf("-> MERGED Step Inputs: %#v\n", stepData.Inputs)
+	if stepData.Inputs[0].EnvKey != "KEY_1" {
+		t.Error("Inputs[0].EnvKey incorrectly converted")
+	}
+	if stepData.Inputs[0].Value != "Value 1" {
+		t.Error("Inputs[0].Value incorrectly converted")
+	}
+	if stepData.Inputs[1].EnvKey != "KEY_2" {
+		t.Error("Inputs[1].EnvKey incorrectly converted")
+	}
+	if stepData.Inputs[1].Value != "Value 2 CHANGED" {
+		t.Error("Inputs[1].Value incorrectly converted")
+	}
 }
 
-// EnvironmentItemFileModel ...
-type EnvironmentItemFileModel map[string]interface{}
+func TestToEnvironmentItemModel(t *testing.T) {
+	envConf := EnvironmentItemSerializeModel{
+		"TEST_KEY_1": "Test value 1",
+		"opts": EnvironmentItemOptionsSerializeModel{
+			Title:             "env title",
+			Description:       "env description",
+			ValueOptions:      []string{"one", "two"},
+			IsRequired:        &defaultTrue,
+			IsExpand:          &defaultFalse,
+			IsDontChangeValue: &defaultTrue,
+		},
+	}
 
-// StepSourceModel ...
-type StepSourceModel struct {
-	Git string `json:"git" yaml:"git"`
+	envData, err := envConf.ToEnvironmentItemModel()
+	if err != nil {
+		t.Error("Failed to convert: ", err)
+	}
+	t.Logf("envData: %#v\n", envData)
+
+	if envData.EnvKey != "TEST_KEY_1" {
+		t.Error("envData.KEY incorrectly converted")
+	}
+	if envData.Value != "Test value 1" {
+		t.Error("envData.Value incorrectly converted")
+	}
+	if envData.Title != "env title" {
+		t.Error("envData.Title incorrectly converted")
+	}
+	if envData.Description != "env description" {
+		t.Error("envData.Description incorrectly converted")
+	}
+	if len(envData.ValueOptions) != 2 {
+		t.Error("envData.ValueOptions incorrectly converted")
+	}
+	if envData.IsRequired != true {
+		t.Error("envData.IsRequired incorrectly converted")
+	}
+	if envData.IsExpand != false {
+		t.Error("envData.IsExpand incorrectly converted")
+	}
+	if envData.IsDontChangeValue != true {
+		t.Error("envData.IsDontChangeValue incorrectly converted")
+	}
+}
+func TestToStepModel(t *testing.T) {
+	confModel := StepSerializeModel{
+		Name:        "test-step",
+		Description: "test description",
+		Website:     "https://web.site",
+		ForkURL:     "https://fork.url",
+		Source: StepSourceModel{
+			Git: "https://git/url",
+		},
+		HostOsTags:          []string{"osx"},
+		ProjectTypeTags:     []string{"ios"},
+		TypeTags:            []string{"some-cat"},
+		IsRequiresAdminUser: true,
+		Inputs: []EnvironmentItemSerializeModel{
+			EnvironmentItemSerializeModel{
+				"INPUT_1": "Input value 1",
+				"opts": EnvironmentItemOptionsSerializeModel{
+					Title:       "Env title",
+					Description: "Env description",
+				},
+			},
+			EnvironmentItemSerializeModel{
+				"INPUT_2": "Input value 2",
+			},
+		},
+		Outputs: []EnvironmentItemSerializeModel{},
+	}
+
+	dataModel, err := confModel.ToStepModel()
+	if err != nil {
+		t.Error("Failed to convert: ", err)
+	}
+	t.Logf("dataModel: %#v\n", dataModel)
+
+	if dataModel.Name != "test-step" {
+		t.Error("dataModel.Name incorrectly converted")
+	}
+	if dataModel.Website != "https://web.site" {
+		t.Error("dataModel.Website incorrectly converted")
+	}
+	if dataModel.IsRequiresAdminUser != true {
+		t.Error("dataModel.IsRequiresAdminUser incorrectly converted")
+	}
+
+	inputs := dataModel.Inputs
+	t.Logf("inputs: %#v\n", inputs)
+	if inputs[0].EnvKey != "INPUT_1" {
+		t.Error("inputs[0].EnvKey incorrectly converted")
+	}
+	if inputs[0].Value != "Input value 1" {
+		t.Error("inputs[0].Value incorrectly converted")
+	}
+	if inputs[0].Title != "Env title" {
+		t.Error("inputs[0].Title incorrectly converted")
+	}
+	if inputs[0].Description != "Env description" {
+		t.Error("inputs[0].Description incorrectly converted")
+	}
+
+	if inputs[1].EnvKey != "INPUT_2" {
+		t.Error("inputs[1].EnvKey incorrectly converted")
+	}
+	if inputs[1].Value != "Input value 2" {
+		t.Error("inputs[1].Value incorrectly converted")
+	}
 }
 
-// StepFileModel ...
-type StepFileModel struct {
-	ID                  string                     `json:"id" yaml:"id"`
-	SteplibSource       string                     `json:"steplib_source" yaml:"steplib_source"`
-	VersionTag          string                     `json:"version_tag" yaml:"version_tag"`
-	Name                string                     `json:"name" yaml:"name"`
-	Description         string                     `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string                     `json:"website" yaml:"website"`
-	ForkURL             string                     `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              StepSourceModel            `json:"source" yaml:"source"`
-	HostOsTags          []string                   `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string                   `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string                   `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser bool                       `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []EnvironmentItemFileModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []EnvironmentItemFileModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
+	confModel := BitriseConfigSerializeModel{
+		FormatVersion: "0.0.1",
+		App: AppSerializeModel{
+			Environments: []EnvironmentItemSerializeModel{
+				EnvironmentItemSerializeModel{
+					"APP_KEY1": "App key 1",
+					"opts": EnvironmentItemOptionsSerializeModel{
+						Title:        "title",
+						Description:  "descr",
+						ValueOptions: []string{"1tes", "w"},
+						IsRequired:   &defaultTrue,
+						IsExpand:     &defaultFalse,
+					},
+				},
+			},
+		},
+		Workflows: map[string]WorkflowSerializeModel{
+			"test": WorkflowSerializeModel{
+				Environments: []EnvironmentItemSerializeModel{},
+				Steps: []StepListItemSerializeModel{
+					StepListItemSerializeModel{
+						"https://git/url::step-id@1.2.3": StepSerializeModel{
+							Name:        "test-step",
+							Description: "test description",
+							Website:     "https://web.site",
+							ForkURL:     "https://fork.url",
+							Source: StepSourceModel{
+								Git: "https://git/url",
+							},
+							HostOsTags:          []string{"osx"},
+							ProjectTypeTags:     []string{"ios"},
+							TypeTags:            []string{"some-cat"},
+							IsRequiresAdminUser: true,
+							Inputs: []EnvironmentItemSerializeModel{
+								EnvironmentItemSerializeModel{
+									"INPUT_KEY1": "Input key 1",
+									"opts": EnvironmentItemOptionsSerializeModel{
+										Title:        "input title 1",
+										Description:  "input descr 1",
+										ValueOptions: []string{"one", "two"},
+										IsRequired:   &defaultTrue,
+										IsExpand:     &defaultFalse,
+									},
+								},
+							},
+							Outputs: []EnvironmentItemSerializeModel{},
+						},
+					},
+				},
+			},
+		},
+	}
+	return confModel
 }
-
-// StepListItemFile ...
-type StepListItemFile map[string]StepFileModel
-
-// WorkflowFileModel ...
-type WorkflowFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments"`
-	Steps        []StepListItemFile         `json:"steps"`
-}
-
-// AppFileModel ...
-type AppFileModel struct {
-	Environments []EnvironmentItemFileModel `json:"environments" yaml:"environments"`
-}
-
-// BitriseConfigFileModel ...
-type BitriseConfigFileModel struct {
-	FormatVersion string                       `json:"format_version" yaml:"format_version"`
-	App           AppFileModel                 `json:"app" yaml:"app"`
-	Workflows     map[string]WorkflowFileModel `json:"workflows" yaml:"workflows"`
-}
-*/
 
 func TestConvertBitriseConfig(t *testing.T) {
-	defaultTrue := true
-	defaultFale := false
+	confModel := createTestBitriseConfigSerializeModel()
 
-	appEnv := EnvironmentItemFileModel{
-		"TEST_KEY": "test value",
-		"opts": EnvironmentItemOptionsFileModel{
-			Title:        "title",
-			Description:  "descr",
-			ValueOptions: []string{"1tes", "w"},
-			IsRequired:   &defaultTrue,
-			IsExpand:     &defaultFale,
-		},
+	dataModel, err := confModel.ToBitriseDataModel()
+	if err != nil {
+		t.Error("Failed to convert Bitrise Config model to Data model: ", err)
 	}
 
-	stepList := StepListItemFile{
-		"Step1": StepFileModel{
-            ID: "id",
-            SteplibSource :"steplib",
-            Source              StepSourceModel{
-                Git: "gitmit",
-            },
-            HostOsTags          []string                   `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-            ProjectTypeTags     []string                   `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-            TypeTags            []string                   `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-            IsRequiresAdminUser bool                       `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-            Inputs              []EnvironmentItemFileModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-            Outputs             []EnvironmentItemFileModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-        },
+	if dataModel.FormatVersion != "0.0.1" {
+		t.Errorf("Format incorrectly converted to: %#v\n", dataModel.FormatVersion)
 	}
 
-	workflowFileMap := map[string]WorkflowFileModel{
-		"test": WorkflowFileModel{
-			Environments: []EnvironmentItemFileModel{appEnv},
-			Steps:        []StepListItemFile{stepList},
-		},
+	appEnv := dataModel.App.Environments[0]
+	if appEnv.EnvKey != "APP_KEY1" {
+		t.Errorf("App.Environments[0] (Key) incorrectly converted to: %#v\n", appEnv)
+	}
+	if appEnv.Value != "App key 1" {
+		t.Errorf("App.Environments[0] (Value) incorrectly converted to: %#v\n", appEnv)
 	}
 
-	appFile := AppFileModel{
-		Environments: []EnvironmentItemFileModel{appEnv},
+	step := dataModel.Workflows["test"].Steps[0]
+	stepID, stepData, err := step.GetStepIDStepDataPair()
+	if err != nil {
+		t.Logf("Step Data model: %#v\n", step)
+		t.Error("Failed to convert Step Config model to Data model: ", err)
+	}
+	if stepID != "https://git/url::step-id@1.2.3" {
+		t.Errorf("Workflows.Steps (StepID) incorrectly converted to: %#v\n", stepID)
+	}
+	t.Logf("StepData: %#v", stepData)
+	if stepData.Name != "test-step" {
+		t.Error("StepData (Name) incorrectly converted")
 	}
 
-	configFile := BitriseConfigFileModel{
-		FormatVersion: "0.0.1",
-		App:           appFile,
-		Workflows:     workflowFileMap,
+	// Serialize & Deserialize
+	confForSaveModel := dataModel.ToBitriseConfigSerializeModel()
+	var bytes []byte
+	bytes, err = yaml.Marshal(confForSaveModel)
+	if err != nil {
+		t.Error("Failed to generate YAML for Bitrise Config: ", err)
 	}
-
-	if configFile.FormatVersion == "" {
-
+	// deserialize
+	var bitriseConfigFile BitriseConfigSerializeModel
+	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
+		t.Error("Failed to parse YAML of Bitrise Config: ", err)
 	}
+	t.Logf("bitriseConfigFile: %#v\n", bitriseConfigFile)
+	// finally, convert back to non-serialize data model
+	finalBitriseDataModel, err := bitriseConfigFile.ToBitriseDataModel()
+	if err != nil {
+		t.Error("Failed to convert Bitrise serialize model to data model: ", err)
+	}
+	t.Logf("finalBitriseDataModel: %#v\n", finalBitriseDataModel)
+}
+
+func TestParseFromInterfaceMap(t *testing.T) {
+	t.Log("EnvironmentItemOptionsSerializeModel::TestParseFromInterfaceMap - IMPLEMENT!")
 }

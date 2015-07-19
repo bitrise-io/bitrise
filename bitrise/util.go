@@ -13,36 +13,25 @@ import (
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
-// NewError ...
-func NewError(a ...interface{}) error {
-	errStr := fmt.Sprint(a...)
-	return errors.New(errStr)
-}
-
-// NewErrorf ...
-func NewErrorf(format string, a ...interface{}) error {
-	errStr := fmt.Sprintf(format, a...)
-	return errors.New(errStr)
-}
-
 // ReadBitriseConfig ...
-func ReadBitriseConfig(pth string) (models.BitriseConfigModel, error) {
+func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
+	log.Debugln("-> ReadBitriseConfig")
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	} else if !isExists {
-		return models.BitriseConfigModel{}, NewErrorf("No file found at path", pth)
+		return models.BitriseDataModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	}
-	var bitriseConfigFile models.BitriseConfigFileModel
+	var bitriseConfigFile models.BitriseConfigSerializeModel
 	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
-		return models.BitriseConfigModel{}, err
+		return models.BitriseDataModel{}, err
 	}
 
-	return bitriseConfigFile.ToBitriseConfigModel()
+	return bitriseConfigFile.ToBitriseDataModel()
 }
 
 // ReadSpecStep ...
@@ -50,7 +39,7 @@ func ReadSpecStep(pth string) (models.StepModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.StepModel{}, err
 	} else if !isExists {
-		return models.StepModel{}, NewErrorf("No file found at path", pth)
+		return models.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
 	bytes, err := ioutil.ReadFile(pth)
