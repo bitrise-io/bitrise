@@ -28,7 +28,7 @@ func update(c *cli.Context) {
 	}
 
 	for _, URI := range collectionURIs {
-		pth := stepman.GetStepCollectionPath(URI)
+		pth := stepman.GetCollectionBaseDirPath(URI)
 		if exists, err := pathutil.IsPathExists(pth); err != nil {
 			log.Fatal("[STEPMAN] - Failed to check path:", err)
 		} else if !exists {
@@ -39,7 +39,7 @@ func update(c *cli.Context) {
 			log.Fatal("[STEPMAN] - Failed to do git update:", err)
 		}
 
-		specPth := pth + "steplib.yml"
+		specPth := pth + "/steplib.yml"
 		collection, err := stepman.ParseStepCollection(specPth)
 		if err != nil {
 			log.Fatal("[STEPMAN] - Failed to read step spec:", err)

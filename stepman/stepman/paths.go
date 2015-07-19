@@ -160,30 +160,30 @@ func GetStepSpecPath(collectionURI string) string {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + alias + "/spec/spec.json"
+	return CollectionsDirPath + "/" + alias + "/spec/spec.json"
 }
 
-// GetStepCacheDir ...
-func GetStepCacheDir(collectionURI string) string {
+// GetCacheBaseDir ...
+func GetCacheBaseDir(collectionURI string) string {
 	alias, err := getAlias(collectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + alias + "/cache/"
+	return CollectionsDirPath + "/" + alias + "/cache"
 }
 
-// GetStepCollectionPath ...
-func GetStepCollectionPath(collectionURI string) string {
+// GetCollectionBaseDirPath ...
+func GetCollectionBaseDirPath(collectionURI string) string {
 	alias, err := getAlias(collectionURI)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to read step spec path:", err)
 		return ""
 	}
-	return CollectionsDirPath + alias + "/collection/"
+	return CollectionsDirPath + "/" + alias + "/collection"
 }
 
-// GetAllSetpCollectionPath ...
+// GetAllStepCollectionPath ...
 func GetAllStepCollectionPath() []string {
 	routeMap, err := readRouteMap()
 	if err != nil {
@@ -201,7 +201,7 @@ func GetAllStepCollectionPath() []string {
 
 // Life cycle
 func init() {
-	stepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname + "/"
-	routingFilePath = stepManDirPath + RoutingFilename
-	CollectionsDirPath = stepManDirPath + CollectionsDirname + "/"
+	stepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname
+	routingFilePath = stepManDirPath + "/" + RoutingFilename
+	CollectionsDirPath = stepManDirPath + "/" + CollectionsDirname
 }

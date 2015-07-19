@@ -31,12 +31,12 @@ func setup(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 
-	pth := stepman.GetStepCollectionPath(collectionURI)
+	pth := stepman.GetCollectionBaseDirPath(collectionURI)
 	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to get step spec path:", err)
 	}
 
-	specPth := pth + "steplib.yml"
+	specPth := pth + "/steplib.yml"
 	collection, err := stepman.ParseStepCollection(specPth)
 	if err != nil {
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
