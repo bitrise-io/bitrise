@@ -24,8 +24,8 @@ type OutputModel struct {
 	Description *string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
-// StepModel ...
-type StepModel struct {
+// StepSerializedModel ...
+type StepSerializedModel struct {
 	ID                  string            `json:"id"`
 	SteplibSource       string            `json:"steplib_source"`
 	VersionTag          string            `json:"version_tag"`
@@ -42,18 +42,18 @@ type StepModel struct {
 	Outputs             []*OutputModel    `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
-// StepGroupModel ...
-type StepGroupModel struct {
+// StepGroupSerializedModel ...
+type StepGroupSerializedModel struct {
 	ID       string      `json:"id"`
-	Versions []StepModel `json:"versions"`
-	Latest   StepModel   `json:"latest"`
+	Versions []StepSerializedModel `json:"versions"`
+	Latest   StepSerializedModel   `json:"latest"`
 }
 
 // StepHash ...
-type StepHash map[string]StepGroupModel
+type StepHash map[string]StepGroupSerializedModel
 
-// StepCollectionModel ...
-type StepCollectionModel struct {
+// StepCollectionSerializedModel ...
+type StepCollectionSerializedModel struct {
 	FormatVersion        string              `json:"format_version" yaml:"format_version"`
 	GeneratedAtTimeStamp int64               `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
 	Steps                StepHash            `json:"steps" yaml:"steps"`
@@ -65,14 +65,14 @@ type StepCollectionModel struct {
 type WorkFlowModel struct {
 	FormatVersion string      `json:"format_version"`
 	Environments  []string    `json:"environments"`
-	Steps         []StepModel `json:"steps"`
+	Steps         []StepSerializedModel `json:"steps"`
 }
 
 // -------------------
 // --- Struct methods
 
 // GetStep ...
-func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
+func (collection StepCollectionSerializedModel) GetStep(id, version string) (bool, StepSerializedModel) {
 	log.Debugln("-> GetStep")
 	versions := collection.Steps[id].Versions
 	for _, step := range versions {
@@ -81,11 +81,11 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 			return true, step
 		}
 	}
-	return false, StepModel{}
+	return false, StepSerializedModel{}
 }
 
 // GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []map[string]string {
+func (collection StepCollectionSerializedModel) GetDownloadLocations(step StepSerializedModel) []map[string]string {
 	locations := []map[string]string{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		for key, value := range downloadLocation {

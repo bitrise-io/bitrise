@@ -17,22 +17,22 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
-	"github.com/bitrise-io/stepman/models"
+	models "github.com/bitrise-io/stepman/models/models_1_0_0"
 	"gopkg.in/yaml.v2"
 )
 
 // DebugMode ...
 var DebugMode bool
 
-func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, error) {
+func parseStepYml(collectionURI, pth, id, version string) (models.StepSerializedModel, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return models.StepModel{}, err
+		return models.StepSerializedModel{}, err
 	}
 
-	var stepModel models.StepModel
+	var stepModel models.StepSerializedModel
 	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
-		return models.StepModel{}, err
+		return models.StepSerializedModel{}, err
 	}
 
 	stepModel.ID = id
@@ -43,21 +43,21 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 }
 
 // ParseStepCollection ...
-func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
+func ParseStepCollection(pth string) (models.StepCollectionSerializedModel, error) {
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return models.StepCollectionModel{}, err
+		return models.StepCollectionSerializedModel{}, err
 	}
 
-	var stepCollection models.StepCollectionModel
+	var stepCollection models.StepCollectionSerializedModel
 	if err := yaml.Unmarshal(bytes, &stepCollection); err != nil {
-		return models.StepCollectionModel{}, err
+		return models.StepCollectionSerializedModel{}, err
 	}
 	return stepCollection, nil
 }
 
 // GetDownloadLocations ...
-func getDownloadLocations(step models.StepModel, collection models.StepCollectionModel) []map[string]string {
+func getDownloadLocations(step models.StepSerializedModel, collection models.StepCollectionSerializedModel) []map[string]string {
 	locations := []map[string]string{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		for key, value := range downloadLocation {
@@ -76,7 +76,7 @@ func getDownloadLocations(step models.StepModel, collection models.StepCollectio
 }
 
 // DownloadStep ...
-func DownloadStep(step models.StepModel, collection models.StepCollectionModel) error {
+func DownloadStep(step models.StepSerializedModel, collection models.StepCollectionSerializedModel) error {
 	downloadLocations := getDownloadLocations(step, collection)
 
 	stepPth := GetStepCacheDirPath(collection.SteplibSource, step)
@@ -121,13 +121,13 @@ func DownloadStep(step models.StepModel, collection models.StepCollectionModel) 
 
 // GetStepCacheDirPath ...
 // Step's Cache dir path, where it's code lives.
-func GetStepCacheDirPath(collectionURI string, step models.StepModel) string {
+func GetStepCacheDirPath(collectionURI string, step models.StepSerializedModel) string {
 	return GetCacheBaseDir(collectionURI) + "/" + step.ID + "/" + step.VersionTag
 }
 
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
-func GetStepCollectionDirPath(collectionURI string, step models.StepModel) string {
+func GetStepCollectionDirPath(collectionURI string, step models.StepSerializedModel) string {
 	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + step.ID + "/" + step.VersionTag
 }
 
@@ -157,8 +157,8 @@ func isVersionGrater(version1, version2 string) bool {
 	return false
 }
 
-func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) models.StepGroupModel {
-	var newStepGroup models.StepGroupModel
+func addStepToStepGroup(step models.StepSerializedModel, stepGroup models.StepGroupSerializedModel) models.StepGroupSerializedModel {
+	var newStepGroup models.StepGroupSerializedModel
 	if len(stepGroup.Versions) > 0 {
 		// Step Group already created -> new version of step
 		newStepGroup = stepGroup
@@ -168,11 +168,11 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 		}
 	} else {
 		// Create Step Group
-		newStepGroup = models.StepGroupModel{}
+		newStepGroup = models.StepGroupSerializedModel{}
 		newStepGroup.Latest = step
 	}
 
-	versions := make([]models.StepModel, len(newStepGroup.Versions))
+	versions := make([]models.StepSerializedModel, len(newStepGroup.Versions))
 	for idx, step := range newStepGroup.Versions {
 		versions[idx] = step
 	}
@@ -183,9 +183,9 @@ func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) 
 	return newStepGroup
 }
 
-func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
+func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionSerializedModel) ([]byte, error) {
 	log.Debugln("-> generateFormattedJSONForStepsSpec")
-	collection := models.StepCollectionModel{
+	collection := models.StepCollectionSerializedModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
 		SteplibSource:        collectionURI,
@@ -247,7 +247,7 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCollectionModel) error {
+func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCollectionSerializedModel) error {
 	pth := GetStepSpecPath(collectionURI)
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
@@ -291,19 +291,19 @@ func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCol
 }
 
 // ReadStepSpec ...
-func ReadStepSpec(collectionURI string) (models.StepCollectionModel, error) {
+func ReadStepSpec(collectionURI string) (models.StepCollectionSerializedModel, error) {
 	log.Debugln("-> ReadStepSpec: ", collectionURI)
 
 	pth := GetStepSpecPath(collectionURI)
 	file, err := os.Open(pth)
 	if err != nil {
-		return models.StepCollectionModel{}, err
+		return models.StepCollectionSerializedModel{}, err
 	}
 
-	var stepCollection models.StepCollectionModel
+	var stepCollection models.StepCollectionSerializedModel
 	parser := json.NewDecoder(file)
 	if err = parser.Decode(&stepCollection); err != nil {
-		return models.StepCollectionModel{}, err
+		return models.StepCollectionSerializedModel{}, err
 	}
 	return stepCollection, err
 }
