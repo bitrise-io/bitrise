@@ -7,8 +7,8 @@ import (
 // -------------------
 // --- Models
 
-// EnvironmentItemSerializedModel ...
-type EnvironmentItemSerializedModel struct {
+// EnvironmentItemModel ...
+type EnvironmentItemModel struct {
 	EnvKey            string   `json:"env_key" yaml:"env_key"`
 	Value             string   `json:"value" yaml:"value"`
 	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
@@ -19,36 +19,36 @@ type EnvironmentItemSerializedModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
-// StepSerializedModel ...
-type StepSerializedModel struct {
-	ID                  string                            `json:"id"`
-	SteplibSource       string                            `json:"steplib_source"`
-	VersionTag          string                            `json:"version_tag"`
-	Name                string                            `json:"name" yaml:"name"`
-	Description         *string                           `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string                            `json:"website" yaml:"website"`
-	ForkURL             *string                           `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              map[string]string                 `json:"source" yaml:"source"`
-	HostOsTags          *[]string                         `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     *[]string                         `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            *[]string                         `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser *bool                             `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	Inputs              []*EnvironmentItemSerializedModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []*EnvironmentItemSerializedModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+// StepModel ...
+type StepModel struct {
+	ID                  string                  `json:"id"`
+	SteplibSource       string                  `json:"steplib_source"`
+	VersionTag          string                  `json:"version_tag"`
+	Name                string                  `json:"name" yaml:"name"`
+	Description         *string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Website             string                  `json:"website" yaml:"website"`
+	ForkURL             *string                 `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
+	Source              map[string]string       `json:"source" yaml:"source"`
+	HostOsTags          *[]string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     *[]string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            *[]string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	IsRequiresAdminUser *bool                   `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	Inputs              []*EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []*EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
-// StepGroupSerializedModel ...
-type StepGroupSerializedModel struct {
-	ID       string                `json:"id"`
-	Versions []StepSerializedModel `json:"versions"`
-	Latest   StepSerializedModel   `json:"latest"`
+// StepGroupModel ...
+type StepGroupModel struct {
+	ID       string      `json:"id"`
+	Versions []StepModel `json:"versions"`
+	Latest   StepModel   `json:"latest"`
 }
 
 // StepHash ...
-type StepHash map[string]StepGroupSerializedModel
+type StepHash map[string]StepGroupModel
 
-// StepCollectionSerializedModel ...
-type StepCollectionSerializedModel struct {
+// StepCollectionModel ...
+type StepCollectionModel struct {
 	FormatVersion        string              `json:"format_version" yaml:"format_version"`
 	GeneratedAtTimeStamp int64               `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
 	Steps                StepHash            `json:"steps" yaml:"steps"`
@@ -56,18 +56,18 @@ type StepCollectionSerializedModel struct {
 	DownloadLocations    []map[string]string `json:"download_locations" yaml:"download_locations"`
 }
 
-// WorkFlowSerializedModel ...
-type WorkFlowSerializedModel struct {
-	FormatVersion string                `json:"format_version"`
-	Environments  []string              `json:"environments"`
-	Steps         []StepSerializedModel `json:"steps"`
+// WorkFlowModel ...
+type WorkFlowModel struct {
+	FormatVersion string      `json:"format_version"`
+	Environments  []string    `json:"environments"`
+	Steps         []StepModel `json:"steps"`
 }
 
 // -------------------
 // --- Struct methods
 
 // GetStep ...
-func (collection StepCollectionSerializedModel) GetStep(id, version string) (bool, StepSerializedModel) {
+func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
 	log.Debugln("-> GetStep")
 	versions := collection.Steps[id].Versions
 	for _, step := range versions {
@@ -76,11 +76,11 @@ func (collection StepCollectionSerializedModel) GetStep(id, version string) (boo
 			return true, step
 		}
 	}
-	return false, StepSerializedModel{}
+	return false, StepModel{}
 }
 
 // GetDownloadLocations ...
-func (collection StepCollectionSerializedModel) GetDownloadLocations(step StepSerializedModel) []map[string]string {
+func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []map[string]string {
 	locations := []map[string]string{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		for key, value := range downloadLocation {
