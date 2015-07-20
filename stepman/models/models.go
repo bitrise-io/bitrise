@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -91,7 +93,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 }
 
 // GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []DownloadLocationModel {
+func (collection StepCollectionModel) GetDownloadLocations(step StepModel) ([]DownloadLocationModel, error) {
 	locations := []DownloadLocationModel{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		switch downloadLocation.Type {
@@ -109,8 +111,11 @@ func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []Dow
 			}
 			locations = append(locations, location)
 		default:
-			log.Error("[STEPMAN] - Invalid download location")
+			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, step)
 		}
 	}
-	return locations
+	if len(locations) < 1 {
+		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", step)
+	}
+	return locations, nil
 }

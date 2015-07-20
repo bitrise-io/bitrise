@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -58,7 +59,10 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 
 // DownloadStep ...
 func DownloadStep(step models.StepModel, collection models.StepCollectionModel) error {
-	downloadLocations := collection.GetDownloadLocations(step)
+	downloadLocations, err := collection.GetDownloadLocations(step)
+	if err != nil {
+		return err
+	}
 
 	stepPth := GetStepCacheDirPath(collection.SteplibSource, step)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
@@ -88,7 +92,7 @@ func DownloadStep(step models.StepModel, collection models.StepCollectionModel) 
 				return nil
 			}
 		default:
-			log.Error("[STEPMAN] - Invalid download location")
+			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step (%#v)", downloadLocation, step)
 		}
 	}
 
