@@ -66,7 +66,7 @@ func getDownloadLocations(step models.StepModel, collection models.StepCollectio
 				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
 				locations = append(locations, map[string]string{key: url})
 			case "git":
-				locations = append(locations, step.Source)
+				locations = append(locations, map[string]string{key: step.Source.Git})
 			default:
 				log.Error("[STEPMAN] - Invalid download location")
 			}

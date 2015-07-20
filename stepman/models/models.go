@@ -19,6 +19,11 @@ type EnvironmentItemModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
+// StepSourceModel ...
+type StepSourceModel struct {
+	Git string `json:"git" yaml:"git"`
+}
+
 // StepModel ...
 type StepModel struct {
 	ID                  string                  `json:"id"`
@@ -28,7 +33,7 @@ type StepModel struct {
 	Description         *string                 `json:"description,omitempty" yaml:"description,omitempty"`
 	Website             string                  `json:"website" yaml:"website"`
 	ForkURL             *string                 `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              map[string]string       `json:"source" yaml:"source"`
+	Source              StepSourceModel         `json:"source" yaml:"source"`
 	HostOsTags          *[]string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     *[]string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            *[]string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
@@ -89,7 +94,7 @@ func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []map
 				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
 				locations = append(locations, map[string]string{key: url})
 			case "git":
-				locations = append(locations, step.Source)
+				locations = append(locations, map[string]string{key: step.Source.Git})
 			default:
 				log.Error("[STEPMAN] - Invalid download location")
 			}
