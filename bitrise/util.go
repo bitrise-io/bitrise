@@ -87,7 +87,8 @@ func convertStepmanToBitriseStepModel(specStep stepmanModels.StepModel) (models.
 		HostOsTags:          specStep.HostOsTags,
 		ProjectTypeTags:     specStep.ProjectTypeTags,
 		TypeTags:            specStep.TypeTags,
-		IsRequiresAdminUser: *specStep.IsRequiresAdminUser,
+		IsRequiresAdminUser: specStep.IsRequiresAdminUser,
+		IsAlwaysRun:         specStep.IsAlwaysRun,
 		Inputs:              inputs,
 		Outputs:             outputs,
 	}
