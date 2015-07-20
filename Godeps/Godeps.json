@@ -17,6 +17,11 @@
 			"Rev": "28962e1f8282be10be34b01b0f7efe614c8656eb"
 		},
 		{
+			"ImportPath": "github.com/bitrise-io/stepman/models",
+			"Comment": "merged_yaml_json_models-81-ge916acb",
+			"Rev": "e916acb04c46a08c478d83a7f8f05e06b10e753a"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-135-gf998261",
 			"Rev": "f9982619ccace7df963bb7f6d1de3a6f014ff709"
