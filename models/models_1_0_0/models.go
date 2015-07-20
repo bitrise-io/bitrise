@@ -15,6 +15,8 @@ const (
 	DefaultIsExpand bool = true
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue bool = false
+	// DefaultIsAlwaysRun ...
+	DefaultIsAlwaysRun bool = false
 )
 
 // -------------------
@@ -43,6 +45,7 @@ type StepModel struct {
 	ProjectTypeTags     []string
 	TypeTags            []string
 	IsRequiresAdminUser bool
+	IsAlwaysRun         bool
 	Inputs              []EnvironmentItemModel
 	Outputs             []EnvironmentItemModel
 }

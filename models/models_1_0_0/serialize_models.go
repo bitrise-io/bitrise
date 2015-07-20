@@ -39,6 +39,7 @@ type StepSerializeModel struct {
 	ProjectTypeTags     []string                        `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string                        `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
 	IsRequiresAdminUser bool                            `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	IsAlwaysRun         bool                            `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
 	Inputs              []EnvironmentItemSerializeModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs             []EnvironmentItemSerializeModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }

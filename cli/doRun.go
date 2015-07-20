@@ -130,9 +130,13 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 				return err
 			}
 
-			if err := runStep(specStep, stepIDData); err != nil {
-				log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
-				failedSteps = append(failedSteps, compositeStepIDStr)
+			if isBuildFailed() && specStep.IsAlwaysRun == false {
+				log.Infof("Build failed, skip step: %s (%s)", stepIDData.ID, stepIDData.Version)
+			} else {
+				if err := runStep(specStep, stepIDData); err != nil {
+					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
+					failedSteps = append(failedSteps, compositeStepIDStr)
+				}
 			}
 		}
 	}
