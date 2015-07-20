@@ -84,7 +84,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 	log.Debugln("-> GetStep")
 	versions := collection.Steps[id].Versions
 	for _, step := range versions {
-		log.Debugf(" Iterating... itm: %#v\n", step)
+		// log.Debugf(" Iterating... itm: %#v\n", step)
 		if step.VersionTag == version {
 			return true, step
 		}

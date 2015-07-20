@@ -1,6 +1,7 @@
 package stepman
 
 import (
+	"errors"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -13,8 +14,28 @@ func DoGitPull(pth string) error {
 }
 
 // DoGitClone ...
-func DoGitClone(git, pth string) error {
-	return RunCommand("git", []string{"clone", "--recursive", git, pth}...)
+func DoGitClone(uri, pth string) error {
+	if uri == "" {
+		return errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return errors.New("Git Clone 'pth' missing")
+	}
+	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
+}
+
+// DoGitCloneWithVersion ...
+func DoGitCloneWithVersion(uri, pth, version string) error {
+	if uri == "" {
+		return errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return errors.New("Git Clone 'pth' missing")
+	}
+	if version == "" {
+		return errors.New("Git Clone 'version' missing")
+	}
+	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
 }
 
 // DoGitUpdate ...
