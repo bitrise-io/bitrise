@@ -112,10 +112,6 @@ func convertToBitriseEnvironmentItemModel(specEnv specModels.EnvironmentItemMode
 		isDontChnageValue = *specEnv.IsDontChangeValue
 	}
 
-	if specEnv.EnvKey == "" || specEnv.Value == "" {
-		log.Errorf("Invalid env Key:%v Value:%v", specEnv.EnvKey, specEnv.Value)
-	}
-
 	env := models.EnvironmentItemModel{
 		EnvKey:            specEnv.EnvKey,
 		Value:             specEnv.Value,

@@ -69,18 +69,57 @@ type BitriseConfigSerializeModel struct {
 
 // GetKeyValuePair ...
 func (envFile EnvironmentItemSerializeModel) GetKeyValuePair() (string, string, error) {
-	if len(envFile) < 3 {
+	keyValueFound := false
+	optsFound := false
+
+	retKey := ""
+	retValue := ""
+
+	if len(envFile) == 1 {
 		for key, value := range envFile {
 			if key != OptionsKey {
 				valueStr, ok := value.(string)
 				if ok == false {
 					return "", "", fmt.Errorf("Invalid value (key:%#v) (value:%#v)", key, value)
 				}
-				return key, valueStr, nil
+
+				retKey = key
+				retValue = valueStr
+				keyValueFound = true
 			}
 		}
+
+		if keyValueFound == false {
+			return "", "", errors.New("Invalid envFile: no key-value found")
+		}
+
+		return retKey, retValue, nil
+	} else if len(envFile) == 2 {
+		for key, value := range envFile {
+			if key != OptionsKey {
+				valueStr, ok := value.(string)
+				if ok == false {
+					return "", "", fmt.Errorf("Invalid value (key:%#v) (value:%#v)", key, value)
+				}
+
+				retKey = key
+				retValue = valueStr
+				keyValueFound = true
+			} else if key == OptionsKey {
+				optsFound = true
+			}
+		}
+
+		if keyValueFound == false {
+			return "", "", errors.New("Invalid envFile: 2 fields but, no key-value found")
+		}
+		if optsFound == false {
+			return "", "", errors.New("Invalid envFile: 2 fields but, no opts found")
+		}
+
+		return retKey, retValue, nil
 	}
-	return "", "", errors.New("Invalid envFile")
+	return "", "", errors.New("Invalid envFile: 0 or more then 2 fileds ")
 }
 
 // // SetFieldOnInterface ...
@@ -196,8 +235,23 @@ func (envSerModel *EnvironmentItemOptionsSerializeModel) ParseFromInterfaceMap(i
 
 // GetOptions ...
 func (envFile EnvironmentItemSerializeModel) GetOptions() (EnvironmentItemOptionsSerializeModel, error) {
+	if len(envFile) < 1 {
+		return EnvironmentItemOptionsSerializeModel{}, errors.New("Invalid env: less then 1 field")
+	}
+	if len(envFile) > 2 {
+		return EnvironmentItemOptionsSerializeModel{}, errors.New("Invalid env: more then 2 field")
+	}
+
+	optsShouldExist := false
+	if len(envFile) == 2 {
+		optsShouldExist = true
+	}
+
 	value, found := envFile[OptionsKey]
 	if !found {
+		if optsShouldExist {
+			return EnvironmentItemOptionsSerializeModel{}, errors.New("Invalid envFile: 2 fields but, no opts found")
+		}
 		return EnvironmentItemOptionsSerializeModel{}, nil
 	}
 

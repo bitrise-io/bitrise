@@ -2,9 +2,11 @@ format_version: 1.0.0
 app:
   environments:
   - BITRISE_PROJECT_TITLE: BitriseCLI
-    is_expand: "no"
+    opts:
+        is_expand: no
   - BITRISE_DEV_BRANCH: master
-    is_expand: "no"
+    opts:
+        is_expand: no
 workflows:
 
   test:
