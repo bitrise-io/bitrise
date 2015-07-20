@@ -58,13 +58,14 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(step models.StepModel, collection models.StepCollectionModel) error {
-	downloadLocations, err := collection.GetDownloadLocations(step)
+func DownloadStep(collection models.StepCollectionModel, stepVersionData models.StepModel) error {
+	log.Debugf("Download Step version: %#v\n", stepVersionData)
+	downloadLocations, err := collection.GetDownloadLocations(stepVersionData)
 	if err != nil {
 		return err
 	}
 
-	stepPth := GetStepCacheDirPath(collection.SteplibSource, step)
+	stepPth := GetStepCacheDirPath(collection.SteplibSource, stepVersionData)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
@@ -85,14 +86,14 @@ func DownloadStep(step models.StepModel, collection models.StepCollectionModel) 
 			}
 		case "git":
 			log.Info("[STEPMAN] - Git clone step from:", downloadLocation.Src)
-			if err := DoGitClone(downloadLocation.Src, stepPth); err != nil {
+			if err := DoGitCloneWithVersion(downloadLocation.Src, stepPth, stepVersionData.VersionTag); err != nil {
 				log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
 				return nil
 			}
 		default:
-			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step (%#v)", downloadLocation, step)
+			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step (%#v)", downloadLocation, stepVersionData)
 		}
 	}
 
@@ -212,7 +213,7 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 		log.Error("[STEPMAN] - Failed to walk through path:", err)
 	}
 
-	log.Debugf("  collected steps: %#v\n", stepHash)
+	// log.Debugf("  collected steps: %#v\n", stepHash)
 	collection.Steps = stepHash
 
 	var bytes []byte

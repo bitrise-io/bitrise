@@ -47,17 +47,17 @@ func activate(c *cli.Context) {
 	}
 	// log.Debugf("Spec: %#v\n", collection)
 
-	exist, step := collection.GetStep(id, version)
+	exist, stepVersionData := collection.GetStep(id, version)
 	if !exist {
 		log.Fatalf("[STEPMAN] - Failed to activate Step: %s (v%s), does not exist in local cache.", id, version)
 	}
 
-	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, step)
+	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, stepVersionData)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
-		if err := stepman.DownloadStep(step, collection); err != nil {
+		if err := stepman.DownloadStep(collection, stepVersionData); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}
@@ -86,7 +86,7 @@ func activate(c *cli.Context) {
 			log.Fatalln("[STEPMAN] - Copy yml destination path exist")
 		}
 
-		stepCollectionDir := stepman.GetStepCollectionDirPath(collectionURI, step)
+		stepCollectionDir := stepman.GetStepCollectionDirPath(collectionURI, stepVersionData)
 		stepYMLSrc := stepCollectionDir + "/step.yml"
 		if err = stepman.RunCopyFile(stepYMLSrc, copyYML); err != nil {
 			log.Fatalln("[STEPMAN] - Failed to copy step.yml:", err)

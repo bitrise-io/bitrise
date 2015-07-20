@@ -35,12 +35,12 @@ func download(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
 
-	exist, step := collection.GetStep(id, version)
+	exist, stepVersionData := collection.GetStep(id, version)
 	if !exist {
 		log.Fatalf("[STEPMAN] - Step: %s (v%s) failed to download from every avaiable download location.", id, version)
 	}
 
-	if err := stepman.DownloadStep(step, collection); err != nil {
+	if err := stepman.DownloadStep(collection, stepVersionData); err != nil {
 		log.Fatal("[STEPMAN] - Failed to download step")
 	}
 }
