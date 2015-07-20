@@ -130,7 +130,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 				return err
 			}
 
-			if isBuildFailed() && specStep.IsAlwaysRun == false {
+			if isBuildFailed() && !specStep.IsAlwaysRun {
 				log.Infof("Build failed, skip step: %s (%s)", stepIDData.ID, stepIDData.Version)
 			} else {
 				if err := runStep(specStep, stepIDData); err != nil {
