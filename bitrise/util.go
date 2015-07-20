@@ -10,7 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
-	specModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
@@ -49,18 +49,18 @@ func ReadSpecStep(pth string) (models.StepModel, error) {
 		return models.StepModel{}, err
 	}
 
-	var specStep specModels.StepModel
+	var specStep stepmanModels.StepModel
 	if err := yaml.Unmarshal(bytes, &specStep); err != nil {
 		return models.StepModel{}, err
 	}
 
-	return convertToBitriseStepModel(specStep)
+	return convertStepmanToBitriseStepModel(specStep)
 }
 
-func convertToBitriseStepModel(specStep specModels.StepModel) (models.StepModel, error) {
+func convertStepmanToBitriseStepModel(specStep stepmanModels.StepModel) (models.StepModel, error) {
 	inputs := []models.EnvironmentItemModel{}
 	for _, specEnv := range specStep.Inputs {
-		env, err := convertToBitriseEnvironmentItemModel(specEnv)
+		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
 		if err != nil {
 			return models.StepModel{}, err
 		}
@@ -69,7 +69,7 @@ func convertToBitriseStepModel(specStep specModels.StepModel) (models.StepModel,
 
 	outputs := []models.EnvironmentItemModel{}
 	for _, specEnv := range specStep.Outputs {
-		env, err := convertToBitriseEnvironmentItemModel(specEnv)
+		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
 		if err != nil {
 			return models.StepModel{}, err
 		}
@@ -96,7 +96,7 @@ func convertToBitriseStepModel(specStep specModels.StepModel) (models.StepModel,
 }
 
 // ToEnvironmentItemModel ...
-func convertToBitriseEnvironmentItemModel(specEnv specModels.EnvironmentItemModel) (models.EnvironmentItemModel, error) {
+func convertStepmanToBitriseEnvironmentItemModel(specEnv stepmanModels.EnvironmentItemModel) (models.EnvironmentItemModel, error) {
 	isRequired := models.DefaultIsRequired
 	if specEnv.IsRequired != nil {
 		isRequired = *specEnv.IsRequired
