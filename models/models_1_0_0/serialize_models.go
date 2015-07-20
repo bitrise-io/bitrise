@@ -77,7 +77,7 @@ func (envFile EnvironmentItemSerializeModel) GetKeyValuePair() (string, string, 
 		for key, value := range envFile {
 			if key != OptionsKey {
 				if retKey != "" {
-					return "", "", errors.New("Invalid envFile: more then 1 key-value field found!")
+					return "", "", errors.New("Invalid env: more then 1 key-value field found!")
 				}
 
 				valueStr, ok := value.(string)
@@ -90,10 +90,14 @@ func (envFile EnvironmentItemSerializeModel) GetKeyValuePair() (string, string, 
 			}
 		}
 
+		if retKey == "" {
+			return "", "", errors.New("Invalid env: no envKey specified!")
+		}
+
 		return retKey, retValue, nil
 	}
 
-	return "", "", errors.New("Invalid envFile: 0 or more then 2 fileds ")
+	return "", "", errors.New("Invalid env: more then 2 fields ")
 }
 
 // // SetFieldOnInterface ...
