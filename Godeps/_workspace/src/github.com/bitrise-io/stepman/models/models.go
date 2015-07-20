@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -37,7 +39,8 @@ type StepModel struct {
 	HostOsTags          []string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser *bool                  `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	IsRequiresAdminUser bool                   `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	IsAlwaysRun         bool                   `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
 	Inputs              []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs             []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
@@ -82,7 +85,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 	log.Debugln("-> GetStep")
 	versions := collection.Steps[id].Versions
 	for _, step := range versions {
-		log.Debugf(" Iterating... itm: %#v\n", step)
+		// log.Debugf(" Iterating... itm: %#v\n", step)
 		if step.VersionTag == version {
 			return true, step
 		}
@@ -91,7 +94,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 }
 
 // GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []DownloadLocationModel {
+func (collection StepCollectionModel) GetDownloadLocations(step StepModel) ([]DownloadLocationModel, error) {
 	locations := []DownloadLocationModel{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		switch downloadLocation.Type {
@@ -109,8 +112,11 @@ func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []Dow
 			}
 			locations = append(locations, location)
 		default:
-			log.Error("[STEPMAN] - Invalid download location")
+			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, step)
 		}
 	}
-	return locations
+	if len(locations) < 1 {
+		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", step)
+	}
+	return locations, nil
 }
