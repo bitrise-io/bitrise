@@ -56,28 +56,9 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 	return stepCollection, nil
 }
 
-// GetDownloadLocations ...
-func getDownloadLocations(step models.StepModel, collection models.StepCollectionModel) []map[string]string {
-	locations := []map[string]string{}
-	for _, downloadLocation := range collection.DownloadLocations {
-		for key, value := range downloadLocation {
-			switch key {
-			case "zip":
-				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
-				locations = append(locations, map[string]string{key: url})
-			case "git":
-				locations = append(locations, step.Source)
-			default:
-				log.Error("[STEPMAN] - Invalid download location")
-			}
-		}
-	}
-	return locations
-}
-
 // DownloadStep ...
 func DownloadStep(step models.StepModel, collection models.StepCollectionModel) error {
-	downloadLocations := getDownloadLocations(step, collection)
+	downloadLocations := collection.GetDownloadLocations(step)
 
 	stepPth := GetStepCacheDirPath(collection.SteplibSource, step)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
@@ -88,28 +69,26 @@ func DownloadStep(step models.StepModel, collection models.StepCollectionModel) 
 	}
 
 	success := false
-	for _, downloadLocationMap := range downloadLocations {
-		for key, value := range downloadLocationMap {
-			switch key {
-			case "zip":
-				log.Info("[STEPMAN] - Downloading step from:", value)
-				if err := DownloadAndUnZIP(value, stepPth); err != nil {
-					log.Error("[STEPMAN] - Failed to download step.zip:", err)
-				} else {
-					success = true
-					return nil
-				}
-			case "git":
-				log.Info("[STEPMAN] - Git clone step from:", value)
-				if err := DoGitClone(value, stepPth); err != nil {
-					log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", value, err)
-				} else {
-					success = true
-					return nil
-				}
-			default:
-				log.Error("[STEPMAN] - Invalid download location")
+	for _, downloadLocation := range downloadLocations {
+		switch downloadLocation.Type {
+		case "zip":
+			log.Info("[STEPMAN] - Downloading step from:", downloadLocation.Src)
+			if err := DownloadAndUnZIP(downloadLocation.Src, stepPth); err != nil {
+				log.Error("[STEPMAN] - Failed to download step.zip:", err)
+			} else {
+				success = true
+				return nil
 			}
+		case "git":
+			log.Info("[STEPMAN] - Git clone step from:", downloadLocation.Src)
+			if err := DoGitClone(downloadLocation.Src, stepPth); err != nil {
+				log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
+			} else {
+				success = true
+				return nil
+			}
+		default:
+			log.Error("[STEPMAN] - Invalid download location")
 		}
 	}
 
