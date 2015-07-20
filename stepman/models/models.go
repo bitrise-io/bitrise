@@ -52,13 +52,19 @@ type StepGroupModel struct {
 // StepHash ...
 type StepHash map[string]StepGroupModel
 
+// DownloadLocationModel ...
+type DownloadLocationModel struct {
+	Type string `json:"type"`
+	Src  string `json:"src"`
+}
+
 // StepCollectionModel ...
 type StepCollectionModel struct {
-	FormatVersion        string              `json:"format_version" yaml:"format_version"`
-	GeneratedAtTimeStamp int64               `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
-	Steps                StepHash            `json:"steps" yaml:"steps"`
-	SteplibSource        string              `json:"steplib_source" yaml:"steplib_source"`
-	DownloadLocations    []map[string]string `json:"download_locations" yaml:"download_locations"`
+	FormatVersion        string                  `json:"format_version" yaml:"format_version"`
+	GeneratedAtTimeStamp int64                   `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
+	Steps                StepHash                `json:"steps" yaml:"steps"`
+	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
+	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
 }
 
 // WorkFlowModel ...
@@ -85,19 +91,25 @@ func (collection StepCollectionModel) GetStep(id, version string) (bool, StepMod
 }
 
 // GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []map[string]string {
-	locations := []map[string]string{}
+func (collection StepCollectionModel) GetDownloadLocations(step StepModel) []DownloadLocationModel {
+	locations := []DownloadLocationModel{}
 	for _, downloadLocation := range collection.DownloadLocations {
-		for key, value := range downloadLocation {
-			switch key {
-			case "zip":
-				url := value + step.ID + "/" + step.VersionTag + "/step.zip"
-				locations = append(locations, map[string]string{key: url})
-			case "git":
-				locations = append(locations, map[string]string{key: step.Source.Git})
-			default:
-				log.Error("[STEPMAN] - Invalid download location")
+		switch downloadLocation.Type {
+		case "zip":
+			url := downloadLocation.Src + step.ID + "/" + step.VersionTag + "/step.zip"
+			location := DownloadLocationModel{
+				Type: downloadLocation.Type,
+				Src:  url,
 			}
+			locations = append(locations, location)
+		case "git":
+			location := DownloadLocationModel{
+				Type: downloadLocation.Type,
+				Src:  step.Source.Git,
+			}
+			locations = append(locations, location)
+		default:
+			log.Error("[STEPMAN] - Invalid download location")
 		}
 	}
 	return locations
