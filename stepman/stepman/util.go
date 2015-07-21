@@ -36,7 +36,15 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 		return models.StepModel{}, err
 	}
 
+	if err := stepModel.Normalize(); err != nil {
+		return models.StepModel{}, err
+	}
+
 	if err := stepModel.Validate(); err != nil {
+		return models.StepModel{}, err
+	}
+
+	if err := stepModel.FillMissingDeafults(); err != nil {
 		return models.StepModel{}, err
 	}
 
@@ -149,6 +157,7 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	} else {
 		stepGroup.LatestVersionNumber = version
 	}
+	log.Debugf("SetGroup: %#v, versionParam: %#v, stepParam: %#v", stepGroup, version, step)
 	stepGroup.Versions[version] = step
 	return stepGroup
 }
@@ -174,19 +183,20 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 
 		if match {
 			components := strings.Split(truncatedPath, "/")
-			log.Debugf("  components: %#v\n", components)
 			if len(components) == 4 {
 				id := components[1]
 				version := components[2]
 
+				log.Debugf("Start parsing (StepId:%s) (Version:%s)", id, version)
 				step, parseErr := parseStepYml(collectionURI, path, id, version)
 				if parseErr != nil {
+					log.Debugf("  Failed to parse StepId: %v Version: %v", id, version)
 					return parseErr
 				}
 				stepGroup, found := stepHash[id]
 				if !found {
 					stepGroup = models.StepGroupModel{
-						ID: id,
+						Versions: map[string]models.StepModel{},
 					}
 				}
 				stepGroup = addStepVersionToStepGroup(step, version, stepGroup)
