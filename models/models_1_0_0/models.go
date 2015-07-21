@@ -15,6 +15,8 @@ const (
 	DefaultIsExpand bool = true
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue bool = false
+	// DefaultIsAlwaysRun ...
+	DefaultIsAlwaysRun bool = false
 )
 
 // -------------------
@@ -22,7 +24,7 @@ const (
 
 // EnvironmentItemModel ...
 type EnvironmentItemModel struct {
-	EnvKey            string `yaml:"env_key"`
+	EnvKey            string
 	Value             string
 	Title             string
 	Description       string
@@ -43,6 +45,7 @@ type StepModel struct {
 	ProjectTypeTags     []string
 	TypeTags            []string
 	IsRequiresAdminUser bool
+	IsAlwaysRun         bool
 	Inputs              []EnvironmentItemModel
 	Outputs             []EnvironmentItemModel
 }

@@ -10,6 +10,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	stepmanModels "github.com/bitrise-io/stepman/models"
+
 	"github.com/bitrise-io/go-pathutil/pathutil"
 )
 
@@ -46,12 +48,83 @@ func ReadSpecStep(pth string) (models.StepModel, error) {
 	if err != nil {
 		return models.StepModel{}, err
 	}
-	var specStep models.StepModel
+
+	var specStep stepmanModels.StepModel
 	if err := yaml.Unmarshal(bytes, &specStep); err != nil {
 		return models.StepModel{}, err
 	}
 
-	return specStep, nil
+	return convertStepmanToBitriseStepModel(specStep)
+}
+
+func convertStepmanToBitriseStepModel(specStep stepmanModels.StepModel) (models.StepModel, error) {
+	inputs := []models.EnvironmentItemModel{}
+	for _, specEnv := range specStep.Inputs {
+		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
+		if err != nil {
+			return models.StepModel{}, err
+		}
+		inputs = append(inputs, env)
+	}
+
+	outputs := []models.EnvironmentItemModel{}
+	for _, specEnv := range specStep.Outputs {
+		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
+		if err != nil {
+			return models.StepModel{}, err
+		}
+		outputs = append(outputs, env)
+	}
+
+	step := models.StepModel{
+		Name:        specStep.Name,
+		Description: specStep.Description,
+		Website:     specStep.Website,
+		ForkURL:     specStep.ForkURL,
+		Source: models.StepSourceModel{
+			Git: specStep.Source.Git,
+		},
+		HostOsTags:          specStep.HostOsTags,
+		ProjectTypeTags:     specStep.ProjectTypeTags,
+		TypeTags:            specStep.TypeTags,
+		IsRequiresAdminUser: specStep.IsRequiresAdminUser,
+		IsAlwaysRun:         specStep.IsAlwaysRun,
+		Inputs:              inputs,
+		Outputs:             outputs,
+	}
+
+	return step, nil
+}
+
+// ToEnvironmentItemModel ...
+func convertStepmanToBitriseEnvironmentItemModel(specEnv stepmanModels.EnvironmentItemModel) (models.EnvironmentItemModel, error) {
+	isRequired := models.DefaultIsRequired
+	if specEnv.IsRequired != nil {
+		isRequired = *specEnv.IsRequired
+	}
+
+	isExpand := models.DefaultIsExpand
+	if specEnv.IsExpand != nil {
+		isExpand = *specEnv.IsExpand
+	}
+
+	isDontChnageValue := models.DefaultIsDontChangeValue
+	if specEnv.IsDontChangeValue != nil {
+		isDontChnageValue = *specEnv.IsDontChangeValue
+	}
+
+	env := models.EnvironmentItemModel{
+		EnvKey:            specEnv.EnvKey,
+		Value:             specEnv.Value,
+		Title:             specEnv.Title,
+		Description:       specEnv.Description,
+		ValueOptions:      specEnv.ValueOptions,
+		IsRequired:        isRequired,
+		IsExpand:          isExpand,
+		IsDontChangeValue: isDontChnageValue,
+	}
+
+	return env, nil
 }
 
 // WriteStringToFile ...

@@ -70,6 +70,19 @@ func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
 	return nil
 }
 
+func cleanupStepWorkDir() error {
+	stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
+	if err := bitrise.RemoveFile(stepYMLPth); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
+	}
+
+	stepDir := bitrise.BitriseWorkStepsDirPath
+	if err := bitrise.RemoveDir(stepDir); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
+	}
+	return nil
+}
+
 func activateAndRunSteps(workflow models.WorkflowModel) error {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
@@ -90,17 +103,17 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		fmt.Println()
 		log.Infof("========== (%d) %s ==========", idx, workflowStep.Name)
 		fmt.Println()
-		stepDir := bitrise.BitriseWorkStepsDirPath + "/step_src"
+		stepDir := bitrise.BitriseWorkStepsDirPath
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
 			log.Error("Failed to setup stepman:", err)
 		}
 
-		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
-		if err := bitrise.RemoveFile(stepYMLPth); err != nil {
-			return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
+		if err := cleanupStepWorkDir(); err != nil {
+			return err
 		}
 
+		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
 			failedSteps = append(failedSteps, compositeStepIDStr)
@@ -117,9 +130,13 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 				return err
 			}
 
-			if err := runStep(specStep, stepIDData); err != nil {
-				log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
-				failedSteps = append(failedSteps, compositeStepIDStr)
+			if isBuildFailed() && !specStep.IsAlwaysRun {
+				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping %s (%s)", stepIDData.ID, stepIDData.Version)
+			} else {
+				if err := runStep(specStep, stepIDData); err != nil {
+					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
+					failedSteps = append(failedSteps, compositeStepIDStr)
+				}
 			}
 		}
 	}
@@ -140,7 +157,7 @@ func runStep(step models.StepModel, stepIDData StepIDData) error {
 		}
 	}
 
-	stepDir := bitrise.BitriseWorkStepsDirPath + "/step_src"
+	stepDir := bitrise.BitriseWorkStepsDirPath
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
 	if err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd); err != nil {
