@@ -36,9 +36,9 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 		return models.StepModel{}, err
 	}
 
-	stepModel.ID = id
-	stepModel.VersionTag = version
-	stepModel.SteplibSource = collectionURI
+	if err := stepModel.Validate(); err != nil {
+		return models.StepModel{}, err
+	}
 
 	return stepModel, nil
 }
@@ -58,14 +58,14 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(collection models.StepCollectionModel, stepVersionData models.StepModel) error {
-	log.Debugf("Download Step version: %#v\n", stepVersionData)
-	downloadLocations, err := collection.GetDownloadLocations(stepVersionData)
+func DownloadStep(collection models.StepCollectionModel, id, version string) error {
+	log.Debugf("Download Step: %#v (%#v)\n", id, version)
+	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
 		return err
 	}
 
-	stepPth := GetStepCacheDirPath(collection.SteplibSource, stepVersionData)
+	stepPth := GetStepCacheDirPath(collection.SteplibSource, id, version)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
@@ -86,14 +86,14 @@ func DownloadStep(collection models.StepCollectionModel, stepVersionData models.
 			}
 		case "git":
 			log.Info("[STEPMAN] - Git clone step from:", downloadLocation.Src)
-			if err := DoGitCloneWithVersion(downloadLocation.Src, stepPth, stepVersionData.VersionTag); err != nil {
+			if err := DoGitCloneWithVersion(downloadLocation.Src, stepPth, version); err != nil {
 				log.Errorf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
 				return nil
 			}
 		default:
-			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step (%#v)", downloadLocation, stepVersionData)
+			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
 		}
 	}
 
@@ -105,19 +105,19 @@ func DownloadStep(collection models.StepCollectionModel, stepVersionData models.
 
 // GetStepCacheDirPath ...
 // Step's Cache dir path, where it's code lives.
-func GetStepCacheDirPath(collectionURI string, step models.StepModel) string {
-	return GetCacheBaseDir(collectionURI) + "/" + step.ID + "/" + step.VersionTag
+func GetStepCacheDirPath(collectionURI string, id, version string) string {
+	return GetCacheBaseDir(collectionURI) + "/" + id + "/" + version
 }
 
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
-func GetStepCollectionDirPath(collectionURI string, step models.StepModel) string {
-	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + step.ID + "/" + step.VersionTag
+func GetStepCollectionDirPath(collectionURI string, id, version string) string {
+	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + id + "/" + version
 }
 
 // semantic version (X.Y.Z)
-// true if version 2 is greater then version 1
-func isVersionGrater(version1, version2 string) bool {
+// 1 if version 2 is greater then version 1, -1 if not
+func compareVersions(version1, version2 string) int {
 	version1Slice := strings.Split(version1, ".")
 	version2Slice := strings.Split(version2, ".")
 
@@ -125,50 +125,35 @@ func isVersionGrater(version1, version2 string) bool {
 		num1, err1 := strconv.ParseInt(num, 0, 64)
 		if err1 != nil {
 			log.Error("[STEPMAN] - Failed to parse int:", err1)
-			return false
+			return 0
 		}
 
 		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
 		if err2 != nil {
 			log.Error("[STEPMAN] - Failed to parse int:", err2)
-			return false
+			return 0
 		}
 
 		if num2 > num1 {
-			return true
+			return 1
 		}
 	}
-	return false
+	return -1
 }
 
-func addStepToStepGroup(step models.StepModel, stepGroup models.StepGroupModel) models.StepGroupModel {
-	var newStepGroup models.StepGroupModel
-	if len(stepGroup.Versions) > 0 {
-		// Step Group already created -> new version of step
-		newStepGroup = stepGroup
-
-		if isVersionGrater(newStepGroup.Latest.VersionTag, step.VersionTag) {
-			newStepGroup.Latest = step
+func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) models.StepGroupModel {
+	if stepGroup.LatestVersionNumber != "" {
+		if compareVersions(stepGroup.LatestVersionNumber, version) > 0 {
+			stepGroup.LatestVersionNumber = version
 		}
 	} else {
-		// Create Step Group
-		newStepGroup = models.StepGroupModel{}
-		newStepGroup.Latest = step
+		stepGroup.LatestVersionNumber = version
 	}
-
-	versions := make([]models.StepModel, len(newStepGroup.Versions))
-	for idx, step := range newStepGroup.Versions {
-		versions[idx] = step
-	}
-	versions = append(versions, step)
-
-	newStepGroup.Versions = versions
-	newStepGroup.ID = step.ID
-	return newStepGroup
+	stepGroup.Versions[version] = step
+	return stepGroup
 }
 
 func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
-	log.Debugln("-> generateFormattedJSONForStepsSpec")
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
@@ -191,16 +176,22 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 			components := strings.Split(truncatedPath, "/")
 			log.Debugf("  components: %#v\n", components)
 			if len(components) == 4 {
-				name := components[1]
+				id := components[1]
 				version := components[2]
 
-				step, parseErr := parseStepYml(collectionURI, path, name, version)
+				step, parseErr := parseStepYml(collectionURI, path, id, version)
 				if parseErr != nil {
 					return parseErr
 				}
-				stepGroup := addStepToStepGroup(step, stepHash[name])
+				stepGroup, found := stepHash[id]
+				if !found {
+					stepGroup = models.StepGroupModel{
+						ID: id,
+					}
+				}
+				stepGroup = addStepVersionToStepGroup(step, version, stepGroup)
 
-				stepHash[name] = stepGroup
+				stepHash[id] = stepGroup
 			} else {
 				log.Debug("  * Path:", truncatedPath)
 				log.Debug("  * Legth:", len(components))
