@@ -108,34 +108,34 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 
 // GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
-	if len(env) < 3 {
-		retKey := ""
-		retValue := ""
-
-		for key, value := range env {
-			if key != optionsKey {
-				if retKey != "" {
-					return "", "", errors.New("Invalid env: more then 1 key-value field found!")
-				}
-
-				valueStr, ok := value.(string)
-				if ok == false {
-					return "", "", fmt.Errorf("Invalid value (key:%#v) (value:%#v)", key, value)
-				}
-
-				retKey = key
-				retValue = valueStr
-			}
-		}
-
-		if retKey == "" {
-			return "", "", errors.New("Invalid env: no envKey specified!")
-		}
-
-		return retKey, retValue, nil
+	if len(env) > 2 {
+		return "", "", errors.New("Invalid env: more then 2 fields ")
 	}
 
-	return "", "", errors.New("Invalid env: more then 2 fields ")
+	retKey := ""
+	retValue := ""
+
+	for key, value := range env {
+		if key != optionsKey {
+			if retKey != "" {
+				return "", "", errors.New("Invalid env: more then 1 key-value field found!")
+			}
+
+			valueStr, ok := value.(string)
+			if ok == false {
+				return "", "", fmt.Errorf("Invalid value (key:%#v) (value:%#v)", key, value)
+			}
+
+			retKey = key
+			retValue = valueStr
+		}
+	}
+
+	if retKey == "" {
+		return "", "", errors.New("Invalid env: no envKey specified!")
+	}
+
+	return retKey, retValue, nil
 }
 
 // ParseFromInterfaceMap ...
