@@ -121,9 +121,6 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		}
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
-		fmt.Println()
-		log.Infof("========== (%d) %s ==========", idx, *workflowStep.Title)
-		fmt.Println()
 		stepDir := bitrise.BitriseWorkStepsDirPath
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
@@ -150,6 +147,10 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 			if err := models.MergeStepWith(specStep, workflowStep); err != nil {
 				return err
 			}
+
+			fmt.Println()
+			log.Infof("========== (%d) %s ==========", idx, *specStep.Title)
+			fmt.Println()
 
 			if isBuildFailed() && !*specStep.IsAlwaysRun {
 				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping %s (%s)", stepIDData.ID, stepIDData.Version)
