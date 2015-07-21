@@ -91,8 +91,8 @@ type AppModel struct {
 	Environments []EnvironmentItemModel `json:"environments" yaml:"environments"`
 }
 
-// BitriseConfigModel ...
-type BitriseConfigModel struct {
+// BitriseDataModel ...
+type BitriseDataModel struct {
 	FormatVersion string                   `json:"format_version" yaml:"format_version"`
 	App           AppModel                 `json:"app" yaml:"app"`
 	Workflows     map[string]WorkflowModel `json:"workflows" yaml:"workflows"`
