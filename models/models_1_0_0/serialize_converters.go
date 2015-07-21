@@ -30,6 +30,7 @@ func (stepFile StepSerializeModel) ToStepModel() (StepModel, error) {
 		ProjectTypeTags:     stepFile.ProjectTypeTags,
 		TypeTags:            stepFile.TypeTags,
 		IsRequiresAdminUser: stepFile.IsRequiresAdminUser,
+		IsAlwaysRun:         stepFile.IsAlwaysRun,
 		Inputs:              inputs,
 		Outputs:             outputs,
 	}

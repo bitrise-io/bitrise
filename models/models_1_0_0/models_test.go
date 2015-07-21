@@ -298,5 +298,5 @@ func TestConvertBitriseConfig(t *testing.T) {
 }
 
 func TestParseFromInterfaceMap(t *testing.T) {
-	t.Log("EnvironmentItemOptionsSerializeModel::TestParseFromInterfaceMap - IMPLEMENT!")
+	t.Logf("TestParseFromInterfaceMap -- coming soon")
 }

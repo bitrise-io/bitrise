@@ -3,7 +3,10 @@ app:
   environments:
   - BITRISE_PROJECT_TITLE: BitriseCLI
     opts:
-      is_expand: false
+        is_expand: no
+  - BITRISE_DEV_BRANCH: master
+    opts:
+        is_expand: no
 workflows:
 
   test:
