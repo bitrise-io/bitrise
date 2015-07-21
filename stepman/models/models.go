@@ -66,34 +66,3 @@ type StepCollectionModel struct {
 	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
 	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
 }
-
-// WorkFlowModel ...
-type WorkFlowModel struct {
-	FormatVersion string      `json:"format_version"`
-	Environments  []string    `json:"environments"`
-	Steps         []StepModel `json:"steps"`
-}
-
-// -------------------
-// --- Bitrise-cli models
-
-// StepListItemModel ...
-type StepListItemModel map[string]StepModel
-
-// WorkflowModel ...
-type WorkflowModel struct {
-	Environments []EnvironmentItemModel `json:"environments"`
-	Steps        []StepListItemModel    `json:"steps"`
-}
-
-// AppModel ...
-type AppModel struct {
-	Environments []EnvironmentItemModel `json:"environments" yaml:"environments"`
-}
-
-// BitriseConfigModel ...
-type BitriseConfigModel struct {
-	FormatVersion string                   `json:"format_version" yaml:"format_version"`
-	App           AppModel                 `json:"app" yaml:"app"`
-	Workflows     map[string]WorkflowModel `json:"workflows" yaml:"workflows"`
-}

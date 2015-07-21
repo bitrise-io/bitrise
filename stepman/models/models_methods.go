@@ -178,6 +178,11 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 
 // GetDownloadLocations ...
 func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
+	step, found := collection.GetStep(id, version)
+	if found == false {
+		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
+	}
+
 	locations := []DownloadLocationModel{}
 	for _, downloadLocation := range collection.DownloadLocations {
 		switch downloadLocation.Type {
@@ -189,14 +194,11 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 			}
 			locations = append(locations, location)
 		case "git":
-			step, found := collection.GetStep(id, version)
-			if found {
-				location := DownloadLocationModel{
-					Type: downloadLocation.Type,
-					Src:  *step.Source.Git,
-				}
-				locations = append(locations, location)
+			location := DownloadLocationModel{
+				Type: downloadLocation.Type,
+				Src:  *step.Source.Git,
 			}
+			locations = append(locations, location)
 		default:
 			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, id)
 		}
@@ -338,156 +340,4 @@ func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error
 	log.Debugf("Parsed options: %#v\n", options)
 
 	return options, nil
-}
-
-// MergeWith ...
-func (env *EnvironmentItemModel) MergeWith(otherEnv EnvironmentItemModel) error {
-	// merge key-value
-	key, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-
-	otherKey, otherValue, err := otherEnv.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-
-	if otherKey != key {
-		return errors.New("Env keys are diferent")
-	}
-
-	(*env)[key] = otherValue
-
-	//merge options
-	options, err := env.GetOptions()
-	if err != nil {
-		return err
-	}
-
-	otherOptions, err := otherEnv.GetOptions()
-	if err != nil {
-		return err
-	}
-
-	if otherOptions.Title != nil {
-		*options.Title = *otherOptions.Title
-	}
-	if otherOptions.Description != nil {
-		*options.Description = *otherOptions.Description
-	}
-	if len(otherOptions.ValueOptions) > 0 {
-		options.ValueOptions = otherOptions.ValueOptions
-	}
-	if otherOptions.IsRequired != nil {
-		*options.IsRequired = *otherOptions.IsRequired
-	}
-	if otherOptions.IsExpand != nil {
-		*options.IsExpand = *otherOptions.IsExpand
-	}
-	if otherOptions.IsDontChangeValue != nil {
-		*options.IsDontChangeValue = *otherOptions.IsDontChangeValue
-	}
-	return nil
-}
-
-// MergeWith ...
-func (step *StepModel) MergeWith(otherStep StepModel) error {
-	if otherStep.Title != nil {
-		*step.Title = *otherStep.Title
-	}
-	if otherStep.Description != nil {
-		*step.Description = *otherStep.Description
-	}
-	if otherStep.Summary != nil {
-		*step.Summary = *otherStep.Summary
-	}
-	if otherStep.Website != nil {
-		*step.Website = *otherStep.Website
-	}
-	if otherStep.SourceCodeURL != nil {
-		*step.SourceCodeURL = *otherStep.SourceCodeURL
-	}
-	if otherStep.SupportURL != nil {
-		*step.SupportURL = *otherStep.SupportURL
-	}
-	if otherStep.Source.Git != nil {
-		*step.Source.Git = *otherStep.Source.Git
-	}
-	if len(otherStep.HostOsTags) > 0 {
-		step.HostOsTags = otherStep.HostOsTags
-	}
-	if len(otherStep.ProjectTypeTags) > 0 {
-		step.ProjectTypeTags = otherStep.ProjectTypeTags
-	}
-	if len(otherStep.TypeTags) > 0 {
-		step.TypeTags = otherStep.TypeTags
-	}
-	if otherStep.IsRequiresAdminUser != nil {
-		*step.IsRequiresAdminUser = *otherStep.IsRequiresAdminUser
-	}
-	if otherStep.IsAlwaysRun != nil {
-		*step.IsAlwaysRun = *otherStep.IsAlwaysRun
-	}
-	if otherStep.IsNotImportant != nil {
-		*step.IsNotImportant = *otherStep.IsNotImportant
-	}
-
-	for _, input := range step.Inputs {
-		key, _, err := input.GetKeyValuePair()
-		if err != nil {
-			return err
-		}
-		otherInput, found := otherStep.getInputByKey(key)
-		if found {
-			err := input.MergeWith(otherInput)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, output := range step.Outputs {
-		key, _, err := output.GetKeyValuePair()
-		if err != nil {
-			return err
-		}
-		otherOutput, found := otherStep.getOutputByKey(key)
-		if found {
-			err := output.MergeWith(otherOutput)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (step StepModel) getInputByKey(key string) (EnvironmentItemModel, bool) {
-	for _, input := range step.Inputs {
-		k, _, err := input.GetKeyValuePair()
-		if err != nil {
-			return EnvironmentItemModel{}, false
-		}
-
-		if k == key {
-			return input, true
-		}
-	}
-	return EnvironmentItemModel{}, false
-}
-
-func (step StepModel) getOutputByKey(key string) (EnvironmentItemModel, bool) {
-	for _, output := range step.Outputs {
-		k, _, err := output.GetKeyValuePair()
-		if err != nil {
-			return EnvironmentItemModel{}, false
-		}
-
-		if k == key {
-			return output, true
-		}
-	}
-	return EnvironmentItemModel{}, false
 }
