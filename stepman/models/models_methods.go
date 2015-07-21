@@ -180,7 +180,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
 	step, found := collection.GetStep(id, version)
 	if found == false {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection dosn't contains step %s (%s)", id, version)
+		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
 	}
 
 	locations := []DownloadLocationModel{}
