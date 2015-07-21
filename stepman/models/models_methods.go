@@ -63,9 +63,7 @@ func (step StepModel) Validate() error {
 
 // GetStep ...
 func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bool) {
-	log.Debugln("-> GetStep")
 	stepHash := collection.Steps
-	//map[string]StepModel
 	stepVersions, found := stepHash[id]
 	if !found {
 		return StepModel{}, false
