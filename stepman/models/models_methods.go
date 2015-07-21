@@ -440,7 +440,10 @@ func (step *StepModel) MergeWith(otherStep StepModel) error {
 		}
 		otherInput, found := otherStep.getInputByKey(key)
 		if found {
-			input.MergeWith(otherInput)
+			err := input.MergeWith(otherInput)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -451,7 +454,10 @@ func (step *StepModel) MergeWith(otherStep StepModel) error {
 		}
 		otherOutput, found := otherStep.getOutputByKey(key)
 		if found {
-			output.MergeWith(otherOutput)
+			err := output.MergeWith(otherOutput)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
