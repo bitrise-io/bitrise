@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
 
@@ -56,12 +57,22 @@ func createStepIDDataFromString(s string) (StepIDData, error) {
 	}, nil
 }
 
-func exportEnvironmentsList(envsList []models.EnvironmentItemModel) error {
+func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
-		if env.Value != "" {
-			if err := bitrise.RunEnvmanAdd(env.EnvKey, env.Value, env.IsExpand); err != nil {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+
+		opts, err := env.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		if value != "" {
+			if err := bitrise.RunEnvmanAdd(key, value, *opts.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -83,6 +94,16 @@ func cleanupStepWorkDir() error {
 	return nil
 }
 
+func getStepIDStepDataPair(stepListItm models.StepListItemModel) (string, stepmanModels.StepModel, error) {
+	if len(stepListItm) > 1 {
+		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
+	}
+	for key, value := range stepListItm {
+		return key, value, nil
+	}
+	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
+}
+
 func activateAndRunSteps(workflow models.WorkflowModel) error {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
@@ -90,7 +111,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		// TODO: first arg should be 'stepCompositeID'
 		//  which can contain the step-collection, step-id, version, etc.
 		//  in one string!
-		compositeStepIDStr, workflowStep, err := stepListItm.GetStepIDStepDataPair()
+		compositeStepIDStr, workflowStep, err := getStepIDStepDataPair(stepListItm)
 		if err != nil {
 			return err
 		}
@@ -101,7 +122,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
 		fmt.Println()
-		log.Infof("========== (%d) %s ==========", idx, workflowStep.Name)
+		log.Infof("========== (%d) %s ==========", idx, *workflowStep.Title)
 		fmt.Println()
 		stepDir := bitrise.BitriseWorkStepsDirPath
 
@@ -126,11 +147,11 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 				return err
 			}
 
-			if err := specStep.MergeWith(workflowStep); err != nil {
+			if err := models.MergeStepWith(specStep, workflowStep); err != nil {
 				return err
 			}
 
-			if isBuildFailed() && !specStep.IsAlwaysRun {
+			if isBuildFailed() && !*specStep.IsAlwaysRun {
 				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping %s (%s)", stepIDData.ID, stepIDData.Version)
 			} else {
 				if err := runStep(specStep, stepIDData); err != nil {
@@ -143,14 +164,24 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 	return nil
 }
 
-func runStep(step models.StepModel, stepIDData StepIDData) error {
+func runStep(step stepmanModels.StepModel, stepIDData StepIDData) error {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 	// Add step envs
 	for _, input := range step.Inputs {
-		if input.Value != "" {
+		key, value, err := input.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+
+		opts, err := input.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		if value != "" {
 			log.Debugf("Input: %#v\n", input)
-			if err := bitrise.RunEnvmanAdd(input.EnvKey, input.Value, input.IsExpand); err != nil {
+			if err := bitrise.RunEnvmanAdd(key, value, *opts.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}

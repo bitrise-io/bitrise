@@ -76,9 +76,9 @@ func TestMergeWith(t *testing.T) {
 }
 
 func TestToEnvironmentItemModel(t *testing.T) {
-	envConf := EnvironmentItemSerializeModel{
+	envConf := EnvironmentItemModel{
 		"TEST_KEY_1": "Test value 1",
-		"opts": EnvironmentItemOptionsSerializeModel{
+		"opts": EnvironmentItemOptionsModel{
 			Title:             "env title",
 			Description:       "env description",
 			ValueOptions:      []string{"one", "two"},
@@ -120,7 +120,7 @@ func TestToEnvironmentItemModel(t *testing.T) {
 	}
 }
 func TestToStepModel(t *testing.T) {
-	confModel := StepSerializeModel{
+	confModel := StepModel{
 		Name:        "test-step",
 		Description: "test description",
 		Website:     "https://web.site",
@@ -132,19 +132,19 @@ func TestToStepModel(t *testing.T) {
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"some-cat"},
 		IsRequiresAdminUser: true,
-		Inputs: []EnvironmentItemSerializeModel{
-			EnvironmentItemSerializeModel{
+		Inputs: []EnvironmentItemModel{
+			EnvironmentItemModel{
 				"INPUT_1": "Input value 1",
-				"opts": EnvironmentItemOptionsSerializeModel{
+				"opts": EnvironmentItemOptionsModel{
 					Title:       "Env title",
 					Description: "Env description",
 				},
 			},
-			EnvironmentItemSerializeModel{
+			EnvironmentItemModel{
 				"INPUT_2": "Input value 2",
 			},
 		},
-		Outputs: []EnvironmentItemSerializeModel{},
+		Outputs: []EnvironmentItemModel{},
 	}
 
 	dataModel, err := confModel.ToStepModel()
@@ -186,14 +186,14 @@ func TestToStepModel(t *testing.T) {
 	}
 }
 
-func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
-	confModel := BitriseConfigSerializeModel{
+func createTestBitriseConfigModel() BitriseConfigModel {
+	confModel := BitriseConfigModel{
 		FormatVersion: "0.0.1",
-		App: AppSerializeModel{
-			Environments: []EnvironmentItemSerializeModel{
-				EnvironmentItemSerializeModel{
+		App: AppModel{
+			Environments: []EnvironmentItemModel{
+				EnvironmentItemModel{
 					"APP_KEY1": "App key 1",
-					"opts": EnvironmentItemOptionsSerializeModel{
+					"opts": EnvironmentItemOptionsModel{
 						Title:        "title",
 						Description:  "descr",
 						ValueOptions: []string{"1tes", "w"},
@@ -203,12 +203,12 @@ func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
 				},
 			},
 		},
-		Workflows: map[string]WorkflowSerializeModel{
-			"test": WorkflowSerializeModel{
-				Environments: []EnvironmentItemSerializeModel{},
-				Steps: []StepListItemSerializeModel{
-					StepListItemSerializeModel{
-						"https://git/url::step-id@1.2.3": StepSerializeModel{
+		Workflows: map[string]WorkflowModel{
+			"test": WorkflowModel{
+				Environments: []EnvironmentItemModel{},
+				Steps: []StepListItemModel{
+					StepListItemModel{
+						"https://git/url::step-id@1.2.3": StepModel{
 							Name:        "test-step",
 							Description: "test description",
 							Website:     "https://web.site",
@@ -220,10 +220,10 @@ func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
 							ProjectTypeTags:     []string{"ios"},
 							TypeTags:            []string{"some-cat"},
 							IsRequiresAdminUser: true,
-							Inputs: []EnvironmentItemSerializeModel{
-								EnvironmentItemSerializeModel{
+							Inputs: []EnvironmentItemModel{
+								EnvironmentItemModel{
 									"INPUT_KEY1": "Input key 1",
-									"opts": EnvironmentItemOptionsSerializeModel{
+									"opts": EnvironmentItemOptionsModel{
 										Title:        "input title 1",
 										Description:  "input descr 1",
 										ValueOptions: []string{"one", "two"},
@@ -232,7 +232,7 @@ func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
 									},
 								},
 							},
-							Outputs: []EnvironmentItemSerializeModel{},
+							Outputs: []EnvironmentItemModel{},
 						},
 					},
 				},
@@ -243,7 +243,7 @@ func createTestBitriseConfigSerializeModel() BitriseConfigSerializeModel {
 }
 
 func TestConvertBitriseConfig(t *testing.T) {
-	confModel := createTestBitriseConfigSerializeModel()
+	confModel := createTestBitriseConfigModel()
 
 	dataModel, err := confModel.ToBitriseDataModel()
 	if err != nil {
@@ -277,14 +277,14 @@ func TestConvertBitriseConfig(t *testing.T) {
 	}
 
 	// Serialize & Deserialize
-	confForSaveModel := dataModel.ToBitriseConfigSerializeModel()
+	confForSaveModel := dataModel.ToBitriseConfigModel()
 	var bytes []byte
 	bytes, err = yaml.Marshal(confForSaveModel)
 	if err != nil {
 		t.Error("Failed to generate YAML for Bitrise Config: ", err)
 	}
 	// deserialize
-	var bitriseConfigFile BitriseConfigSerializeModel
+	var bitriseConfigFile BitriseConfigModel
 	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
 		t.Error("Failed to parse YAML of Bitrise Config: ", err)
 	}

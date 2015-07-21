@@ -12,7 +12,7 @@ workflows:
   test:
     steps:
     - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script@2.0.0:
-        name: Running the TEST script
+        title: Running the TEST script
         inputs:
         - content: |
             #!/bin/bash
@@ -26,7 +26,7 @@ workflows:
   install:
     steps:
     - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script@2.0.0:
-        name: Running go install
+        title: Running go install
         inputs:
         - content: |
             #!/bin/bash
@@ -36,19 +36,18 @@ workflows:
 
   install-tools:
     steps:
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::generic-script-runner@1.0.1:
-        name: Running go install on other tools
+    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+        title: Running go install on other tools
         inputs:
-        - GENERIC_SCRIPT_RUNNER_CONTENT: |
+        - content: |
             #!/bin/bash
             set -v
             set -e
             bash ./_scripts/go_install_tools.sh
           opts:
             is_expand: no
-        - GENERIC_SCRIPT_RUNNER_BIN: /bin/bash
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script@2.0.0:
-        name: Running go install on bitrise-cli
+    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+        title: Running go install on bitrise-cli
         inputs:
         - content: |
             #!/bin/bash

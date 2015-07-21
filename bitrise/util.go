@@ -28,103 +28,45 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	if err != nil {
 		return models.BitriseDataModel{}, err
 	}
-	var bitriseConfigFile models.BitriseConfigSerializeModel
-	if err := yaml.Unmarshal(bytes, &bitriseConfigFile); err != nil {
+	var bitriseData models.BitriseDataModel
+	if err := yaml.Unmarshal(bytes, &bitriseData); err != nil {
 		return models.BitriseDataModel{}, err
 	}
 
-	return bitriseConfigFile.ToBitriseDataModel()
+	return bitriseData, nil
 }
 
 // ReadSpecStep ...
-func ReadSpecStep(pth string) (models.StepModel, error) {
+func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.StepModel{}, err
+		return stepmanModels.StepModel{}, err
 	} else if !isExists {
-		return models.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
+		return stepmanModels.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
 	bytes, err := ioutil.ReadFile(pth)
 	if err != nil {
-		return models.StepModel{}, err
+		return stepmanModels.StepModel{}, err
 	}
 
-	var specStep stepmanModels.StepModel
-	if err := yaml.Unmarshal(bytes, &specStep); err != nil {
-		return models.StepModel{}, err
+	var stepModel stepmanModels.StepModel
+	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
+		return stepmanModels.StepModel{}, err
 	}
 
-	return convertStepmanToBitriseStepModel(specStep)
-}
-
-func convertStepmanToBitriseStepModel(specStep stepmanModels.StepModel) (models.StepModel, error) {
-	inputs := []models.EnvironmentItemModel{}
-	for _, specEnv := range specStep.Inputs {
-		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
-		if err != nil {
-			return models.StepModel{}, err
-		}
-		inputs = append(inputs, env)
+	if err := stepModel.Normalize(); err != nil {
+		return stepmanModels.StepModel{}, err
 	}
 
-	outputs := []models.EnvironmentItemModel{}
-	for _, specEnv := range specStep.Outputs {
-		env, err := convertStepmanToBitriseEnvironmentItemModel(specEnv)
-		if err != nil {
-			return models.StepModel{}, err
-		}
-		outputs = append(outputs, env)
+	if err := stepModel.Validate(); err != nil {
+		return stepmanModels.StepModel{}, err
 	}
 
-	step := models.StepModel{
-		Name:        specStep.Name,
-		Description: specStep.Description,
-		Website:     specStep.Website,
-		ForkURL:     specStep.ForkURL,
-		Source: models.StepSourceModel{
-			Git: specStep.Source.Git,
-		},
-		HostOsTags:          specStep.HostOsTags,
-		ProjectTypeTags:     specStep.ProjectTypeTags,
-		TypeTags:            specStep.TypeTags,
-		IsRequiresAdminUser: specStep.IsRequiresAdminUser,
-		IsAlwaysRun:         specStep.IsAlwaysRun,
-		Inputs:              inputs,
-		Outputs:             outputs,
+	if err := stepModel.FillMissingDeafults(); err != nil {
+		return stepmanModels.StepModel{}, err
 	}
 
-	return step, nil
-}
-
-// ToEnvironmentItemModel ...
-func convertStepmanToBitriseEnvironmentItemModel(specEnv stepmanModels.EnvironmentItemModel) (models.EnvironmentItemModel, error) {
-	isRequired := models.DefaultIsRequired
-	if specEnv.IsRequired != nil {
-		isRequired = *specEnv.IsRequired
-	}
-
-	isExpand := models.DefaultIsExpand
-	if specEnv.IsExpand != nil {
-		isExpand = *specEnv.IsExpand
-	}
-
-	isDontChnageValue := models.DefaultIsDontChangeValue
-	if specEnv.IsDontChangeValue != nil {
-		isDontChnageValue = *specEnv.IsDontChangeValue
-	}
-
-	env := models.EnvironmentItemModel{
-		EnvKey:            specEnv.EnvKey,
-		Value:             specEnv.Value,
-		Title:             specEnv.Title,
-		Description:       specEnv.Description,
-		ValueOptions:      specEnv.ValueOptions,
-		IsRequired:        isRequired,
-		IsExpand:          isExpand,
-		IsDontChangeValue: isDontChnageValue,
-	}
-
-	return env, nil
+	return stepModel, nil
 }
 
 // WriteStringToFile ...

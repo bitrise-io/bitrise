@@ -11,6 +11,7 @@ import (
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
 
@@ -43,24 +44,26 @@ func doInit(c *cli.Context) {
 	}
 
 	defaultExpand := true
-	projectSettingsEnvs := []models.EnvironmentItemModel{}
+	projectSettingsEnvs := []stepmanModels.EnvironmentItemModel{}
 	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectTitleEnv := models.EnvironmentItemModel{
-			EnvKey:   "BITRISE_PROJECT_TITLE",
-			Value:    val,
-			IsExpand: defaultExpand,
+		projectTitleEnv := stepmanModels.EnvironmentItemModel{
+			"BITRISE_PROJECT_TITLE": val,
+			"opts": stepmanModels.EnvironmentItemOptionsModel{
+				IsExpand: &defaultExpand,
+			},
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
 	}
 	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		devBranchEnv := models.EnvironmentItemModel{
-			EnvKey:   "BITRISE_DEV_BRANCH",
-			Value:    val,
-			IsExpand: defaultExpand,
+		devBranchEnv := stepmanModels.EnvironmentItemModel{
+			"BITRISE_DEV_BRANCH": val,
+			"opts": stepmanModels.EnvironmentItemOptionsModel{
+				IsExpand: &defaultExpand,
+			},
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
 	}
@@ -143,8 +146,7 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 }
 
 func saveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
-	confModel := bitriseConf.ToBitriseConfigSerializeModel()
-	contBytes, err := generateYAML(confModel)
+	contBytes, err := generateYAML(bitriseConf)
 	if err != nil {
 		return err
 	}
