@@ -204,20 +204,8 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 
 // GetOptions ...
 func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error) {
-	if len(env) > 2 {
-		return EnvironmentItemOptionsModel{}, errors.New("Invalid env: more then 2 field")
-	}
-
-	optsShouldExist := false
-	if len(env) == 2 {
-		optsShouldExist = true
-	}
-
 	value, found := env[optionsKey]
 	if !found {
-		if optsShouldExist {
-			return EnvironmentItemOptionsModel{}, errors.New("Invalid env: 2 fields but, no opts found")
-		}
 		return EnvironmentItemOptionsModel{}, nil
 	}
 
