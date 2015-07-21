@@ -116,8 +116,8 @@ func GetStepCollectionDirPath(collectionURI string, id, version string) string {
 }
 
 // semantic version (X.Y.Z)
-// true if version 2 is greater then version 1
-func isVersionGreater(version1, version2 string) bool {
+// 1 if version 2 is greater then version 1, -1 if not
+func compareVersions(version1, version2 string) int {
 	version1Slice := strings.Split(version1, ".")
 	version2Slice := strings.Split(version2, ".")
 
@@ -125,56 +125,35 @@ func isVersionGreater(version1, version2 string) bool {
 		num1, err1 := strconv.ParseInt(num, 0, 64)
 		if err1 != nil {
 			log.Error("[STEPMAN] - Failed to parse int:", err1)
-			return false
+			return 0
 		}
 
 		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
 		if err2 != nil {
 			log.Error("[STEPMAN] - Failed to parse int:", err2)
-			return false
+			return 0
 		}
 
 		if num2 > num1 {
-			return true
+			return 1
 		}
 	}
-	return false
+	return -1
 }
 
-func isVersionTheGreatest(stepGroup models.StepGroupModel, version string) bool {
-	greatestVersion := "0.0.0"
-	for stepVersion := range stepGroup.Versions {
-		if isVersionGreater(greatestVersion, stepVersion) {
-			greatestVersion = stepVersion
-		}
-	}
-
-	return isVersionGreater(greatestVersion, version)
-}
-
-func addStepToStepGroup(step models.StepModel, id, version string, stepGroup models.StepGroupModel) models.StepGroupModel {
-	var newStepGroup models.StepGroupModel
-
-	if len(stepGroup.Versions) > 0 {
-		// Step Group already created -> new version of step
-		newStepGroup = stepGroup
-
-		if isVersionTheGreatest(newStepGroup, version) {
-			newStepGroup.Latest = step
+func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) models.StepGroupModel {
+	if stepGroup.LatestVersionNumber != "" {
+		if compareVersions(stepGroup.LatestVersionNumber, version) > 0 {
+			stepGroup.LatestVersionNumber = version
 		}
 	} else {
-		// Create Step Group
-		newStepGroup.Latest = step
+		stepGroup.LatestVersionNumber = version
 	}
-
-	newStepGroup.Versions[version] = step
-	newStepGroup.ID = id
-
-	return newStepGroup
+	stepGroup.Versions[version] = step
+	return stepGroup
 }
 
 func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
-	log.Debugln("-> generateFormattedJSONForStepsSpec")
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
@@ -204,7 +183,13 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 				if parseErr != nil {
 					return parseErr
 				}
-				stepGroup := addStepToStepGroup(step, id, version, stepHash[id])
+				stepGroup, found := stepHash[id]
+				if !found {
+					stepGroup = models.StepGroupModel{
+						ID: id,
+					}
+				}
+				stepGroup = addStepVersionToStepGroup(step, version, stepGroup)
 
 				stepHash[id] = stepGroup
 			} else {
