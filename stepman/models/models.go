@@ -1,9 +1,5 @@
 package models
 
-const (
-	optionsKey string = "opts"
-)
-
 // -------------------
 // --- Common models
 
@@ -49,7 +45,6 @@ type StepModel struct {
 
 // StepGroupModel ...
 type StepGroupModel struct {
-	ID                  string               `json:"id"`
 	Versions            map[string]StepModel `json:"versions"`
 	LatestVersionNumber string               `json:"latest_version_number"`
 }
