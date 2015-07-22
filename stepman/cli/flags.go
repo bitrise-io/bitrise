@@ -84,7 +84,7 @@ var (
 	flCopyYML = cli.StringFlag{
 		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
 		Value: "",
-		Usage: "",
+		Usage: "Path where the stp.yml will copied.",
 	}
 )
 
