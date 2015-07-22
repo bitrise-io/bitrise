@@ -11,6 +11,7 @@ app:
       is_expand: no
 
 workflows:
+  # ----- Main (real) Workflows -----
   test:
     steps:
     - script:
@@ -23,7 +24,7 @@ workflows:
 
   install:
     steps:
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+    - script@0.9.0:
         title: Running go install
         inputs:
         - content: |
@@ -34,7 +35,7 @@ workflows:
 
   install-tools:
     steps:
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+    - script@0.9.0:
         title: Running go install on other tools
         inputs:
         - content: |
@@ -42,7 +43,7 @@ workflows:
             set -v
             set -e
             bash ./_scripts/go_install_tools.sh
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+    - script@0.9.0:
         title: Running go install on bitrise-cli
         inputs:
         - content: |
@@ -51,3 +52,32 @@ workflows:
             set -e
             godep restore
             go install
+
+  # ----- Other, test workflows -----
+  fail:
+    # this workflow is a test for failed steps/workflows,
+    #  it'll fail
+    steps:
+      - script:
+          title: "ok"
+      - script:
+          title: "fail"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -v
+              exit 1
+      - script:
+          title: "ok"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "-----> This should NOT be printed!!"
+          is_always_run: false
+      - script:
+          title: "ok"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "-----> This should be printed!!"
+          is_always_run: true

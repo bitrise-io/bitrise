@@ -172,7 +172,7 @@ func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels
 
 // CreateStepIDDataFromString ...
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	steplibSrc := defaultStepLibSource
+	steplibSrc := ""
 	stepIDAndVersionStr := ""
 	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
 	if len(libsourceStepSplits) == 2 {
@@ -182,12 +182,16 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	} else if len(libsourceStepSplits) == 1 {
 		// missing steplib-src mode, ex: step-id@1.0.0
 		//  in this case if we have a default StepLibSource we'll use that
-		if steplibSrc == "" {
-			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-		}
 		stepIDAndVersionStr = libsourceStepSplits[0]
 	} else {
 		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
+	}
+
+	if steplibSrc == "" {
+		if defaultStepLibSource == "" {
+			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+		}
+		steplibSrc = defaultStepLibSource
 	}
 
 	stepID := ""
