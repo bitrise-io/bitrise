@@ -1,17 +1,19 @@
 format_version: 1.0.0
+default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
+
 app:
   environments:
   - BITRISE_PROJECT_TITLE: BitriseCLI
     opts:
-        is_expand: no
+      is_expand: no
   - BITRISE_DEV_BRANCH: master
     opts:
-        is_expand: no
-workflows:
+      is_expand: no
 
+workflows:
   test:
     steps:
-    - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+    - script@0.9.0:
         title: Running the TEST script
         inputs:
         - content: |

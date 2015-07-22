@@ -91,3 +91,63 @@ func TestMergeWith(t *testing.T) {
 func TestParseFromInterfaceMap(t *testing.T) {
 	t.Logf("TestParseFromInterfaceMap -- coming soon")
 }
+
+func TestCreateStepIDDataFromString(t *testing.T) {
+	t.Logf("CreateStepIDDataFromString")
+
+	// default / long / verbose ID mode
+	stepCompositeIDString := "steplib-src::step-id@0.0.1"
+	t.Log("stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Error("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "steplib-src" {
+		t.Error("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.ID != "step-id" {
+		t.Error("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	}
+	if stepIDData.Version != "0.0.1" {
+		t.Error("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	// no steplib-source
+	stepCompositeIDString = "step-id@0.0.1"
+	t.Log("(no steplib-source test) stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
+	if err != nil {
+		t.Error("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "default-steplib-src" {
+		t.Error("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.ID != "step-id" {
+		t.Error("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	}
+	if stepIDData.Version != "0.0.1" {
+		t.Error("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	// no steplib-source & no default -> fail
+	stepCompositeIDString = "step-id@0.0.1"
+	t.Log("(no steplib-source & no default, should fail) stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err == nil {
+		t.Error("Should fail to parse the ID if it does not contain a steplib-src and no default src is provided")
+	} else {
+		t.Log("Expected error (ok): ", err)
+	}
+
+	// empty test
+	stepCompositeIDString = ""
+	t.Log("Empty stepCompositeIDString test")
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
+	if err == nil {
+		t.Error("Should fail to parse the ID from an empty string! (at least the step-id is required)")
+	} else {
+		t.Log("Expected error (ok): ", err)
+	}
+}

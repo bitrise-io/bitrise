@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -156,4 +157,51 @@ func getOutputByKey(step stepmanModels.StepModel, key string) (stepmanModels.Env
 		}
 	}
 	return stepmanModels.EnvironmentItemModel{}, false
+}
+
+// GetStepIDStepDataPair ...
+func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels.StepModel, error) {
+	if len(stepListItm) > 1 {
+		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
+	}
+	for key, value := range stepListItm {
+		return key, value, nil
+	}
+	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
+}
+
+// CreateStepIDDataFromString ...
+func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
+	steplibSrc := defaultStepLibSource
+	stepIDAndVersionStr := ""
+	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
+	if len(libsourceStepSplits) == 2 {
+		// long/verbose ID mode, ex: step-lib-src::step-id@1.0.0
+		steplibSrc = libsourceStepSplits[0]
+		stepIDAndVersionStr = libsourceStepSplits[1]
+	} else if len(libsourceStepSplits) == 1 {
+		// missing steplib-src mode, ex: step-id@1.0.0
+		//  in this case if we have a default StepLibSource we'll use that
+		if steplibSrc == "" {
+			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+		}
+		stepIDAndVersionStr = libsourceStepSplits[0]
+	} else {
+		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+	}
+
+	stepID := ""
+	stepVersion := ""
+	stepidVersionSplits := strings.Split(stepIDAndVersionStr, "@")
+	if len(stepidVersionSplits) != 2 {
+		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionStr + ")")
+	}
+	stepID = stepidVersionSplits[0]
+	stepVersion = stepidVersionSplits[1]
+
+	return StepIDData{
+		SteplibSource: steplibSrc,
+		ID:            stepID,
+		Version:       stepVersion,
+	}, nil
 }
