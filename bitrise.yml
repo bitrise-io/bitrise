@@ -72,6 +72,20 @@ workflows:
             finalpth=_bin/${binversion}/${BITRISE_BIN_NAME}-$(uname -s)-$(uname -m)
             echo "finalpth: ${finalpth}"
             mv _bin/tmpbin "${finalpth}"
+            # register the version for next steps
+            envman add --key RELEASE_VERSION --value "${binversion}"
+    - slack-message@1.2.0:
+        inputs:
+        - SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
+          opts:
+            is_expand: true
+        - SLACK_CHANNEL: $SLACK_CHANNEL
+          opts:
+            is_expand: true
+        - SLACK_FROM_NAME: bitrise-cli
+        - SLACK_MESSAGE_TEXT: |
+            Release v${RELEASE_VERSION} is ready. :tada:
+        - SLACK_ICON_EMOJI: ":rocket:"
 
   # ----- Other, test workflows -----
   fail:
