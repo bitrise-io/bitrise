@@ -13,7 +13,7 @@ app:
 workflows:
   test:
     steps:
-    - script@0.9.0:
+    - script:
         title: Running the TEST script
         inputs:
         - content: |

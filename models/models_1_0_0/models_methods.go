@@ -187,17 +187,24 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		}
 		stepIDAndVersionStr = libsourceStepSplits[0]
 	} else {
-		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
 	}
 
 	stepID := ""
 	stepVersion := ""
 	stepidVersionSplits := strings.Split(stepIDAndVersionStr, "@")
-	if len(stepidVersionSplits) != 2 {
+	if len(stepidVersionSplits) == 2 {
+		stepID = stepidVersionSplits[0]
+		stepVersion = stepidVersionSplits[1]
+	} else if len(stepidVersionSplits) == 1 {
+		stepID = stepidVersionSplits[0]
+	} else {
 		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionStr + ")")
 	}
-	stepID = stepidVersionSplits[0]
-	stepVersion = stepidVersionSplits[1]
+
+	if stepID == "" {
+		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+	}
 
 	return StepIDData{
 		SteplibSource: steplibSrc,
