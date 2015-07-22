@@ -28,7 +28,7 @@ func activate(c *cli.Context) {
 
 	version := c.String(VersionKey)
 	if version == "" {
-		log.Fatal("[STEPMAN] - Missing step version")
+		log.Debug("[STEPMAN] - Missing step version -- Use latest version")
 	}
 
 	path := c.String(PathKey)
@@ -45,7 +45,13 @@ func activate(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec")
 	}
-	// log.Debugf("Spec: %#v\n", collection)
+
+	latest, err := collection.GetLatestVersion(id)
+	if err != nil {
+		log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
+	}
+	log.Debug("[STEPMAN] - Latest version of step: %s", latest)
+	version = latest
 
 	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {

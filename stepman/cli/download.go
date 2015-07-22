@@ -27,13 +27,20 @@ func download(c *cli.Context) {
 
 	version := c.String(VersionKey)
 	if version == "" {
-		log.Fatal("[STEPMAN] - Missing step version")
+		log.Debug("[STEPMAN] - Missing step version -- Use latest version")
 	}
 
 	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
+
+	latest, err := collection.GetLatestVersion(id)
+	if err != nil {
+		log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
+	}
+	log.Debug("[STEPMAN] - Latest version of step: %s", latest)
+	version = latest
 
 	if err := stepman.DownloadStep(collection, id, version); err != nil {
 		log.Fatal("[STEPMAN] - Failed to download step")
