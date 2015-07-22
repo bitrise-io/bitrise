@@ -26,8 +26,8 @@ Then:
 chmod +x /usr/local/bin/bitrise-cli
 ```
 
-The first time it's mandatory to do a `setup` as well after the install,
-and as a best practice you should the a setup every time you install a new version of `bitrise-cli`.
+The first time it's mandatory to do a `setup` as well as after the install,
+and as a best practice you should run a setup every time you install a new version of `bitrise-cli`.
 
 Doing the setup is as easy as:
 
