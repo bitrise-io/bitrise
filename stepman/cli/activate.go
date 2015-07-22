@@ -47,7 +47,7 @@ func activate(c *cli.Context) {
 		if err != nil {
 			log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
 		}
-		log.Debug("[STEPMAN] - Latest version of step: %s", latest)
+		log.Debug("[STEPMAN] - Latest version of step:", latest)
 		version = latest
 	}
 
