@@ -115,7 +115,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			fmt.Println()
 
 			if isBuildFailed() && !*specStep.IsAlwaysRun {
-				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping (%s (%s))", stepIDData.ID, stepIDData.Version)
+				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
 			} else {
 				if err := runStep(specStep, stepIDData); err != nil {
 					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
