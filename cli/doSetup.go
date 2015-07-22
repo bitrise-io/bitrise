@@ -180,7 +180,7 @@ func checkIsStepmanInstalled(isInstall bool) error {
 			return err
 		}
 		installCmdLines := []string{
-			"curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.1/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman",
+			"curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.2/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman",
 			"chmod +x /usr/local/bin/stepman",
 		}
 		officialGitHubURL := "https://github.com/bitrise-io/stepman"
