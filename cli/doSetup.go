@@ -14,8 +14,21 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func printBitriseHeaderASCIIArt() {
+	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
+	fmt.Println(`
+  ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
+  ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
+  ██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
+  ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
+  ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
+  ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
+	fmt.Println()
+}
+
 func doSetup(c *cli.Context) {
-	log.Infoln("[BITRISE_CLI] - Setup - Still work-in-progress")
+	printBitriseHeaderASCIIArt()
+	log.Infoln("[BITRISE_CLI] - Setup")
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
 	case "darwin":
