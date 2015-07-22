@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -8,6 +9,30 @@ import (
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
+
+func updateCollection(collectionURI string) error {
+	pth := stepman.GetCollectionBaseDirPath(collectionURI)
+	if exists, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if !exists {
+		return errors.New("[STEPMAN] - Not initialized")
+	}
+
+	if err := stepman.DoGitPull(pth); err != nil {
+		return err
+	}
+
+	specPth := pth + "/steplib.yml"
+	collection, err := stepman.ParseStepCollection(specPth)
+	if err != nil {
+		return err
+	}
+
+	if err := stepman.WriteStepSpecToFile(collectionURI, collection); err != nil {
+		return err
+	}
+	return nil
+}
 
 func update(c *cli.Context) {
 	log.Info("[STEPMAN] - Update")
@@ -28,25 +53,8 @@ func update(c *cli.Context) {
 	}
 
 	for _, URI := range collectionURIs {
-		pth := stepman.GetCollectionBaseDirPath(URI)
-		if exists, err := pathutil.IsPathExists(pth); err != nil {
-			log.Fatal("[STEPMAN] - Failed to check path:", err)
-		} else if !exists {
-			log.Fatal("[STEPMAN] - Not initialized")
-		}
-
-		if err := stepman.DoGitPull(pth); err != nil {
-			log.Fatal("[STEPMAN] - Failed to do git update:", err)
-		}
-
-		specPth := pth + "/steplib.yml"
-		collection, err := stepman.ParseStepCollection(specPth)
-		if err != nil {
-			log.Fatal("[STEPMAN] - Failed to read step spec:", err)
-		}
-
-		if err := stepman.WriteStepSpecToFile(URI, collection); err != nil {
-			log.Fatal("[STEPMAN] - Failed to save step spec:", err)
+		if err := updateCollection(URI); err != nil {
+			log.Fatalf("Failed to update collection:%s error:%v", URI, err)
 		}
 	}
 

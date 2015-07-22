@@ -31,6 +31,7 @@ var (
 				flCollection,
 				flID,
 				flVersion,
+				flUpdate,
 			},
 		},
 		{
@@ -44,6 +45,7 @@ var (
 				flVersion,
 				flPath,
 				flCopyYML,
+				flUpdate,
 			},
 		},
 	}

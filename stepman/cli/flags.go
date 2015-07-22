@@ -3,6 +3,14 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
+	// HelpKey ...
+	HelpKey      string = "help"
+	helpKeyShort string = "h"
+
+	// VersionKey ...
+	VersionKey      string = "version"
+	versionKeyShort string = "v"
+
 	// CollectionPathEnvKey ...
 	CollectionPathEnvKey string = "STEPMAN_COLLECTION"
 	// CollectionKey ...
@@ -25,10 +33,6 @@ const (
 	IDKey      string = "id"
 	idKeyShort string = "i"
 
-	// VersionKey ...
-	VersionKey      string = "version"
-	versionKeyShort string = "v"
-
 	// PathKey ...
 	PathKey      string = "path"
 	pathKeyShort string = "p"
@@ -37,9 +41,9 @@ const (
 	CopyYMLKey      string = "copyyml"
 	copyYMLKeyShort string = "y"
 
-	// HelpKey ...
-	HelpKey      string = "help"
-	helpKeyShort string = "h"
+	// UpdateKey ...
+	UpdateKey      string = "update"
+	updateKeyShort string = "u"
 )
 
 var (
@@ -85,6 +89,10 @@ var (
 		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
 		Value: "",
 		Usage: "",
+	}
+	flUpdate = cli.BoolFlag{
+		Name:  UpdateKey + ", " + updateKeyShort,
+		Usage: "If flag is set, and collection doesn't contains the specified step, the collection will updated.",
 	}
 )
 
