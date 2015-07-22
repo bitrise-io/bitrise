@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
@@ -26,35 +25,11 @@ var (
 	inventoryPath string
 )
 
-// StepIDData ...
-type StepIDData struct {
-	ID            string
-	Version       string
-	SteplibSource string
-}
-
 func isBuildFailed() bool {
 	if len(failedSteps) > 0 {
 		return true
 	}
 	return false
-}
-
-func createStepIDDataFromString(s string) (StepIDData, error) {
-	libsourceStepSplits := strings.Split(s, "::")
-	if len(libsourceStepSplits) != 2 {
-		return StepIDData{}, errors.New("Steplib should be separated with a '::' separator from the step ID (" + s + ")")
-	}
-	stepidVersionSplits := strings.Split(libsourceStepSplits[1], "@")
-	if len(stepidVersionSplits) != 2 {
-		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + libsourceStepSplits[1] + ")")
-	}
-
-	return StepIDData{
-		SteplibSource: libsourceStepSplits[0],
-		ID:            stepidVersionSplits[0],
-		Version:       stepidVersionSplits[1],
-	}, nil
 }
 
 func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
@@ -94,28 +69,15 @@ func cleanupStepWorkDir() error {
 	return nil
 }
 
-func getStepIDStepDataPair(stepListItm models.StepListItemModel) (string, stepmanModels.StepModel, error) {
-	if len(stepListItm) > 1 {
-		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
-	}
-	for key, value := range stepListItm {
-		return key, value, nil
-	}
-	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
-}
-
-func activateAndRunSteps(workflow models.WorkflowModel) error {
+func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) error {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	for idx, stepListItm := range workflow.Steps {
-		// TODO: first arg should be 'stepCompositeID'
-		//  which can contain the step-collection, step-id, version, etc.
-		//  in one string!
-		compositeStepIDStr, workflowStep, err := getStepIDStepDataPair(stepListItm)
+		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			return err
 		}
-		stepIDData, err := createStepIDDataFromString(compositeStepIDStr)
+		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
 			return err
 		}
@@ -165,7 +127,7 @@ func activateAndRunSteps(workflow models.WorkflowModel) error {
 	return nil
 }
 
-func runStep(step stepmanModels.StepModel, stepIDData StepIDData) error {
+func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData) error {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 	// Add step envs
@@ -308,7 +270,7 @@ func doRun(c *cli.Context) {
 	}
 
 	// Run the Workflow
-	if err := activateAndRunSteps(workflowToRun); err != nil {
+	if err := activateAndRunSteps(workflowToRun, bitriseConfig.DefaultStepLibSource); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
 	}
 
