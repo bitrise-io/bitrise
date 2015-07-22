@@ -1,9 +1,9 @@
-format_version: 1.0.0
+format_version: 0.9.2
 default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
 
 app:
-  environments:
-  - BITRISE_PROJECT_TITLE: BitriseCLI
+  envs:
+  - BITRISE_BIN_NAME: bitrise-cli
     opts:
       is_expand: no
   - BITRISE_DEV_BRANCH: master
@@ -52,6 +52,26 @@ workflows:
             set -e
             godep restore
             go install
+
+  create-release:
+    steps:
+    - script:
+        title: Creating deploy
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            if [ -f _bin/tmpbin ] ; then
+              rm _bin/tmpbin
+            fi
+            go build -o _bin/tmpbin
+            binversion="$(_bin/tmpbin -version)"
+            echo "binversion: ${binversion}"
+            mkdir -p _bin/${binversion}
+            finalpth=_bin/${binversion}/${BITRISE_BIN_NAME}-$(uname -s)-$(uname -m)
+            echo "finalpth: ${finalpth}"
+            mv _bin/tmpbin "${finalpth}"
 
   # ----- Other, test workflows -----
   fail:

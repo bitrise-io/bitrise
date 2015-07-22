@@ -2,3 +2,4 @@ _temp/
 bitrise-cli
 .bitrise
 .bitrise.secrets.yml
+_bin

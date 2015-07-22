@@ -10,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
-	"github.com/bitrise-io/goinp/goinp"
 	"github.com/codegangsta/cli"
 )
 
@@ -61,14 +60,6 @@ func checkProgramInstalledPath(clcommand string) (string, error) {
 	outBytes, err := cmd.Output()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
-
-	// var stdoutBuff bytes.Buffer
-	// cmd := exec.Command("which", clcommand)
-	// cmd.Stdin = os.Stdin
-	// cmd.Stdout = &stdoutBuff
-	// cmd.Stderr = os.Stderr
-	// cmdErr := cmd.Run()
-	// return string(stdoutBuff.Bytes()), cmdErr
 }
 
 func checkIsHomebrewInstalled() error {
@@ -96,48 +87,51 @@ func checkIsHomebrewInstalled() error {
 	return nil
 }
 
-func checkIsAnsibleInstalled() error {
-	progInstallPth, err := checkProgramInstalledPath("ansible")
-	if err != nil {
-		officialSiteURL := "http://www.ansible.com/home"
-		officialGitHubURL := "https://github.com/ansible/ansible"
-		log.Infoln("")
-		log.Infoln("Ansible was not found.")
-		log.Infoln("Ansible is used for system provisioning.")
-		log.Infoln("You can find more information on Ansible's official website:", officialSiteURL)
-		log.Infoln(" or on it's GitHub page:", officialGitHubURL)
-		log.Infoln("You can install Ansible through brew:")
-		log.Infoln("$ brew update && brew install ansible")
-		isInstall, err := goinp.AskForBool("Would you like to install Ansible right now?")
-		if err != nil {
-			return err
-		}
-		if !isInstall {
-			return errors.New("Ansible not found and install was not initiated.")
-		}
-
-		// Install
-		log.Infoln("$ brew update --verbose")
-		if err := bitrise.RunCommand("brew", "update", "--verbose"); err != nil {
-			return err
-		}
-		log.Infoln("$ brew install ansible")
-		if err := bitrise.RunCommand("brew", "install", "ansible"); err != nil {
-			return err
-		}
-
-		// just check again
-		return checkIsAnsibleInstalled()
-	}
-	log.Infoln(" * [OK] Ansible :", progInstallPth)
-	return nil
-}
+//
+// install with brew example
+//
+// func checkIsAnsibleInstalled() error {
+// 	progInstallPth, err := checkProgramInstalledPath("ansible")
+// 	if err != nil {
+// 		officialSiteURL := "http://www.ansible.com/home"
+// 		officialGitHubURL := "https://github.com/ansible/ansible"
+// 		log.Infoln("")
+// 		log.Infoln("Ansible was not found.")
+// 		log.Infoln("Ansible is used for system provisioning.")
+// 		log.Infoln("You can find more information on Ansible's official website:", officialSiteURL)
+// 		log.Infoln(" or on it's GitHub page:", officialGitHubURL)
+// 		log.Infoln("You can install Ansible through brew:")
+// 		log.Infoln("$ brew update && brew install ansible")
+// 		isInstall, err := goinp.AskForBool("Would you like to install Ansible right now?")
+// 		if err != nil {
+// 			return err
+// 		}
+// 		if !isInstall {
+// 			return errors.New("Ansible not found and install was not initiated.")
+// 		}
+//
+// 		// Install
+// 		log.Infoln("$ brew update --verbose")
+// 		if err := bitrise.RunCommand("brew", "update", "--verbose"); err != nil {
+// 			return err
+// 		}
+// 		log.Infoln("$ brew install ansible")
+// 		if err := bitrise.RunCommand("brew", "install", "ansible"); err != nil {
+// 			return err
+// 		}
+//
+// 		// just check again
+// 		return checkIsAnsibleInstalled()
+// 	}
+// 	log.Infoln(" * [OK] Ansible :", progInstallPth)
+// 	return nil
+// }
 
 func checkIsEnvmanInstalled() error {
 	progInstallPth, err := checkProgramInstalledPath("envman")
 	if err != nil {
 		installCmdLines := []string{
-			"curl -L https://github.com/bitrise-io/envman/releases/download/0.9.1/envman-`uname -s`-`uname -m` > /usr/local/bin/envman",
+			"curl -L https://github.com/bitrise-io/envman/releases/download/0.9.1/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman",
 			"chmod +x /usr/local/bin/envman",
 		}
 		officialGitHubURL := "https://github.com/bitrise-io/envman"
@@ -145,19 +139,20 @@ func checkIsEnvmanInstalled() error {
 		log.Warnln("Envman was not found.")
 		log.Infoln("You can find more information on envman's official GitHub page:", officialGitHubURL)
 		fmt.Println()
-		log.Infoln("You can install envman by running:")
-		fmt.Println(strings.Join(installCmdLines, "\n"))
-		fmt.Println()
-		isInstall, err := goinp.AskForBool("Would you like to install envman automatically?")
-		if err != nil {
-			return err
-		}
-		if !isInstall {
-			return errors.New("envman not found and install was not initiated")
-		}
+		// log.Infoln("You can install envman by running:")
+		// fmt.Println(strings.Join(installCmdLines, "\n"))
+		// fmt.Println()
+		// isInstall, err := goinp.AskForBool("Would you like to install envman automatically? [y/n]")
+		// if err != nil {
+		// 	return err
+		// }
+		// if !isInstall {
+		// 	return errors.New("envman not found and install was not initiated")
+		// }
 
 		// Install
-		log.Infoln("Running script:")
+		log.Infoln("Installing...")
+		fmt.Println(strings.Join(installCmdLines, "\n"))
 		if err := bitrise.RunBashCommandLines(installCmdLines); err != nil {
 			return err
 		}
@@ -178,9 +173,35 @@ func checkIsEnvmanInstalled() error {
 func checkIsStepmanInstalled() error {
 	progInstallPth, err := checkProgramInstalledPath("stepman")
 	if err != nil {
-		log.Infoln("")
-		log.Infoln("stepman was not found.")
-		return errors.New("stepman was not found")
+		installCmdLines := []string{
+			"curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.1/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman",
+			"chmod +x /usr/local/bin/stepman",
+		}
+		officialGitHubURL := "https://github.com/bitrise-io/stepman"
+		fmt.Println()
+		log.Warnln("Stepman was not found.")
+		log.Infoln("You can find more information on stepman's official GitHub page:", officialGitHubURL)
+		fmt.Println()
+		// log.Infoln("You can install stepman by running:")
+		// fmt.Println(strings.Join(installCmdLines, "\n"))
+		// fmt.Println()
+		// isInstall, err := goinp.AskForBool("Would you like to install stepman automatically? [y/n]")
+		// if err != nil {
+		// 	return err
+		// }
+		// if !isInstall {
+		// 	return errors.New("stepman not found and install was not initiated")
+		// }
+
+		// Install
+		log.Infoln("Installing...")
+		fmt.Println(strings.Join(installCmdLines, "\n"))
+		if err := bitrise.RunBashCommandLines(installCmdLines); err != nil {
+			return err
+		}
+
+		// just check again
+		return checkIsStepmanInstalled()
 	}
 	verStr, err := bitrise.RunCommandAndReturnStdout("stepman", "-version")
 	if err != nil {
