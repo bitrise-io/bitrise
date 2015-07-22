@@ -17,7 +17,7 @@ Part of the Bitrise Continuous Integration, Delivery and Automations Stack.
 To install `bitrise-cli`, run the following commands (in a bash shell):
 
 ```
-curl -L https://github.com/bitrise-io/bitrise-cli/releases/download/0.9.1/bitrise-cli-`uname -s`-`uname -m` > /usr/local/bin/bitrise-cli
+curl -L https://github.com/bitrise-io/bitrise-cli/releases/download/0.9.1/bitrise-cli-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise-cli
 ```
 
 Then:
