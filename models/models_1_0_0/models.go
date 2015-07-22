@@ -22,9 +22,8 @@ type AppModel struct {
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	FormatVersion string                               `json:"format_version"`
-	Environments  []stepmanModels.EnvironmentItemModel `json:"environments"`
-	Steps         []StepListItemModel                  `json:"steps"`
+	Environments []stepmanModels.EnvironmentItemModel `json:"environments" yaml:"environments"`
+	Steps        []StepListItemModel                  `json:"steps" yaml:"steps"`
 }
 
 // StepListItemModel ...
