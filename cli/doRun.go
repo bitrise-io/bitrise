@@ -122,6 +122,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					failedSteps = append(failedSteps, compositeStepIDStr)
 				}
 			}
+
+			fmt.Println()
 		}
 	}
 	return nil
