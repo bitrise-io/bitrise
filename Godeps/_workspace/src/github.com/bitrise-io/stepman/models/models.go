@@ -1,55 +1,52 @@
 package models
 
-import (
-	"fmt"
-
-	log "github.com/Sirupsen/logrus"
-)
-
 // -------------------
-// --- Models
+// --- Common models
 
-// EnvironmentItemModel ...
-type EnvironmentItemModel struct {
-	EnvKey            string   `json:"env_key" yaml:"env_key"`
-	Value             string   `json:"value" yaml:"value"`
-	Title             string   `json:"title,omitempty" yaml:"title,omitempty"`
-	Description       string   `json:"description,omitempty" yaml:"description,omitempty"`
+// EnvironmentItemOptionsModel ...
+type EnvironmentItemOptionsModel struct {
+	Title             *string  `json:"title,omitempty" yaml:"title,omitempty"`
+	Description       *string  `json:"description,omitempty" yaml:"description,omitempty"`
 	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
 	IsExpand          *bool    `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 }
 
+// EnvironmentItemModel ...
+type EnvironmentItemModel map[string]interface{}
+
 // StepSourceModel ...
 type StepSourceModel struct {
-	Git string `json:"git" yaml:"git"`
+	Git *string `json:"git,omitempty" yaml:"git,omitempty"`
 }
 
 // StepModel ...
 type StepModel struct {
-	ID                  string                 `json:"id"`
-	SteplibSource       string                 `json:"steplib_source"`
-	VersionTag          string                 `json:"version_tag"`
-	Name                string                 `json:"name" yaml:"name"`
-	Description         string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Website             string                 `json:"website" yaml:"website"`
-	ForkURL             string                 `json:"fork_url,omitempty" yaml:"fork_url,omitempty"`
-	Source              StepSourceModel        `json:"source" yaml:"source"`
+	Title               *string                `json:"title,omitempty" yaml:"title,omitempty"`
+	Description         *string                `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary             *string                `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Website             *string                `json:"website,omitempty" yaml:"website,omitempty"`
+	SourceCodeURL       *string                `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
+	SupportURL          *string                `json:"support_url,omitempty" yaml:"support_url,omitempty"`
+	Source              StepSourceModel        `json:"source,omitempty" yaml:"source,omitempty"`
 	HostOsTags          []string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser bool                   `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	IsAlwaysRun         bool                   `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
+	IsRequiresAdminUser *bool                  `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	IsAlwaysRun         *bool                  `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
+	IsNotImportant      *bool                  `json:"is_not_important,omitempty" yaml:"is_not_important,omitempty"`
 	Inputs              []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs             []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
+// -------------------
+// --- Steplib models
+
 // StepGroupModel ...
 type StepGroupModel struct {
-	ID       string      `json:"id"`
-	Versions []StepModel `json:"versions"`
-	Latest   StepModel   `json:"latest"`
+	Versions            map[string]StepModel `json:"versions"`
+	LatestVersionNumber string               `json:"latest_version_number"`
 }
 
 // StepHash ...
@@ -68,55 +65,4 @@ type StepCollectionModel struct {
 	Steps                StepHash                `json:"steps" yaml:"steps"`
 	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
 	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
-}
-
-// WorkFlowModel ...
-type WorkFlowModel struct {
-	FormatVersion string      `json:"format_version"`
-	Environments  []string    `json:"environments"`
-	Steps         []StepModel `json:"steps"`
-}
-
-// -------------------
-// --- Struct methods
-
-// GetStep ...
-func (collection StepCollectionModel) GetStep(id, version string) (bool, StepModel) {
-	log.Debugln("-> GetStep")
-	versions := collection.Steps[id].Versions
-	for _, step := range versions {
-		// log.Debugf(" Iterating... itm: %#v\n", step)
-		if step.VersionTag == version {
-			return true, step
-		}
-	}
-	return false, StepModel{}
-}
-
-// GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(step StepModel) ([]DownloadLocationModel, error) {
-	locations := []DownloadLocationModel{}
-	for _, downloadLocation := range collection.DownloadLocations {
-		switch downloadLocation.Type {
-		case "zip":
-			url := downloadLocation.Src + step.ID + "/" + step.VersionTag + "/step.zip"
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  url,
-			}
-			locations = append(locations, location)
-		case "git":
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  step.Source.Git,
-			}
-			locations = append(locations, location)
-		default:
-			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, step)
-		}
-	}
-	if len(locations) < 1 {
-		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", step)
-	}
-	return locations, nil
 }
