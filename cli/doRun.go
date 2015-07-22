@@ -38,7 +38,7 @@ func isBuildFailed() bool {
 	return false
 }
 
-func handleFailedStepListItem(stepListItem models.StepListItemModel, err error) {
+func registerFailedStepListItem(stepListItem models.StepListItemModel, err error) {
 	name := ""
 	for key := range stepListItem {
 		name = key
@@ -54,9 +54,9 @@ func handleFailedStepListItem(stepListItem models.StepListItemModel, err error) 
 	log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
 }
 
-func handleFailedStep(step stepmanModels.StepModel, err error) {
+func registerFailedStep(step stepmanModels.StepModel, err error) {
 	if *step.IsNotImportant {
-		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not importent", *step.Title, err)
+		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		fmt.Println()
 	} else {
 		failedStep := FailedStepModel{
@@ -113,12 +113,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	for idx, stepListItm := range workflow.Steps {
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
-			handleFailedStepListItem(stepListItm, err)
+			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
-			handleFailedStepListItem(stepListItm, err)
+			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
@@ -126,18 +126,18 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepDir := bitrise.BitriseWorkStepsDirPath
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
-			handleFailedStepListItem(stepListItm, err)
+			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 
 		if err := cleanupStepWorkDir(); err != nil {
-			handleFailedStepListItem(stepListItm, err)
+			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
-			handleFailedStepListItem(stepListItm, err)
+			registerFailedStepListItem(stepListItm, err)
 			continue
 		} else {
 			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
@@ -145,12 +145,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 			log.Debugf("Spec read from YML: %#v\n", specStep)
 			if err != nil {
-				handleFailedStepListItem(stepListItm, err)
+				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
 
 			if err := models.MergeStepWith(specStep, workflowStep); err != nil {
-				handleFailedStepListItem(stepListItm, err)
+				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
 
@@ -162,7 +162,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
 			} else {
 				if err := runStep(specStep, stepIDData); err != nil {
-					handleFailedStep(specStep, err)
+					registerFailedStep(specStep, err)
 					continue
 				}
 			}
