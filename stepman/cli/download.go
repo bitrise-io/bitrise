@@ -11,7 +11,7 @@ import (
 func download(c *cli.Context) {
 	log.Info("[STEPMAN] - Download")
 
-	// StepSpec collection path
+	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
 		collectionURI = os.Getenv(CollectionPathEnvKey)
@@ -40,6 +40,24 @@ func download(c *cli.Context) {
 		}
 		log.Debug("[STEPMAN] - Latest version of step:", latest)
 		version = latest
+	}
+
+	update := parseUpdate(c)
+
+	// Check step exist in collection
+	if _, found := collection.GetStep(id, version); !found {
+		if update {
+			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating collection", id, version)
+			if err := updateCollection(collectionURI); err != nil {
+				log.Fatalf("[STEPMAN] - Failed to update collection:%s error:%v", collectionURI, err)
+			}
+
+			if _, found := collection.GetStep(id, version); !found {
+				log.Fatalf("[STEPMAN] - Even the updated collection doesn't contain step (id:%s) (version:%s)", id, version)
+			}
+		} else {
+			log.Fatalf("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s)", id, version)
+		}
 	}
 
 	if err := stepman.DownloadStep(collection, id, version); err != nil {

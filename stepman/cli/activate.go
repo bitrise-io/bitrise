@@ -9,6 +9,13 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func parseUpdate(c *cli.Context) bool {
+	if c.IsSet(UpdateKey) {
+		return c.Bool(UpdateKey)
+	}
+	return false
+}
+
 func activate(c *cli.Context) {
 	log.Debugln("[STEPMAN] - Activate")
 
@@ -33,6 +40,8 @@ func activate(c *cli.Context) {
 
 	copyYML := c.String(CopyYMLKey)
 
+	update := parseUpdate(c)
+
 	// Get step
 	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
@@ -51,14 +60,32 @@ func activate(c *cli.Context) {
 		version = latest
 	}
 
-	log.Debugf("  (id:%#v) (version:%#v) (path:%#v) (copyYML:%#v)\n", id, version, path, copyYML)
+	// Check step exist in collection
+	if _, found := collection.GetStep(id, version); !found {
+		if update {
+			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating collection", id, version)
+			if err := updateCollection(collectionURI); err != nil {
+				log.Fatalf("[STEPMAN] - Failed to update collection:%s error:%v", collectionURI, err)
+			}
 
+			if _, found := collection.GetStep(id, version); !found {
+				log.Fatalf("[STEPMAN] - Even the updated collection doesn't contain step (id:%s) (version:%s)", id, version)
+			}
+		} else {
+			log.Fatalf("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s)", id, version)
+		}
+	}
+
+	// Check step exist in local cache
 	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
 		if err := stepman.DownloadStep(collection, id, version); err != nil {
+			if update {
+
+			}
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}
