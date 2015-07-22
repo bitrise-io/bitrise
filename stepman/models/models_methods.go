@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -207,6 +209,48 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", id)
 	}
 	return locations, nil
+}
+
+// CompareVersions ...
+// semantic version (X.Y.Z)
+// 1 if version 2 is greater then version 1, -1 if not
+func CompareVersions(version1, version2 string) int {
+	version1Slice := strings.Split(version1, ".")
+	version2Slice := strings.Split(version2, ".")
+
+	for i, num := range version1Slice {
+		num1, err1 := strconv.ParseInt(num, 0, 64)
+		if err1 != nil {
+			log.Error("[STEPMAN] - Failed to parse int:", err1)
+			return 0
+		}
+
+		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
+		if err2 != nil {
+			log.Error("[STEPMAN] - Failed to parse int:", err2)
+			return 0
+		}
+
+		if num2 > num1 {
+			return 1
+		}
+	}
+	return -1
+}
+
+// GetLatestStepVersion ...
+func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, error) {
+	stepHash := collection.Steps
+	stepGroup, found := stepHash[id]
+	if !found {
+		return "", fmt.Errorf("Collection doesn't contains step %s", id)
+	}
+
+	if stepGroup.LatestVersionNumber == "" {
+		return "", fmt.Errorf("Failed to find latest version of step %s", id)
+	}
+
+	return stepGroup.LatestVersionNumber, nil
 }
 
 // GetKeyValuePair ...

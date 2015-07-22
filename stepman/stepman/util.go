@@ -12,7 +12,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -123,35 +122,9 @@ func GetStepCollectionDirPath(collectionURI string, id, version string) string {
 	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + id + "/" + version
 }
 
-// semantic version (X.Y.Z)
-// 1 if version 2 is greater then version 1, -1 if not
-func compareVersions(version1, version2 string) int {
-	version1Slice := strings.Split(version1, ".")
-	version2Slice := strings.Split(version2, ".")
-
-	for i, num := range version1Slice {
-		num1, err1 := strconv.ParseInt(num, 0, 64)
-		if err1 != nil {
-			log.Error("[STEPMAN] - Failed to parse int:", err1)
-			return 0
-		}
-
-		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
-		if err2 != nil {
-			log.Error("[STEPMAN] - Failed to parse int:", err2)
-			return 0
-		}
-
-		if num2 > num1 {
-			return 1
-		}
-	}
-	return -1
-}
-
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) models.StepGroupModel {
 	if stepGroup.LatestVersionNumber != "" {
-		if compareVersions(stepGroup.LatestVersionNumber, version) > 0 {
+		if models.CompareVersions(stepGroup.LatestVersionNumber, version) > 0 {
 			stepGroup.LatestVersionNumber = version
 		}
 	} else {
