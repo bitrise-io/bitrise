@@ -1,0 +1,21 @@
+format_version: 0.9.1
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+app:
+  environments:
+  - BITRISE_PROJECT_TITLE: stepman
+    opts:
+      is_expand: true
+  - BITRISE_DEV_BRANCH: master
+    opts:
+      is_expand: true
+workflows:
+  create-release:
+    steps:
+    - script:
+        title: Creating deploy
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            go build -o bin/stepman-`uname -s`-`uname -m`
