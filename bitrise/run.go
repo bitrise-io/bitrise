@@ -39,9 +39,9 @@ func RunEnvmanInit() error {
 // RunEnvmanAdd ...
 func RunEnvmanAdd(key, value string, expand bool) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "add", "--key", key}
+	args := []string{"--loglevel", logLevel, "add", "--key", key, "--append"}
 	if !expand {
-		args = []string{"--loglevel", logLevel, "add", "--key", key, "--no-expand"}
+		args = []string{"--loglevel", logLevel, "add", "--key", key, "--no-expand", "--append"}
 	}
 
 	envman := exec.Command("envman", args...)
