@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
@@ -23,6 +24,9 @@ const (
 var (
 	failedSteps   []string
 	inventoryPath string
+
+	startTime time.Time
+	runTime   time.Duration
 )
 
 func isBuildFailed() bool {
@@ -165,12 +169,27 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData) error {
 	return nil
 }
 
+func handleRunFailed(err error) {
+	endTime := time.Now()
+	runTime = endTime.Sub(startTime)
+	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String() + " s")
+}
+
+func handleRunSuccess() {
+	endTime := time.Now()
+	runTime = endTime.Sub(startTime)
+	log.Info("DONE - Congrats!!")
+	log.Info("Total run time: " + runTime.String() + " s")
+}
+
 func doRun(c *cli.Context) {
 	log.Debugln("[BITRISE_CLI] - Run")
 
+	startTime = time.Now()
+
 	// Cleanup
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
-		log.Fatal("Failed to cleanup bitrise work dir:", err)
+		handleRunFailed(errors.New("Failed to cleanup bitrise work dir: " + err.Error()))
 	}
 	failedSteps = []string{}
 
@@ -280,6 +299,7 @@ func doRun(c *cli.Context) {
 	if len(failedSteps) > 0 {
 		log.Info("Failed steps:", failedSteps)
 		log.Info("FINISHED but a couple of steps failed - Ouch")
+		os.Exit(1)
 	} else {
 		log.Infoln("DONE - Congrats!!")
 	}
