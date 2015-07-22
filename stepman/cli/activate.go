@@ -83,9 +83,6 @@ func activate(c *cli.Context) {
 	} else if !exist {
 		log.Info("[STEPMAN] - Step does not exist, download it")
 		if err := stepman.DownloadStep(collection, id, version); err != nil {
-			if update {
-
-			}
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}
