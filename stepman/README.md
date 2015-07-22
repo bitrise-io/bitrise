@@ -7,7 +7,7 @@
 To install `stepman`, run the following commands (in a bash shell):
 
 ```
-curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.1/stepman-`uname -s`-`uname -m` > /usr/local/bin/stepman
+curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.1/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
 ```
 
 Then:
