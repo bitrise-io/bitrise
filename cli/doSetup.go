@@ -127,9 +127,12 @@ func checkIsHomebrewInstalled() error {
 // 	return nil
 // }
 
-func checkIsEnvmanInstalled() error {
+func checkIsEnvmanInstalled(isInstall bool) error {
 	progInstallPth, err := checkProgramInstalledPath("envman")
 	if err != nil {
+		if !isInstall {
+			return err
+		}
 		installCmdLines := []string{
 			"curl -L https://github.com/bitrise-io/envman/releases/download/0.9.1/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman",
 			"chmod +x /usr/local/bin/envman",
@@ -158,7 +161,7 @@ func checkIsEnvmanInstalled() error {
 		}
 
 		// just check again
-		return checkIsEnvmanInstalled()
+		return checkIsEnvmanInstalled(false)
 	}
 	verStr, err := bitrise.RunCommandAndReturnStdout("envman", "-version")
 	if err != nil {
@@ -170,9 +173,12 @@ func checkIsEnvmanInstalled() error {
 	return nil
 }
 
-func checkIsStepmanInstalled() error {
+func checkIsStepmanInstalled(isInstall bool) error {
 	progInstallPth, err := checkProgramInstalledPath("stepman")
 	if err != nil {
+		if !isInstall {
+			return err
+		}
 		installCmdLines := []string{
 			"curl -L https://github.com/bitrise-io/stepman/releases/download/0.9.1/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman",
 			"chmod +x /usr/local/bin/stepman",
@@ -201,7 +207,7 @@ func checkIsStepmanInstalled() error {
 		}
 
 		// just check again
-		return checkIsStepmanInstalled()
+		return checkIsStepmanInstalled(false)
 	}
 	verStr, err := bitrise.RunCommandAndReturnStdout("stepman", "-version")
 	if err != nil {
@@ -222,10 +228,10 @@ func doSetupOnOSX() error {
 	// if err := checkIsAnsibleInstalled(); err != nil {
 	// 	return errors.New("Ansible failed to install")
 	// }
-	if err := checkIsEnvmanInstalled(); err != nil {
+	if err := checkIsEnvmanInstalled(true); err != nil {
 		return errors.New(fmt.Sprint("Envman failed to install:", err))
 	}
-	if err := checkIsStepmanInstalled(); err != nil {
+	if err := checkIsStepmanInstalled(true); err != nil {
 		return errors.New(fmt.Sprint("Stepman failed to install:", err))
 	}
 	log.Infoln("All the required tools are installed!")
