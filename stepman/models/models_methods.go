@@ -238,12 +238,16 @@ func CompareVersions(version1, version2 string) int {
 	return -1
 }
 
-// GetLatestVersion ...
-func (collection StepCollectionModel) GetLatestVersion(id string) (string, error) {
+// GetLatestStepVersion ...
+func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, error) {
 	stepHash := collection.Steps
 	stepGroup, found := stepHash[id]
 	if !found {
 		return "", fmt.Errorf("Collection doesn't contains step %s", id)
+	}
+
+	if stepGroup.LatestVersionNumber == "" {
+		return "", fmt.Errorf("Failed to find latest version of step %s", id)
 	}
 
 	return stepGroup.LatestVersionNumber, nil

@@ -26,11 +26,6 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Missing step id")
 	}
 
-	version := c.String(VersionKey)
-	if version == "" {
-		log.Debug("[STEPMAN] - Missing step version -- Use latest version")
-	}
-
 	path := c.String(PathKey)
 	if path == "" {
 		log.Fatal("[STEPMAN] - Missing destination path")
@@ -38,20 +33,25 @@ func activate(c *cli.Context) {
 
 	copyYML := c.String(CopyYMLKey)
 
-	log.Debugf("  (id:%#v) (version:%#v) (path:%#v) (copyYML:%#v)\n", id, version, path, copyYML)
-
 	// Get step
 	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec")
 	}
 
-	latest, err := collection.GetLatestVersion(id)
-	if err != nil {
-		log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
+	version := c.String(VersionKey)
+	if version == "" {
+		log.Debug("[STEPMAN] - Missing step version -- Use latest version")
+
+		latest, err := collection.GetLatestStepVersion(id)
+		if err != nil {
+			log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
+		}
+		log.Debug("[STEPMAN] - Latest version of step: %s", latest)
+		version = latest
 	}
-	log.Debug("[STEPMAN] - Latest version of step: %s", latest)
-	version = latest
+
+	log.Debugf("  (id:%#v) (version:%#v) (path:%#v) (copyYML:%#v)\n", id, version, path, copyYML)
 
 	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
