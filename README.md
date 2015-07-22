@@ -12,6 +12,30 @@ on your own device.
 Part of the Bitrise Continuous Integration, Delivery and Automations Stack.
 
 
+## Install and Setup
+
+To install `bitrise-cli`, run the following commands (in a bash shell):
+
+```
+curl -L https://github.com/bitrise-io/bitrise-cli/releases/download/0.9.1/bitrise-cli-`uname -s`-`uname -m` > /usr/local/bin/bitrise-cli
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise-cli
+```
+
+The first time it's mandatory to do a `setup` as well after the install,
+and as a best practice you should the a setup every time you install a new version of `bitrise-cli`.
+
+Doing the setup is as easy as:
+
+`bitrise-cli setup`
+
+Once the setup finishes you have everything in place to use `bitrise-cli`.
+
+
 ## Development Guideline
 
 * Number one priority is UX for the end-user, to make it a pleasant experience to work with this tool!
