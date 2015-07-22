@@ -141,9 +141,37 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 		t.Log("Expected error (ok): ", err)
 	}
 
+	// no steplib & no version, only step-id
+	stepCompositeIDString = "step-id"
+	t.Log("no steplib & no version, only step-id and default lib source: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-lib-src")
+	if err != nil {
+		t.Error("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "def-lib-src" {
+		t.Error("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.ID != "step-id" {
+		t.Error("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	}
+	if stepIDData.Version != "" {
+		t.Error("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
 	// empty test
 	stepCompositeIDString = ""
 	t.Log("Empty stepCompositeIDString test")
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
+	if err == nil {
+		t.Error("Should fail to parse the ID from an empty string! (at least the step-id is required)")
+	} else {
+		t.Log("Expected error (ok): ", err)
+	}
+
+	// special empty test
+	stepCompositeIDString = "@1.0.0"
+	t.Log("Empty stepCompositeIDString test with only version")
 	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
 	if err == nil {
 		t.Error("Should fail to parse the ID from an empty string! (at least the step-id is required)")
