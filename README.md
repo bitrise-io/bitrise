@@ -31,7 +31,9 @@ and as a best practice you should the a setup every time you install a new versi
 
 Doing the setup is as easy as:
 
-`bitrise-cli setup`
+```
+bitrise-cli setup
+```
 
 Once the setup finishes you have everything in place to use `bitrise-cli`.
 
