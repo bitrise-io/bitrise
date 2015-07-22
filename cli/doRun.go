@@ -21,15 +21,53 @@ const (
 )
 
 var (
-	failedSteps   []string
+	failedSteps   []FailedStepModel
 	inventoryPath string
 )
+
+// FailedStepModel ...
+type FailedStepModel struct {
+	StepName string
+	Error    error
+}
 
 func isBuildFailed() bool {
 	if len(failedSteps) > 0 {
 		return true
 	}
 	return false
+}
+
+func handleFailedStepListItem(stepListItem models.StepListItemModel, err error) {
+	name := ""
+	for key := range stepListItem {
+		name = key
+		break
+	}
+
+	failedStep := FailedStepModel{
+		StepName: name,
+		Error:    err,
+	}
+	failedSteps = append(failedSteps, failedStep)
+
+	log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
+}
+
+func handleFailedStep(step stepmanModels.StepModel, err error) {
+	if *step.IsNotImportant {
+		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not importent", *step.Title, err)
+		fmt.Println()
+	} else {
+		failedStep := FailedStepModel{
+			StepName: *step.Title,
+			Error:    err,
+		}
+		failedSteps = append(failedSteps, failedStep)
+
+		log.Errorf("Failed to execute step: (%v) error: (%v)", *step.Title, err)
+		fmt.Println()
+	}
 }
 
 func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
@@ -75,39 +113,45 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	for idx, stepListItm := range workflow.Steps {
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
-			return err
+			handleFailedStepListItem(stepListItm, err)
+			continue
 		}
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
-			return err
+			handleFailedStepListItem(stepListItm, err)
+			continue
 		}
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
 		stepDir := bitrise.BitriseWorkStepsDirPath
 
 		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
-			log.Error("Failed to setup stepman:", err)
+			handleFailedStepListItem(stepListItm, err)
+			continue
 		}
 
 		if err := cleanupStepWorkDir(); err != nil {
-			return err
+			handleFailedStepListItem(stepListItm, err)
+			continue
 		}
 
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to run stepman activate")
-			failedSteps = append(failedSteps, compositeStepIDStr)
+			handleFailedStepListItem(stepListItm, err)
+			continue
 		} else {
 			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 			log.Debugf("Spec read from YML: %#v\n", specStep)
 			if err != nil {
-				return err
+				handleFailedStepListItem(stepListItm, err)
+				continue
 			}
 
 			if err := models.MergeStepWith(specStep, workflowStep); err != nil {
-				return err
+				handleFailedStepListItem(stepListItm, err)
+				continue
 			}
 
 			fmt.Println()
@@ -118,8 +162,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
 			} else {
 				if err := runStep(specStep, stepIDData); err != nil {
-					log.Errorln("[BITRISE_CLI] - Failed to run step:", err)
-					failedSteps = append(failedSteps, compositeStepIDStr)
+					handleFailedStep(specStep, err)
+					continue
 				}
 			}
 
@@ -165,6 +209,13 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData) error {
 	return nil
 }
 
+func printFailedSteps() {
+	log.Infof("%d step(s) failed:", len(failedSteps))
+	for _, failedStep := range failedSteps {
+		log.Infof("Step: (%s) error: (%v)", failedStep.StepName, failedStep.Error)
+	}
+}
+
 func doRun(c *cli.Context) {
 	log.Debugln("[BITRISE_CLI] - Run")
 
@@ -172,7 +223,7 @@ func doRun(c *cli.Context) {
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
 		log.Fatal("Failed to cleanup bitrise work dir:", err)
 	}
-	failedSteps = []string{}
+	failedSteps = []FailedStepModel{}
 
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
@@ -278,7 +329,7 @@ func doRun(c *cli.Context) {
 
 	log.Infoln("")
 	if len(failedSteps) > 0 {
-		log.Info("Failed steps:", failedSteps)
+		printFailedSteps()
 		log.Info("FINISHED but a couple of steps failed - Ouch")
 	} else {
 		log.Infoln("DONE - Congrats!!")
