@@ -22,23 +22,21 @@ const (
 )
 
 var (
-	failedSteps   []FailedStepModel
-	inventoryPath string
-	startTime     time.Time
+	failedSteps            []FailedStepModel
+	failedNotInporentSteps []FailedStepModel
+	inventoryPath          string
+	startTime              time.Time
 )
 
 // FailedStepModel ...
 type FailedStepModel struct {
-	StepName       string
-	Error          error
-	IsNotImportant bool
+	StepName string
+	Error    error
 }
 
 func isBuildFailed() bool {
-	for _, failedStep := range failedSteps {
-		if !failedStep.IsNotImportant {
-			return true
-		}
+	if len(failedSteps) > 0 {
+		return true
 	}
 	return false
 }
@@ -51,56 +49,54 @@ func registerFailedStepListItem(stepListItem models.StepListItemModel, err error
 	}
 
 	failedStep := FailedStepModel{
-		StepName:       name,
-		Error:          err,
-		IsNotImportant: false,
+		StepName: name,
+		Error:    err,
 	}
 	failedSteps = append(failedSteps, failedStep)
 	log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
 }
 
 func registerFailedStep(step stepmanModels.StepModel, err error) {
+	failedStep := FailedStepModel{
+		StepName: *step.Title,
+		Error:    err,
+	}
+
 	if *step.IsNotImportant {
+		failedNotInporentSteps = append(failedNotInporentSteps, failedStep)
 		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		fmt.Println()
 	} else {
+		failedSteps = append(failedSteps, failedStep)
 		log.Errorf("Failed to execute step: (%v) error: (%v)", *step.Title, err)
 		fmt.Println()
 	}
-
-	failedStep := FailedStepModel{
-		StepName:       *step.Title,
-		Error:          err,
-		IsNotImportant: *step.IsNotImportant,
-	}
-	failedSteps = append(failedSteps, failedStep)
 }
 
-func registerRunFailed(err error) {
+func buildFailedFatal(err error) {
 	runTime := time.Now().Sub(startTime)
+	printStepStatus()
 	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String())
 }
 
-func registerRunSuccess() {
-	runTime := time.Now().Sub(startTime)
-	log.Info("Total run time: " + runTime.String())
-	log.Info("DONE - Congrats!!")
+func printStepStatus() {
+	printFailedStepsIfExist()
+	printFailedNotInportentStepsIsExist()
 }
 
-func registerRunSuccessWithFailedSteps() {
-	runTime := time.Now().Sub(startTime)
-	printFailedSteps()
-	log.Info("Total run time: " + runTime.String())
-	log.Info("FINISHED but a couple of steps failed - Ouch")
-	os.Exit(1)
+func printFailedNotInportentStepsIsExist() {
+	if len(failedNotInporentSteps) > 0 {
+		log.Infof("%d not important step(s) failed:", len(failedNotInporentSteps))
+		for _, failedNotImportantStep := range failedNotInporentSteps {
+			log.Infof("Step: (%s) | error: (%v)", failedNotImportantStep.StepName, failedNotImportantStep.Error)
+		}
+	}
 }
 
-func printFailedSteps() {
-	log.Infof("%d step(s) failed:", len(failedSteps))
-	for _, failedStep := range failedSteps {
-		if failedStep.IsNotImportant {
-			log.Infof("Step: (%s) | marked as not important | error: (%v)", failedStep.StepName, failedStep.Error)
-		} else {
+func printFailedStepsIfExist() {
+	if len(failedSteps) > 0 {
+		log.Infof("%d step(s) failed:", len(failedSteps))
+		for _, failedStep := range failedSteps {
 			log.Infof("Step: (%s) | error: (%v)", failedStep.StepName, failedStep.Error)
 		}
 	}
@@ -253,7 +249,7 @@ func doRun(c *cli.Context) {
 
 	// Cleanup
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to cleanup bitrise work dir: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to cleanup bitrise work dir: " + err.Error()))
 	}
 
 	// Input validation
@@ -262,10 +258,10 @@ func doRun(c *cli.Context) {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
 
 		if exist, err := pathutil.IsPathExists("./" + DefaultBitriseConfigFileName); err != nil {
-			registerRunFailed(errors.New("[BITRISE_CLI] - Failed to check path:" + err.Error()))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to check path:" + err.Error()))
 		} else if !exist {
 			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
-			registerRunFailed(errors.New("[BITRISE_CLI] - No workflow yml found"))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - No workflow yml found"))
 		}
 		bitriseConfigPath = "./" + DefaultBitriseConfigFileName
 	}
@@ -276,25 +272,25 @@ func doRun(c *cli.Context) {
 		inventoryPath = bitrise.CurrentDir + "/" + DefaultSecretsFileName
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			registerRunFailed(errors.New("[BITRISE_CLI] - Failed to check path: " + err.Error()))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to check path: " + err.Error()))
 		} else if !exist {
 			log.Debugln("[BITRISE_CLI] - No inventory yml found")
 			inventoryPath = ""
 		}
 	} else {
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			registerRunFailed(errors.New("[BITRISE_CLI] - Failed to check path: " + err.Error()))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to check path: " + err.Error()))
 		} else if !exist {
-			registerRunFailed(errors.New("[BITRISE_CLI] - No inventory yml found"))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - No inventory yml found"))
 		}
 	}
 	if inventoryPath != "" {
 		if err := bitrise.RunEnvmanEnvstoreTest(inventoryPath); err != nil {
-			registerRunFailed(errors.New("Invalid invetory format: " + err.Error()))
+			buildFailedFatal(errors.New("Invalid invetory format: " + err.Error()))
 		}
 
 		if err := bitrise.RunCopy(inventoryPath, bitrise.EnvstorePath); err != nil {
-			registerRunFailed(errors.New("Failed to copy inventory: " + err.Error()))
+			buildFailedFatal(errors.New("Failed to copy inventory: " + err.Error()))
 		}
 	}
 
@@ -308,23 +304,23 @@ func doRun(c *cli.Context) {
 
 	// Envman setup
 	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.EnvstorePath); err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to add env: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to add env: " + err.Error()))
 	}
 
 	if err := os.Setenv(bitrise.FormattedOutputPathEnvKey, bitrise.FormattedOutputPath); err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to add env: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to add env: " + err.Error()))
 	}
 
 	if inventoryPath == "" {
 		if err := bitrise.RunEnvmanInit(); err != nil {
-			registerRunFailed(errors.New("[BITRISE_CLI] - Failed to run envman init"))
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to run envman init"))
 		}
 	}
 
 	// Run work flow
 	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 	if err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to read Workflow: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to read Workflow: " + err.Error()))
 	}
 
 	// check workflow
@@ -340,30 +336,34 @@ func doRun(c *cli.Context) {
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!"))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!"))
 	}
 	log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRunName)
 
 	// App level environment
 	if err := exportEnvironmentsList(bitriseConfig.App.Environments); err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to export App environments: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export App environments: " + err.Error()))
 	}
 
 	// Workflow level environments
 	if err := exportEnvironmentsList(workflowToRun.Environments); err != nil {
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
 	}
 
 	// Run the Workflow
 	if err := activateAndRunSteps(workflowToRun, bitriseConfig.DefaultStepLibSource); err != nil {
 		log.Fatalln("[BITRISE_CLI] - Failed to activate steps:", err)
-		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to activate steps: " + err.Error()))
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to activate steps: " + err.Error()))
 	}
 
+	// Build finished
 	log.Infoln("")
+	runTime := time.Now().Sub(startTime)
+	printStepStatus()
+	log.Info("Total run time: " + runTime.String())
 	if len(failedSteps) > 0 {
-		registerRunSuccessWithFailedSteps()
+		log.Fatal("FINISHED but a couple of steps failed - Ouch")
 	} else {
-		registerRunSuccess()
+		log.Info("DONE - Congrats!!")
 	}
 }
