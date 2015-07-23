@@ -18,7 +18,8 @@ const (
 	minStepmanVersion = "0.9.2"
 )
 
-func printBitriseHeaderASCIIArt() {
+// PrintBitriseHeaderASCIIArt ...
+func PrintBitriseHeaderASCIIArt() {
 	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
 	fmt.Println(`
   ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
@@ -31,7 +32,7 @@ func printBitriseHeaderASCIIArt() {
 }
 
 func doSetup(c *cli.Context) {
-	printBitriseHeaderASCIIArt()
+	PrintBitriseHeaderASCIIArt()
 	log.Infoln("[BITRISE_CLI] - Setup")
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {

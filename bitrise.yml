@@ -95,7 +95,22 @@ workflows:
       - script:
           title: "ok"
       - script:
+          title: "ls"
+          inputs:
+          - content: |
+              #/bin/bash
+              ls -alh
+      - script:
           title: "fail"
+          is_not_important: true
+          inputs:
+          - content: |
+              #/bin/bash
+              set -v
+              exit 1
+      - script:
+          title: "fail 2"
+          is_not_important: false
           inputs:
           - content: |
               #/bin/bash
