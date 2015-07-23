@@ -88,7 +88,7 @@ func printFailedNotInportentStepsIsExist() {
 	if len(failedNotInporentSteps) > 0 {
 		log.Infof("%d not important step(s) failed:", len(failedNotInporentSteps))
 		for _, failedNotImportantStep := range failedNotInporentSteps {
-			log.Infof("Step: (%s) | error: (%v)", failedNotImportantStep.StepName, failedNotImportantStep.Error)
+			log.Infof(" * Step: (%s) | error: (%v)", failedNotImportantStep.StepName, failedNotImportantStep.Error)
 		}
 	}
 }
@@ -97,7 +97,7 @@ func printFailedStepsIfExist() {
 	if len(failedSteps) > 0 {
 		log.Infof("%d step(s) failed:", len(failedSteps))
 		for _, failedStep := range failedSteps {
-			log.Infof("Step: (%s) | error: (%v)", failedStep.StepName, failedStep.Error)
+			log.Infof(" * Step: (%s) | error: (%v)", failedStep.StepName, failedStep.Error)
 		}
 	}
 }
@@ -357,7 +357,8 @@ func doRun(c *cli.Context) {
 	}
 
 	// Build finished
-	log.Infoln("")
+	fmt.Println()
+	log.Infoln("==> Summary:")
 	runTime := time.Now().Sub(startTime)
 	printStepStatus()
 	log.Info("Total run time: " + runTime.String())
@@ -365,5 +366,8 @@ func doRun(c *cli.Context) {
 		log.Fatal("FINISHED but a couple of steps failed - Ouch")
 	} else {
 		log.Info("DONE - Congrats!!")
+		if len(failedNotInporentSteps) > 0 {
+			log.Warn("P.S.: a couple of non imporatant steps failed")
+		}
 	}
 }
