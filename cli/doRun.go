@@ -34,6 +34,7 @@ type FailedStepModel struct {
 
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
+	TotalStepCount          int
 	FailedSteps             []FailedStepModel
 	FailedNotImportantSteps []FailedStepModel
 	SkippedSteps            []FailedStepModel
@@ -45,34 +46,26 @@ func buildFailedFatal(err error) {
 }
 
 func printStepStatus(stepRunResults StepRunResultsModel) {
-	printFailedStepsIfExist(stepRunResults.FailedSteps)
-	printFailedNotInportentStepsIsExist(stepRunResults.FailedNotImportantSteps)
-	printSkippedStepsIfExist(stepRunResults.SkippedSteps)
+	log.Infof("Out of %d steps, %d failed, %d failed but was marked as not important and %d was skipped",
+		stepRunResults.TotalStepCount,
+		len(stepRunResults.FailedSteps),
+		len(stepRunResults.FailedNotImportantSteps),
+		len(stepRunResults.SkippedSteps))
+
+	printStepStatusList(fmt.Sprintf("%d step(s) failed:", len(stepRunResults.FailedSteps)), stepRunResults.FailedSteps)
+	printStepStatusList(fmt.Sprintf("%d not important step(s) failed:", len(stepRunResults.FailedNotImportantSteps)), stepRunResults.FailedNotImportantSteps)
+	printStepStatusList(fmt.Sprintf("%d step(s) skipped:", len(stepRunResults.SkippedSteps)), stepRunResults.SkippedSteps)
 }
 
-func printSkippedStepsIfExist(skippedSteps []FailedStepModel) {
-	if len(skippedSteps) > 0 {
-		log.Infof("%d step(s) skipped:", len(skippedSteps))
-		for _, skippedStep := range skippedSteps {
-			log.Infof(" * Step: (%s)", skippedStep.StepName)
-		}
-	}
-}
-
-func printFailedNotInportentStepsIsExist(failedNotImportantSteps []FailedStepModel) {
-	if len(failedNotImportantSteps) > 0 {
-		log.Infof("%d not important step(s) failed:", len(failedNotImportantSteps))
-		for _, failedNotImportantStep := range failedNotImportantSteps {
-			log.Infof(" * Step: (%s) | error: (%v)", failedNotImportantStep.StepName, failedNotImportantStep.Error)
-		}
-	}
-}
-
-func printFailedStepsIfExist(failedSteps []FailedStepModel) {
-	if len(failedSteps) > 0 {
-		log.Infof("%d step(s) failed:", len(failedSteps))
-		for _, failedStep := range failedSteps {
-			log.Infof(" * Step: (%s) | error: (%v)", failedStep.StepName, failedStep.Error)
+func printStepStatusList(header string, stepList []FailedStepModel) {
+	if len(stepList) > 0 {
+		log.Infof(header)
+		for _, step := range stepList {
+			if step.Error != nil {
+				log.Infof(" * Step: (%s) | error: (%v)", step.StepName, step.Error)
+			} else {
+				log.Infof(" * Step: (%s)", step.StepName)
+			}
 		}
 	}
 }
@@ -117,6 +110,13 @@ func cleanupStepWorkDir() error {
 func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (stepRunResults StepRunResultsModel) {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
+	stepRunResults = StepRunResultsModel{
+		TotalStepCount:          0,
+		FailedSteps:             []FailedStepModel{},
+		FailedNotImportantSteps: []FailedStepModel{},
+		SkippedSteps:            []FailedStepModel{},
+	}
+
 	registerFailedStepListItem := func(stepListItem models.StepListItemModel, err error) {
 		name := ""
 		for key := range stepListItem {
@@ -150,6 +150,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	}
 
 	for idx, stepListItm := range workflow.Steps {
+		stepRunResults.TotalStepCount++
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
@@ -209,8 +210,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					continue
 				}
 			}
-
-			fmt.Println()
 		}
 	}
 	return stepRunResults
