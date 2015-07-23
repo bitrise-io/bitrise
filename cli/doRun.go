@@ -154,9 +154,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	isBuildFailed := func() bool {
 		return len(stepRunResults.FailedSteps) > 0
 	}
+	stepRunResults.TotalStepCount = len(workflow.Steps)
 
 	for idx, stepListItm := range workflow.Steps {
-		stepRunResults.TotalStepCount++
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
