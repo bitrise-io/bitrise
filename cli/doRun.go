@@ -46,15 +46,21 @@ func buildFailedFatal(err error) {
 }
 
 func printStepStatus(stepRunResults StepRunResultsModel) {
-	log.Infof("Out of %d steps, %d failed, %d failed but was marked as not important and %d was skipped",
-		stepRunResults.TotalStepCount,
-		len(stepRunResults.FailedSteps),
-		len(stepRunResults.FailedNotImportantSteps),
-		len(stepRunResults.SkippedSteps))
+	failedCount := len(stepRunResults.FailedSteps)
+	failedNotImportantCount := len(stepRunResults.FailedNotImportantSteps)
+	skippedCount := len(stepRunResults.SkippedSteps)
+	successCount := stepRunResults.TotalStepCount - failedCount - failedNotImportantCount - skippedCount
 
-	printStepStatusList(fmt.Sprintf("%d step(s) failed:", len(stepRunResults.FailedSteps)), stepRunResults.FailedSteps)
-	printStepStatusList(fmt.Sprintf("%d not important step(s) failed:", len(stepRunResults.FailedNotImportantSteps)), stepRunResults.FailedNotImportantSteps)
-	printStepStatusList(fmt.Sprintf("%d step(s) skipped:", len(stepRunResults.SkippedSteps)), stepRunResults.SkippedSteps)
+	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as not important and %d was skipped",
+		stepRunResults.TotalStepCount,
+		successCount,
+		failedCount,
+		failedNotImportantCount,
+		skippedCount)
+
+	printStepStatusList("Failed steps:", stepRunResults.FailedSteps)
+	printStepStatusList("Failed but not important steps:", stepRunResults.FailedNotImportantSteps)
+	printStepStatusList("Skipped steps:", stepRunResults.SkippedSteps)
 }
 
 func printStepStatusList(header string, stepList []FailedStepModel) {
