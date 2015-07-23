@@ -76,6 +76,21 @@ func printStepStatusList(header string, stepList []FailedStepModel) {
 	}
 }
 
+func setBuildFailedEnv(failed bool) error {
+	statusStr := "0"
+	if failed {
+		statusStr = "1"
+	}
+	if err := os.Setenv("STEPLIB_BUILD_STATUS", statusStr); err != nil {
+		return err
+	}
+
+	if err := os.Setenv("BITRISE_BUILD_STATUS", statusStr); err != nil {
+		return err
+	}
+	return nil
+}
+
 func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
@@ -157,6 +172,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	stepRunResults.TotalStepCount = len(workflow.Steps)
 
 	for idx, stepListItm := range workflow.Steps {
+		if err := setBuildFailedEnv(isBuildFailed()); err != nil {
+			log.Error("Failed to set Build Status envs")
+		}
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
