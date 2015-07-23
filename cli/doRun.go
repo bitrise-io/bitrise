@@ -71,21 +71,18 @@ func registerFailedStep(step stepmanModels.StepModel, err error) {
 }
 
 func registerRunFailed(err error) {
-	endTime := time.Now()
-	runTime := endTime.Sub(startTime)
+	runTime := time.Now().Sub(startTime)
 	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String())
 }
 
 func registerRunSuccess() {
-	endTime := time.Now()
-	runTime := endTime.Sub(startTime)
+	runTime := time.Now().Sub(startTime)
 	log.Info("DONE - Congrats!!")
 	log.Info("Total run time: " + runTime.String())
 }
 
 func registerRunSuccessWithFailedSteps() {
-	endTime := time.Now()
-	runTime := endTime.Sub(startTime)
+	runTime := time.Now().Sub(startTime)
 	log.Info("Failed steps:", failedSteps)
 	log.Info("FINISHED but a couple of steps failed - Ouch")
 	log.Info("Total run time: " + runTime.String())
