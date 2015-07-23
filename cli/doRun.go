@@ -131,10 +131,6 @@ func cleanupStepWorkDir() error {
 func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (stepRunResults StepRunResultsModel) {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
-	if err := setBuildFailedEnv(false); err != nil {
-		log.Error("Failed to set Build Status envs")
-	}
-
 	stepRunResults = StepRunResultsModel{
 		TotalStepCount:          0,
 		FailedSteps:             []FailedStepModel{},
@@ -154,9 +150,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			Error:    err,
 		}
 		stepRunResults.FailedSteps = append(stepRunResults.FailedSteps, failedStep)
-		if err := setBuildFailedEnv(true); err != nil {
-			log.Error("Failed to set Build Status envs")
-		}
 		log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
 	}
 	registerFailedStep := func(step stepmanModels.StepModel, err error) {
@@ -170,9 +163,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		} else {
 			stepRunResults.FailedSteps = append(stepRunResults.FailedSteps, failedStep)
-			if err := setBuildFailedEnv(true); err != nil {
-				log.Error("Failed to set Build Status envs")
-			}
 			log.Errorf("Failed to execute step: (%v) error: (%v)", *step.Title, err)
 		}
 	}
@@ -182,6 +172,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	stepRunResults.TotalStepCount = len(workflow.Steps)
 
 	for idx, stepListItm := range workflow.Steps {
+		if err := setBuildFailedEnv(isBuildFailed()); err != nil {
+			log.Error("Failed to set Build Status envs")
+		}
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
