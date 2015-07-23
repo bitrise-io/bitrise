@@ -179,6 +179,7 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 				stepGroup, err = addStepVersionToStepGroup(step, version, stepGroup)
 				if err != nil {
 					log.Debugf("  Failed to add step to step-group. (StepId:%v) (Version: %v) | Error: %v", id, version, err)
+					return err
 				}
 
 				stepHash[id] = stepGroup
