@@ -22,10 +22,10 @@ const (
 )
 
 var (
-	failedSteps            []FailedStepModel
-	failedNotInporentSteps []FailedStepModel
-	inventoryPath          string
-	startTime              time.Time
+	failedSteps             []FailedStepModel
+	failedNotImportantSteps []FailedStepModel
+	inventoryPath           string
+	startTime               time.Time
 )
 
 // FailedStepModel ...
@@ -63,7 +63,7 @@ func registerFailedStep(step stepmanModels.StepModel, err error) {
 	}
 
 	if *step.IsNotImportant {
-		failedNotInporentSteps = append(failedNotInporentSteps, failedStep)
+		failedNotImportantSteps = append(failedNotImportantSteps, failedStep)
 		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		fmt.Println()
 	} else {
@@ -85,9 +85,9 @@ func printStepStatus() {
 }
 
 func printFailedNotInportentStepsIsExist() {
-	if len(failedNotInporentSteps) > 0 {
-		log.Infof("%d not important step(s) failed:", len(failedNotInporentSteps))
-		for _, failedNotImportantStep := range failedNotInporentSteps {
+	if len(failedNotImportantSteps) > 0 {
+		log.Infof("%d not important step(s) failed:", len(failedNotImportantSteps))
+		for _, failedNotImportantStep := range failedNotImportantSteps {
 			log.Infof(" * Step: (%s) | error: (%v)", failedNotImportantStep.StepName, failedNotImportantStep.Error)
 		}
 	}
@@ -366,7 +366,7 @@ func doRun(c *cli.Context) {
 		log.Fatal("FINISHED but a couple of steps failed - Ouch")
 	} else {
 		log.Info("DONE - Congrats!!")
-		if len(failedNotInporentSteps) > 0 {
+		if len(failedNotImportantSteps) > 0 {
 			log.Warn("P.S.: a couple of non imporatant steps failed")
 		}
 	}
