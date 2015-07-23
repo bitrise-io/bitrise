@@ -200,7 +200,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				if err := runStep(specStep, stepIDData); err != nil {
 					registerFailedStep(specStep, err)
 					continue
-
 				}
 			}
 
