@@ -17,14 +17,13 @@ type BitriseDataModel struct {
 
 // AppModel ...
 type AppModel struct {
-	Environments []stepmanModels.EnvironmentItemModel `json:"environments" yaml:"environments"`
+	Environments []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
 }
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	FormatVersion string                               `json:"format_version"`
-	Environments  []stepmanModels.EnvironmentItemModel `json:"environments"`
-	Steps         []StepListItemModel                  `json:"steps"`
+	Environments []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Steps        []StepListItemModel                  `json:"steps" yaml:"steps"`
 }
 
 // StepListItemModel ...

@@ -15,7 +15,10 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-var defaultSecretsContent = `envs:
+const (
+	defaultStepLibSource = "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
+	//
+	defaultSecretsContent = `envs:
 - MY_HOME: $HOME
 - MY_SECRET_PASSWORD: XyZ
   is_expand: no
@@ -26,6 +29,7 @@ var defaultSecretsContent = `envs:
   # For example if your password contains the dollar sign ($)
   #  it would (by default) be expanded as an environment variable.
   # You can prevent this with is_expand: no`
+)
 
 func doInit(c *cli.Context) {
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
@@ -73,13 +77,30 @@ func doInit(c *cli.Context) {
 	//  * timestamp gen
 	//  * bash script - hello world
 
+	scriptStepTitle := "Hello Bitrise!"
+	scriptStepContent := `#!/bin/bash
+echo "Welcome to Bitrise!"`
 	bitriseConf := models.BitriseDataModel{
-		FormatVersion: "1.0.0", // TODO: move this into a project config file!
+		FormatVersion:        c.App.Version,
+		DefaultStepLibSource: defaultStepLibSource,
 		App: models.AppModel{
 			Environments: projectSettingsEnvs,
 		},
 		Workflows: map[string]models.WorkflowModel{
-			"primary": models.WorkflowModel{},
+			"primary": models.WorkflowModel{
+				Steps: []models.StepListItemModel{
+					models.StepListItemModel{
+						"script": stepmanModels.StepModel{
+							Title: &scriptStepTitle,
+							Inputs: []stepmanModels.EnvironmentItemModel{
+								stepmanModels.EnvironmentItemModel{
+									"content": scriptStepContent,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
