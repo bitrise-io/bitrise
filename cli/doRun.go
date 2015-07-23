@@ -24,9 +24,7 @@ const (
 var (
 	failedSteps   []FailedStepModel
 	inventoryPath string
-
-	startTime time.Time
-	runTime   time.Duration
+	startTime     time.Time
 )
 
 // FailedStepModel ...
@@ -74,20 +72,20 @@ func registerFailedStep(step stepmanModels.StepModel, err error) {
 
 func registerRunFailed(err error) {
 	endTime := time.Now()
-	runTime = endTime.Sub(startTime)
+	runTime := endTime.Sub(startTime)
 	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String())
 }
 
 func registerRunSuccess() {
 	endTime := time.Now()
-	runTime = endTime.Sub(startTime)
+	runTime := endTime.Sub(startTime)
 	log.Info("DONE - Congrats!!")
 	log.Info("Total run time: " + runTime.String())
 }
 
 func registerRunSuccessWithFailedSteps() {
 	endTime := time.Now()
-	runTime = endTime.Sub(startTime)
+	runTime := endTime.Sub(startTime)
 	log.Info("Failed steps:", failedSteps)
 	log.Info("FINISHED but a couple of steps failed - Ouch")
 	log.Info("Total run time: " + runTime.String())
@@ -238,12 +236,12 @@ func doRun(c *cli.Context) {
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	startTime = time.Now()
+	failedSteps = []FailedStepModel{}
 
 	// Cleanup
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
 		registerRunFailed(errors.New("[BITRISE_CLI] - Failed to cleanup bitrise work dir: " + err.Error()))
 	}
-	failedSteps = []FailedStepModel{}
 
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
