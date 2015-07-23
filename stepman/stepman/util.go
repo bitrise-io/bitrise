@@ -122,9 +122,13 @@ func GetStepCollectionDirPath(collectionURI string, id, version string) string {
 	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + id + "/" + version
 }
 
-func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) models.StepGroupModel {
+func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
 	if stepGroup.LatestVersionNumber != "" {
-		if models.CompareVersions(stepGroup.LatestVersionNumber, version) > 0 {
+		r, err := models.CompareVersions(stepGroup.LatestVersionNumber, version)
+		if err != nil {
+			return models.StepGroupModel{}, err
+		}
+		if r == 1 {
 			stepGroup.LatestVersionNumber = version
 		}
 	} else {
@@ -132,7 +136,7 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	}
 	log.Debugf("SetGroup: %#v, versionParam: %#v, stepParam: %#v", stepGroup, version, step)
 	stepGroup.Versions[version] = step
-	return stepGroup
+	return stepGroup, nil
 }
 
 func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
@@ -172,7 +176,10 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 						Versions: map[string]models.StepModel{},
 					}
 				}
-				stepGroup = addStepVersionToStepGroup(step, version, stepGroup)
+				stepGroup, err = addStepVersionToStepGroup(step, version, stepGroup)
+				if err != nil {
+					log.Debugf("  Failed to add step to step-group. (StepId:%v) (Version: %v) | Error: %v", id, version, err)
+				}
 
 				stepHash[id] = stepGroup
 			} else {
