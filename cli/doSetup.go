@@ -15,7 +15,7 @@ import (
 
 const (
 	minEnvmanVersion  = "0.9.1"
-	minStepmanVersion = "0.9.2"
+	minStepmanVersion = "0.9.3"
 )
 
 // PrintBitriseHeaderASCIIArt ...
@@ -74,13 +74,13 @@ func checkIsHomebrewInstalled() error {
 
 	progInstallPth, err := checkProgramInstalledPath("brew")
 	if err != nil {
-		log.Infoln("")
-		log.Infoln("It seems that Homebrew is not installed on your system.")
+		fmt.Println()
+		log.Warn("It seems that Homebrew is not installed on your system.")
 		log.Infoln("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
 		log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
 		log.Infoln(brewRubyInstallCmdString)
 		log.Infoln("You can find more information about Homebrew on it's official site at:", officialSiteURL)
-		log.Infoln("Once the installation of brew is finished you can call the bitrise setup again.")
+		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
 	verStr, err := bitrise.RunCommandAndReturnStdout("brew", "--version")
@@ -90,6 +90,32 @@ func checkIsHomebrewInstalled() error {
 	}
 	log.Infoln(" * [OK] Homebrew :", progInstallPth)
 	log.Infoln("        version :", verStr)
+	return nil
+}
+
+func checkIsXcodeCLTInstalled() error {
+	progInstallPth, err := checkProgramInstalledPath("xcodebuild")
+	if err != nil {
+		fmt.Println()
+		log.Warn("It seems that the Xcode Command Line Tools are not installed on your system.")
+		log.Infoln("You can install it by running the following command in your Terminal:")
+		log.Infoln("xcode-select --install")
+		log.Warn("Once the installation is finished you should call the bitrise setup again.")
+		return err
+	}
+	verStr, err := bitrise.RunCommandAndReturnStdout("xcodebuild", "-version")
+	if err != nil {
+		log.Infoln("")
+		return errors.New("Failed to get version")
+	}
+	xcodeSelectPth, err := bitrise.RunCommandAndReturnStdout("xcode-select", "-p")
+	if err != nil {
+		log.Infoln("")
+		return errors.New("Failed to get Xcode path")
+	}
+	log.Infoln(" * [OK] xcodebuild path :", progInstallPth)
+	log.Infoln("        active Xcode (Command Line Tools) path :", xcodeSelectPth)
+	log.Infoln("        version :", strings.Join(strings.Split(verStr, "\n"), " | "))
 	return nil
 }
 
@@ -212,8 +238,11 @@ func checkIsStepmanInstalled() error {
 func doSetupOnOSX() error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
+	if err := checkIsXcodeCLTInstalled(); err != nil {
+		return errors.New(fmt.Sprint("Xcode Command Line Tools not installed. Err:", err))
+	}
 	if err := checkIsHomebrewInstalled(); err != nil {
-		return errors.New("Homebrew failed to install")
+		return errors.New(fmt.Sprint("Homebrew not installed. Err:", err))
 	}
 	// if err := checkIsAnsibleInstalled(); err != nil {
 	// 	return errors.New("Ansible failed to install")
