@@ -35,20 +35,33 @@ func setup(c *cli.Context) {
 
 	pth := stepman.GetCollectionBaseDirPath(route)
 	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		}
 		log.Fatal("[STEPMAN] - Failed to get step spec path:", err)
 	}
 
 	specPth := pth + "/steplib.yml"
 	collection, err := stepman.ParseStepCollection(specPth)
 	if err != nil {
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		}
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
+
 	}
 
 	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		}
 		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
 	}
 
 	if err := stepman.AddRoute(route); err != nil {
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		}
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 

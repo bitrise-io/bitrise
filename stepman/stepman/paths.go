@@ -93,6 +93,24 @@ func (routes SteplibRoutes) writeToFile() error {
 	return nil
 }
 
+// RemoveDir ...
+func RemoveDir(dirPth string) error {
+	if exist, err := pathutil.IsPathExists(dirPth); err != nil {
+		return err
+	} else if exist {
+		if err := os.RemoveAll(dirPth); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CleanupRoute ...
+func CleanupRoute(route SteplibRoute) error {
+	pth := CollectionsDirPath + "/" + route.FolderAlias
+	return RemoveDir(pth)
+}
+
 // RootExistForCollection ...
 func RootExistForCollection(collectionURI string) (bool, error) {
 	routes, err := readRouteMap()
