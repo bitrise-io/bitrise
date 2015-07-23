@@ -11,7 +11,12 @@ import (
 )
 
 func updateCollection(collectionURI string) error {
-	pth := stepman.GetCollectionBaseDirPath(collectionURI)
+	route, found := stepman.ReadRoute(collectionURI)
+	if !found {
+		return errors.New("No route found for lib: " + collectionURI)
+	}
+
+	pth := stepman.GetCollectionBaseDirPath(route)
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
@@ -28,7 +33,7 @@ func updateCollection(collectionURI string) error {
 		return err
 	}
 
-	if err := stepman.WriteStepSpecToFile(collectionURI, collection); err != nil {
+	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
 		return err
 	}
 	return nil

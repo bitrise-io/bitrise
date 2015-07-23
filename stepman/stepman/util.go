@@ -72,7 +72,11 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 		return err
 	}
 
-	stepPth := GetStepCacheDirPath(collection.SteplibSource, id, version)
+	stepPth, found := GetStepCacheDirPath(collection.SteplibSource, id, version)
+	if !found {
+		return errors.New("Route doesn't exist for lib: " + collection.SteplibSource)
+	}
+
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
@@ -112,14 +116,18 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 
 // GetStepCacheDirPath ...
 // Step's Cache dir path, where it's code lives.
-func GetStepCacheDirPath(collectionURI string, id, version string) string {
-	return GetCacheBaseDir(collectionURI) + "/" + id + "/" + version
+func GetStepCacheDirPath(uri string, id, version string) (string, bool) {
+	return GetCacheBaseDir(uri) + "/" + id + "/" + version, true
 }
 
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
-func GetStepCollectionDirPath(collectionURI string, id, version string) string {
-	return GetCollectionBaseDirPath(collectionURI) + "/steps/" + id + "/" + version
+func GetStepCollectionDirPath(uri string, id, version string) (string, bool) {
+	route, found := ReadRoute(uri)
+	if found == false {
+		return "", false
+	}
+	return GetCollectionBaseDirPath(route) + "/steps/" + id + "/" + version, true
 }
 
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
@@ -139,17 +147,17 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	return stepGroup, nil
 }
 
-func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection models.StepCollectionModel) ([]byte, error) {
+func generateFormattedJSONForStepsSpec(route SteplibRoute, templateCollection models.StepCollectionModel) ([]byte, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        collectionURI,
+		SteplibSource:        route.SteplibURI,
 		DownloadLocations:    templateCollection.DownloadLocations,
 	}
 
 	stepHash := models.StepHash{}
 
-	stepsSpecDir := GetCollectionBaseDirPath(collectionURI)
+	stepsSpecDir := GetCollectionBaseDirPath(route)
 	log.Debugln("  stepsSpecDir: ", stepsSpecDir)
 	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(path, stepsSpecDir+"/", "", -1)
@@ -165,7 +173,7 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 				version := components[2]
 
 				log.Debugf("Start parsing (StepId:%s) (Version:%s)", id, version)
-				step, parseErr := parseStepYml(collectionURI, path, id, version)
+				step, parseErr := parseStepYml(route.SteplibURI, path, id, version)
 				if parseErr != nil {
 					log.Debugf("  Failed to parse StepId: %v Version: %v", id, version)
 					return parseErr
@@ -213,8 +221,8 @@ func generateFormattedJSONForStepsSpec(collectionURI string, templateCollection 
 }
 
 // WriteStepSpecToFile ...
-func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCollectionModel) error {
-	pth := GetStepSpecPath(collectionURI)
+func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route SteplibRoute) error {
+	pth := GetStepSpecPath(route)
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		log.Error("[STEPMAN] - Failed to check path:", err)
@@ -243,7 +251,7 @@ func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCol
 		}
 	}()
 
-	jsonContBytes, err := generateFormattedJSONForStepsSpec(collectionURI, templateCollection)
+	jsonContBytes, err := generateFormattedJSONForStepsSpec(route, templateCollection)
 	if err != nil {
 		return err
 	}
@@ -257,10 +265,14 @@ func WriteStepSpecToFile(collectionURI string, templateCollection models.StepCol
 }
 
 // ReadStepSpec ...
-func ReadStepSpec(collectionURI string) (models.StepCollectionModel, error) {
-	log.Debugln("-> ReadStepSpec: ", collectionURI)
+func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
+	log.Debugln("-> ReadStepSpec: ", uri)
 
-	pth := GetStepSpecPath(collectionURI)
+	route, found := ReadRoute(uri)
+	if !found {
+		return models.StepCollectionModel{}, errors.New("No route found for lib: " + uri)
+	}
+	pth := GetStepSpecPath(route)
 	file, err := os.Open(pth)
 	if err != nil {
 		return models.StepCollectionModel{}, err

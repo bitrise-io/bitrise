@@ -11,7 +11,7 @@ import (
 func setup(c *cli.Context) {
 	log.Debugln("[STEPMAN] - Setup")
 
-	// StepSpec collection path
+	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
 		collectionURI = os.Getenv(CollectionPathEnvKey)
@@ -27,11 +27,13 @@ func setup(c *cli.Context) {
 		return
 	}
 
-	if err := stepman.SetupRouting(collectionURI); err != nil {
-		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
+	alias := stepman.GenerateFolderAlias(collectionURI)
+	route := stepman.SteplibRoute{
+		SteplibURI:  collectionURI,
+		FolderAlias: alias,
 	}
 
-	pth := stepman.GetCollectionBaseDirPath(collectionURI)
+	pth := stepman.GetCollectionBaseDirPath(route)
 	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to get step spec path:", err)
 	}
@@ -42,8 +44,12 @@ func setup(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
 
-	if err := stepman.WriteStepSpecToFile(collectionURI, collection); err != nil {
+	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
 		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
+	}
+
+	if err := stepman.AddRoute(route); err != nil {
+		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 
 	log.Info("[STEPMAN] - Initialized")
