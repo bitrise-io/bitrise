@@ -29,13 +29,16 @@ var (
 
 // FailedStepModel ...
 type FailedStepModel struct {
-	StepName string
-	Error    error
+	StepName       string
+	Error          error
+	IsNotImportant bool
 }
 
 func isBuildFailed() bool {
-	if len(failedSteps) > 0 {
-		return true
+	for _, failedStep := range failedSteps {
+		if !failedStep.IsNotImportant {
+			return true
+		}
 	}
 	return false
 }
@@ -48,8 +51,9 @@ func registerFailedStepListItem(stepListItem models.StepListItemModel, err error
 	}
 
 	failedStep := FailedStepModel{
-		StepName: name,
-		Error:    err,
+		StepName:       name,
+		Error:          err,
+		IsNotImportant: false,
 	}
 	failedSteps = append(failedSteps, failedStep)
 	log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
@@ -60,14 +64,16 @@ func registerFailedStep(step stepmanModels.StepModel, err error) {
 		log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		fmt.Println()
 	} else {
-		failedStep := FailedStepModel{
-			StepName: *step.Title,
-			Error:    err,
-		}
-		failedSteps = append(failedSteps, failedStep)
 		log.Errorf("Failed to execute step: (%v) error: (%v)", *step.Title, err)
 		fmt.Println()
 	}
+
+	failedStep := FailedStepModel{
+		StepName:       *step.Title,
+		Error:          err,
+		IsNotImportant: *step.IsNotImportant,
+	}
+	failedSteps = append(failedSteps, failedStep)
 }
 
 func registerRunFailed(err error) {
@@ -77,16 +83,27 @@ func registerRunFailed(err error) {
 
 func registerRunSuccess() {
 	runTime := time.Now().Sub(startTime)
-	log.Info("DONE - Congrats!!")
 	log.Info("Total run time: " + runTime.String())
+	log.Info("DONE - Congrats!!")
 }
 
 func registerRunSuccessWithFailedSteps() {
 	runTime := time.Now().Sub(startTime)
-	log.Info("Failed steps:", failedSteps)
-	log.Info("FINISHED but a couple of steps failed - Ouch")
+	printFailedSteps()
 	log.Info("Total run time: " + runTime.String())
+	log.Info("FINISHED but a couple of steps failed - Ouch")
 	os.Exit(1)
+}
+
+func printFailedSteps() {
+	log.Infof("%d step(s) failed:", len(failedSteps))
+	for _, failedStep := range failedSteps {
+		if failedStep.IsNotImportant {
+			log.Infof("Step: (%s) | marked as not important | error: (%v)", failedStep.StepName, failedStep.Error)
+		} else {
+			log.Infof("Step: (%s) | error: (%v)", failedStep.StepName, failedStep.Error)
+		}
+	}
 }
 
 func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
