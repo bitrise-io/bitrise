@@ -52,8 +52,10 @@ func RunEnvmanAdd(key, value string, expand bool) error {
 }
 
 // RunEnvmanRunInDir ...
-func RunEnvmanRunInDir(dir string, cmd []string) error {
-	logLevel := log.GetLevel().String()
+func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) error {
+	if logLevel == "" {
+		logLevel = log.GetLevel().String()
+	}
 	args := []string{"--loglevel", logLevel, "run"}
 	args = append(args, cmd...)
 	return RunCommandInDir(dir, "envman", args...)
@@ -61,7 +63,7 @@ func RunEnvmanRunInDir(dir string, cmd []string) error {
 
 // RunEnvmanRun ...
 func RunEnvmanRun(cmd []string) error {
-	return RunEnvmanRunInDir("", cmd)
+	return RunEnvmanRunInDir("", cmd, "")
 }
 
 // RunEnvmanEnvstoreTest ...
