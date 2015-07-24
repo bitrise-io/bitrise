@@ -88,6 +88,12 @@ workflows:
         - SLACK_ICON_EMOJI: ":rocket:"
 
   # ----- Other, test workflows -----
+  local:
+    # this workflow is a test for local steps
+    steps:
+      - path::/Users/godrei/develop/go/src/github.com/gkiki90/steps-timestamp:
+          title: "local_time-stamp-test"
+
   fail:
     # this workflow is a test for failed steps/workflows,
     #  it'll fail

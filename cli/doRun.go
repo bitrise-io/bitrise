@@ -185,61 +185,76 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
+
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
-
-		stepDir := bitrise.BitriseWorkStepsDirPath
-
-		if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
-			registerFailedStepListItem(stepListItm, err)
-			continue
-		}
 
 		if err := cleanupStepWorkDir(); err != nil {
 			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 
-		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
-		if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
+		stepDir := ""
+		stepYMLPth := ""
+		log.Debugf("StepIdData: %v", stepIDData)
+		if stepIDData.SteplibSource != "" {
+			log.Debug("[BITRISE_CLI] - Activating step")
+			if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
+				registerFailedStepListItem(stepListItm, err)
+				continue
+			}
+
+			stepDir = bitrise.BitriseWorkStepsDirPath
+			stepYMLPth = bitrise.BitriseWorkDirPath + "/current_step.yml"
+			if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
+				registerFailedStepListItem(stepListItm, err)
+				continue
+			} else {
+				log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
+			}
+
+		} else if stepIDData.LocalPath != "" {
+			log.Debugf("[BITRISE_CLI] - Local step found: %s (%s) [%s]", stepIDData.ID, stepIDData.Version, stepIDData.LocalPath)
+			stepDir = stepIDData.LocalPath
+			stepYMLPth = stepIDData.LocalPath + "/step.yml"
+		} else {
+			registerFailedStepListItem(stepListItm, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))
+			continue
+		}
+
+		log.Debug("------------Step YML:", stepYMLPth)
+		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
+		log.Debugf("Spec read from YML: %#v\n", specStep)
+		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
 			continue
+		}
+
+		if err := models.MergeStepWith(specStep, workflowStep); err != nil {
+			registerFailedStepListItem(stepListItm, err)
+			continue
+		}
+
+		fmt.Println()
+		log.Infof("========== (%d) %s ==========", idx, *specStep.Title)
+		fmt.Println()
+
+		if isBuildFailed() && !*specStep.IsAlwaysRun {
+			log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
+			skippedStep := FailedStepModel{
+				StepName: *specStep.Title,
+			}
+			stepRunResults.SkippedSteps = append(stepRunResults.SkippedSteps, skippedStep)
 		} else {
-			log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
-
-			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
-			log.Debugf("Spec read from YML: %#v\n", specStep)
-			if err != nil {
-				registerFailedStepListItem(stepListItm, err)
+			if err := runStep(specStep, stepIDData, stepDir); err != nil {
+				registerFailedStep(specStep, err)
 				continue
-			}
-
-			if err := models.MergeStepWith(specStep, workflowStep); err != nil {
-				registerFailedStepListItem(stepListItm, err)
-				continue
-			}
-
-			fmt.Println()
-			log.Infof("========== (%d) %s ==========", idx, *specStep.Title)
-			fmt.Println()
-
-			if isBuildFailed() && !*specStep.IsAlwaysRun {
-				log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
-				skippedStep := FailedStepModel{
-					StepName: *specStep.Title,
-				}
-				stepRunResults.SkippedSteps = append(stepRunResults.SkippedSteps, skippedStep)
-			} else {
-				if err := runStep(specStep, stepIDData); err != nil {
-					registerFailedStep(specStep, err)
-					continue
-				}
 			}
 		}
 	}
 	return stepRunResults
 }
 
-func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData) error {
+func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) error {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
 
 	// Add step envs
@@ -263,7 +278,6 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData) error {
 		}
 	}
 
-	stepDir := bitrise.BitriseWorkStepsDirPath
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
 	fmt.Println("----------------------- OUTPUT ---------------------------")
