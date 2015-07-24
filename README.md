@@ -17,12 +17,16 @@ Part of the Bitrise Continuous Integration, Delivery and Automations Stack.
 Check the latest release for instructions at: [https://github.com/bitrise-io/bitrise-cli/releases](https://github.com/bitrise-io/bitrise-cli/releases)
 
 
+## Tutorials and Examples
+
+You can find examples in the [_examples](https://github.com/bitrise-io/bitrise-cli/tree/master/_examples) folder.
+
+If you're getting started you should start with [_examples/tutorials](https://github.com/bitrise-io/bitrise-cli/tree/master/_examples/tutorials),
+this should guide you through the basics, while you'll already use `bitrise-cli` (requires installed `bitrise-cli`).
+
 ## Development Guideline
 
 * Number one priority is UX for the end-user, to make it a pleasant experience to work with this tool!
 * Code should be kept simple: easy to understand, easy to collaborate/contribute (as much as possible of course).
 
 
-## Tests
-
-* Work with multiple projects, in separate folders
