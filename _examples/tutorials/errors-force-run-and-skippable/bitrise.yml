@@ -1,0 +1,46 @@
+format_version: 0.9.5
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+
+workflows:
+  fail:
+    # this workflow is a test for failed steps/workflows,
+    #  it'll fail
+    steps:
+      - script:
+          title: "ok"
+      - script:
+          title: "ls"
+          inputs:
+          - content: |
+              #/bin/bash
+              ls -alh
+      - script:
+          title: "fail"
+          is_skippable: true
+          inputs:
+          - content: |
+              #/bin/bash
+              set -v
+              exit 1
+      - script:
+          title: "fail 2"
+          is_skippable: false
+          inputs:
+          - content: |
+              #/bin/bash
+              set -v
+              exit 1
+      - script:
+          title: "ok"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "-----> This should NOT be printed!!"
+          is_always_run: false
+      - script:
+          title: "ok"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "-----> This should be printed!!"
+          is_always_run: true
