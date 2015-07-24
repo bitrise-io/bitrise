@@ -171,13 +171,18 @@ func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
 
-// path::~/develop/steps-xcode-builder
-// https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@2.0.0
-// script@2.0.0
-// script
-
 // CreateStepIDDataFromString ...
-// CreateStepIDDataFromString ...
+// compositeVersionStr examples:
+//  * local path:
+//    * path::~/path/to/step/dir
+//  * direct git url and branch or tag:
+//    * git::https://github.com/bitrise-io/steps-timestamp.git@master
+//  * full ID with steplib, stepid and version:
+//    * https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@2.0.0
+//  * only stepid and version (requires a default steplib source to be provided):
+//    * script@2.0.0
+//  * only stepid, latest version will be used (requires a default steplib source to be provided):
+//    * script
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
 	stepSrc := ""
 	stepIDAndVersionOrURIStr := ""
@@ -225,7 +230,7 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 
 	return StepIDData{
 		SteplibSource: stepSrc,
-		ID:            stepIDOrURI,
+		IDorURI:       stepIDOrURI,
 		Version:       stepVersion,
 	}, nil
 }

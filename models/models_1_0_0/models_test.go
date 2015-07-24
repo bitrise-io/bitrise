@@ -106,8 +106,8 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.SteplibSource != "steplib-src" {
 		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
 	}
-	if stepIDData.ID != "step-id" {
-		t.Fatal("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	if stepIDData.IDorURI != "step-id" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
 	}
 	if stepIDData.Version != "0.0.1" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
@@ -124,8 +124,8 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.SteplibSource != "default-steplib-src" {
 		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
 	}
-	if stepIDData.ID != "step-id" {
-		t.Fatal("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	if stepIDData.IDorURI != "step-id" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
 	}
 	if stepIDData.Version != "0.0.1" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
@@ -142,8 +142,8 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.SteplibSource != "default-steplib-src" {
 		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
 	}
-	if stepIDData.ID != "step-id" {
-		t.Fatal("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	if stepIDData.IDorURI != "step-id" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
 	}
 	if stepIDData.Version != "0.0.1" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
@@ -178,8 +178,8 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.SteplibSource != "def-lib-src" {
 		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
 	}
-	if stepIDData.ID != "step-id" {
-		t.Fatal("stepIDData.ID incorrectly converted:", stepIDData.ID)
+	if stepIDData.IDorURI != "step-id" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
 	}
 	if stepIDData.Version != "" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
