@@ -36,4 +36,5 @@ type StepIDData struct {
 	ID            string
 	Version       string
 	SteplibSource string
+	LocalPath     string
 }
