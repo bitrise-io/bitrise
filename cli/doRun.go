@@ -282,12 +282,11 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
 	fmt.Println("----------------------- OUTPUT ---------------------------")
-	if err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic"); err != nil {
-		fmt.Println("----------------------------------------------------------")
-		log.Errorln("[BITRISE_CLI] - Failed to run envman run")
+	err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic")
+	fmt.Println("----------------------------------------------------------")
+	if err != nil {
 		return err
 	}
-	fmt.Println("----------------------------------------------------------")
 
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.ID, stepIDData.Version)
 	return nil
@@ -383,6 +382,9 @@ func doRun(c *cli.Context) {
 		for wfName := range bitriseConfig.Workflows {
 			log.Infoln(" * " + wfName)
 		}
+		fmt.Println()
+		log.Infoln("You can run a selected workflow with:")
+		log.Infoln("-> bitrise-cli run the-workflow-name")
 		os.Exit(1)
 	}
 

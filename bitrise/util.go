@@ -96,3 +96,40 @@ func WriteBytesToFile(pth string, fileCont []byte) error {
 
 	return nil
 }
+
+// IsVersionBetween ...
+//  returns true if it's between the lower and upper limit
+//  or in case it matches the lower or the upper limit
+func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
+	r1, err := stepmanModels.CompareVersions(verBase, verLower)
+	if err != nil {
+		return false, err
+	}
+	if r1 == 1 {
+		return false, nil
+	}
+
+	r2, err := stepmanModels.CompareVersions(verBase, verUpper)
+	if err != nil {
+		return false, err
+	}
+	if r2 == -1 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// IsVersionGreaterOrEqual ...
+//  returns true if verBase is greater or equal to verLower
+func IsVersionGreaterOrEqual(verBase, verLower string) (bool, error) {
+	r1, err := stepmanModels.CompareVersions(verBase, verLower)
+	if err != nil {
+		return false, err
+	}
+	if r1 == 1 {
+		return false, nil
+	}
+
+	return true, nil
+}
