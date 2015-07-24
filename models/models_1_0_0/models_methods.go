@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -178,126 +177,55 @@ func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels
 // script
 
 // CreateStepIDDataFromString ...
+// CreateStepIDDataFromString ...
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	ID := ""
-	version := ""
-	source := ""
-	path := ""
+	stepSrc := ""
+	stepIDAndVersionOrURIStr := ""
+	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
+	if len(libsourceStepSplits) == 2 {
+		// long/verbose ID mode, ex: step-lib-src::step-id@1.0.0
+		stepSrc = libsourceStepSplits[0]
+		stepIDAndVersionOrURIStr = libsourceStepSplits[1]
+	} else if len(libsourceStepSplits) == 1 {
+		// missing steplib-src mode, ex: step-id@1.0.0
+		//  in this case if we have a default StepLibSource we'll use that
+		stepIDAndVersionOrURIStr = libsourceStepSplits[0]
+	} else {
+		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
+	}
 
-	components := strings.Split(compositeVersionStr, "::")
-	if len(components) == 1 {
-		idAndVersion := components[0]
-		idAndVersionComponents := strings.Split(idAndVersion, "@")
-		if len(idAndVersionComponents) == 1 {
-			ID = idAndVersionComponents[0]
-		} else if len(idAndVersionComponents) == 2 {
-			ID = idAndVersionComponents[0]
-			version = idAndVersionComponents[1]
-		} else {
-			return StepIDData{}, fmt.Errorf("Invalid idAndVersionComponents length (%d)", len(idAndVersionComponents))
-		}
+	stepIDOrURI := ""
+	stepVersion := ""
+	stepidVersionOrURISplits := strings.Split(stepIDAndVersionOrURIStr, "@")
+	if len(stepidVersionOrURISplits) == 2 {
+		stepIDOrURI = stepidVersionOrURISplits[0]
+		stepVersion = stepidVersionOrURISplits[1]
+	} else if len(stepidVersionOrURISplits) == 1 {
+		stepIDOrURI = stepidVersionOrURISplits[0]
+	} else {
+		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionOrURIStr + ")")
+	}
 
+	if stepIDOrURI == "" {
+		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+	}
+
+	if stepSrc == "" {
 		if defaultStepLibSource == "" {
 			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
 		}
-		source = defaultStepLibSource
-	} else if len(components) == 2 {
-		sourceStr := components[0]
-		idAndVersion := components[1]
-		idAndVersionComponents := strings.Split(idAndVersion, "@")
-		if len(idAndVersionComponents) == 1 {
-			ID = idAndVersionComponents[0]
-		} else if len(idAndVersionComponents) == 2 {
-			ID = idAndVersionComponents[0]
-			version = idAndVersionComponents[1]
-		} else {
-			return StepIDData{}, fmt.Errorf("Invalid idAndVersionComponents length (%d)", len(idAndVersionComponents))
+		stepSrc = defaultStepLibSource
+	} else if stepSrc == "path" {
+		uri, err := pathutil.AbsPath(stepIDOrURI)
+		if err != nil {
+			return StepIDData{}, err
 		}
-
-		if sourceStr == "path" {
-			pth, err := pathutil.AbsPath(ID)
-			if err != nil {
-				return StepIDData{}, err
-			}
-			path = pth
-		} else {
-			source = sourceStr
-		}
-	} else {
-		return StepIDData{}, fmt.Errorf("Invalid components length (%d)", len(components))
+		stepIDOrURI = uri
 	}
 
 	return StepIDData{
-		ID:            ID,
-		Version:       version,
-		SteplibSource: source,
-		LocalPath:     path,
+		SteplibSource: stepSrc,
+		ID:            stepIDOrURI,
+		Version:       stepVersion,
 	}, nil
-
-	/*
-		createIDVersionAndSourceComponents := func(IDVersionAndSource string) (idAndVersion string, source *string, e error) {
-			components := strings.Split(IDVersionAndSource, "::")
-			if len(components) == 1 {
-				idAndVersion = components[0]
-			} else if len(components) == 2 {
-				sourceStr := components[0]
-				source = &sourceStr
-				idAndVersion = components[1]
-			} else {
-				return "", new(string), fmt.Errorf("Invalid components length (%d)", len(components))
-			}
-			return idAndVersion, source, nil
-		}
-
-		createIDAndVersion := func(idAndVersionStr string) (ID, version string, e error) {
-			idAndVersionComponents := strings.Split(idAndVersionStr, "@")
-			if len(idAndVersionComponents) == 1 {
-				ID = idAndVersionComponents[0]
-			} else if len(idAndVersionComponents) == 2 {
-				ID = idAndVersionComponents[0]
-				version = idAndVersionComponents[1]
-			} else {
-				return "", "", fmt.Errorf("Invalid idAndVersionComponents length (%d)", len(idAndVersionComponents))
-			}
-			return ID, version, nil
-		}
-
-		createSource := func(sourceStr *string, id string) (source, path string, e error) {
-			if sourceStr == nil {
-				if defaultStepLibSource == "" {
-					return "", "", errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-				}
-				source = defaultStepLibSource
-			} else {
-				if *sourceStr == "path" {
-					path = id
-				} else {
-					source = *sourceStr
-				}
-			}
-			return source, path, nil
-		}
-
-		stepIDAndVersionStr, stepSourceStr, err := createIDVersionAndSourceComponents(compositeVersionStr)
-		if err != nil {
-			return StepIDData{}, err
-		}
-		fmt.Println("stepIDAndVersionStr:", stepIDAndVersionStr)
-		fmt.Println("stepSourceStr:", stepSourceStr)
-
-		stepID, stepVersion, err := createIDAndVersion(stepIDAndVersionStr)
-		if err != nil {
-			return StepIDData{}, err
-		}
-		fmt.Println("stepID:", stepID)
-		fmt.Println("stepVersion:", stepVersion)
-
-		steplibSource, localPath, err := createSource(stepSourceStr, stepID)
-		if err != nil {
-			return StepIDData{}, err
-		}
-		fmt.Println("steplibSource:", steplibSource)
-		fmt.Println("localPath:", localPath)
-
-	*/
 }

@@ -196,7 +196,13 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepDir := ""
 		stepYMLPth := ""
 		log.Debugf("StepIdData: %v", stepIDData)
-		if stepIDData.SteplibSource != "" {
+		if stepIDData.SteplibSource == "path" {
+			log.Debugf("[BITRISE_CLI] - Local step found: %s (%s)", stepIDData.ID, stepIDData.Version)
+			stepDir = stepIDData.ID
+			stepYMLPth = stepDir + "/step.yml"
+		} else if stepIDData.SteplibSource == "git" {
+
+		} else if stepIDData.SteplibSource != "" {
 			log.Debug("[BITRISE_CLI] - Activating step")
 			if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
 				registerFailedStepListItem(stepListItm, err)
@@ -211,11 +217,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			} else {
 				log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
 			}
-
-		} else if stepIDData.LocalPath != "" {
-			log.Debugf("[BITRISE_CLI] - Local step found: %s (%s) [%s]", stepIDData.ID, stepIDData.Version, stepIDData.LocalPath)
-			stepDir = stepIDData.LocalPath
-			stepYMLPth = stepIDData.LocalPath + "/step.yml"
 		} else {
 			registerFailedStepListItem(stepListItm, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))
 			continue
