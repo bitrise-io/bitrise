@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -214,7 +215,11 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		}
 
 		if sourceStr == "path" {
-			path = ID
+			pth, err := pathutil.AbsPath(ID)
+			if err != nil {
+				return StepIDData{}, err
+			}
+			path = pth
 		} else {
 			source = sourceStr
 		}
