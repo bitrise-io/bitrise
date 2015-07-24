@@ -104,11 +104,16 @@ func (step StepModel) Validate() error {
 
 // FillMissingDeafults ...
 func (env *EnvironmentItemModel) FillMissingDeafults() error {
+	defaultString := ""
+
 	options, err := env.GetOptions()
 	if err != nil {
 		return err
 	}
 
+	if options.Description == nil {
+		options.Description = &defaultString
+	}
 	if options.IsRequired == nil {
 		options.IsRequired = &DefaultIsRequired
 	}
@@ -128,6 +133,12 @@ func (step *StepModel) FillMissingDeafults() error {
 	if step.Description == nil {
 		step.Description = &defaultString
 	}
+	if step.SourceCodeURL == nil {
+		step.SourceCodeURL = &defaultString
+	}
+	if step.SupportURL == nil {
+		step.SupportURL = &defaultString
+	}
 	if step.IsRequiresAdminUser == nil {
 		step.IsRequiresAdminUser = &DefaultIsRequiresAdminUser
 	}
@@ -136,6 +147,9 @@ func (step *StepModel) FillMissingDeafults() error {
 	}
 	if step.IsSkippable == nil {
 		step.IsSkippable = &DefaultIsSkippable
+	}
+	if step.RunIf == nil {
+		step.RunIf = &defaultString
 	}
 
 	for _, input := range step.Inputs {
