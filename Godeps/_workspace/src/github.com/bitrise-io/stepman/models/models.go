@@ -23,21 +23,26 @@ type StepSourceModel struct {
 
 // StepModel ...
 type StepModel struct {
-	Title               *string                `json:"title,omitempty" yaml:"title,omitempty"`
-	Description         *string                `json:"description,omitempty" yaml:"description,omitempty"`
-	Summary             *string                `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Website             *string                `json:"website,omitempty" yaml:"website,omitempty"`
-	SourceCodeURL       *string                `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
-	SupportURL          *string                `json:"support_url,omitempty" yaml:"support_url,omitempty"`
-	Source              StepSourceModel        `json:"source,omitempty" yaml:"source,omitempty"`
-	HostOsTags          []string               `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string               `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string               `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser *bool                  `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
-	IsAlwaysRun         *bool                  `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
-	IsNotImportant      *bool                  `json:"is_not_important,omitempty" yaml:"is_not_important,omitempty"`
-	Inputs              []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs             []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	Title               *string         `json:"title,omitempty" yaml:"title,omitempty"`
+	Description         *string         `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary             *string         `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Website             *string         `json:"website,omitempty" yaml:"website,omitempty"`
+	SourceCodeURL       *string         `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
+	SupportURL          *string         `json:"support_url,omitempty" yaml:"support_url,omitempty"`
+	Source              StepSourceModel `json:"source,omitempty" yaml:"source,omitempty"`
+	HostOsTags          []string        `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     []string        `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            []string        `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	IsRequiresAdminUser *bool           `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	// IsAlwaysRun : if true then this step will always run,
+	//  even if a previous step fails.
+	IsAlwaysRun *bool `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
+	// IsSkippable : if true and this step fails the build will still continue.
+	//  If false then the build will be marked as failed and only those
+	//  steps will run which are marked with IsAlwaysRun.
+	IsSkippable *bool                  `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
+	Inputs      []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs     []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 // -------------------
