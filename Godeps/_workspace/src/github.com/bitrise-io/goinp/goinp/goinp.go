@@ -45,6 +45,7 @@ func ParseBool(userInputStr string) (bool, error) {
 	if userInputStr == "" {
 		return false, errors.New("No string to parse")
 	}
+	userInputStr = strings.TrimSpace(userInputStr)
 
 	lowercased := strings.ToLower(userInputStr)
 	if lowercased == "yes" || lowercased == "y" {

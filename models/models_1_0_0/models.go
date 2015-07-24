@@ -40,3 +40,17 @@ type StepIDData struct {
 	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
 	SteplibSource string
 }
+
+// StepRunResultsModel ...
+type StepRunResultsModel struct {
+	TotalStepCount          int
+	FailedSteps             []FailedStepModel
+	FailedNotImportantSteps []FailedStepModel
+	SkippedSteps            []FailedStepModel
+}
+
+// FailedStepModel ...
+type FailedStepModel struct {
+	StepName string
+	Error    error
+}

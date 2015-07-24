@@ -40,9 +40,11 @@ type StepModel struct {
 	// IsSkippable : if true and this step fails the build will still continue.
 	//  If false then the build will be marked as failed and only those
 	//  steps will run which are marked with IsAlwaysRun.
-	IsSkippable *bool                  `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
-	Inputs      []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs     []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	IsSkippable *bool `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
+	// RunIf : only run the step if the template example evaluates to true
+	RunIf   *string                `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Inputs  []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 // -------------------

@@ -1,0 +1,14 @@
+format_version: 0.9.5
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+workflows:
+  primary:
+    envs: []
+    steps:
+    - script:
+        title: Hello Bitrise!
+        run_if: |
+          {{getenv "CI" | eq "true"}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Welcome to Bitrise!"

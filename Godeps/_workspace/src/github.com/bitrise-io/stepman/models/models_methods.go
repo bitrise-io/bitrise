@@ -148,6 +148,9 @@ func (step *StepModel) FillMissingDeafults() error {
 	if step.IsSkippable == nil {
 		step.IsSkippable = &DefaultIsSkippable
 	}
+	if step.RunIf == nil {
+		step.RunIf = &defaultString
+	}
 
 	for _, input := range step.Inputs {
 		err := input.FillMissingDeafults()

@@ -26,32 +26,18 @@ var (
 	startTime     time.Time
 )
 
-// FailedStepModel ...
-type FailedStepModel struct {
-	StepName string
-	Error    error
-}
-
-// StepRunResultsModel ...
-type StepRunResultsModel struct {
-	TotalStepCount          int
-	FailedSteps             []FailedStepModel
-	FailedNotImportantSteps []FailedStepModel
-	SkippedSteps            []FailedStepModel
-}
-
 func buildFailedFatal(err error) {
 	runTime := time.Now().Sub(startTime)
 	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String())
 }
 
-func printStepStatus(stepRunResults StepRunResultsModel) {
+func printStepStatus(stepRunResults models.StepRunResultsModel) {
 	failedCount := len(stepRunResults.FailedSteps)
 	failedNotImportantCount := len(stepRunResults.FailedNotImportantSteps)
 	skippedCount := len(stepRunResults.SkippedSteps)
 	successCount := stepRunResults.TotalStepCount - failedCount - failedNotImportantCount - skippedCount
 
-	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as not important and %d was skipped",
+	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as skippable and %d was skipped",
 		stepRunResults.TotalStepCount,
 		successCount,
 		failedCount,
@@ -59,11 +45,11 @@ func printStepStatus(stepRunResults StepRunResultsModel) {
 		skippedCount)
 
 	printStepStatusList("Failed steps:", stepRunResults.FailedSteps)
-	printStepStatusList("Failed but not important steps:", stepRunResults.FailedNotImportantSteps)
+	printStepStatusList("Failed but skippable steps:", stepRunResults.FailedNotImportantSteps)
 	printStepStatusList("Skipped steps:", stepRunResults.SkippedSteps)
 }
 
-func printStepStatusList(header string, stepList []FailedStepModel) {
+func printStepStatusList(header string, stepList []models.FailedStepModel) {
 	if len(stepList) > 0 {
 		log.Infof(header)
 		for _, step := range stepList {
@@ -128,14 +114,14 @@ func cleanupStepWorkDir() error {
 	return nil
 }
 
-func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (stepRunResults StepRunResultsModel) {
+func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (stepRunResults models.StepRunResultsModel) {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
-	stepRunResults = StepRunResultsModel{
+	stepRunResults = models.StepRunResultsModel{
 		TotalStepCount:          0,
-		FailedSteps:             []FailedStepModel{},
-		FailedNotImportantSteps: []FailedStepModel{},
-		SkippedSteps:            []FailedStepModel{},
+		FailedSteps:             []models.FailedStepModel{},
+		FailedNotImportantSteps: []models.FailedStepModel{},
+		SkippedSteps:            []models.FailedStepModel{},
 	}
 
 	registerFailedStepListItem := func(stepListItem models.StepListItemModel, err error) {
@@ -145,7 +131,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			break
 		}
 
-		failedStep := FailedStepModel{
+		failedStep := models.FailedStepModel{
 			StepName: name,
 			Error:    err,
 		}
@@ -153,26 +139,24 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		log.Errorf("Failed to execute step: (%v) error: (%v)", name, err)
 	}
 	registerFailedStep := func(step stepmanModels.StepModel, err error) {
-		failedStep := FailedStepModel{
+		failedStep := models.FailedStepModel{
 			StepName: *step.Title,
 			Error:    err,
 		}
 
 		if *step.IsSkippable {
 			stepRunResults.FailedNotImportantSteps = append(stepRunResults.FailedNotImportantSteps, failedStep)
-			log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
+			log.Warnf("Failed to execute step: (%v) error: (%v), but it's marked as skippable", *step.Title, err)
 		} else {
 			stepRunResults.FailedSteps = append(stepRunResults.FailedSteps, failedStep)
 			log.Errorf("Failed to execute step: (%v) error: (%v)", *step.Title, err)
 		}
 	}
-	isBuildFailed := func() bool {
-		return len(stepRunResults.FailedSteps) > 0
-	}
+
 	stepRunResults.TotalStepCount = len(workflow.Steps)
 
 	for idx, stepListItm := range workflow.Steps {
-		if err := setBuildFailedEnv(isBuildFailed()); err != nil {
+		if err := setBuildFailedEnv(stepRunResults.IsBuildFailed()); err != nil {
 			log.Error("Failed to set Build Status envs")
 		}
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
@@ -259,12 +243,29 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		log.Infof("========== (%d) %s ==========", idx, *mergedStep.Title)
 		fmt.Println()
 
-		if isBuildFailed() && !*mergedStep.IsAlwaysRun {
-			log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
-			skippedStep := FailedStepModel{
+		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
+			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, stepRunResults)
+			if err != nil {
+				registerFailedStep(mergedStep, err)
+				continue
+			}
+			if !isRun {
+				log.Warn("The step's Is-Run expression evaluated to false - skipping")
+				log.Info(" The Is-Run expression was: ", *mergedStep.RunIf)
+				skippedStep := models.FailedStepModel{
+					StepName: *mergedStep.Title,
+				}
+				stepRunResults.SkippedSteps = append(stepRunResults.SkippedSteps, skippedStep)
+				continue
+			}
+		}
+		if stepRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
+			log.Warnf("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
+			skippedStep := models.FailedStepModel{
 				StepName: *mergedStep.Title,
 			}
 			stepRunResults.SkippedSteps = append(stepRunResults.SkippedSteps, skippedStep)
+			continue
 		} else {
 			if err := runStep(mergedStep, stepIDData, stepDir); err != nil {
 				registerFailedStep(mergedStep, err)

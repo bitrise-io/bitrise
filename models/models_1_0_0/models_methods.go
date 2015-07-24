@@ -245,3 +245,8 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		Version:       stepVersion,
 	}, nil
 }
+
+// IsBuildFailed ...
+func (stepRes StepRunResultsModel) IsBuildFailed() bool {
+	return len(stepRes.FailedSteps) > 0
+}
