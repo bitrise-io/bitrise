@@ -33,13 +33,7 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Missing step id")
 	}
 
-	path := c.String(PathKey)
-	if path == "" {
-		log.Fatal("[STEPMAN] - Missing destination path")
-	}
-
 	copyYML := c.String(CopyYMLKey)
-
 	update := parseUpdate(c)
 
 	// Get step
@@ -60,6 +54,16 @@ func activate(c *cli.Context) {
 		version = latest
 	}
 
+	path := c.String(PathKey)
+	if path == "" {
+		log.Fatal("[STEPMAN] - Missing destination path")
+	}
+
+	route, found := stepman.ReadRoute(collection.SteplibSource)
+	if !found {
+		log.Fatalf("No route found for lib: %s", collection.SteplibSource)
+	}
+
 	// Check step exist in collection
 	if _, found := collection.GetStep(id, version); !found {
 		if update {
@@ -77,7 +81,7 @@ func activate(c *cli.Context) {
 	}
 
 	// Check step exist in local cache
-	stepCacheDir := stepman.GetStepCacheDirPath(collectionURI, id, version)
+	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
@@ -111,7 +115,7 @@ func activate(c *cli.Context) {
 			log.Fatalln("[STEPMAN] - Copy yml destination path exist")
 		}
 
-		stepCollectionDir := stepman.GetStepCollectionDirPath(collectionURI, id, version)
+		stepCollectionDir := stepman.GetStepCollectionDirPath(route, id, version)
 		stepYMLSrc := stepCollectionDir + "/step.yml"
 		if err = stepman.RunCopyFile(stepYMLSrc, copyYML); err != nil {
 			log.Fatalln("[STEPMAN] - Failed to copy step.yml:", err)

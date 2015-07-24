@@ -28,59 +28,36 @@ var (
 	CollectionsDirPath string
 )
 
-// RouteMap ...
-type RouteMap map[string]string
+// SteplibRoute ...
+type SteplibRoute struct {
+	SteplibURI  string
+	FolderAlias string
+}
 
-// RootExistForCollection ...
-func RootExistForCollection(collectionURI string) (bool, error) {
-	RouteMap, err := readRouteMap()
+// SteplibRoutes ...
+type SteplibRoutes []SteplibRoute
+
+// GetRoute ...
+func (routes SteplibRoutes) GetRoute(URI string) (route SteplibRoute, found bool) {
+	for _, route := range routes {
+		if route.SteplibURI == URI {
+			return route, true
+		}
+	}
+	return SteplibRoute{}, false
+}
+
+// ReadRoute ...
+func ReadRoute(uri string) (route SteplibRoute, found bool) {
+	routes, err := readRouteMap()
 	if err != nil {
-		return false, err
+		return SteplibRoute{}, false
 	}
 
-	if RouteMap[collectionURI] != "" {
-		return true, nil
-	}
-	return false, nil
+	return routes.GetRoute(uri)
 }
 
-func getAlias(source string) (string, error) {
-	routeMap, err := readRouteMap()
-	if err != nil {
-		return "", err
-	}
-
-	if routeMap[source] == "" {
-		return "", errors.New("No route found for source")
-	}
-
-	return routeMap[source], nil
-}
-
-func addRoute(source, alias string) error {
-	RouteMap, err := readRouteMap()
-	if err != nil {
-		return err
-	}
-
-	if RouteMap[source] != "" {
-		return errors.New("Route already exist for source")
-	}
-
-	RouteMap[source] = alias
-
-	if err := writeRouteMapToFile(RouteMap); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func generateFolderAlias(source string) string {
-	return fmt.Sprintf("%v", time.Now().Unix())
-}
-
-func writeRouteMapToFile(RouteMap RouteMap) error {
+func (routes SteplibRoutes) writeToFile() error {
 	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
 		return err
 	} else if !exist {
@@ -99,7 +76,12 @@ func writeRouteMapToFile(RouteMap RouteMap) error {
 		}
 	}()
 
-	bytes, err := json.MarshalIndent(RouteMap, "", "\t")
+	routeMap := map[string]string{}
+	for _, route := range routes {
+		routeMap[route.SteplibURI] = route.FolderAlias
+	}
+
+	bytes, err := json.MarshalIndent(routeMap, "", "\t")
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err
@@ -111,24 +93,100 @@ func writeRouteMapToFile(RouteMap RouteMap) error {
 	return nil
 }
 
-func readRouteMap() (RouteMap, error) {
+// RemoveDir ...
+func RemoveDir(dirPth string) error {
+	if exist, err := pathutil.IsPathExists(dirPth); err != nil {
+		return err
+	} else if exist {
+		if err := os.RemoveAll(dirPth); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CleanupRoute ...
+func CleanupRoute(route SteplibRoute) error {
+	pth := CollectionsDirPath + "/" + route.FolderAlias
+	return RemoveDir(pth)
+}
+
+// RootExistForCollection ...
+func RootExistForCollection(collectionURI string) (bool, error) {
+	routes, err := readRouteMap()
+	if err != nil {
+		return false, err
+	}
+
+	_, found := routes.GetRoute(collectionURI)
+	return found, nil
+}
+
+func getAlias(uri string) (string, error) {
+	routes, err := readRouteMap()
+	if err != nil {
+		return "", err
+	}
+
+	route, found := routes.GetRoute(uri)
+	if found == false {
+		return "", errors.New("No routes exist for uri:" + uri)
+	}
+	return route.FolderAlias, nil
+}
+
+// AddRoute ...
+func AddRoute(route SteplibRoute) error {
+	routes, err := readRouteMap()
+	if err != nil {
+		return err
+	}
+
+	routes = append(routes, route)
+	if err := routes.writeToFile(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GenerateFolderAlias ...
+func GenerateFolderAlias() string {
+	return fmt.Sprintf("%v", time.Now().Unix())
+}
+
+func readRouteMap() (SteplibRoutes, error) {
 	if exist, err := pathutil.IsPathExists(routingFilePath); err != nil {
-		return RouteMap{}, err
+		return SteplibRoutes{}, err
 	} else if !exist {
-		return RouteMap{}, nil
+		return SteplibRoutes{}, nil
 	}
 
 	file, e := os.Open(routingFilePath)
 	if e != nil {
-		return RouteMap{}, e
+		return SteplibRoutes{}, e
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error("[STEPMAN] - Failed to close file:", err)
+		}
+	}()
 
-	var routeMap RouteMap
+	var routeMap map[string]string
 	parser := json.NewDecoder(file)
 	if err := parser.Decode(&routeMap); err != nil {
-		return RouteMap{}, err
+		return SteplibRoutes{}, err
 	}
-	return routeMap, nil
+
+	routes := []SteplibRoute{}
+	for key, value := range routeMap {
+		routes = append(routes, SteplibRoute{
+			SteplibURI:  key,
+			FolderAlias: value,
+		})
+	}
+
+	return routes, nil
 }
 
 // CreateStepManDirIfNeeded ...
@@ -143,60 +201,47 @@ func CreateStepManDirIfNeeded() error {
 	return nil
 }
 
-// SetupRouting ...
-func SetupRouting(collectionURI string) error {
-	if collectionURI == "" {
-		return errors.New("No collection path defined")
-	}
-
-	alias := generateFolderAlias(collectionURI)
-	return addRoute(collectionURI, alias)
-}
-
 // GetStepSpecPath ...
-func GetStepSpecPath(collectionURI string) string {
-	alias, err := getAlias(collectionURI)
-	if err != nil {
-		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
-		return ""
-	}
-	return CollectionsDirPath + "/" + alias + "/spec/spec.json"
+func GetStepSpecPath(route SteplibRoute) string {
+	return CollectionsDirPath + "/" + route.FolderAlias + "/spec/spec.json"
 }
 
 // GetCacheBaseDir ...
-func GetCacheBaseDir(collectionURI string) string {
-	alias, err := getAlias(collectionURI)
-	if err != nil {
-		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
-		return ""
-	}
-	return CollectionsDirPath + "/" + alias + "/cache"
+func GetCacheBaseDir(route SteplibRoute) string {
+	return CollectionsDirPath + "/" + route.FolderAlias + "/cache"
 }
 
 // GetCollectionBaseDirPath ...
-func GetCollectionBaseDirPath(collectionURI string) string {
-	alias, err := getAlias(collectionURI)
-	if err != nil {
-		log.Error("[STEPMAN] - Failed to read step spec path:", err)
-		return ""
-	}
-	return CollectionsDirPath + "/" + alias + "/collection"
+func GetCollectionBaseDirPath(route SteplibRoute) string {
+	return CollectionsDirPath + "/" + route.FolderAlias + "/collection"
 }
 
 // GetAllStepCollectionPath ...
 func GetAllStepCollectionPath() []string {
-	routeMap, err := readRouteMap()
+	routes, err := readRouteMap()
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to read step specs path:", err)
 		return []string{}
 	}
 
 	sources := []string{}
-	for source := range routeMap {
-		sources = append(sources, source)
+	for _, route := range routes {
+		sources = append(sources, route.SteplibURI)
 	}
 
 	return sources
+}
+
+// GetStepCacheDirPath ...
+// Step's Cache dir path, where it's code lives.
+func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
+	return GetCacheBaseDir(route) + "/" + id + "/" + version
+}
+
+// GetStepCollectionDirPath ...
+// Step's Collection dir path, where it's spec (step.yml) lives.
+func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
+	return GetCollectionBaseDirPath(route) + "/steps/" + id + "/" + version
 }
 
 // Life cycle
