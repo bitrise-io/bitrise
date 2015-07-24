@@ -198,18 +198,24 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		log.Debugf("StepIdData: %v", stepIDData)
 		if stepIDData.SteplibSource == "path" {
-			log.Debugf("[BITRISE_CLI] - Local step found: %s (%s)", stepIDData.ID, stepIDData.Version)
-
-			if err := bitrise.RunCopyDir(stepIDData.ID, stepDir); err != nil {
+			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
+			stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
+			if err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
-			if err := bitrise.RunCopyFile(stepIDData.ID+"/step.yml", stepYMLPth); err != nil {
+
+			if err := bitrise.RunCopyDir(stepAbsLocalPth, stepDir); err != nil {
+				registerFailedStepListItem(stepListItm, err)
+				continue
+			}
+			if err := bitrise.RunCopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
-			if err := bitrise.RunGitClone(stepIDData.ID, stepDir); err != nil {
+			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
+			if err := bitrise.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
@@ -224,11 +230,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.ID, stepIDData.Version, stepDir, stepYMLPth); err != nil {
+			if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			} else {
-				log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.ID, stepIDData.Version)
+				log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 			}
 		} else {
 			registerFailedStepListItem(stepListItm, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))
@@ -253,7 +259,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		fmt.Println()
 
 		if isBuildFailed() && !*specStep.IsAlwaysRun {
-			log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.ID, stepIDData.Version)
+			log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			skippedStep := FailedStepModel{
 				StepName: *specStep.Title,
 			}
@@ -269,7 +275,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 }
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) error {
-	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.ID, stepIDData.Version)
+	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Add step envs
 	for _, input := range step.Inputs {
@@ -301,7 +307,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return err
 	}
 
-	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.ID, stepIDData.Version)
+	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 	return nil
 }
 

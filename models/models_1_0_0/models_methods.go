@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -171,14 +170,20 @@ func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
 
-// path::~/develop/steps-xcode-builder
-// https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@2.0.0
-// script@2.0.0
-// script
-
 // CreateStepIDDataFromString ...
-// CreateStepIDDataFromString ...
+// compositeVersionStr examples:
+//  * local path:
+//    * path::~/path/to/step/dir
+//  * direct git url and branch or tag:
+//    * git::https://github.com/bitrise-io/steps-timestamp.git@master
+//  * full ID with steplib, stepid and version:
+//    * https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@2.0.0
+//  * only stepid and version (requires a default steplib source to be provided):
+//    * script@2.0.0
+//  * only stepid, latest version will be used (requires a default steplib source to be provided):
+//    * script
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
+	// first, determine the steplib-source/type
 	stepSrc := ""
 	stepIDAndVersionOrURIStr := ""
 	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
@@ -194,12 +199,29 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
 	}
 
+	if stepSrc == "" {
+		if defaultStepLibSource == "" {
+			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+		}
+		stepSrc = defaultStepLibSource
+	}
+
+	// now determine the ID-or-URI and the version (if provided)
 	stepIDOrURI := ""
 	stepVersion := ""
 	stepidVersionOrURISplits := strings.Split(stepIDAndVersionOrURIStr, "@")
-	if len(stepidVersionOrURISplits) == 2 {
-		stepIDOrURI = stepidVersionOrURISplits[0]
-		stepVersion = stepidVersionOrURISplits[1]
+	if len(stepidVersionOrURISplits) >= 2 {
+		splitsCnt := len(stepidVersionOrURISplits)
+		allButLastSplits := stepidVersionOrURISplits[:splitsCnt-1]
+		// the ID or URI is all components except the last @version component
+		//  which will be the version itself
+		// for example in case it's a git direct URI like:
+		//  git@github.com:bitrise-io/steps-timestamp.git@develop
+		// which contains 2 at (@) signs only the last should be the version,
+		//  the first one is part of the URI
+		stepIDOrURI = strings.Join(allButLastSplits, "@")
+		// version is simply the last component
+		stepVersion = stepidVersionOrURISplits[splitsCnt-1]
 	} else if len(stepidVersionOrURISplits) == 1 {
 		stepIDOrURI = stepidVersionOrURISplits[0]
 	} else {
@@ -210,22 +232,9 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
 	}
 
-	if stepSrc == "" {
-		if defaultStepLibSource == "" {
-			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-		}
-		stepSrc = defaultStepLibSource
-	} else if stepSrc == "path" {
-		uri, err := pathutil.AbsPath(stepIDOrURI)
-		if err != nil {
-			return StepIDData{}, err
-		}
-		stepIDOrURI = uri
-	}
-
 	return StepIDData{
 		SteplibSource: stepSrc,
-		ID:            stepIDOrURI,
+		IDorURI:       stepIDOrURI,
 		Version:       stepVersion,
 	}, nil
 }

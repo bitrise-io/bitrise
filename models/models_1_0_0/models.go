@@ -33,7 +33,10 @@ type StepListItemModel map[string]stepmanModels.StepModel
 // structured representation of a composite-step-id
 //  a composite step id is: step-lib-source::step-id@1.0.0
 type StepIDData struct {
-	ID            string
-	Version       string
+	// IDOrURI : ID if steplib is provided, URI if local step or in case a direct git url provided
+	IDorURI string
+	// Version : version in the steplib, or in case of a direct git step the tag-or-branch to use
+	Version string
+	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
 	SteplibSource string
 }
