@@ -22,14 +22,17 @@ func RunCopyDir(src, dst string) error {
 }
 
 // RunGitClone ...
-func RunGitClone(uri, pth string) error {
+func RunGitClone(uri, pth, tagOrBranch string) error {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
 	if pth == "" {
-		return errors.New("Git Clone 'pth' missing")
+		return errors.New("Git Clone 'path' missing")
 	}
-	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
+	if tagOrBranch == "" {
+		return errors.New("Git Clone 'tag or branch' missing")
+	}
+	return RunCommand("git", []string{"clone", "--recursive", "--branch", tagOrBranch, uri, pth}...)
 }
 
 // ------------------

@@ -93,9 +93,9 @@ workflows:
     steps:
       - script:
           title: "ok"
-      - git::https://github.com/bitrise-io/steps-timestamp.git:
+      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
           title: "remote_git-stamp-test"
-      - git::https://github.com/bitrise-io/steps-timestamp.git:
+      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
           title: "remote_git-stamp-test"
       - script:
           title: "print time"

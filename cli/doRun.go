@@ -209,7 +209,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
-			if err := bitrise.RunGitClone(stepIDData.ID, stepDir); err != nil {
+			if err := bitrise.RunGitClone(stepIDData.ID, stepDir, stepIDData.Version); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
