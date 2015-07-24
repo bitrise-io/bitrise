@@ -1,4 +1,4 @@
-format_version: 0.9.2
+format_version: 0.9.5
 default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
 
 app:
@@ -11,7 +11,7 @@ app:
       is_expand: false
 
 workflows:
-  # ----- Main (real) Workflows -----
+
   test:
     steps:
     - script:
@@ -114,81 +114,3 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - SLACK_ICON_EMOJI: ":rocket:"
-
-  # ----- Other, test workflows -----
-  git:
-    # this workflow is a test for local steps
-    steps:
-      - script:
-          title: "ok"
-      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
-          title: "remote_git-stamp-test"
-      - git::git@github.com:bitrise-io/steps-timestamp.git@master:
-          title: "remote_git-stamp-test"
-      - script:
-          title: "print time"
-          inputs:
-          - content: |
-              #/bin/bash
-              set -e
-              echo "ISO_DATETIME: ${ISO_DATETIME}"
-
-  local:
-    # this workflow is a test for local steps
-    steps:
-      - script:
-          title: "ok"
-      - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp:
-          title: "local_time-stamp-test"
-      - path::$HOME/develop/go/src/github.com/bitrise-io/steps-timestamp:
-          title: "local_time-stamp-test"
-      - script:
-          title: "print time"
-          inputs:
-          - content: |
-              #/bin/bash
-              set -e
-              echo "ISO_DATETIME: ${ISO_DATETIME}"
-
-  fail:
-    # this workflow is a test for failed steps/workflows,
-    #  it'll fail
-    steps:
-      - script:
-          title: "ok"
-      - script:
-          title: "ls"
-          inputs:
-          - content: |
-              #/bin/bash
-              ls -alh
-      - script:
-          title: "fail"
-          is_skippable: true
-          inputs:
-          - content: |
-              #/bin/bash
-              set -v
-              exit 1
-      - script:
-          title: "fail 2"
-          is_skippable: false
-          inputs:
-          - content: |
-              #/bin/bash
-              set -v
-              exit 1
-      - script:
-          title: "ok"
-          inputs:
-          - content: |
-              #/bin/bash
-              echo "-----> This should NOT be printed!!"
-          is_always_run: false
-      - script:
-          title: "ok"
-          inputs:
-          - content: |
-              #/bin/bash
-              echo "-----> This should be printed!!"
-          is_always_run: true

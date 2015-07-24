@@ -1,0 +1,40 @@
+format_version: 1.0.0
+workflows:
+
+  git_clone:
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::git-clone:
+        run_if: "{{ IS_TOOL == true }}"
+
+  build:
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script-runner@1.1.1:
+          inputs:
+            - __INPUT_FILE__: |
+                bundle install
+                middleman build
+
+  stage:
+    envs:
+      - S3_BUCKET: middleman-stage
+    before_run:
+      - build
+    after_run:
+      - notifications
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::amazon-s3-bucket-sync:
+
+  deploy:
+    envs:
+      - S3_BUCKET: middleman-prod
+    before_run:
+      - build
+    after_run:
+      - notifications
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::amazon-s3-bucket-sync:
+
+  notifications:
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::send-hipchat-msg:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::send-slack-msg:

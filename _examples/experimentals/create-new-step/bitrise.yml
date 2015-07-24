@@ -1,0 +1,18 @@
+format_version: 0.9.4
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+app:
+  envs:
+  - STEP_DIR_PATH: ~/develop/
+    opts:
+      is_expand: true
+      is_required: true
+workflows:
+  create:
+    envs: []
+    steps:
+    - script:
+        title: Hello Bitrise!
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Welcome to Bitrise!"

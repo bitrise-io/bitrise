@@ -1,0 +1,43 @@
+format_version: 0.9.5
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: EnvTest $HOME
+    opts:
+      is_expand: no
+  - BITRISE_DEV_BRANCH: develop
+    opts:
+      is_expand: no
+
+workflows:
+  example-envs:
+    # You can run this workflow with:
+    # bitrise-cli run example-envs
+    envs: []
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Hello world!"
+               echo "BITRISE_PROJECT_TITLE (HOME should NOT be expanded): ${BITRISE_PROJECT_TITLE}"
+               export EXP_TEST='Exported value'
+               echo "EXP_TEST: ${EXP_TEST}"
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Second script/step"
+               echo "BITRISE_DEV_BRANCH: ${BITRISE_DEV_BRANCH}"
+               echo "EXP_TEST (should be empty): ${EXP_TEST}"
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Read from .bitrise.secrets.yml: ${BITRISE_SECRET_TEST1}"
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo 'This ENV should NOT be expanded: ${BITRISE_PROJECT_TITLE}'
