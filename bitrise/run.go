@@ -8,6 +8,18 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// RunCopyFile ...
+func RunCopyFile(src, dst string) error {
+	args := []string{src, dst}
+	return RunCommand("cp", args...)
+}
+
+// RunCopyDir ...
+func RunCopyDir(src, dst string) error {
+	args := []string{"-r", src, dst}
+	return RunCommand("cp", args...)
+}
+
 // ------------------
 // --- Stepman
 
