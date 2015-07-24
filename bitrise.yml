@@ -88,10 +88,16 @@ workflows:
         - SLACK_ICON_EMOJI: ":rocket:"
 
   # ----- Other, test workflows -----
+  git:
+    # this workflow is a test for local steps
+    steps:
+      - git::https://github.com/bitrise-io/steps-timestamp.git:
+          title: "local_time-stamp-test"
+
   local:
     # this workflow is a test for local steps
     steps:
-      - path::~/develop/go/src/github.com/gkiki90/steps-timestamp:
+      - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp:
           title: "local_time-stamp-test"
       - script:
           title: "ls"
