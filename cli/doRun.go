@@ -158,7 +158,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			Error:    err,
 		}
 
-		if *step.IsNotImportant {
+		if *step.IsSkippable {
 			stepRunResults.FailedNotImportantSteps = append(stepRunResults.FailedNotImportantSteps, failedStep)
 			log.Errorf("Failed to execute step: (%v) error: (%v), but it's marked as not important", *step.Title, err)
 		} else {

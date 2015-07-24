@@ -5,10 +5,10 @@ app:
   envs:
   - BITRISE_BIN_NAME: bitrise-cli
     opts:
-      is_expand: no
-  - BITRISE_DEV_BRANCH: master
+      is_expand: false
+  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/bitrise-cli/releases
     opts:
-      is_expand: no
+      is_expand: false
 
 workflows:
   # ----- Main (real) Workflows -----
@@ -85,6 +85,19 @@ workflows:
             mv _bin/tmpbin "${finalpth}"
             # register the version for next steps
             envman add --key RELEASE_VERSION --value "${binversion}"
+  announce-release:
+    steps:
+    - script:
+        title: Creating deploy
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            go install
+            # register the version for next steps
+            binversion="$(${BITRISE_BIN_NAME} -version)"
+            envman add --key RELEASE_VERSION --value "${binversion}"
     - slack-message@1.2.0:
         inputs:
         - SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
@@ -93,9 +106,13 @@ workflows:
         - SLACK_CHANNEL: $SLACK_CHANNEL
           opts:
             is_expand: true
-        - SLACK_FROM_NAME: bitrise-cli
+        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
+          opts:
+            is_expand: true
         - SLACK_MESSAGE_TEXT: |
-            Release v${RELEASE_VERSION} is ready. :tada:
+            Release v${RELEASE_VERSION} was just published! :tada:
+
+            You can find it at ${GITHUB_RELEASES_URL}
         - SLACK_ICON_EMOJI: ":rocket:"
 
   # ----- Other, test workflows -----
@@ -147,7 +164,7 @@ workflows:
               ls -alh
       - script:
           title: "fail"
-          is_not_important: true
+          is_skippable: true
           inputs:
           - content: |
               #/bin/bash
@@ -155,7 +172,7 @@ workflows:
               exit 1
       - script:
           title: "fail 2"
-          is_not_important: false
+          is_skippable: false
           inputs:
           - content: |
               #/bin/bash

@@ -96,8 +96,8 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) error {
 	if otherStep.IsAlwaysRun != nil {
 		*step.IsAlwaysRun = *otherStep.IsAlwaysRun
 	}
-	if otherStep.IsNotImportant != nil {
-		*step.IsNotImportant = *otherStep.IsNotImportant
+	if otherStep.IsSkippable != nil {
+		*step.IsSkippable = *otherStep.IsSkippable
 	}
 
 	for _, input := range step.Inputs {
