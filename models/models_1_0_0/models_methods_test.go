@@ -39,8 +39,13 @@ func TestMergeWith(t *testing.T) {
 	}
 
 	diffTitle := "name 2"
+	newSuppURL := "supp"
+	runIfStr := `{{getenv "CI" | eq "true"}}`
 	stepDiffToMerge := stepmanModels.StepModel{
-		Title: &diffTitle,
+		Title:      &diffTitle,
+		HostOsTags: []string{"linux"},
+		SupportURL: &newSuppURL,
+		RunIf:      &runIfStr,
 		Inputs: []stepmanModels.EnvironmentItemModel{
 			stepmanModels.EnvironmentItemModel{
 				"KEY_2": "Value 2 CHANGED",
@@ -51,19 +56,26 @@ func TestMergeWith(t *testing.T) {
 	t.Logf("-> stepData: %#v\n", stepData)
 	t.Logf("-> stepDiffToMerge: %#v\n", stepDiffToMerge)
 
-	if err := MergeStepWith(stepData, stepDiffToMerge); err != nil {
+	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
+	if err != nil {
 		t.Fatal("Failed to convert: ", err)
 	}
 
-	t.Logf("-> MERGED Step Data: %#v\n", stepData)
+	t.Logf("-> MERGED Step Data: %#v\n", mergedStepData)
 
-	if *stepData.Title != "name 2" {
-		t.Fatal("step.Name incorrectly converted")
+	if *mergedStepData.Title != "name 2" {
+		t.Fatal("mergedStepData.Title incorrectly converted:", *mergedStepData.Title)
+	}
+	if mergedStepData.HostOsTags[0] != "linux" {
+		t.Fatal("mergedStepData.HostOsTags incorrectly converted:", mergedStepData.HostOsTags)
+	}
+	if *mergedStepData.RunIf != `{{getenv "CI" | eq "true"}}` {
+		t.Fatal("mergedStepData.RunIf incorrectly converted:", *mergedStepData.RunIf)
 	}
 
 	//
-	t.Logf("-> MERGED Step Inputs: %#v\n", stepData.Inputs)
-	input0 := stepData.Inputs[0]
+	t.Logf("-> MERGED Step Inputs: %#v\n", mergedStepData.Inputs)
+	input0 := mergedStepData.Inputs[0]
 	key0, value0, err := input0.GetKeyValuePair()
 	if err != nil {
 		t.Fatal("Failed to get key-value:", err)
@@ -75,7 +87,7 @@ func TestMergeWith(t *testing.T) {
 		t.Fatal("Inputs[0].Value incorrectly converted")
 	}
 
-	input1 := stepData.Inputs[1]
+	input1 := mergedStepData.Inputs[1]
 	key1, value1, err := input1.GetKeyValuePair()
 	if err != nil {
 		t.Fatal("Failed to get key-value:", err)

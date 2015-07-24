@@ -59,7 +59,11 @@ func MergeEnvironmentWith(env *stepmanModels.EnvironmentItemModel, otherEnv step
 }
 
 // MergeStepWith ...
-func MergeStepWith(step, otherStep stepmanModels.StepModel) error {
+func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepModel, error) {
+	if err := step.FillMissingDeafults(); err != nil {
+		return stepmanModels.StepModel{}, err
+	}
+
 	if otherStep.Title != nil {
 		*step.Title = *otherStep.Title
 	}
@@ -99,17 +103,20 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) error {
 	if otherStep.IsSkippable != nil {
 		*step.IsSkippable = *otherStep.IsSkippable
 	}
+	if otherStep.RunIf != nil {
+		*step.RunIf = *otherStep.RunIf
+	}
 
 	for _, input := range step.Inputs {
 		key, _, err := input.GetKeyValuePair()
 		if err != nil {
-			return err
+			return stepmanModels.StepModel{}, err
 		}
 		otherInput, found := getInputByKey(otherStep, key)
 		if found {
 			err := MergeEnvironmentWith(&input, otherInput)
 			if err != nil {
-				return err
+				return stepmanModels.StepModel{}, err
 			}
 		}
 	}
@@ -117,18 +124,18 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) error {
 	for _, output := range step.Outputs {
 		key, _, err := output.GetKeyValuePair()
 		if err != nil {
-			return err
+			return stepmanModels.StepModel{}, err
 		}
 		otherOutput, found := getOutputByKey(otherStep, key)
 		if found {
 			err := MergeEnvironmentWith(&output, otherOutput)
 			if err != nil {
-				return err
+				return stepmanModels.StepModel{}, err
 			}
 		}
 	}
 
-	return nil
+	return step, nil
 }
 
 func getInputByKey(step stepmanModels.StepModel, key string) (stepmanModels.EnvironmentItemModel, bool) {
@@ -237,4 +244,9 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		IDorURI:       stepIDOrURI,
 		Version:       stepVersion,
 	}, nil
+}
+
+// IsBuildFailed ...
+func (stepRes StepRunResultsModel) IsBuildFailed() bool {
+	return len(stepRes.FailedSteps) > 0
 }

@@ -14,12 +14,12 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
-			"Rev": "28962e1f8282be10be34b01b0f7efe614c8656eb"
+			"Rev": "f4fc4388757b694d3733279ab4dcefcfc875d189"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.4-5-g7fa41b4",
-			"Rev": "7fa41b4c1bbca40d60f3b6a597d403bdb3420601"
+			"Comment": "0.9.4-13-g2abf980",
+			"Rev": "2abf98073308a3dee325993559d71bc5cd398f5e"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
