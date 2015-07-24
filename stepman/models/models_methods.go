@@ -21,8 +21,8 @@ const (
 	DefaultIsAlwaysRun = false
 	// DefaultIsRequiresAdminUser ...
 	DefaultIsRequiresAdminUser = false
-	// DefaultIsNotImportant ...
-	DefaultIsNotImportant = false
+	// DefaultIsSkippable ...
+	DefaultIsSkippable = false
 )
 
 // -------------------
@@ -145,8 +145,8 @@ func (step *StepModel) FillMissingDeafults() error {
 	if step.IsAlwaysRun == nil {
 		step.IsAlwaysRun = &defaultFalse
 	}
-	if step.IsNotImportant == nil {
-		step.IsNotImportant = &defaultFalse
+	if step.IsSkippable == nil {
+		step.IsSkippable = &defaultFalse
 	}
 
 	for _, input := range step.Inputs {
