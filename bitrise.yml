@@ -53,6 +53,17 @@ workflows:
             godep restore
             go install
 
+  godep-update:
+    steps:
+    - script:
+          title: Dependency update
+          inputs:
+          - content: |-
+              #!/bin/bash
+              set -v
+              set -e
+              rm -rf ./Godeps
+              godep save
   create-release:
     steps:
     - script:
