@@ -116,39 +116,7 @@ workflows:
         - SLACK_ICON_EMOJI: ":rocket:"
 
   # ----- Other, test workflows -----
-  git:
-    # this workflow is a test for local steps
-    steps:
-      - script:
-          title: "ok"
-      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
-          title: "remote_git-stamp-test"
-      - git::git@github.com:bitrise-io/steps-timestamp.git@master:
-          title: "remote_git-stamp-test"
-      - script:
-          title: "print time"
-          inputs:
-          - content: |
-              #/bin/bash
-              set -e
-              echo "ISO_DATETIME: ${ISO_DATETIME}"
-
-  local:
-    # this workflow is a test for local steps
-    steps:
-      - script:
-          title: "ok"
-      - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp:
-          title: "local_time-stamp-test"
-      - path::$HOME/develop/go/src/github.com/bitrise-io/steps-timestamp:
-          title: "local_time-stamp-test"
-      - script:
-          title: "print time"
-          inputs:
-          - content: |
-              #/bin/bash
-              set -e
-              echo "ISO_DATETIME: ${ISO_DATETIME}"
+  
 
   fail:
     # this workflow is a test for failed steps/workflows,

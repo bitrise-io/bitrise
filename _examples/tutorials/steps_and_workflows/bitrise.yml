@@ -1,0 +1,139 @@
+format_version: 0.9.5
+default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+
+workflows:
+
+  basics:
+    # You can run this workflow with:
+    # bitrise-cli run basics
+    #
+    # All of the following steps in this workflow will do exactly the
+    #  same thing, it demonstrates how you can define a step's ID
+    #  in different ways.
+    steps:
+      # If you use a step from a step collection / library then
+      #  a step's ID consists of three parts:
+      # 1. The step-lib source
+      # 2. The step's ID in the step-lib
+      # 3. The step's version, registered in the step-lib
+      # A full ID looks like this:
+      # step-lib-source::step-id@version
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+          title: "Full ID"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      # If you define a default_step_lib_source (just like you can see it
+      #  at the top of this bitrise.yml file) then you don't have to
+      #  specify it again for the steps if you want to use
+      #  the default_step_lib_source
+      # You can include the :: separator or if you want to you can remove it
+      #  completely.
+      - ::script@0.9.0:
+          title: "Using default_step_lib_source"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script@0.9.0:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      # If you want to use the latest version of the step
+      #  you can even remove the version from the ID.
+      # Once again you can include the separator (@ for the version)
+      #  but you can remove it completely.
+      # Note that the trailing colon is still required, even
+      #  if you don't specify the version!
+      - script@:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+
+
+  direct-url:
+    # You can run this workflow with:
+    # bitrise-cli run direct-url
+    #
+    # This workflow shows how to use steps with specifying the
+    #  step's git clone URL directly.
+    # This way the step will always be git cloned from the specified
+    #  URL and not used from a step library/collection.
+    # To do this you have to construct the ID in this way:
+    #  git::git-clone-url-of-the-step-repo@branch-or-tag
+    steps:
+      - script:
+          title: "ok"
+      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
+          title: "remote_git-stamp-test"
+      - git::git@github.com:bitrise-io/steps-timestamp.git@master:
+          title: "remote_git-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
+
+  relative:
+    # You can run this workflow with:
+    # bitrise-cli run relative
+    #
+    # You can specify local path for a step as well.
+    # The path can be any kind of path (even absolute path)
+    #  but the best way is to use relative paths
+    #  if you want to run your workflow on a Continuous Integration
+    #  service or want to share with someone else. Absolute paths
+    #  and relative-to-home paths most likely won't work anywhere
+    #  else except on your machine.
+    # To do this you have to construct the ID in this way:
+    #  path::local-path-of-the-step-folder
+    steps:
+      - script:
+          title: "ok"
+      - path::./steps-timestamp:
+          title: "relative_pth-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
+
+  local:
+    # You can run this workflow with:
+    # bitrise-cli run local
+    #
+    # This is the same as the 'relative' workflow example
+    #  just demonstrating that you can use all the common
+    #  patterns to define the path of the step.
+    # You can define even absolute paths but keep in mind
+    #  that if you do it most likely won't work at someone,
+    #  or on your Continuous Integration service (like your favorite Bitrise.io)
+    steps:
+      - script:
+          title: "ok"
+      - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp:
+          title: "local_time-stamp-test"
+      - path::$HOME/develop/go/src/github.com/bitrise-io/steps-timestamp:
+          title: "local_time-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
