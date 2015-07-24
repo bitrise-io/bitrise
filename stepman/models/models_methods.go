@@ -11,6 +11,9 @@ import (
 
 const (
 	optionsKey = "opts"
+)
+
+var (
 	//DefaultIsRequired ...
 	DefaultIsRequired = false
 	// DefaultIsExpand ...
@@ -21,8 +24,8 @@ const (
 	DefaultIsAlwaysRun = false
 	// DefaultIsRequiresAdminUser ...
 	DefaultIsRequiresAdminUser = false
-	// DefaultIsNotImportant ...
-	DefaultIsNotImportant = false
+	// DefaultIsSkippable ...
+	DefaultIsSkippable = false
 )
 
 // -------------------
@@ -102,8 +105,6 @@ func (step StepModel) Validate() error {
 // FillMissingDeafults ...
 func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	defaultString := ""
-	defaultFalse := false
-	defaultTrue := true
 
 	options, err := env.GetOptions()
 	if err != nil {
@@ -114,13 +115,13 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 		options.Description = &defaultString
 	}
 	if options.IsRequired == nil {
-		options.IsRequired = &defaultFalse
+		options.IsRequired = &DefaultIsRequired
 	}
 	if options.IsExpand == nil {
-		options.IsExpand = &defaultTrue
+		options.IsExpand = &DefaultIsExpand
 	}
 	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = &defaultFalse
+		options.IsDontChangeValue = &DefaultIsDontChangeValue
 	}
 	return nil
 }
@@ -128,7 +129,6 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 // FillMissingDeafults ...
 func (step *StepModel) FillMissingDeafults() error {
 	defaultString := ""
-	defaultFalse := false
 
 	if step.Description == nil {
 		step.Description = &defaultString
@@ -140,13 +140,13 @@ func (step *StepModel) FillMissingDeafults() error {
 		step.SupportURL = &defaultString
 	}
 	if step.IsRequiresAdminUser == nil {
-		step.IsRequiresAdminUser = &defaultFalse
+		step.IsRequiresAdminUser = &DefaultIsRequiresAdminUser
 	}
 	if step.IsAlwaysRun == nil {
-		step.IsAlwaysRun = &defaultFalse
+		step.IsAlwaysRun = &DefaultIsAlwaysRun
 	}
-	if step.IsNotImportant == nil {
-		step.IsNotImportant = &defaultFalse
+	if step.IsSkippable == nil {
+		step.IsSkippable = &DefaultIsSkippable
 	}
 
 	for _, input := range step.Inputs {
