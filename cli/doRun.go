@@ -200,8 +200,14 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: %s (%s)", stepIDData.ID, stepIDData.Version)
 
-			bitrise.RunCopyDir(stepIDData.ID, stepDir)
-			bitrise.RunCopyFile(stepIDData.ID+"/step.yml", stepYMLPth)
+			if err := bitrise.RunCopyDir(stepIDData.ID, stepDir); err != nil {
+				registerFailedStepListItem(stepListItm, err)
+				continue
+			}
+			if err := bitrise.RunCopyFile(stepIDData.ID+"/step.yml", stepYMLPth); err != nil {
+				registerFailedStepListItem(stepListItm, err)
+				continue
+			}
 		} else if stepIDData.SteplibSource == "git" {
 
 		} else if stepIDData.SteplibSource != "" {
