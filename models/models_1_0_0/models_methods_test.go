@@ -204,4 +204,94 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	} else {
 		t.Log("Expected error (ok): ", err)
 	}
+
+	//
+	// ----- Local Path
+	stepCompositeIDString = "path::/some/path"
+	t.Log("LOCAL - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "path" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "/some/path" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	stepCompositeIDString = "path::~/some/path/in/home"
+	t.Log("LOCAL - path should be preserved as-it-is, #1 - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "path" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "~/some/path/in/home" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	stepCompositeIDString = "path::$HOME/some/path/in/home"
+	t.Log("LOCAL - path should be preserved as-it-is, #1 - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "path" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "$HOME/some/path/in/home" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	//
+	// ----- Direct git uri
+	stepCompositeIDString = "git::https://github.com/bitrise-io/steps-timestamp.git@develop"
+	t.Log("DIRECT-GIT - http(s) - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "git" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "https://github.com/bitrise-io/steps-timestamp.git" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "develop" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
+	stepCompositeIDString = "git::git@github.com:bitrise-io/steps-timestamp.git@develop"
+	t.Log("DIRECT-GIT - ssh - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "git" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "git@github.com:bitrise-io/steps-timestamp.git" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "develop" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+
 }
