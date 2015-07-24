@@ -72,11 +72,12 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 		return err
 	}
 
-	stepPth, found := GetStepCacheDirPath(collection.SteplibSource, id, version)
+	route, found := ReadRoute(collection.SteplibSource)
 	if !found {
-		return errors.New("Route doesn't exist for lib: " + collection.SteplibSource)
+		return errors.New("No routing found for lib: " + err.Error())
 	}
 
+	stepPth := GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
@@ -112,22 +113,6 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 		return errors.New("Failed to download step")
 	}
 	return nil
-}
-
-// GetStepCacheDirPath ...
-// Step's Cache dir path, where it's code lives.
-func GetStepCacheDirPath(uri string, id, version string) (string, bool) {
-	return GetCacheBaseDir(uri) + "/" + id + "/" + version, true
-}
-
-// GetStepCollectionDirPath ...
-// Step's Collection dir path, where it's spec (step.yml) lives.
-func GetStepCollectionDirPath(uri string, id, version string) (string, bool) {
-	route, found := ReadRoute(uri)
-	if found == false {
-		return "", false
-	}
-	return GetCollectionBaseDirPath(route) + "/steps/" + id + "/" + version, true
 }
 
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {

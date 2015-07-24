@@ -151,7 +151,7 @@ func AddRoute(route SteplibRoute) error {
 }
 
 // GenerateFolderAlias ...
-func GenerateFolderAlias(source string) string {
+func GenerateFolderAlias() string {
 	return fmt.Sprintf("%v", time.Now().Unix())
 }
 
@@ -166,6 +166,11 @@ func readRouteMap() (SteplibRoutes, error) {
 	if e != nil {
 		return SteplibRoutes{}, e
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error("[STEPMAN] - Failed to close file:", err)
+		}
+	}()
 
 	var routeMap map[string]string
 	parser := json.NewDecoder(file)
@@ -202,13 +207,8 @@ func GetStepSpecPath(route SteplibRoute) string {
 }
 
 // GetCacheBaseDir ...
-func GetCacheBaseDir(collectionURI string) string {
-	alias, err := getAlias(collectionURI)
-	if err != nil {
-		log.Error("[STEPMAN] - Failed to generate current step spec path:", err)
-		return ""
-	}
-	return CollectionsDirPath + "/" + alias + "/cache"
+func GetCacheBaseDir(route SteplibRoute) string {
+	return CollectionsDirPath + "/" + route.FolderAlias + "/cache"
 }
 
 // GetCollectionBaseDirPath ...
@@ -230,6 +230,18 @@ func GetAllStepCollectionPath() []string {
 	}
 
 	return sources
+}
+
+// GetStepCacheDirPath ...
+// Step's Cache dir path, where it's code lives.
+func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
+	return GetCacheBaseDir(route) + "/" + id + "/" + version
+}
+
+// GetStepCollectionDirPath ...
+// Step's Collection dir path, where it's spec (step.yml) lives.
+func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
+	return GetCollectionBaseDirPath(route) + "/steps/" + id + "/" + version
 }
 
 // Life cycle

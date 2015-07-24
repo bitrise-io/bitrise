@@ -27,7 +27,7 @@ func setup(c *cli.Context) {
 		return
 	}
 
-	alias := stepman.GenerateFolderAlias(collectionURI)
+	alias := stepman.GenerateFolderAlias()
 	route := stepman.SteplibRoute{
 		SteplibURI:  collectionURI,
 		FolderAlias: alias,
