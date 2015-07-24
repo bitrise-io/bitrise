@@ -249,24 +249,25 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			continue
 		}
 
-		if err := models.MergeStepWith(specStep, workflowStep); err != nil {
+		mergedStep, err := models.MergeStepWith(specStep, workflowStep)
+		if err != nil {
 			registerFailedStepListItem(stepListItm, err)
 			continue
 		}
 
 		fmt.Println()
-		log.Infof("========== (%d) %s ==========", idx, *specStep.Title)
+		log.Infof("========== (%d) %s ==========", idx, *mergedStep.Title)
 		fmt.Println()
 
-		if isBuildFailed() && !*specStep.IsAlwaysRun {
+		if isBuildFailed() && !*mergedStep.IsAlwaysRun {
 			log.Infof("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			skippedStep := FailedStepModel{
-				StepName: *specStep.Title,
+				StepName: *mergedStep.Title,
 			}
 			stepRunResults.SkippedSteps = append(stepRunResults.SkippedSteps, skippedStep)
 		} else {
-			if err := runStep(specStep, stepIDData, stepDir); err != nil {
-				registerFailedStep(specStep, err)
+			if err := runStep(mergedStep, stepIDData, stepDir); err != nil {
+				registerFailedStep(mergedStep, err)
 				continue
 			}
 		}
