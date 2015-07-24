@@ -1,0 +1,16 @@
+format_version: 1.0.0
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: MyTit1
+    is_expand: no
+  - BITRISE_DEV_BRANCH: develop
+    is_expand: no
+workflows:
+  _:
+    envs: []
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
+    #   - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::bash-script-runner@1.1.1:
+    #       source:
+    #         git: https://github.com/bitrise-io/steps-bash-script.git
+    #       is_always_run: false
