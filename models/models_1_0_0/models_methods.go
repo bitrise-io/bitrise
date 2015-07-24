@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -170,49 +171,61 @@ func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
 }
 
+// path::~/develop/steps-xcode-builder
+// https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@2.0.0
+// script@2.0.0
+// script
+
+// CreateStepIDDataFromString ...
 // CreateStepIDDataFromString ...
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	steplibSrc := ""
-	stepIDAndVersionStr := ""
+	stepSrc := ""
+	stepIDAndVersionOrURIStr := ""
 	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
 	if len(libsourceStepSplits) == 2 {
 		// long/verbose ID mode, ex: step-lib-src::step-id@1.0.0
-		steplibSrc = libsourceStepSplits[0]
-		stepIDAndVersionStr = libsourceStepSplits[1]
+		stepSrc = libsourceStepSplits[0]
+		stepIDAndVersionOrURIStr = libsourceStepSplits[1]
 	} else if len(libsourceStepSplits) == 1 {
 		// missing steplib-src mode, ex: step-id@1.0.0
 		//  in this case if we have a default StepLibSource we'll use that
-		stepIDAndVersionStr = libsourceStepSplits[0]
+		stepIDAndVersionOrURIStr = libsourceStepSplits[0]
 	} else {
 		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
 	}
 
-	if steplibSrc == "" {
-		if defaultStepLibSource == "" {
-			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-		}
-		steplibSrc = defaultStepLibSource
-	}
-
-	stepID := ""
+	stepIDOrURI := ""
 	stepVersion := ""
-	stepidVersionSplits := strings.Split(stepIDAndVersionStr, "@")
-	if len(stepidVersionSplits) == 2 {
-		stepID = stepidVersionSplits[0]
-		stepVersion = stepidVersionSplits[1]
-	} else if len(stepidVersionSplits) == 1 {
-		stepID = stepidVersionSplits[0]
+	stepidVersionOrURISplits := strings.Split(stepIDAndVersionOrURIStr, "@")
+	if len(stepidVersionOrURISplits) == 2 {
+		stepIDOrURI = stepidVersionOrURISplits[0]
+		stepVersion = stepidVersionOrURISplits[1]
+	} else if len(stepidVersionOrURISplits) == 1 {
+		stepIDOrURI = stepidVersionOrURISplits[0]
 	} else {
-		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionStr + ")")
+		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionOrURIStr + ")")
 	}
 
-	if stepID == "" {
+	if stepIDOrURI == "" {
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
 	}
 
+	if stepSrc == "" {
+		if defaultStepLibSource == "" {
+			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+		}
+		stepSrc = defaultStepLibSource
+	} else if stepSrc == "path" {
+		uri, err := pathutil.AbsPath(stepIDOrURI)
+		if err != nil {
+			return StepIDData{}, err
+		}
+		stepIDOrURI = uri
+	}
+
 	return StepIDData{
-		SteplibSource: steplibSrc,
-		ID:            stepID,
+		SteplibSource: stepSrc,
+		ID:            stepIDOrURI,
 		Version:       stepVersion,
 	}, nil
 }

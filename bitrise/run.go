@@ -1,12 +1,36 @@
 package bitrise
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
+
+// RunCopyFile ...
+func RunCopyFile(src, dst string) error {
+	args := []string{src, dst}
+	return RunCommand("cp", args...)
+}
+
+// RunCopyDir ...
+func RunCopyDir(src, dst string) error {
+	args := []string{"-r", src, dst}
+	return RunCommand("cp", args...)
+}
+
+// RunGitClone ...
+func RunGitClone(uri, pth string) error {
+	if uri == "" {
+		return errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return errors.New("Git Clone 'pth' missing")
+	}
+	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
+}
 
 // ------------------
 // --- Stepman
