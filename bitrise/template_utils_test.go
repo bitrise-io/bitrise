@@ -118,9 +118,23 @@ func TestRegisteredFlags(t *testing.T) {
 		t.Fatal("Invalid result")
 	}
 
+	propTempCont = `$.IsCI`
+	isCI = true
+	t.Log("IsCI=true; short with $; propTempCont: ", propTempCont)
+	if err := os.Setenv("CI", "true"); err != nil {
+		t.Fatal("Failed to set test env!")
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes, isCI)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isYes {
+		t.Fatal("Invalid result")
+	}
+
 	propTempCont = `.IsCI`
 	isCI = true
-	t.Log("IsCI=true; short; propTempCont: ", propTempCont)
+	t.Log("IsCI=true; short, no $; propTempCont: ", propTempCont)
 	if err := os.Setenv("CI", "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}

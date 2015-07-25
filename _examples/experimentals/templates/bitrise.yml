@@ -2,19 +2,75 @@ format_version: 0.9.5
 default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
 workflows:
   primary:
-    envs: []
     steps:
+    #
+    # Get and compare envs
     - script:
         title: Run-If expression
         run_if: |
-          {{getenv "CI" | eq "true"}}
+          {{getenv "TEST_KEY" | eq "test value"}}
         inputs:
         - content: |-
             #!/bin/bash
             echo "RunIf expression was true"
+    #
+    # Or if that's all you want to do just use the enveq function
+    - script:
+        title: Run-If expression
+        run_if: '{{enveq "TEST_KEY" "test value"}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Use the available expression data properties
+    #  like IsCI or IsBuildFailed directly
+    - script:
+        title: Run-If expression
+        run_if: "{{.IsCI}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # You don't have to wrap the expression in {{...}} if it's a simple
+    #  oneliner
+    - script:
+        title: Run-If expression
+        run_if: $.IsCI
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # You can even remove the $ sign, it's optional in a simple
+    #  expression like this
     - script:
         title: Run-If expression
         run_if: .IsCI
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # If-Else condition
+    - script:
+        title: Run-If expression
+        run_if: |
+          {{if .IsCI}}
+          true
+          {{else}}
+          false
+          {{end}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Multi condition
+    - script:
+        title: Run-If expression
+        run_if: "{{.IsCI | and (not .IsBuildFailed)}}"
         inputs:
         - content: |-
             #!/bin/bash
