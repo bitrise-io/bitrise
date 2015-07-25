@@ -16,6 +16,9 @@ var (
 		"getenv": func(key string) string {
 			return os.Getenv(key)
 		},
+		"enveq": func(key, expectedValue string) bool {
+			return (os.Getenv(key) == expectedValue)
+		},
 	}
 )
 

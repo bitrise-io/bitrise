@@ -34,9 +34,9 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 func TestRegisteredFunctions(t *testing.T) {
 	buildRes := models.StepRunResultsModel{}
 
-	propTempCont := `{{getenv "CI" | eq "true"}}`
-	t.Log("propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "true"); err != nil {
+	propTempCont := `{{getenv "TEST_KEY" | eq "Test value"}}`
+	t.Log("getenv - YES - propTempCont: ", propTempCont)
+	if err := os.Setenv("TEST_KEY", "Test value"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err := EvaluateStepTemplateToBool(propTempCont, buildRes, false)
@@ -47,13 +47,56 @@ func TestRegisteredFunctions(t *testing.T) {
 		t.Fatal("Invalid result")
 	}
 
-	propTempCont = `{{.IsCI}}`
+	propTempCont = `{{getenv "TEST_KEY" | eq "A different value"}}`
+	t.Log("getenv - NO - propTempCont: ", propTempCont)
+	if err := os.Setenv("TEST_KEY", "Test value"); err != nil {
+		t.Fatal("Failed to set test env!")
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes, false)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `{{enveq "TEST_KEY" "enveq value"}}`
+	t.Log("enveq - YES - propTempCont: ", propTempCont)
+	if err := os.Setenv("TEST_KEY", "enveq value"); err != nil {
+		t.Fatal("Failed to set test env!")
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes, false)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `{{enveq "TEST_KEY" "different enveq value"}}`
+	t.Log("enveq - NO - propTempCont: ", propTempCont)
+	if err := os.Setenv("TEST_KEY", "enveq value"); err != nil {
+		t.Fatal("Failed to set test env!")
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes, false)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isYes {
+		t.Fatal("Invalid result")
+	}
+}
+
+func TestRegisteredFlags(t *testing.T) {
+	buildRes := models.StepRunResultsModel{}
+
+	propTempCont := `{{.IsCI}}`
 	isCI := true
 	t.Log("IsCI=true; propTempCont: ", propTempCont)
 	if err := os.Setenv("CI", "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes, isCI)
+	isYes, err := EvaluateStepTemplateToBool(propTempCont, buildRes, isCI)
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
