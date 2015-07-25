@@ -5,10 +5,17 @@ workflows:
     envs: []
     steps:
     - script:
-        title: Hello Bitrise!
+        title: Run-If expression
         run_if: |
           {{getenv "CI" | eq "true"}}
         inputs:
         - content: |-
             #!/bin/bash
-            echo "Welcome to Bitrise!"
+            echo "RunIf expression was true"
+    - script:
+        title: Run-If expression
+        run_if: .IsCI
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
