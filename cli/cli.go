@@ -9,6 +9,11 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+var (
+	// IsCIMode ...
+	IsCIMode = false
+)
+
 func before(c *cli.Context) error {
 	// Log level
 	level, err := log.ParseLevel(c.String(LogLevelKey))
@@ -20,6 +25,16 @@ func before(c *cli.Context) error {
 		log.Fatal("Failed to set log level env:", err)
 	}
 	log.SetLevel(level)
+
+	// CI
+	//  if CI mode indicated make sure we set the related env
+	//  so all other tools we use will also get it
+	if c.IsSet(CIKey) {
+		if err := os.Setenv("CI", "true"); err != nil {
+			return err
+		}
+		IsCIMode = true
+	}
 
 	return nil
 }
