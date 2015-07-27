@@ -327,14 +327,14 @@ func doRun(c *cli.Context) {
 	bitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
+		bitriseConfigPath = bitrise.CurrentDir + "/" + DefaultBitriseConfigFileName
 
-		if exist, err := pathutil.IsPathExists("./" + DefaultBitriseConfigFileName); err != nil {
+		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to check path:" + err.Error()))
 		} else if !exist {
 			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
 			buildFailedFatal(errors.New("[BITRISE_CLI] - No workflow yml found"))
 		}
-		bitriseConfigPath = "./" + DefaultBitriseConfigFileName
 	}
 
 	inventoryPath = c.String(InventoryKey)

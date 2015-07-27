@@ -19,7 +19,7 @@ var (
 		{
 			Name:      "run",
 			ShortName: "r",
-			Usage:     "Runs a specified Workflow",
+			Usage:     "Runs a specified Workflow.",
 			Action:    doRun,
 			Flags: []cli.Flag{
 				flPath,
