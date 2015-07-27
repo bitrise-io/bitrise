@@ -3,10 +3,10 @@ app:
   envs:
   - BITRISE_PROJECT_TITLE: MyTit1
     opts:
-        is_expand: no
+      is_expand: no
   - BITRISE_DEV_BRANCH: develop
     opts:
-        is_expand: no
+      is_expand: no
 workflows:
   _:
     envs: []
