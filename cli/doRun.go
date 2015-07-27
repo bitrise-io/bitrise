@@ -312,6 +312,21 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	return nil
 }
 
+func activateAndRunWorkflow(workflowToRun models.WorkflowModel, bitriseConfig models.BitriseDataModel) models.StepRunResultsModel {
+	// App level environment
+	if err := exportEnvironmentsList(bitriseConfig.App.Environments); err != nil {
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export App environments: " + err.Error()))
+	}
+
+	// Workflow level environments
+	if err := exportEnvironmentsList(workflowToRun.Environments); err != nil {
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
+	}
+
+	// Run the Workflow
+	return activateAndRunSteps(workflowToRun, bitriseConfig.DefaultStepLibSource)
+}
+
 func doRun(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt()
 	log.Debugln("[BITRISE_CLI] - Run")
@@ -412,20 +427,60 @@ func doRun(c *cli.Context) {
 	if !exist {
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!"))
 	}
+
+	// Run beforeWorkflow
+	if workflowToRun.BeforeWorkflow != "" {
+		log.Info("[BITRISE_CLI] - Before workflow defined: ", workflowToRun.BeforeWorkflow)
+		beforeWorkflowToRun, exist := bitriseConfig.Workflows[workflowToRun.BeforeWorkflow]
+		if !exist {
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRun.BeforeWorkflow + ") does not exist!"))
+		}
+		log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRun.BeforeWorkflow)
+		log.Infof("++++++++++++++ Running before workflow: %s ++++++++++++++++", workflowToRun.BeforeWorkflow)
+		fmt.Println()
+		stepRunResults := activateAndRunWorkflow(beforeWorkflowToRun, bitriseConfig)
+		fmt.Println()
+		log.Infof("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+		printStepStatus(stepRunResults)
+		if len(stepRunResults.FailedSteps) > 0 {
+			log.Fatal("[BITRISE_CLI] - Before workflow FINISHED but a couple of steps failed - Ouch")
+		} else {
+			if len(stepRunResults.FailedNotImportantSteps) > 0 {
+				log.Warn("[BITRISE_CLI] - Before workflow FINISHED but a couple of non imporatant steps failed")
+			}
+		}
+	}
+
 	log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRunName)
+	log.Infof("+++++++++++++++++ Running workflow: %s +++++++++++++++++++", workflowToRunName)
+	fmt.Println()
+	stepRunResults := activateAndRunWorkflow(workflowToRun, bitriseConfig)
+	fmt.Println()
+	log.Info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-	// App level environment
-	if err := exportEnvironmentsList(bitriseConfig.App.Environments); err != nil {
-		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export App environments: " + err.Error()))
+	if workflowToRun.AfterWorkflow != "" {
+		log.Info("[BITRISE_CLI] - After workflow defined: ", workflowToRun.AfterWorkflow)
+		afterWorkflowToRun, exist := bitriseConfig.Workflows[workflowToRun.AfterWorkflow]
+		if !exist {
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRun.AfterWorkflow + ") does not exist!"))
+		}
+		log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRun.AfterWorkflow)
+		log.Infof("+++++++++++++ Running after workflow: %s +++++++++++++++", workflowToRun.AfterWorkflow)
+		fmt.Println()
+		stepRunResults := activateAndRunWorkflow(afterWorkflowToRun, bitriseConfig)
+		fmt.Println()
+		log.Info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+		printStepStatus(stepRunResults)
+		if len(stepRunResults.FailedSteps) > 0 {
+			log.Fatal("[BITRISE_CLI] - After workflow FINISHED but a couple of steps failed - Ouch")
+		} else {
+			if len(stepRunResults.FailedNotImportantSteps) > 0 {
+				log.Warn("[BITRISE_CLI] - After workflow FINISHED but a couple of non imporatant steps failed")
+			}
+		}
 	}
-
-	// Workflow level environments
-	if err := exportEnvironmentsList(workflowToRun.Environments); err != nil {
-		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
-	}
-
-	// Run the Workflow
-	stepRunResults := activateAndRunSteps(workflowToRun, bitriseConfig.DefaultStepLibSource)
 
 	// Build finished
 	fmt.Println()
