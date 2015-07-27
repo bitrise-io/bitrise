@@ -15,10 +15,6 @@ const (
 	LogLevelKey      string = "loglevel"
 	logLevelKeyShort string = "l"
 
-	// IDKey ...
-	IDKey      string = "id"
-	idKeyShort string = "i"
-
 	// VersionKey ...
 	VersionKey      string = "version"
 	versionKeyShort string = "v"
@@ -54,25 +50,15 @@ var (
 		flTool,
 	}
 	// Command flags
-	flID = cli.StringFlag{
-		Name:  IDKey + ", " + idKeyShort,
-		Value: "",
-		Usage: "Step id.",
-	}
-	flVersion = cli.StringFlag{
-		Name:  VersionKey + ", " + versionKeyShort,
-		Value: "",
-		Usage: "Step version.",
-	}
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
 		Value: "",
-		Usage: "Path where the step will copied.",
+		Usage: "Path where the workflow config file is located.",
 	}
 	flInventory = cli.StringFlag{
 		Name:  InventoryKey + ", " + inventoryShortKey,
 		Value: "",
-		Usage: "",
+		Usage: "Path of the inventory file.",
 	}
 )
 

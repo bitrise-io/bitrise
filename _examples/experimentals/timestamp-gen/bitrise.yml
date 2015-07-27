@@ -2,9 +2,11 @@ format_version: 1.0.0
 app:
   envs:
   - BITRISE_PROJECT_TITLE: MyTit1
-    is_expand: no
+    opts:
+      is_expand: no
   - BITRISE_DEV_BRANCH: develop
-    is_expand: no
+    opts:
+      is_expand: no
 workflows:
   _:
     envs: []
