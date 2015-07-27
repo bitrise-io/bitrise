@@ -332,6 +332,7 @@ func doRun(c *cli.Context) {
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	startTime = time.Now()
+	workflowMap := map[string]bool{}
 
 	// Cleanup
 	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
@@ -427,9 +428,14 @@ func doRun(c *cli.Context) {
 	if !exist {
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + workflowToRunName + ") does not exist!"))
 	}
+	workflowMap[workflowToRunName] = true
 
 	// Run beforeWorkflow
 	if workflowToRun.BeforeWorkflow != "" {
+		if workflowMap[workflowToRun.BeforeWorkflow] {
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow refer cycle found: (" + workflowToRunName + ") - before: ( " + workflowToRun.BeforeWorkflow + ")"))
+		}
+
 		log.Info("[BITRISE_CLI] - Before workflow defined: ", workflowToRun.BeforeWorkflow)
 		beforeWorkflowToRun, exist := bitriseConfig.Workflows[workflowToRun.BeforeWorkflow]
 		if !exist {
@@ -450,6 +456,8 @@ func doRun(c *cli.Context) {
 				log.Warn("[BITRISE_CLI] - Before workflow FINISHED but a couple of non imporatant steps failed")
 			}
 		}
+
+		workflowMap[workflowToRun.BeforeWorkflow] = true
 	}
 
 	log.Infoln("[BITRISE_CLI] - Running Workflow:", workflowToRunName)
@@ -460,6 +468,10 @@ func doRun(c *cli.Context) {
 	log.Info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 	if workflowToRun.AfterWorkflow != "" {
+		if workflowMap[workflowToRun.AfterWorkflow] {
+			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow refer cycle found: (" + workflowToRunName + ") - after: ( " + workflowToRun.AfterWorkflow + ")"))
+		}
+
 		log.Info("[BITRISE_CLI] - After workflow defined: ", workflowToRun.AfterWorkflow)
 		afterWorkflowToRun, exist := bitriseConfig.Workflows[workflowToRun.AfterWorkflow]
 		if !exist {
