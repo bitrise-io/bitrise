@@ -240,7 +240,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		fmt.Println()
-		log.Infof("========== (%d) %s ==========", idx, *mergedStep.Title)
+		log.Infof(bitrise.Greenf("========== (%d) %s ==========", idx, *mergedStep.Title))
 		fmt.Println()
 
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
