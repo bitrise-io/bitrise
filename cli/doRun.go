@@ -180,9 +180,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepDir := bitrise.BitriseWorkStepsDirPath
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 
-		log.Debugf("StepIdData: %v", stepIDData)
 		if stepIDData.SteplibSource == "path" {
-			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
+			log.Infof("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 			stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 			if err != nil {
 				registerFailedStepListItem(stepListItm, err)
@@ -198,7 +197,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
-			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
+			log.Infof("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
@@ -208,7 +207,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		} else if stepIDData.SteplibSource != "" {
-			log.Debug("[BITRISE_CLI] - Activating step")
+			log.Infof("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
