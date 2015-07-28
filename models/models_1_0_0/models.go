@@ -45,21 +45,8 @@ type StepIDData struct {
 	SteplibSource string
 }
 
-// WorkflowRunResultsModel ..
-type WorkflowRunResultsModel struct {
-	BeforWorkflowsResults []WorkflowItemRunResultsModel
-	AfterRunResults       []WorkflowItemRunResultsModel
-	Results               WorkflowItemRunResultsModel
-}
-
-// WorkflowItemRunResultsModel ...
-type WorkflowItemRunResultsModel struct {
-	Title       string
-	StepResults StepRunResultsModel
-}
-
-// StepRunResultsModel ...
-type StepRunResultsModel struct {
+// BuildRunResultsModel ...
+type BuildRunResultsModel struct {
 	TotalStepCount          int
 	FailedSteps             []FailedStepModel
 	FailedNotImportantSteps []FailedStepModel
