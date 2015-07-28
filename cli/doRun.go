@@ -188,7 +188,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := bitrise.RunCopyDir(stepAbsLocalPth, stepDir); err != nil {
+			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
+			if err := bitrise.RunCopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			}
@@ -217,7 +218,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerFailedStepListItem(stepListItm, err)
 				continue
 			} else {
-				log.Debugf("[BITRISE_CLI] - Step activated: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
+				log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			}
 		} else {
 			registerFailedStepListItem(stepListItm, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))

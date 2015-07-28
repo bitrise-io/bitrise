@@ -12,13 +12,16 @@ import (
 // RunCopyFile ...
 func RunCopyFile(src, dst string) error {
 	args := []string{src, dst}
-	return RunCommand("cp", args...)
+	return RunCommand("rsync", args...)
 }
 
 // RunCopyDir ...
-func RunCopyDir(src, dst string) error {
+func RunCopyDir(src, dst string, isOnlyContent bool) error {
+	if isOnlyContent && !strings.HasSuffix(src, "/") {
+		src = src + "/"
+	}
 	args := []string{"-r", src, dst}
-	return RunCommand("cp", args...)
+	return RunCommand("rsync", args...)
 }
 
 // RunGitClone ...
@@ -132,7 +135,7 @@ func RunBashCommandLines(cmdLines []string) error {
 // RunCopy ...
 func RunCopy(src, dst string) error {
 	args := []string{src, dst}
-	return RunCommand("cp", args...)
+	return RunCommand("rsync", args...)
 }
 
 // RunCommand ...
