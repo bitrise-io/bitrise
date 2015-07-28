@@ -1,0 +1,59 @@
+format_version: 1.0.0
+default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
+
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: MyTit1
+    opts:
+      is_expand: no
+  - BITRISE_DEV_BRANCH: develop
+    opts:
+      is_expand: no
+
+workflows:
+  after-before-test:
+    title: "test title"
+    summary: |
+        This is a workflow summary.
+        Check this out!
+    envs: []
+    before_run:
+      - before
+      - before2
+    after_run:
+      - after
+    steps:
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
+
+  before:
+    envs: []
+    steps:
+      - script:
+          title: Running the Before script
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is a before workflow'
+
+  before2:
+    envs: []
+    steps:
+      - script:
+          title: Running the Before2 script
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is a before2 workflow'
+
+  after:
+    envs: []
+    steps:
+      - script:
+          title: Running the After script
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is an after workflow'

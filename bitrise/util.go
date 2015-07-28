@@ -10,9 +10,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-
 	"github.com/bitrise-io/go-pathutil/pathutil"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 // ReadBitriseConfig ...
@@ -30,6 +29,18 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	}
 	var bitriseData models.BitriseDataModel
 	if err := yaml.Unmarshal(bytes, &bitriseData); err != nil {
+		return models.BitriseDataModel{}, err
+	}
+
+	if err := bitriseData.Normalize(); err != nil {
+		return models.BitriseDataModel{}, err
+	}
+
+	if err := bitriseData.Validate(); err != nil {
+		return models.BitriseDataModel{}, err
+	}
+
+	if err := bitriseData.FillMissingDeafults(); err != nil {
 		return models.BitriseDataModel{}, err
 	}
 
