@@ -33,24 +33,26 @@ func buildFailedFatal(err error) {
 }
 
 func printRunningStep(title string, idx int) {
-	log.Info("###  =====================================================")
-	log.Infof("###  || (%d) %s", idx, title)
+	log.Info("||  =====================================================")
+	log.Infof("|| --- Running step (%d) %s", idx, title)
 }
 
 func printFinishedStep() {
 	log.Info("###  =====================================================")
 }
 
-func printRunningWorkflow(title string) {
+func printRunningWorkflow(title string, isMain bool) {
 	fmt.Println()
-	log.Info("##########################################################")
-	log.Info("###")
-	log.Infof("### Running workflow (%s)", title)
-	log.Info("###")
+	if isMain {
+		log.Info("##########################################################")
+	}
+	log.Info("||")
+	log.Infof("|| - Running workflow (%s)", title)
+	log.Info("||")
 }
 
 func printFinishedWorkflow() {
-	log.Info("###")
+	log.Info("||")
 	log.Info("##########################################################")
 	fmt.Println()
 }
@@ -398,7 +400,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		if beforeWorkflow.Title == "" {
 			beforeWorkflow.Title = beforeWorkflowName
 		}
-		printRunningWorkflow(beforeWorkflowName)
+		printRunningWorkflow(beforeWorkflowName, false)
 		beforStepRunResults := activateAndRunWorkflow(beforeWorkflow, bitriseConfig)
 		printFinishedWorkflow()
 		beforWorkflowItemResults := models.WorkflowItemRunResultsModel{
@@ -431,7 +433,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		if afterWorkflow.Title == "" {
 			afterWorkflow.Title = afterWorkflowName
 		}
-		printRunningWorkflow(afterWorkflowName)
+		printRunningWorkflow(afterWorkflowName, false)
 		afterStepRunResults := activateAndRunWorkflow(afterWorkflow, bitriseConfig)
 		printFinishedWorkflow()
 		afterWorkflowItemResults := models.WorkflowItemRunResultsModel{
@@ -554,7 +556,7 @@ func doRun(c *cli.Context) {
 		workflowToRun.Title = workflowToRunName
 	}
 
-	printRunningWorkflow(workflowToRunName)
+	printRunningWorkflow(workflowToRunName, true)
 	stepRunResults := activateAndRunWorkflow(workflowToRun, bitriseConfig)
 	workflowRunResults.Results = models.WorkflowItemRunResultsModel{
 		Title:       workflowToRunName,
