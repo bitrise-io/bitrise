@@ -32,21 +32,12 @@ var (
 // --- Struct methods
 
 // Normalize ...
-func (step StepModel) Normalize() error {
-	for _, input := range step.Inputs {
-		opts, err := input.GetOptions()
-		if err != nil {
-			return err
-		}
-		input[optionsKey] = opts
+func (env *EnvironmentItemModel) Normalize() error {
+	opts, err := env.GetOptions()
+	if err != nil {
+		return err
 	}
-	for _, output := range step.Outputs {
-		opts, err := output.GetOptions()
-		if err != nil {
-			return err
-		}
-		output[optionsKey] = opts
-	}
+	(*env)[optionsKey] = opts
 	return nil
 }
 
@@ -73,35 +64,6 @@ func (env EnvironmentItemModel) Validate() error {
 	return nil
 }
 
-// Validate ...
-func (step StepModel) Validate() error {
-	if step.Title == nil || *step.Title == "" {
-		return errors.New("Invalid step: missing or empty title")
-	}
-	if step.Summary == nil || *step.Summary == "" {
-		return errors.New("Invalid step: missing or empty summary")
-	}
-	if step.Website == nil || *step.Website == "" {
-		return errors.New("Invalid step: missing or empty website")
-	}
-	if step.Source.Git == nil || *step.Source.Git == "" {
-		return errors.New("Invalid step: missing or empty source")
-	}
-	for _, input := range step.Inputs {
-		err := input.Validate()
-		if err != nil {
-			return err
-		}
-	}
-	for _, output := range step.Outputs {
-		err := output.Validate()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // FillMissingDeafults ...
 func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	defaultString := ""
@@ -122,6 +84,50 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	}
 	if options.IsDontChangeValue == nil {
 		options.IsDontChangeValue = &DefaultIsDontChangeValue
+	}
+	return nil
+}
+
+// Normalize ...
+func (step StepModel) Normalize() error {
+	for _, input := range step.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		if err := output.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Validate ...
+func (step StepModel) Validate() error {
+	if step.Title == nil || *step.Title == "" {
+		return errors.New("Invalid step: missing or empty required 'title' property")
+	}
+	if step.Summary == nil || *step.Summary == "" {
+		return errors.New("Invalid step: missing or empty required 'summary' property")
+	}
+	if step.Website == nil || *step.Website == "" {
+		return errors.New("Invalid step: missing or empty required 'website' property")
+	}
+	if step.Source.Git == nil || *step.Source.Git == "" {
+		return errors.New("Invalid step: missing or empty required 'source' property")
+	}
+	for _, input := range step.Inputs {
+		err := input.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		err := output.Validate()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
