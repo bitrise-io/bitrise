@@ -8,7 +8,7 @@ import (
 )
 
 func TestEvaluateStepTemplateToBool(t *testing.T) {
-	buildRes := models.StepRunResultsModel{}
+	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{eq 1 1}}`
 	t.Log("Simple true")
@@ -32,7 +32,7 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 }
 
 func TestRegisteredFunctions(t *testing.T) {
-	buildRes := models.StepRunResultsModel{}
+	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{getenv "TEST_KEY" | eq "Test value"}}`
 	t.Log("getenv - YES - propTempCont: ", propTempCont)
@@ -88,7 +88,7 @@ func TestRegisteredFunctions(t *testing.T) {
 }
 
 func TestRegisteredFlags(t *testing.T) {
-	buildRes := models.StepRunResultsModel{}
+	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{.IsCI}}`
 	isCI := true

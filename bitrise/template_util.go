@@ -24,12 +24,12 @@ var (
 
 // TemplateDataModel ...
 type TemplateDataModel struct {
-	BuildResults  models.StepRunResultsModel
+	BuildResults  models.BuildRunResultsModel
 	IsBuildFailed bool
 	IsCI          bool
 }
 
-func createTemplateDataModel(buildResults models.StepRunResultsModel, isCI bool) TemplateDataModel {
+func createTemplateDataModel(buildResults models.BuildRunResultsModel, isCI bool) TemplateDataModel {
 	return TemplateDataModel{
 		BuildResults:  buildResults,
 		IsBuildFailed: buildResults.IsBuildFailed(),
@@ -38,7 +38,7 @@ func createTemplateDataModel(buildResults models.StepRunResultsModel, isCI bool)
 }
 
 // EvaluateStepTemplateToBool ...
-func EvaluateStepTemplateToBool(expStr string, buildResults models.StepRunResultsModel, isCI bool) (bool, error) {
+func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResultsModel, isCI bool) (bool, error) {
 	if expStr == "" {
 		return false, errors.New("EvaluateStepTemplateToBool: Invalid, empty input: expStr")
 	}

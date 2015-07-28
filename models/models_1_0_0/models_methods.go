@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -61,16 +60,9 @@ func (workflow *WorkflowModel) Normalize() error {
 // FillMissingDeafults ...
 func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
 	for _, env := range workflow.Environments {
-		opts, err := env.GetOptions()
-		if err != nil {
-			return err
-		}
-
-		log.Warn("env opts:", opts)
 		if err := env.FillMissingDeafults(); err != nil {
 			return err
 		}
-		log.Warn("filled env opts:", opts)
 	}
 	if workflow.Title == "" {
 		workflow.Title = title
@@ -338,6 +330,20 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 }
 
 // IsBuildFailed ...
-func (stepRes StepRunResultsModel) IsBuildFailed() bool {
-	return len(stepRes.FailedSteps) > 0
+func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
+	return len(buildRes.FailedSteps) > 0
+}
+
+// Append ...
+func (buildRes *BuildRunResultsModel) Append(res BuildRunResultsModel) {
+	buildRes.TotalStepCount += res.TotalStepCount
+	for _, failed := range res.FailedSteps {
+		buildRes.FailedSteps = append(buildRes.FailedSteps, failed)
+	}
+	for _, notImportant := range res.FailedNotImportantSteps {
+		buildRes.FailedNotImportantSteps = append(buildRes.FailedNotImportantSteps, notImportant)
+	}
+	for _, skipped := range res.SkippedSteps {
+		buildRes.SkippedSteps = append(buildRes.SkippedSteps, skipped)
+	}
 }
