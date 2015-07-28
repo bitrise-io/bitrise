@@ -178,8 +178,6 @@ func saveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
 	log.Println()
 	log.Infoln("=> Init success!")
 	log.Infoln("File created at path:", pth)
-	log.Infoln("With the content:")
-	log.Infoln(string(contBytes))
 
 	return nil
 }
