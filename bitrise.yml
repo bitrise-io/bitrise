@@ -30,6 +30,8 @@ workflows:
             bash ./_scripts/common/test.sh
 
   install:
+    before_run:
+      - test
     steps:
     - script@0.9.0:
         title: Running go install
