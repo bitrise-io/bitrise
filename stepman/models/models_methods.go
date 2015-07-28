@@ -32,12 +32,12 @@ var (
 // --- Struct methods
 
 // Normalize ...
-func (env EnvironmentItemModel) Normalize() error {
+func (env *EnvironmentItemModel) Normalize() error {
 	opts, err := env.GetOptions()
 	if err != nil {
 		return err
 	}
-	env[optionsKey] = opts
+	(*env)[optionsKey] = opts
 	return nil
 }
 
