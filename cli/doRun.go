@@ -389,6 +389,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
 	}
 
+	// Run befor run workflows
 	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
@@ -407,6 +408,11 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		workflowRunResults.BeforWorkflowsResults = append(workflowRunResults.BeforWorkflowsResults, beforWorkflowItemResults)
 	}
 
+	// Run workflow
+	if err := exportEnvironmentsList(workflow.Environments); err != nil {
+		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
+	}
+
 	stepRunResults := activateAndRunSteps(workflow, bitriseConfig.DefaultStepLibSource)
 	if len(stepRunResults.FailedSteps) > 0 {
 		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
@@ -416,6 +422,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		}
 	}
 
+	// Run after run workflows
 	for _, afterWorkflowName := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
 		if !exist {
