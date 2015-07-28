@@ -85,6 +85,7 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	if options.IsDontChangeValue == nil {
 		options.IsDontChangeValue = &DefaultIsDontChangeValue
 	}
+	(*env)[optionsKey] = options
 	return nil
 }
 
