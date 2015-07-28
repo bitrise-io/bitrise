@@ -22,12 +22,12 @@ type AppModel struct {
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	Title           string                               `json:"title" yaml:"title"`
-	Summary         string                               `json:"summary" yaml:"summary"`
-	BeforeWorkflows []string                             `json:"before_run" yaml:"before_run"`
-	AfterWorkflows  []string                             `json:"after_run" yaml:"after_run"`
-	Environments    []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
-	Steps           []StepListItemModel                  `json:"steps" yaml:"steps"`
+	Title        string                               `json:"title" yaml:"title"`
+	Summary      string                               `json:"summary" yaml:"summary"`
+	BeforeRun    []string                             `json:"before_run" yaml:"before_run"`
+	AfterRun     []string                             `json:"after_run" yaml:"after_run"`
+	Environments []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Steps        []StepListItemModel                  `json:"steps" yaml:"steps"`
 }
 
 // StepListItemModel ...
@@ -48,7 +48,7 @@ type StepIDData struct {
 // WorkflowRunResultsModel ..
 type WorkflowRunResultsModel struct {
 	BeforWorkflowsResults []WorkflowItemRunResultsModel
-	AfterWorkflowsResults []WorkflowItemRunResultsModel
+	AfterRunResults       []WorkflowItemRunResultsModel
 	Results               WorkflowItemRunResultsModel
 }
 

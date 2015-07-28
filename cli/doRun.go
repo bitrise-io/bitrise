@@ -74,7 +74,7 @@ func printSummary() {
 	failedNotImportantStepCount += len(workflowRunResults.Results.StepResults.FailedNotImportantSteps)
 	skippedStepCount += len(workflowRunResults.Results.StepResults.SkippedSteps)
 
-	for _, workflowItemResults := range workflowRunResults.AfterWorkflowsResults {
+	for _, workflowItemResults := range workflowRunResults.AfterRunResults {
 		totalStepCount += workflowItemResults.StepResults.TotalStepCount
 		failedStepCount += len(workflowItemResults.StepResults.FailedSteps)
 		failedNotImportantStepCount += len(workflowItemResults.StepResults.FailedNotImportantSteps)
@@ -389,7 +389,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
 	}
 
-	for _, beforeWorkflowName := range workflow.BeforeWorkflows {
+	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
 			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + beforeWorkflowName + ") does not exist!"))
@@ -416,7 +416,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		}
 	}
 
-	for _, afterWorkflowName := range workflow.AfterWorkflows {
+	for _, afterWorkflowName := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
 		if !exist {
 			buildFailedFatal(errors.New("[BITRISE_CLI] - Specified Workflow (" + afterWorkflowName + ") does not exist!"))
@@ -431,7 +431,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 			Title:       afterWorkflowName,
 			StepResults: afterStepRunResults,
 		}
-		workflowRunResults.AfterWorkflowsResults = append(workflowRunResults.AfterWorkflowsResults, afterWorkflowItemResults)
+		workflowRunResults.AfterRunResults = append(workflowRunResults.AfterRunResults, afterWorkflowItemResults)
 	}
 
 	return stepRunResults

@@ -72,13 +72,13 @@ func (workflow *WorkflowModel) Validate(title string) error {
 	// Validate reference cycle
 	referenceHash := map[string]bool{}
 	referenceHash[title] = true
-	for _, beforeWorkflowName := range workflow.BeforeWorkflows {
+	for _, beforeWorkflowName := range workflow.BeforeRun {
 		if referenceHash[beforeWorkflowName] {
 			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + beforeWorkflowName + ")")
 		}
 		referenceHash[beforeWorkflowName] = true
 	}
-	for _, afterWorkflowName := range workflow.AfterWorkflows {
+	for _, afterWorkflowName := range workflow.AfterRun {
 		if referenceHash[afterWorkflowName] {
 			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + afterWorkflowName + ")")
 		}

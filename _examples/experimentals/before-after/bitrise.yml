@@ -27,7 +27,6 @@ workflows:
 
   before:
     envs: []
-    before_workflow:
     steps:
       - script:
           title: Running the Before script
@@ -39,7 +38,6 @@ workflows:
 
   before2:
     envs: []
-    before_workflow:
     steps:
       - script:
           title: Running the Before2 script
@@ -51,7 +49,6 @@ workflows:
 
   after:
     envs: []
-    before_workflow:
     steps:
       - script:
           title: Running the After script
