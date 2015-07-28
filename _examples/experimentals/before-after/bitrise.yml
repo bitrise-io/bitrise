@@ -4,8 +4,6 @@ default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-s
 app:
   envs:
   - BITRISE_PROJECT_TITLE: MyTit1
-    opts:
-      is_expand: no
   - BITRISE_DEV_BRANCH: develop
     opts:
       is_expand: no
@@ -35,6 +33,7 @@ workflows:
                 #!/bin/bash
                 set -v
                 echo 'This is a before workflow'
+                exit 1
 
   before2:
     envs: []

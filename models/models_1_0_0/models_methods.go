@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -11,6 +12,11 @@ import (
 func (config *BitriseDataModel) Normalize() error {
 	for _, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, env := range config.App.Environments {
+		if err := env.Normalize(); err != nil {
 			return err
 		}
 	}
@@ -34,6 +40,11 @@ func (config *BitriseDataModel) FillMissingDeafults() error {
 			return err
 		}
 	}
+	for _, env := range config.App.Environments {
+		if err := env.FillMissingDeafults(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -50,9 +61,16 @@ func (workflow *WorkflowModel) Normalize() error {
 // FillMissingDeafults ...
 func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
 	for _, env := range workflow.Environments {
+		opts, err := env.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		log.Warn("env opts:", opts)
 		if err := env.FillMissingDeafults(); err != nil {
 			return err
 		}
+		log.Warn("filled env opts:", opts)
 	}
 	if workflow.Title == "" {
 		workflow.Title = title
