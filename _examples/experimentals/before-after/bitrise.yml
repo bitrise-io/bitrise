@@ -46,7 +46,8 @@ workflows:
                 set -v
                 echo 'This is a before workflow'
                 echo "MY_TEST_ENV: ${MY_TEST_ENV}"
-                exit 1
+                echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
+                echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"
 
   before2:
     envs: []
