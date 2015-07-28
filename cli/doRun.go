@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
+	"github.com/bitrise-io/bitrise-cli/colorstring"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -33,28 +34,24 @@ func buildFailedFatal(err error) {
 }
 
 func printRunningStep(title string, idx int) {
-	log.Info("||  =====================================================")
-	log.Infof("|| --- Running step (%d) %s", idx, title)
+	log.Infof("|| ---> " + colorstring.Greenf("Running step (%d) %s", idx, title))
 }
 
-func printFinishedStep() {
-	log.Info("###  =====================================================")
-}
-
-func printRunningWorkflow(title string, isMain bool) {
-	fmt.Println()
-	if isMain {
+func printRunningWorkflow(title string, isTarget bool) {
+	if isTarget {
 		log.Info("##########################################################")
 	}
 	log.Info("||")
-	log.Infof("|| - Running workflow (%s)", title)
+	log.Infof("|| -> " + colorstring.Magentaf("Running workflow (%s)", title))
 	log.Info("||")
 }
 
-func printFinishedWorkflow() {
+func printFinishedWorkflow(isTarget bool) {
 	log.Info("||")
-	log.Info("##########################################################")
-	fmt.Println()
+	if isTarget {
+		log.Info("||")
+		log.Info("##########################################################")
+	}
 }
 
 func printSummary() {
@@ -89,12 +86,15 @@ func printSummary() {
 	log.Infoln("==> Summary:")
 	runTime := time.Now().Sub(startTime)
 	log.Info("Total run time: " + runTime.String())
-	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as skippable and %d was skipped",
-		totalStepCount,
-		successStepCount,
-		failedStepCount,
-		failedNotImportantStepCount,
-		skippedStepCount)
+
+	totalString := fmt.Sprintf("Out of %d steps,", totalStepCount)
+	successString := colorstring.Greenf(" %d was successful,", successStepCount)
+	failedString := colorstring.Redf(" %d failed,", failedStepCount)
+	notImportantString := colorstring.Yellowf(" %d failed but was marked as skippable and", failedNotImportantStepCount)
+	skippedString := colorstring.Whitef(" %d was skipped", skippedStepCount)
+
+	log.Info(totalString + successString + failedString + notImportantString + skippedString)
+
 	if failedStepCount > 0 {
 		log.Fatal("FINISHED but a couple of steps failed - Ouch")
 	} else {
@@ -315,7 +315,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, stepRunResults, IsCIMode)
 			if err != nil {
 				registerFailedStep(mergedStep, err)
-				printFinishedStep()
 				continue
 			}
 			if !isRun {
@@ -338,11 +337,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		} else {
 			printRunningStep(*mergedStep.Title, idx)
 			if err := runStep(mergedStep, stepIDData, stepDir); err != nil {
-				printFinishedStep()
 				registerFailedStep(mergedStep, err)
 				continue
 			}
-			printFinishedStep()
 		}
 	}
 	return stepRunResults
@@ -374,9 +371,8 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	log.Info("###  || ---------------- OUTPUT -------------------------")
+	log.Info("|| -----> " + colorstring.Green("OUTPUT"))
 	err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic")
-	log.Info("###  ||  ------------------------------------------------")
 	if err != nil {
 		return err
 	}
@@ -391,7 +387,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
 	}
 
-	// Run befor run workflows
+	// Run these workflows before running the target workflow
 	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
@@ -402,7 +398,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		}
 		printRunningWorkflow(beforeWorkflowName, false)
 		beforStepRunResults := activateAndRunWorkflow(beforeWorkflow, bitriseConfig)
-		printFinishedWorkflow()
+		printFinishedWorkflow(false)
 		beforWorkflowItemResults := models.WorkflowItemRunResultsModel{
 			Title:       beforeWorkflowName,
 			StepResults: beforStepRunResults,
@@ -410,21 +406,14 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		workflowRunResults.BeforWorkflowsResults = append(workflowRunResults.BeforWorkflowsResults, beforWorkflowItemResults)
 	}
 
-	// Run workflow
+	// Run the target workflow
 	if err := exportEnvironmentsList(workflow.Environments); err != nil {
 		buildFailedFatal(errors.New("[BITRISE_CLI] - Failed to export Workflow environments: " + err.Error()))
 	}
 
 	stepRunResults := activateAndRunSteps(workflow, bitriseConfig.DefaultStepLibSource)
-	if len(stepRunResults.FailedSteps) > 0 {
-		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
-	} else {
-		if len(stepRunResults.FailedNotImportantSteps) > 0 {
-			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
-		}
-	}
 
-	// Run after run workflows
+	// Run these workflows after running the target workflow
 	for _, afterWorkflowName := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
 		if !exist {
@@ -435,7 +424,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 		}
 		printRunningWorkflow(afterWorkflowName, false)
 		afterStepRunResults := activateAndRunWorkflow(afterWorkflow, bitriseConfig)
-		printFinishedWorkflow()
+		printFinishedWorkflow(false)
 		afterWorkflowItemResults := models.WorkflowItemRunResultsModel{
 			Title:       afterWorkflowName,
 			StepResults: afterStepRunResults,
@@ -562,8 +551,15 @@ func doRun(c *cli.Context) {
 		Title:       workflowToRunName,
 		StepResults: stepRunResults,
 	}
-	printFinishedWorkflow()
+	printFinishedWorkflow(true)
 
 	// // Build finished
 	printSummary()
+	if len(stepRunResults.FailedSteps) > 0 {
+		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
+	} else {
+		if len(stepRunResults.FailedNotImportantSteps) > 0 {
+			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
+		}
+	}
 }
