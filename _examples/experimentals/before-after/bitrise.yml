@@ -67,5 +67,5 @@ workflows:
           inputs:
             - content: |
                 #!/bin/bash
-                set -v
-                echo 'This is an after workflow'
+                echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
+                echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"
