@@ -76,16 +76,16 @@ func (env EnvironmentItemModel) Validate() error {
 // Validate ...
 func (step StepModel) Validate() error {
 	if step.Title == nil || *step.Title == "" {
-		return errors.New("Invalid step: missing or empty title")
+		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
 	if step.Summary == nil || *step.Summary == "" {
-		return errors.New("Invalid step: missing or empty summary")
+		return errors.New("Invalid step: missing or empty required 'summary' property")
 	}
 	if step.Website == nil || *step.Website == "" {
-		return errors.New("Invalid step: missing or empty website")
+		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
 	if step.Source.Git == nil || *step.Source.Git == "" {
-		return errors.New("Invalid step: missing or empty source")
+		return errors.New("Invalid step: missing or empty required 'source' property")
 	}
 	for _, input := range step.Inputs {
 		err := input.Validate()
