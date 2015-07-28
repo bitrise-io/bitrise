@@ -16,7 +16,10 @@ workflows:
     summary: |
         This is a workflow summary.
         Check this out!
-    envs: []
+    envs:
+    - MY_TEST_ENV: My test value
+      opts:
+        is_expand: false
     before_run:
       - before
       - before2
@@ -35,6 +38,7 @@ workflows:
                 #!/bin/bash
                 set -v
                 echo 'This is a before workflow'
+                echo "MY_TEST_ENV: ${MY_TEST_ENV}"
 
   before2:
     envs: []
