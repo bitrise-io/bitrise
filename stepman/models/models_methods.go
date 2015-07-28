@@ -32,21 +32,12 @@ var (
 // --- Struct methods
 
 // Normalize ...
-func (step StepModel) Normalize() error {
-	for _, input := range step.Inputs {
-		opts, err := input.GetOptions()
-		if err != nil {
-			return err
-		}
-		input[optionsKey] = opts
+func (env *EnvironmentItemModel) Normalize() error {
+	opts, err := env.GetOptions()
+	if err != nil {
+		return err
 	}
-	for _, output := range step.Outputs {
-		opts, err := output.GetOptions()
-		if err != nil {
-			return err
-		}
-		output[optionsKey] = opts
-	}
+	(*env)[optionsKey] = opts
 	return nil
 }
 
@@ -70,6 +61,45 @@ func (env EnvironmentItemModel) Validate() error {
 		return errors.New("Invalid environment: missing or empty title")
 	}
 
+	return nil
+}
+
+// FillMissingDeafults ...
+func (env *EnvironmentItemModel) FillMissingDeafults() error {
+	defaultString := ""
+
+	options, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+
+	if options.Description == nil {
+		options.Description = &defaultString
+	}
+	if options.IsRequired == nil {
+		options.IsRequired = &DefaultIsRequired
+	}
+	if options.IsExpand == nil {
+		options.IsExpand = &DefaultIsExpand
+	}
+	if options.IsDontChangeValue == nil {
+		options.IsDontChangeValue = &DefaultIsDontChangeValue
+	}
+	return nil
+}
+
+// Normalize ...
+func (step StepModel) Normalize() error {
+	for _, input := range step.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		if err := output.Normalize(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -98,30 +128,6 @@ func (step StepModel) Validate() error {
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// FillMissingDeafults ...
-func (env *EnvironmentItemModel) FillMissingDeafults() error {
-	defaultString := ""
-
-	options, err := env.GetOptions()
-	if err != nil {
-		return err
-	}
-
-	if options.Description == nil {
-		options.Description = &defaultString
-	}
-	if options.IsRequired == nil {
-		options.IsRequired = &DefaultIsRequired
-	}
-	if options.IsExpand == nil {
-		options.IsExpand = &DefaultIsExpand
-	}
-	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = &DefaultIsDontChangeValue
 	}
 	return nil
 }
