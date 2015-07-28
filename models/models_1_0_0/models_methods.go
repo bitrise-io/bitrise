@@ -62,13 +62,6 @@ func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
 
 // Validate ...
 func (workflow *WorkflowModel) Validate(title string) error {
-	// Validate envs
-	for _, env := range workflow.Environments {
-		if err := env.Validate(); err != nil {
-			return err
-		}
-	}
-
 	// Validate reference cycle
 	referenceHash := map[string]bool{}
 	referenceHash[title] = true
