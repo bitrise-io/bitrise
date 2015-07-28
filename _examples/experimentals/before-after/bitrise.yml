@@ -24,10 +24,19 @@ workflows:
     after_run:
       - after
     steps:
+      - script:
+          title: Running the target script
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is a before workflow'
+                exit 1
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
 
   before:
-    envs: []
+    envs:
+      - BITRISE_PROJECT: MyTit1
     steps:
       - script:
           title: Running the Before script
