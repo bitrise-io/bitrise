@@ -14,7 +14,10 @@ workflows:
     summary: |
         This is a workflow summary.
         Check this out!
-    envs: []
+    envs:
+    - MY_TEST_ENV: My test value
+      opts:
+        is_expand: false
     before_run:
       - before
       - before2
@@ -42,6 +45,8 @@ workflows:
                 #!/bin/bash
                 set -v
                 echo 'This is a before workflow'
+                echo "MY_TEST_ENV: ${MY_TEST_ENV}"
+                exit 1
 
   before2:
     envs: []
@@ -62,5 +67,5 @@ workflows:
           inputs:
             - content: |
                 #!/bin/bash
-                set -v
-                echo 'This is an after workflow'
+                echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
+                echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"
