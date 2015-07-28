@@ -33,27 +33,23 @@ func buildFailedFatal(err error) {
 }
 
 func printRunningStep(title string, idx int) {
-	log.Info("==========================================================")
-	log.Infof("=== (%d) %s", idx, title)
-	log.Info("===")
+	log.Info("###  =====================================================")
+	log.Infof("###  || (%d) %s", idx, title)
 }
 
 func printFinishedStep() {
-	log.Info("===")
-	log.Info("===")
-	log.Info("==========================================================")
-	fmt.Println()
+	log.Info("###  =====================================================")
 }
 
 func printRunningWorkflow(title string) {
 	fmt.Println()
 	log.Info("##########################################################")
+	log.Info("###")
 	log.Infof("### Running workflow (%s)", title)
 	log.Info("###")
 }
 
 func printFinishedWorkflow() {
-	log.Info("###")
 	log.Info("###")
 	log.Info("##########################################################")
 	fmt.Println()
@@ -376,9 +372,9 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	log.Info("------------------------- OUTPUT -------------------------")
+	log.Info("###  || ---------------- OUTPUT -------------------------")
 	err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic")
-	log.Info("----------------------------------------------------------")
+	log.Info("###  ||  ------------------------------------------------")
 	if err != nil {
 		return err
 	}
