@@ -208,7 +208,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	stepRunResults.TotalStepCount = len(workflow.Steps)
 
 	for idx, stepListItm := range workflow.Steps {
-		if err := setBuildFailedEnv(stepRunResults.IsBuildFailed()); err != nil {
+		if err := setBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
 			log.Error("Failed to set Build Status envs")
 		}
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
