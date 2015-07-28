@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
+	"github.com/bitrise-io/bitrise-cli/colorstring"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -239,7 +240,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		fmt.Println()
-		log.Infof("========== (%d) %s ==========", idx, *mergedStep.Title)
+		log.Infof(colorstring.Magentaf("========== (%d) %s ==========", idx, *mergedStep.Title))
 		fmt.Println()
 
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
