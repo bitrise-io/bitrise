@@ -7,6 +7,86 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// Normalize ...
+func (config *BitriseDataModel) Normalize() error {
+	for _, workflow := range config.Workflows {
+		if err := workflow.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Validate ...
+func (config *BitriseDataModel) Validate() error {
+	for title, workflow := range config.Workflows {
+		if err := workflow.Validate(title); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// FillMissingDeafults ...
+func (config *BitriseDataModel) FillMissingDeafults() error {
+	for title, workflow := range config.Workflows {
+		if err := workflow.FillMissingDeafults(title); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Normalize ...
+func (workflow *WorkflowModel) Normalize() error {
+	for _, env := range workflow.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// FillMissingDeafults ...
+func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
+	for _, env := range workflow.Environments {
+		if err := env.FillMissingDeafults(); err != nil {
+			return err
+		}
+	}
+	if workflow.Title == "" {
+		workflow.Title = title
+	}
+	return nil
+}
+
+// Validate ...
+func (workflow *WorkflowModel) Validate(title string) error {
+	// Validate envs
+	for _, env := range workflow.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// Validate reference cycle
+	referenceHash := map[string]bool{}
+	referenceHash[title] = true
+	for _, beforeWorkflowName := range workflow.BeforeWorkflows {
+		if referenceHash[beforeWorkflowName] {
+			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + beforeWorkflowName + ")")
+		}
+		referenceHash[beforeWorkflowName] = true
+	}
+	for _, afterWorkflowName := range workflow.AfterWorkflows {
+		if referenceHash[afterWorkflowName] {
+			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + afterWorkflowName + ")")
+		}
+		referenceHash[afterWorkflowName] = true
+	}
+	return nil
+}
+
 // MergeEnvironmentWith ...
 func MergeEnvironmentWith(env *stepmanModels.EnvironmentItemModel, otherEnv stepmanModels.EnvironmentItemModel) error {
 	// merge key-value

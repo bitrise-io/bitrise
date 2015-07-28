@@ -22,10 +22,12 @@ type AppModel struct {
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	BeforeWorkflow string                               `json:"before_run" yaml:"before_run"`
-	AfterWorkflow  string                               `json:"after_run" yaml:"after_run"`
-	Environments   []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
-	Steps          []StepListItemModel                  `json:"steps" yaml:"steps"`
+	Title           string                               `json:"title" yaml:"title"`
+	Summary         string                               `json:"summary" yaml:"summary"`
+	BeforeWorkflows []string                             `json:"before_run" yaml:"before_run"`
+	AfterWorkflows  []string                             `json:"after_run" yaml:"after_run"`
+	Environments    []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Steps           []StepListItemModel                  `json:"steps" yaml:"steps"`
 }
 
 // StepListItemModel ...
@@ -41,6 +43,19 @@ type StepIDData struct {
 	Version string
 	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
 	SteplibSource string
+}
+
+// WorkflowRunResultsModel ..
+type WorkflowRunResultsModel struct {
+	BeforWorkflowsResults []WorkflowItemRunResultsModel
+	AfterWorkflowsResults []WorkflowItemRunResultsModel
+	Results               WorkflowItemRunResultsModel
+}
+
+// WorkflowItemRunResultsModel ...
+type WorkflowItemRunResultsModel struct {
+	Title       string
+	StepResults StepRunResultsModel
 }
 
 // StepRunResultsModel ...
