@@ -5,8 +5,41 @@ import (
 )
 
 func TestGetKeyValuePair(t *testing.T) {
-	t.Log("Trivial compare")
-	// if res, err := CompareVersions("1.0.0", "1.0.1"); res != 1 || err != nil {
-	// 	t.Fatal("Failed, res:", res, "| err:", err)
-	// }
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestParseFromInterfaceMap(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestGetKeyValuePair(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestGetOptions(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestNormalize(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestFillMissingDeafults(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestNormalizeEnvironmentItemModel(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
+}
+
+func TestValidate(t *testing.T) {
+	t.Log("TestGetKeyValuePair")
+	// 	t.Fatal("TestGetKeyValuePair failed")
 }
