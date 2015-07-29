@@ -5,6 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
+	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/codegangsta/cli"
 )
@@ -17,7 +18,7 @@ func clearEnvs() error {
 		return errors.New(errMsg)
 	}
 
-	if err := envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, []envman.EnvModel{}); err != nil {
+	if err := envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, []models.EnvironmentItemModel{}); err != nil {
 		return err
 	}
 

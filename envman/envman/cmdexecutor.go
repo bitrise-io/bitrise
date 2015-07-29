@@ -5,30 +5,40 @@ import (
 	"os/exec"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/envman/models"
 )
 
 // CommandModel ...
 type CommandModel struct {
 	Command      string
 	Argumentums  []string
-	Environments []EnvModel
+	Environments []models.EnvironmentItemModel
 }
 
 func expandEnvsInString(inp string) string {
 	return os.ExpandEnv(inp)
 }
 
-func commandEnvs(envs []EnvModel) ([]string, error) {
-	for _, eModel := range envs {
-		var value string
-
-		if eModel.IsExpand {
-			value = expandEnvsInString(eModel.Value)
-		} else {
-			value = eModel.Value
+func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
+	for _, env := range envs {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return []string{}, err
 		}
 
-		if err := os.Setenv(eModel.Key, value); err != nil {
+		opts, err := env.GetOptions()
+		if err != nil {
+			return []string{}, err
+		}
+
+		var valueStr string
+		if *opts.IsExpand {
+			valueStr = expandEnvsInString(value)
+		} else {
+			valueStr = value
+		}
+
+		if err := os.Setenv(key, valueStr); err != nil {
 			return []string{}, err
 		}
 	}

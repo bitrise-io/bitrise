@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
+	"github.com/bitrise-io/envman/models"
 	"github.com/codegangsta/cli"
 )
 
@@ -16,13 +17,22 @@ func addEnv(key string, value string, expand, replace bool) error {
 	}
 
 	// Load envs, or create if not exist
-	environments, err := envman.LoadEnvMapOrCreate()
+	environments, err := envman.ReadEnvsOrCreateEmptyList()
 	if err != nil {
 		return err
 	}
 
 	// Add or update envlist
-	newEnv := envman.EnvModel{Key: key, Value: value, IsExpand: expand}
+	newEnv := models.EnvironmentItemModel{
+		key: value,
+		models.OptionsKey: models.EnvironmentItemOptionsModel{
+			IsExpand: &expand,
+		},
+	}
+	if err := newEnv.NormalizeEnvironmentItemModel(); err != nil {
+		return err
+	}
+
 	if _, err = envman.UpdateOrAddToEnvlist(environments, newEnv, replace); err != nil {
 		return err
 	}
@@ -41,7 +51,7 @@ func loadValueFromFile(pth string) (string, error) {
 }
 
 func logEnvs() error {
-	environments, err := envman.LoadEnvMap()
+	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
 	if err != nil {
 		return err
 	}
@@ -49,10 +59,20 @@ func logEnvs() error {
 	if len(environments) == 0 {
 		log.Info("[ENVMAN] - Empty envstore")
 	} else {
-		for _, eModel := range environments {
-			envString := "- " + eModel.Key + ": " + eModel.Value
+		for _, env := range environments {
+			key, value, err := env.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			opts, err := env.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			envString := "- " + key + ": " + value
 			log.Debugln(envString)
-			if eModel.IsExpand == false {
+			if !*opts.IsExpand {
 				expandString := "  " + "isExpand" + ": " + "false"
 				log.Debugln(expandString)
 			}
