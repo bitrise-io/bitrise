@@ -27,15 +27,15 @@ func TestMergeWith(t *testing.T) {
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
 		IsRequiresAdminUser: &defaultTrue,
-		Inputs: []stepmanModels.EnvironmentItemModel{
-			stepmanModels.EnvironmentItemModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",
 			},
-			stepmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
 				"KEY_2": "Value 2",
 			},
 		},
-		Outputs: []stepmanModels.EnvironmentItemModel{},
+		Outputs: []envmanModels.EnvironmentItemModel{},
 	}
 
 	diffTitle := "name 2"
@@ -46,8 +46,8 @@ func TestMergeWith(t *testing.T) {
 		HostOsTags: []string{"linux"},
 		SupportURL: &newSuppURL,
 		RunIf:      &runIfStr,
-		Inputs: []stepmanModels.EnvironmentItemModel{
-			stepmanModels.EnvironmentItemModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
 				"KEY_2": "Value 2 CHANGED",
 			},
 		},

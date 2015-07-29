@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	"github.com/bitrise-io/bitrise-cli/colorstring"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
@@ -65,7 +66,7 @@ func printSummary() {
 	failedStepCount += len(buildRunResults.FailedSteps)
 	failedNotImportantStepCount += len(buildRunResults.FailedNotImportantSteps)
 	skippedStepCount += len(buildRunResults.SkippedSteps)
-	successStepCount = totalStepCount - failedStepCount - failedNotImportantStepCount
+	successStepCount = totalStepCount - failedStepCount - failedNotImportantStepCount - skippedStepCount
 
 	fmt.Println()
 	log.Infoln("==> Summary:")
@@ -136,7 +137,7 @@ func setBuildFailedEnv(failed bool) error {
 	return nil
 }
 
-func exportEnvironmentsList(envsList []stepmanModels.EnvironmentItemModel) error {
+func exportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
 
 	for _, env := range envsList {
