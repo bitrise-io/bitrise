@@ -29,7 +29,8 @@ type envsYMLModel struct {
 // -------------------
 // --- Environment handling methods
 
-func prepareRawEnv(rawEnv *models.EnvironmentItemModel) error {
+// PrepareRawEnv ...
+func PrepareRawEnv(rawEnv *models.EnvironmentItemModel) error {
 	if err := rawEnv.Normalize(); err != nil {
 		return err
 	}
@@ -235,7 +236,7 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 	}
 
 	for _, env := range envsYML.Envs {
-		if err := prepareRawEnv(&env); err != nil {
+		if err := PrepareRawEnv(&env); err != nil {
 			return []models.EnvironmentItemModel{}, err
 		}
 	}
