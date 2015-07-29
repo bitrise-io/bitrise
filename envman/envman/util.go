@@ -23,43 +23,11 @@ var (
 )
 
 type envsYMLModel struct {
-	Envs []models.EnvironmentItemModel `yaml:"environments"`
+	Envs []models.EnvironmentItemModel `yaml:"envs"`
 }
 
 // -------------------
 // --- Environment handling methods
-
-// PrepareRawEnv ...
-func PrepareRawEnv(rawEnv *models.EnvironmentItemModel) error {
-	if err := rawEnv.Normalize(); err != nil {
-		return err
-	}
-
-	if err := validate(*rawEnv); err != nil {
-		return err
-	}
-
-	if err := rawEnv.FillMissingDeafults(); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Validate ...
-func validate(env models.EnvironmentItemModel) error {
-	key, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-	if key == "" {
-		return errors.New("Invalid environment: empty env_key")
-	}
-	_, err = env.GetOptions()
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 // UpdateOrAddToEnvlist ...
 func UpdateOrAddToEnvlist(oldEnvSlice []models.EnvironmentItemModel, newEnv models.EnvironmentItemModel, replace bool) ([]models.EnvironmentItemModel, error) {
@@ -129,10 +97,34 @@ func UpdateOrAddToEnvlist(oldEnvSlice []models.EnvironmentItemModel, newEnv mode
 	return newEnvs, nil
 }
 
+func removeDefaults(env *models.EnvironmentItemModel) error {
+	opts, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+	if opts.Title != nil && *opts.Title == "" {
+		opts.Title = nil
+	}
+	if opts.Description != nil && *opts.Description == "" {
+		opts.Description = nil
+	}
+	if opts.IsRequired != nil && *opts.IsRequired == models.DefaultIsRequired {
+		opts.IsRequired = nil
+	}
+	if opts.IsExpand != nil && *opts.IsExpand == models.DefaultIsExpand {
+		opts.IsExpand = nil
+	}
+	if opts.IsDontChangeValue != nil && *opts.IsDontChangeValue == models.DefaultIsDontChangeValue {
+		opts.IsDontChangeValue = nil
+	}
+	(*env)[models.OptionsKey] = opts
+	return nil
+}
+
 func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byte, error) {
-	envMapSlice := []map[string]interface{}{}
+	envMapSlice := []models.EnvironmentItemModel{}
 	for _, env := range envs {
-		key, value, err := env.GetKeyValuePair()
+		err := removeDefaults(&env)
 		if err != nil {
 			return []byte{}, err
 		}
@@ -143,43 +135,34 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byt
 			return []byte{}, err
 		}
 
-		envOptionsMap := map[string]interface{}{}
-		if opts.Title != nil && *opts.Title != "" {
-			envOptionsMap["title"] = *opts.Title
+		if opts.Title != nil {
 			hasOptions = true
 		}
-		if *opts.Description != "" {
-			envOptionsMap["description"] = *opts.Description
+		if opts.Description != nil {
 			hasOptions = true
 		}
 		if len(opts.ValueOptions) > 0 {
-			envOptionsMap["value_options"] = opts.ValueOptions
 			hasOptions = true
 		}
-		if *opts.IsRequired != models.DefaultIsRequired {
-			envOptionsMap["is_required"] = *opts.IsRequired
+		if opts.IsRequired != nil {
 			hasOptions = true
 		}
-		if *opts.IsExpand != models.DefaultIsExpand {
-			envOptionsMap["is_expand"] = *opts.IsExpand
+		if opts.IsExpand != nil {
 			hasOptions = true
 		}
-		if *opts.IsDontChangeValue != models.DefaultIsDontChangeValue {
-			envOptionsMap["is_dont_change_value"] = *opts.IsDontChangeValue
+		if opts.IsDontChangeValue != nil {
 			hasOptions = true
 		}
 
-		envMap := map[string]interface{}{
-			key: value,
-		}
-		if hasOptions {
-			envMap[models.OptionsKey] = envOptionsMap
+		if !hasOptions {
+			delete(env, models.OptionsKey)
 		}
 
-		envMapSlice = append(envMapSlice, envMap)
+		envMapSlice = append(envMapSlice, env)
 	}
-	envYML := map[string]interface{}{
-		"environments": envMapSlice,
+
+	envYML := envsYMLModel{
+		Envs: envMapSlice,
 	}
 	bytes, err := yaml.Marshal(envYML)
 	if err != nil {
@@ -236,7 +219,7 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 	}
 
 	for _, env := range envsYML.Envs {
-		if err := PrepareRawEnv(&env); err != nil {
+		if err := env.NormalizeEnvironmentItemModel(); err != nil {
 			return []models.EnvironmentItemModel{}, err
 		}
 	}

@@ -193,3 +193,35 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	(*env)[OptionsKey] = options
 	return nil
 }
+
+// NormalizeEnvironmentItemModel ...
+func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
+	if err := env.Normalize(); err != nil {
+		return err
+	}
+
+	if err := env.Validate(); err != nil {
+		return err
+	}
+
+	if err := env.FillMissingDeafults(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Validate ...
+func (env EnvironmentItemModel) Validate() error {
+	key, _, err := env.GetKeyValuePair()
+	if err != nil {
+		return err
+	}
+	if key == "" {
+		return errors.New("Invalid environment: empty env_key")
+	}
+	_, err = env.GetOptions()
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -29,7 +29,7 @@ func addEnv(key string, value string, expand, replace bool) error {
 			IsExpand: &expand,
 		},
 	}
-	if err := envman.PrepareRawEnv(&newEnv); err != nil {
+	if err := newEnv.NormalizeEnvironmentItemModel(); err != nil {
 		return err
 	}
 
