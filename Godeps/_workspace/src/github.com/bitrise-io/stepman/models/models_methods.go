@@ -10,8 +10,8 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
-// Validate ...
-func Validate(env envmanModels.EnvironmentItemModel) error {
+// ValidateStepInputOutputModel ...
+func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
 	key, _, err := env.GetKeyValuePair()
 	if err != nil {
 		return err
@@ -50,8 +50,8 @@ func (step StepModel) Normalize() error {
 	return nil
 }
 
-// Validate ...
-func (step StepModel) Validate() error {
+// ValidateStepInputOutputModel ...
+func (step StepModel) ValidateStepInputOutputModel() error {
 	if step.Title == nil || *step.Title == "" {
 		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
@@ -65,13 +65,13 @@ func (step StepModel) Validate() error {
 		return errors.New("Invalid step: missing or empty required 'source' property")
 	}
 	for _, input := range step.Inputs {
-		err := Validate(input)
+		err := ValidateStepInputOutputModel(input)
 		if err != nil {
 			return err
 		}
 	}
 	for _, output := range step.Outputs {
-		err := Validate(output)
+		err := ValidateStepInputOutputModel(output)
 		if err != nil {
 			return err
 		}
