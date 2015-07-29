@@ -1,20 +1,11 @@
 package models
 
+import (
+	envmanModels "github.com/bitrise-io/envman/models"
+)
+
 // -------------------
 // --- Common models
-
-// EnvironmentItemOptionsModel ...
-type EnvironmentItemOptionsModel struct {
-	Title             *string  `json:"title,omitempty" yaml:"title,omitempty"`
-	Description       *string  `json:"description,omitempty" yaml:"description,omitempty"`
-	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
-	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
-	IsExpand          *bool    `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
-	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
-}
-
-// EnvironmentItemModel ...
-type EnvironmentItemModel map[string]interface{}
 
 // StepSourceModel ...
 type StepSourceModel struct {
@@ -42,9 +33,9 @@ type StepModel struct {
 	//  steps will run which are marked with IsAlwaysRun.
 	IsSkippable *bool `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
 	// RunIf : only run the step if the template example evaluates to true
-	RunIf   *string                `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Inputs  []EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs []EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	RunIf   *string                             `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Inputs  []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 // -------------------
