@@ -17,10 +17,20 @@ func printEnvs() error {
 	if len(environments) == 0 {
 		log.Info("[ENVMAN] - Empty envstore")
 	} else {
-		for _, eModel := range environments {
-			envString := "- " + eModel.Key + ": " + eModel.Value
+		for _, env := range environments {
+			key, value, err := env.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			options, err := env.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			envString := "- " + key + ": " + value
 			fmt.Println(envString)
-			if !eModel.IsExpand {
+			if !*options.IsExpand {
 				expandString := "  " + "isExpand" + ": " + "false"
 				fmt.Println(expandString)
 			}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/envman/models"
 )
 
 const (
@@ -16,41 +17,30 @@ const (
 	FalseKey string = "false"
 )
 
-// EnvModel ... This is the model of ENVIRONMENT in envman, for methods
-type EnvModel struct {
-	Key      string
-	Value    string
-	IsExpand bool
-}
-
-// EnvMapItem ... This is the model of ENVIRONMENT in envman, for storing in file
-type EnvMapItem map[string]string
-
 type envsYMLModel struct {
-	Envs []EnvMapItem `yml:"environments"`
+	Envs []models.EnvironmentItemModel `yml:"environments"`
 }
 
-// Convert envsYMLModel to envModel array
-func (envYML envsYMLModel) convertToEnvModelArray() []EnvModel {
-	var envModels []EnvModel
-	for _, envMapItem := range envYML.Envs {
-		envModel := envMapItem.convertToEnvModel()
-		envModels = append(envModels, envModel)
-	}
-	return envModels
-}
+// // Convert envsYMLModel to envModel array
+// func (envYML envsYMLModel) convertToEnvModelArray() []models.EnvironmentItemModel {
+// 	var envModels []models.EnvironmentItemModel
+// 	for _, env := range envYML.Envs {
+// 		envModels = append(envModels, env)
+// 	}
+// 	return envModels
+// }
 
-func (eMap EnvMapItem) convertToEnvModel() EnvModel {
-	var eModel EnvModel
-	for key, value := range eMap {
-		if key != IsExpandKey {
-			eModel.Key = key
-			eModel.Value = value
-		}
-	}
-	eModel.IsExpand = ParseBool(eMap[IsExpandKey], true)
-	return eModel
-}
+// func (eMap EnvMapItem) convertToEnvModel() models.EnvironmentItemModel {
+// 	var eModel EnvModel
+// 	for key, value := range eMap {
+// 		if key != IsExpandKey {
+// 			eModel.Key = key
+// 			eModel.Value = value
+// 		}
+// 	}
+// 	eModel.IsExpand = ParseBool(eMap[IsExpandKey], true)
+// 	return eModel
+// }
 
 // ParseBool ...
 func ParseBool(s string, defaultValue bool) bool {
@@ -74,23 +64,23 @@ func ParseBool(s string, defaultValue bool) bool {
 	return value
 }
 
-// Convert envModel array to envsYMLModel
-func convertToEnvsYMLModel(eModels []EnvModel) envsYMLModel {
-	var envYML envsYMLModel
-	var envMaps []EnvMapItem
-	for _, eModel := range eModels {
-		eMap := eModel.convertToEnvMap()
-		envMaps = append(envMaps, eMap)
-	}
-	envYML.Envs = envMaps
-	return envYML
-}
+// // Convert envModel array to envsYMLModel
+// func convertToEnvsYMLModel(eModels []EnvModel) envsYMLModel {
+// 	var envYML envsYMLModel
+// 	var envMaps []EnvMapItem
+// 	for _, eModel := range eModels {
+// 		eMap := eModel.convertToEnvMap()
+// 		envMaps = append(envMaps, eMap)
+// 	}
+// 	envYML.Envs = envMaps
+// 	return envYML
+// }
 
-func (eModel EnvModel) convertToEnvMap() EnvMapItem {
-	eMap := make(EnvMapItem)
-	if !eModel.IsExpand {
-		eMap[IsExpandKey] = FalseKey
-	}
-	eMap[eModel.Key] = eModel.Value
-	return eMap
-}
+// func (eModel EnvModel) convertToEnvMap() EnvMapItem {
+// 	eMap := make(EnvMapItem)
+// 	if !eModel.IsExpand {
+// 		eMap[IsExpandKey] = FalseKey
+// 	}
+// 	eMap[eModel.Key] = eModel.Value
+// 	return eMap
+// }

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	"gopkg.in/yaml.v2"
@@ -36,7 +37,7 @@ func InitAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exist {
-		if err := WriteEnvMapToFile(pth, []EnvModel{}); err != nil {
+		if err := WriteEnvMapToFile(pth, []models.EnvironmentItemModel{}); err != nil {
 			return err
 		}
 	} else {
@@ -44,83 +45,6 @@ func InitAtPath(pth string) error {
 		return errors.New(errorMsg)
 	}
 	return nil
-}
-
-// LoadEnvMap ...
-func LoadEnvMap() ([]EnvModel, error) {
-	envsYML, err := readEnvMapFromFile(CurrentEnvStoreFilePath)
-	if err != nil {
-		return []EnvModel{}, err
-	}
-	return envsYML.convertToEnvModelArray(), nil
-}
-
-// LoadEnvMapOrCreate ...
-func LoadEnvMapOrCreate() ([]EnvModel, error) {
-	envModels, err := LoadEnvMap()
-	if err != nil {
-		if err.Error() == "No environment variable list found" {
-			err = InitAtPath(CurrentEnvStoreFilePath)
-			return []EnvModel{}, err
-		}
-		return []EnvModel{}, err
-	}
-	return envModels, nil
-}
-
-// UpdateOrAddToEnvlist ...
-func UpdateOrAddToEnvlist(envs []EnvModel, env EnvModel, replace bool) ([]EnvModel, error) {
-	var newEnvs []EnvModel
-	exist := false
-
-	if replace {
-		match := 0
-		for _, eModel := range envs {
-			if eModel.Key == env.Key {
-				match = match + 1
-			}
-		}
-		if match > 1 {
-			if ToolMode {
-				errorMsg := "   More then one env exist with key '" + env.Key + "'"
-				return []EnvModel{}, errors.New(errorMsg)
-			}
-			msg := "   More then one env exist with key '" + env.Key + "' replace all/append ['replace/append'] ?"
-			answer, err := goinp.AskForString(msg)
-			if err != nil {
-				return []EnvModel{}, err
-			}
-
-			switch answer {
-			case "replace":
-				break
-			case "append":
-				replace = false
-				break
-			default:
-				errorMsg := "Failed to parse answer: '" + answer + "' use ['replace/append']!"
-				return []EnvModel{}, errors.New(errorMsg)
-			}
-		}
-	}
-
-	for _, eModel := range envs {
-		if replace && eModel.Key == env.Key {
-			exist = true
-			newEnvs = append(newEnvs, env)
-		} else {
-			newEnvs = append(newEnvs, eModel)
-		}
-	}
-
-	if !exist {
-		newEnvs = append(newEnvs, env)
-	}
-
-	if err := WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvs); err != nil {
-		return []EnvModel{}, err
-	}
-	return newEnvs, nil
 }
 
 func readEnvMapFromFile(pth string) (envsYMLModel, error) {
@@ -142,8 +66,100 @@ func readEnvMapFromFile(pth string) (envsYMLModel, error) {
 	return envsModel, nil
 }
 
-func generateFormattedYMLForEnvModels(envs []EnvModel) ([]byte, error) {
-	envYML := convertToEnvsYMLModel(envs)
+// LoadEnvMap ...
+func LoadEnvMap() ([]models.EnvironmentItemModel, error) {
+	envsYML, err := readEnvMapFromFile(CurrentEnvStoreFilePath)
+	if err != nil {
+		return []models.EnvironmentItemModel{}, err
+	}
+	return envsYML.Envs, nil
+}
+
+// LoadEnvMapOrCreate ...
+func LoadEnvMapOrCreate() ([]models.EnvironmentItemModel, error) {
+	envModels, err := LoadEnvMap()
+	if err != nil {
+		if err.Error() == "No environment variable list found" {
+			err = InitAtPath(CurrentEnvStoreFilePath)
+			return []models.EnvironmentItemModel{}, err
+		}
+		return []models.EnvironmentItemModel{}, err
+	}
+	return envModels, nil
+}
+
+// UpdateOrAddToEnvlist ...
+func UpdateOrAddToEnvlist(oldEnvSlice []models.EnvironmentItemModel, newEnv models.EnvironmentItemModel, replace bool) ([]models.EnvironmentItemModel, error) {
+	newKey, _, err := newEnv.GetKeyValuePair()
+	if err != nil {
+		return []models.EnvironmentItemModel{}, err
+	}
+
+	var newEnvs []models.EnvironmentItemModel
+	exist := false
+
+	if replace {
+		match := 0
+		for _, env := range oldEnvSlice {
+			key, _, err := env.GetKeyValuePair()
+			if err != nil {
+				return []models.EnvironmentItemModel{}, err
+			}
+
+			if key == newKey {
+				match = match + 1
+			}
+		}
+		if match > 1 {
+			if ToolMode {
+				return []models.EnvironmentItemModel{}, errors.New("More then one env exist with key '" + newKey + "'")
+			}
+			msg := "   More then one env exist with key '" + newKey + "' replace all/append ['replace/append'] ?"
+			answer, err := goinp.AskForString(msg)
+			if err != nil {
+				return []models.EnvironmentItemModel{}, err
+			}
+
+			switch answer {
+			case "replace":
+				break
+			case "append":
+				replace = false
+				break
+			default:
+				return []models.EnvironmentItemModel{}, errors.New("Failed to parse answer: '" + answer + "' use ['replace/append']!")
+			}
+		}
+	}
+
+	for _, env := range oldEnvSlice {
+		key, _, err := env.GetKeyValuePair()
+		if err != nil {
+			return []models.EnvironmentItemModel{}, err
+		}
+
+		if replace && key == newKey {
+			exist = true
+			newEnvs = append(newEnvs, newEnv)
+		} else {
+			newEnvs = append(newEnvs, env)
+		}
+	}
+
+	if !exist {
+		newEnvs = append(newEnvs, newEnv)
+	}
+
+	if err := WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvs); err != nil {
+		return []models.EnvironmentItemModel{}, err
+	}
+	return newEnvs, nil
+}
+
+func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byte, error) {
+	envYML := envsYMLModel{
+		Envs: envs,
+	}
 	bytes, err := yaml.Marshal(envYML)
 	if err != nil {
 		return []byte{}, err
@@ -152,7 +168,8 @@ func generateFormattedYMLForEnvModels(envs []EnvModel) ([]byte, error) {
 }
 
 // WriteEnvMapToFile ...
-func WriteEnvMapToFile(pth string, envs []EnvModel) error {
+func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
+	log.Info("Write")
 	if pth == "" {
 		return errors.New("No path provided")
 	}
