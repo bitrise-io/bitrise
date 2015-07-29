@@ -39,7 +39,7 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 		return models.StepModel{}, err
 	}
 
-	if err := stepModel.Validate(); err != nil {
+	if err := stepModel.ValidateStepInputOutputModel(); err != nil {
 		return models.StepModel{}, err
 	}
 
