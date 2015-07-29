@@ -7,8 +7,6 @@ import (
 // -------------------
 // --- Common models
 
-type EnvironmentItemModel envmanModels.EnvironmentItemModel
-
 // StepSourceModel ...
 type StepSourceModel struct {
 	Git *string `json:"git,omitempty" yaml:"git,omitempty"`
