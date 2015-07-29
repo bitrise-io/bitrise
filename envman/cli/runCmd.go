@@ -10,7 +10,7 @@ func runCmd(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if len(c.Args()) > 0 {
-		doCmdEnvs, err := envman.LoadEnvMap()
+		doCmdEnvs, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
 		if err != nil {
 			log.Fatal("[ENVMAN] - Failed to load EnvStore:", err)
 		}

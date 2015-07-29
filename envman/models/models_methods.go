@@ -170,29 +170,6 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
-// Validate ...
-func (env EnvironmentItemModel) Validate() error {
-	key, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-	if key == "" {
-		return errors.New("Invalid environment: empty env_key")
-	}
-
-	log.Debugln("-> validate")
-	options, err := env.GetOptions()
-	if err != nil {
-		return err
-	}
-
-	if options.Title == nil || *options.Title == "" {
-		return errors.New("Invalid environment: missing or empty title")
-	}
-
-	return nil
-}
-
 // FillMissingDeafults ...
 func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	defaultString := ""
@@ -201,7 +178,6 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	if err != nil {
 		return err
 	}
-
 	if options.Description == nil {
 		options.Description = &defaultString
 	}

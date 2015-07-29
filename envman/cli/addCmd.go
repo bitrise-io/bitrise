@@ -17,7 +17,7 @@ func addEnv(key string, value string, expand, replace bool) error {
 	}
 
 	// Load envs, or create if not exist
-	environments, err := envman.LoadEnvMapOrCreate()
+	environments, err := envman.ReadEnvsOrCreateEmptyList()
 	if err != nil {
 		return err
 	}
@@ -29,6 +29,14 @@ func addEnv(key string, value string, expand, replace bool) error {
 			IsExpand: &expand,
 		},
 	}
+	if err := newEnv.Normalize(); err != nil {
+		return err
+	}
+
+	if err := newEnv.FillMissingDeafults(); err != nil {
+		return err
+	}
+
 	if _, err = envman.UpdateOrAddToEnvlist(environments, newEnv, replace); err != nil {
 		return err
 	}
@@ -47,7 +55,7 @@ func loadValueFromFile(pth string) (string, error) {
 }
 
 func logEnvs() error {
-	environments, err := envman.LoadEnvMap()
+	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
 	if err != nil {
 		return err
 	}

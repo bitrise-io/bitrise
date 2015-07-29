@@ -9,7 +9,7 @@ import (
 )
 
 func printEnvs() error {
-	environments, err := envman.LoadEnvMap()
+	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
 	if err != nil {
 		return err
 	}
