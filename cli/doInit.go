@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -48,13 +49,13 @@ func doInit(c *cli.Context) {
 	}
 
 	defaultExpand := true
-	projectSettingsEnvs := []stepmanModels.EnvironmentItemModel{}
+	projectSettingsEnvs := []envmanModels.EnvironmentItemModel{}
 	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectTitleEnv := stepmanModels.EnvironmentItemModel{
+		projectTitleEnv := envmanModels.EnvironmentItemModel{
 			"BITRISE_PROJECT_TITLE": val,
-			"opts": stepmanModels.EnvironmentItemOptionsModel{
+			"opts": envmanModels.EnvironmentItemOptionsModel{
 				IsExpand: &defaultExpand,
 			},
 		}
@@ -63,9 +64,9 @@ func doInit(c *cli.Context) {
 	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		devBranchEnv := stepmanModels.EnvironmentItemModel{
+		devBranchEnv := envmanModels.EnvironmentItemModel{
 			"BITRISE_DEV_BRANCH": val,
-			"opts": stepmanModels.EnvironmentItemOptionsModel{
+			"opts": envmanModels.EnvironmentItemOptionsModel{
 				IsExpand: &defaultExpand,
 			},
 		}
@@ -92,8 +93,8 @@ echo "Welcome to Bitrise!"`
 					models.StepListItemModel{
 						"script": stepmanModels.StepModel{
 							Title: &scriptStepTitle,
-							Inputs: []stepmanModels.EnvironmentItemModel{
-								stepmanModels.EnvironmentItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								envmanModels.EnvironmentItemModel{
 									"content": scriptStepContent,
 								},
 							},

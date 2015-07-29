@@ -1,6 +1,7 @@
 package models
 
 import (
+	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -17,17 +18,17 @@ type BitriseDataModel struct {
 
 // AppModel ...
 type AppModel struct {
-	Environments []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
 }
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	Title        string                               `json:"title" yaml:"title"`
-	Summary      string                               `json:"summary" yaml:"summary"`
-	BeforeRun    []string                             `json:"before_run" yaml:"before_run"`
-	AfterRun     []string                             `json:"after_run" yaml:"after_run"`
-	Environments []stepmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
-	Steps        []StepListItemModel                  `json:"steps" yaml:"steps"`
+	Title        string                              `json:"title" yaml:"title"`
+	Summary      string                              `json:"summary" yaml:"summary"`
+	BeforeRun    []string                            `json:"before_run" yaml:"before_run"`
+	AfterRun     []string                            `json:"after_run" yaml:"after_run"`
+	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Steps        []StepListItemModel                 `json:"steps" yaml:"steps"`
 }
 
 // StepListItemModel ...

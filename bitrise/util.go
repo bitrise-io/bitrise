@@ -69,7 +69,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 		return stepmanModels.StepModel{}, err
 	}
 
-	if err := stepModel.Validate(); err != nil {
+	if err := stepModel.ValidateStepInputOutputModel(); err != nil {
 		return stepmanModels.StepModel{}, err
 	}
 

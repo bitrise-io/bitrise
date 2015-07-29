@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -72,6 +73,13 @@ func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
 
 // Validate ...
 func (workflow *WorkflowModel) Validate(title string) error {
+	// Validate envs
+	for _, env := range workflow.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+
 	// Validate reference cycle
 	referenceHash := map[string]bool{}
 	referenceHash[title] = true
@@ -91,7 +99,7 @@ func (workflow *WorkflowModel) Validate(title string) error {
 }
 
 // MergeEnvironmentWith ...
-func MergeEnvironmentWith(env *stepmanModels.EnvironmentItemModel, otherEnv stepmanModels.EnvironmentItemModel) error {
+func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envmanModels.EnvironmentItemModel) error {
 	// merge key-value
 	key, _, err := env.GetKeyValuePair()
 	if err != nil {
@@ -221,32 +229,32 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	return step, nil
 }
 
-func getInputByKey(step stepmanModels.StepModel, key string) (stepmanModels.EnvironmentItemModel, bool) {
+func getInputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
 	for _, input := range step.Inputs {
 		k, _, err := input.GetKeyValuePair()
 		if err != nil {
-			return stepmanModels.EnvironmentItemModel{}, false
+			return envmanModels.EnvironmentItemModel{}, false
 		}
 
 		if k == key {
 			return input, true
 		}
 	}
-	return stepmanModels.EnvironmentItemModel{}, false
+	return envmanModels.EnvironmentItemModel{}, false
 }
 
-func getOutputByKey(step stepmanModels.StepModel, key string) (stepmanModels.EnvironmentItemModel, bool) {
+func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
 	for _, output := range step.Outputs {
 		k, _, err := output.GetKeyValuePair()
 		if err != nil {
-			return stepmanModels.EnvironmentItemModel{}, false
+			return envmanModels.EnvironmentItemModel{}, false
 		}
 
 		if k == key {
 			return output, true
 		}
 	}
-	return stepmanModels.EnvironmentItemModel{}, false
+	return envmanModels.EnvironmentItemModel{}, false
 }
 
 // GetStepIDStepDataPair ...
