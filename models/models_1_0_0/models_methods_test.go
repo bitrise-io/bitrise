@@ -7,7 +7,21 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-func TestMergeWith(t *testing.T) {
+// Workflow
+func TestFillMissingDefaults(t *testing.T) {
+
+}
+
+// Workflow
+func TestValidate(t *testing.T) {
+
+}
+
+func TestMergeEnvironmentWith(t *testing.T) {
+
+}
+
+func TestMergeStepWith(t *testing.T) {
 	title := "name 1"
 	desc := "desc 1"
 	website := "web/1"
@@ -101,8 +115,12 @@ func TestMergeWith(t *testing.T) {
 	}
 }
 
-func TestParseFromInterfaceMap(t *testing.T) {
-	t.Logf("TestParseFromInterfaceMap -- coming soon")
+func TestGetInputByKey(t *testing.T) {
+
+}
+
+func TestGetStepIDStepDataPair(t *testing.T) {
+
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
@@ -306,5 +324,4 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.Version != "develop" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
 	}
-
 }

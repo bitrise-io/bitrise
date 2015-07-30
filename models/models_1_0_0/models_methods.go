@@ -36,7 +36,7 @@ func (config *BitriseDataModel) Validate() error {
 // FillMissingDefaults ...
 func (config *BitriseDataModel) FillMissingDefaults() error {
 	for title, workflow := range config.Workflows {
-		if err := workflow.FillMissingDeafults(title); err != nil {
+		if err := workflow.FillMissingDefaults(title); err != nil {
 			return err
 		}
 	}
@@ -58,8 +58,8 @@ func (workflow *WorkflowModel) Normalize() error {
 	return nil
 }
 
-// FillMissingDeafults ...
-func (workflow *WorkflowModel) FillMissingDeafults(title string) error {
+// FillMissingDefaults ...
+func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
 	for _, env := range workflow.Environments {
 		if err := env.FillMissingDefaults(); err != nil {
 			return err
