@@ -22,15 +22,12 @@ var (
 
 	testTitle        = "test_title"
 	testDescription  = "test_description"
-	testSummary      = "summary"
 	testValueOptions = []string{testKey2, testValue2}
 	testTrue         = true
 	testFalse        = false
 )
 
 func TestValidateStepInputOutputModel(t *testing.T) {
-	t.Log("TestValidateStepInputOutputModel")
-
 	// Filled env
 	env := envmanModels.EnvironmentItemModel{
 		testKey: testValue,
