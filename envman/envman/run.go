@@ -45,8 +45,8 @@ func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
 	return os.Environ(), nil
 }
 
-// ExecuteCmd ...
-func ExecuteCmd(commandToRun CommandModel) error {
+// RunCmd ...
+func RunCmd(commandToRun CommandModel) error {
 	cmdEnvs, err := commandEnvs(commandToRun.Environments)
 	if err != nil {
 		return err

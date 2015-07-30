@@ -30,7 +30,7 @@ func runCmd(c *cli.Context) {
 
 		log.Debugln("[ENVMAN] - Executing command:", cmdToExecute)
 
-		if err := envman.ExecuteCmd(cmdToExecute); err != nil {
+		if err := envman.RunCmd(cmdToExecute); err != nil {
 			log.Fatal("[ENVMAN] - Failed to execute command:", err)
 		}
 

@@ -33,7 +33,12 @@ func addEnv(key string, value string, expand, replace bool) error {
 		return err
 	}
 
-	if _, err = envman.UpdateOrAddToEnvlist(environments, newEnv, replace); err != nil {
+	newEnvSlice, err := envman.UpdateOrAddToEnvlist(environments, newEnv, replace)
+	if err != nil {
+		return err
+	}
+
+	if err := envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, newEnvSlice); err != nil {
 		return err
 	}
 
