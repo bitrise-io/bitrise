@@ -14,6 +14,31 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// SaveConfigToFile ...
+func SaveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
+	contBytes, err := generateYAML(bitriseConf)
+	if err != nil {
+		return err
+	}
+	if err := WriteBytesToFile(pth, contBytes); err != nil {
+		return err
+	}
+
+	log.Println()
+	log.Infoln("=> Init success!")
+	log.Infoln("File created at path:", pth)
+
+	return nil
+}
+
+func generateYAML(v interface{}) ([]byte, error) {
+	bytes, err := yaml.Marshal(v)
+	if err != nil {
+		return []byte{}, err
+	}
+	return bytes, nil
+}
+
 // ReadBitriseConfig ...
 func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	log.Debugln("-> ReadBitriseConfig")
@@ -40,7 +65,7 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 		return models.BitriseDataModel{}, err
 	}
 
-	if err := bitriseData.FillMissingDeafults(); err != nil {
+	if err := bitriseData.FillMissingDefaults(); err != nil {
 		return models.BitriseDataModel{}, err
 	}
 
