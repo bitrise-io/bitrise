@@ -98,7 +98,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 		return stepmanModels.StepModel{}, err
 	}
 
-	if err := stepModel.FillMissingDeafults(); err != nil {
+	if err := stepModel.FillMissingDefaults(); err != nil {
 		return stepmanModels.StepModel{}, err
 	}
 

@@ -151,7 +151,7 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 
 // MergeStepWith ...
 func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepModel, error) {
-	if err := step.FillMissingDeafults(); err != nil {
+	if err := step.FillMissingDefaults(); err != nil {
 		return stepmanModels.StepModel{}, err
 	}
 

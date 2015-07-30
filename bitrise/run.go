@@ -52,7 +52,7 @@ func RunStepmanSetup(collection string) error {
 func RunStepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "activate", "--collection", collection,
-		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth}
+		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth, "--update"}
 	return RunCommand("stepman", args...)
 }
 
