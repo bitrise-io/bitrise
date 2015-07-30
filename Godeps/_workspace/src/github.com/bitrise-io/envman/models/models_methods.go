@@ -170,8 +170,8 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
-// FillMissingDeafults ...
-func (env *EnvironmentItemModel) FillMissingDeafults() error {
+// FillMissingDefaults ...
+func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	defaultString := ""
 
 	options, err := env.GetOptions()
@@ -204,7 +204,7 @@ func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
 		return err
 	}
 
-	if err := env.FillMissingDeafults(); err != nil {
+	if err := env.FillMissingDefaults(); err != nil {
 		return err
 	}
 	return nil

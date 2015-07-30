@@ -79,8 +79,8 @@ func (step StepModel) ValidateStepInputOutputModel() error {
 	return nil
 }
 
-// FillMissingDeafults ...
-func (step *StepModel) FillMissingDeafults() error {
+// FillMissingDefaults ...
+func (step *StepModel) FillMissingDefaults() error {
 	defaultString := ""
 
 	if step.Description == nil {
@@ -106,13 +106,13 @@ func (step *StepModel) FillMissingDeafults() error {
 	}
 
 	for _, input := range step.Inputs {
-		err := input.FillMissingDeafults()
+		err := input.FillMissingDefaults()
 		if err != nil {
 			return err
 		}
 	}
 	for _, output := range step.Outputs {
-		err := output.FillMissingDeafults()
+		err := output.FillMissingDefaults()
 		if err != nil {
 			return err
 		}
