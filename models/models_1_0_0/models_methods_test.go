@@ -151,6 +151,15 @@ func TestMergeStepWith(t *testing.T) {
 	stepDiffToMerge := stepmanModels.StepModel{
 		Title:      &diffTitle,
 		HostOsTags: []string{"linux"},
+		Source: stepmanModels.StepSourceModel{
+			Git: &git,
+		},
+		Dependencies: []stepmanModels.DependencyModel{
+			stepmanModels.DependencyModel{
+				Tool:       "brew",
+				Dependency: "test",
+			},
+		},
 		SupportURL: &newSuppURL,
 		RunIf:      &runIfStr,
 		Inputs: []envmanModels.EnvironmentItemModel{
@@ -159,9 +168,6 @@ func TestMergeStepWith(t *testing.T) {
 			},
 		},
 	}
-
-	t.Logf("-> stepData: %#v\n", stepData)
-	t.Logf("-> stepDiffToMerge: %#v\n", stepDiffToMerge)
 
 	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
 	if err != nil {
@@ -179,9 +185,17 @@ func TestMergeStepWith(t *testing.T) {
 	if *mergedStepData.RunIf != `{{getenv "CI" | eq "true"}}` {
 		t.Fatal("mergedStepData.RunIf incorrectly converted:", *mergedStepData.RunIf)
 	}
+	if len(mergedStepData.Dependencies) != 1 {
+		t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
+
+	} else {
+		dep := mergedStepData.Dependencies[0]
+		if dep.Tool != "brew" || dep.Dependency != "test" {
+			t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
+		}
+	}
 
 	//
-	t.Logf("-> MERGED Step Inputs: %#v\n", mergedStepData.Inputs)
 	input0 := mergedStepData.Inputs[0]
 	key0, value0, err := input0.GetKeyValuePair()
 	if err != nil {

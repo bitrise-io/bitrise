@@ -3,13 +3,10 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
 	"runtime"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/bitrise"
+	"github.com/bitrise-io/bitrise-cli/dependencies"
 	"github.com/codegangsta/cli"
 )
 
@@ -60,65 +57,6 @@ func doSetup(c *cli.Context) {
 	log.Infoln("That's all :)")
 }
 
-func checkProgramInstalledPath(clcommand string) (string, error) {
-	cmd := exec.Command("which", clcommand)
-	cmd.Stderr = os.Stderr
-	outBytes, err := cmd.Output()
-	outStr := string(outBytes)
-	return strings.TrimSpace(outStr), err
-}
-
-func checkIsHomebrewInstalled() error {
-	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
-	officialSiteURL := "http://brew.sh/"
-
-	progInstallPth, err := checkProgramInstalledPath("brew")
-	if err != nil {
-		fmt.Println()
-		log.Warn("It seems that Homebrew is not installed on your system.")
-		log.Infoln("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
-		log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
-		log.Infoln(brewRubyInstallCmdString)
-		log.Infoln("You can find more information about Homebrew on it's official site at:", officialSiteURL)
-		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
-		return err
-	}
-	verStr, err := bitrise.RunCommandAndReturnStdout("brew", "--version")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get version")
-	}
-	log.Infoln(" * [OK] Homebrew :", progInstallPth)
-	log.Infoln("        version :", verStr)
-	return nil
-}
-
-func checkIsXcodeCLTInstalled() error {
-	progInstallPth, err := checkProgramInstalledPath("xcodebuild")
-	if err != nil {
-		fmt.Println()
-		log.Warn("It seems that the Xcode Command Line Tools are not installed on your system.")
-		log.Infoln("You can install it by running the following command in your Terminal:")
-		log.Infoln("xcode-select --install")
-		log.Warn("Once the installation is finished you should call the bitrise setup again.")
-		return err
-	}
-	verStr, err := bitrise.RunCommandAndReturnStdout("xcodebuild", "-version")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get version")
-	}
-	xcodeSelectPth, err := bitrise.RunCommandAndReturnStdout("xcode-select", "-p")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get Xcode path")
-	}
-	log.Infoln(" * [OK] xcodebuild path :", progInstallPth)
-	log.Infoln("        active Xcode (Command Line Tools) path :", xcodeSelectPth)
-	log.Infoln("        version :", strings.Join(strings.Split(verStr, "\n"), " | "))
-	return nil
-}
-
 //
 // install with brew example
 //
@@ -159,98 +97,22 @@ func checkIsXcodeCLTInstalled() error {
 // 	return nil
 // }
 
-func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
-	doInstall := func() error {
-		installCmdLines := []string{
-			"curl -L https://github.com/bitrise-io/" + toolname + "/releases/download/" + minVersion + "/" + toolname + "-$(uname -s)-$(uname -m) > /usr/local/bin/" + toolname,
-			"chmod +x /usr/local/bin/" + toolname,
-		}
-		officialGithub := "https://github.com/bitrise-io/" + toolname
-		fmt.Println()
-		log.Warnln("No supported " + toolname + " version found.")
-		log.Infoln("You can find more information about "+toolname+" on it's official GitHub page:", officialGithub)
-		fmt.Println()
-
-		// Install
-		log.Infoln("Installing...")
-		fmt.Println(strings.Join(installCmdLines, "\n"))
-		if err := bitrise.RunBashCommandLines(installCmdLines); err != nil {
-			return err
-		}
-
-		// check again
-		return checkIsBitriseToolInstalled(toolname, minVersion, false)
-	}
-
-	// check whether installed
-	progInstallPth, err := checkProgramInstalledPath(toolname)
-	if err != nil {
-		if !isInstall {
-			return err
-		}
-
-		return doInstall()
-	}
-	verStr, err := bitrise.RunCommandAndReturnStdout(toolname, "-version")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get version")
-	}
-
-	// version check
-	isVersionOk, err := bitrise.IsVersionGreaterOrEqual(verStr, minVersion)
-	if err != nil {
-		log.Error("Failed to validate installed version")
-		return err
-	}
-	if !isVersionOk {
-		log.Warn("Installed "+toolname+" found, but not a supported version: ", verStr)
-		if !isInstall {
-			return errors.New("Failed to install required version.")
-		}
-		log.Warn("Updating...")
-		return doInstall()
-	}
-
-	log.Infoln(" * [OK] "+toolname+" :", progInstallPth)
-	log.Infoln("        version :", verStr)
-	return nil
-}
-
-func checkIsEnvmanInstalled() error {
-	toolname := "envman"
-	minVersion := minEnvmanVersion
-	if err := checkIsBitriseToolInstalled(toolname, minVersion, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func checkIsStepmanInstalled() error {
-	toolname := "stepman"
-	minVersion := minStepmanVersion
-	if err := checkIsBitriseToolInstalled(toolname, minVersion, true); err != nil {
-		return err
-	}
-	return nil
-}
-
 func doSetupOnOSX() error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
-	if err := checkIsXcodeCLTInstalled(); err != nil {
+	if err := dependencies.CheckIsXcodeCLTInstalled(); err != nil {
 		return errors.New(fmt.Sprint("Xcode Command Line Tools not installed. Err:", err))
 	}
-	if err := checkIsHomebrewInstalled(); err != nil {
+	if err := dependencies.CheckIsHomebrewInstalled(); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed. Err:", err))
 	}
 	// if err := checkIsAnsibleInstalled(); err != nil {
 	// 	return errors.New("Ansible failed to install")
 	// }
-	if err := checkIsEnvmanInstalled(); err != nil {
+	if err := dependencies.CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
 		return errors.New(fmt.Sprint("Envman failed to install:", err))
 	}
-	if err := checkIsStepmanInstalled(); err != nil {
+	if err := dependencies.CheckIsStepmanInstalled(minStepmanVersion); err != nil {
 		return errors.New(fmt.Sprint("Stepman failed to install:", err))
 	}
 	log.Infoln("All the required tools are installed!")

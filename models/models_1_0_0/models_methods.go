@@ -207,10 +207,13 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		*step.SupportURL = *otherStep.SupportURL
 	}
 	if otherStep.Source.Git != nil {
-		// if step.Title == nil {
-		// 	step.Title = new(string)
-		// }
+		if step.Source.Git == nil {
+			step.Source.Git = new(string)
+		}
 		*step.Source.Git = *otherStep.Source.Git
+	}
+	if len(otherStep.Dependencies) > 0 {
+		step.Dependencies = otherStep.Dependencies
 	}
 	if len(otherStep.HostOsTags) > 0 {
 		step.HostOsTags = otherStep.HostOsTags
