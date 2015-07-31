@@ -127,25 +127,40 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 	if err != nil {
 		return err
 	}
-
 	if otherOptions.Title != nil {
+		if options.Title == nil {
+			options.Title = new(string)
+		}
 		*options.Title = *otherOptions.Title
 	}
 	if otherOptions.Description != nil {
+		if options.Description == nil {
+			options.Description = new(string)
+		}
 		*options.Description = *otherOptions.Description
 	}
 	if len(otherOptions.ValueOptions) > 0 {
 		options.ValueOptions = otherOptions.ValueOptions
 	}
 	if otherOptions.IsRequired != nil {
+		if options.IsRequired == nil {
+			options.IsRequired = new(bool)
+		}
 		*options.IsRequired = *otherOptions.IsRequired
 	}
 	if otherOptions.IsExpand != nil {
+		if options.IsExpand == nil {
+			options.IsExpand = new(bool)
+		}
 		*options.IsExpand = *otherOptions.IsExpand
 	}
 	if otherOptions.IsDontChangeValue != nil {
+		if options.IsDontChangeValue == nil {
+			options.IsDontChangeValue = new(bool)
+		}
 		*options.IsDontChangeValue = *otherOptions.IsDontChangeValue
 	}
+	(*env)[envmanModels.OptionsKey] = options
 	return nil
 }
 
@@ -156,24 +171,45 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	}
 
 	if otherStep.Title != nil {
+		if step.Title == nil {
+			step.Title = new(string)
+		}
 		*step.Title = *otherStep.Title
 	}
 	if otherStep.Description != nil {
+		if step.Description == nil {
+			step.Description = new(string)
+		}
 		*step.Description = *otherStep.Description
 	}
 	if otherStep.Summary != nil {
+		if step.Summary == nil {
+			step.Summary = new(string)
+		}
 		*step.Summary = *otherStep.Summary
 	}
 	if otherStep.Website != nil {
+		if step.Website == nil {
+			step.Website = new(string)
+		}
 		*step.Website = *otherStep.Website
 	}
 	if otherStep.SourceCodeURL != nil {
+		if step.SourceCodeURL == nil {
+			step.SourceCodeURL = new(string)
+		}
 		*step.SourceCodeURL = *otherStep.SourceCodeURL
 	}
 	if otherStep.SupportURL != nil {
+		if step.SupportURL == nil {
+			step.SupportURL = new(string)
+		}
 		*step.SupportURL = *otherStep.SupportURL
 	}
 	if otherStep.Source.Git != nil {
+		// if step.Title == nil {
+		// 	step.Title = new(string)
+		// }
 		*step.Source.Git = *otherStep.Source.Git
 	}
 	if len(otherStep.HostOsTags) > 0 {
@@ -186,15 +222,27 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.TypeTags = otherStep.TypeTags
 	}
 	if otherStep.IsRequiresAdminUser != nil {
+		if step.IsRequiresAdminUser == nil {
+			step.IsRequiresAdminUser = new(bool)
+		}
 		*step.IsRequiresAdminUser = *otherStep.IsRequiresAdminUser
 	}
 	if otherStep.IsAlwaysRun != nil {
+		if step.IsAlwaysRun == nil {
+			step.IsAlwaysRun = new(bool)
+		}
 		*step.IsAlwaysRun = *otherStep.IsAlwaysRun
 	}
 	if otherStep.IsSkippable != nil {
+		if step.IsSkippable == nil {
+			step.IsSkippable = new(bool)
+		}
 		*step.IsSkippable = *otherStep.IsSkippable
 	}
 	if otherStep.RunIf != nil {
+		if step.RunIf == nil {
+			step.RunIf = new(string)
+		}
 		*step.RunIf = *otherStep.RunIf
 	}
 
@@ -258,11 +306,11 @@ func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.Envi
 }
 
 // GetStepIDStepDataPair ...
-func GetStepIDStepDataPair(stepListItm StepListItemModel) (string, stepmanModels.StepModel, error) {
-	if len(stepListItm) > 1 {
+func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModels.StepModel, error) {
+	if len(stepListItem) > 1 {
 		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
 	}
-	for key, value := range stepListItm {
+	for key, value := range stepListItem {
 		return key, value, nil
 	}
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")

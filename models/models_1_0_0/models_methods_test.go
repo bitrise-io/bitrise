@@ -7,37 +7,129 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-// Workflow
-func TestFillMissingDefaults(t *testing.T) {
+var (
+	testKey    = "test_key"
+	testValue  = "test_value"
+	testKey1   = "test_key1"
+	testValue1 = "test_value1"
+	testKey2   = "test_key2"
+	testValue2 = "test_value2"
 
-}
+	title   = "name 1"
+	desc    = "desc 1"
+	website = "web/1"
+	git     = "https://git.url"
+	fork    = "fork/1"
+
+	testTitle        = "test_title"
+	testDescription  = "test_description"
+	testValueOptions = []string{"test_valu_options1", "test_valu_options2"}
+	testTrue         = true
+	testFalse        = false
+)
 
 // Workflow
 func TestValidate(t *testing.T) {
+	workflow := WorkflowModel{
+		BeforeRun: []string{"befor1", "befor2", "befor3"},
+		AfterRun:  []string{"after1", "after2", "after3"},
+	}
+	err := workflow.Validate("title")
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	// refrence  cycle
+	workflow = WorkflowModel{
+		BeforeRun: []string{"befor1", "befor2", "befor3"},
+		AfterRun:  []string{"after1", "after2", "befor1"},
+	}
+	err = workflow.Validate("title")
+	if err == nil {
+		t.Fatal("Reference cycle, should case of error")
+	}
 }
 
 func TestMergeEnvironmentWith(t *testing.T) {
+	// Different keys
+	diffEnv := envmanModels.EnvironmentItemModel{
+		testKey: testValue,
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             &testTitle,
+			Description:       &testDescription,
+			ValueOptions:      testValueOptions,
+			IsRequired:        &testTrue,
+			IsExpand:          &testFalse,
+			IsDontChangeValue: &testTrue,
+		},
+	}
+	env := envmanModels.EnvironmentItemModel{
+		testKey1: testValue,
+	}
 
+	err := MergeEnvironmentWith(&env, diffEnv)
+	if err == nil {
+		t.Fatal("Different keys, should case of error")
+	}
+
+	// Normal merge
+	env = envmanModels.EnvironmentItemModel{
+		testKey:                 testValue,
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{},
+	}
+
+	err = MergeEnvironmentWith(&env, diffEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	options, err := env.GetOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	diffOptions, err := diffEnv.GetOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if *options.Title != *diffOptions.Title {
+		t.Fatal("Failed to merge Title")
+	}
+	if *options.Description != *diffOptions.Description {
+		t.Fatal("Failed to merge Description")
+	}
+	if len(options.ValueOptions) != len(diffOptions.ValueOptions) {
+		t.Fatal("Failed to merge ValueOptions")
+	}
+	if *options.IsRequired != *diffOptions.IsRequired {
+		t.Fatal("Failed to merge IsRequired")
+	}
+	if *options.IsExpand != *diffOptions.IsExpand {
+		t.Fatal("Failed to merge IsExpand")
+	}
+	if *options.IsDontChangeValue != *diffOptions.IsDontChangeValue {
+		t.Fatal("Failed to merge IsDontChangeValue")
+	}
 }
 
 func TestMergeStepWith(t *testing.T) {
-	title := "name 1"
+	// title := "name 1"
 	desc := "desc 1"
 	website := "web/1"
-	git := "https://git.url"
+	// git := "https://git.url"
 	fork := "fork/1"
 
 	defaultTrue := true
 
 	stepData := stepmanModels.StepModel{
-		Title:         &title,
+		// Title:         &title,
 		Description:   &desc,
 		Website:       &website,
 		SourceCodeURL: &fork,
-		Source: stepmanModels.StepSourceModel{
-			Git: &git,
-		},
+		// Source: stepmanModels.StepSourceModel{
+		// 	Git: &git,
+		// },
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
@@ -116,11 +208,52 @@ func TestMergeStepWith(t *testing.T) {
 }
 
 func TestGetInputByKey(t *testing.T) {
+	stepData := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"KEY_1": "Value 1",
+			},
+			envmanModels.EnvironmentItemModel{
+				"KEY_2": "Value 2",
+			},
+		},
+	}
 
+	_, found := getInputByKey(stepData, "KEY_1")
+	if found == false {
+		t.Fatal("Failed to find env (KEY_1)")
+	}
+
+	_, found = getInputByKey(stepData, "KEY_3")
+	if found {
+		t.Fatal("(KEY_3) found, even it doesn't exist")
+	}
 }
 
 func TestGetStepIDStepDataPair(t *testing.T) {
+	stepData := stepmanModels.StepModel{}
 
+	stepListItem := StepListItemModel{
+		"step1": stepData,
+	}
+
+	id, _, err := GetStepIDStepDataPair(stepListItem)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "step1" {
+		t.Fatalf("Invalid step id (%s) found", id)
+	}
+
+	stepListItem = StepListItemModel{
+		"step1": stepData,
+		"step2": stepData,
+	}
+
+	id, _, err = GetStepIDStepDataPair(stepListItem)
+	if err == nil {
+		t.Fatal("2 key-value, should case of error")
+	}
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
