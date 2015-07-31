@@ -11,23 +11,6 @@ import (
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 )
 
-// RunCommand ...
-func RunCommand(name string, args ...string) error {
-	return RunCommandInDir("", name, args...)
-}
-
-// RunCommandInDir ...
-func RunCommandInDir(dir, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if dir != "" {
-		cmd.Dir = dir
-	}
-	return cmd.Run()
-}
-
 // CheckProgramInstalledPath ...
 func CheckProgramInstalledPath(clcommand string) (string, error) {
 	cmd := exec.Command("which", clcommand)
@@ -57,8 +40,8 @@ func CheckIsRubyGemsInstalled() error {
 		log.Infoln("")
 		return errors.New("Failed to get version")
 	}
-	log.Infoln(" * [OK] RubyGems :", progInstallPth)
-	log.Infoln("        version :", verStr)
+	log.Debugln(" * [OK] RubyGems :", progInstallPth)
+	log.Debugln("        version :", verStr)
 	return nil
 }
 
@@ -83,8 +66,8 @@ func CheckIsHomebrewInstalled() error {
 		log.Infoln("")
 		return errors.New("Failed to get version")
 	}
-	log.Infoln(" * [OK] Homebrew :", progInstallPth)
-	log.Infoln("        version :", verStr)
+	log.Debugln(" * [OK] Homebrew :", progInstallPth)
+	log.Debugln("        version :", verStr)
 	return nil
 }
 
@@ -205,7 +188,11 @@ func InstallWithBrewIfNeeded(tool string) error {
 	}
 	if pth == "" {
 		args := []string{"install", tool}
-		return RunCommand("brew", args...)
+		out, err := bitrise.RunCommandAndReturnStdout("brew", args...)
+		if err != nil {
+			log.Error("Failed to install with brew:", out)
+			return err
+		}
 	}
 	return nil
 }
@@ -222,7 +209,11 @@ func InstallWithRubyGemsIfNeeded(gemName string) error {
 	}
 	if pth == "" {
 		args := []string{"install", gemName}
-		return RunCommand("gem", args...)
+		out, err := bitrise.RunCommandAndReturnStdout("gem", args...)
+		if err != nil {
+			log.Error("Failed to install with gem:", out)
+			return err
+		}
 	}
 	return nil
 }

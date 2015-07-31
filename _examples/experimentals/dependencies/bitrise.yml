@@ -1,0 +1,53 @@
+format_version: 1.0.0
+default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
+
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: MyTit1
+  - BITRISE_DEV_BRANCH: develop
+    opts:
+      is_expand: no
+
+workflows:
+  dependencies:
+    title: "test title"
+    summary: |
+        This is a workflow summary.
+        Check this out!
+    envs:
+    - MY_TEST_ENV: My test value
+      opts:
+        is_expand: false
+    before_run:
+      - before
+    steps:
+      - script:
+          title: Running the target script
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is a before workflow'
+                exit 1
+      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
+          is_always_run: true
+
+  before:
+    envs:
+      - BITRISE_PROJECT: MyTit1
+    steps:
+      - script:
+          title: Running the Before script
+          dependencies:
+              - tool: brew
+                dependency: brew-cask
+              - tool: brew
+                dependency: git
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                echo 'This is a before workflow'
+                echo "MY_TEST_ENV: ${MY_TEST_ENV}"
+                echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
+                echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"

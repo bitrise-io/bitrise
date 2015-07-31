@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	"github.com/bitrise-io/bitrise-cli/colorstring"
+	"github.com/bitrise-io/bitrise-cli/dependencies"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -327,6 +328,26 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) error {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
+
+	// Check dependencies
+	for _, dep := range step.Dependencies {
+		switch dep.Tool {
+		case stepmanModels.ToolBrew:
+			err := dependencies.InstallWithBrewIfNeeded(dep.Dependency)
+			if err != nil {
+				return err
+			}
+			break
+		case stepmanModels.ToolRubyGems:
+			err := dependencies.InstallWithRubyGemsIfNeeded(dep.Dependency)
+			if err != nil {
+				return err
+			}
+			break
+		default:
+			return errors.New("Not supported dependency (" + dep.Tool + ") (" + dep.Dependency + ")")
+		}
+	}
 
 	// Add step envs
 	for _, input := range step.Inputs {
