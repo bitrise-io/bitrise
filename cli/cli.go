@@ -15,6 +15,8 @@ var (
 )
 
 func before(c *cli.Context) error {
+	PrintBitriseHeaderASCIIArt()
+
 	// Log level
 	level, err := log.ParseLevel(c.String(LogLevelKey))
 	if err != nil {
@@ -34,6 +36,7 @@ func before(c *cli.Context) error {
 			return err
 		}
 		IsCIMode = true
+		log.Info("Bitrise-cli runs in CI mode")
 	}
 
 	return nil

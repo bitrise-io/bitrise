@@ -29,7 +29,6 @@ func PrintBitriseHeaderASCIIArt() {
 }
 
 func doSetup(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt()
 	log.Infoln("[BITRISE_CLI] - Setup")
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
