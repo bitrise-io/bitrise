@@ -9,7 +9,7 @@ app:
       is_expand: no
 
 workflows:
-  dependencies:
+  dependencies_test:
     title: "test title"
     summary: |
         This is a workflow summary.
@@ -23,12 +23,14 @@ workflows:
     steps:
       - script:
           title: Running the target script
+          dependencies:
+            - tool: brew
+              dependency: cmake
           inputs:
             - content: |
                 #!/bin/bash
                 set -v
-                echo 'This is a before workflow'
-                exit 1
+                echo 'This is a target workflow'
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
           is_always_run: true
 
@@ -38,16 +40,13 @@ workflows:
     steps:
       - script:
           title: Running the Before script
-          dependencies:
-              - tool: brew
-                dependency: brew-cask
-              - tool: brew
-                dependency: git
           inputs:
             - content: |
                 #!/bin/bash
                 set -v
                 echo 'This is a before workflow'
-                echo "MY_TEST_ENV: ${MY_TEST_ENV}"
-                echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
-                echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"
+                OUTPUT="$(which cmake)"
+                echo "$OUTPUT"
+                # if [ "$OUTPUT" != "" ]; then
+                #     brew uninstall cmake
+                # fi
