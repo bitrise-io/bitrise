@@ -112,8 +112,8 @@ func (step StepModel) Normalize() error {
 	return nil
 }
 
-// ValidateStepInputOutputModel ...
-func (step StepModel) ValidateStepInputOutputModel() error {
+// ValidateStep ...
+func (step StepModel) ValidateStep() error {
 	if step.Title == nil || *step.Title == "" {
 		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
