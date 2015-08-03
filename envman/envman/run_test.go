@@ -9,25 +9,25 @@ import (
 )
 
 func TestExpandEnvsInString(t *testing.T) {
-	t.Log("TestExpandEnvsInString")
+	if err := os.Setenv("MY_ENV_KEY", "key"); err != nil {
+		t.Fatal("failed to set env (MY_ENV_KEY)")
+	}
 
-	inp := "${HOME} home"
+	inp := "${MY_ENV_KEY} of my home"
 	expanded := expandEnvsInString(inp)
 
-	home := os.Getenv("HOME")
-	if home != "" {
-		should := home + " home"
+	key := os.Getenv("MY_ENV_KEY")
+	if key != "" {
+		should := key + " of my home"
 		if expanded != should {
 			t.Fatalf("Incorrect expand (%s), should be: (%s)", expanded, should)
 		}
 	} else {
-		t.Fatal("No ${HOME} env set")
+		t.Fatal("No ${MY_ENV_KEY} env set")
 	}
 }
 
 func TestCommandEnvs(t *testing.T) {
-	t.Log("TestCommandEnvs")
-
 	env1 := models.EnvironmentItemModel{
 		"test_key1": "test_value1",
 	}
@@ -81,7 +81,3 @@ func TestCommandEnvs(t *testing.T) {
 		t.Fatalf("Failed to set env (%v)", env2)
 	}
 }
-
-// func TestRunCmd(t *testing.T) {
-// 	t.Log("TestRunCmd")
-// }

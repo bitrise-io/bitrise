@@ -130,6 +130,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	}
 
 	// Key is not string
+	model = map[interface{}]interface{}{}
 	model[true] = "false"
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
