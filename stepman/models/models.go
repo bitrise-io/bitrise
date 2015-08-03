@@ -11,8 +11,8 @@ type StepSourceModel struct {
 
 // DependencyModel ...
 type DependencyModel struct {
-	DepManager string `json:"dep_manager,omitempty" yaml:"dep_manager,omitempty"`
-	DepName    string `json:"dep_name,omitempty" yaml:"dep_name,omitempty"`
+	Manager string `json:"manager,omitempty" yaml:"manager,omitempty"`
+	Name    string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 // StepModel ...0
