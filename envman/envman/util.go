@@ -4,8 +4,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/models"
@@ -21,10 +19,6 @@ var (
 	// ToolMode ...
 	ToolMode bool
 )
-
-type envsYMLModel struct {
-	Envs []models.EnvironmentItemModel `yaml:"envs"`
-}
 
 // -------------------
 // --- Environment handling methods
@@ -91,9 +85,6 @@ func UpdateOrAddToEnvlist(oldEnvSlice []models.EnvironmentItemModel, newEnv mode
 		newEnvs = append(newEnvs, newEnv)
 	}
 
-	if err := WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvs); err != nil {
-		return []models.EnvironmentItemModel{}, err
-	}
 	return newEnvs, nil
 }
 
@@ -161,7 +152,7 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byt
 		envMapSlice = append(envMapSlice, env)
 	}
 
-	envYML := envsYMLModel{
+	envYML := models.EnvsYMLModel{
 		Envs: envMapSlice,
 	}
 	bytes, err := yaml.Marshal(envYML)
@@ -213,7 +204,7 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 	if err != nil {
 		return []models.EnvironmentItemModel{}, err
 	}
-	var envsYML envsYMLModel
+	var envsYML models.EnvsYMLModel
 	if err := yaml.Unmarshal(bytes, &envsYML); err != nil {
 		return []models.EnvironmentItemModel{}, err
 	}
@@ -261,29 +252,4 @@ func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
 		return err
 	}
 	return nil
-}
-
-// -------------------
-// --- Common methods
-
-// ParseBool ...
-func ParseBool(s string, defaultValue bool) bool {
-	if s == "" {
-		return defaultValue
-	}
-
-	lowercased := strings.ToLower(s)
-	if lowercased == "yes" || lowercased == "y" {
-		return true
-	}
-	if lowercased == "no" || lowercased == "n" {
-		return false
-	}
-
-	value, err := strconv.ParseBool(s)
-	if err != nil {
-		log.Errorln("[ENVMAN] - isExpand: Failed to parse input:", err)
-		return defaultValue
-	}
-	return value
 }

@@ -1,8 +1,10 @@
 package envman
 
 import (
+	"errors"
 	"os"
 	"os/exec"
+	"syscall"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/models"
@@ -45,11 +47,11 @@ func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
 	return os.Environ(), nil
 }
 
-// ExecuteCmd ...
-func ExecuteCmd(commandToRun CommandModel) error {
+// RunCmd ...
+func RunCmd(commandToRun CommandModel) (int, error) {
 	cmdEnvs, err := commandEnvs(commandToRun.Environments)
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	cmd := exec.Command(commandToRun.Command, commandToRun.Argumentums...)
@@ -60,5 +62,17 @@ func ExecuteCmd(commandToRun CommandModel) error {
 
 	log.Debugln("Command to execute:", cmd)
 
-	return cmd.Run()
+	cmdExitCode := 0
+	if err := cmd.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
+			if !ok {
+				return 1, errors.New("Failed to cast exit status")
+			}
+			cmdExitCode = waitStatus.ExitStatus()
+		}
+		return cmdExitCode, err
+	}
+
+	return 0, nil
 }

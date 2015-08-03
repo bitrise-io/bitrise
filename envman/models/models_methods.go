@@ -19,12 +19,6 @@ var (
 	DefaultIsExpand = true
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
-	// DefaultIsAlwaysRun ...
-	DefaultIsAlwaysRun = false
-	// DefaultIsRequiresAdminUser ...
-	DefaultIsRequiresAdminUser = false
-	// DefaultIsSkippable ...
-	DefaultIsSkippable = false
 )
 
 // GetKeyValuePair ...
@@ -170,8 +164,8 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
-// FillMissingDeafults ...
-func (env *EnvironmentItemModel) FillMissingDeafults() error {
+// FillMissingDefaults ...
+func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	defaultString := ""
 
 	options, err := env.GetOptions()
@@ -194,22 +188,6 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	return nil
 }
 
-// NormalizeEnvironmentItemModel ...
-func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
-	if err := env.Normalize(); err != nil {
-		return err
-	}
-
-	if err := env.Validate(); err != nil {
-		return err
-	}
-
-	if err := env.FillMissingDeafults(); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Validate ...
 func (env EnvironmentItemModel) Validate() error {
 	key, _, err := env.GetKeyValuePair()
@@ -221,6 +199,22 @@ func (env EnvironmentItemModel) Validate() error {
 	}
 	_, err = env.GetOptions()
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// NormalizeEnvironmentItemModel ...
+func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
+	if err := env.Normalize(); err != nil {
+		return err
+	}
+
+	if err := env.Validate(); err != nil {
+		return err
+	}
+
+	if err := env.FillMissingDefaults(); err != nil {
 		return err
 	}
 	return nil

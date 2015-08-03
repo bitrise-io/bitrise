@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/codegangsta/cli"
@@ -30,8 +32,9 @@ func runCmd(c *cli.Context) {
 
 		log.Debugln("[ENVMAN] - Executing command:", cmdToExecute)
 
-		if err := envman.ExecuteCmd(cmdToExecute); err != nil {
-			log.Fatal("[ENVMAN] - Failed to execute command:", err)
+		if exit, err := envman.RunCmd(cmdToExecute); err != nil {
+			log.Error("[ENVMAN] - Failed to execute command:", err)
+			os.Exit(exit)
 		}
 
 		log.Debugln("[ENVMAN] - Command executed")
