@@ -23,7 +23,9 @@ go install github.com/tools/godep
 godep restore
 
 # Intsall
+cd ..
 go install
+cd "${REPO_ROOT_DIR}"
 
 # Check for unhandled errors
 go get -u github.com/kisielk/errcheck

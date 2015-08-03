@@ -3,8 +3,8 @@
 set -e
 set -v
 
+cd ..
 errcheck -asserts=true -blank=true $(go list ./...)
-
 
 # ==> TEST
 go test -v ./...
