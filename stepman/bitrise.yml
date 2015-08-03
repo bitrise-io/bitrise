@@ -71,3 +71,14 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - SLACK_ICON_EMOJI: ":rocket:"
+  godep-update:
+    steps:
+    - script:
+          title: Dependency update
+          inputs:
+          - content: |-
+              #!/bin/bash
+              set -v
+              set -e
+              rm -rf ./Godeps
+              godep save
