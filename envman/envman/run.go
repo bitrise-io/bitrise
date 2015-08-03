@@ -3,6 +3,7 @@ package envman
 import (
 	"os"
 	"os/exec"
+	"syscall"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/models"
@@ -46,10 +47,10 @@ func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
 }
 
 // RunCmd ...
-func RunCmd(commandToRun CommandModel) error {
+func RunCmd(commandToRun CommandModel) (int, error) {
 	cmdEnvs, err := commandEnvs(commandToRun.Environments)
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	cmd := exec.Command(commandToRun.Command, commandToRun.Argumentums...)
@@ -60,5 +61,15 @@ func RunCmd(commandToRun CommandModel) error {
 
 	log.Debugln("Command to execute:", cmd)
 
-	return cmd.Run()
+	cmdExitCode := 0
+	if err := cmd.Run(); err != nil {
+		var waitStatus syscall.WaitStatus
+		if exitError, ok := err.(*exec.ExitError); ok {
+			waitStatus = exitError.Sys().(syscall.WaitStatus)
+			cmdExitCode = waitStatus.ExitStatus()
+		}
+		return cmdExitCode, err
+	}
+
+	return 0, nil
 }
