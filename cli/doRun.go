@@ -424,6 +424,8 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 }
 
 func doRun(c *cli.Context) {
+	PrintBitriseHeaderASCIIArt()
+
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	startTime = time.Now()

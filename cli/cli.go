@@ -15,8 +15,6 @@ var (
 )
 
 func before(c *cli.Context) error {
-	PrintBitriseHeaderASCIIArt()
-
 	// Log level
 	level, err := log.ParseLevel(c.String(LogLevelKey))
 	if err != nil {
