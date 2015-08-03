@@ -10,6 +10,15 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
+var (
+	// DefaultIsAlwaysRun ...
+	DefaultIsAlwaysRun = false
+	// DefaultIsRequiresAdminUser ...
+	DefaultIsRequiresAdminUser = false
+	// DefaultIsSkippable ...
+	DefaultIsSkippable = false
+)
+
 // ValidateStepInputOutputModel ...
 func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
 	key, _, err := env.GetKeyValuePair()
@@ -30,141 +39,6 @@ func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
 	}
 
 	return nil
-}
-
-// -------------------
-// --- Struct methods
-
-// Normalize ...
-func (step StepModel) Normalize() error {
-	for _, input := range step.Inputs {
-		if err := input.Normalize(); err != nil {
-			return err
-		}
-	}
-	for _, output := range step.Outputs {
-		if err := output.Normalize(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// ValidateStepInputOutputModel ...
-func (step StepModel) ValidateStepInputOutputModel() error {
-	if step.Title == nil || *step.Title == "" {
-		return errors.New("Invalid step: missing or empty required 'title' property")
-	}
-	if step.Summary == nil || *step.Summary == "" {
-		return errors.New("Invalid step: missing or empty required 'summary' property")
-	}
-	if step.Website == nil || *step.Website == "" {
-		return errors.New("Invalid step: missing or empty required 'website' property")
-	}
-	if step.Source.Git == nil || *step.Source.Git == "" {
-		return errors.New("Invalid step: missing or empty required 'source' property")
-	}
-	for _, input := range step.Inputs {
-		err := ValidateStepInputOutputModel(input)
-		if err != nil {
-			return err
-		}
-	}
-	for _, output := range step.Outputs {
-		err := ValidateStepInputOutputModel(output)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// FillMissingDeafults ...
-func (step *StepModel) FillMissingDeafults() error {
-	defaultString := ""
-
-	if step.Description == nil {
-		step.Description = &defaultString
-	}
-	if step.SourceCodeURL == nil {
-		step.SourceCodeURL = &defaultString
-	}
-	if step.SupportURL == nil {
-		step.SupportURL = &defaultString
-	}
-	if step.IsRequiresAdminUser == nil {
-		step.IsRequiresAdminUser = &envmanModels.DefaultIsRequiresAdminUser
-	}
-	if step.IsAlwaysRun == nil {
-		step.IsAlwaysRun = &envmanModels.DefaultIsAlwaysRun
-	}
-	if step.IsSkippable == nil {
-		step.IsSkippable = &envmanModels.DefaultIsSkippable
-	}
-	if step.RunIf == nil {
-		step.RunIf = &defaultString
-	}
-
-	for _, input := range step.Inputs {
-		err := input.FillMissingDeafults()
-		if err != nil {
-			return err
-		}
-	}
-	for _, output := range step.Outputs {
-		err := output.FillMissingDeafults()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// GetStep ...
-func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bool) {
-	stepHash := collection.Steps
-	stepVersions, found := stepHash[id]
-	if !found {
-		return StepModel{}, false
-	}
-	step, found := stepVersions.Versions[version]
-	if !found {
-		return StepModel{}, false
-	}
-	return step, true
-}
-
-// GetDownloadLocations ...
-func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
-	step, found := collection.GetStep(id, version)
-	if found == false {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
-	}
-
-	locations := []DownloadLocationModel{}
-	for _, downloadLocation := range collection.DownloadLocations {
-		switch downloadLocation.Type {
-		case "zip":
-			url := downloadLocation.Src + id + "/" + version + "/step.zip"
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  url,
-			}
-			locations = append(locations, location)
-		case "git":
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  *step.Source.Git,
-			}
-			locations = append(locations, location)
-		default:
-			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, id)
-		}
-	}
-	if len(locations) < 1 {
-		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", id)
-	}
-	return locations, nil
 }
 
 // CompareVersions ...
@@ -218,6 +92,141 @@ func CompareVersions(version1, version2 string) (int, error) {
 		}
 	}
 	return -1, nil
+}
+
+// -------------------
+// --- Struct methods
+
+// Normalize ...
+func (step StepModel) Normalize() error {
+	for _, input := range step.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		if err := output.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ValidateStep ...
+func (step StepModel) ValidateStep() error {
+	if step.Title == nil || *step.Title == "" {
+		return errors.New("Invalid step: missing or empty required 'title' property")
+	}
+	if step.Summary == nil || *step.Summary == "" {
+		return errors.New("Invalid step: missing or empty required 'summary' property")
+	}
+	if step.Website == nil || *step.Website == "" {
+		return errors.New("Invalid step: missing or empty required 'website' property")
+	}
+	if step.Source.Git == nil || *step.Source.Git == "" {
+		return errors.New("Invalid step: missing or empty required 'source' property")
+	}
+	for _, input := range step.Inputs {
+		err := ValidateStepInputOutputModel(input)
+		if err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		err := ValidateStepInputOutputModel(output)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// FillMissingDefaults ...
+func (step *StepModel) FillMissingDefaults() error {
+	defaultString := ""
+
+	if step.Description == nil {
+		step.Description = &defaultString
+	}
+	if step.SourceCodeURL == nil {
+		step.SourceCodeURL = &defaultString
+	}
+	if step.SupportURL == nil {
+		step.SupportURL = &defaultString
+	}
+	if step.IsRequiresAdminUser == nil {
+		step.IsRequiresAdminUser = &DefaultIsRequiresAdminUser
+	}
+	if step.IsAlwaysRun == nil {
+		step.IsAlwaysRun = &DefaultIsAlwaysRun
+	}
+	if step.IsSkippable == nil {
+		step.IsSkippable = &DefaultIsSkippable
+	}
+	if step.RunIf == nil {
+		step.RunIf = &defaultString
+	}
+
+	for _, input := range step.Inputs {
+		err := input.FillMissingDefaults()
+		if err != nil {
+			return err
+		}
+	}
+	for _, output := range step.Outputs {
+		err := output.FillMissingDefaults()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetStep ...
+func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bool) {
+	stepHash := collection.Steps
+	stepVersions, found := stepHash[id]
+	if !found {
+		return StepModel{}, false
+	}
+	step, found := stepVersions.Versions[version]
+	if !found {
+		return StepModel{}, false
+	}
+	return step, true
+}
+
+// GetDownloadLocations ...
+func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
+	step, found := collection.GetStep(id, version)
+	if found == false {
+		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
+	}
+
+	locations := []DownloadLocationModel{}
+	for _, downloadLocation := range collection.DownloadLocations {
+		switch downloadLocation.Type {
+		case "zip":
+			url := downloadLocation.Src + id + "/" + version + "/step.zip"
+			location := DownloadLocationModel{
+				Type: downloadLocation.Type,
+				Src:  url,
+			}
+			locations = append(locations, location)
+		case "git":
+			location := DownloadLocationModel{
+				Type: downloadLocation.Type,
+				Src:  *step.Source.Git,
+			}
+			locations = append(locations, location)
+		default:
+			return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - Invalid download location (%#v) for step (%#v)", downloadLocation, id)
+		}
+	}
+	if len(locations) < 1 {
+		return []DownloadLocationModel{}, fmt.Errorf("[STEPMAN] - No download location found for step (%#v)", id)
+	}
+	return locations, nil
 }
 
 // GetLatestStepVersion ...

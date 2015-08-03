@@ -12,3 +12,8 @@ type EnvironmentItemOptionsModel struct {
 
 // EnvironmentItemModel ...
 type EnvironmentItemModel map[string]interface{}
+
+// EnvsYMLModel ...
+type EnvsYMLModel struct {
+	Envs []EnvironmentItemModel `yaml:"envs"`
+}

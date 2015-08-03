@@ -64,6 +64,4 @@ func setup(c *cli.Context) {
 		}
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
-
-	log.Info("[STEPMAN] - Initialized")
 }
