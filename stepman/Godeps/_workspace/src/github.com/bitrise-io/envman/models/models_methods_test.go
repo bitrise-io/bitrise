@@ -19,8 +19,6 @@ var (
 )
 
 func TestGetKeyValuePair(t *testing.T) {
-	t.Log("TestGetKeyValuePair")
-
 	// Filled env
 	env := EnvironmentItemModel{
 		testKey: testValue,
@@ -115,8 +113,6 @@ func TestGetKeyValuePair(t *testing.T) {
 }
 
 func TestParseFromInterfaceMap(t *testing.T) {
-	t.Log("TestParseFromInterfaceMap")
-
 	envOptions := EnvironmentItemOptionsModel{}
 	model := map[interface{}]interface{}{}
 
@@ -130,6 +126,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	}
 
 	// Key is not string
+	model = map[interface{}]interface{}{}
 	model[true] = "false"
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
@@ -170,8 +167,6 @@ func TestParseFromInterfaceMap(t *testing.T) {
 }
 
 func TestGetOptions(t *testing.T) {
-	t.Log("TestGetOptions")
-
 	// Filled env
 	env := EnvironmentItemModel{
 		testKey: testValue,
@@ -216,9 +211,6 @@ func TestGetOptions(t *testing.T) {
 }
 
 func TestNormalize(t *testing.T) {
-	t.Log("TestNormalize")
-	// 	t.Fatal("TestNormalize failed")
-
 	// Filled with map[string]interface{} options
 	env := EnvironmentItemModel{
 		testKey: testValue,
@@ -317,8 +309,6 @@ func TestNormalize(t *testing.T) {
 }
 
 func TestFillMissingDefaults(t *testing.T) {
-	t.Log("TestFillMissingDefaults")
-
 	// Empty env
 	env := EnvironmentItemModel{
 		testKey: testValue,
@@ -391,8 +381,6 @@ func TestFillMissingDefaults(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	t.Log("TestValidate")
-
 	// No key-value
 	env := EnvironmentItemModel{
 		OptionsKey: EnvironmentItemOptionsModel{
@@ -427,8 +415,3 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-// func TestNormalizeEnvironmentItemModel(t *testing.T) {
-// 	t.Log("TestNormalizeEnvironmentItemModel")
-// 	// 	t.Fatal("TestNormalizeEnvironmentItemModel failed")
-// }
