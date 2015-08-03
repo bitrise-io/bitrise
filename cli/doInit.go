@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/yaml.v2"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
@@ -33,6 +31,8 @@ const (
 )
 
 func doInit(c *cli.Context) {
+	PrintBitriseHeaderASCIIArt()
+
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
 	bitriseSecretsFileRelPath := "./" + DefaultSecretsFileName
 
@@ -105,7 +105,7 @@ echo "Welcome to Bitrise!"`
 		},
 	}
 
-	if err := saveConfigToFile(bitriseConfigFileRelPath, bitriseConf); err != nil {
+	if err := bitrise.SaveConfigToFile(bitriseConfigFileRelPath, bitriseConf); err != nil {
 		log.Fatalln("Failed to init the bitrise config file:", err)
 	} else {
 		fmt.Println()
@@ -165,28 +165,4 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func saveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
-	contBytes, err := generateYAML(bitriseConf)
-	if err != nil {
-		return err
-	}
-	if err := bitrise.WriteBytesToFile(pth, contBytes); err != nil {
-		return err
-	}
-
-	log.Println()
-	log.Infoln("=> Init success!")
-	log.Infoln("File created at path:", pth)
-
-	return nil
-}
-
-func generateYAML(v interface{}) ([]byte, error) {
-	bytes, err := yaml.Marshal(v)
-	if err != nil {
-		return []byte{}, err
-	}
-	return bytes, nil
 }

@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
 	"github.com/bitrise-io/bitrise-cli/colorstring"
+	"github.com/bitrise-io/bitrise-cli/dependencies"
 	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -21,6 +22,8 @@ const (
 	DefaultBitriseConfigFileName = "bitrise.yml"
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
+
+	depManagerBrew = "brew"
 )
 
 var (
@@ -328,6 +331,20 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) error {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
+	// Check dependencies
+	for _, dep := range step.Dependencies {
+		switch dep.Manager {
+		case depManagerBrew:
+			err := dependencies.InstallWithBrewIfNeeded(dep.Name)
+			if err != nil {
+				return err
+			}
+			break
+		default:
+			return errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
+		}
+	}
+
 	// Add step envs
 	for _, input := range step.Inputs {
 		key, value, err := input.GetKeyValuePair()
@@ -408,6 +425,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 
 func doRun(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt()
+
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	startTime = time.Now()

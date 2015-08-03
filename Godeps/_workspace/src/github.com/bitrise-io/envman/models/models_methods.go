@@ -19,18 +19,12 @@ var (
 	DefaultIsExpand = true
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
-	// DefaultIsAlwaysRun ...
-	DefaultIsAlwaysRun = false
-	// DefaultIsRequiresAdminUser ...
-	DefaultIsRequiresAdminUser = false
-	// DefaultIsSkippable ...
-	DefaultIsSkippable = false
 )
 
 // GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	if len(env) > 2 {
-		return "", "", errors.New("Invalid env: more then 2 fields ")
+		return "", "", fmt.Errorf("Invalid env: more than 2 fields: %#v", env)
 	}
 
 	retKey := ""
@@ -39,7 +33,7 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	for key, value := range env {
 		if key != OptionsKey {
 			if retKey != "" {
-				return "", "", errors.New("Invalid env: more then 1 key-value field found!")
+				return "", "", fmt.Errorf("Invalid env: more than 1 key-value field found: %#v", env)
 			}
 
 			valueStr, ok := value.(string)
@@ -47,7 +41,7 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 				if value == nil {
 					valueStr = ""
 				} else {
-					return "", "", fmt.Errorf("Invalid value (key:%#v) (value:%#v)", key, value)
+					return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
 				}
 			}
 
@@ -170,8 +164,8 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
-// FillMissingDeafults ...
-func (env *EnvironmentItemModel) FillMissingDeafults() error {
+// FillMissingDefaults ...
+func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	defaultString := ""
 
 	options, err := env.GetOptions()
@@ -194,22 +188,6 @@ func (env *EnvironmentItemModel) FillMissingDeafults() error {
 	return nil
 }
 
-// NormalizeEnvironmentItemModel ...
-func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
-	if err := env.Normalize(); err != nil {
-		return err
-	}
-
-	if err := env.Validate(); err != nil {
-		return err
-	}
-
-	if err := env.FillMissingDeafults(); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Validate ...
 func (env EnvironmentItemModel) Validate() error {
 	key, _, err := env.GetKeyValuePair()
@@ -221,6 +199,22 @@ func (env EnvironmentItemModel) Validate() error {
 	}
 	_, err = env.GetOptions()
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// NormalizeEnvironmentItemModel ...
+func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
+	if err := env.Normalize(); err != nil {
+		return err
+	}
+
+	if err := env.Validate(); err != nil {
+		return err
+	}
+
+	if err := env.FillMissingDefaults(); err != nil {
 		return err
 	}
 	return nil
