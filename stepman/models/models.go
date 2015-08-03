@@ -4,18 +4,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
-const (
-	// ToolBrew ...
-	ToolBrew = "brew"
-	// ToolRubyGems ...
-	ToolRubyGems = "ruby_gems"
-)
-
-var (
-	// SupportedTools ...
-	SupportedTools = []string{ToolBrew, ToolRubyGems}
-)
-
 // StepSourceModel ...
 type StepSourceModel struct {
 	Git *string `json:"git,omitempty" yaml:"git,omitempty"`
@@ -23,11 +11,11 @@ type StepSourceModel struct {
 
 // DependencyModel ...
 type DependencyModel struct {
-	Tool       string `json:"tool,omitempty" yaml:"tool,omitempty"`
-	Dependency string `json:"dependency,omitempty" yaml:"dependency,omitempty"`
+	DepManager string `json:"dep_manager,omitempty" yaml:"tool,dep_manager"`
+	DepName    string `json:"dep_name,omitempty" yaml:"dep_name,omitempty"`
 }
 
-// StepModel ...
+// StepModel ...0
 type StepModel struct {
 	Title               *string           `json:"title,omitempty" yaml:"title,omitempty"`
 	Description         *string           `json:"description,omitempty" yaml:"description,omitempty"`
