@@ -85,7 +85,7 @@ func activate(c *cli.Context) {
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
-		log.Info("[STEPMAN] - Step does not exist, download it")
+		log.Debug("[STEPMAN] - Step does not exist, download it")
 		if err := stepman.DownloadStep(collection, id, version); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}

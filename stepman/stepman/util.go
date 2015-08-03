@@ -81,7 +81,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
-		log.Info("[STEPMAN] - Step already downloaded")
+		log.Debug("[STEPMAN] - Step already downloaded")
 		return nil
 	}
 
@@ -89,7 +89,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			log.Info("[STEPMAN] - Downloading step from:", downloadLocation.Src)
+			log.Debug("[STEPMAN] - Downloading step from:", downloadLocation.Src)
 			if err := DownloadAndUnZIP(downloadLocation.Src, stepPth); err != nil {
 				log.Warn("[STEPMAN] - Failed to download step.zip:", err)
 			} else {
@@ -97,7 +97,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 				return nil
 			}
 		case "git":
-			log.Info("[STEPMAN] - Git clone step from:", downloadLocation.Src)
+			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
 			if err := DoGitCloneWithVersion(downloadLocation.Src, stepPth, version); err != nil {
 				log.Warn("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
