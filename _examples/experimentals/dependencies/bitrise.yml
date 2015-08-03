@@ -24,8 +24,8 @@ workflows:
       - script:
           title: Running the target script
           dependencies:
-            - tool: brew
-              dependency: cmake
+            - dep_manager: brew
+              dep_name: cmake
           inputs:
             - content: |
                 #!/bin/bash

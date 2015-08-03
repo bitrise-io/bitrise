@@ -4,27 +4,31 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
-// -------------------
-// --- Common models
-
 // StepSourceModel ...
 type StepSourceModel struct {
 	Git *string `json:"git,omitempty" yaml:"git,omitempty"`
 }
 
-// StepModel ...
+// DependencyModel ...
+type DependencyModel struct {
+	DepManager string `json:"dep_manager,omitempty" yaml:"dep_manager,omitempty"`
+	DepName    string `json:"dep_name,omitempty" yaml:"dep_name,omitempty"`
+}
+
+// StepModel ...0
 type StepModel struct {
-	Title               *string         `json:"title,omitempty" yaml:"title,omitempty"`
-	Description         *string         `json:"description,omitempty" yaml:"description,omitempty"`
-	Summary             *string         `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Website             *string         `json:"website,omitempty" yaml:"website,omitempty"`
-	SourceCodeURL       *string         `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
-	SupportURL          *string         `json:"support_url,omitempty" yaml:"support_url,omitempty"`
-	Source              StepSourceModel `json:"source,omitempty" yaml:"source,omitempty"`
-	HostOsTags          []string        `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
-	ProjectTypeTags     []string        `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
-	TypeTags            []string        `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
-	IsRequiresAdminUser *bool           `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
+	Title               *string           `json:"title,omitempty" yaml:"title,omitempty"`
+	Description         *string           `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary             *string           `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Website             *string           `json:"website,omitempty" yaml:"website,omitempty"`
+	SourceCodeURL       *string           `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
+	SupportURL          *string           `json:"support_url,omitempty" yaml:"support_url,omitempty"`
+	Source              StepSourceModel   `json:"source,omitempty" yaml:"source,omitempty"`
+	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
+	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
+	TypeTags            []string          `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
+	Dependencies        []DependencyModel `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	IsRequiresAdminUser *bool             `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
 	// IsAlwaysRun : if true then this step will always run,
 	//  even if a previous step fails.
 	IsAlwaysRun *bool `json:"is_always_run,omitempty" yaml:"is_always_run,omitempty"`
@@ -37,9 +41,6 @@ type StepModel struct {
 	Inputs  []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
-
-// -------------------
-// --- Steplib models
 
 // StepGroupModel ...
 type StepGroupModel struct {

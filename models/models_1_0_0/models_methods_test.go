@@ -156,8 +156,8 @@ func TestMergeStepWith(t *testing.T) {
 		},
 		Dependencies: []stepmanModels.DependencyModel{
 			stepmanModels.DependencyModel{
-				Tool:       "brew",
-				Dependency: "test",
+				DepManager: "brew",
+				DepName:    "test",
 			},
 		},
 		SupportURL: &newSuppURL,
@@ -190,7 +190,7 @@ func TestMergeStepWith(t *testing.T) {
 
 	} else {
 		dep := mergedStepData.Dependencies[0]
-		if dep.Tool != "brew" || dep.Dependency != "test" {
+		if dep.DepManager != "brew" || dep.DepName != "test" {
 			t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
 		}
 	}
@@ -271,8 +271,6 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
-	t.Logf("CreateStepIDDataFromString")
-
 	// default / long / verbose ID mode
 	stepCompositeIDString := "steplib-src::step-id@0.0.1"
 	t.Log("stepCompositeIDString: ", stepCompositeIDString)
