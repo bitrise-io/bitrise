@@ -1,6 +1,7 @@
 package envman
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"syscall"
@@ -63,9 +64,11 @@ func RunCmd(commandToRun CommandModel) (int, error) {
 
 	cmdExitCode := 0
 	if err := cmd.Run(); err != nil {
-		var waitStatus syscall.WaitStatus
 		if exitError, ok := err.(*exec.ExitError); ok {
-			waitStatus = exitError.Sys().(syscall.WaitStatus)
+			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
+			if !ok {
+				return 1, errors.New("Failed to cast exit status")
+			}
 			cmdExitCode = waitStatus.ExitStatus()
 		}
 		return cmdExitCode, err
