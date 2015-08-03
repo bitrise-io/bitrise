@@ -60,8 +60,6 @@ func countOfEnvKeyInEnvSlice(env models.EnvironmentItemModel, envSlice []models.
 }
 
 func TestUpdateOrAddToEnvlist(t *testing.T) {
-	t.Log("TestUpdateOrAddToEnvlist")
-
 	env1 := models.EnvironmentItemModel{
 		"test_key1": "test_value1",
 	}
@@ -126,8 +124,6 @@ func TestUpdateOrAddToEnvlist(t *testing.T) {
 }
 
 func TestRemoveDefaults(t *testing.T) {
-	t.Log("TestRemoveDefaults")
-
 	// Filled env
 	env := models.EnvironmentItemModel{
 		testKey: testValue,
