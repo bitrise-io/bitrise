@@ -156,8 +156,8 @@ func TestMergeStepWith(t *testing.T) {
 		},
 		Dependencies: []stepmanModels.DependencyModel{
 			stepmanModels.DependencyModel{
-				DepManager: "brew",
-				DepName:    "test",
+				Manager: "brew",
+				Name:    "test",
 			},
 		},
 		SupportURL: &newSuppURL,
@@ -190,7 +190,7 @@ func TestMergeStepWith(t *testing.T) {
 
 	} else {
 		dep := mergedStepData.Dependencies[0]
-		if dep.DepManager != "brew" || dep.DepName != "test" {
+		if dep.Manager != "brew" || dep.Name != "test" {
 			t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
 		}
 	}

@@ -23,8 +23,7 @@ const (
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
 
-	depManagerBrew     = "brew"
-	depManagerRubyGems = "gem"
+	depManagerBrew = "brew"
 )
 
 var (
@@ -334,21 +333,15 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	// Check dependencies
 	for _, dep := range step.Dependencies {
-		switch dep.DepManager {
+		switch dep.Manager {
 		case depManagerBrew:
-			err := dependencies.InstallWithBrewIfNeeded(dep.DepName)
-			if err != nil {
-				return err
-			}
-			break
-		case depManagerRubyGems:
-			err := dependencies.InstallWithRubyGemsIfNeeded(dep.DepName)
+			err := dependencies.InstallWithBrewIfNeeded(dep.Name)
 			if err != nil {
 				return err
 			}
 			break
 		default:
-			return errors.New("Not supported dependency (" + dep.DepManager + ") (" + dep.DepName + ")")
+			return errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 		}
 	}
 
