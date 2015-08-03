@@ -82,16 +82,20 @@ func CheckIsXcodeCLTInstalled() error {
 		log.Warn("Once the installation is finished you should call the bitrise setup again.")
 		return err
 	}
-	verStr, err := bitrise.RunCommandAndReturnStdout("xcodebuild", "-version")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get version")
-	}
 	xcodeSelectPth, err := bitrise.RunCommandAndReturnStdout("xcode-select", "-p")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get Xcode path")
 	}
+
+	verStr, err := bitrise.RunCommandAndReturnStdout("xcodebuild", "-version")
+	if err != nil {
+		log.Infoln("")
+		log.Warn("No Xcode found, only the Xcode Command Line Tools are available!")
+		log.Warn("Full Xcode is required to build, test and archive iOS apps!")
+		verStr = "No full Xcode available, only Command Line Tools."
+	}
+
 	log.Infoln(" * [OK] xcodebuild path :", progInstallPth)
 	log.Infoln("        active Xcode (Command Line Tools) path :", xcodeSelectPth)
 	log.Infoln("        version :", strings.Join(strings.Split(verStr, "\n"), " | "))
