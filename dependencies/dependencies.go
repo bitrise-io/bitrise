@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise-cli/bitrise"
+	"github.com/bitrise-io/bitrise-cli/colorstring"
 )
 
 // CheckProgramInstalledPath ...
@@ -66,8 +67,8 @@ func CheckIsHomebrewInstalled() error {
 		log.Infoln("")
 		return errors.New("Failed to get version")
 	}
-	log.Debugln(" * [OK] Homebrew :", progInstallPth)
-	log.Debugln("        version :", verStr)
+	log.Infoln(" * "+colorstring.Green("[OK]")+" Homebrew :", progInstallPth)
+	log.Infoln("        version :", verStr)
 	return nil
 }
 
@@ -88,17 +89,31 @@ func CheckIsXcodeCLTInstalled() error {
 		return errors.New("Failed to get Xcode path")
 	}
 
-	verStr, err := bitrise.RunCommandAndReturnStdout("xcodebuild", "-version")
+	isFullXcodeAvailable := false
+	verStr, err := bitrise.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
 	if err != nil {
-		log.Infoln("")
-		log.Warn("No Xcode found, only the Xcode Command Line Tools are available!")
-		log.Warn("Full Xcode is required to build, test and archive iOS apps!")
-		verStr = "No full Xcode available, only Command Line Tools."
+		// No full Xcode available, only the Command Line Tools
+		// verStr is something like "xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance"
+		isFullXcodeAvailable = false
+	} else {
+		// version OK - full Xcode available
+		//  we'll just format it a bit to fit into one line
+		isFullXcodeAvailable = true
+		verStr = strings.Join(strings.Split(verStr, "\n"), " | ")
 	}
 
-	log.Infoln(" * [OK] xcodebuild path :", progInstallPth)
-	log.Infoln("        active Xcode (Command Line Tools) path :", xcodeSelectPth)
-	log.Infoln("        version :", strings.Join(strings.Split(verStr, "\n"), " | "))
+	log.Infoln(" * "+colorstring.Green("[OK]")+" xcodebuild path :", progInstallPth)
+	if !isFullXcodeAvailable {
+		log.Infoln("        version (xcodebuild) :", colorstring.Yellowf("%s", verStr))
+	} else {
+		log.Infoln("        version (xcodebuild) :", verStr)
+	}
+	log.Infoln("        active Xcode (Command Line Tools) path (xcode-select --print-path) :", xcodeSelectPth)
+	if !isFullXcodeAvailable {
+		log.Warn(colorstring.Yellowf("%s", "No Xcode found, only the Xcode Command Line Tools are available!"))
+		log.Warn(colorstring.Yellowf("%s", "Full Xcode is required to build, test and archive iOS apps!"))
+	}
+
 	return nil
 }
 
@@ -155,7 +170,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		return doInstall()
 	}
 
-	log.Infoln(" * [OK] "+toolname+" :", progInstallPth)
+	log.Infoln(" * "+colorstring.Green("[OK]")+" "+toolname+" :", progInstallPth)
 	log.Infoln("        version :", verStr)
 	return nil
 }
