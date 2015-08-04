@@ -25,7 +25,7 @@ const (
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
 
 	depManagerBrew                 = "brew"
-	stepRunSummaryBoxMaxWidthChars = 40
+	stepRunSummaryBoxMaxWidthChars = 50
 
 	stepRunResultCodeSuccess            = 0
 	stepRunResultCodeFailed             = 1
@@ -41,7 +41,7 @@ var (
 
 func printRunningWorkflow(title string) {
 	fmt.Println()
-	log.Infof("Running workflow (%s)", title)
+	log.Info(colorstring.Bluef("Running workflow (%s)", title))
 	fmt.Println()
 }
 
@@ -58,12 +58,18 @@ func printRunningStep(title string, idx int) {
 	log.Info(sep)
 }
 
-func printStepSummary(title string, resultCode int, runTime string) {
+func printStepSummary(title string, resultCode int, runTime string, exitCode int) {
 	content := fmt.Sprintf("%s | .... | %s", title, runTime)
+	if resultCode == stepRunResultCodeFailed || resultCode == stepRunResultCodeFailedNotImportant {
+		content = fmt.Sprintf("%s | .... | exit code: %d | %s", title, exitCode, runTime)
+	}
 	if len(content) > stepRunSummaryBoxMaxWidthChars {
 		dif := len(content) - stepRunSummaryBoxMaxWidthChars
 		title = title[0:(len(title) - dif)]
 		content = fmt.Sprintf("%s | .... | %s", title, runTime)
+		if resultCode == stepRunResultCodeFailed || resultCode == stepRunResultCodeFailedNotImportant {
+			content = fmt.Sprintf("%s | .... | exit code: %d | %s", title, exitCode, runTime)
+		}
 	}
 
 	sep := strings.Repeat("-", len(content)+2)
@@ -75,11 +81,11 @@ func printStepSummary(title string, resultCode int, runTime string) {
 		break
 	case stepRunResultCodeFailed:
 		runStateIcon := "❌ "
-		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.Red(title), runTime)
+		content = fmt.Sprintf("%s | %s | %s | exit code: %d", runStateIcon, colorstring.Red(title), runTime, exitCode)
 		break
 	case stepRunResultCodeFailedNotImportant:
 		runStateIcon := "❌ "
-		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.Yellow(title), runTime)
+		content = fmt.Sprintf("%s | %s | %s | exit code: %d", runStateIcon, colorstring.Yellow(title), runTime, exitCode)
 		break
 	case stepRunResultCodeSkipped:
 		runStateIcon := "➡ "
@@ -247,12 +253,15 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
 		case stepRunResultCodeFailed:
+			log.Errorf("Step (%s) failed, error: (%v)", *step.Title, err)
 			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
 		case stepRunResultCodeFailedNotImportant:
+			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", *step.Title, err)
 			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case stepRunResultCodeSkipped:
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		default:
@@ -266,7 +275,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime).String())
+		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
 	}
 	registerStepListItemRunResults := func(stepListItem models.StepListItemModel, resultCode int, exitCode int, err error) {
 		name := ""
@@ -286,12 +295,15 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
 		case stepRunResultCodeFailed:
+			log.Errorf("Step (%s) failed, error: (%v)", name, err)
 			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
 		case stepRunResultCodeFailedNotImportant:
+			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", name, err)
 			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case stepRunResultCodeSkipped:
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		default:
@@ -305,7 +317,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime).String())
+		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
 	}
 
 	for idx, stepListItm := range workflow.Steps {
@@ -408,7 +420,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 		if workflowRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
-			log.Warnf("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			registerStepRunResults(mergedStep, stepRunResultCodeSkipped, 0, err)
 			continue
 		} else {
