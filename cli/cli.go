@@ -52,7 +52,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = "0.9.6"
+	app.Version = "0.9.7"
 
 	app.Author = ""
 	app.Email = ""
