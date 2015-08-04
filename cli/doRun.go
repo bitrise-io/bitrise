@@ -64,9 +64,9 @@ func printRunningStep(title string, idx int) {
 
 func printStepSummary(title string, resultCode int, runTime string) {
 	successString := "✅ "
-	if resultCode != ResultCodeSuccess {
-		successString = "❌ "
-	}
+	// if resultCode != ResultCodeSuccess {
+	// 	successString = "❌ "
+	// }
 	content := fmt.Sprintf("%s | %s | %s", successString, title, runTime)
 	if len(content) > maxStepNameChars {
 		dif := len(content) - maxStepNameChars
@@ -76,10 +76,23 @@ func printStepSummary(title string, resultCode int, runTime string) {
 
 	sep := strings.Repeat("-", len(content)+2)
 	log.Info(sep)
-	if resultCode == ResultCodeSuccess {
+	switch resultCode {
+	case ResultCodeSuccess:
+		successString = "✅ "
 		content = fmt.Sprintf("%s | %s | %s", successString, title, runTime)
-	} else {
+		break
+	case ResultCodeFailed:
+		successString = "❌ "
 		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Red(title), runTime)
+		break
+	case ResultCodeFailedNotImportant:
+		successString = "❌ "
+		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Red(title), runTime)
+		break
+	case ResultCodeSkipped:
+		successString = "➡ "
+		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Yellow(title), runTime)
+		break
 	}
 
 	log.Infof("| " + content + " |")
@@ -110,20 +123,30 @@ func printSummary() {
 	runTime := time.Now().Sub(startTime)
 	log.Info("Total run time: " + runTime.String())
 
-	totalString := fmt.Sprintf("Out of %d steps,", totalStepCount)
-	successString := colorstring.Greenf(" %d was successful,", successStepCount)
-	failedString := colorstring.Redf(" %d failed,", failedStepCount)
-	notImportantString := colorstring.Yellowf(" %d failed but was marked as skippable and", failedNotImportantStepCount)
-	skippedString := colorstring.Whitef(" %d was skipped", skippedStepCount)
+	if totalStepCount > 0 {
+		log.Infof("Out of %d steps:", totalStepCount)
 
-	log.Info(totalString + successString + failedString + notImportantString + skippedString)
-
-	if failedStepCount > 0 {
-		log.Fatal("FINISHED but a couple of steps failed - Ouch")
-	} else {
-		log.Info("DONE - Congrats!!")
+		if successStepCount > 0 {
+			log.Info(colorstring.Greenf(" * %d was successful", successStepCount))
+		}
+		if failedStepCount > 0 {
+			log.Info(colorstring.Redf(" * %d failed", failedStepCount))
+		}
 		if failedNotImportantStepCount > 0 {
-			log.Warn("P.S.: a couple of non imporatant steps failed")
+			log.Info(colorstring.Yellowf(" * %d failed but was marked as skippable and", failedNotImportantStepCount))
+		}
+		if skippedStepCount > 0 {
+			log.Info(colorstring.Whitef(" * %d was skipped", skippedStepCount))
+		}
+
+		fmt.Println()
+		if failedStepCount > 0 {
+			log.Fatal("FINISHED but a couple of steps failed - Ouch")
+		} else {
+			log.Info("DONE - Congrats!!")
+			if failedNotImportantStepCount > 0 {
+				log.Warn("P.S.: a couple of non imporatant steps failed")
+			}
 		}
 	}
 }
