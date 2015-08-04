@@ -392,6 +392,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			continue
 		}
 
+		printRunningStep(*mergedStep.Title, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, workflowRunResults, IsCIMode)
 			if err != nil {
@@ -410,7 +411,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			registerStepRunResults(mergedStep, ResultCodeSkipped, 0, err)
 			continue
 		} else {
-			printRunningStep(*mergedStep.Title, idx)
 			exit, err := runStep(mergedStep, stepIDData, stepDir)
 			if err != nil {
 				registerStepRunResults(mergedStep, ResultCodeFailed, exit, err)
