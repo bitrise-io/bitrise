@@ -31,7 +31,7 @@ workflows:
                 #!/bin/bash
                 set -v
                 echo 'This is a before workflow'
-                exit 1
+                exit 34
       - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
 
   before:
