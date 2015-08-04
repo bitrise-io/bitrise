@@ -59,32 +59,31 @@ func printRunningStep(title string, idx int) {
 }
 
 func printStepSummary(title string, resultCode int, runTime string) {
-	successString := "✅ "
-	content := fmt.Sprintf("%s | %s | %s", successString, title, runTime)
+	content := fmt.Sprintf("%s | .... | %s", title, runTime)
 	if len(content) > stepRunSummaryBoxMaxWidthChars {
 		dif := len(content) - stepRunSummaryBoxMaxWidthChars
 		title = title[0:(len(title) - dif)]
-		content = fmt.Sprintf("%s | %s | %s", successString, title, runTime)
+		content = fmt.Sprintf("%s | .... | %s", title, runTime)
 	}
 
 	sep := strings.Repeat("-", len(content)+2)
 	log.Info(sep)
 	switch resultCode {
 	case stepRunResultCodeSuccess:
-		successString = "✅ "
-		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Green(title), runTime)
+		runStateIcon := "✅ "
+		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.Green(title), runTime)
 		break
 	case stepRunResultCodeFailed:
-		successString = "❌ "
-		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Red(title), runTime)
+		runStateIcon := "❌ "
+		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.Red(title), runTime)
 		break
 	case stepRunResultCodeFailedNotImportant:
-		successString = "❌ "
-		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Yellow(title), runTime)
+		runStateIcon := "❌ "
+		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.Yellow(title), runTime)
 		break
 	case stepRunResultCodeSkipped:
-		successString = "➡ "
-		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.White(title), runTime)
+		runStateIcon := "➡ "
+		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.White(title), runTime)
 		break
 	default:
 		log.Error("Unkown result code")
