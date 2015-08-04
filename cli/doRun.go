@@ -24,17 +24,13 @@ const (
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
 
-	depManagerBrew   = "brew"
-	maxStepNameChars = 40
+	depManagerBrew                 = "brew"
+	stepRunSummaryBoxMaxWidthChars = 40
 
-	// ResultCodeSuccess ...
-	ResultCodeSuccess = 0
-	// ResultCodeFailed ...
-	ResultCodeFailed = 1
-	// ResultCodeFailedNotImportant ...
-	ResultCodeFailedNotImportant = 2
-	// ResultCodeSkipped ...
-	ResultCodeSkipped = 3
+	stepRunResultCodeSuccess            = 0
+	stepRunResultCodeFailed             = 1
+	stepRunResultCodeFailedNotImportant = 2
+	stepRunResultCodeSkipped            = 3
 )
 
 var (
@@ -45,31 +41,28 @@ var (
 
 func printRunningWorkflow(title string) {
 	fmt.Println()
-	log.Infof(colorstring.Magentaf("Running workflow (%s)", title))
+	log.Infof("Running workflow (%s)", title)
 	fmt.Println()
 }
 
 func printRunningStep(title string, idx int) {
 	content := fmt.Sprintf("(%d) %s", idx, title)
-	if len(content) > maxStepNameChars {
-		dif := maxStepNameChars - len(content)
+	if len(content) > stepRunSummaryBoxMaxWidthChars {
+		dif := stepRunSummaryBoxMaxWidthChars - len(content)
 		title = title[0 : len(content)-dif]
 		content = fmt.Sprintf("(%d) %s", idx, title)
 	}
 	sep := strings.Repeat("-", len(content)+4)
 	log.Info(sep)
-	log.Infof("| " + colorstring.Greenf("(%d) %s", idx, title) + " |")
+	log.Infof("| (%d) %s |", idx, title)
 	log.Info(sep)
 }
 
 func printStepSummary(title string, resultCode int, runTime string) {
 	successString := "✅ "
-	// if resultCode != ResultCodeSuccess {
-	// 	successString = "❌ "
-	// }
 	content := fmt.Sprintf("%s | %s | %s", successString, title, runTime)
-	if len(content) > maxStepNameChars {
-		dif := len(content) - maxStepNameChars
+	if len(content) > stepRunSummaryBoxMaxWidthChars {
+		dif := len(content) - stepRunSummaryBoxMaxWidthChars
 		title = title[0:(len(title) - dif)]
 		content = fmt.Sprintf("%s | %s | %s", successString, title, runTime)
 	}
@@ -77,22 +70,25 @@ func printStepSummary(title string, resultCode int, runTime string) {
 	sep := strings.Repeat("-", len(content)+2)
 	log.Info(sep)
 	switch resultCode {
-	case ResultCodeSuccess:
+	case stepRunResultCodeSuccess:
 		successString = "✅ "
-		content = fmt.Sprintf("%s | %s | %s", successString, title, runTime)
+		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Green(title), runTime)
 		break
-	case ResultCodeFailed:
+	case stepRunResultCodeFailed:
 		successString = "❌ "
 		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Red(title), runTime)
 		break
-	case ResultCodeFailedNotImportant:
+	case stepRunResultCodeFailedNotImportant:
 		successString = "❌ "
-		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Red(title), runTime)
-		break
-	case ResultCodeSkipped:
-		successString = "➡ "
 		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.Yellow(title), runTime)
 		break
+	case stepRunResultCodeSkipped:
+		successString = "➡ "
+		content = fmt.Sprintf("%s | %s | %s", successString, colorstring.White(title), runTime)
+		break
+	default:
+		log.Error("Unkown result code")
+		return
 	}
 
 	log.Infof("| " + content + " |")
@@ -248,21 +244,24 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		switch resultCode {
-		case ResultCodeSuccess:
+		case stepRunResultCodeSuccess:
 			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
-		case ResultCodeFailed:
+		case stepRunResultCodeFailed:
 			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
-		case ResultCodeFailedNotImportant:
+		case stepRunResultCodeFailedNotImportant:
 			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
-		case ResultCodeSkipped:
+		case stepRunResultCodeSkipped:
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
+		default:
+			log.Error("Unkown result code")
+			return
 		}
 
-		if resultCode != ResultCodeSuccess {
+		if resultCode != stepRunResultCodeSuccess {
 			if err := setBuildFailedEnv(true); err != nil {
 				log.Error("Failed to set Build Status envs")
 			}
@@ -284,21 +283,24 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		switch resultCode {
-		case ResultCodeSuccess:
+		case stepRunResultCodeSuccess:
 			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
-		case ResultCodeFailed:
+		case stepRunResultCodeFailed:
 			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
-		case ResultCodeFailedNotImportant:
+		case stepRunResultCodeFailedNotImportant:
 			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
-		case ResultCodeSkipped:
+		case stepRunResultCodeSkipped:
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
+		default:
+			log.Error("Unkown result code")
+			return
 		}
 
-		if resultCode != ResultCodeSuccess {
+		if resultCode != stepRunResultCodeSuccess {
 			if err := setBuildFailedEnv(true); err != nil {
 				log.Error("Failed to set Build Status envs")
 			}
@@ -315,19 +317,19 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 			continue
 		}
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 			continue
 		}
 
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
 		if err := cleanupStepWorkDir(); err != nil {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 			continue
 		}
 
@@ -338,57 +340,57 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 			stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 			if err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 
 			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 			if err := bitrise.RunCopyDir(stepAbsLocalPth, stepDir, true); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 			if err := bitrise.RunCopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 			if err := bitrise.RunCopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.RunStepmanSetup(stepIDData.SteplibSource); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 
 			if err := bitrise.RunStepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
-				registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+				registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 				continue
 			} else {
 				log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			}
 		} else {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData))
 			continue
 		}
 
 		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 		log.Debugf("Spec read from YML: %#v\n", specStep)
 		if err != nil {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 			continue
 		}
 
 		mergedStep, err := models.MergeStepWith(specStep, workflowStep)
 		if err != nil {
-			registerStepListItemRunResults(stepListItm, ResultCodeFailed, 1, err)
+			registerStepListItemRunResults(stepListItm, stepRunResultCodeFailed, 1, err)
 			continue
 		}
 
@@ -396,27 +398,27 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, workflowRunResults, IsCIMode)
 			if err != nil {
-				registerStepRunResults(mergedStep, ResultCodeFailed, 1, err)
+				registerStepRunResults(mergedStep, stepRunResultCodeFailed, 1, err)
 				continue
 			}
 			if !isRun {
 				log.Warn("The step's Is-Run expression evaluated to false - skipping")
 				log.Info(" The Is-Run expression was: ", *mergedStep.RunIf)
-				registerStepRunResults(mergedStep, ResultCodeSkipped, 0, err)
+				registerStepRunResults(mergedStep, stepRunResultCodeSkipped, 0, err)
 				continue
 			}
 		}
 		if workflowRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
 			log.Warnf("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
-			registerStepRunResults(mergedStep, ResultCodeSkipped, 0, err)
+			registerStepRunResults(mergedStep, stepRunResultCodeSkipped, 0, err)
 			continue
 		} else {
 			exit, err := runStep(mergedStep, stepIDData, stepDir)
 			if err != nil {
-				registerStepRunResults(mergedStep, ResultCodeFailed, exit, err)
+				registerStepRunResults(mergedStep, stepRunResultCodeFailed, exit, err)
 				continue
 			} else {
-				registerStepRunResults(mergedStep, ResultCodeSuccess, 0, nil)
+				registerStepRunResults(mergedStep, stepRunResultCodeSuccess, 0, nil)
 			}
 		}
 	}
@@ -463,7 +465,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	log.Info(colorstring.Green("OUTPUT"))
+	log.Info("OUTPUT:")
 	if exit, err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic"); err != nil {
 		return exit, err
 	}
