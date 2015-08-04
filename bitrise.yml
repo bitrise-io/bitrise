@@ -73,6 +73,7 @@ workflows:
               set -e
               rm -rf ./Godeps
               godep save
+
   create-release:
     steps:
     - script:
@@ -94,6 +95,19 @@ workflows:
             mv _bin/tmpbin "${finalpth}"
             # register the version for next steps
             envman add --key RELEASE_VERSION --value "${binversion}"
+    - script:
+        title: Creating release changelog template
+        inputs:
+        - content: |-
+            changelog_path = "./_changelogs/#{ENV['RELEASE_VERSION']}.md"
+            puts " * changelog_path: #{changelog_path}"
+            template_content = File.read("./_changelogs/template.md")
+            changelog_content = template_content.gsub("{{version}}", ENV['RELEASE_VERSION'])
+            File.open(changelog_path, "w") do |f|
+              f.write(changelog_content)
+            end
+        - runner_bin: ruby
+
   announce-release:
     steps:
     - script:
