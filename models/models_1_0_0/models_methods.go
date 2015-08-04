@@ -395,7 +395,9 @@ func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 
 // Append ...
 func (buildRes *BuildRunResultsModel) Append(res BuildRunResultsModel) {
-	buildRes.TotalStepCount += res.TotalStepCount
+	for _, success := range res.SuccessSteps {
+		buildRes.SuccessSteps = append(buildRes.SuccessSteps, success)
+	}
 	for _, failed := range res.FailedSteps {
 		buildRes.FailedSteps = append(buildRes.FailedSteps, failed)
 	}

@@ -48,14 +48,15 @@ type StepIDData struct {
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
-	TotalStepCount          int
-	FailedSteps             []FailedStepModel
-	FailedNotImportantSteps []FailedStepModel
-	SkippedSteps            []FailedStepModel
+	SuccessSteps            []StepRunResultsModel
+	FailedSteps             []StepRunResultsModel
+	FailedNotImportantSteps []StepRunResultsModel
+	SkippedSteps            []StepRunResultsModel
 }
 
-// FailedStepModel ...
-type FailedStepModel struct {
+// StepRunResultsModel ...
+type StepRunResultsModel struct {
 	StepName string
 	Error    error
+	ExitCode int
 }

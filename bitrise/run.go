@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -23,6 +24,30 @@ func RunCommandInDir(dir, name string, args ...string) error {
 	}
 	log.Debugln("Run command: $", cmd)
 	return cmd.Run()
+}
+
+// RunCommandInDirWithExitCode ...
+func RunCommandInDirWithExitCode(dir, name string, args ...string) (int, error) {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if dir != "" {
+		cmd.Dir = dir
+	}
+
+	cmdExitCode := 0
+	if err := cmd.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
+			if !ok {
+				return 1, errors.New("Failed to cast exit status")
+			}
+			cmdExitCode = waitStatus.ExitStatus()
+		}
+		return cmdExitCode, err
+	}
+	return 0, nil
 }
 
 // RunCommand ...
@@ -132,17 +157,17 @@ func RunEnvmanAdd(key, value string, expand bool) error {
 }
 
 // RunEnvmanRunInDir ...
-func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) error {
+func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) (int, error) {
 	if logLevel == "" {
 		logLevel = log.GetLevel().String()
 	}
 	args := []string{"--loglevel", logLevel, "run"}
 	args = append(args, cmd...)
-	return RunCommandInDir(dir, "envman", args...)
+	return RunCommandInDirWithExitCode(dir, "envman", args...)
 }
 
 // RunEnvmanRun ...
-func RunEnvmanRun(cmd []string) error {
+func RunEnvmanRun(cmd []string) (int, error) {
 	return RunEnvmanRunInDir("", cmd, "")
 }
 
