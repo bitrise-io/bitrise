@@ -38,6 +38,14 @@ func RunCommandAndReturnStdout(cmdName string, cmdArgs ...string) (string, error
 	return strings.TrimSpace(outStr), err
 }
 
+// RunCommandAndReturnCombinedStdoutAndStderr ..
+func RunCommandAndReturnCombinedStdoutAndStderr(cmdName string, cmdArgs ...string) (string, error) {
+	cmd := exec.Command(cmdName, cmdArgs...)
+	outBytes, err := cmd.CombinedOutput()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
+}
+
 // RunBashCommand ...
 func RunBashCommand(cmdStr string) error {
 	return RunCommand("bash", "-c", cmdStr)

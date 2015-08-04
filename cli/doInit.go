@@ -20,14 +20,19 @@ const (
 	defaultSecretsContent = `envs:
 - MY_HOME: $HOME
 - MY_SECRET_PASSWORD: XyZ
-  is_expand: no
-  # Hint: You can use is_expand: no
-  #  if you want to make it sure that
-  #  the value is preserved as-it-is, and won't be
-  #  expanded before use.
-  # For example if your password contains the dollar sign ($)
-  #  it would (by default) be expanded as an environment variable.
-  # You can prevent this with is_expand: no`
+  opts:
+    # You can include some options as well if you
+    #  want to change how the value is passed to a command.
+    is_expand: no
+    # For example you can use is_expand: no
+    #  if you want to make it sure that
+    #  the value is preserved as-it-is, and won't be
+    #  expanded before use.
+    # For example if your password contains the dollar sign ($)
+    #  it would (by default) be expanded as an environment variable,
+    #  just like $HOME would be expanded/replaced with your home
+    #  directory path.
+    # You can prevent this with is_expand: no`
 )
 
 func doInit(c *cli.Context) {
