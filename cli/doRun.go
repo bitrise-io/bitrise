@@ -99,11 +99,11 @@ func printSummary() {
 	failedNotImportantStepCount := 0
 	skippedStepCount := 0
 
-	totalStepCount += len(buildRunResults.SuccessSteps)
+	successStepCount += len(buildRunResults.SuccessSteps)
 	failedStepCount += len(buildRunResults.FailedSteps)
 	failedNotImportantStepCount += len(buildRunResults.FailedNotImportantSteps)
 	skippedStepCount += len(buildRunResults.SkippedSteps)
-	successStepCount = totalStepCount - failedStepCount - failedNotImportantStepCount - skippedStepCount
+	totalStepCount = successStepCount + failedStepCount + failedNotImportantStepCount + skippedStepCount
 
 	fmt.Println()
 	log.Infoln("==> Summary:")
@@ -212,7 +212,7 @@ func cleanupStepWorkDir() error {
 	return nil
 }
 
-func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (stepRunResults models.BuildRunResultsModel) {
+func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string) (workflowRunResults models.BuildRunResultsModel) {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	var stepStartTime time.Time
@@ -226,16 +226,16 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		switch resultCode {
 		case ResultCodeSuccess:
-			stepRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
+			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
 		case ResultCodeFailed:
-			stepRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
+			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
 		case ResultCodeFailedNotImportant:
-			stepRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
+			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case ResultCodeSkipped:
-			stepRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		}
 
@@ -262,16 +262,16 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		switch resultCode {
 		case ResultCodeSuccess:
-			stepRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
+			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
 			break
 		case ResultCodeFailed:
-			stepRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
+			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
 			break
 		case ResultCodeFailedNotImportant:
-			stepRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
+			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case ResultCodeSkipped:
-			stepRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		}
 
@@ -370,7 +370,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, stepRunResults, IsCIMode)
+			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, workflowRunResults, IsCIMode)
 			if err != nil {
 				registerStepRunResults(mergedStep, ResultCodeFailed, 1, err)
 				continue
@@ -382,7 +382,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		}
-		if stepRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
+		if workflowRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
 			log.Warnf("A previous step failed and this step was not marked to IsAlwaysRun - skipping step (id:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			registerStepRunResults(mergedStep, ResultCodeSkipped, 0, err)
 			continue
@@ -397,7 +397,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 	}
-	return stepRunResults
+	return workflowRunResults
 }
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) (int, error) {
