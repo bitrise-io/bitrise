@@ -123,10 +123,26 @@ workflows:
             envman add --key RELEASE_VERSION --value "${binversion}"
     - slack-message@1.2.0:
         inputs:
-        - SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
+        - SLACK_WEBHOOK_URL: $INTERNAL_SLACK_WEBHOOK_URL
           opts:
             is_expand: true
-        - SLACK_CHANNEL: $SLACK_CHANNEL
+        - SLACK_CHANNEL: $INTERNAL_SLACK_CHANNEL
+          opts:
+            is_expand: true
+        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
+          opts:
+            is_expand: true
+        - SLACK_MESSAGE_TEXT: |
+            Release v${RELEASE_VERSION} was just published! :tada:
+
+            You can find it at ${GITHUB_RELEASES_URL}
+        - SLACK_ICON_EMOJI: ":rocket:"
+    - slack-message@1.2.0:
+        inputs:
+        - SLACK_WEBHOOK_URL: $PUBLIC_SLACK_WEBHOOK_URL
+          opts:
+            is_expand: true
+        - SLACK_CHANNEL: $PUBLIC_SLACK_CHANNEL
           opts:
             is_expand: true
         - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
