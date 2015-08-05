@@ -6,6 +6,7 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise-cli/colorstring"
 	"github.com/codegangsta/cli"
 )
 
@@ -29,14 +30,13 @@ func before(c *cli.Context) error {
 	// CI
 	//  if CI mode indicated make sure we set the related env
 	//  so all other tools we use will also get it
-	if c.IsSet(CIKey) {
+	if c.Bool(CIKey) {
 		if err := os.Setenv("CI", "true"); err != nil {
 			return err
 		}
 		IsCIMode = true
-		log.Info("Bitrise-cli runs in CI mode")
+		log.Info(colorstring.Yellow("Bitrise-cli runs in CI mode"))
 	}
-
 	return nil
 }
 
