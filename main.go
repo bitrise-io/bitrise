@@ -4,7 +4,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/cli"
+	"github.com/bitrise-io/bitrise/cli"
 )
 
 func init() {

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/bitrise"
-	"github.com/bitrise-io/bitrise-cli/colorstring"
+	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/colorstring"
 )
 
 // CheckProgramInstalledPath ...

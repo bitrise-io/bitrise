@@ -10,10 +10,10 @@ RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
 ENV GOPATH /go
 ENV PATH /go/bin:$PATH
 
-RUN mkdir -p /go/src/github.com/bitrise-io/bitrise-cli
-COPY . /go/src/github.com/bitrise-io/bitrise-cli
+RUN mkdir -p /go/src/github.com/bitrise-io/bitrise
+COPY . /go/src/github.com/bitrise-io/bitrise
 
-WORKDIR /go/src/github.com/bitrise-io/bitrise-cli
+WORKDIR /go/src/github.com/bitrise-io/bitrise
 # godep
 RUN go get -u github.com/tools/godep
 RUN go install github.com/tools/godep
@@ -22,6 +22,6 @@ RUN godep restore
 RUN go install
 
 # include _temp/bin in the PATH
-ENV PATH /go/src/github.com/bitrise-io/bitrise-cli/_temp/bin:$PATH
+ENV PATH /go/src/github.com/bitrise-io/bitrise/_temp/bin:$PATH
 
-CMD bitrise-cli --version
+CMD bitrise --version

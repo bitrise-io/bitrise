@@ -8,10 +8,10 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/bitrise"
-	"github.com/bitrise-io/bitrise-cli/colorstring"
-	"github.com/bitrise-io/bitrise-cli/dependencies"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/colorstring"
+	"github.com/bitrise-io/bitrise/dependencies"
+	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -620,7 +620,7 @@ func doRun(c *cli.Context) {
 		}
 		fmt.Println()
 		log.Infoln("You can run a selected workflow with:")
-		log.Infoln("-> bitrise-cli run the-workflow-name")
+		log.Infoln("-> bitrise run the-workflow-name")
 		os.Exit(1)
 	}
 

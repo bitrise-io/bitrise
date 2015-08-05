@@ -1,6 +1,6 @@
 # Bitrise CLI
 
-[![Join the chat at https://gitter.im/bitrise-io/bitrise-cli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bitrise-io/bitrise-cli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/bitrise-io/bitrise](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bitrise-io/bitrise?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 **Technology Preview:** this repository is still under active development, breaking changes are expected and feedback is greatly appreciated!
 
@@ -14,15 +14,15 @@ Part of the Bitrise Continuous Integration, Delivery and Automations Stack.
 
 ## Install and Setup
 
-Check the latest release for instructions at: [https://github.com/bitrise-io/bitrise-cli/releases](https://github.com/bitrise-io/bitrise-cli/releases)
+Check the latest release for instructions at: [https://github.com/bitrise-io/bitrise/releases](https://github.com/bitrise-io/bitrise/releases)
 
 
 ## Tutorials and Examples
 
-You can find examples in the [_examples](https://github.com/bitrise-io/bitrise-cli/tree/master/_examples) folder.
+You can find examples in the [_examples](https://github.com/bitrise-io/bitrise/tree/master/_examples) folder.
 
-If you're getting started you should start with [_examples/tutorials](https://github.com/bitrise-io/bitrise-cli/tree/master/_examples/tutorials),
-this should guide you through the basics, while you'll already use `bitrise-cli` (requires installed `bitrise-cli`).
+If you're getting started you should start with [_examples/tutorials](https://github.com/bitrise-io/bitrise/tree/master/_examples/tutorials),
+this should guide you through the basics, while you'll already use `bitrise` (requires installed `bitrise`).
 
 ## Development Guideline
 
