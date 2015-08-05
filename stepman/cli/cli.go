@@ -10,13 +10,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func parseDebug(c *cli.Context) bool {
-	if c.IsSet(DebugKey) {
-		return c.Bool(DebugKey)
-	}
-	return false
-}
-
 func before(c *cli.Context) error {
 	// Log level
 	if logLevel, err := log.ParseLevel(c.String(LogLevelKey)); err != nil {
@@ -32,7 +25,7 @@ func before(c *cli.Context) error {
 	}
 
 	// Debug mode
-	stepman.DebugMode = parseDebug(c)
+	stepman.DebugMode = c.Bool(DebugKey)
 	return nil
 }
 
