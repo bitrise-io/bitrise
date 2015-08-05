@@ -5,8 +5,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/bitrise"
-	models "github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/bitrise"
+	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
@@ -118,7 +118,7 @@ echo "Welcome to Bitrise!"`
 		fmt.Println()
 		fmt.Println("We initialized a " + DefaultBitriseConfigFileName + " config file for you.")
 		fmt.Println("If you're in this folder you can use this config file")
-		fmt.Println(" with bitrise-cli automatically, you don't have to")
+		fmt.Println(" with bitrise automatically, you don't have to")
 		fmt.Println(" specify it's path.")
 		fmt.Println()
 	}
@@ -143,14 +143,14 @@ echo "Welcome to Bitrise!"`
 	fmt.Println()
 	fmt.Println("Hurray, you're good to go!")
 	fmt.Println("You can simply run:")
-	fmt.Println("-> bitrise-cli run primary")
+	fmt.Println("-> bitrise run primary")
 	fmt.Println("to test the sample configuration (which contains")
 	fmt.Println("an example workflow called 'primary').")
 	fmt.Println()
 	fmt.Println("Once you tested this sample setup you can")
 	fmt.Println(" open the " + DefaultBitriseConfigFileName + " config file,")
 	fmt.Println(" modify it and then run a workflow with:")
-	fmt.Println("-> bitrise-cli run YOUR-WORKFLOW-NAME")
+	fmt.Println("-> bitrise run YOUR-WORKFLOW-NAME")
 }
 
 func saveSecretsToFile(pth, secretsStr string) (bool, error) {

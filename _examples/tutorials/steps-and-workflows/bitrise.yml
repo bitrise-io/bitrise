@@ -5,7 +5,7 @@ workflows:
 
   basics:
     # You can run this workflow with:
-    # bitrise-cli run basics
+    # bitrise run basics
     #
     # All of the following steps in this workflow will do exactly the
     #  same thing, it demonstrates how you can define a step's ID
@@ -64,7 +64,7 @@ workflows:
 
   direct-url:
     # You can run this workflow with:
-    # bitrise-cli run direct-url
+    # bitrise run direct-url
     #
     # This workflow shows how to use steps with specifying the
     #  step's git clone URL directly.
@@ -89,7 +89,7 @@ workflows:
 
   relative:
     # You can run this workflow with:
-    # bitrise-cli run relative
+    # bitrise run relative
     #
     # You can specify local path for a step as well.
     # The path can be any kind of path (even absolute path)
@@ -115,7 +115,7 @@ workflows:
 
   local:
     # You can run this workflow with:
-    # bitrise-cli run local
+    # bitrise run local
     #
     # This is the same as the 'relative' workflow example
     #  just demonstrating that you can use all the common

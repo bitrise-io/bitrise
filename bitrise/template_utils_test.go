@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bitrise-io/bitrise-cli/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/models/models_1_0_0"
 )
 
 func TestEvaluateStepTemplateToBool(t *testing.T) {

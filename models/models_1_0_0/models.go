@@ -6,7 +6,7 @@ import (
 )
 
 // -------------------
-// --- Bitrise-cli models
+// --- bitrise models
 
 // BitriseDataModel ...
 type BitriseDataModel struct {

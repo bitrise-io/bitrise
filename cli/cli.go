@@ -6,7 +6,7 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/colorstring"
+	"github.com/bitrise-io/bitrise/colorstring"
 	"github.com/codegangsta/cli"
 )
 
@@ -35,7 +35,7 @@ func before(c *cli.Context) error {
 			return err
 		}
 		IsCIMode = true
-		log.Info(colorstring.Yellow("Bitrise-cli runs in CI mode"))
+		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
 	}
 	return nil
 }

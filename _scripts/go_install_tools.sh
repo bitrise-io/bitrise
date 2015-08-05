@@ -28,7 +28,7 @@ cd "${STEPMAN_REPO_DIR_PATH}"
 godep restore
 go install
 
-# godep restore for bitrise-cli
+# godep restore for bitrise
 cd "${REPO_ROOT_DIR}"
 godep restore
 

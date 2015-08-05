@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise-cli/dependencies"
+	"github.com/bitrise-io/bitrise/dependencies"
 	"github.com/codegangsta/cli"
 )
 
@@ -50,9 +50,9 @@ func doSetup(c *cli.Context) {
 	fmt.Println()
 	log.Infoln("We're ready to rock!!")
 	fmt.Println()
-	log.Infoln("To start using bitrise-cli:")
+	log.Infoln("To start using bitrise:")
 	log.Infoln("* cd into your project's directory (if you're not there already)")
-	log.Infoln("* call: bitrise-cli init")
+	log.Infoln("* call: bitrise init")
 	log.Infoln("* follow the guide")
 	fmt.Println()
 	log.Infoln("That's all :)")
