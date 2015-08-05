@@ -31,6 +31,7 @@ const (
 	stepRunResultCodeFailed             = 1
 	stepRunResultCodeFailedNotImportant = 2
 	stepRunResultCodeSkipped            = 3
+	stepRunResultCodeSkippedWithRunIf   = 4
 )
 
 var (
@@ -88,7 +89,7 @@ func printStepSummary(title string, resultCode int, duration time.Duration, exit
 		runStateIcon := "❌ "
 		content = fmt.Sprintf("%s | %s | %s | exit code: %d", runStateIcon, colorstring.Yellow(title), runTime, exitCode)
 		break
-	case stepRunResultCodeSkipped:
+	case stepRunResultCodeSkipped, stepRunResultCodeSkippedWithRunIf:
 		runStateIcon := "➡ "
 		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.White(title), runTime)
 		break
@@ -265,6 +266,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
+		case stepRunResultCodeSkippedWithRunIf:
+			log.Warn("The step's (" + *step.Title + ") Run-If expression evaluated to false - skipping")
+			log.Info("The Run-If expression was: ", colorstring.White(*step.RunIf))
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			break
 		default:
 			log.Error("Unkown result code")
 			return
@@ -305,6 +311,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			break
 		case stepRunResultCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			break
+		case stepRunResultCodeSkippedWithRunIf:
+			log.Warn("The step's (" + name + ") Run-If expression evaluated to false - skipping")
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		default:
@@ -414,9 +424,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 			if !isRun {
-				log.Warn("The step's Is-Run expression evaluated to false - skipping")
-				log.Info(" The Is-Run expression was: ", *mergedStep.RunIf)
-				registerStepRunResults(mergedStep, stepRunResultCodeSkipped, 0, err)
+				registerStepRunResults(mergedStep, stepRunResultCodeSkippedWithRunIf, 0, err)
 				continue
 			}
 		}
