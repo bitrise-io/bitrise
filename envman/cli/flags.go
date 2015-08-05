@@ -82,17 +82,14 @@ var (
 	// Command flags
 	flKey = cli.StringFlag{
 		Name:  KeyKey + ", " + keyKeyShortT,
-		Value: "",
 		Usage: "Key of the environment variable. Empty string (\"\") is NOT accepted.",
 	}
 	flValue = cli.StringFlag{
 		Name:  ValueKey + ", " + valueKeyShort,
-		Value: "",
 		Usage: "Value of the environment variable. Empty string is accepted.",
 	}
 	flValueFile = cli.StringFlag{
 		Name:  ValueFileKey + ", " + valueFileKeyShort,
-		Value: "",
 		Usage: "Path of a file which contains the environment variable's value to be stored.",
 	}
 	flNoExpand = cli.BoolFlag{
