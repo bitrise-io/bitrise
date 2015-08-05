@@ -42,7 +42,7 @@ func download(c *cli.Context) {
 		version = latest
 	}
 
-	update := parseUpdate(c)
+	update := c.Bool(UpdateKey)
 
 	// Check step exist in collection
 	if _, found := collection.GetStep(id, version); !found {

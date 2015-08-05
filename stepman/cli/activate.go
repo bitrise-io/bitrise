@@ -9,13 +9,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func parseUpdate(c *cli.Context) bool {
-	if c.IsSet(UpdateKey) {
-		return c.Bool(UpdateKey)
-	}
-	return false
-}
-
 func activate(c *cli.Context) {
 	log.Debugln("[STEPMAN] - Activate")
 
@@ -34,7 +27,7 @@ func activate(c *cli.Context) {
 	}
 
 	copyYML := c.String(CopyYMLKey)
-	update := parseUpdate(c)
+	update := c.Bool(UpdateKey)
 
 	// Get step
 	collection, err := stepman.ReadStepSpec(collectionURI)

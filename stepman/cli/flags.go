@@ -56,8 +56,8 @@ var (
 	}
 	flDebug = cli.BoolFlag{
 		Name:   DebugKey + ", " + debugKeyShort,
-		EnvVar: DebugEnvKey,
 		Usage:  "Debug mode.",
+		EnvVar: DebugEnvKey,
 	}
 	flags = []cli.Flag{
 		flDebug,
@@ -66,28 +66,23 @@ var (
 	// Command flags
 	flCollection = cli.StringFlag{
 		Name:   CollectionKey + ", " + collectionKeyShort,
-		Value:  "",
-		EnvVar: CollectionPathEnvKey,
 		Usage:  "Collection of step.",
+		EnvVar: CollectionPathEnvKey,
 	}
 	flID = cli.StringFlag{
 		Name:  IDKey + ", " + idKeyShort,
-		Value: "",
 		Usage: "Step id.",
 	}
 	flVersion = cli.StringFlag{
 		Name:  VersionKey + ", " + versionKeyShort,
-		Value: "",
 		Usage: "Step version.",
 	}
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
-		Value: "",
 		Usage: "Path where the step will copied.",
 	}
 	flCopyYML = cli.StringFlag{
 		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
-		Value: "",
 		Usage: "Path where the selected/activated step's step.yml will be copied.",
 	}
 	flUpdate = cli.BoolFlag{
