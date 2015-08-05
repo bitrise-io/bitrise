@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/colorstring"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -136,7 +137,7 @@ echo "Welcome to Bitrise!"`
 		fmt.Println("This way you can safely commit and share your configuration file")
 		fmt.Println(" and ignore this secrets file, so nobody else will")
 		fmt.Println(" know about your secrets.")
-		fmt.Println("You should NEVER commit this secrets file into your repository!!")
+		fmt.Println(colorstring.Yellow("You should NEVER commit this secrets file into your repository!!"))
 		fmt.Println()
 	}
 
