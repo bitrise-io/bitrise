@@ -58,7 +58,8 @@ func printRunningStep(title string, idx int) {
 	log.Info(sep)
 }
 
-func printStepSummary(title string, resultCode int, runTime string, exitCode int) {
+func printStepSummary(title string, resultCode int, duration time.Duration, exitCode int) {
+	runTime := bitrise.TimeToFormattedSeconds(duration, " sec")
 	content := fmt.Sprintf("%s | .... | %s", title, runTime)
 	if resultCode == stepRunResultCodeFailed || resultCode == stepRunResultCodeFailedNotImportant {
 		content = fmt.Sprintf("%s | .... | exit code: %d | %s", title, exitCode, runTime)
@@ -122,7 +123,7 @@ func printSummary() {
 	fmt.Println()
 	log.Infoln("==> Summary:")
 	runTime := time.Now().Sub(startTime)
-	log.Info("Total run time: " + runTime.String())
+	log.Info("Total run time: " + bitrise.TimeToFormattedSeconds(runTime, " seconds"))
 
 	if totalStepCount > 0 {
 		log.Infof("Out of %d steps:", totalStepCount)
@@ -275,7 +276,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
+		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime), exitCode)
 	}
 	registerStepListItemRunResults := func(stepListItem models.StepListItemModel, resultCode int, exitCode int, err error) {
 		name := ""
@@ -317,7 +318,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
+		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime), exitCode)
 	}
 
 	for idx, stepListItm := range workflow.Steps {
@@ -475,7 +476,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	log.Info("OUTPUT:")
+	log.Debug("OUTPUT:")
 	if exit, err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic"); err != nil {
 		return exit, err
 	}

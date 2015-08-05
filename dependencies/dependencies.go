@@ -195,23 +195,27 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 	return nil
 }
 
-func chekWithBrewProgramInstalled(tool string) (bool, error) {
+func chekWithBrewProgramInstalled(tool string) error {
 	args := []string{"list", tool}
 	cmd := exec.Command("brew", args...)
-	log.Debugln("Run command: $", cmd)
-	if err := cmd.Run(); err != nil {
-		return false, err
+
+	if outBytes, err := cmd.CombinedOutput(); err != nil {
+		log.Debugf("%s", outBytes)
+		return err
 	}
-	return true, nil
+
+	return nil
 }
 
 // InstallWithBrewIfNeeded ...
 func InstallWithBrewIfNeeded(tool string) error {
-	if _, err := chekWithBrewProgramInstalled(tool); err != nil {
+	if err := chekWithBrewProgramInstalled(tool); err != nil {
 		args := []string{"install", tool}
-		if err := bitrise.RunCommand("brew", args...); err != nil {
+		if out, err := bitrise.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
+			log.Infof("%s", out)
 			return err
 		}
 	}
+	log.Info(" * " + colorstring.Green("[OK] ") + "Dependency (" + tool + ") installed")
 	return nil
 }
