@@ -3,51 +3,55 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
+	// PathEnvKey ...
+	PathEnvKey = "ENVMAN_ENVSTORE_PATH"
 	// PathKey ...
-	PathKey      string = "path"
-	pathKeyShort string = "p"
+	PathKey      = "path"
+	pathKeyShort = "p"
 
 	// LogLevelEnvKey ...
-	LogLevelEnvKey string = "LOGLEVEL"
+	LogLevelEnvKey = "LOGLEVEL"
 	// LogLevelKey ...
-	LogLevelKey      string = "loglevel"
-	logLevelKeyShort string = "l"
+	LogLevelKey      = "loglevel"
+	logLevelKeyShort = "l"
 
 	// KeyKey ...
-	KeyKey       string = "key"
-	keyKeyShortT string = "k"
+	KeyKey       = "key"
+	keyKeyShortT = "k"
 
 	// ValueKey ...
-	ValueKey      string = "value"
-	valueKeyShort string = "v"
+	ValueKey      = "value"
+	valueKeyShort = "v"
 
 	// ValueFileKey ...
-	ValueFileKey      string = "valuefile"
-	valueFileKeyShort string = "f"
+	ValueFileKey      = "valuefile"
+	valueFileKeyShort = "f"
 
 	// NoExpandKey ...
-	NoExpandKey      string = "no-expand"
-	noExpandKeyShort string = "n"
+	NoExpandKey      = "no-expand"
+	noExpandKeyShort = "n"
 
 	// AppendKey ...
-	AppendKey      string = "append"
-	appendKeyShort string = "a"
+	AppendKey      = "append"
+	appendKeyShort = "a"
 
+	// ToolEnvKey ...
+	ToolEnvKey = "ENVMAN_TOOLMODE"
 	// ToolKey ...
-	ToolKey      string = "tool"
-	toolKeyShort string = "t"
+	ToolKey      = "tool"
+	toolKeyShort = "t"
 
 	// ClearKey ....
-	ClearKey      string = "clear"
-	clearKeyShort string = "c"
+	ClearKey      = "clear"
+	clearKeyShort = "c"
 
 	// HelpKey ...
-	HelpKey      string = "help"
-	helpKeyShort string = "h"
+	HelpKey      = "help"
+	helpKeyShort = "h"
 
 	// VersionKey ...
-	VersionKey      string = "version"
-	versionKeyShort string = "v"
+	VersionKey      = "version"
+	versionKeyShort = "v"
 )
 
 var (
@@ -60,13 +64,13 @@ var (
 	}
 	flPath = cli.StringFlag{
 		Name:   PathKey + ", " + pathKeyShort,
-		EnvVar: "ENVMAN_ENVSTORE_PATH",
+		EnvVar: PathEnvKey,
 		Value:  "",
 		Usage:  "Path of the envstore.",
 	}
 	flTool = cli.BoolFlag{
 		Name:   ToolKey + ", " + toolKeyShort,
-		EnvVar: "ENVMAN_TOOLMODE",
+		EnvVar: ToolEnvKey,
 		Usage:  "If true, envman will NOT ask for user inputs.",
 	}
 	flags = []cli.Flag{

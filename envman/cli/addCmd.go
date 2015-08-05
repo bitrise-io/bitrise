@@ -87,26 +87,12 @@ func logEnvs() error {
 	return nil
 }
 
-func parseExpand(c *cli.Context) bool {
-	if c.IsSet(NoExpandKey) {
-		return !c.Bool(NoExpandKey)
-	}
-	return true
-}
-
-func parseReplace(c *cli.Context) bool {
-	if c.IsSet(AppendKey) {
-		return !c.Bool(AppendKey)
-	}
-	return true
-}
-
 func addCmd(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
-	expand := parseExpand(c)
-	replace := parseReplace(c)
+	expand := !c.Bool(NoExpandKey)
+	replace := !c.Bool(AppendKey)
 
 	var value string
 	if stdinValue != "" {
