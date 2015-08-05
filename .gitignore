@@ -1,5 +1,4 @@
 _temp/
-bitrise
 .bitrise
 .bitrise.secrets.yml
 _bin
