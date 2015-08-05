@@ -1,6 +1,3 @@
-Changelog template:
-
-
 ## Changes
 
 * __BREAKING__ : change 1
