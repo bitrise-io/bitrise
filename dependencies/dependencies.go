@@ -195,28 +195,21 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 	return nil
 }
 
-// InstallWithBrewIfNeeded ...
-func InstallWithBrewIfNeeded(tool string) error {
-	if err := CheckIsHomebrewInstalled(); err != nil {
-		return err
+func chekWithBrewProgramInstalled(tool string) (bool, error) {
+	args := []string{"list", tool}
+	cmd := exec.Command("brew", args...)
+	log.Debugln("Run command: $", cmd)
+	if err := cmd.Run(); err != nil {
+		return false, err
 	}
-	if _, err := CheckProgramInstalledPath(tool); err != nil {
-		args := []string{"install", tool}
-		if err := bitrise.RunCommand("brew", args...); err != nil {
-			return err
-		}
-	}
-	return nil
+	return true, nil
 }
 
-// InstallWithRubyGemsIfNeeded ...
-func InstallWithRubyGemsIfNeeded(gemName string) error {
-	if err := CheckIsRubyGemsInstalled(); err != nil {
-		return err
-	}
-	if _, err := CheckProgramInstalledPath(gemName); err != nil {
-		args := []string{"install", gemName}
-		if err := bitrise.RunCommand("gem", args...); err != nil {
+// InstallWithBrewIfNeeded ...
+func InstallWithBrewIfNeeded(tool string) error {
+	if _, err := chekWithBrewProgramInstalled(tool); err != nil {
+		args := []string{"install", tool}
+		if err := bitrise.RunCommand("brew", args...); err != nil {
 			return err
 		}
 	}
