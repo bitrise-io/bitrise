@@ -47,6 +47,6 @@ workflows:
                 echo 'This is a before workflow'
                 OUTPUT="$(which cmake)"
                 echo "$OUTPUT"
-                # if [ "$OUTPUT" != "" ]; then
-                #     brew uninstall cmake
-                # fi
+                if [ "$OUTPUT" != "" ]; then
+                    brew uninstall cmake
+                fi

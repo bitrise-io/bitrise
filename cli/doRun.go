@@ -31,6 +31,7 @@ const (
 	stepRunResultCodeFailed             = 1
 	stepRunResultCodeFailedNotImportant = 2
 	stepRunResultCodeSkipped            = 3
+	stepRunResultCodeSkippedWithRunIf   = 4
 )
 
 var (
@@ -58,7 +59,8 @@ func printRunningStep(title string, idx int) {
 	log.Info(sep)
 }
 
-func printStepSummary(title string, resultCode int, runTime string, exitCode int) {
+func printStepSummary(title string, resultCode int, duration time.Duration, exitCode int) {
+	runTime := bitrise.TimeToFormattedSeconds(duration, " sec")
 	content := fmt.Sprintf("%s | .... | %s", title, runTime)
 	if resultCode == stepRunResultCodeFailed || resultCode == stepRunResultCodeFailedNotImportant {
 		content = fmt.Sprintf("%s | .... | exit code: %d | %s", title, exitCode, runTime)
@@ -87,7 +89,7 @@ func printStepSummary(title string, resultCode int, runTime string, exitCode int
 		runStateIcon := "❌ "
 		content = fmt.Sprintf("%s | %s | %s | exit code: %d", runStateIcon, colorstring.Yellow(title), runTime, exitCode)
 		break
-	case stepRunResultCodeSkipped:
+	case stepRunResultCodeSkipped, stepRunResultCodeSkippedWithRunIf:
 		runStateIcon := "➡ "
 		content = fmt.Sprintf("%s | %s | %s", runStateIcon, colorstring.White(title), runTime)
 		break
@@ -122,7 +124,7 @@ func printSummary() {
 	fmt.Println()
 	log.Infoln("==> Summary:")
 	runTime := time.Now().Sub(startTime)
-	log.Info("Total run time: " + runTime.String())
+	log.Info("Total run time: " + bitrise.TimeToFormattedSeconds(runTime, " seconds"))
 
 	if totalStepCount > 0 {
 		log.Infof("Out of %d steps:", totalStepCount)
@@ -264,6 +266,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
+		case stepRunResultCodeSkippedWithRunIf:
+			log.Warn("The step's (" + *step.Title + ") Run-If expression evaluated to false - skipping")
+			log.Info("The Run-If expression was: ", colorstring.White(*step.RunIf))
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			break
 		default:
 			log.Error("Unkown result code")
 			return
@@ -275,7 +282,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
+		printStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime), exitCode)
 	}
 	registerStepListItemRunResults := func(stepListItem models.StepListItemModel, resultCode int, exitCode int, err error) {
 		name := ""
@@ -306,6 +313,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
+		case stepRunResultCodeSkippedWithRunIf:
+			log.Warn("The step's (" + name + ") Run-If expression evaluated to false - skipping")
+			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			break
 		default:
 			log.Error("Unkown result code")
 			return
@@ -317,7 +328,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
-		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime).String(), exitCode)
+		printStepSummary(name, resultCode, time.Now().Sub(stepStartTime), exitCode)
 	}
 
 	for idx, stepListItm := range workflow.Steps {
@@ -413,9 +424,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 			if !isRun {
-				log.Warn("The step's Is-Run expression evaluated to false - skipping")
-				log.Info(" The Is-Run expression was: ", *mergedStep.RunIf)
-				registerStepRunResults(mergedStep, stepRunResultCodeSkipped, 0, err)
+				registerStepRunResults(mergedStep, stepRunResultCodeSkippedWithRunIf, 0, err)
 				continue
 			}
 		}
@@ -475,7 +484,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	stepCmd := stepDir + "/" + "step.sh"
 	cmd := []string{"bash", stepCmd}
-	log.Info("OUTPUT:")
+	log.Debug("OUTPUT:")
 	if exit, err := bitrise.RunEnvmanRunInDir(bitrise.CurrentDir, cmd, "panic"); err != nil {
 		return exit, err
 	}

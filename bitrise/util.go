@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -13,6 +14,17 @@ import (
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
+
+// TimeToFormattedSeconds ...
+func TimeToFormattedSeconds(t time.Duration, postfix string) string {
+	sec := t.Seconds()
+	if sec > 10.0 {
+		return fmt.Sprintf("%.f%s", sec, postfix)
+	} else if sec < 1.0 {
+		return fmt.Sprintf("%.2f%s", sec, postfix)
+	}
+	return fmt.Sprintf("%.1f%s", sec, postfix)
+}
 
 // SaveConfigToFile ...
 func SaveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
