@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "0.9.2"
-	minStepmanVersion = "0.9.6"
+	minEnvmanVersion  = "0.9.3"
+	minStepmanVersion = "0.9.7"
 )
 
 // PrintBitriseHeaderASCIIArt ...
