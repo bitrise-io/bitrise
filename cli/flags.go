@@ -52,12 +52,10 @@ var (
 	// Command flags
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
-		Value: "",
 		Usage: "Path where the workflow config file is located.",
 	}
 	flInventory = cli.StringFlag{
 		Name:  InventoryKey + ", " + inventoryShortKey,
-		Value: "",
 		Usage: "Path of the inventory file.",
 	}
 )
