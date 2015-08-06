@@ -9,6 +9,16 @@ app:
     opts:
       is_expand: false
 workflows:
+  delete-stepman-dir:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            rm -rf ~/.stepman
+
   create-release:
     steps:
     - script:

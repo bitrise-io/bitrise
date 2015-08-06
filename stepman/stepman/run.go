@@ -3,6 +3,7 @@ package stepman
 import (
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // RunCopyFile ...
@@ -12,9 +13,12 @@ func RunCopyFile(src, dst string) error {
 }
 
 // RunCopyDir ...
-func RunCopyDir(src, dst string) error {
+func RunCopyDir(src, dst string, isOnlyContent bool) error {
+	if isOnlyContent && !strings.HasSuffix(src, "/") {
+		src = src + "/"
+	}
 	args := []string{"-r", src, dst}
-	return RunCommand("cp", args...)
+	return RunCommand("rsync", args...)
 }
 
 // RunCommand ...

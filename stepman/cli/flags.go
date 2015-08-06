@@ -16,6 +16,10 @@ const (
 	// CollectionKey ...
 	CollectionKey      string = "collection"
 	collectionKeyShort string = "c"
+	// LocalCollectionKey ...
+	LocalCollectionKey string = "local"
+	// CopySpecJSONKey ...
+	CopySpecJSONKey string = "copy-spec-json"
 
 	// DebugEnvKey ...
 	DebugEnvKey string = "STEPMAN_DEBUG"
@@ -68,6 +72,14 @@ var (
 		Name:   CollectionKey + ", " + collectionKeyShort,
 		Usage:  "Collection of step.",
 		EnvVar: CollectionPathEnvKey,
+	}
+	flLocalCollection = cli.BoolFlag{
+		Name:  LocalCollectionKey,
+		Usage: "Allow the --collection to be a local path.",
+	}
+	flCopySpecJSON = cli.StringFlag{
+		Name:  CopySpecJSONKey,
+		Usage: "If setup succeeds copy the generates spec.json to this path.",
 	}
 	flID = cli.StringFlag{
 		Name:  IDKey + ", " + idKeyShort,
