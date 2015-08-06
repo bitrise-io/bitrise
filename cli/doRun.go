@@ -282,22 +282,17 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunResults models.BuildRunResultsModel) models.BuildRunResultsModel {
 	bitrise.PrintRunningWorkflow(workflow.Title)
+
 	if err := bitrise.ExportEnvironmentsList(workflow.Environments); err != nil {
 		bitrise.PrintBuildFailedFatal(buildRunResults.StartTime, errors.New("[BITRISE_CLI] - Failed to export Workflow environments: "+err.Error()))
 	}
 
-	stepRunResults := activateAndRunSteps(workflow, steplibSource, buildRunResults)
-	return stepRunResults
+	return activateAndRunSteps(workflow, steplibSource, buildRunResults)
 }
 
 func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel, startTime time.Time) models.BuildRunResultsModel {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: startTime,
-	}
-
-	// Workflow level environments
-	if err := bitrise.ExportEnvironmentsList(workflow.Environments); err != nil {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to export Workflow environments: "+err.Error()))
 	}
 
 	// Run these workflows before running the target workflow
@@ -314,11 +309,6 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 	}
 
 	// Run the target workflow
-	bitrise.PrintRunningWorkflow(workflow.Title)
-	if err := bitrise.ExportEnvironmentsList(workflow.Environments); err != nil {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to export Workflow environments: "+err.Error()))
-	}
-
 	workflowRunResults := runWorkflow(workflow, bitriseConfig.DefaultStepLibSource, buildRunResults)
 	buildRunResults.Append(workflowRunResults)
 
@@ -340,7 +330,6 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 
 func doRun(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt()
-
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	startTime := time.Now()
