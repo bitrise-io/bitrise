@@ -94,7 +94,8 @@ func PrintStepSummary(title string, resultCode int, duration time.Duration, exit
 // PrintBuildFailedFatal ...
 func PrintBuildFailedFatal(startTime time.Time, err error) {
 	runTime := time.Now().Sub(startTime)
-	log.Fatal("Build failed error: " + err.Error() + " total run time: " + runTime.String())
+	log.Error("Build failed: " + err.Error())
+	log.Fatal("Total run time: " + runTime.String())
 }
 
 // PrintSummary ...

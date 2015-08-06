@@ -14,8 +14,239 @@ const (
 	buildFailedTestBitriseConfigPath = "./_tests/build_failed_test_bitrise.yml"
 )
 
+func TestMasterWorkflow(t *testing.T) {
+	// Before
+	beforeStep1 := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+					#!/bin/bash
+					set -v
+					echo 'Before step 1'
+				`,
+			},
+		},
+	}
+
+	beforeWorkflow1 := models.WorkflowModel{
+		BeforeRun: []string{"before2"},
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": beforeStep1,
+			},
+		},
+	}
+
+	beforeStep2 := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+					#!/bin/bash
+					set -v
+					echo 'Before step 2'
+				`,
+			},
+		},
+	}
+
+	beforeWorkflow2 := models.WorkflowModel{
+		BeforeRun: []string{"before1"},
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": beforeStep2,
+			},
+		},
+	}
+
+	// After
+	afterStep := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+						#!/bin/bash
+						set -v
+						echo 'After step'
+					`,
+			},
+		},
+	}
+
+	afterWorkflow := models.WorkflowModel{
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": afterStep,
+			},
+		},
+	}
+
+	// Target
+	targetStep := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+						#!/bin/bash
+						set -v
+						echo 'Target step'
+						exit 1
+					`,
+			},
+		},
+	}
+
+	workflow := models.WorkflowModel{
+		BeforeRun: []string{"before1", "before2"},
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": targetStep,
+			},
+		},
+	}
+
+	config := models.BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		Workflows: map[string]models.WorkflowModel{
+			"target":  workflow,
+			"before1": beforeWorkflow1,
+			"before2": beforeWorkflow2,
+			"after":   afterWorkflow,
+		},
+	}
+
+	err := config.Validate()
+	if err == nil {
+		t.Fatal("Should found workflow reference cycle")
+	}
+}
+
+func TestZeroSteps(t *testing.T) {
+	workflow := models.WorkflowModel{
+		Steps: []models.StepListItemModel{},
+	}
+
+	config := models.BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		Workflows: map[string]models.WorkflowModel{
+			"zero_steps": models.WorkflowModel{},
+		},
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	if len(buildRunResults.SuccessSteps) != 0 {
+		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedNotImportantSteps) != 0 {
+		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	}
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+}
+
+func TestTivialFail(t *testing.T) {
+	step := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+						#!/bin/bash
+						set -v
+						echo 'This is a before workflow'
+						exit 34
+					`,
+			},
+		},
+	}
+
+	workflow := models.WorkflowModel{
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": step,
+			},
+		},
+	}
+
+	config := models.BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		Workflows: map[string]models.WorkflowModel{
+			"trivial_fail": workflow,
+		},
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	if len(buildRunResults.SuccessSteps) != 0 {
+		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 1 {
+		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedNotImportantSteps) != 0 {
+		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	}
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+}
+
+func TestTrivialSuccess(t *testing.T) {
+	step := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"content": `
+						#!/bin/bash
+						set -v
+						echo 'Should be success'
+					`,
+			},
+		},
+	}
+
+	workflow := models.WorkflowModel{
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{
+				"script": step,
+			},
+		},
+	}
+
+	config := models.BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		Workflows: map[string]models.WorkflowModel{
+			"trivial_success": workflow,
+		},
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	if len(buildRunResults.SuccessSteps) != 1 {
+		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedNotImportantSteps) != 0 {
+		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	}
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+}
+
 func TestBuildFailedMode(t *testing.T) {
-	config := getTestBitriseConfig()
+	config := getBuildFailedTestBitriseConfig()
 	workflow, exist := config.Workflows["build_failed_test"]
 	if !exist {
 		t.Fatal("Failed to find workflow (build_failed_test) in config")
@@ -24,7 +255,10 @@ func TestBuildFailedMode(t *testing.T) {
 		workflow.Title = "build_failed_test"
 	}
 
-	buildRunResults := activateAndRunWorkflow(workflow, config, time.Now())
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 1 {
 		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
 	}
@@ -39,7 +273,7 @@ func TestBuildFailedMode(t *testing.T) {
 	}
 }
 
-func getTestBitriseConfig() (config models.BitriseDataModel) {
+func getBuildFailedTestBitriseConfig() (config models.BitriseDataModel) {
 	// Before
 	beforeStep1 := stepmanModels.StepModel{
 		Inputs: []envmanModels.EnvironmentItemModel{

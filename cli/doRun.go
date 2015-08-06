@@ -287,42 +287,37 @@ func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunRe
 		bitrise.PrintBuildFailedFatal(buildRunResults.StartTime, errors.New("[BITRISE_CLI] - Failed to export Workflow environments: "+err.Error()))
 	}
 
-	return activateAndRunSteps(workflow, steplibSource, buildRunResults)
+	workflowResults := activateAndRunSteps(workflow, steplibSource, buildRunResults)
+	buildRunResults.Append(workflowResults)
+	return buildRunResults
 }
 
-func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel, startTime time.Time) models.BuildRunResultsModel {
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: startTime,
-	}
-
+func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel, buildRunResults models.BuildRunResultsModel) models.BuildRunResultsModel {
 	// Run these workflows before running the target workflow
 	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+beforeWorkflowName+") does not exist!"))
+			bitrise.PrintBuildFailedFatal(buildRunResults.StartTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+beforeWorkflowName+") does not exist!"))
 		}
 		if beforeWorkflow.Title == "" {
 			beforeWorkflow.Title = beforeWorkflowName
 		}
-		workflowRunResults := runWorkflow(beforeWorkflow, bitriseConfig.DefaultStepLibSource, buildRunResults)
-		buildRunResults.Append(workflowRunResults)
+		buildRunResults = activateAndRunWorkflow(beforeWorkflow, bitriseConfig, buildRunResults)
 	}
 
 	// Run the target workflow
-	workflowRunResults := runWorkflow(workflow, bitriseConfig.DefaultStepLibSource, buildRunResults)
-	buildRunResults.Append(workflowRunResults)
+	buildRunResults = runWorkflow(workflow, bitriseConfig.DefaultStepLibSource, buildRunResults)
 
 	// Run these workflows after running the target workflow
 	for _, afterWorkflowName := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
 		if !exist {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+afterWorkflowName+") does not exist!"))
+			bitrise.PrintBuildFailedFatal(buildRunResults.StartTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+afterWorkflowName+") does not exist!"))
 		}
 		if afterWorkflow.Title == "" {
 			afterWorkflow.Title = afterWorkflowName
 		}
-		workflowRunResults := runWorkflow(afterWorkflow, bitriseConfig.DefaultStepLibSource, buildRunResults)
-		buildRunResults.Append(workflowRunResults)
+		buildRunResults = activateAndRunWorkflow(afterWorkflow, bitriseConfig, buildRunResults)
 	}
 
 	return buildRunResults
@@ -437,7 +432,10 @@ func doRun(c *cli.Context) {
 		workflowToRun.Title = workflowToRunName
 	}
 
-	buildRunResults := activateAndRunWorkflow(workflowToRun, bitriseConfig, startTime)
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: startTime,
+	}
+	buildRunResults = activateAndRunWorkflow(workflowToRun, bitriseConfig, buildRunResults)
 
 	// // Build finished
 	bitrise.PrintSummary(buildRunResults)
