@@ -264,7 +264,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		}
-		if workflowRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
+		if buildRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
 			registerStepRunResults(mergedStep, bitrise.StepRunResultCodeSkipped, 0, err)
 			continue
 		} else {
