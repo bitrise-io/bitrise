@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -46,10 +45,6 @@ func update(c *cli.Context) {
 
 	// StepSpec collection path
 	collectionURI := c.String(CollectionKey)
-	if collectionURI == "" {
-		collectionURI = os.Getenv(CollectionPathEnvKey)
-	}
-
 	if collectionURI == "" {
 		log.Info("[STEPMAN] - No step collection specified, update all")
 		collectionURIs = stepman.GetAllStepCollectionPath()
