@@ -4,7 +4,7 @@
 #  Go template expressions, you can find the full documentation
 #  on Go's text/template doc page: https://golang.org/pkg/text/template/
 format_version: 0.9.5
-default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib
 workflows:
   primary:
     steps:
