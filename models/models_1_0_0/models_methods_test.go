@@ -38,16 +38,6 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// refrence  cycle
-	workflow = WorkflowModel{
-		BeforeRun: []string{"befor1", "befor2", "befor3"},
-		AfterRun:  []string{"after1", "after2", "befor1"},
-	}
-	err = workflow.Validate("title")
-	if err == nil {
-		t.Fatal("Reference cycle, should case of error")
-	}
 }
 
 func TestMergeEnvironmentWith(t *testing.T) {

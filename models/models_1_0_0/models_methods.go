@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -23,10 +24,72 @@ func (config *BitriseDataModel) Normalize() error {
 	return nil
 }
 
+func containsWorkflowName(title string, workflowStack []string) bool {
+	for _, t := range workflowStack {
+		if t == title {
+			return true
+		}
+	}
+	return false
+}
+
+func removeWorkflowName(title string, workflowStack []string) []string {
+	newStack := []string{}
+	for _, t := range workflowStack {
+		if t != title {
+			newStack = append(newStack, t)
+		}
+	}
+	return newStack
+}
+
+func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitriseConfig BitriseDataModel, workflowStack []string) error {
+	if containsWorkflowName(workflowID, workflowStack) {
+		stackStr := ""
+		for _, aWorkflowID := range workflowStack {
+			stackStr += aWorkflowID + " -> "
+		}
+		stackStr += workflowID
+		return fmt.Errorf("Workflow reference cycle found: %s", stackStr)
+	}
+	workflowStack = append(workflowStack, workflowID)
+
+	for _, beforeWorkflowName := range workflow.BeforeRun {
+		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
+		if !exist {
+			return errors.New("Workflow not exist wit name " + beforeWorkflowName)
+		}
+
+		err := checkWorkflowReferenceCycle(beforeWorkflowName, beforeWorkflow, bitriseConfig, workflowStack)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, afterWorkflowName := range workflow.AfterRun {
+		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
+		if !exist {
+			return errors.New("Workflow not exist wit name " + afterWorkflowName)
+		}
+
+		err := checkWorkflowReferenceCycle(afterWorkflowName, afterWorkflow, bitriseConfig, workflowStack)
+		if err != nil {
+			return err
+		}
+	}
+
+	workflowStack = removeWorkflowName(workflowID, workflowStack)
+
+	return nil
+}
+
 // Validate ...
 func (config *BitriseDataModel) Validate() error {
-	for title, workflow := range config.Workflows {
-		if err := workflow.Validate(title); err != nil {
+	for ID, workflow := range config.Workflows {
+		if err := workflow.Validate(ID); err != nil {
+			return err
+		}
+		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
 			return err
 		}
 	}
@@ -78,22 +141,6 @@ func (workflow *WorkflowModel) Validate(title string) error {
 		if err := env.Validate(); err != nil {
 			return err
 		}
-	}
-
-	// Validate reference cycle
-	referenceHash := map[string]bool{}
-	referenceHash[title] = true
-	for _, beforeWorkflowName := range workflow.BeforeRun {
-		if referenceHash[beforeWorkflowName] {
-			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + beforeWorkflowName + ")")
-		}
-		referenceHash[beforeWorkflowName] = true
-	}
-	for _, afterWorkflowName := range workflow.AfterRun {
-		if referenceHash[afterWorkflowName] {
-			return errors.New("Invalid workflow: refrence cycle found: 2 x (" + afterWorkflowName + ")")
-		}
-		referenceHash[afterWorkflowName] = true
 	}
 	return nil
 }
