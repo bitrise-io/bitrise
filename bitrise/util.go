@@ -11,9 +11,65 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
+
+// ExportEnvironmentsList ...
+func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error {
+	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
+
+	for _, env := range envsList {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+
+		opts, err := env.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		if value != "" {
+			if err := RunEnvmanAdd(key, value, *opts.IsExpand); err != nil {
+				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// CleanupStepWorkDir ...
+func CleanupStepWorkDir() error {
+	stepYMLPth := BitriseWorkDirPath + "/current_step.yml"
+	if err := RemoveFile(stepYMLPth); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
+	}
+
+	stepDir := BitriseWorkStepsDirPath
+	if err := RemoveDir(stepDir); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
+	}
+	return nil
+}
+
+// SetBuildFailedEnv ...
+func SetBuildFailedEnv(failed bool) error {
+	statusStr := "0"
+	if failed {
+		statusStr = "1"
+	}
+	if err := os.Setenv("STEPLIB_BUILD_STATUS", statusStr); err != nil {
+		return err
+	}
+
+	if err := os.Setenv("BITRISE_BUILD_STATUS", statusStr); err != nil {
+		return err
+	}
+	return nil
+}
 
 // TimeToFormattedSeconds ...
 func TimeToFormattedSeconds(t time.Duration, postfix string) string {

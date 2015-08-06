@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -48,6 +50,7 @@ type StepIDData struct {
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
+	StartTime               time.Time
 	SuccessSteps            []StepRunResultsModel
 	FailedSteps             []StepRunResultsModel
 	FailedNotImportantSteps []StepRunResultsModel
