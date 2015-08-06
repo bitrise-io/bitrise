@@ -1,5 +1,5 @@
 format_version: 0.9.5
-default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib
 
 app:
   envs:
@@ -16,7 +16,7 @@ workflows:
     # bitrise run example-envs
     envs: []
     steps:
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+      - https://github.com/bitrise-io/bitrise-steplib::script@0.9.0:
          inputs:
            - content: |
                #!/bin/bash
@@ -24,19 +24,19 @@ workflows:
                echo "BITRISE_PROJECT_TITLE (HOME should NOT be expanded): ${BITRISE_PROJECT_TITLE}"
                export EXP_TEST='Exported value'
                echo "EXP_TEST: ${EXP_TEST}"
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+      - https://github.com/bitrise-io/bitrise-steplib::script@0.9.0:
          inputs:
            - content: |
                #!/bin/bash
                echo "Second script/step"
                echo "BITRISE_DEV_BRANCH: ${BITRISE_DEV_BRANCH}"
                echo "EXP_TEST (should be empty): ${EXP_TEST}"
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+      - https://github.com/bitrise-io/bitrise-steplib::script@0.9.0:
          inputs:
            - content: |
                #!/bin/bash
                echo "Read from .bitrise.secrets.yml: ${BITRISE_SECRET_TEST1}"
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::script@0.9.0:
+      - https://github.com/bitrise-io/bitrise-steplib::script@0.9.0:
          inputs:
            - content: |
                #!/bin/bash

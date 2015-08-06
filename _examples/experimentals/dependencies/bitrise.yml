@@ -1,5 +1,5 @@
 format_version: 1.0.0
-default_step_lib_source: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib"
 
 app:
   envs:
@@ -31,7 +31,7 @@ workflows:
                 #!/bin/bash
                 set -v
                 echo 'This is a target workflow'
-      - https://bitbucket.org/bitrise-team/bitrise-new-steps-spec::timestamp-gen@1.0.0:
+      - https://github.com/bitrise-io/bitrise-steplib::timestamp-gen@1.0.0:
           is_always_run: true
 
   before:

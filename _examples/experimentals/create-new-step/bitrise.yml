@@ -1,5 +1,5 @@
 format_version: 0.9.4
-default_step_lib_source: https://bitbucket.org/bitrise-team/bitrise-new-steps-spec
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib
 app:
   envs:
   - STEP_DIR_PATH: ~/develop/
