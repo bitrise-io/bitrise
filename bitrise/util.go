@@ -145,6 +145,30 @@ func WriteBytesToFile(pth string, fileCont []byte) error {
 	return nil
 }
 
+// ReadBytesFromFile ...
+func ReadBytesFromFile(pth string) ([]byte, error) {
+	if isExists, err := pathutil.IsPathExists(pth); err != nil {
+		return []byte{}, err
+	} else if !isExists {
+		return []byte{}, errors.New(fmt.Sprint("No file found at path", pth))
+	}
+
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return []byte{}, err
+	}
+	return bytes, nil
+}
+
+// ReadStringFromFile ...
+func ReadStringFromFile(pth string) (string, error) {
+	contBytes, err := ReadBytesFromFile(pth)
+	if err != nil {
+		return "", err
+	}
+	return string(contBytes), nil
+}
+
 // IsVersionBetween ...
 //  returns true if it's between the lower and upper limit
 //  or in case it matches the lower or the upper limit

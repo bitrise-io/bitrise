@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/dependencies"
 	"github.com/codegangsta/cli"
 )
@@ -44,6 +45,11 @@ func doSetup(c *cli.Context) {
 		}
 	default:
 		log.Fatalln("Sorry, unsupported platform :(")
+	}
+
+	err := bitrise.SaveSetupSuccessForVersion(c.App.Version)
+	if err != nil {
+		log.Fatal("Failed to save setup-success into config file: ", err)
 	}
 
 	// guide
@@ -117,6 +123,7 @@ func doSetupOnOSX() error {
 		return errors.New(fmt.Sprint("Stepman failed to install:", err))
 	}
 	log.Infoln("All the required tools are installed!")
+
 	return nil
 }
 
