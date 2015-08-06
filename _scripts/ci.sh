@@ -7,13 +7,16 @@ export REPO_ROOT_DIR="${THIS_SCRIPT_DIR}/.."
 
 set -v
 
-bash "${THIS_SCRIPT_DIR}/common/ci.sh"
+# Install dependencies
+go get -u github.com/tools/godep
+go install github.com/tools/godep
+godep restore
 
-# TODO:
-#  do a `go build` and run a couple of test commands with it
-
+# Build a test version
 go build -o tmpbin
 ./tmpbin setup
 rm ./tmpbin
+
+bash "${THIS_SCRIPT_DIR}/common/ci.sh"
 
 # ===> DONE
