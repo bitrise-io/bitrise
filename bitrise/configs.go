@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	bitriseVersionSetupStateFileName = "version.setup"
+	bitriseVersionSetupStateFileName = "setup.version"
 )
 
 func getBitriseConfigsDirPath() string {
@@ -30,8 +30,8 @@ func ensureBitriseConfigDirExists() error {
 	return nil
 }
 
-// CheckSetupForVersion ...
-func CheckSetupForVersion(ver string) bool {
+// CheckIsSetupWasDoneForVersion ...
+func CheckIsSetupWasDoneForVersion(ver string) bool {
 	configPth := getBitriseConfigVersionSetupFilePath()
 	cont, err := ReadStringFromFile(configPth)
 	if err != nil {

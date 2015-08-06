@@ -9,7 +9,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/colorstring"
-	"github.com/bitrise-io/bitrise/dependencies"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	"github.com/bitrise-io/go-pathutil/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -32,7 +31,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	for _, dep := range step.Dependencies {
 		switch dep.Manager {
 		case depManagerBrew:
-			err := dependencies.InstallWithBrewIfNeeded(dep.Name)
+			err := bitrise.InstallWithBrewIfNeeded(dep.Name)
 			if err != nil {
 				return 1, err
 			}
@@ -331,6 +330,13 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 func doRun(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt()
 	log.Debugln("[BITRISE_CLI] - Run")
+
+	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
+		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
+		if err := bitrise.RunSetup(c.App.Version); err != nil {
+			log.Fatalln("Setup failed:", err)
+		}
+	}
 
 	startTime := time.Now()
 

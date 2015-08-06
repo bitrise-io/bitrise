@@ -31,7 +31,7 @@ func TestSetupForVersionChecks(t *testing.T) {
 	}
 
 	t.Log("First check - should be empty and so should fail")
-	if isOK := CheckSetupForVersion("0.9.7"); isOK {
+	if isOK := CheckIsSetupWasDoneForVersion("0.9.7"); isOK {
 		t.Fatal("Should not be OK")
 	}
 
@@ -42,12 +42,12 @@ func TestSetupForVersionChecks(t *testing.T) {
 	}
 
 	t.Log("Check for the 'ok' version - should be ok")
-	if isOK := CheckSetupForVersion("0.9.7"); !isOK {
+	if isOK := CheckIsSetupWasDoneForVersion("0.9.7"); !isOK {
 		t.Fatal("Should be OK")
 	}
 
 	t.Log("Check for a newer version - should NOT be ok")
-	if isOK := CheckSetupForVersion("0.9.8"); isOK {
+	if isOK := CheckIsSetupWasDoneForVersion("0.9.8"); isOK {
 		t.Fatal("Should NOT be OK")
 	}
 }
