@@ -15,9 +15,6 @@ func activate(c *cli.Context) {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		collectionURI = os.Getenv(CollectionPathEnvKey)
-	}
-	if collectionURI == "" {
 		log.Fatalln("[STEPMAN] - No step collection specified")
 	}
 

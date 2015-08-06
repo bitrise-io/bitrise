@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
@@ -13,9 +11,6 @@ func download(c *cli.Context) {
 
 	// Input validation
 	collectionURI := c.String(CollectionKey)
-	if collectionURI == "" {
-		collectionURI = os.Getenv(CollectionPathEnvKey)
-	}
 	if collectionURI == "" {
 		log.Fatalln("[STEPMAN] - No step collection specified")
 	}
