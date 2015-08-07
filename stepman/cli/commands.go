@@ -66,19 +66,20 @@ var (
 					},
 				},
 				{
-					Name:    "start",
-					Aliases: []string{"s"},
+					Name:    "create",
+					Aliases: []string{"c"},
 					Usage:   "Coming soon.",
-					Action:  start,
+					Action:  create,
 					Flags: []cli.Flag{
-						flCollection,
+						flTag,
+						flURL,
 					},
 				},
 				{
-					Name:    "start",
-					Aliases: []string{"s"},
+					Name:    "finish",
+					Aliases: []string{"f"},
 					Usage:   "Coming soon.",
-					Action:  start,
+					Action:  finish,
 					Flags: []cli.Flag{
 						flCollection,
 					},

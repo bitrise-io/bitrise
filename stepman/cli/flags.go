@@ -48,6 +48,14 @@ const (
 	// UpdateKey ...
 	UpdateKey      string = "update"
 	updateKeyShort string = "u"
+
+	// TagKey ...
+	TagKey      string = "tag"
+	tagKeyShort string = "t"
+
+	// URLKey ...
+	URLKey      string = "url"
+	urlKeyShort string = "u"
 )
 
 var (
@@ -100,6 +108,14 @@ var (
 	flUpdate = cli.BoolFlag{
 		Name:  UpdateKey + ", " + updateKeyShort,
 		Usage: "If flag is set, and collection doesn't contains the specified step, the collection will updated.",
+	}
+	flTag = cli.StringFlag{
+		Name:  TagKey + ", " + tagKeyShort,
+		Usage: "Coming soon.",
+	}
+	flURL = cli.StringFlag{
+		Name:  URLKey + ", " + urlKeyShort,
+		Usage: "Coming soon.",
 	}
 )
 
