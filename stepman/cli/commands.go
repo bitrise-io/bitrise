@@ -65,6 +65,24 @@ var (
 						flCollection,
 					},
 				},
+				{
+					Name:    "start",
+					Aliases: []string{"s"},
+					Usage:   "Coming soon.",
+					Action:  start,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
+				{
+					Name:    "start",
+					Aliases: []string{"s"},
+					Usage:   "Coming soon.",
+					Action:  start,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
 			},
 		},
 	}
