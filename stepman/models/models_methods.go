@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -120,16 +119,6 @@ func (source StepSourceModel) ValidateSource() error {
 	}
 	if source.Commit == nil || *source.Commit == "" {
 		return errors.New("Invalid step: missing or empty required 'source.commit' property")
-	}
-
-	cmd := exec.Command("git", []string{"rev-parse", "HEAD"}...)
-	bytes, err := cmd.CombinedOutput()
-	hash := string(bytes[:])
-	if err != nil {
-		return err
-	}
-	if *source.Commit != hash {
-		return fmt.Errorf("Step source commit hash (%s) is not the latest on HEAD (%s)", *source.Commit, hash)
 	}
 	return nil
 }
