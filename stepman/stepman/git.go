@@ -24,18 +24,43 @@ func DoGitClone(uri, pth string) error {
 	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
 }
 
-// DoGitCloneWithVersion ...
-func DoGitCloneWithVersion(uri, pth, version string) error {
+// DoGitCheckout ...
+func DoGitCheckout(commithash string) error {
+	if commithash == "" {
+		return errors.New("Git Clone 'hash' missing")
+	}
+	return RunCommand("git", []string{"checkout", commithash}...)
+}
+
+// // DoGitCloneWithVersion ...
+// func DoGitCloneWithVersion(uri, pth, version string) error {
+// 	if uri == "" {
+// 		return errors.New("Git Clone 'uri' missing")
+// 	}
+// 	if pth == "" {
+// 		return errors.New("Git Clone 'pth' missing")
+// 	}
+// 	if version == "" {
+// 		return errors.New("Git Clone 'version' missing")
+// 	}
+// 	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
+// }
+
+// DoGitCloneWithCommit ...
+func DoGitCloneWithCommit(uri, pth, commithash string) error {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
 	if pth == "" {
 		return errors.New("Git Clone 'pth' missing")
 	}
-	if version == "" {
-		return errors.New("Git Clone 'version' missing")
+	if commithash == "" {
+		return errors.New("Git Clone 'hash' missing")
 	}
-	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
+	if err := RunCommand("git", []string{"clone", "--recursive", uri, pth}...); err != nil {
+		return err
+	}
+	return DoGitCheckout(commithash)
 }
 
 // DoGitUpdate ...
