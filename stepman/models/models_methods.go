@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -112,6 +113,27 @@ func (step StepModel) Normalize() error {
 	return nil
 }
 
+// ValidateSource ...
+func (source StepSourceModel) ValidateSource() error {
+	if source.Git == nil || *source.Git == "" {
+		return errors.New("Invalid step: missing or empty required 'source.git' property")
+	}
+	if source.Commit == nil || *source.Commit == "" {
+		return errors.New("Invalid step: missing or empty required 'source.commit' property")
+	}
+
+	cmd := exec.Command("git", []string{"rev-parse", "HEAD"}...)
+	bytes, err := cmd.CombinedOutput()
+	hash := string(bytes[:])
+	if err != nil {
+		return err
+	}
+	if *source.Commit != hash {
+		return fmt.Errorf("Step source commit hash (%s) is not the latest on HEAD (%s)", *source.Commit, hash)
+	}
+	return nil
+}
+
 // ValidateStep ...
 func (step StepModel) ValidateStep() error {
 	if step.Title == nil || *step.Title == "" {
@@ -123,11 +145,8 @@ func (step StepModel) ValidateStep() error {
 	if step.Website == nil || *step.Website == "" {
 		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
-	if step.Source.Git == nil || *step.Source.Git == "" {
-		return errors.New("Invalid step: missing or empty required 'source.git' property")
-	}
-	if step.Source.Commit == nil || *step.Source.Commit == "" {
-		return errors.New("Invalid step: missing or empty required 'source.commit' property")
+	if err := step.Source.ValidateSource(); err != nil {
+		return err
 	}
 	for _, input := range step.Inputs {
 		err := ValidateStepInputOutputModel(input)
