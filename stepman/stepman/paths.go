@@ -108,7 +108,13 @@ func RemoveDir(dirPth string) error {
 // CleanupRoute ...
 func CleanupRoute(route SteplibRoute) error {
 	pth := CollectionsDirPath + "/" + route.FolderAlias
-	return RemoveDir(pth)
+	if err := RemoveDir(pth); err != nil {
+		return err
+	}
+	if err := RemoveRoute(route); err != nil {
+		return err
+	}
+	return nil
 }
 
 // RootExistForCollection ...
@@ -133,6 +139,25 @@ func getAlias(uri string) (string, error) {
 		return "", errors.New("No routes exist for uri:" + uri)
 	}
 	return route.FolderAlias, nil
+}
+
+// RemoveRoute ...
+func RemoveRoute(route SteplibRoute) error {
+	routes, err := readRouteMap()
+	if err != nil {
+		return err
+	}
+
+	newRoutes := SteplibRoutes{}
+	for _, aRoute := range routes {
+		if aRoute.SteplibURI != route.SteplibURI {
+			newRoutes = append(newRoutes, aRoute)
+		}
+	}
+	if err := routes.writeToFile(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // AddRoute ...

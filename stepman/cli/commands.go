@@ -50,5 +50,22 @@ var (
 				flUpdate,
 			},
 		},
+		{
+			Name:    "share",
+			Aliases: []string{"s"},
+			Usage:   "Coming soon.",
+			Action:  share,
+			Subcommands: []cli.Command{
+				{
+					Name:    "start",
+					Aliases: []string{"s"},
+					Usage:   "Coming soon.",
+					Action:  start,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
+			},
+		},
 	}
 )
