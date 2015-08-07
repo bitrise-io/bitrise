@@ -93,7 +93,7 @@ func activate(c *cli.Context) {
 		}
 	}
 
-	if err = stepman.RunCopyDir(srcFolder+"/", destFolder); err != nil {
+	if err = stepman.RunCopyDir(srcFolder+"/", destFolder, true); err != nil {
 		log.Fatalln("[STEPMAN] - Failed to copy step:", err)
 	}
 

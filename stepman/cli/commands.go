@@ -11,6 +11,8 @@ var (
 			Action:    setup,
 			Flags: []cli.Flag{
 				flCollection,
+				flLocalCollection,
+				flCopySpecJSON,
 			},
 		},
 		{
