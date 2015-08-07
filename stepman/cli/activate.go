@@ -55,7 +55,8 @@ func activate(c *cli.Context) {
 	}
 
 	// Check step exist in collection
-	if _, found := collection.GetStep(id, version); !found {
+	step, found := collection.GetStep(id, version)
+	if !found {
 		if update {
 			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating collection", id, version)
 			if err := updateCollection(collectionURI); err != nil {
@@ -76,7 +77,7 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Debug("[STEPMAN] - Step does not exist, download it")
-		if err := stepman.DownloadStep(collection, id, version); err != nil {
+		if err := stepman.DownloadStep(collection, id, version, *step.Source.Commit); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}

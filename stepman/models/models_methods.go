@@ -124,7 +124,10 @@ func (step StepModel) ValidateStep() error {
 		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
 	if step.Source.Git == nil || *step.Source.Git == "" {
-		return errors.New("Invalid step: missing or empty required 'source' property")
+		return errors.New("Invalid step: missing or empty required 'source.git' property")
+	}
+	if step.Source.Commit == nil || *step.Source.Commit == "" {
+		return errors.New("Invalid step: missing or empty required 'source.commit' property")
 	}
 	for _, input := range step.Inputs {
 		err := ValidateStepInputOutputModel(input)
