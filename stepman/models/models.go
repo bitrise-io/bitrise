@@ -66,3 +66,10 @@ type StepCollectionModel struct {
 	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
 	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
 }
+
+// ShareModel ...
+type ShareModel struct {
+	Collection string
+	StepName   string
+	StepTag    string
+}

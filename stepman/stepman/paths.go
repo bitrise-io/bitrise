@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/stepman/models"
 )
 
 const (
@@ -16,6 +18,8 @@ const (
 	StepmanDirname string = ".stepman"
 	// RoutingFilename ...
 	RoutingFilename string = "routing.json"
+	// ShareFilename ...
+	ShareFilename string = "share.json"
 	// CollectionsDirname ...
 	CollectionsDirname string = "step_collections"
 )
@@ -23,6 +27,7 @@ const (
 var (
 	stepManDirPath  string
 	routingFilePath string
+	shareFilePath   string
 
 	// CollectionsDirPath ...
 	CollectionsDirPath string
@@ -82,6 +87,60 @@ func (routes SteplibRoutes) writeToFile() error {
 	}
 
 	bytes, err := json.MarshalIndent(routeMap, "", "\t")
+	if err != nil {
+		log.Error("[STEPMAN] - Failed to parse json:", err)
+		return err
+	}
+
+	if _, err := file.Write(bytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ReadShareSteplibFromFile ...
+func ReadShareSteplibFromFile() (models.ShareModel, error) {
+	if exist, err := pathutil.IsPathExists(shareFilePath); err != nil {
+		return models.ShareModel{}, err
+	} else if !exist {
+		return models.ShareModel{}, errors.New("No share steplib found")
+	}
+
+	bytes, err := ioutil.ReadFile(shareFilePath)
+	if err != nil {
+		return models.ShareModel{}, err
+	}
+
+	share := models.ShareModel{}
+	if err := json.Unmarshal(bytes, &share); err != nil {
+		return models.ShareModel{}, err
+	}
+
+	return share, nil
+}
+
+// WriteShareSteplibToFile ...
+func WriteShareSteplibToFile(share models.ShareModel) error {
+	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
+		return err
+	} else if !exist {
+		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
+			return err
+		}
+	}
+
+	file, err := os.OpenFile(shareFilePath, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error("[STEPMAN] - Failed to close file:", err)
+		}
+	}()
+
+	var bytes []byte
+	bytes, err = json.Marshal(share)
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err
@@ -273,5 +332,6 @@ func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
 func init() {
 	stepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname
 	routingFilePath = stepManDirPath + "/" + RoutingFilename
+	shareFilePath = stepManDirPath + "/" + ShareFilename
 	CollectionsDirPath = stepManDirPath + "/" + CollectionsDirname
 }

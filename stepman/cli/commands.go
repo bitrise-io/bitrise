@@ -73,6 +73,7 @@ var (
 					Flags: []cli.Flag{
 						flTag,
 						flURL,
+						flCollection,
 					},
 				},
 				{

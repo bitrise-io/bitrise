@@ -6,6 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/colorstring"
 	"github.com/bitrise-io/goinp/goinp"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -67,6 +68,16 @@ func start(c *cli.Context) {
 			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
 		}
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
+	}
+
+	share := models.ShareModel{
+		Collection: collectionURI,
+	}
+	if err := stepman.WriteShareSteplibToFile(share); err != nil {
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		}
+		log.Fatal("[STEPMAN] - Failed to save share steplib to file:", err)
 	}
 
 	fmt.Println()
