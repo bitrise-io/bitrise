@@ -65,7 +65,7 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(collection models.StepCollectionModel, id, version string) error {
+func DownloadStep(collection models.StepCollectionModel, id, version, commithash string) error {
 	log.Debugf("Download Step: %#v (%#v)\n", id, version)
 	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
@@ -98,7 +98,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version string) err
 			}
 		case "git":
 			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
-			if err := DoGitCloneWithVersion(downloadLocation.Src, stepPth, version); err != nil {
+			if err := DoGitCloneWithCommit(downloadLocation.Src, stepPth, version, commithash); err != nil {
 				log.Warn("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true

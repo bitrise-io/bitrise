@@ -2,7 +2,9 @@ package stepman
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -24,8 +26,29 @@ func DoGitClone(uri, pth string) error {
 	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
 }
 
-// DoGitCloneWithVersion ...
-func DoGitCloneWithVersion(uri, pth, version string) error {
+// DoGitCheckout ...
+func DoGitCheckout(commithash string) error {
+	if commithash == "" {
+		return errors.New("Git Clone 'hash' missing")
+	}
+	return RunCommand("git", []string{"checkout", commithash}...)
+}
+
+// GetLatestGitCommitHashOnHead ...
+func GetLatestGitCommitHashOnHead(pth string) (string, error) {
+	cmd := exec.Command("git", []string{"rev-parse", "HEAD"}...)
+	cmd.Dir = pth
+	bytes, err := cmd.CombinedOutput()
+	cmdOutput := string(bytes)
+	if err != nil {
+		log.Error(cmdOutput)
+		return "", err
+	}
+	return cmdOutput, nil
+}
+
+// DoGitCloneWithCommit ...
+func DoGitCloneWithCommit(uri, pth, version, commithash string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -35,7 +58,35 @@ func DoGitCloneWithVersion(uri, pth, version string) error {
 	if version == "" {
 		return errors.New("Git Clone 'version' missing")
 	}
-	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
+	if commithash == "" {
+		return errors.New("Git Clone 'commithash' missing")
+	}
+	if err = RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...); err != nil {
+		return
+	}
+
+	// cleanup
+	defer func() {
+		if err != nil {
+			if err := RemoveDir(pth); err != nil {
+				log.Errorln("Failed to cleanup path: ", pth, " | err: ", err)
+			}
+		}
+	}()
+
+	latestCommit, err := GetLatestGitCommitHashOnHead(pth)
+	if err != nil {
+		return
+	}
+	if commithash != latestCommit {
+		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
+	}
+
+	if err = DoGitCheckout(commithash); err != nil {
+		return
+	}
+
+	return
 }
 
 // DoGitUpdate ...
