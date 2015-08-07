@@ -2,7 +2,9 @@ package stepman
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -32,22 +34,8 @@ func DoGitCheckout(commithash string) error {
 	return RunCommand("git", []string{"checkout", commithash}...)
 }
 
-// // DoGitCloneWithVersion ...
-// func DoGitCloneWithVersion(uri, pth, version string) error {
-// 	if uri == "" {
-// 		return errors.New("Git Clone 'uri' missing")
-// 	}
-// 	if pth == "" {
-// 		return errors.New("Git Clone 'pth' missing")
-// 	}
-// 	if version == "" {
-// 		return errors.New("Git Clone 'version' missing")
-// 	}
-// 	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
-// }
-
 // DoGitCloneWithCommit ...
-func DoGitCloneWithCommit(uri, pth, commithash string) error {
+func DoGitCloneWithCommit(uri, pth, version, commithash string) error {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -57,9 +45,22 @@ func DoGitCloneWithCommit(uri, pth, commithash string) error {
 	if commithash == "" {
 		return errors.New("Git Clone 'hash' missing")
 	}
-	if err := RunCommand("git", []string{"clone", "--recursive", uri, pth}...); err != nil {
+	if err := RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...); err != nil {
 		return err
 	}
+
+	cmd := exec.Command("git", []string{"rev-parse", "HEAD"}...)
+	cmd.Dir = pth
+	bytes, err := cmd.CombinedOutput()
+	cmdOutput := string(bytes)
+	if err != nil {
+		log.Error(cmdOutput)
+		return err
+	}
+	if commithash != cmdOutput {
+		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, cmdOutput, commithash)
+	}
+
 	return DoGitCheckout(commithash)
 }
 
