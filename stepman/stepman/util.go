@@ -99,7 +99,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version, commithash
 		case "git":
 			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
 			if err := DoGitCloneWithCommit(downloadLocation.Src, stepPth, version, commithash); err != nil {
-				log.Warn("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
+				log.Warnf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
 				return nil
