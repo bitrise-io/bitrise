@@ -81,7 +81,9 @@ func create(c *cli.Context) {
 	ID := getStepIDFromGit(gitURI)
 	share.StepID = ID
 	share.StepTag = tag
-	WriteShareSteplibToFile(share)
+	if err := WriteShareSteplibToFile(share); err != nil {
+		log.Fatal("[STEPMAN] - Failed to save share steplib to file:", err)
+	}
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, ID, tag)
 	log.Infof("Step dir in collection:", stepDirInSteplib)
