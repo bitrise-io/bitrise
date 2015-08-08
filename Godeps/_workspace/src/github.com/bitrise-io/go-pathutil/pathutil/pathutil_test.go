@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -112,4 +113,26 @@ func TestUserHomeDir(t *testing.T) {
 	if path := UserHomeDir(); path == "" {
 		t.Error("No returned path")
 	}
+}
+
+func TestNormalizedOSTempDirPath(t *testing.T) {
+	t.Log("Returned temp dir path should not have a / at it's end")
+	tmpPth, err := NormalizedOSTempDirPath("some-test")
+	if err != nil {
+		t.Error(err)
+	}
+	if strings.HasSuffix(tmpPth, "/") {
+		t.Error("Invalid path, has an ending slash character: ", tmpPth)
+	}
+	t.Log("-> tmpPth: ", tmpPth)
+
+	t.Log("Should work if empty prefix is defined")
+	tmpPth, err = NormalizedOSTempDirPath("")
+	if err != nil {
+		t.Error(err)
+	}
+	if strings.HasSuffix(tmpPth, "/") {
+		t.Error("Invalid path, has an ending slash character: ", tmpPth)
+	}
+	t.Log("-> tmpPth: ", tmpPth)
 }
