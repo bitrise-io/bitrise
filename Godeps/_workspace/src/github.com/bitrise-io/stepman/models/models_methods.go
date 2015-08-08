@@ -124,7 +124,7 @@ func (source StepSourceModel) ValidateSource() error {
 }
 
 // ValidateStep ...
-func (step StepModel) ValidateStep() error {
+func (step StepModel) ValidateStep(isValidateStepSource bool) error {
 	if step.Title == nil || *step.Title == "" {
 		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
@@ -134,8 +134,10 @@ func (step StepModel) ValidateStep() error {
 	if step.Website == nil || *step.Website == "" {
 		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
-	if err := step.Source.ValidateSource(); err != nil {
-		return err
+	if isValidateStepSource {
+		if err := step.Source.ValidateSource(); err != nil {
+			return err
+		}
 	}
 	for _, input := range step.Inputs {
 		err := ValidateStepInputOutputModel(input)
@@ -211,7 +213,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
 	step, found := collection.GetStep(id, version)
 	if found == false {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
+		return []DownloadLocationModel{}, fmt.Errorf("Collection (%s) doesn't contains step %s (%s)", collection.SteplibSource, id, version)
 	}
 
 	locations := []DownloadLocationModel{}
@@ -245,7 +247,7 @@ func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, e
 	stepHash := collection.Steps
 	stepGroup, found := stepHash[id]
 	if !found {
-		return "", fmt.Errorf("Collection doesn't contains step %s", id)
+		return "", fmt.Errorf("Collection (%s) doesn't contains step (%s)", collection.SteplibSource, id)
 	}
 
 	if stepGroup.LatestVersionNumber == "" {
