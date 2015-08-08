@@ -2,6 +2,7 @@ package pathutil
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,19 +26,39 @@ func IsRelativePath(pth string) bool {
 	return true
 }
 
-// IsPathExists ...
-func IsPathExists(pth string) (bool, error) {
+func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
-		return false, errors.New("No path provided")
+		return nil, false, errors.New("No path provided")
 	}
-	_, err := os.Stat(pth)
+	fileInf, err := os.Stat(pth)
 	if err == nil {
-		return true, nil
+		return nil, true, nil
 	}
 	if os.IsNotExist(err) {
+		return fileInf, false, nil
+	}
+	return fileInf, false, err
+}
+
+// IsPathExists ...
+func IsPathExists(pth string) (bool, error) {
+	_, isExists, err := genericIsPathExists(pth)
+	return isExists, err
+}
+
+// IsDirExists ...
+func IsDirExists(pth string) (bool, error) {
+	fileInf, isExists, err := genericIsPathExists(pth)
+	if err != nil {
+		return false, err
+	}
+	if !isExists {
 		return false, nil
 	}
-	return false, err
+	if fileInf == nil {
+		return false, errors.New("No file info available.")
+	}
+	return fileInf.IsDir(), nil
 }
 
 // AbsPath expands ENV vars and the ~ character
@@ -67,4 +88,16 @@ func UserHomeDir() string {
 		return home
 	}
 	return os.Getenv("HOME")
+}
+
+// NormalizedOSTempDirPath ...
+// Returns a temp dir path. If tmpDirNamePrefix is provided it'll be used
+//  as the tmp dir's name prefix.
+// Normalized: it's guaranteed that the path won't end with '/'.
+func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
+	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
+	if strings.HasSuffix(retPth, "/") {
+		retPth = retPth[:len(retPth)-1]
+	}
+	return
 }
