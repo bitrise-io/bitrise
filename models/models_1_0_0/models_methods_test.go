@@ -142,7 +142,7 @@ func TestMergeStepWith(t *testing.T) {
 		Title:      &diffTitle,
 		HostOsTags: []string{"linux"},
 		Source: stepmanModels.StepSourceModel{
-			Git: &git,
+			Git: git,
 		},
 		Dependencies: []stepmanModels.DependencyModel{
 			stepmanModels.DependencyModel{
