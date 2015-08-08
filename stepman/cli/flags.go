@@ -48,6 +48,14 @@ const (
 	// UpdateKey ...
 	UpdateKey      string = "update"
 	updateKeyShort string = "u"
+
+	// TagKey ...
+	TagKey      string = "tag"
+	tagKeyShort string = "t"
+
+	// GitKey ...
+	GitKey      string = "git"
+	gitKeyShort string = "g"
 )
 
 var (
@@ -100,6 +108,14 @@ var (
 	flUpdate = cli.BoolFlag{
 		Name:  UpdateKey + ", " + updateKeyShort,
 		Usage: "If flag is set, and collection doesn't contains the specified step, the collection will updated.",
+	}
+	flTag = cli.StringFlag{
+		Name:  TagKey + ", " + tagKeyShort,
+		Usage: "Git (version) tag.",
+	}
+	flGit = cli.StringFlag{
+		Name:  GitKey + ", " + gitKeyShort,
+		Usage: "Git clone url of the step repository.",
 	}
 )
 

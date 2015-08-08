@@ -51,6 +51,42 @@ var (
 			},
 		},
 		{
+			Name:    "share",
+			Aliases: []string{"s"},
+			Usage:   "Publish your step.",
+			Action:  share,
+			Subcommands: []cli.Command{
+				{
+					Name:    "start",
+					Aliases: []string{"s"},
+					Usage:   "Preparations for publishing.",
+					Action:  start,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
+				{
+					Name:    "create",
+					Aliases: []string{"c"},
+					Usage:   "Create your change - add it to your own copy of the collection.",
+					Action:  create,
+					Flags: []cli.Flag{
+						flTag,
+						flGit,
+					},
+				},
+				{
+					Name:    "finish",
+					Aliases: []string{"f"},
+					Usage:   "Finish up.",
+					Action:  finish,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
+			},
+		},
+		{
 			Name:   "delete",
 			Usage:  "Delete the specified collection from local caches.",
 			Action: deleteCollection,
