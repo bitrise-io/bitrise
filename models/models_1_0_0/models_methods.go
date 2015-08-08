@@ -373,7 +373,7 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModel
 //  * direct git url and branch or tag:
 //    * git::https://github.com/bitrise-io/steps-timestamp.git@master
 //  * full ID with steplib, stepid and version:
-//    * https://github.com/bitrise-io/bitrise-steplib::script@2.0.0
+//    * https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
 //  * only stepid and version (requires a default steplib source to be provided):
 //    * script@2.0.0
 //  * only stepid, latest version will be used (requires a default steplib source to be provided):

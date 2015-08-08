@@ -3,12 +3,12 @@ workflows:
 
   git_clone:
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib::git-clone:
+      - https://github.com/bitrise-io/bitrise-steplib.git::git-clone:
         run_if: "{{ IS_TOOL == true }}"
 
   build:
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib::bash-script-runner@1.1.1:
+      - https://github.com/bitrise-io/bitrise-steplib.git::bash-script-runner@1.1.1:
           inputs:
             - __INPUT_FILE__: |
                 bundle install
@@ -22,7 +22,7 @@ workflows:
     after_run:
       - notifications
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib::amazon-s3-bucket-sync:
+      - https://github.com/bitrise-io/bitrise-steplib.git::amazon-s3-bucket-sync:
 
   deploy:
     envs:
@@ -32,9 +32,9 @@ workflows:
     after_run:
       - notifications
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib::amazon-s3-bucket-sync:
+      - https://github.com/bitrise-io/bitrise-steplib.git::amazon-s3-bucket-sync:
 
   notifications:
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib::send-hipchat-msg:
-      - https://github.com/bitrise-io/bitrise-steplib::send-slack-msg:
+      - https://github.com/bitrise-io/bitrise-steplib.git::send-hipchat-msg:
+      - https://github.com/bitrise-io/bitrise-steplib.git::send-slack-msg:

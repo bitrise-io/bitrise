@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultStepLibSource = "https://github.com/bitrise-io/bitrise-steplib"
+	defaultStepLibSource = "https://github.com/bitrise-io/bitrise-steplib.git"
 	//
 	defaultSecretsContent = `envs:
 - MY_HOME: $HOME
