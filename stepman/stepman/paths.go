@@ -155,7 +155,7 @@ func RemoveRoute(route SteplibRoute) error {
 			newRoutes = append(newRoutes, aRoute)
 		}
 	}
-	if err := routes.writeToFile(); err != nil {
+	if err := newRoutes.writeToFile(); err != nil {
 		return err
 	}
 	return nil
