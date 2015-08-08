@@ -53,13 +53,13 @@ var (
 		{
 			Name:    "share",
 			Aliases: []string{"s"},
-			Usage:   "Coming soon.",
+			Usage:   "Publish your step.",
 			Action:  share,
 			Subcommands: []cli.Command{
 				{
 					Name:    "start",
 					Aliases: []string{"s"},
-					Usage:   "Coming soon.",
+					Usage:   "Preparations for publishing.",
 					Action:  start,
 					Flags: []cli.Flag{
 						flCollection,
@@ -68,7 +68,7 @@ var (
 				{
 					Name:    "create",
 					Aliases: []string{"c"},
-					Usage:   "Coming soon.",
+					Usage:   "Create your change - add it to your own copy of the collection.",
 					Action:  create,
 					Flags: []cli.Flag{
 						flTag,
@@ -78,7 +78,7 @@ var (
 				{
 					Name:    "finish",
 					Aliases: []string{"f"},
-					Usage:   "Coming soon.",
+					Usage:   "Finish up.",
 					Action:  finish,
 					Flags: []cli.Flag{
 						flCollection,

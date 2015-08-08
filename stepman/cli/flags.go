@@ -111,11 +111,11 @@ var (
 	}
 	flTag = cli.StringFlag{
 		Name:  TagKey + ", " + tagKeyShort,
-		Usage: "Coming soon.",
+		Usage: "Git (version) tag.",
 	}
 	flGit = cli.StringFlag{
 		Name:  GitKey + ", " + gitKeyShort,
-		Usage: "Coming soon.",
+		Usage: "Git clone url of the step repository.",
 	}
 )
 
