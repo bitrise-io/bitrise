@@ -50,5 +50,13 @@ var (
 				flUpdate,
 			},
 		},
+		{
+			Name:   "delete",
+			Usage:  "Delete the specified collection from local caches.",
+			Action: deleteCollection,
+			Flags: []cli.Flag{
+				flCollection,
+			},
+		},
 	}
 )
