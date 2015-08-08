@@ -53,9 +53,9 @@ const (
 	TagKey      string = "tag"
 	tagKeyShort string = "t"
 
-	// URLKey ...
-	URLKey      string = "url"
-	urlKeyShort string = "u"
+	// GitKey ...
+	GitKey      string = "git"
+	gitKeyShort string = "g"
 )
 
 var (
@@ -113,8 +113,8 @@ var (
 		Name:  TagKey + ", " + tagKeyShort,
 		Usage: "Coming soon.",
 	}
-	flURL = cli.StringFlag{
-		Name:  URLKey + ", " + urlKeyShort,
+	flGit = cli.StringFlag{
+		Name:  GitKey + ", " + gitKeyShort,
 		Usage: "Coming soon.",
 	}
 )

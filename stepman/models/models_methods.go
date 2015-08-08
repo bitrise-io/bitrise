@@ -114,10 +114,10 @@ func (step StepModel) Normalize() error {
 
 // ValidateSource ...
 func (source StepSourceModel) ValidateSource() error {
-	if source.Git == nil || *source.Git == "" {
+	if source.Git == "" {
 		return errors.New("Invalid step: missing or empty required 'source.git' property")
 	}
-	if source.Commit == nil || *source.Commit == "" {
+	if source.Commit == "" {
 		return errors.New("Invalid step: missing or empty required 'source.commit' property")
 	}
 	return nil
@@ -227,7 +227,7 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 		case "git":
 			location := DownloadLocationModel{
 				Type: downloadLocation.Type,
-				Src:  *step.Source.Git,
+				Src:  step.Source.Git,
 			}
 			locations = append(locations, location)
 		default:

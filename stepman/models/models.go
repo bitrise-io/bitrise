@@ -6,8 +6,8 @@ import (
 
 // StepSourceModel ...
 type StepSourceModel struct {
-	Git    *string `json:"git,omitempty" yaml:"git,omitempty"`
-	Commit *string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Git    string `json:"git,omitempty" yaml:"git,omitempty"`
+	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 }
 
 // DependencyModel ...
@@ -65,11 +65,4 @@ type StepCollectionModel struct {
 	Steps                StepHash                `json:"steps" yaml:"steps"`
 	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
 	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
-}
-
-// ShareModel ...
-type ShareModel struct {
-	Collection string
-	StepName   string
-	StepTag    string
 }

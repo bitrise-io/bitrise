@@ -30,18 +30,21 @@ func create(c *cli.Context) {
 		log.Fatalln("[STEPMAN] - No step tag specified")
 	}
 
-	URL := c.String(URLKey)
-	if URL == "" {
+	gitURI := c.String(GitKey)
+	if gitURI == "" {
 		log.Fatalln("[STEPMAN] - No step url specified")
 	}
 
 	// Clone step to tmp dir
 	tmp := os.TempDir()
-	if err := stepman.RemoveDir(tmp); err != nil {
-		log.Fatal(err)
-	}
-	log.Infof("Cloning step from (%s) with tah (%s) to temporary path (%s)", URL, tag, tmp)
-	if err := stepman.DoGitCloneWithVersion(URL, tmp, tag); err != nil {
+	defer func() {
+		if err := stepman.RemoveDir(tmp); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	log.Infof("Cloning step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
+	if err := stepman.DoGitCloneVersion(gitURI, tmp, tag); err != nil {
 		log.Fatal(err)
 	}
 
@@ -50,28 +53,22 @@ func create(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var stepModel models.StepModel
+	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
+		log.Fatal(err)
+	}
 
 	commit, err := stepman.DoGitGetCommit(tmp)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	var stepModel models.StepModel
-	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
-		log.Fatal(err)
-	}
 	stepModel.Source = models.StepSourceModel{
-		Git:    &URL,
-		Commit: &commit,
-	}
-
-	stepBytes, err := yaml.Marshal(stepModel)
-	if err != nil {
-		log.Fatal(err)
+		Git:    gitURI,
+		Commit: commit,
 	}
 
 	// Copy step.yml to steplib
-	share, err := stepman.ReadShareSteplibFromFile()
+	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,11 +78,10 @@ func create(c *cli.Context) {
 		log.Fatalln("No route found for collectionURI (%s)", share.Collection)
 	}
 
-	ID := getStepIDFromGit(URL)
-	log.Infof("Step id from URL:", ID)
-	share.StepName = ID
+	ID := getStepIDFromGit(gitURI)
+	share.StepID = ID
 	share.StepTag = tag
-	stepman.WriteShareSteplibToFile(share)
+	WriteShareSteplibToFile(share)
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, ID, tag)
 	log.Infof("Step dir in collection:", stepDirInSteplib)
@@ -110,33 +106,33 @@ func create(c *cli.Context) {
 		}
 	}()
 
+	stepBytes, err := yaml.Marshal(stepModel)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if _, err := file.Write([]byte(stepBytes)); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := stepman.RemoveDir(tmp); err != nil {
-		log.Fatal(err)
-	}
-
-	// Update spec.json
-	steplibBaseDir := stepman.GetCollectionBaseDirPath(route)
-	specPth := steplibBaseDir + "/steplib.yml"
-	collection, err := stepman.ParseStepCollection(specPth)
-	if err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
-		}
-		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
-	}
-
-	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
-		}
-		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
-	}
+	// // Update spec.json
+	// steplibBaseDir := stepman.GetCollectionBaseDirPath(route)
+	// specPth := steplibBaseDir + "/steplib.yml"
+	// collection, err := stepman.ParseStepCollection(specPth)
+	// if err != nil {
+	// 	if err := stepman.CleanupRoute(route); err != nil {
+	// 		log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
+	// 	}
+	// 	log.Fatal("[STEPMAN] - Failed to read step spec:", err)
+	// }
+	//
+	// if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
+	// 	if err := stepman.CleanupRoute(route); err != nil {
+	// 		log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
+	// 	}
+	// 	log.Fatal("[STEPMAN] - Failed to save step spec:", err)
+	// }
 
 	fmt.Println()
-	log.Info(" * "+colorstring.Green("[OK]")+" Your step added to local steplib.", specPth)
+	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) added to local steplib (%s).", share.StepID, share.Collection)
 	fmt.Println()
 }

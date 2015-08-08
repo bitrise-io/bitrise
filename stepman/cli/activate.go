@@ -77,7 +77,7 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Debug("[STEPMAN] - Step does not exist, download it")
-		if err := stepman.DownloadStep(collection, id, version, *step.Source.Commit); err != nil {
+		if err := stepman.DownloadStep(collection, id, version, step.Source.Commit); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}

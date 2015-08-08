@@ -7,7 +7,7 @@ import (
 )
 
 func finish(c *cli.Context) {
-	share, err := stepman.ReadShareSteplibFromFile()
+	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -19,11 +19,11 @@ func finish(c *cli.Context) {
 
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
 	log.Info("Collection dir:", collectionDir)
-	if err := stepman.DoGitCheckoutBranch(collectionDir, share.StepName); err != nil {
+	if err := stepman.DoGitCheckoutBranch(collectionDir, share.StepID); err != nil {
 		log.Fatal(err)
 	}
 
-	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepName, share.StepTag)
+	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
 	log.Info("New step.yml:", stepYMLPathInSteplib)
 	if err := stepman.DoGitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
@@ -31,12 +31,16 @@ func finish(c *cli.Context) {
 	}
 
 	log.Info("Do commit")
-	if err := stepman.DoGitCommit(collectionDir, share.StepName+share.StepTag); err != nil {
+	if err := stepman.DoGitCommit(collectionDir, share.StepID+share.StepTag); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Do push")
-	if err := stepman.DoGitPush(collectionDir); err != nil {
+	if err := stepman.DoGitPushToOrigin(collectionDir, share.StepID); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := DeleteShareSteplibFile(); err != nil {
 		log.Fatal(err)
 	}
 }

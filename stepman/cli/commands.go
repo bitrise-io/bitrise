@@ -72,8 +72,7 @@ var (
 					Action:  create,
 					Flags: []cli.Flag{
 						flTag,
-						flURL,
-						flCollection,
+						flGit,
 					},
 				},
 				{

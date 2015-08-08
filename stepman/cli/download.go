@@ -56,7 +56,7 @@ func download(c *cli.Context) {
 		}
 	}
 
-	if err := stepman.DownloadStep(collection, id, version, *step.Source.Commit); err != nil {
+	if err := stepman.DownloadStep(collection, id, version, step.Source.Commit); err != nil {
 		log.Fatal("[STEPMAN] - Failed to download step")
 	}
 }

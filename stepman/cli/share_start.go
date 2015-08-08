@@ -6,7 +6,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/colorstring"
 	"github.com/bitrise-io/goinp/goinp"
-	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -32,55 +31,54 @@ func start(c *cli.Context) {
 		}
 	}
 
+	// cleanup
+	var route stepman.SteplibRoute
+	isSuccess := false
+	defer func() {
+		if !isSuccess {
+			if err := stepman.CleanupRoute(route); err != nil {
+				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+			}
+		}
+	}()
+
 	// Preparing steplib
 	alias := stepman.GenerateFolderAlias()
-	route := stepman.SteplibRoute{
+	route = stepman.SteplibRoute{
 		SteplibURI:  collectionURI,
 		FolderAlias: alias,
 	}
 
 	pth := stepman.GetCollectionBaseDirPath(route)
 	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
 		log.Fatal("[STEPMAN] - Failed to setup step spec:", err)
 	}
 
 	specPth := pth + "/steplib.yml"
 	collection, err := stepman.ParseStepCollection(specPth)
 	if err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
 		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
 	}
 
 	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
 		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
 	}
 
 	if err := stepman.AddRoute(route); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
 
-	share := models.ShareModel{
+	share := ShareModel{
 		Collection: collectionURI,
 	}
-	if err := stepman.WriteShareSteplibToFile(share); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
+	if err := WriteShareSteplibToFile(share); err != nil {
 		log.Fatal("[STEPMAN] - Failed to save share steplib to file:", err)
 	}
 
+	isSuccess = true
+
 	fmt.Println()
 	log.Info(" * "+colorstring.Green("[OK]")+" You can find your step lib repo at:", specPth)
+	log.Info("   Next call `stepman create --tag VERSION_TAG --git GIT_URI` to move your step into your steplib fork.")
 	fmt.Println()
 }

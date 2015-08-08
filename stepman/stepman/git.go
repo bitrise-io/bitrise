@@ -53,14 +53,14 @@ func DoGitAddFile(repoPath, filePath string) error {
 	return RunCommandInDir(repoPath, "git", []string{"add", filePath}...)
 }
 
-// DoGitPush ...
-func DoGitPush(repoPath string) error {
-	return RunCommandInDir(repoPath, "git", []string{"push"}...)
+// DoGitPushToOrigin ...
+func DoGitPushToOrigin(repoPath, branch string) error {
+	return RunCommandInDir(repoPath, "git", []string{"push", "-u", "origin", branch}...)
 }
 
 // CheckIsNoGitChanges ...
 func CheckIsNoGitChanges(repoPath string) error {
-	return RunCommandInDir(repoPath, "git", []string{"diff", "--cahce", "--exit-code", "--quiet"}...)
+	return RunCommandInDir(repoPath, "git", []string{"diff", "--cached", "--exit-code", "--quiet"}...)
 }
 
 // DoGitCommit ...
@@ -74,8 +74,21 @@ func DoGitCommit(repoPath string, message string) error {
 	return nil
 }
 
-// DoGitCloneWithVersion ...
-func DoGitCloneWithVersion(uri, pth, version string) error {
+// GetLatestGitCommitHashOnHead ...
+func GetLatestGitCommitHashOnHead(pth string) (string, error) {
+	cmd := exec.Command("git", []string{"rev-parse", "HEAD"}...)
+	cmd.Dir = pth
+	bytes, err := cmd.CombinedOutput()
+	cmdOutput := string(bytes)
+	if err != nil {
+		log.Error(cmdOutput)
+		return "", err
+	}
+	return cmdOutput, nil
+}
+
+// DoGitCloneVersion ...
+func DoGitCloneVersion(uri, pth, version string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -86,6 +99,48 @@ func DoGitCloneWithVersion(uri, pth, version string) error {
 		return errors.New("Git Clone 'version' missing")
 	}
 	return RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...)
+}
+
+// DoGitCloneVersionAndCommit ...
+func DoGitCloneVersionAndCommit(uri, pth, version, commithash string) (err error) {
+	if uri == "" {
+		return errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return errors.New("Git Clone 'pth' missing")
+	}
+	if version == "" {
+		return errors.New("Git Clone 'version' missing")
+	}
+	if commithash == "" {
+		return errors.New("Git Clone 'commithash' missing")
+	}
+	if err = RunCommand("git", []string{"clone", "--recursive", uri, pth, "--branch", version}...); err != nil {
+		return
+	}
+
+	// cleanup
+	defer func() {
+		if err != nil {
+			if err := RemoveDir(pth); err != nil {
+				log.Errorln("Failed to cleanup path: ", pth, " | err: ", err)
+			}
+		}
+	}()
+
+	latestCommit, err := GetLatestGitCommitHashOnHead(pth)
+	if err != nil {
+		return
+	}
+	if commithash != latestCommit {
+		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
+	}
+
+	if err = DoGitCheckout(pth, commithash); err != nil {
+		return
+	}
+
+	return
 }
 
 // DoGitGetCommit ...
@@ -99,26 +154,6 @@ func DoGitGetCommit(pth string) (string, error) {
 		return "", err
 	}
 	return cmdOutput, nil
-}
-
-// DoGitCloneWithCommit ...
-func DoGitCloneWithCommit(uri, pth, version, commithash string) error {
-	if commithash == "" {
-		return errors.New("Git Clone 'hash' missing")
-	}
-	if err := DoGitCloneWithVersion(uri, pth, version); err != nil {
-		return err
-	}
-
-	cmdOutput, err := DoGitGetCommit(pth)
-	if err != nil {
-		return err
-	}
-	if commithash != cmdOutput {
-		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, cmdOutput, commithash)
-	}
-
-	return DoGitCheckout(pth, commithash)
 }
 
 // DoGitUpdate ...
