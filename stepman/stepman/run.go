@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // RunCopyFile ...
@@ -27,6 +29,7 @@ func RunCommand(name string, args ...string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	log.Debugf("Running command: %#v", cmd)
 	return cmd.Run()
 }
 
