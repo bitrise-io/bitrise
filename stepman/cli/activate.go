@@ -59,7 +59,7 @@ func activate(c *cli.Context) {
 	if !found {
 		if update {
 			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating collection", id, version)
-			if err := stepman.ReGenerateStepSpec(collectionURI); err != nil {
+			if err := stepman.ReGenerateStepSpec(route); err != nil {
 				log.Fatalf("[STEPMAN] - Failed to update collection:%s error:%v", collectionURI, err)
 			}
 

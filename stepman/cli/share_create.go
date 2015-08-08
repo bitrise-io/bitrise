@@ -112,7 +112,7 @@ func create(c *cli.Context) {
 	}
 
 	// Update spec.json
-	if err := stepman.ReGenerateStepSpec(route.SteplibURI); err != nil {
+	if err := stepman.ReGenerateStepSpec(route); err != nil {
 		log.Fatal(err)
 	}
 

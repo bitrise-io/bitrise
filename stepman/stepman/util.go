@@ -272,21 +272,12 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 }
 
 // ReGenerateStepSpec ...
-func ReGenerateStepSpec(collectionURI string) error {
-	route, found := ReadRoute(collectionURI)
-	if !found {
-		return errors.New("No route found for lib: " + collectionURI)
-	}
-
+func ReGenerateStepSpec(route SteplibRoute) error {
 	pth := GetCollectionBaseDirPath(route)
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
 		return errors.New("[STEPMAN] - Not initialized")
-	}
-
-	if err := DoGitPull(pth); err != nil {
-		return err
 	}
 
 	specPth := pth + "/steplib.yml"

@@ -30,12 +30,19 @@ func setup(c *cli.Context) {
 		FolderAlias: alias,
 	}
 
-	pth := stepman.GetCollectionBaseDirPath(route)
-	if !c.Bool(LocalCollectionKey) {
-		if err := stepman.DoGitClone(collectionURI, pth); err != nil {
+	// Cleanup
+	isSuccess := false
+	defer func() {
+		if !isSuccess {
 			if err := stepman.CleanupRoute(route); err != nil {
 				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
 			}
+		}
+	}()
+
+	pth := stepman.GetCollectionBaseDirPath(route)
+	if !c.Bool(LocalCollectionKey) {
+		if err := stepman.DoGitClone(collectionURI, pth); err != nil {
 			log.Fatal("[STEPMAN] - Failed to setup step spec:", err)
 		}
 	} else {
@@ -47,14 +54,11 @@ func setup(c *cli.Context) {
 		}
 		log.Info("Collection dir created - OK.")
 		if err := stepman.RunCopyDir(collectionURI, pth, true); err != nil {
-			if err := stepman.CleanupRoute(route); err != nil {
-				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-			}
 			log.Fatal("[STEPMAN] - Failed to setup local step spec:", err)
 		}
 	}
 
-	if err := stepman.ReGenerateStepSpec(route.SteplibURI); err != nil {
+	if err := stepman.ReGenerateStepSpec(route); err != nil {
 		log.Fatal(err)
 	}
 
@@ -68,9 +72,8 @@ func setup(c *cli.Context) {
 	}
 
 	if err := stepman.AddRoute(route); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
 		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
 	}
+
+	isSuccess = true
 }

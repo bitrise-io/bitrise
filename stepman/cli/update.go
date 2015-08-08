@@ -2,6 +2,7 @@ package cli
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-pathutil/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -21,7 +22,23 @@ func update(c *cli.Context) {
 	}
 
 	for _, URI := range collectionURIs {
-		if err := stepman.ReGenerateStepSpec(URI); err != nil {
+		route, found := stepman.ReadRoute(URI)
+		if !found {
+			log.Fatal("No route found for lib: " + collectionURI)
+		}
+
+		pth := stepman.GetCollectionBaseDirPath(route)
+		if exists, err := pathutil.IsPathExists(pth); err != nil {
+			log.Fatal(err)
+		} else if !exists {
+			log.Fatal("[STEPMAN] - Not initialized")
+		}
+
+		if err := stepman.DoGitPull(pth); err != nil {
+			log.Fatal(err)
+		}
+
+		if err := stepman.ReGenerateStepSpec(route); err != nil {
 			log.Fatalf("Failed to update collection:%s error:%v", URI, err)
 		}
 	}
