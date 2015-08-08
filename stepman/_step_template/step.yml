@@ -1,0 +1,33 @@
+title: "STEP TEMPLATE"
+summary: A short summary of the step. Don't make it too long ;)
+description: |-
+  This is a Step template.
+  Contains everything what's required for a valid Stepman managed step.
+
+  A Step's description (and generally any `description` property)
+  can be a [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted text.
+
+  To create your own Step:
+
+  1. Create a new repository on GitHub
+  2. Copy the files from this folder into your repository
+  3. That's all, you can use it on your own machine
+  4. Once you're happy with it you can share it with others.
+website: https://github.com/bitrise-io/steps-script
+source_code_url: https://github.com/bitrise-io/steps-script
+host_os_tags:
+  - osx-10.10
+project_type_tags: []
+type_tags:
+  - script
+is_requires_admin_user: true
+inputs:
+  - example_step_input:
+    opts:
+      title: "Example Step Input"
+      description: |
+        Description of this input.
+
+        Can be Markdown formatted text.
+      is_expand: false
+      is_required: true
