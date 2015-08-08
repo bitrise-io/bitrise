@@ -1,0 +1,32 @@
+format_version: 0.9.8
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib
+app:
+  envs: []
+workflows:
+
+  reinstall:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            brew uninstall bitrise
+
+            set -e
+            brew install bitrise
+  check:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            brew audit --strict bitrise
+
+            brew test bitrise
+  all:
+    before_run:
+      - reinstall
+      - check
