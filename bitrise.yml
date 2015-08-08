@@ -12,23 +12,6 @@ app:
 
 workflows:
 
-  test:
-    steps:
-    - script:
-        title: Running go test ./...
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            go test ./...
-    - script:
-        title: Running the TEST script
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            bash ./_scripts/common/test.sh
-
   install:
     before_run:
       - test
@@ -124,10 +107,10 @@ workflows:
     - slack-message@1.2.0:
         title: Announce on Internal Slack channel
         inputs:
-        - SLACK_WEBHOOK_URL: $INTERNAL_SLACK_WEBHOOK_URL
+        - SLACK_WEBHOOK_URL: $INTERNAL_DEV_SLACK_WEBHOOK_URL
           opts:
             is_expand: true
-        - SLACK_CHANNEL: $INTERNAL_SLACK_CHANNEL
+        - SLACK_CHANNEL: $INTERNAL_DEV_SLACK_CHANNEL
           opts:
             is_expand: true
         - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
@@ -155,3 +138,25 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - SLACK_ICON_EMOJI: ":rocket:"
+
+  ci:
+    steps:
+    - script:
+        title: Running CI script
+        inputs:
+        - content: bash _scripts/ci.sh
+    - slack-message:
+        inputs:
+        - SLACK_WEBHOOK_URL: $INTERNAL_DEV_SLACK_WEBHOOK_URL
+          opts:
+            is_expand: true
+        - SLACK_CHANNEL: $INTERNAL_DEV_SLACK_CHANNEL
+          opts:
+            is_expand: true
+        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
+          opts:
+            is_expand: true
+        - SLACK_MESSAGE_TEXT: CI was successful
+        - SLACK_ERROR_MESSAGE_TEXT: CI FAILED
+        - SLACK_ICON_EMOJI: ":white_check_mark:"
+        - SLACK_ERROR_ICON_EMOJI: ":no_entry_sign:"
