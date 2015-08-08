@@ -12,6 +12,23 @@ app:
 
 workflows:
 
+  test:
+    steps:
+    - script:
+        title: Running go test ./...
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            go test ./...
+    - script:
+        title: Running the TEST script
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            bash ./_scripts/common/test.sh
+
   install:
     before_run:
       - test

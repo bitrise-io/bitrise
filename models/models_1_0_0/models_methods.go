@@ -57,7 +57,7 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
-			return errors.New("Workflow not exist wit name " + beforeWorkflowName)
+			return errors.New("Workflow does not exist with name " + beforeWorkflowName)
 		}
 
 		err := checkWorkflowReferenceCycle(beforeWorkflowName, beforeWorkflow, bitriseConfig, workflowStack)
@@ -69,7 +69,7 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 	for _, afterWorkflowName := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowName]
 		if !exist {
-			return errors.New("Workflow not exist wit name " + afterWorkflowName)
+			return errors.New("Workflow does not exist with name " + afterWorkflowName)
 		}
 
 		err := checkWorkflowReferenceCycle(afterWorkflowName, afterWorkflow, bitriseConfig, workflowStack)
