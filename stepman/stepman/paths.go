@@ -21,11 +21,12 @@ const (
 )
 
 var (
-	stepManDirPath  string
-	routingFilePath string
-
+	// StepManDirPath ...
+	StepManDirPath string
 	// CollectionsDirPath ...
 	CollectionsDirPath string
+
+	routingFilePath string
 )
 
 // SteplibRoute ...
@@ -58,10 +59,10 @@ func ReadRoute(uri string) (route SteplibRoute, found bool) {
 }
 
 func (routes SteplibRoutes) writeToFile() error {
-	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
+	if exist, err := pathutil.IsPathExists(StepManDirPath); err != nil {
 		return err
 	} else if !exist {
-		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
+		if err := os.MkdirAll(StepManDirPath, 0777); err != nil {
 			return err
 		}
 	}
@@ -108,7 +109,13 @@ func RemoveDir(dirPth string) error {
 // CleanupRoute ...
 func CleanupRoute(route SteplibRoute) error {
 	pth := CollectionsDirPath + "/" + route.FolderAlias
-	return RemoveDir(pth)
+	if err := RemoveDir(pth); err != nil {
+		return err
+	}
+	if err := RemoveRoute(route); err != nil {
+		return err
+	}
+	return nil
 }
 
 // RootExistForCollection ...
@@ -133,6 +140,25 @@ func getAlias(uri string) (string, error) {
 		return "", errors.New("No routes exist for uri:" + uri)
 	}
 	return route.FolderAlias, nil
+}
+
+// RemoveRoute ...
+func RemoveRoute(route SteplibRoute) error {
+	routes, err := readRouteMap()
+	if err != nil {
+		return err
+	}
+
+	newRoutes := SteplibRoutes{}
+	for _, aRoute := range routes {
+		if aRoute.SteplibURI != route.SteplibURI {
+			newRoutes = append(newRoutes, aRoute)
+		}
+	}
+	if err := routes.writeToFile(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // AddRoute ...
@@ -191,10 +217,10 @@ func readRouteMap() (SteplibRoutes, error) {
 
 // CreateStepManDirIfNeeded ...
 func CreateStepManDirIfNeeded() error {
-	if exist, err := pathutil.IsPathExists(stepManDirPath); err != nil {
+	if exist, err := pathutil.IsPathExists(StepManDirPath); err != nil {
 		return err
 	} else if !exist {
-		if err := os.MkdirAll(stepManDirPath, 0777); err != nil {
+		if err := os.MkdirAll(StepManDirPath, 0777); err != nil {
 			return err
 		}
 	}
@@ -246,7 +272,7 @@ func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
 
 // Life cycle
 func init() {
-	stepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname
-	routingFilePath = stepManDirPath + "/" + RoutingFilename
-	CollectionsDirPath = stepManDirPath + "/" + CollectionsDirname
+	StepManDirPath = pathutil.UserHomeDir() + "/" + StepmanDirname
+	routingFilePath = StepManDirPath + "/" + RoutingFilename
+	CollectionsDirPath = StepManDirPath + "/" + CollectionsDirname
 }

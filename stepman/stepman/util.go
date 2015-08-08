@@ -39,7 +39,7 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 		return models.StepModel{}, err
 	}
 
-	if err := stepModel.ValidateStep(); err != nil {
+	if err := stepModel.ValidateStep(true); err != nil {
 		return models.StepModel{}, err
 	}
 
@@ -98,7 +98,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version, commithash
 			}
 		case "git":
 			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
-			if err := DoGitCloneWithCommit(downloadLocation.Src, stepPth, version, commithash); err != nil {
+			if err := DoGitCloneVersionAndCommit(downloadLocation.Src, stepPth, version, commithash); err != nil {
 				log.Warnf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
@@ -269,6 +269,27 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 		return models.StepCollectionModel{}, err
 	}
 	return stepCollection, err
+}
+
+// ReGenerateStepSpec ...
+func ReGenerateStepSpec(route SteplibRoute) error {
+	pth := GetCollectionBaseDirPath(route)
+	if exists, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if !exists {
+		return errors.New("[STEPMAN] - Not initialized")
+	}
+
+	specPth := pth + "/steplib.yml"
+	collection, err := ParseStepCollection(specPth)
+	if err != nil {
+		return err
+	}
+
+	if err := WriteStepSpecToFile(collection, route); err != nil {
+		return err
+	}
+	return nil
 }
 
 // DownloadAndUnZIP ...
