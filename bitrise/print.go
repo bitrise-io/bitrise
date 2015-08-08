@@ -36,7 +36,7 @@ func PrintRunningWorkflow(title string) {
 func PrintRunningStep(title string, idx int) {
 	content := fmt.Sprintf("(%d) %s", idx, title)
 	if len(content) > stepRunSummaryBoxMaxWidthChars {
-		dif := stepRunSummaryBoxMaxWidthChars - len(content)
+		dif := len(content) - stepRunSummaryBoxMaxWidthChars
 		title = title[0 : len(content)-dif]
 		content = fmt.Sprintf("(%d) %s", idx, title)
 	}
