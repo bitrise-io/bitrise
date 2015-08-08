@@ -174,8 +174,12 @@ workflows:
           opts:
             is_expand: true
         - SLACK_MESSAGE_TEXT: |-
-            CI was successful on branch: ${BITRISE_GIT_BRANCH}
+            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
         - SLACK_ERROR_MESSAGE_TEXT: |-
-            CI FAILED on branch: ${BITRISE_GIT_BRANCH}
+            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
         - SLACK_ICON_EMOJI: ":white_check_mark:"
         - SLACK_ERROR_ICON_EMOJI: ":no_entry_sign:"
