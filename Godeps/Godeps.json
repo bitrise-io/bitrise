@@ -13,9 +13,20 @@
 			"Rev": "3bc0732f1bdf05593b126aa7972829e60c3dbb9e"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
-			"Comment": "1.1.0-10-g88e3cf1",
-			"Rev": "88e3cf18f4593a4df2f907299447bc00c6f14cf9"
+			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
+			"Rev": "32bddcf7a8f62decc1a29dd87286f231a6026c4f"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/command",
+			"Rev": "32bddcf7a8f62decc1a29dd87286f231a6026c4f"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
+			"Rev": "32bddcf7a8f62decc1a29dd87286f231a6026c4f"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
+			"Rev": "32bddcf7a8f62decc1a29dd87286f231a6026c4f"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
