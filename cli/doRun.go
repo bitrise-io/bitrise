@@ -74,7 +74,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	return 0, nil
 }
 
-func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string, buildRunResults models.BuildRunResultsModel) (workflowRunResults models.BuildRunResultsModel) {
+func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string, buildRunResults models.BuildRunResultsModel) models.BuildRunResultsModel {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	var stepStartTime time.Time
@@ -88,38 +88,33 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		switch resultCode {
 		case bitrise.StepRunResultCodeSuccess:
-			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
+			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeFailed:
 			log.Errorf("Step (%s) failed, error: (%v)", *step.Title, err)
-			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
+			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeFailedNotImportant:
 			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", *step.Title, err)
-			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
+			buildRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
-			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkippedWithRunIf:
 			log.Warn("The step's (" + *step.Title + ") Run-If expression evaluated to false - skipping")
 			log.Info("The Run-If expression was: ", colorstring.Blue(*step.RunIf))
-			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		default:
 			log.Error("Unkown result code")
 			return
 		}
 
-		if resultCode != bitrise.StepRunResultCodeSuccess {
-			if err := bitrise.SetBuildFailedEnv(true); err != nil {
-				log.Error("Failed to set Build Status envs")
-			}
-		}
-
 		bitrise.PrintStepSummary(*step.Title, resultCode, time.Now().Sub(stepStartTime), exitCode)
 	}
+
 	registerStepListItemRunResults := func(stepListItem models.StepListItemModel, resultCode int, exitCode int, err error) {
 		name := ""
 		for key := range stepListItem {
@@ -135,33 +130,27 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		switch resultCode {
 		case bitrise.StepRunResultCodeSuccess:
-			workflowRunResults.SuccessSteps = append(workflowRunResults.SuccessSteps, stepResults)
+			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeFailed:
 			log.Errorf("Step (%s) failed, error: (%v)", name, err)
-			workflowRunResults.FailedSteps = append(workflowRunResults.FailedSteps, stepResults)
+			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeFailedNotImportant:
 			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", name, err)
-			workflowRunResults.FailedNotImportantSteps = append(workflowRunResults.FailedNotImportantSteps, stepResults)
+			buildRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
-			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkippedWithRunIf:
 			log.Warn("The step's (" + name + ") Run-If expression evaluated to false - skipping")
-			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
+			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		default:
 			log.Error("Unkown result code")
 			return
-		}
-
-		if resultCode != bitrise.StepRunResultCodeSuccess {
-			if err := bitrise.SetBuildFailedEnv(true); err != nil {
-				log.Error("Failed to set Build Status envs")
-			}
 		}
 
 		bitrise.PrintStepSummary(name, resultCode, time.Now().Sub(stepStartTime), exitCode)
@@ -254,7 +243,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		bitrise.PrintRunningStep(*mergedStep.Title, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, workflowRunResults, IsCIMode)
+			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, buildRunResults, IsCIMode)
 			if err != nil {
 				registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
@@ -277,7 +266,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 	}
-	return workflowRunResults
+
+	return buildRunResults
 }
 
 func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunResults models.BuildRunResultsModel) models.BuildRunResultsModel {
@@ -287,8 +277,7 @@ func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunRe
 		bitrise.PrintBuildFailedFatal(buildRunResults.StartTime, errors.New("[BITRISE_CLI] - Failed to export Workflow environments: "+err.Error()))
 	}
 
-	workflowResults := activateAndRunSteps(workflow, steplibSource, buildRunResults)
-	buildRunResults.Append(workflowResults)
+	buildRunResults = activateAndRunSteps(workflow, steplibSource, buildRunResults)
 	return buildRunResults
 }
 

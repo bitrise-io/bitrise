@@ -62,6 +62,7 @@ func SetBuildFailedEnv(failed bool) error {
 	if failed {
 		statusStr = "1"
 	}
+
 	if err := os.Setenv("STEPLIB_BUILD_STATUS", statusStr); err != nil {
 		return err
 	}
