@@ -11,7 +11,7 @@ workflows:
   _:
     envs: []
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib.git::timestamp-gen@1.0.0:
+      - https://github.com/bitrise-io/bitrise-steplib.git::timestamp@0.9.0:
     #   - https://github.com/bitrise-io/bitrise-steplib.git::bash-script-runner@1.1.1:
     #       source:
     #         git: https://github.com/bitrise-io/steps-bash-script.git
