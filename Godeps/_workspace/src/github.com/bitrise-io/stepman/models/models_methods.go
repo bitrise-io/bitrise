@@ -124,7 +124,7 @@ func (source StepSourceModel) ValidateSource() error {
 }
 
 // ValidateStep ...
-func (step StepModel) ValidateStep() error {
+func (step StepModel) ValidateStep(isValidateStepSource bool) error {
 	if step.Title == nil || *step.Title == "" {
 		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
@@ -134,8 +134,10 @@ func (step StepModel) ValidateStep() error {
 	if step.Website == nil || *step.Website == "" {
 		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
-	if err := step.Source.ValidateSource(); err != nil {
-		return err
+	if isValidateStepSource {
+		if err := step.Source.ValidateSource(); err != nil {
+			return err
+		}
 	}
 	for _, input := range step.Inputs {
 		err := ValidateStepInputOutputModel(input)
