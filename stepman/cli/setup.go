@@ -54,21 +54,10 @@ func setup(c *cli.Context) {
 		}
 	}
 
-	specPth := pth + "/steplib.yml"
-	collection, err := stepman.ParseStepCollection(specPth)
-	if err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
-		log.Fatal("[STEPMAN] - Failed to read step spec:", err)
+	if err := stepman.ReGenerateStepSpec(route.SteplibURI); err != nil {
+		log.Fatal(err)
 	}
 
-	if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
-		}
-		log.Fatal("[STEPMAN] - Failed to save step spec:", err)
-	}
 	if copySpecJSONPath := c.String(CopySpecJSONKey); copySpecJSONPath != "" {
 		log.Info("Copying spec YML to path: ", copySpecJSONPath)
 

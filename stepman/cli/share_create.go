@@ -117,6 +117,11 @@ func create(c *cli.Context) {
 		log.Fatal(err)
 	}
 
+	// Update spec.json
+	if err := stepman.ReGenerateStepSpec(route.SteplibURI); err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println()
 	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) added to local steplib (%s).", share.StepID, share.Collection)
 	log.Info("   Next call `stepman share finish` to commit your changes.")

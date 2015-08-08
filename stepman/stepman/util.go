@@ -271,6 +271,36 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 	return stepCollection, err
 }
 
+// ReGenerateStepSpec ...
+func ReGenerateStepSpec(collectionURI string) error {
+	route, found := ReadRoute(collectionURI)
+	if !found {
+		return errors.New("No route found for lib: " + collectionURI)
+	}
+
+	pth := GetCollectionBaseDirPath(route)
+	if exists, err := pathutil.IsPathExists(pth); err != nil {
+		return err
+	} else if !exists {
+		return errors.New("[STEPMAN] - Not initialized")
+	}
+
+	if err := DoGitPull(pth); err != nil {
+		return err
+	}
+
+	specPth := pth + "/steplib.yml"
+	collection, err := ParseStepCollection(specPth)
+	if err != nil {
+		return err
+	}
+
+	if err := WriteStepSpecToFile(collection, route); err != nil {
+		return err
+	}
+	return nil
+}
+
 // DownloadAndUnZIP ...
 func DownloadAndUnZIP(url, pth string) error {
 	filePath := os.TempDir() + "step.zip"
