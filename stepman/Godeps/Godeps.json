@@ -14,13 +14,13 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.2-12-gd1d00f5",
-			"Rev": "d1d00f554a7db98b3ab5835b0e99a4d2e7943eea"
+			"Comment": "0.9.3-4-g1bb542d",
+			"Rev": "1bb542ddfc28409cdf324911b11993fcbbfbc607"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
-			"Comment": "1.1.0-9-gd1f9f71",
-			"Rev": "d1f9f717f2cbd21583d8623e9c5c7e431e66798f"
+			"Comment": "1.1.0-10-g88e3cf1",
+			"Rev": "88e3cf18f4593a4df2f907299447bc00c6f14cf9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",

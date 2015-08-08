@@ -2,6 +2,7 @@ package pathutil
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -87,4 +88,16 @@ func UserHomeDir() string {
 		return home
 	}
 	return os.Getenv("HOME")
+}
+
+// NormalizedOSTempDirPath ...
+// Returns a temp dir path. If tmpDirNamePrefix is provided it'll be used
+//  as the tmp dir's name prefix.
+// Normalized: it's guaranteed that the path won't end with '/'.
+func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
+	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
+	if strings.HasSuffix(retPth, "/") {
+		retPth = retPth[:len(retPth)-1]
+	}
+	return
 }

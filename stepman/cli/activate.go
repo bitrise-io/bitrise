@@ -29,7 +29,7 @@ func activate(c *cli.Context) {
 	// Get step
 	collection, err := stepman.ReadStepSpec(collectionURI)
 	if err != nil {
-		log.Fatalln("[STEPMAN] - Failed to read steps spec")
+		log.Fatalln("[STEPMAN] - Failed to read steps spec (spec.json)")
 	}
 
 	version := c.String(VersionKey)
