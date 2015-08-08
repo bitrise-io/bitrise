@@ -9,8 +9,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.2-12-gd1d00f5",
-			"Rev": "d1d00f554a7db98b3ab5835b0e99a4d2e7943eea"
+			"Comment": "0.9.3-4-g1bb542d",
+			"Rev": "1bb542ddfc28409cdf324911b11993fcbbfbc607"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
@@ -23,8 +23,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.7-8-gdad904c",
-			"Rev": "dad904caf8973389538bd9c1a2f53de1b6ebbbcb"
+			"Comment": "0.9.7-13-g5df7155",
+			"Rev": "5df7155ad1a5ca88be2a16c416e0bbaab5e44472"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
