@@ -79,6 +79,6 @@ func start(c *cli.Context) {
 
 	fmt.Println()
 	log.Info(" * "+colorstring.Green("[OK]")+" You can find your step lib repo at:", specPth)
-	log.Info("   Next call `stepman create --tag VERSION_TAG --git GIT_URI` to move your step into your steplib fork.")
+	log.Info("   Next call `stepman share create --tag VERSION_TAG --git GIT_URI` to move your step into your steplib fork.")
 	fmt.Println()
 }

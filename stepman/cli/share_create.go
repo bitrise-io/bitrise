@@ -37,6 +37,9 @@ func create(c *cli.Context) {
 
 	// Clone step to tmp dir
 	tmp := os.TempDir()
+	if err := stepman.RemoveDir(tmp); err != nil {
+		log.Fatal(err)
+	}
 	defer func() {
 		if err := stepman.RemoveDir(tmp); err != nil {
 			log.Fatal(err)
@@ -86,7 +89,7 @@ func create(c *cli.Context) {
 	}
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, ID, tag)
-	log.Infof("Step dir in collection:", stepDirInSteplib)
+	log.Info("Step dir in collection:", stepDirInSteplib)
 	if exist, err := pathutil.IsPathExists(stepDirInSteplib); err != nil {
 		log.Fatal(err)
 	} else if !exist {
@@ -96,8 +99,6 @@ func create(c *cli.Context) {
 	}
 
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
-	log.Info("Temporary step.yml path in collection:", stepYMLPathInSteplib)
-
 	file, err := os.OpenFile(stepYMLPathInSteplib, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
@@ -116,25 +117,8 @@ func create(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	// // Update spec.json
-	// steplibBaseDir := stepman.GetCollectionBaseDirPath(route)
-	// specPth := steplibBaseDir + "/steplib.yml"
-	// collection, err := stepman.ParseStepCollection(specPth)
-	// if err != nil {
-	// 	if err := stepman.CleanupRoute(route); err != nil {
-	// 		log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
-	// 	}
-	// 	log.Fatal("[STEPMAN] - Failed to read step spec:", err)
-	// }
-	//
-	// if err := stepman.WriteStepSpecToFile(collection, route); err != nil {
-	// 	if err := stepman.CleanupRoute(route); err != nil {
-	// 		log.Errorf("Failed to cleanup route for uri: %s", share.Collection)
-	// 	}
-	// 	log.Fatal("[STEPMAN] - Failed to save step spec:", err)
-	// }
-
 	fmt.Println()
 	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) added to local steplib (%s).", share.StepID, share.Collection)
+	log.Info("   Next call `stepman share finish` to commit your changes.")
 	fmt.Println()
 }

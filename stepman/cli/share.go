@@ -102,26 +102,8 @@ To share your step walk througth this steps:
 - Fork the steplib repo.
 - Call 'stepman share start -c STEPLIB_REPO_FORK_GIT_URI', this will prepare your forked steplib locally.
 - Next call 'stepman share create --tag STEP_VERSION_TAG --git STEP_GIT_URI', to add your step to steplib locally.
-- After tehese 'stepman share finish', will automagically push these changes to your forked steplib repo
+- After these 'stepman share finish', will automagically push these changes to your forked steplib repo
 - Once you're happy with it create pull request
-
-
-// - stepman setup -share -c https://github.com/gkiki90/bitrise-steplib.git
-//   - You can find your step lib repo at: /Users/godrei/.stepman/step_collections/1438870289/collection
-// - stepman create -c https://github.com/gkiki90/bitrise-steplib.git new-xcode-archive@1.2.0
-//   - NOTE: mkdir -p ./steps/new-xcode-archive/1.2.0
-//   - You can find your step's step.yml at: /Users/godrei/.stepman/step_collections/1438870289/collection/steps/new-xcode-archive/1.2.0/step.yml
-//   - Open this step.yml, fill out the required infos
-//   - Once you're happy with it and want to share:
-//     - you can commit your changes in (it's just a regular git repository):
-//       - cd /Users/godrei/.stepman/step_collections/1438870289/collection
-//       - git checkout -b new-xcode-archive
-//       - git add ./steps/new-xcode-archive/1.2.0/step.yml
-//       - git commit -m 'new-xcode-archive 1.2.0'
-//       - git push
-//     - or call: stepman share -c https://github.com/gkiki90/bitrise-steplib.git new-xcode-archive@1.2.0
-//       to do it automagically
-// - Create a pull request
 
 You can find a template step repository at: https://github.com/bitrise-io/bitrise-steplib/step-template/step.yml
 `)

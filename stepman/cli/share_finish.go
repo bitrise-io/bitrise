@@ -18,7 +18,7 @@ func finish(c *cli.Context) {
 	}
 
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
-	log.Info("Collection dir:", collectionDir)
+	log.Info("Checkout to branch:", share.StepID)
 	if err := stepman.DoGitCheckoutBranch(collectionDir, share.StepID); err != nil {
 		log.Fatal(err)
 	}
