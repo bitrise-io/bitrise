@@ -1,5 +1,5 @@
 format_version: 0.9.5
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
 
@@ -18,7 +18,7 @@ workflows:
       # 3. The step's version, registered in the step-lib
       # A full ID looks like this:
       # step-lib-source::step-id@version
-      - https://github.com/bitrise-io/bitrise-steplib::script@0.9.0:
+      - https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.0:
           title: "Full ID"
           inputs:
           - content: |
