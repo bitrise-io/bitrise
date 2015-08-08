@@ -213,7 +213,7 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
 	step, found := collection.GetStep(id, version)
 	if found == false {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection doesn't contains step %s (%s)", id, version)
+		return []DownloadLocationModel{}, fmt.Errorf("Collection (%s) doesn't contains step %s (%s)", collection.SteplibSource, id, version)
 	}
 
 	locations := []DownloadLocationModel{}
@@ -247,7 +247,7 @@ func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, e
 	stepHash := collection.Steps
 	stepGroup, found := stepHash[id]
 	if !found {
-		return "", fmt.Errorf("Collection doesn't contains step %s", id)
+		return "", fmt.Errorf("Collection (%s) doesn't contains step (%s)", collection.SteplibSource, id)
 	}
 
 	if stepGroup.LatestVersionNumber == "" {
