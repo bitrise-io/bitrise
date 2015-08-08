@@ -104,7 +104,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			break
 		case bitrise.StepRunResultCodeSkippedWithRunIf:
 			log.Warn("The step's (" + *step.Title + ") Run-If expression evaluated to false - skipping")
-			log.Info("The Run-If expression was: ", colorstring.White(*step.RunIf))
+			log.Info("The Run-If expression was: ", colorstring.Blue(*step.RunIf))
 			workflowRunResults.SkippedSteps = append(workflowRunResults.SkippedSteps, stepResults)
 			break
 		default:
