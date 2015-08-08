@@ -26,14 +26,16 @@ func finish(c *cli.Context) {
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepName, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
 	log.Info("New step.yml:", stepYMLPathInSteplib)
-	if err := stepman.DoGitAdd(collectionDir, stepYMLPathInSteplib); err != nil {
+	if err := stepman.DoGitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
 		log.Fatal(err)
 	}
 
+	log.Info("Do commit")
 	if err := stepman.DoGitCommit(collectionDir, share.StepName+share.StepTag); err != nil {
 		log.Fatal(err)
 	}
 
+	log.Info("Do push")
 	if err := stepman.DoGitPush(collectionDir); err != nil {
 		log.Fatal(err)
 	}

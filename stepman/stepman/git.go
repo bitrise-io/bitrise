@@ -27,23 +27,26 @@ func DoGitClone(uri, pth string) error {
 }
 
 // DoGitCheckoutBranch ...
-func DoGitCheckoutBranch(repoPath, commithash string) error {
-	if commithash == "" {
-		return errors.New("Git checkout 'hash' missing")
+func DoGitCheckoutBranch(repoPath, branch string) error {
+	if branch == "" {
+		return errors.New("Git checkout 'branch' missing")
 	}
-	return RunCommandInDir(repoPath, "git", []string{"checkout", "-b", commithash}...)
+	if err := DoGitCheckout(repoPath, branch); err != nil {
+		return RunCommandInDir(repoPath, "git", []string{"checkout", "-b", branch}...)
+	}
+	return nil
 }
 
 // DoGitCheckout ...
-func DoGitCheckout(repoPath, commithash string) error {
-	if commithash == "" {
+func DoGitCheckout(repoPath, checkout string) error {
+	if checkout == "" {
 		return errors.New("Git checkout 'hash' missing")
 	}
-	return RunCommandInDir(repoPath, "git", []string{"checkout", commithash}...)
+	return RunCommandInDir(repoPath, "git", []string{"checkout", checkout}...)
 }
 
-// DoGitAdd ...
-func DoGitAdd(repoPath, filePath string) error {
+// DoGitAddFile ...
+func DoGitAddFile(repoPath, filePath string) error {
 	if filePath == "" {
 		return errors.New("Git add 'file' missing")
 	}
@@ -55,12 +58,20 @@ func DoGitPush(repoPath string) error {
 	return RunCommandInDir(repoPath, "git", []string{"push"}...)
 }
 
+// CheckIsNoGitChanges ...
+func CheckIsNoGitChanges(repoPath string) error {
+	return RunCommandInDir(repoPath, "git", []string{"diff", "--cahce", "--exit-code", "--quiet"}...)
+}
+
 // DoGitCommit ...
 func DoGitCommit(repoPath string, message string) error {
 	if message == "" {
 		return errors.New("Git commit 'message' missing")
 	}
-	return RunCommandInDir(repoPath, "git", []string{"commit", message}...)
+	if err := CheckIsNoGitChanges(repoPath); err != nil {
+		return RunCommandInDir(repoPath, "git", []string{"commit", "-m", message}...)
+	}
+	return nil
 }
 
 // DoGitCloneWithVersion ...
