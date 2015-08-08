@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 func TestSetupForVersionChecks(t *testing.T) {

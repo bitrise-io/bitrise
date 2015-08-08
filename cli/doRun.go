@@ -8,9 +8,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/colorstring"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
-	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
@@ -202,21 +203,21 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 
 			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
-			if err := bitrise.RunCopyDir(stepAbsLocalPth, stepDir, true); err != nil {
+			if err := command.RunCopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-			if err := bitrise.RunCopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
+			if err := command.RunCopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-			if err := bitrise.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := command.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-			if err := bitrise.RunCopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
+			if err := command.RunCopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
@@ -377,7 +378,7 @@ func doRun(c *cli.Context) {
 			bitrise.PrintBuildFailedFatal(startTime, errors.New("Invalid invetory format: "+err.Error()))
 		}
 
-		if err := bitrise.RunCopy(inventoryPath, bitrise.EnvstorePath); err != nil {
+		if err := command.RunCopy(inventoryPath, bitrise.EnvstorePath); err != nil {
 			bitrise.PrintBuildFailedFatal(startTime, errors.New("Failed to copy inventory: "+err.Error()))
 		}
 	}

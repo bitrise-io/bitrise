@@ -4,7 +4,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 const (
@@ -33,7 +34,7 @@ func ensureBitriseConfigDirExists() error {
 // CheckIsSetupWasDoneForVersion ...
 func CheckIsSetupWasDoneForVersion(ver string) bool {
 	configPth := getBitriseConfigVersionSetupFilePath()
-	cont, err := ReadStringFromFile(configPth)
+	cont, err := fileutil.ReadStringFromFile(configPth)
 	if err != nil {
 		return false
 	}
@@ -46,5 +47,5 @@ func SaveSetupSuccessForVersion(ver string) error {
 		return err
 	}
 	configPth := getBitriseConfigVersionSetupFilePath()
-	return WriteStringToFile(configPth, ver)
+	return fileutil.WriteStringToFile(configPth, ver)
 }

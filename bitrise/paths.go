@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 var (

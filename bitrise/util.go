@@ -12,7 +12,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-pathutil/pathutil"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -88,7 +89,7 @@ func SaveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
 	if err != nil {
 		return err
 	}
-	if err := WriteBytesToFile(pth, contBytes); err != nil {
+	if err := fileutil.WriteBytesToFile(pth, contBytes); err != nil {
 		return err
 	}
 
@@ -171,58 +172,6 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	}
 
 	return stepModel, nil
-}
-
-// WriteStringToFile ...
-func WriteStringToFile(pth string, fileCont string) error {
-	return WriteBytesToFile(pth, []byte(fileCont))
-}
-
-// WriteBytesToFile ...
-func WriteBytesToFile(pth string, fileCont []byte) error {
-	if pth == "" {
-		return errors.New("No path provided")
-	}
-
-	file, err := os.Create(pth)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Errorln("Failed to close file:", err)
-		}
-	}()
-
-	if _, err := file.Write(fileCont); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ReadBytesFromFile ...
-func ReadBytesFromFile(pth string) ([]byte, error) {
-	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return []byte{}, err
-	} else if !isExists {
-		return []byte{}, errors.New(fmt.Sprint("No file found at path", pth))
-	}
-
-	bytes, err := ioutil.ReadFile(pth)
-	if err != nil {
-		return []byte{}, err
-	}
-	return bytes, nil
-}
-
-// ReadStringFromFile ...
-func ReadStringFromFile(pth string) (string, error) {
-	contBytes, err := ReadBytesFromFile(pth)
-	if err != nil {
-		return "", err
-	}
-	return string(contBytes), nil
 }
 
 // IsVersionBetween ...
