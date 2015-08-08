@@ -36,15 +36,10 @@ func create(c *cli.Context) {
 	}
 
 	// Clone step to tmp dir
-	tmp := os.TempDir()
-	if err := stepman.RemoveDir(tmp); err != nil {
+	tmp, err := pathutil.NormalizedOSTempDirPath("")
+	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		if err := stepman.RemoveDir(tmp); err != nil {
-			log.Fatal(err)
-		}
-	}()
 
 	log.Infof("Cloning step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
 	if err := stepman.DoGitCloneVersion(gitURI, tmp, tag); err != nil {
@@ -52,7 +47,7 @@ func create(c *cli.Context) {
 	}
 
 	// Update step.yml
-	bytes, err := ioutil.ReadFile(tmp + "step.yml")
+	bytes, err := ioutil.ReadFile(tmp + "/step.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,7 +55,6 @@ func create(c *cli.Context) {
 	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
 		log.Fatal(err)
 	}
-
 	commit, err := stepman.DoGitGetCommit(tmp)
 	if err != nil {
 		log.Fatal(err)
