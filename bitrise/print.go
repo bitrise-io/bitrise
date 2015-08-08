@@ -6,8 +6,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/colorstring"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const (
@@ -81,7 +81,7 @@ func PrintStepSummary(title string, resultCode int, duration time.Duration, exit
 		break
 	case StepRunResultCodeSkipped, StepRunResultCodeSkippedWithRunIf:
 		runStateIcon := "➡"
-		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, colorstring.White(title), runTime)
+		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, colorstring.Blue(title), runTime)
 		break
 	default:
 		log.Error("Unkown result code")
@@ -133,7 +133,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 			log.Info(colorstring.Yellowf(" * %d failed but was marked as skippable and", failedNotImportantStepCount))
 		}
 		if skippedStepCount > 0 {
-			log.Info(colorstring.Whitef(" * %d was skipped", skippedStepCount))
+			log.Info(colorstring.Bluef(" * %d was skipped", skippedStepCount))
 		}
 
 		fmt.Println()
