@@ -96,7 +96,7 @@ func TestFillMissingDefaults(t *testing.T) {
 		Title:   &title,
 		Website: &website,
 		Source: StepSourceModel{
-			Git: &git,
+			Git: git,
 		},
 		HostOsTags:      []string{"osx"},
 		ProjectTypeTags: []string{"ios"},
@@ -138,7 +138,7 @@ func TestGetStep(t *testing.T) {
 		Website:       &website,
 		SourceCodeURL: &fork,
 		Source: StepSourceModel{
-			Git: &git,
+			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
@@ -196,7 +196,7 @@ func TestGetDownloadLocations(t *testing.T) {
 		Website:       &website,
 		SourceCodeURL: &fork,
 		Source: StepSourceModel{
-			Git: &git,
+			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
@@ -284,7 +284,7 @@ func TestGetLatestStepVersion(t *testing.T) {
 		Website:       &website,
 		SourceCodeURL: &fork,
 		Source: StepSourceModel{
-			Git: &git,
+			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},

@@ -6,7 +6,8 @@ import (
 
 // StepSourceModel ...
 type StepSourceModel struct {
-	Git *string `json:"git,omitempty" yaml:"git,omitempty"`
+	Git    string `json:"git,omitempty" yaml:"git,omitempty"`
+	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 }
 
 // DependencyModel ...
