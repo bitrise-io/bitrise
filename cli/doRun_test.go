@@ -104,7 +104,7 @@ func TestMasterWorkflow(t *testing.T) {
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
 			"target":  workflow,
 			"before1": beforeWorkflow1,
@@ -126,7 +126,7 @@ func TestZeroSteps(t *testing.T) {
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
 			"zero_steps": models.WorkflowModel{},
 		},
@@ -174,7 +174,7 @@ func TestTivialFail(t *testing.T) {
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
 			"trivial_fail": workflow,
 		},
@@ -221,7 +221,7 @@ func TestTrivialSuccess(t *testing.T) {
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
 			"trivial_success": workflow,
 		},
@@ -319,7 +319,7 @@ func getBuildFailedTestBitriseConfig() (config models.BitriseDataModel) {
 
 	config = models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://bitbucket.org/bitrise-team/bitrise-new-steps-spec",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
 			"build_failed_test": targetWorkflow,
 			"before1":           beforeWorkflow1,
