@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-pathutil/pathutil"
@@ -16,14 +17,18 @@ func DoGitPull(pth string) error {
 }
 
 // DoGitClone ...
-func DoGitClone(uri, pth string) error {
+func DoGitClone(uri, pth string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
 	if pth == "" {
 		return errors.New("Git Clone 'pth' missing")
 	}
-	return RunCommand("git", []string{"clone", "--recursive", uri, pth}...)
+	if err = RunCommand("git", []string{"clone", "--recursive", uri, pth}...); err != nil {
+		log.Errorf("Failed to git clone from (%s) to (%s)", uri, pth)
+		return
+	}
+	return
 }
 
 // DoGitCheckoutBranch ...
@@ -38,11 +43,11 @@ func DoGitCheckoutBranch(repoPath, branch string) error {
 }
 
 // DoGitCheckout ...
-func DoGitCheckout(repoPath, checkout string) error {
-	if checkout == "" {
-		return errors.New("Git checkout 'hash' missing")
+func DoGitCheckout(dir, commithash string) error {
+	if commithash == "" {
+		return errors.New("Git Clone 'hash' missing")
 	}
-	return RunCommandInDir(repoPath, "git", []string{"checkout", checkout}...)
+	return RunCommandInDir(dir, "git", []string{"checkout", commithash}...)
 }
 
 // DoGitAddFile ...
@@ -84,7 +89,7 @@ func GetLatestGitCommitHashOnHead(pth string) (string, error) {
 		log.Error(cmdOutput)
 		return "", err
 	}
-	return cmdOutput, nil
+	return strings.TrimSpace(cmdOutput), nil
 }
 
 // DoGitCloneVersion ...
@@ -134,10 +139,6 @@ func DoGitCloneVersionAndCommit(uri, pth, version, commithash string) (err error
 	}
 	if commithash != latestCommit {
 		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
-	}
-
-	if err = DoGitCheckout(pth, commithash); err != nil {
-		return
 	}
 
 	return
