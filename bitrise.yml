@@ -173,7 +173,9 @@ workflows:
         - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
           opts:
             is_expand: true
-        - SLACK_MESSAGE_TEXT: CI was successful
-        - SLACK_ERROR_MESSAGE_TEXT: CI FAILED
+        - SLACK_MESSAGE_TEXT: |-
+            CI was successful on branch: ${BITRISE_GIT_BRANCH}
+        - SLACK_ERROR_MESSAGE_TEXT: |-
+            CI FAILED on branch: ${BITRISE_GIT_BRANCH}
         - SLACK_ICON_EMOJI: ":white_check_mark:"
         - SLACK_ERROR_ICON_EMOJI: ":no_entry_sign:"
