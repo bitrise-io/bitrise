@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/colorstring"
+	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 // CheckProgramInstalledPath ...
