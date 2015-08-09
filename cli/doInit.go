@@ -68,7 +68,7 @@ func doInit(c *cli.Context) {
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
 	}
-	if val, err := goinp.AskForString("What's your primary development branch's name?"); err != nil {
+	if val, err := goinp.AskForString("What's your development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
 		devBranchEnv := envmanModels.EnvironmentItemModel{
@@ -95,7 +95,7 @@ echo "Welcome to Bitrise!"`
 			Environments: projectSettingsEnvs,
 		},
 		Workflows: map[string]models.WorkflowModel{
-			"primary": models.WorkflowModel{
+			"test": models.WorkflowModel{
 				Steps: []models.StepListItemModel{
 					models.StepListItemModel{
 						"script": stepmanModels.StepModel{
@@ -142,12 +142,22 @@ echo "Welcome to Bitrise!"`
 		fmt.Println()
 	}
 
+	// add the general .bitrise* item
+	//  which will include both secret files like .bitrise.secrets.yml
+	//  and the .bitrise work temp dir
+	if err := addToGitignore(".bitrise*"); err != nil {
+		log.Fatalln("Failed to add .gitignore pattern. Error: ", err)
+	}
+	fmt.Println(colorstring.Green("For your convenience we added the pattern '.bitrise*' to your .gitignore file"))
+	fmt.Println(" to make it sure that no secrets or temporary work directories will be")
+	fmt.Println(" committed into your repository.")
+
 	fmt.Println()
 	fmt.Println("Hurray, you're good to go!")
 	fmt.Println("You can simply run:")
-	fmt.Println("-> bitrise run primary")
+	fmt.Println("-> bitrise run test")
 	fmt.Println("to test the sample configuration (which contains")
-	fmt.Println("an example workflow called 'primary').")
+	fmt.Println("an example workflow called 'test').")
 	fmt.Println()
 	fmt.Println("Once you tested this sample setup you can")
 	fmt.Println(" open the " + DefaultBitriseConfigFileName + " config file,")
@@ -172,4 +182,8 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func addToGitignore(ignorePattern string) error {
+	return fileutil.AppendStringToFile(".gitignore", "\n"+ignorePattern+"\n")
 }
