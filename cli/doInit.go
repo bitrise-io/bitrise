@@ -145,7 +145,9 @@ echo "Welcome to Bitrise!"`
 	// add the general .bitrise* item
 	//  which will include both secret files like .bitrise.secrets.yml
 	//  and the .bitrise work temp dir
-	addToGitignore(".bitrise*")
+	if err := addToGitignore(".bitrise*"); err != nil {
+		log.Fatalln("Failed to add .gitignore pattern. Error: ", err)
+	}
 	fmt.Println(colorstring.Green("For your convenience we added the pattern '.bitrise*' to your .gitignore file"))
 	fmt.Println(" to make it sure that no secrets or temporary work directories will be")
 	fmt.Println(" committed into your repository.")
