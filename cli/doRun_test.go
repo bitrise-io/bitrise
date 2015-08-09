@@ -258,6 +258,7 @@ func TestBuildFailedMode(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
+	t.Logf("workflow: %#v", workflow)
 	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 1 {
 		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
