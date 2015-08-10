@@ -8,9 +8,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/utils"
 )
 
-var (
+const (
 	// DefaultIsAlwaysRun ...
 	DefaultIsAlwaysRun = false
 	// DefaultIsRequiresAdminUser ...
@@ -156,28 +157,26 @@ func (step StepModel) ValidateStep(isValidateStepSource bool) error {
 
 // FillMissingDefaults ...
 func (step *StepModel) FillMissingDefaults() error {
-	defaultString := ""
-
 	if step.Description == nil {
-		step.Description = &defaultString
+		step.Description = utils.NewStringPtr("")
 	}
 	if step.SourceCodeURL == nil {
-		step.SourceCodeURL = &defaultString
+		step.SourceCodeURL = utils.NewStringPtr("")
 	}
 	if step.SupportURL == nil {
-		step.SupportURL = &defaultString
+		step.SupportURL = utils.NewStringPtr("")
 	}
 	if step.IsRequiresAdminUser == nil {
-		step.IsRequiresAdminUser = &DefaultIsRequiresAdminUser
+		step.IsRequiresAdminUser = utils.NewBoolPtr(DefaultIsRequiresAdminUser)
 	}
 	if step.IsAlwaysRun == nil {
-		step.IsAlwaysRun = &DefaultIsAlwaysRun
+		step.IsAlwaysRun = utils.NewBoolPtr(DefaultIsAlwaysRun)
 	}
 	if step.IsSkippable == nil {
-		step.IsSkippable = &DefaultIsSkippable
+		step.IsSkippable = utils.NewBoolPtr(DefaultIsSkippable)
 	}
 	if step.RunIf == nil {
-		step.RunIf = &defaultString
+		step.RunIf = utils.NewStringPtr("")
 	}
 
 	for _, input := range step.Inputs {

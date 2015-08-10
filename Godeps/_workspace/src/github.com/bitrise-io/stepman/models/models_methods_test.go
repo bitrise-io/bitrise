@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/utils"
 )
 
-var (
+const (
 	testKey    = "test_key"
 	testValue  = "test_value"
 	testKey1   = "test_key1"
@@ -20,11 +21,14 @@ var (
 	git     = "https://git.url"
 	fork    = "fork/1"
 
-	testTitle        = "test_title"
-	testDescription  = "test_description"
+	testTitle       = "test_title"
+	testDescription = "test_description"
+	testTrue        = true
+	testFalse       = false
+)
+
+var (
 	testValueOptions = []string{testKey2, testValue2}
-	testTrue         = true
-	testFalse        = false
 )
 
 func TestValidateStepInputOutputModel(t *testing.T) {
@@ -32,12 +36,12 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 	env := envmanModels.EnvironmentItemModel{
 		testKey: testValue,
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             &testTitle,
-			Description:       &testDescription,
+			Title:             utils.NewStringPtr(testTitle),
+			Description:       utils.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        &testTrue,
-			IsExpand:          &testFalse,
-			IsDontChangeValue: &testTrue,
+			IsRequired:        utils.NewBoolPtr(testTrue),
+			IsExpand:          utils.NewBoolPtr(testFalse),
+			IsDontChangeValue: utils.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -50,12 +54,12 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 	env = envmanModels.EnvironmentItemModel{
 		"": testValue,
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             &testTitle,
-			Description:       &testDescription,
+			Title:             utils.NewStringPtr(testTitle),
+			Description:       utils.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        &testTrue,
-			IsExpand:          &testFalse,
-			IsDontChangeValue: &testTrue,
+			IsRequired:        utils.NewBoolPtr(testTrue),
+			IsExpand:          utils.NewBoolPtr(testFalse),
+			IsDontChangeValue: utils.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -68,11 +72,11 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 	env = envmanModels.EnvironmentItemModel{
 		testKey: testValue,
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Description:       &testDescription,
+			Description:       utils.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        &testTrue,
-			IsExpand:          &testFalse,
-			IsDontChangeValue: &testTrue,
+			IsRequired:        utils.NewBoolPtr(testTrue),
+			IsExpand:          utils.NewBoolPtr(testFalse),
+			IsDontChangeValue: utils.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -93,8 +97,8 @@ func TestFillMissingDefaults(t *testing.T) {
 	// fork := "fork/1"
 
 	step := StepModel{
-		Title:   &title,
-		Website: &website,
+		Title:   utils.NewStringPtr(title),
+		Website: utils.NewStringPtr(website),
 		Source: StepSourceModel{
 			Git: git,
 		},
@@ -132,18 +136,20 @@ func TestFillMissingDefaults(t *testing.T) {
 }
 
 func TestGetStep(t *testing.T) {
+	defaultIsRequiresAdminUser := DefaultIsRequiresAdminUser
+
 	step := StepModel{
-		Title:         &title,
-		Description:   &desc,
-		Website:       &website,
-		SourceCodeURL: &fork,
+		Title:         utils.NewStringPtr(title),
+		Description:   utils.NewStringPtr(desc),
+		Website:       utils.NewStringPtr(website),
+		SourceCodeURL: utils.NewStringPtr(fork),
 		Source: StepSourceModel{
 			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
-		IsRequiresAdminUser: &DefaultIsRequiresAdminUser,
+		IsRequiresAdminUser: utils.NewBoolPtr(defaultIsRequiresAdminUser),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",
@@ -189,19 +195,21 @@ func TestGetStep(t *testing.T) {
 }
 
 func TestGetDownloadLocations(t *testing.T) {
+	defaultIsRequiresAdminUser := DefaultIsRequiresAdminUser
+
 	// Zip & git download locations
 	step := StepModel{
-		Title:         &title,
-		Description:   &desc,
-		Website:       &website,
-		SourceCodeURL: &fork,
+		Title:         utils.NewStringPtr(title),
+		Description:   utils.NewStringPtr(desc),
+		Website:       utils.NewStringPtr(website),
+		SourceCodeURL: utils.NewStringPtr(fork),
 		Source: StepSourceModel{
 			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
-		IsRequiresAdminUser: &DefaultIsRequiresAdminUser,
+		IsRequiresAdminUser: utils.NewBoolPtr(defaultIsRequiresAdminUser),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",
@@ -278,18 +286,20 @@ func TestGetDownloadLocations(t *testing.T) {
 }
 
 func TestGetLatestStepVersion(t *testing.T) {
+	defaultIsRequiresAdminUser := DefaultIsRequiresAdminUser
+
 	step := StepModel{
-		Title:         &title,
-		Description:   &desc,
-		Website:       &website,
-		SourceCodeURL: &fork,
+		Title:         utils.NewStringPtr(title),
+		Description:   utils.NewStringPtr(desc),
+		Website:       utils.NewStringPtr(website),
+		SourceCodeURL: utils.NewStringPtr(fork),
 		Source: StepSourceModel{
 			Git: git,
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
-		IsRequiresAdminUser: &DefaultIsRequiresAdminUser,
+		IsRequiresAdminUser: utils.NewBoolPtr(defaultIsRequiresAdminUser),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",

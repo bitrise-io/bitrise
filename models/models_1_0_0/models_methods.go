@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/utils"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -218,40 +219,22 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	}
 
 	if otherStep.Title != nil {
-		if step.Title == nil {
-			step.Title = new(string)
-		}
-		*step.Title = *otherStep.Title
+		step.Title = utils.NewStringPtr(*otherStep.Title)
 	}
 	if otherStep.Description != nil {
-		if step.Description == nil {
-			step.Description = new(string)
-		}
-		*step.Description = *otherStep.Description
+		step.Description = utils.NewStringPtr(*otherStep.Description)
 	}
 	if otherStep.Summary != nil {
-		if step.Summary == nil {
-			step.Summary = new(string)
-		}
-		*step.Summary = *otherStep.Summary
+		step.Summary = utils.NewStringPtr(*otherStep.Summary)
 	}
 	if otherStep.Website != nil {
-		if step.Website == nil {
-			step.Website = new(string)
-		}
-		*step.Website = *otherStep.Website
+		step.Website = utils.NewStringPtr(*otherStep.Website)
 	}
 	if otherStep.SourceCodeURL != nil {
-		if step.SourceCodeURL == nil {
-			step.SourceCodeURL = new(string)
-		}
-		*step.SourceCodeURL = *otherStep.SourceCodeURL
+		step.SourceCodeURL = utils.NewStringPtr(*otherStep.SourceCodeURL)
 	}
 	if otherStep.SupportURL != nil {
-		if step.SupportURL == nil {
-			step.SupportURL = new(string)
-		}
-		*step.SupportURL = *otherStep.SupportURL
+		step.SupportURL = utils.NewStringPtr(*otherStep.SupportURL)
 	}
 	if otherStep.Source.Git != "" {
 		step.Source.Git = otherStep.Source.Git
@@ -272,28 +255,16 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.TypeTags = otherStep.TypeTags
 	}
 	if otherStep.IsRequiresAdminUser != nil {
-		if step.IsRequiresAdminUser == nil {
-			step.IsRequiresAdminUser = new(bool)
-		}
-		*step.IsRequiresAdminUser = *otherStep.IsRequiresAdminUser
+		step.IsRequiresAdminUser = utils.NewBoolPtr(*otherStep.IsRequiresAdminUser)
 	}
 	if otherStep.IsAlwaysRun != nil {
-		if step.IsAlwaysRun == nil {
-			step.IsAlwaysRun = new(bool)
-		}
-		*step.IsAlwaysRun = *otherStep.IsAlwaysRun
+		step.IsAlwaysRun = utils.NewBoolPtr(*otherStep.IsAlwaysRun)
 	}
 	if otherStep.IsSkippable != nil {
-		if step.IsSkippable == nil {
-			step.IsSkippable = new(bool)
-		}
-		*step.IsSkippable = *otherStep.IsSkippable
+		step.IsSkippable = utils.NewBoolPtr(*otherStep.IsSkippable)
 	}
 	if otherStep.RunIf != nil {
-		if step.RunIf == nil {
-			step.RunIf = new(string)
-		}
-		*step.RunIf = *otherStep.RunIf
+		step.RunIf = utils.NewStringPtr(*otherStep.RunIf)
 	}
 
 	for _, input := range step.Inputs {

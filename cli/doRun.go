@@ -192,21 +192,22 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 
 			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
-			if err := command.RunCopyDir(stepAbsLocalPth, stepDir, true); err != nil {
+
+			if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-			if err := command.RunCopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
+			if err := command.CopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-			if err := command.RunGitClone(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := command.GitCloneAndCheckoutTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-			if err := command.RunCopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
+			if err := command.CopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
@@ -255,12 +256,14 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 		if buildRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
 			registerStepRunResults(mergedStep, bitrise.StepRunResultCodeSkipped, 0, err)
-			continue
 		} else {
 			exit, err := runStep(mergedStep, stepIDData, stepDir)
 			if err != nil {
-				registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailed, exit, err)
-				continue
+				if *mergedStep.IsSkippable {
+					registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailedNotImportant, exit, err)
+				} else {
+					registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailed, exit, err)
+				}
 			} else {
 				registerStepRunResults(mergedStep, bitrise.StepRunResultCodeSuccess, 0, nil)
 			}
@@ -367,7 +370,7 @@ func doRun(c *cli.Context) {
 			bitrise.PrintBuildFailedFatal(startTime, errors.New("Invalid invetory format: "+err.Error()))
 		}
 
-		if err := command.RunCopy(inventoryPath, bitrise.EnvstorePath); err != nil {
+		if err := command.CopyFile(inventoryPath, bitrise.EnvstorePath); err != nil {
 			bitrise.PrintBuildFailedFatal(startTime, errors.New("Failed to copy inventory: "+err.Error()))
 		}
 	}
