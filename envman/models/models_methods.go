@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/utils"
 )
 
 const (
@@ -166,27 +167,21 @@ func (env *EnvironmentItemModel) Normalize() error {
 
 // FillMissingDefaults ...
 func (env *EnvironmentItemModel) FillMissingDefaults() error {
-	defaultString := ""
-
 	options, err := env.GetOptions()
 	if err != nil {
 		return err
 	}
 	if options.Description == nil {
-		options.Description = new(string)
-		*options.Description = defaultString
+		options.Description = utils.NewStringPtr("")
 	}
 	if options.IsRequired == nil {
-		options.IsRequired = new(bool)
-		*options.IsRequired = DefaultIsRequired
+		options.IsRequired = utils.NewBoolPtr(DefaultIsRequired)
 	}
 	if options.IsExpand == nil {
-		options.IsExpand = new(bool)
-		*options.IsExpand = DefaultIsExpand
+		options.IsExpand = utils.NewBoolPtr(DefaultIsExpand)
 	}
 	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = new(bool)
-		*options.IsDontChangeValue = DefaultIsDontChangeValue
+		options.IsDontChangeValue = utils.NewBoolPtr(DefaultIsDontChangeValue)
 	}
 	(*env)[OptionsKey] = options
 	return nil
