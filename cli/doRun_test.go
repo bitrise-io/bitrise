@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -17,6 +18,13 @@ const (
 
 func Test0Steps1Workflows(t *testing.T) {
 	workflow := models.WorkflowModel{}
+
+	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
@@ -46,9 +54,25 @@ func Test0Steps1Workflows(t *testing.T) {
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
 	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
 }
 
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
+	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
+
 	beforeWorkflow := models.WorkflowModel{}
 	afterWorkflow := models.WorkflowModel{}
 
@@ -87,9 +111,25 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
 	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
 }
 
 func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
+	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
+		t.Fatal(err)
+	}
+
 	beforeWorkflow := models.WorkflowModel{
 		BeforeRun: []string{"target"},
 	}
@@ -113,6 +153,15 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 
 	if err := config.Validate(); err == nil {
 		t.Fatal("Circular dependency, should fail")
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}
 }
 
@@ -207,6 +256,15 @@ func Test1Workflow(t *testing.T) {
 	}
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}
 }
 
@@ -329,6 +387,15 @@ func Test3Workflows(t *testing.T) {
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
 	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
 }
 
 func TestMasterWorkflow(t *testing.T) {
@@ -436,6 +503,165 @@ func TestMasterWorkflow(t *testing.T) {
 	}
 }
 
+func TestBuildStatusEnv(t *testing.T) {
+	defaultTrue := true
+	shouldSuccess := "Should success"
+	shouldFail := "Should fail"
+	shouldFailButNotImporatnt := "Should failed not important"
+	shouldSkipped := "Should skipp"
+
+	workflow := models.WorkflowModel{
+		Steps: []models.StepListItemModel{
+			models.StepListItemModel{ // Success
+				"script": stepmanModels.StepModel{
+					Title: utils.NewStringPtr(shouldSuccess),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+								#!/bin/bash
+								set -v
+								if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
+								  exit 1
+								fi
+								if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+								  exit 1
+								fi
+							`,
+						},
+					},
+				},
+			},
+			models.StepListItemModel{ // Failed, but not important
+				"script": stepmanModels.StepModel{
+					Title:       utils.NewStringPtr(shouldFailButNotImporatnt),
+					IsSkippable: utils.NewBoolPtr(defaultTrue),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+									#!/bin/bash
+									set -v
+									echo 'This is a before workflow'
+									exit 34
+								`,
+						},
+					},
+				},
+			},
+			models.StepListItemModel{ // Success
+				"script": stepmanModels.StepModel{
+					Title: utils.NewStringPtr(shouldSuccess),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+								#!/bin/bash
+								set -v
+								if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
+								  exit 1
+								fi
+								if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+								  exit 1
+								fi
+							`,
+						},
+					},
+				},
+			},
+			models.StepListItemModel{ // Fail
+				"script": stepmanModels.StepModel{
+					Title: utils.NewStringPtr(shouldFail),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+								#!/bin/bash
+								set -v
+								exit 1
+							`,
+						},
+					},
+				},
+			},
+			models.StepListItemModel{ // Success
+				"script": stepmanModels.StepModel{
+					Title:       utils.NewStringPtr(shouldSuccess),
+					IsAlwaysRun: utils.NewBoolPtr(defaultTrue),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+								#!/bin/bash
+								set -v
+								if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
+								  echo "should fail"
+								fi
+								if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
+								  echo "should fail"
+								fi
+							`,
+						},
+					},
+				},
+			},
+			models.StepListItemModel{ // Skipped
+				"script": stepmanModels.StepModel{
+					Title: utils.NewStringPtr(shouldSkipped),
+					Inputs: []envmanModels.EnvironmentItemModel{
+						envmanModels.EnvironmentItemModel{
+							"content": `
+								#!/bin/bash
+								set -v
+								if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
+								  echo "should fail"
+								fi
+								if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
+								  echo "should fail"
+								fi
+							`,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	config := models.BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+		Workflows: map[string]models.WorkflowModel{
+			"trivial_fail": workflow,
+		},
+	}
+
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	t.Logf("Build run results: %#v\n", buildRunResults)
+	if len(buildRunResults.SuccessSteps) != 3 {
+		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 1 {
+		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedNotImportantSteps) != 1 {
+		t.Fatalf("FailedNotImportant step count (%d), should be (1)", len(buildRunResults.FailedNotImportantSteps))
+	}
+	if len(buildRunResults.SkippedSteps) != 1 {
+		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
 func TestTivialFail(t *testing.T) {
 	defaultTrue := true
 	shouldSuccess := "Should success"
@@ -525,6 +751,15 @@ func TestTivialFail(t *testing.T) {
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
 	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
 }
 
 func TestTrivialSuccess(t *testing.T) {
@@ -571,6 +806,15 @@ func TestTrivialSuccess(t *testing.T) {
 	}
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}
 }
 
@@ -661,5 +905,14 @@ func TestBuildFailedMode(t *testing.T) {
 	}
 	if len(buildRunResults.FailedNotImportantSteps) != 0 {
 		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}
 }
