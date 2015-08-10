@@ -5,11 +5,12 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
 
 // PrintBitriseHeaderASCIIArt ...
-func PrintBitriseHeaderASCIIArt() {
+func PrintBitriseHeaderASCIIArt(appVersion string) {
 	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
 	fmt.Println(`
   ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
@@ -19,10 +20,12 @@ func PrintBitriseHeaderASCIIArt() {
   ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
   ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
 	fmt.Println()
+	fmt.Println(colorstring.Greenf("Version: %s", appVersion))
+	fmt.Println()
 }
 
 func doSetup(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt()
+	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	if err := bitrise.RunSetup(c.App.Version); err != nil {
 		log.Fatalln("Setup failed:", err)

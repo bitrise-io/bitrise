@@ -39,7 +39,7 @@ const (
 )
 
 func doInit(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt()
+	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
 	bitriseSecretsFileRelPath := "./" + DefaultSecretsFileName
