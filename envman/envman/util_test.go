@@ -124,6 +124,10 @@ func TestUpdateOrAddToEnvlist(t *testing.T) {
 }
 
 func TestRemoveDefaults(t *testing.T) {
+	defaultIsRequired := models.DefaultIsRequired
+	defaultIsExpand := models.DefaultIsExpand
+	defaultIsDontChangeValue := models.DefaultIsDontChangeValue
+
 	// Filled env
 	env := models.EnvironmentItemModel{
 		testKey: testValue,
@@ -131,9 +135,9 @@ func TestRemoveDefaults(t *testing.T) {
 			Title:             &testTitle,
 			Description:       &testEmptyString,
 			ValueOptions:      []string{},
-			IsRequired:        &models.DefaultIsRequired,
-			IsExpand:          &models.DefaultIsExpand,
-			IsDontChangeValue: &models.DefaultIsDontChangeValue,
+			IsRequired:        &defaultIsRequired,
+			IsExpand:          &defaultIsExpand,
+			IsDontChangeValue: &defaultIsDontChangeValue,
 		},
 	}
 
