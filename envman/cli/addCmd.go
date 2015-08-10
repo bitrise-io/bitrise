@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/utils"
 	"github.com/codegangsta/cli"
 )
 
@@ -26,7 +27,7 @@ func addEnv(key string, value string, expand, replace bool) error {
 	newEnv := models.EnvironmentItemModel{
 		key: value,
 		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			IsExpand: &expand,
+			IsExpand: utils.NewBoolPtr(expand),
 		},
 	}
 	if err := newEnv.NormalizeEnvironmentItemModel(); err != nil {

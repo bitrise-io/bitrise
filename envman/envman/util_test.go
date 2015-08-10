@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/utils"
 )
 
 var (
@@ -132,12 +133,12 @@ func TestRemoveDefaults(t *testing.T) {
 	env := models.EnvironmentItemModel{
 		testKey: testValue,
 		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			Title:             &testTitle,
-			Description:       &testEmptyString,
+			Title:             utils.NewStringPtr(testTitle),
+			Description:       utils.NewStringPtr(testEmptyString),
 			ValueOptions:      []string{},
-			IsRequired:        &defaultIsRequired,
-			IsExpand:          &defaultIsExpand,
-			IsDontChangeValue: &defaultIsDontChangeValue,
+			IsRequired:        utils.NewBoolPtr(defaultIsRequired),
+			IsExpand:          utils.NewBoolPtr(defaultIsExpand),
+			IsDontChangeValue: utils.NewBoolPtr(defaultIsDontChangeValue),
 		},
 	}
 
