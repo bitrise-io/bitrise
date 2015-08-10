@@ -12,7 +12,7 @@ const (
 	OptionsKey = "opts"
 )
 
-var (
+const (
 	//DefaultIsRequired ...
 	DefaultIsRequired = false
 	// DefaultIsExpand ...
@@ -173,16 +173,20 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 		return err
 	}
 	if options.Description == nil {
-		options.Description = &defaultString
+		options.Description = new(string)
+		*options.Description = defaultString
 	}
 	if options.IsRequired == nil {
-		options.IsRequired = &DefaultIsRequired
+		options.IsRequired = new(bool)
+		*options.IsRequired = DefaultIsRequired
 	}
 	if options.IsExpand == nil {
-		options.IsExpand = &DefaultIsExpand
+		options.IsExpand = new(bool)
+		*options.IsExpand = DefaultIsExpand
 	}
 	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = &DefaultIsDontChangeValue
+		options.IsDontChangeValue = new(bool)
+		*options.IsDontChangeValue = DefaultIsDontChangeValue
 	}
 	(*env)[OptionsKey] = options
 	return nil
