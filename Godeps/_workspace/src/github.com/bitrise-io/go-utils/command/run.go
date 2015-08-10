@@ -8,9 +8,6 @@ import (
 	"syscall"
 )
 
-// ------------------
-// --- Common
-
 // RunCommandInDir ...
 func RunCommandInDir(dir, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
@@ -81,39 +78,4 @@ func RunBashCommandLines(cmdLines []string) error {
 		}
 	}
 	return nil
-}
-
-// RunCopy ...
-func RunCopy(src, dst string) error {
-	args := []string{src, dst}
-	return RunCommand("rsync", args...)
-}
-
-// RunCopyFile ...
-func RunCopyFile(src, dst string) error {
-	args := []string{src, dst}
-	return RunCommand("rsync", args...)
-}
-
-// RunCopyDir ...
-func RunCopyDir(src, dst string, isOnlyContent bool) error {
-	if isOnlyContent && !strings.HasSuffix(src, "/") {
-		src = src + "/"
-	}
-	args := []string{"-r", src, dst}
-	return RunCommand("rsync", args...)
-}
-
-// RunGitClone ...
-func RunGitClone(uri, pth, tagOrBranch string) error {
-	if uri == "" {
-		return errors.New("Git Clone 'uri' missing")
-	}
-	if pth == "" {
-		return errors.New("Git Clone 'path' missing")
-	}
-	if tagOrBranch == "" {
-		return errors.New("Git Clone 'tag or branch' missing")
-	}
-	return RunCommand("git", []string{"clone", "--recursive", "--branch", tagOrBranch, uri, pth}...)
 }

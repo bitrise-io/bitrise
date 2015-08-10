@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/utils"
 )
 
 const (
@@ -12,7 +13,7 @@ const (
 	OptionsKey = "opts"
 )
 
-var (
+const (
 	//DefaultIsRequired ...
 	DefaultIsRequired = false
 	// DefaultIsExpand ...
@@ -71,13 +72,13 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.Title = &castedValue
+			envSerModel.Title = utils.NewStringPtr(castedValue)
 		case "description":
 			castedValue, ok := value.(string)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.Description = &castedValue
+			envSerModel.Description = utils.NewStringPtr(castedValue)
 		case "value_options":
 			castedValue, ok := value.([]string)
 			if !ok {
@@ -102,19 +103,19 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsRequired = &castedValue
+			envSerModel.IsRequired = utils.NewBoolPtr(castedValue)
 		case "is_expand":
 			castedValue, ok := value.(bool)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsExpand = &castedValue
+			envSerModel.IsExpand = utils.NewBoolPtr(castedValue)
 		case "is_dont_change_value":
 			castedValue, ok := value.(bool)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsDontChangeValue = &castedValue
+			envSerModel.IsDontChangeValue = utils.NewBoolPtr(castedValue)
 		default:
 			return fmt.Errorf("Not supported key found in options: %#v", key)
 		}
@@ -166,23 +167,21 @@ func (env *EnvironmentItemModel) Normalize() error {
 
 // FillMissingDefaults ...
 func (env *EnvironmentItemModel) FillMissingDefaults() error {
-	defaultString := ""
-
 	options, err := env.GetOptions()
 	if err != nil {
 		return err
 	}
 	if options.Description == nil {
-		options.Description = &defaultString
+		options.Description = utils.NewStringPtr("")
 	}
 	if options.IsRequired == nil {
-		options.IsRequired = &DefaultIsRequired
+		options.IsRequired = utils.NewBoolPtr(DefaultIsRequired)
 	}
 	if options.IsExpand == nil {
-		options.IsExpand = &DefaultIsExpand
+		options.IsExpand = utils.NewBoolPtr(DefaultIsExpand)
 	}
 	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = &DefaultIsDontChangeValue
+		options.IsDontChangeValue = utils.NewBoolPtr(DefaultIsDontChangeValue)
 	}
 	(*env)[OptionsKey] = options
 	return nil
