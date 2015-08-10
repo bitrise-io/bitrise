@@ -72,13 +72,13 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.Title = &castedValue
+			envSerModel.Title = utils.NewStringPtr(castedValue)
 		case "description":
 			castedValue, ok := value.(string)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.Description = &castedValue
+			envSerModel.Description = utils.NewStringPtr(castedValue)
 		case "value_options":
 			castedValue, ok := value.([]string)
 			if !ok {
@@ -103,19 +103,19 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsRequired = &castedValue
+			envSerModel.IsRequired = utils.NewBoolPtr(castedValue)
 		case "is_expand":
 			castedValue, ok := value.(bool)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsExpand = &castedValue
+			envSerModel.IsExpand = utils.NewBoolPtr(castedValue)
 		case "is_dont_change_value":
 			castedValue, ok := value.(bool)
 			if !ok {
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
-			envSerModel.IsDontChangeValue = &castedValue
+			envSerModel.IsDontChangeValue = utils.NewBoolPtr(castedValue)
 		default:
 			return fmt.Errorf("Not supported key found in options: %#v", key)
 		}
