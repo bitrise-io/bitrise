@@ -12,7 +12,6 @@ const (
 	clrBlue    = "\x1b[34;1m"
 	clrMagenta = "\x1b[35;1m"
 	clrCyan    = "\x1b[36;1m"
-	clrWhite   = "\x1b[37;1m"
 	clrReset   = "\x1b[0m"
 )
 
@@ -84,16 +83,6 @@ func Cyan(s string) string {
 // Cyanf ...
 func Cyanf(format string, a ...interface{}) string {
 	return addColor(fmt.Sprintf(format, a...), clrCyan)
-}
-
-// White ...
-func White(s string) string {
-	return Whitef(s)
-}
-
-// Whitef ...
-func Whitef(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrWhite)
 }
 
 func addColor(s, color string) string {

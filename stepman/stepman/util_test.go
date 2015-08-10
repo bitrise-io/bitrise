@@ -3,16 +3,17 @@ package stepman
 import (
 	"testing"
 
+	"github.com/bitrise-io/go-utils/utils"
 	"github.com/bitrise-io/stepman/models"
 )
 
-var (
+const (
 	title = "name 1"
 )
 
 func TestAddStepVersionToStepGroup(t *testing.T) {
 	step := models.StepModel{
-		Title: &title,
+		Title: utils.NewStringPtr(title),
 	}
 
 	group := models.StepGroupModel{
