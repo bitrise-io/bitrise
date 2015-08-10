@@ -9,8 +9,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.3-10-g6231b9c",
-			"Rev": "6231b9c0fcf6c010c1bb11a6b3f3cd1c737e5ae6"
+			"Comment": "0.9.3-12-g2565e5e",
+			"Rev": "2565e5e185a48f1a7b6b3fdbb11ac694205ae48c"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
