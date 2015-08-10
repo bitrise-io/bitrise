@@ -316,7 +316,7 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 }
 
 func doRun(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt()
+	PrintBitriseHeaderASCIIArt(c.App.Version)
 	log.Debugln("[BITRISE_CLI] - Run")
 
 	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
