@@ -109,6 +109,23 @@ func generateYAML(v interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
+// ConfigModelFromBytes ...
+func ConfigModelFromBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
+	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
+		return
+	}
+	if err = bitriseData.Normalize(); err != nil {
+		return
+	}
+	if err = bitriseData.Validate(); err != nil {
+		return
+	}
+	if err = bitriseData.FillMissingDefaults(); err != nil {
+		return
+	}
+	return
+}
+
 // ReadBitriseConfig ...
 func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	log.Debugln("-> ReadBitriseConfig")
@@ -122,24 +139,7 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	if err != nil {
 		return models.BitriseDataModel{}, err
 	}
-	var bitriseData models.BitriseDataModel
-	if err := yaml.Unmarshal(bytes, &bitriseData); err != nil {
-		return models.BitriseDataModel{}, err
-	}
-
-	if err := bitriseData.Normalize(); err != nil {
-		return models.BitriseDataModel{}, err
-	}
-
-	if err := bitriseData.Validate(); err != nil {
-		return models.BitriseDataModel{}, err
-	}
-
-	if err := bitriseData.FillMissingDefaults(); err != nil {
-		return models.BitriseDataModel{}, err
-	}
-
-	return bitriseData, nil
+	return ConfigModelFromBytes(bytes)
 }
 
 // ReadSpecStep ...
