@@ -328,11 +328,6 @@ func doRun(c *cli.Context) {
 
 	startTime := time.Now()
 
-	// Cleanup
-	if err := bitrise.CleanupBitriseWorkPath(); err != nil {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to cleanup bitrise work dir: "+err.Error()))
-	}
-
 	// Input validation
 	bitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" {

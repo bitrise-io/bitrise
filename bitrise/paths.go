@@ -29,41 +29,8 @@ const (
 	FormattedOutputPathEnvKey string = "BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH"
 )
 
-// RemoveFile ...
-func RemoveFile(pth string) error {
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return err
-	} else if exist {
-		if err := os.Remove(pth); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// RemoveDir ...
-func RemoveDir(dirPth string) error {
-	if exist, err := pathutil.IsPathExists(dirPth); err != nil {
-		return err
-	} else if exist {
-		if err := os.RemoveAll(dirPth); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// CleanupBitriseWorkPath ...
-func CleanupBitriseWorkPath() error {
-	err := RemoveDir(BitriseWorkDirPath)
-	if err != nil {
-		return err
-	}
-	return initBitriseWorkPaths()
-}
-
 func initBitriseWorkPaths() error {
-	bitriseWorkDirPath, err := filepath.Abs("./.bitrise")
+	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {
 		return err
 	}
@@ -75,6 +42,7 @@ func initBitriseWorkPaths() error {
 		}
 	}
 	BitriseWorkDirPath = bitriseWorkDirPath
+	log.Debug("initBitriseWorkPaths: ", BitriseWorkDirPath)
 
 	bitriseWorkStepsDirPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "step_src"))
 	if err != nil {
