@@ -5,15 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
-	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-)
-
-const (
-	buildFailedTestWorkflowName      = "build_failed_test"
-	buildFailedTestBitriseConfigPath = "./_tests/build_failed_test_bitrise.yml"
 )
 
 func Test0Steps1Workflows(t *testing.T) {
@@ -165,78 +158,47 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 	}
 }
 
-func Test1Workflow(t *testing.T) {
-	defaultTrue := true
-	shouldSuccess := "Should success"
-	shouldFail := "Should fail"
-	shouldFailButSkippable := "Should failed skippable"
-	shouldSkipped := "Should skipp"
+func Test1Workflows(t *testing.T) {
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	workflow := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-				},
-			},
-			models.StepListItemModel{ // Failed, but not skippable
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: pointers.NewBoolPtr(defaultTrue),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-									#!/bin/bash
-									set -v
-									echo 'This is a before workflow'
-									exit 34
-								`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-				},
-			},
-			models.StepListItemModel{ // Fail
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldFail),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-									#!/bin/bash
-									set -v
-									echo 'This is a before workflow'
-									exit 34
-								`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
-				},
-			},
-			models.StepListItemModel{ // Skipped
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSkipped),
-				},
-			},
-		},
+  workflows:
+    trivial_fail:
+      steps:
+      - script:
+          title: Should success
+      - script:
+          title: Should fail, but skippable
+          is_skippable: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+      - script:
+          title: Should success
+      - script:
+          title: Should fail
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+      - script:
+          title: Should success
+          is_always_run: true
+      - script:
+          title: Should skipped
+  `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"trivial_fail": workflow,
-		},
+	workflow, found := config.Workflows["trivial_fail"]
+	if !found {
+		t.Fatal("No workflow found with title (trivial_fail)")
 	}
-
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -269,105 +231,72 @@ func Test1Workflow(t *testing.T) {
 }
 
 func Test3Workflows(t *testing.T) {
-	// Before
-	beforeWorkflow1 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{},
-			},
-			models.StepListItemModel{ // Fail, skippable
-				"script": stepmanModels.StepModel{
-					IsSkippable: pointers.NewBoolPtr(true),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-									#!/bin/bash
-									set -v
-									echo 'Before step 1'
-									exit 1
-								`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{},
-			},
-		},
-	}
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	beforeWorkflow2 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{},
-			},
-		},
-	}
+  workflows:
+    before1:
+      steps:
+      - script:
+          title: Should success
+      - script:
+          title: Should fail, but skippable
+          is_skippable: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+      - script:
+          title: Should success
 
-	// Target
-	workflow := models.WorkflowModel{
-		BeforeRun: []string{"before1", "before2"},
-		AfterRun:  []string{"after1", "after2"},
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Fail
-				"script": stepmanModels.StepModel{
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-										#!/bin/bash
-										set -v
-										echo 'Target step'
-										exit 1
-									`,
-						},
-					},
-				},
-			},
-		},
-	}
+    before2:
+      steps:
+      - script:
+          title: Should success
 
-	// After
-	afterWorkflow1 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{ // Fail
-			models.StepListItemModel{
-				"script": stepmanModels.StepModel{
-					IsAlwaysRun: pointers.NewBoolPtr(true),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-											#!/bin/bash
-											set -v
-											exit 1'
-										`,
-						},
-					},
-				},
-			},
-		},
-	}
+    target:
+      before_run:
+      - before1
+      - before2
+      after_run:
+      - after1
+      - after2
+      steps:
+      - script:
+          title: Should fail
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
 
-	afterWorkflow2 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{ // Skipp
-			models.StepListItemModel{
-				"script": stepmanModels.StepModel{},
-			},
-		},
-	}
+    after1:
+      steps:
+      - script:
+          title: Should fail
+          is_always_run: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
 
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"target":  workflow,
-			"before1": beforeWorkflow1,
-			"before2": beforeWorkflow2,
-			"after1":  afterWorkflow1,
-			"after2":  afterWorkflow2,
-		},
-	}
-
-	err := config.Validate()
+    after2:
+      steps:
+      - script:
+          title: Should skipped
+  `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
 	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -398,238 +327,123 @@ func Test3Workflows(t *testing.T) {
 	}
 }
 
-func TestMasterWorkflow(t *testing.T) {
-	// Before
-	beforeStep1 := stepmanModels.StepModel{
-		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
-				"content": `
-					#!/bin/bash
-					set -v
-					echo 'Before step 1'
-				`,
-			},
-		},
-	}
+func TestRefeneceCycle(t *testing.T) {
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	beforeWorkflow1 := models.WorkflowModel{
-		BeforeRun: []string{"before2"},
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{
-				"script": beforeStep1,
-			},
-		},
-	}
+  workflows:
+    before1:
+      before_run:
+      - before2
 
-	beforeStep2 := stepmanModels.StepModel{
-		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
-				"content": `
-					#!/bin/bash
-					set -v
-					echo 'Before step 2'
-				`,
-			},
-		},
-	}
+    before2:
+      before_run:
+      - before1
 
-	beforeWorkflow2 := models.WorkflowModel{
-		BeforeRun: []string{"before1"},
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{
-				"script": beforeStep2,
-			},
-		},
-	}
-
-	// After
-	afterStep := stepmanModels.StepModel{
-		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
-				"content": `
-						#!/bin/bash
-						set -v
-						echo 'After step'
-					`,
-			},
-		},
-	}
-
-	afterWorkflow := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{
-				"script": afterStep,
-			},
-		},
-	}
-
-	// Target
-	targetStep := stepmanModels.StepModel{
-		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
-				"content": `
-						#!/bin/bash
-						set -v
-						echo 'Target step'
-						exit 1
-					`,
-			},
-		},
-	}
-
-	workflow := models.WorkflowModel{
-		BeforeRun: []string{"before1", "before2"},
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{
-				"script": targetStep,
-			},
-		},
-	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"target":  workflow,
-			"before1": beforeWorkflow1,
-			"before2": beforeWorkflow2,
-			"after":   afterWorkflow,
-		},
-	}
-
-	err := config.Validate()
+    target:
+      before_run:
+      - before1
+      - before2
+  `
+	_, err := bitrise.ConfigModelFromBytes([]byte(configStr))
 	if err == nil {
 		t.Fatal("Should found workflow reference cycle")
 	}
 }
 
 func TestBuildStatusEnv(t *testing.T) {
-	defaultTrue := true
-	shouldSuccess := "Should success"
-	shouldFail := "Should fail"
-	shouldFailButSkippable := "Should failed, skippable"
-	shouldSkipped := "Should skipp"
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	workflow := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
-								  exit 1
-								fi
-								if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
-								  exit 1
-								fi
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Failed, but skippable
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: pointers.NewBoolPtr(defaultTrue),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-									#!/bin/bash
-									set -v
-									echo 'This is a before workflow'
-									exit 34
-								`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
-								  exit 1
-								fi
-								if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
-								  exit 1
-								fi
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Fail
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldFail),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								exit 1
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
-								  echo "should fail"
-								fi
-								if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
-								  echo "should fail"
-								fi
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Skipped
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSkipped),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
-								  echo "should fail"
-								fi
-								if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
-								  echo "should fail"
-								fi
-							`,
-						},
-					},
-				},
-			},
-		},
+  workflows:
+    before1:
+      steps:
+      - script:
+          title: Should success
+      - script:
+          title: Should fail, but skippable
+          is_skippable: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+      - script:
+          title: Should success
+
+    before2:
+      steps:
+      - script:
+          title: Should success
+
+    target:
+      steps:
+      - script:
+          title: Should success
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
+                exit 1
+              fi
+              if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+                exit 1
+              fi
+      - script:
+          title: Should fail, but skippable
+          is_skippable: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              echo 'This is a before workflow'
+              exit 2
+      - script:
+          title: Should success
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
+                exit 1
+              fi
+              if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+                exit 1
+              fi
+      - script:
+          title: Should fail
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 1
+      - script:
+          title: Should success
+          is_always_run: true
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
+                echo "should fail"
+              fi
+              if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
+                echo "should fail"
+              fi
+      - script:
+          title: Should skipped
+  `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"trivial_fail": workflow,
-		},
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
 	}
-
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -662,76 +476,49 @@ func TestBuildStatusEnv(t *testing.T) {
 	}
 }
 
-func TestTivialFail(t *testing.T) {
-	defaultTrue := true
-	shouldSuccess := "Should success"
-	shouldFail := "Should fail"
-	shouldFailButSkippable := "Should failed, skippable"
-	shouldSkipped := "Should skipp"
+func TestFail(t *testing.T) {
+	configStr := `
+    format_version: 1.0.0
+    default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	workflow := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Should be success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-				},
-			},
-			models.StepListItemModel{ // Should fail, but skippable
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: pointers.NewBoolPtr(defaultTrue),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								echo 'This is a before workflow'
-								exit 34
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Should success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccess),
-				},
-			},
-			models.StepListItemModel{ // Should fail
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldFail),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-								#!/bin/bash
-								set -v
-								echo 'This is a before workflow'
-								exit 34
-							`,
-						},
-					},
-				},
-			},
-			models.StepListItemModel{ // Should be skipped
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSkipped),
-				},
-			},
-			models.StepListItemModel{ // Should be success
-				"script": stepmanModels.StepModel{
-					Title:       pointers.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
-				},
-			},
-		},
+    workflows:
+      target:
+        steps:
+        - script:
+            title: Should success
+        - script:
+            title: Should fail, but skippable
+            is_skippable: true
+            inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                exit 2
+        - script:
+            title: Should success
+        - script:
+            title: Should fail
+            inputs:
+            - content: |
+                #!/bin/bash
+                set -v
+                exit 1
+        - script:
+            title: Should skipped
+        - script:
+            title: Should success
+            is_always_run: true
+    `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"trivial_fail": workflow,
-		},
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -762,33 +549,27 @@ func TestTivialFail(t *testing.T) {
 	}
 }
 
-func TestTrivialSuccess(t *testing.T) {
-	step := stepmanModels.StepModel{
-		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
-				"content": `
-						#!/bin/bash
-						set -v
-						echo 'Should be success'
-					`,
-			},
-		},
-	}
+func TestSuccess(t *testing.T) {
+	configStr := `
+    format_version: 1.0.0
+    default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	workflow := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{
-				"script": step,
-			},
-		},
+    workflows:
+      target:
+        steps:
+        - script:
+            title: Should success
+    `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"trivial_success": workflow,
-		},
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -819,74 +600,49 @@ func TestTrivialSuccess(t *testing.T) {
 }
 
 func TestBuildFailedMode(t *testing.T) {
-	shouldSuccessBefore1Before1 := "Should success (before1 - before1)"
-	shouldFailBefore1Before2 := "Should fail (before1 - befor2)"
-	shouldSkippedBefor2Befor1 := "Should skipp (before2 - before1)"
-	shouldSkippedTargetStep1 := "Should skipp (target - step1)"
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-	// Before
-	beforeWorkflow1 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Success
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSuccessBefore1Before1),
-				},
-			},
-			models.StepListItemModel{ // Fail
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldFailBefore1Before2),
-					Inputs: []envmanModels.EnvironmentItemModel{
-						envmanModels.EnvironmentItemModel{
-							"content": `
-									#!/bin/bash
-									set -v
-									echo 'This is a before workflow'
-									exit 34
-								`,
-						},
-					},
-				},
-			},
-		},
-	}
+  workflows:
+    before1:
+      title: before1
+      steps:
+      - script:
+          title: Should success
+      - script:
+          title: Should fail
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
 
-	beforeWorkflow2 := models.WorkflowModel{
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Skip
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSkippedBefor2Befor1),
-				},
-			},
-		},
-	}
+    before2:
+      title: before2
+      steps:
+      - script:
+          title: Should skipped
 
-	// Target
-	targetWorkflow := models.WorkflowModel{
-		BeforeRun: []string{"before1", "before2"},
-		Steps: []models.StepListItemModel{
-			models.StepListItemModel{ // Skip
-				"script": stepmanModels.StepModel{
-					Title: pointers.NewStringPtr(shouldSkippedTargetStep1),
-				},
-			},
-		},
+    target:
+      title: target
+      before_run:
+      - before1
+      - before2
+      steps:
+      - script:
+          title: Should skipped
+    `
+	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"build_failed_test": targetWorkflow,
-			"before1":           beforeWorkflow1,
-			"before2":           beforeWorkflow2,
-		},
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
 	}
-	workflow, exist := config.Workflows["build_failed_test"]
-	if !exist {
-		t.Fatal("Failed to find workflow (build_failed_test) in config")
-	}
-	if workflow.Title == "" {
-		workflow.Title = "build_failed_test"
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -894,6 +650,7 @@ func TestBuildFailedMode(t *testing.T) {
 	}
 
 	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 2 {
 		t.Fatalf("Skipped step count (%d), should be (2)", len(buildRunResults.SkippedSteps))
 	}
