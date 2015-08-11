@@ -9,16 +9,15 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.3-12-g2565e5e",
-			"Rev": "2565e5e185a48f1a7b6b3fdbb11ac694205ae48c"
-		},
-		{
-			"ImportPath": "github.com/bitrise-io/go-pathutil/pathutil",
-			"Comment": "1.1.0-10-g88e3cf1",
-			"Rev": "88e3cf18f4593a4df2f907299447bc00c6f14cf9"
+			"Comment": "0.9.3-13-gb4509ae",
+			"Rev": "b4509aeaaf4d487e13caa17f9d1c39bb505e9e15"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
+			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
 			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
 		},
 		{
