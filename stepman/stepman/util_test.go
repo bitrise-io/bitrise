@@ -3,7 +3,7 @@ package stepman
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/models"
 )
 
@@ -13,7 +13,7 @@ const (
 
 func TestAddStepVersionToStepGroup(t *testing.T) {
 	step := models.StepModel{
-		Title: utils.NewStringPtr(title),
+		Title: pointers.NewStringPtr(title),
 	}
 
 	group := models.StepGroupModel{
