@@ -46,7 +46,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
 	stepYMLPth := BitriseWorkDirPath + "/current_step.yml"
-	if err := command.RemoveDir(stepYMLPth); err != nil {
+	if err := command.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
 
