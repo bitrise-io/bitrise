@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -219,22 +219,22 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	}
 
 	if otherStep.Title != nil {
-		step.Title = utils.NewStringPtr(*otherStep.Title)
+		step.Title = pointers.NewStringPtr(*otherStep.Title)
 	}
 	if otherStep.Description != nil {
-		step.Description = utils.NewStringPtr(*otherStep.Description)
+		step.Description = pointers.NewStringPtr(*otherStep.Description)
 	}
 	if otherStep.Summary != nil {
-		step.Summary = utils.NewStringPtr(*otherStep.Summary)
+		step.Summary = pointers.NewStringPtr(*otherStep.Summary)
 	}
 	if otherStep.Website != nil {
-		step.Website = utils.NewStringPtr(*otherStep.Website)
+		step.Website = pointers.NewStringPtr(*otherStep.Website)
 	}
 	if otherStep.SourceCodeURL != nil {
-		step.SourceCodeURL = utils.NewStringPtr(*otherStep.SourceCodeURL)
+		step.SourceCodeURL = pointers.NewStringPtr(*otherStep.SourceCodeURL)
 	}
 	if otherStep.SupportURL != nil {
-		step.SupportURL = utils.NewStringPtr(*otherStep.SupportURL)
+		step.SupportURL = pointers.NewStringPtr(*otherStep.SupportURL)
 	}
 	if otherStep.Source.Git != "" {
 		step.Source.Git = otherStep.Source.Git
@@ -255,16 +255,16 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.TypeTags = otherStep.TypeTags
 	}
 	if otherStep.IsRequiresAdminUser != nil {
-		step.IsRequiresAdminUser = utils.NewBoolPtr(*otherStep.IsRequiresAdminUser)
+		step.IsRequiresAdminUser = pointers.NewBoolPtr(*otherStep.IsRequiresAdminUser)
 	}
 	if otherStep.IsAlwaysRun != nil {
-		step.IsAlwaysRun = utils.NewBoolPtr(*otherStep.IsAlwaysRun)
+		step.IsAlwaysRun = pointers.NewBoolPtr(*otherStep.IsAlwaysRun)
 	}
 	if otherStep.IsSkippable != nil {
-		step.IsSkippable = utils.NewBoolPtr(*otherStep.IsSkippable)
+		step.IsSkippable = pointers.NewBoolPtr(*otherStep.IsSkippable)
 	}
 	if otherStep.RunIf != nil {
-		step.RunIf = utils.NewStringPtr(*otherStep.RunIf)
+		step.RunIf = pointers.NewStringPtr(*otherStep.RunIf)
 	}
 
 	for _, input := range step.Inputs {

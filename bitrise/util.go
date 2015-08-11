@@ -14,6 +14,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -179,7 +180,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 //  returns true if it's between the lower and upper limit
 //  or in case it matches the lower or the upper limit
 func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
-	r1, err := stepmanModels.CompareVersions(verBase, verLower)
+	r1, err := versions.CompareVersions(verBase, verLower)
 	if err != nil {
 		return false, err
 	}
@@ -187,7 +188,7 @@ func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
 		return false, nil
 	}
 
-	r2, err := stepmanModels.CompareVersions(verBase, verUpper)
+	r2, err := versions.CompareVersions(verBase, verUpper)
 	if err != nil {
 		return false, err
 	}
@@ -201,7 +202,7 @@ func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
 // IsVersionGreaterOrEqual ...
 //  returns true if verBase is greater or equal to verLower
 func IsVersionGreaterOrEqual(verBase, verLower string) (bool, error) {
-	r1, err := stepmanModels.CompareVersions(verBase, verLower)
+	r1, err := versions.CompareVersions(verBase, verLower)
 	if err != nil {
 		return false, err
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/goinp/goinp"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
@@ -64,7 +64,7 @@ func doInit(c *cli.Context) {
 		projectTitleEnv := envmanModels.EnvironmentItemModel{
 			"BITRISE_PROJECT_TITLE": val,
 			"opts": envmanModels.EnvironmentItemOptionsModel{
-				IsExpand: utils.NewBoolPtr(defaultExpand),
+				IsExpand: pointers.NewBoolPtr(defaultExpand),
 			},
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
@@ -75,7 +75,7 @@ func doInit(c *cli.Context) {
 		devBranchEnv := envmanModels.EnvironmentItemModel{
 			"BITRISE_DEV_BRANCH": val,
 			"opts": envmanModels.EnvironmentItemOptionsModel{
-				IsExpand: utils.NewBoolPtr(defaultExpand),
+				IsExpand: pointers.NewBoolPtr(defaultExpand),
 			},
 		}
 		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
@@ -100,7 +100,7 @@ echo "Welcome to Bitrise!"`
 				Steps: []models.StepListItemModel{
 					models.StepListItemModel{
 						"script": stepmanModels.StepModel{
-							Title: utils.NewStringPtr(scriptStepTitle),
+							Title: pointers.NewStringPtr(scriptStepTitle),
 							Inputs: []envmanModels.EnvironmentItemModel{
 								envmanModels.EnvironmentItemModel{
 									"content": scriptStepContent,
