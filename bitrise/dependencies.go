@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/versions"
 )
 
@@ -37,7 +37,7 @@ func CheckIsRubyGemsInstalled() error {
 		log.Warn("Once the installation of RubyGems is finished you should call the bitrise setup again.")
 		return err
 	}
-	verStr, err := command.RunCommandAndReturnStdout("gem", "--version")
+	verStr, err := cmdex.RunCommandAndReturnStdout("gem", "--version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -63,7 +63,7 @@ func CheckIsHomebrewInstalled() error {
 		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
-	verStr, err := command.RunCommandAndReturnStdout("brew", "--version")
+	verStr, err := cmdex.RunCommandAndReturnStdout("brew", "--version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -84,14 +84,14 @@ func CheckIsXcodeCLTInstalled() error {
 		log.Warn("Once the installation is finished you should call the bitrise setup again.")
 		return err
 	}
-	xcodeSelectPth, err := command.RunCommandAndReturnStdout("xcode-select", "-p")
+	xcodeSelectPth, err := cmdex.RunCommandAndReturnStdout("xcode-select", "-p")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get Xcode path")
 	}
 
 	isFullXcodeAvailable := false
-	verStr, err := command.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
+	verStr, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
 	if err != nil {
 		// No full Xcode available, only the Command Line Tools
 		// verStr is something like "xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance"
@@ -133,7 +133,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		// Install
 		log.Infoln("Installing...")
 		fmt.Println(strings.Join(installCmdLines, "\n"))
-		if err := command.RunBashCommandLines(installCmdLines); err != nil {
+		if err := cmdex.RunBashCommandLines(installCmdLines); err != nil {
 			return err
 		}
 
@@ -150,7 +150,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 		return doInstall()
 	}
-	verStr, err := command.RunCommandAndReturnStdout(toolname, "-version")
+	verStr, err := cmdex.RunCommandAndReturnStdout(toolname, "-version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -212,7 +212,7 @@ func chekWithBrewProgramInstalled(tool string) error {
 func InstallWithBrewIfNeeded(tool string) error {
 	if err := chekWithBrewProgramInstalled(tool); err != nil {
 		args := []string{"install", tool}
-		if out, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
 			log.Infof("%s", out)
 			return err
 		}

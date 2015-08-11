@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/cmdex"
 )
 
 // ------------------
@@ -16,7 +16,7 @@ import (
 func RunStepmanSetup(collection string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "setup", "--collection", collection}
-	return command.RunCommand("stepman", args...)
+	return cmdex.RunCommand("stepman", args...)
 }
 
 // RunStepmanActivate ...
@@ -24,7 +24,7 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) err
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "activate", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth, "--update"}
-	return command.RunCommand("stepman", args...)
+	return cmdex.RunCommand("stepman", args...)
 }
 
 // ------------------
@@ -34,7 +34,7 @@ func RunStepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) err
 func RunEnvmanInit() error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "init"}
-	return command.RunCommand("envman", args...)
+	return cmdex.RunCommand("envman", args...)
 }
 
 // RunEnvmanAdd ...
@@ -59,7 +59,7 @@ func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) (int, error) {
 	}
 	args := []string{"--loglevel", logLevel, "run"}
 	args = append(args, cmd...)
-	return command.RunCommandInDirWithExitCode(dir, "envman", args...)
+	return cmdex.RunCommandInDirWithExitCode(dir, "envman", args...)
 }
 
 // RunEnvmanRun ...
