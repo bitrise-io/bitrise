@@ -213,10 +213,36 @@ func InstallWithBrewIfNeeded(tool string) error {
 	if err := checkWithBrewProgramInstalled(tool); err != nil {
 		args := []string{"install", tool}
 		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
-			log.Infof("%s", out)
+			log.Infof("Output was: %s", out)
 			return err
 		}
 	}
-	log.Info(" * " + colorstring.Green("[OK] ") + "Dependency (" + tool + ") installed")
+
+	return nil
+}
+
+// DependencyTryCheckTool ...
+func DependencyTryCheckTool(tool string) error {
+	var cmd *exec.Cmd
+	errMsg := ""
+
+	switch tool {
+	case "xcode":
+		cmd = exec.Command("xcodebuild", "-version")
+		errMsg = "The full Xcode app is not installed, required for this step. You can install it from the App Store."
+		break
+	default:
+		cmd = exec.Command(tool)
+	}
+
+	outBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		if errMsg != "" {
+			return errors.New(errMsg)
+		}
+		log.Infof("Output was: %s", outBytes)
+		return fmt.Errorf("Dependency check failed for: %s", tool)
+	}
+
 	return nil
 }
