@@ -17,8 +17,8 @@ const (
 	StepRunResultCodeSuccess = 0
 	// StepRunResultCodeFailed ...
 	StepRunResultCodeFailed = 1
-	// StepRunResultCodeFailedNotImportant ...
-	StepRunResultCodeFailedNotImportant = 2
+	// StepRunResultCodeFailedSkippable ...
+	StepRunResultCodeFailedSkippable = 2
 	// StepRunResultCodeSkipped ...
 	StepRunResultCodeSkipped = 3
 	// StepRunResultCodeSkippedWithRunIf ...
@@ -52,7 +52,7 @@ func PrintRunningStep(title string, idx int) {
 func PrintStepSummary(title string, resultCode int, duration time.Duration, exitCode int) {
 	runTime := TimeToFormattedSeconds(duration, " sec")
 	content := fmt.Sprintf("|...| %s | %s |", title, runTime)
-	if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedNotImportant {
+	if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedSkippable {
 		content = fmt.Sprintf("|...| %s | %s | exit code: %d |", title, runTime, exitCode)
 	}
 	if len(content) > stepRunSummaryBoxMaxWidthChars {
@@ -61,7 +61,7 @@ func PrintStepSummary(title string, resultCode int, duration time.Duration, exit
 		title = title[0:newLength]
 		title = title + "..."
 		content = fmt.Sprintf("|...| %s | %s |", title, runTime)
-		if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedNotImportant {
+		if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedSkippable {
 			content = fmt.Sprintf("|...| %s | %s | exit code: %d |", title, runTime, exitCode)
 		}
 	}
@@ -75,7 +75,7 @@ func PrintStepSummary(title string, resultCode int, duration time.Duration, exit
 		runStateIcon := "❌"
 		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, colorstring.Red(title), runTime, exitCode)
 		break
-	case StepRunResultCodeFailedNotImportant:
+	case StepRunResultCodeFailedSkippable:
 		runStateIcon := "❌"
 		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, colorstring.Yellow(title), runTime, exitCode)
 		break
@@ -106,14 +106,14 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	totalStepCount := 0
 	successStepCount := 0
 	failedStepCount := 0
-	failedNotImportantStepCount := 0
+	failedSkippableStepCount := 0
 	skippedStepCount := 0
 
 	successStepCount += len(buildRunResults.SuccessSteps)
 	failedStepCount += len(buildRunResults.FailedSteps)
-	failedNotImportantStepCount += len(buildRunResults.FailedNotImportantSteps)
+	failedSkippableStepCount += len(buildRunResults.FailedSkippableSteps)
 	skippedStepCount += len(buildRunResults.SkippedSteps)
-	totalStepCount = successStepCount + failedStepCount + failedNotImportantStepCount + skippedStepCount
+	totalStepCount = successStepCount + failedStepCount + failedSkippableStepCount + skippedStepCount
 
 	fmt.Println()
 	log.Infoln("==> Summary:")
@@ -129,8 +129,8 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		if failedStepCount > 0 {
 			log.Info(colorstring.Redf(" * %d failed", failedStepCount))
 		}
-		if failedNotImportantStepCount > 0 {
-			log.Info(colorstring.Yellowf(" * %d failed but was marked as skippable and", failedNotImportantStepCount))
+		if failedSkippableStepCount > 0 {
+			log.Info(colorstring.Yellowf(" * %d failed but was marked as skippable and", failedSkippableStepCount))
 		}
 		if skippedStepCount > 0 {
 			log.Info(colorstring.Bluef(" * %d was skipped", skippedStepCount))
@@ -141,7 +141,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 			log.Fatal("FINISHED but a couple of steps failed - Ouch")
 		} else {
 			log.Info("DONE - Congrats!!")
-			if failedNotImportantStepCount > 0 {
+			if failedSkippableStepCount > 0 {
 				log.Warn("P.S.: a couple of non imporatant steps failed")
 			}
 		}
@@ -151,20 +151,20 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 // PrintStepStatus ...
 func PrintStepStatus(stepRunResults models.BuildRunResultsModel) {
 	failedCount := len(stepRunResults.FailedSteps)
-	failedNotImportantCount := len(stepRunResults.FailedNotImportantSteps)
+	failedSkippableCount := len(stepRunResults.FailedSkippableSteps)
 	skippedCount := len(stepRunResults.SkippedSteps)
 	successCount := len(stepRunResults.SuccessSteps)
-	totalCount := successCount + failedCount + failedNotImportantCount + skippedCount
+	totalCount := successCount + failedCount + failedSkippableCount + skippedCount
 
 	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as skippable and %d was skipped",
 		totalCount,
 		successCount,
 		failedCount,
-		failedNotImportantCount,
+		failedSkippableCount,
 		skippedCount)
 
 	PrintStepStatusList("Failed steps:", stepRunResults.FailedSteps)
-	PrintStepStatusList("Failed but skippable steps:", stepRunResults.FailedNotImportantSteps)
+	PrintStepStatusList("Failed but skippable steps:", stepRunResults.FailedSkippableSteps)
 	PrintStepStatusList("Skipped steps:", stepRunResults.SkippedSteps)
 }
 

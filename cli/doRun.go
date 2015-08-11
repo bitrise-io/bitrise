@@ -94,9 +94,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Errorf("Step (%s) failed, error: (%v)", *step.Title, err)
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
-		case bitrise.StepRunResultCodeFailedNotImportant:
-			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", *step.Title, err)
-			buildRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
+		case bitrise.StepRunResultCodeFailedSkippable:
+			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", *step.Title, err)
+			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
@@ -136,9 +136,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			log.Errorf("Step (%s) failed, error: (%v)", name, err)
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
-		case bitrise.StepRunResultCodeFailedNotImportant:
-			log.Warnf("Step (%s) failed, but was marked as not important, error: (%v)", name, err)
-			buildRunResults.FailedNotImportantSteps = append(buildRunResults.FailedNotImportantSteps, stepResults)
+		case bitrise.StepRunResultCodeFailedSkippable:
+			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", name, err)
+			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case bitrise.StepRunResultCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
@@ -260,7 +260,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			exit, err := runStep(mergedStep, stepIDData, stepDir)
 			if err != nil {
 				if *mergedStep.IsSkippable {
-					registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailedNotImportant, exit, err)
+					registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailedSkippable, exit, err)
 				} else {
 					registerStepRunResults(mergedStep, bitrise.StepRunResultCodeFailed, exit, err)
 				}
@@ -441,7 +441,7 @@ func doRun(c *cli.Context) {
 	if len(buildRunResults.FailedSteps) > 0 {
 		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
 	} else {
-		if len(buildRunResults.FailedNotImportantSteps) > 0 {
+		if len(buildRunResults.FailedSkippableSteps) > 0 {
 			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
 		}
 	}
