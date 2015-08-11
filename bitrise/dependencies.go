@@ -196,7 +196,7 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 	return nil
 }
 
-func chekWithBrewProgramInstalled(tool string) error {
+func checkWithBrewProgramInstalled(tool string) error {
 	args := []string{"list", tool}
 	cmd := exec.Command("brew", args...)
 
@@ -210,7 +210,7 @@ func chekWithBrewProgramInstalled(tool string) error {
 
 // InstallWithBrewIfNeeded ...
 func InstallWithBrewIfNeeded(tool string) error {
-	if err := chekWithBrewProgramInstalled(tool); err != nil {
+	if err := checkWithBrewProgramInstalled(tool); err != nil {
 		args := []string{"install", tool}
 		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
 			log.Infof("%s", out)
