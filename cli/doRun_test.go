@@ -48,8 +48,8 @@ func Test0Steps1Workflows(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 0 {
 		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 0 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -105,8 +105,8 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 0 {
 		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 0 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -169,7 +169,7 @@ func Test1Workflow(t *testing.T) {
 	defaultTrue := true
 	shouldSuccess := "Should success"
 	shouldFail := "Should fail"
-	shouldFailButNotImporatnt := "Should failed not important"
+	shouldFailButSkippable := "Should failed skippable"
 	shouldSkipped := "Should skipp"
 
 	workflow := models.WorkflowModel{
@@ -179,9 +179,9 @@ func Test1Workflow(t *testing.T) {
 					Title: utils.NewStringPtr(shouldSuccess),
 				},
 			},
-			models.StepListItemModel{ // Failed, but not important
+			models.StepListItemModel{ // Failed, but not skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButNotImporatnt),
+					Title:       utils.NewStringPtr(shouldFailButSkippable),
 					IsSkippable: utils.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
@@ -251,8 +251,8 @@ func Test1Workflow(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 1 {
 		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 1 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (1)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 1 {
+		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
@@ -275,7 +275,7 @@ func Test3Workflows(t *testing.T) {
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{},
 			},
-			models.StepListItemModel{ // Fail, not important
+			models.StepListItemModel{ // Fail, skippable
 				"script": stepmanModels.StepModel{
 					IsSkippable: utils.NewBoolPtr(true),
 					Inputs: []envmanModels.EnvironmentItemModel{
@@ -381,8 +381,8 @@ func Test3Workflows(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 2 {
 		t.Fatalf("Failed step count (%d), should be (2)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 1 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (1)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 1 {
+		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
@@ -507,7 +507,7 @@ func TestBuildStatusEnv(t *testing.T) {
 	defaultTrue := true
 	shouldSuccess := "Should success"
 	shouldFail := "Should fail"
-	shouldFailButNotImporatnt := "Should failed not important"
+	shouldFailButSkippable := "Should failed, skippable"
 	shouldSkipped := "Should skipp"
 
 	workflow := models.WorkflowModel{
@@ -531,9 +531,9 @@ func TestBuildStatusEnv(t *testing.T) {
 					},
 				},
 			},
-			models.StepListItemModel{ // Failed, but not important
+			models.StepListItemModel{ // Failed, but skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButNotImporatnt),
+					Title:       utils.NewStringPtr(shouldFailButSkippable),
 					IsSkippable: utils.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
@@ -645,8 +645,8 @@ func TestBuildStatusEnv(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 1 {
 		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 1 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (1)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 1 {
+		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
@@ -666,7 +666,7 @@ func TestTivialFail(t *testing.T) {
 	defaultTrue := true
 	shouldSuccess := "Should success"
 	shouldFail := "Should fail"
-	shouldFailButNotImporatnt := "Should failed not important"
+	shouldFailButSkippable := "Should failed, skippable"
 	shouldSkipped := "Should skipp"
 
 	workflow := models.WorkflowModel{
@@ -676,9 +676,9 @@ func TestTivialFail(t *testing.T) {
 					Title: utils.NewStringPtr(shouldSuccess),
 				},
 			},
-			models.StepListItemModel{ // Should fail, but not important
+			models.StepListItemModel{ // Should fail, but skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButNotImporatnt),
+					Title:       utils.NewStringPtr(shouldFailButSkippable),
 					IsSkippable: utils.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
@@ -745,8 +745,8 @@ func TestTivialFail(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 1 {
 		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 1 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (1)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 1 {
+		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 1 {
 		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
@@ -801,8 +801,8 @@ func TestTrivialSuccess(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 0 {
 		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 0 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
 	}
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -903,8 +903,8 @@ func TestBuildFailedMode(t *testing.T) {
 	if len(buildRunResults.FailedSteps) != 1 {
 		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
 	}
-	if len(buildRunResults.FailedNotImportantSteps) != 0 {
-		t.Fatalf("FailedNotImportant step count (%d), should be (0)", len(buildRunResults.FailedNotImportantSteps))
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
 	}
 
 	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {

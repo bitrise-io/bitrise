@@ -50,11 +50,11 @@ type StepIDData struct {
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
-	StartTime               time.Time
-	SuccessSteps            []StepRunResultsModel
-	FailedSteps             []StepRunResultsModel
-	FailedNotImportantSteps []StepRunResultsModel
-	SkippedSteps            []StepRunResultsModel
+	StartTime            time.Time
+	SuccessSteps         []StepRunResultsModel
+	FailedSteps          []StepRunResultsModel
+	FailedSkippableSteps []StepRunResultsModel
+	SkippedSteps         []StepRunResultsModel
 }
 
 // StepRunResultsModel ...

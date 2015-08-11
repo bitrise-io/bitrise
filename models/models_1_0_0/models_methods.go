@@ -419,8 +419,8 @@ func (buildRes *BuildRunResultsModel) Append(res BuildRunResultsModel) {
 	for _, failed := range res.FailedSteps {
 		buildRes.FailedSteps = append(buildRes.FailedSteps, failed)
 	}
-	for _, notImportant := range res.FailedNotImportantSteps {
-		buildRes.FailedNotImportantSteps = append(buildRes.FailedNotImportantSteps, notImportant)
+	for _, skippable := range res.FailedSkippableSteps {
+		buildRes.FailedSkippableSteps = append(buildRes.FailedSkippableSteps, skippable)
 	}
 	for _, skipped := range res.SkippedSteps {
 		buildRes.SkippedSteps = append(buildRes.SkippedSteps, skipped)
