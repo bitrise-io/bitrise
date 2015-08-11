@@ -1,8 +1,9 @@
-package command
+package cmdex
 
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 
@@ -18,14 +19,14 @@ func GitClone(uri, pth string) (err error) {
 		return errors.New("Git Clone 'pth' missing")
 	}
 	if err = RunCommand("git", "clone", "--recursive", uri, pth); err != nil {
-		fmt.Errorf("Failed to git clone from (%s) to (%s)", uri, pth)
+		log.Printf(" [!] Failed to git clone from (%s) to (%s)", uri, pth)
 		return
 	}
 	return
 }
 
-// GitCloneAndCheckoutTagOrBranch ...
-func GitCloneAndCheckoutTagOrBranch(uri, pth, tagOrBranch string) error {
+// GitCloneTagOrBranch ...
+func GitCloneTagOrBranch(uri, pth, tagOrBranch string) error {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -38,8 +39,8 @@ func GitCloneAndCheckoutTagOrBranch(uri, pth, tagOrBranch string) error {
 	return RunCommand("git", []string{"clone", "--recursive", "--branch", tagOrBranch, uri, pth}...)
 }
 
-// GitCloneAndCheckoutTagOrBranchAndCheckHeadState ...
-func GitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commithash string) (err error) {
+// GitCloneTagOrBranchAndValidateCommitHash ...
+func GitCloneTagOrBranchAndValidateCommitHash(uri, pth, version, commithash string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -60,7 +61,7 @@ func GitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commitha
 	defer func() {
 		if err != nil {
 			if err := RemoveDir(pth); err != nil {
-				fmt.Errorf("Failed to cleanup path (%s) error: (%v) ", pth, err)
+				log.Printf(" [!] Failed to cleanup path (%s) error: (%v) ", pth, err)
 			}
 		}
 	}()
@@ -70,7 +71,7 @@ func GitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commitha
 		return
 	}
 	if commithash != latestCommit {
-		return fmt.Errorf("Commit hash esn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
+		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected commit hash: %s) (got: %s)", version, latestCommit, commithash)
 	}
 
 	return
@@ -80,7 +81,7 @@ func GitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commitha
 func GitPull(pth string) error {
 	err := RunCommandInDir(pth, "git", []string{"pull"}...)
 	if err != nil {
-		fmt.Errorf("Git pull failed, error (%v)", err)
+		log.Printf(" [!] Git pull failed, error (%v)", err)
 		return err
 	}
 	return nil
@@ -154,21 +155,21 @@ func GitGetLatestCommitHashOnHead(pth string) (string, error) {
 	bytes, err := cmd.CombinedOutput()
 	cmdOutput := string(bytes)
 	if err != nil {
-		fmt.Errorf(cmdOutput)
+		log.Printf(" [!] Output: %v", cmdOutput)
 		return "", err
 	}
 	return strings.TrimSpace(cmdOutput), nil
 }
 
-// GitGetCommit ...
-func GitGetCommit(pth string) (string, error) {
+// GitGetCommitHashOfHEAD ...
+func GitGetCommitHashOfHEAD(pth string) (string, error) {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	cmd.Dir = pth
 	bytes, err := cmd.CombinedOutput()
 	cmdOutput := string(bytes)
 	if err != nil {
-		fmt.Errorf(cmdOutput)
+		log.Printf(" [!] Output: %s", cmdOutput)
 		return "", err
 	}
-	return cmdOutput, nil
+	return strings.TrimSpace(cmdOutput), nil
 }

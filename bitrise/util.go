@@ -12,7 +12,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -46,12 +46,12 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
 	stepYMLPth := BitriseWorkDirPath + "/current_step.yml"
-	if err := command.RemoveDir(stepYMLPth); err != nil {
+	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
 
 	stepDir := BitriseWorkStepsDirPath
-	if err := command.RemoveDir(stepDir); err != nil {
+	if err := cmdex.RemoveDir(stepDir); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
 	}
 	return nil

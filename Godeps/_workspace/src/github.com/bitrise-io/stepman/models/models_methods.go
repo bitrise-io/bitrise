@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -62,6 +63,14 @@ func (source StepSourceModel) ValidateSource() error {
 	if source.Git == "" {
 		return errors.New("Invalid step: missing or empty required 'source.git' property")
 	}
+
+	if !strings.HasPrefix(source.Git, "http://") && !strings.HasPrefix(source.Git, "https://") {
+		return errors.New("Invalid step: step source should start with http:// or https://")
+	}
+	if !strings.HasSuffix(source.Git, ".git") {
+		return errors.New("Invalid step: step source should ends with .git")
+	}
+
 	if source.Commit == "" {
 		return errors.New("Invalid step: missing or empty required 'source.commit' property")
 	}

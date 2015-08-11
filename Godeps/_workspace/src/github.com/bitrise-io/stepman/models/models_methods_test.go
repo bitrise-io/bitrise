@@ -31,6 +31,75 @@ var (
 	testValueOptions = []string{testKey2, testValue2}
 )
 
+func TestValidateStep(t *testing.T) {
+	step := StepModel{
+		Title:   pointers.NewStringPtr("title"),
+		Summary: pointers.NewStringPtr("summary"),
+		Website: pointers.NewStringPtr("website"),
+		Source: StepSourceModel{
+			Git:    "https://github.com/bitrise-io/bitrise.git",
+			Commit: "1e1482141079fc12def64d88cb7825b8f1cb1dc3",
+		},
+	}
+
+	if err := step.ValidateStep(true); err != nil {
+		t.Fatal(err)
+	}
+
+	step.Title = nil
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: no Title defined")
+	}
+	step.Title = new(string)
+
+	*step.Title = ""
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: empty Title")
+	}
+
+	step.Description = nil
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: no Description defined")
+	}
+	step.Description = new(string)
+
+	*step.Description = ""
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: empty Description")
+	}
+
+	step.Website = nil
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: no Website defined")
+	}
+	step.Website = new(string)
+
+	*step.Website = ""
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: empty Website")
+	}
+
+	step.Source.Git = ""
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: empty Source.Git")
+	}
+
+	step.Source.Git = "git@github.com:bitrise-io/bitrise.git"
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: Source.Git has invalid prefix")
+	}
+
+	step.Source.Git = "https://github.com/bitrise-io/bitrise"
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: Source.Git has invalid suffix")
+	}
+
+	step.Source.Commit = ""
+	if err := step.ValidateStep(true); err == nil {
+		t.Fatal("Invalid step: empty Source.Commit")
+	}
+}
+
 func TestValidateStepInputOutputModel(t *testing.T) {
 	// Filled env
 	env := envmanModels.EnvironmentItemModel{
@@ -85,9 +154,6 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		t.Fatal("Empty Title, should fail")
 	}
 }
-
-// func TestNormalize(t *testing.T) {
-// }
 
 func TestFillMissingDefaults(t *testing.T) {
 	title := "name 1"

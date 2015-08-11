@@ -1,4 +1,4 @@
-package command
+package cmdex
 
 import (
 	"archive/zip"
