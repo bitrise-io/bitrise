@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
@@ -81,6 +82,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	var stepStartTime time.Time
 
 	registerStepRunResults := func(step stepmanModels.StepModel, resultCode int, exitCode int, err error) {
+		if step.Title == nil {
+			log.Error("Step title is nil, should not happend!")
+			step.Title = pointers.NewStringPtr("ERROR! Step title is nil!")
+		}
+
 		stepResults := models.StepRunResultsModel{
 			StepName: *step.Title,
 			Error:    err,
