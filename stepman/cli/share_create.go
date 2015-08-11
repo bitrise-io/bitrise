@@ -64,6 +64,9 @@ func create(c *cli.Context) {
 		Git:    gitURI,
 		Commit: commit,
 	}
+	if err := stepModel.ValidateStep(true); err != nil {
+		log.Fatal(err)
+	}
 
 	// Copy step.yml to steplib
 	share, err := ReadShareSteplibFromFile()
