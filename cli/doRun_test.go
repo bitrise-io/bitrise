@@ -7,7 +7,7 @@ import (
 
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -176,13 +176,13 @@ func Test1Workflow(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 				},
 			},
 			models.StepListItemModel{ // Failed, but not skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldFailButSkippable),
+					IsSkippable: pointers.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -197,12 +197,12 @@ func Test1Workflow(t *testing.T) {
 			},
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 				},
 			},
 			models.StepListItemModel{ // Fail
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldFail),
+					Title: pointers.NewStringPtr(shouldFail),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -217,13 +217,13 @@ func Test1Workflow(t *testing.T) {
 			},
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldSuccess),
+					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
 				},
 			},
 			models.StepListItemModel{ // Skipped
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSkipped),
+					Title: pointers.NewStringPtr(shouldSkipped),
 				},
 			},
 		},
@@ -277,7 +277,7 @@ func Test3Workflows(t *testing.T) {
 			},
 			models.StepListItemModel{ // Fail, skippable
 				"script": stepmanModels.StepModel{
-					IsSkippable: utils.NewBoolPtr(true),
+					IsSkippable: pointers.NewBoolPtr(true),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -331,7 +331,7 @@ func Test3Workflows(t *testing.T) {
 		Steps: []models.StepListItemModel{ // Fail
 			models.StepListItemModel{
 				"script": stepmanModels.StepModel{
-					IsAlwaysRun: utils.NewBoolPtr(true),
+					IsAlwaysRun: pointers.NewBoolPtr(true),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -514,7 +514,7 @@ func TestBuildStatusEnv(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -533,8 +533,8 @@ func TestBuildStatusEnv(t *testing.T) {
 			},
 			models.StepListItemModel{ // Failed, but skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldFailButSkippable),
+					IsSkippable: pointers.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -549,7 +549,7 @@ func TestBuildStatusEnv(t *testing.T) {
 			},
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -568,7 +568,7 @@ func TestBuildStatusEnv(t *testing.T) {
 			},
 			models.StepListItemModel{ // Fail
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldFail),
+					Title: pointers.NewStringPtr(shouldFail),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -582,8 +582,8 @@ func TestBuildStatusEnv(t *testing.T) {
 			},
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldSuccess),
+					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -602,7 +602,7 @@ func TestBuildStatusEnv(t *testing.T) {
 			},
 			models.StepListItemModel{ // Skipped
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSkipped),
+					Title: pointers.NewStringPtr(shouldSkipped),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -673,13 +673,13 @@ func TestTivialFail(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Should be success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 				},
 			},
 			models.StepListItemModel{ // Should fail, but skippable
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldFailButSkippable),
-					IsSkippable: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldFailButSkippable),
+					IsSkippable: pointers.NewBoolPtr(defaultTrue),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -694,12 +694,12 @@ func TestTivialFail(t *testing.T) {
 			},
 			models.StepListItemModel{ // Should success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccess),
+					Title: pointers.NewStringPtr(shouldSuccess),
 				},
 			},
 			models.StepListItemModel{ // Should fail
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldFail),
+					Title: pointers.NewStringPtr(shouldFail),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -714,13 +714,13 @@ func TestTivialFail(t *testing.T) {
 			},
 			models.StepListItemModel{ // Should be skipped
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSkipped),
+					Title: pointers.NewStringPtr(shouldSkipped),
 				},
 			},
 			models.StepListItemModel{ // Should be success
 				"script": stepmanModels.StepModel{
-					Title:       utils.NewStringPtr(shouldSuccess),
-					IsAlwaysRun: utils.NewBoolPtr(defaultTrue),
+					Title:       pointers.NewStringPtr(shouldSuccess),
+					IsAlwaysRun: pointers.NewBoolPtr(defaultTrue),
 				},
 			},
 		},
@@ -829,12 +829,12 @@ func TestBuildFailedMode(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Success
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSuccessBefore1Before1),
+					Title: pointers.NewStringPtr(shouldSuccessBefore1Before1),
 				},
 			},
 			models.StepListItemModel{ // Fail
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldFailBefore1Before2),
+					Title: pointers.NewStringPtr(shouldFailBefore1Before2),
 					Inputs: []envmanModels.EnvironmentItemModel{
 						envmanModels.EnvironmentItemModel{
 							"content": `
@@ -854,7 +854,7 @@ func TestBuildFailedMode(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Skip
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSkippedBefor2Befor1),
+					Title: pointers.NewStringPtr(shouldSkippedBefor2Befor1),
 				},
 			},
 		},
@@ -866,7 +866,7 @@ func TestBuildFailedMode(t *testing.T) {
 		Steps: []models.StepListItemModel{
 			models.StepListItemModel{ // Skip
 				"script": stepmanModels.StepModel{
-					Title: utils.NewStringPtr(shouldSkippedTargetStep1),
+					Title: pointers.NewStringPtr(shouldSkippedTargetStep1),
 				},
 			},
 		},

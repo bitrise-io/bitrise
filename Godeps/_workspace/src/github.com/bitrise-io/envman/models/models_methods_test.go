@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 )
 
 var (
@@ -25,12 +25,12 @@ func TestGetKeyValuePair(t *testing.T) {
 	env := EnvironmentItemModel{
 		testKey: testValue,
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testFalse),
-			IsDontChangeValue: utils.NewBoolPtr(testTrue),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testFalse),
+			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -51,12 +51,12 @@ func TestGetKeyValuePair(t *testing.T) {
 		testKey:  testValue,
 		testKey1: testValue1,
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testFalse),
-			IsDontChangeValue: utils.NewBoolPtr(testTrue),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testFalse),
+			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -99,12 +99,12 @@ func TestGetKeyValuePair(t *testing.T) {
 	// Missing key-value
 	env = EnvironmentItemModel{
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testFalse),
-			IsDontChangeValue: utils.NewBoolPtr(testTrue),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testFalse),
+			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -153,7 +153,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 
 	// is_required is not a bool
 	model = map[interface{}]interface{}{}
-	model["is_required"] = utils.NewBoolPtr(testTrue)
+	model["is_required"] = pointers.NewBoolPtr(testTrue)
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
 		t.Fatal("is_required is not a bool, should be error")
@@ -173,8 +173,8 @@ func TestGetOptions(t *testing.T) {
 	env := EnvironmentItemModel{
 		testKey: testValue,
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:    utils.NewStringPtr(testTitle),
-			IsExpand: utils.NewBoolPtr(testFalse),
+			Title:    pointers.NewStringPtr(testTitle),
+			IsExpand: pointers.NewBoolPtr(testFalse),
 		},
 	}
 	opts, err := env.GetOptions()
@@ -251,10 +251,10 @@ func TestNormalize(t *testing.T) {
 	env = EnvironmentItemModel{
 		testKey: testValue,
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:        utils.NewStringPtr(testTitle),
-			Description:  utils.NewStringPtr(testDescription),
+			Title:        pointers.NewStringPtr(testTitle),
+			Description:  pointers.NewStringPtr(testDescription),
 			ValueOptions: testValueOptions,
-			IsRequired:   utils.NewBoolPtr(testTrue),
+			IsRequired:   pointers.NewBoolPtr(testTrue),
 		},
 	}
 
@@ -345,12 +345,12 @@ func TestFillMissingDefaults(t *testing.T) {
 	env = EnvironmentItemModel{
 		testKey: testValue,
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testTrue),
-			IsDontChangeValue: utils.NewBoolPtr(testFalse),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testTrue),
+			IsDontChangeValue: pointers.NewBoolPtr(testFalse),
 		},
 	}
 	err = env.FillMissingDefaults()
@@ -386,12 +386,12 @@ func TestValidate(t *testing.T) {
 	// No key-value
 	env := EnvironmentItemModel{
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testTrue),
-			IsDontChangeValue: utils.NewBoolPtr(testFalse),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testTrue),
+			IsDontChangeValue: pointers.NewBoolPtr(testFalse),
 		},
 	}
 	err := env.Validate()

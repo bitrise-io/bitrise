@@ -9,28 +9,32 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.3-12-g2565e5e",
-			"Rev": "2565e5e185a48f1a7b6b3fdbb11ac694205ae48c"
+			"Comment": "0.9.3-16-gf513cb3",
+			"Rev": "f513cb3c57d3876d703fa2597d7f720b8a664211"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/command",
-			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-utils/utils",
-			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
+			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/versions",
+			"Rev": "b8a3fba94b0cd7ae3f26b4ccac17111643cc4738"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -38,8 +42,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.7-52-g5e20040",
-			"Rev": "5e20040a8b721654834cb879cb89bde8ac6a693f"
+			"Comment": "0.9.7-55-gb0c3945",
+			"Rev": "b0c3945423d794903028cd21a5008be68c708979"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",

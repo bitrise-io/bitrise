@@ -10,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/versions"
 )
 
 // CheckProgramInstalledPath ...
@@ -156,7 +157,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	// version check
-	isVersionOk, err := IsVersionGreaterOrEqual(verStr, minVersion)
+	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minVersion)
 	if err != nil {
 		log.Error("Failed to validate installed version")
 		return err
