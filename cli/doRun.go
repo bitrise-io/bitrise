@@ -24,7 +24,8 @@ const (
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
 
-	depManagerBrew = "brew"
+	depManagerBrew     = "brew"
+	depManagerTryCheck = "_"
 )
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string) (int, error) {
@@ -39,9 +40,17 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, err
 			}
 			break
+		case depManagerTryCheck:
+			err := bitrise.DependencyTryCheckTool(dep.Name)
+			if err != nil {
+				return 1, err
+			}
+			break
 		default:
 			return 1, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 		}
+
+		log.Info(" * " + colorstring.Green("[OK] ") + "Dependency (" + dep.Name + ") installed")
 	}
 
 	// Add step envs

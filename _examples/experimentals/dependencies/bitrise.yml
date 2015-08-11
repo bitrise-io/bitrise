@@ -1,4 +1,4 @@
-format_version: 1.0.0
+format_version: 0.9.8
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -50,3 +50,10 @@ workflows:
                 if [ "$OUTPUT" != "" ]; then
                     brew uninstall cmake
                 fi
+
+  dependencies_xcode:
+    steps:
+    - script:
+        dependencies:
+        - manager: _
+          name: xcode
