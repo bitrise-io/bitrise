@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/stepman"
@@ -50,7 +51,7 @@ func start(c *cli.Context) {
 	}
 
 	pth := stepman.GetCollectionBaseDirPath(route)
-	if err := stepman.DoGitClone(collectionURI, pth); err != nil {
+	if err := cmdex.GitClone(collectionURI, pth); err != nil {
 		log.Fatal("[STEPMAN] - Failed to setup step spec:", err)
 	}
 

@@ -2,6 +2,7 @@ package cli
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
@@ -19,24 +20,24 @@ func finish(c *cli.Context) {
 
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
 	log.Info("Checkout to branch:", share.StepID)
-	if err := stepman.DoGitCheckoutBranch(collectionDir, share.StepID); err != nil {
+	if err := cmdex.GitCheckoutBranch(collectionDir, share.StepID); err != nil {
 		log.Fatal(err)
 	}
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
 	log.Info("New step.yml:", stepYMLPathInSteplib)
-	if err := stepman.DoGitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
+	if err := cmdex.GitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Do commit")
-	if err := stepman.DoGitCommit(collectionDir, share.StepID+share.StepTag); err != nil {
+	if err := cmdex.GitCommit(collectionDir, share.StepID+share.StepTag); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Do push")
-	if err := stepman.DoGitPushToOrigin(collectionDir, share.StepID); err != nil {
+	if err := cmdex.GitPushToOrigin(collectionDir, share.StepID); err != nil {
 		log.Fatal(err)
 	}
 

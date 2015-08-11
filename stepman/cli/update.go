@@ -2,6 +2,7 @@ package cli
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
@@ -34,7 +35,7 @@ func update(c *cli.Context) {
 			log.Fatal("[STEPMAN] - Not initialized")
 		}
 
-		if err := stepman.DoGitPull(pth); err != nil {
+		if err := cmdex.GitPull(pth); err != nil {
 			log.Fatal(err)
 		}
 

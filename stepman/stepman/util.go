@@ -16,6 +16,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
@@ -99,7 +100,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version, commithash
 			}
 		case "git":
 			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
-			if err := DoGitCloneVersionAndCommit(downloadLocation.Src, stepPth, version, commithash); err != nil {
+			if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash); err != nil {
 				log.Warnf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true

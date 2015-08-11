@@ -9,8 +9,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
@@ -42,7 +43,7 @@ func create(c *cli.Context) {
 	}
 
 	log.Infof("Cloning step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
-	if err := stepman.DoGitCloneVersion(gitURI, tmp, tag); err != nil {
+	if err := cmdex.GitCloneTagOrBranch(gitURI, tmp, tag); err != nil {
 		log.Fatal(err)
 	}
 
@@ -55,7 +56,7 @@ func create(c *cli.Context) {
 	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
 		log.Fatal(err)
 	}
-	commit, err := stepman.DoGitGetCommit(tmp)
+	commit, err := cmdex.GitGetCommitHashOfHEAD(tmp)
 	if err != nil {
 		log.Fatal(err)
 	}
