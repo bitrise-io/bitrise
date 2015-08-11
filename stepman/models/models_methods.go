@@ -68,7 +68,7 @@ func (source StepSourceModel) ValidateSource() error {
 		return errors.New("Invalid step: step source should start with http:// or https://")
 	}
 	if !strings.HasSuffix(source.Git, ".git") {
-		return errors.New("Invalid step: step source should ends with .git")
+		return errors.New("Invalid step: step source should end with .git")
 	}
 
 	if source.Commit == "" {
