@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -49,12 +49,12 @@ func TestMergeEnvironmentWith(t *testing.T) {
 	diffEnv := envmanModels.EnvironmentItemModel{
 		testKey: testValue,
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             utils.NewStringPtr(testTitle),
-			Description:       utils.NewStringPtr(testDescription),
+			Title:             pointers.NewStringPtr(testTitle),
+			Description:       pointers.NewStringPtr(testDescription),
 			ValueOptions:      testValueOptions,
-			IsRequired:        utils.NewBoolPtr(testTrue),
-			IsExpand:          utils.NewBoolPtr(testFalse),
-			IsDontChangeValue: utils.NewBoolPtr(testTrue),
+			IsRequired:        pointers.NewBoolPtr(testTrue),
+			IsExpand:          pointers.NewBoolPtr(testFalse),
+			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
 		},
 	}
 	env := envmanModels.EnvironmentItemModel{
@@ -115,13 +115,13 @@ func TestMergeStepWith(t *testing.T) {
 	defaultTrue := true
 
 	stepData := stepmanModels.StepModel{
-		Description:         utils.NewStringPtr(desc),
-		Website:             utils.NewStringPtr(website),
-		SourceCodeURL:       utils.NewStringPtr(fork),
+		Description:         pointers.NewStringPtr(desc),
+		Website:             pointers.NewStringPtr(website),
+		SourceCodeURL:       pointers.NewStringPtr(fork),
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
-		IsRequiresAdminUser: utils.NewBoolPtr(defaultTrue),
+		IsRequiresAdminUser: pointers.NewBoolPtr(defaultTrue),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",
@@ -137,7 +137,7 @@ func TestMergeStepWith(t *testing.T) {
 	newSuppURL := "supp"
 	runIfStr := `{{getenv "CI" | eq "true"}}`
 	stepDiffToMerge := stepmanModels.StepModel{
-		Title:      utils.NewStringPtr(diffTitle),
+		Title:      pointers.NewStringPtr(diffTitle),
 		HostOsTags: []string{"linux"},
 		Source: stepmanModels.StepSourceModel{
 			Git: git,
@@ -148,8 +148,8 @@ func TestMergeStepWith(t *testing.T) {
 				Name:    "test",
 			},
 		},
-		SupportURL: utils.NewStringPtr(newSuppURL),
-		RunIf:      utils.NewStringPtr(runIfStr),
+		SupportURL: pointers.NewStringPtr(newSuppURL),
+		RunIf:      pointers.NewStringPtr(runIfStr),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_2": "Value 2 CHANGED",

@@ -8,7 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/utils"
+	"github.com/bitrise-io/go-utils/pointers"
 )
 
 const (
@@ -158,25 +158,25 @@ func (step StepModel) ValidateStep(isValidateStepSource bool) error {
 // FillMissingDefaults ...
 func (step *StepModel) FillMissingDefaults() error {
 	if step.Description == nil {
-		step.Description = utils.NewStringPtr("")
+		step.Description = pointers.NewStringPtr("")
 	}
 	if step.SourceCodeURL == nil {
-		step.SourceCodeURL = utils.NewStringPtr("")
+		step.SourceCodeURL = pointers.NewStringPtr("")
 	}
 	if step.SupportURL == nil {
-		step.SupportURL = utils.NewStringPtr("")
+		step.SupportURL = pointers.NewStringPtr("")
 	}
 	if step.IsRequiresAdminUser == nil {
-		step.IsRequiresAdminUser = utils.NewBoolPtr(DefaultIsRequiresAdminUser)
+		step.IsRequiresAdminUser = pointers.NewBoolPtr(DefaultIsRequiresAdminUser)
 	}
 	if step.IsAlwaysRun == nil {
-		step.IsAlwaysRun = utils.NewBoolPtr(DefaultIsAlwaysRun)
+		step.IsAlwaysRun = pointers.NewBoolPtr(DefaultIsAlwaysRun)
 	}
 	if step.IsSkippable == nil {
-		step.IsSkippable = utils.NewBoolPtr(DefaultIsSkippable)
+		step.IsSkippable = pointers.NewBoolPtr(DefaultIsSkippable)
 	}
 	if step.RunIf == nil {
-		step.RunIf = utils.NewStringPtr("")
+		step.RunIf = pointers.NewStringPtr("")
 	}
 
 	for _, input := range step.Inputs {

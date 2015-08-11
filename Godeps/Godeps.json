@@ -29,7 +29,7 @@
 			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-utils/utils",
+			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
 			"Rev": "5b79d81e05d7511dd97dad7f0f4449ad97a7ee51"
 		},
 		{
