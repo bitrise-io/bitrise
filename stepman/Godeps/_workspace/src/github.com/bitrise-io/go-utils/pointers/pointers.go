@@ -1,4 +1,4 @@
-package utils
+package pointers
 
 // NewBoolPtr ...
 func NewBoolPtr(val bool) *bool {

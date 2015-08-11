@@ -17,6 +17,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
 )
@@ -117,7 +118,7 @@ func DownloadStep(collection models.StepCollectionModel, id, version, commithash
 
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
 	if stepGroup.LatestVersionNumber != "" {
-		r, err := models.CompareVersions(stepGroup.LatestVersionNumber, version)
+		r, err := versions.CompareVersions(stepGroup.LatestVersionNumber, version)
 		if err != nil {
 			return models.StepGroupModel{}, err
 		}
