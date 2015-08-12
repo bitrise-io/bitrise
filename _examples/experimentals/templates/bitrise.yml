@@ -3,7 +3,7 @@
 # The templates / expressions you can use are the official
 #  Go template expressions, you can find the full documentation
 #  on Go's text/template doc page: https://golang.org/pkg/text/template/
-format_version: 0.9.5
+format_version: 0.9.8
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   primary:
@@ -12,7 +12,7 @@ workflows:
     # Get and compare envs
     - script:
         title: Run-If expression
-        run_if: |
+        run_if: |-
           {{getenv "TEST_KEY" | eq "test value"}}
         inputs:
         - content: |-
@@ -32,7 +32,8 @@ workflows:
     #  like IsCI or IsBuildFailed directly
     - script:
         title: Run-If expression
-        run_if: "{{.IsCI}}"
+        run_if: |-
+          {{.IsCI}}
         inputs:
         - content: |-
             #!/bin/bash
@@ -61,7 +62,7 @@ workflows:
     # If-Else condition
     - script:
         title: Run-If expression
-        run_if: |
+        run_if: |-
           {{if .IsCI}}
           true
           {{else}}
@@ -74,9 +75,26 @@ workflows:
     #
     # Multi condition
     - script:
-        title: Run-If expression
-        run_if: "{{.IsCI | and (not .IsBuildFailed)}}"
+        title: CI and Not Failed
+        run_if: |-
+          {{.IsCI | and (not .IsBuildFailed)}}
         inputs:
         - content: |-
             #!/bin/bash
             echo "RunIf expression was true"
+    #
+    # Pull Request condition
+    - script:
+        title: Only if NOT a Pull Request
+        run_if: not .IsPR
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    - script:
+        title: Only if it was a Pull Request
+        run_if: .IsPR
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Pull Request ID: ${PULL_REQUEST_ID}"
