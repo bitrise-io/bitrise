@@ -11,6 +11,13 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func printFinishStart(specPth string) {
+	fmt.Println()
+	log.Info(" * "+colorstring.Green("[OK]")+" You can find your StepLib repo at: ", specPth)
+	fmt.Println()
+	fmt.Println("   " + GuideTextForShareCreate())
+}
+
 func start(c *cli.Context) {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
@@ -19,12 +26,15 @@ func start(c *cli.Context) {
 	}
 
 	if route, found := stepman.ReadRoute(collectionURI); found {
-		log.Warn("[STEPMAN] - Steplib found localy.")
-		if val, err := goinp.AskForBool("Would you like to remove local version of steplib and re-clone it? [yes/no]"); err != nil {
-			log.Fatalln("Error:", err)
+		collLocalPth := stepman.GetCollectionBaseDirPath(route)
+		log.Warnf("StepLib found locally at: %s", collLocalPth)
+		log.Info("For sharing it's required to work with a clean StepLib repository.")
+		if val, err := goinp.AskForBool("Would you like to remove the local version (your forked StepLib repository) and re-clone it? [yes/no]"); err != nil {
+			log.Fatalln(err)
 		} else {
 			if !val {
-				return
+				log.Errorln("Unfortunately we can't continue with sharing without a clean StepLib repository.")
+				log.Fatalln("Please finish your changes, run this command again and allow it to remove the local StepLib folder!")
 			}
 			if err := stepman.CleanupRoute(route); err != nil {
 				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
@@ -33,12 +43,19 @@ func start(c *cli.Context) {
 	}
 
 	// cleanup
+	if err := DeleteShareSteplibFile(); err != nil {
+		log.Fatal(err)
+	}
+
 	var route stepman.SteplibRoute
 	isSuccess := false
 	defer func() {
 		if !isSuccess {
 			if err := stepman.CleanupRoute(route); err != nil {
 				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+			}
+			if err := DeleteShareSteplibFile(); err != nil {
+				log.Fatal(err)
 			}
 		}
 	}()
@@ -77,9 +94,5 @@ func start(c *cli.Context) {
 	}
 
 	isSuccess = true
-
-	fmt.Println()
-	log.Info(" * "+colorstring.Green("[OK]")+" You can find your step lib repo at:", specPth)
-	log.Info("   Next call `stepman share create --tag VERSION_TAG --git GIT_URI` to move your step into your steplib fork.")
-	fmt.Println()
+	printFinishStart(pth)
 }

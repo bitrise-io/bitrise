@@ -73,6 +73,7 @@ var (
 					Flags: []cli.Flag{
 						flTag,
 						flGit,
+						flStepID,
 					},
 				},
 				{
@@ -80,9 +81,6 @@ var (
 					Aliases: []string{"f"},
 					Usage:   "Finish up.",
 					Action:  finish,
-					Flags: []cli.Flag{
-						flCollection,
-					},
 				},
 			},
 		},

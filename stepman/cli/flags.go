@@ -3,59 +3,64 @@ package cli
 import "github.com/codegangsta/cli"
 
 const (
+	// DebugEnvKey ...
+	DebugEnvKey = "STEPMAN_DEBUG"
+	// LogLevelEnvKey ...
+	LogLevelEnvKey = "LOGLEVEL"
+	// CollectionPathEnvKey ...
+	CollectionPathEnvKey = "STEPMAN_COLLECTION"
+
 	// HelpKey ...
-	HelpKey      string = "help"
-	helpKeyShort string = "h"
+	HelpKey      = "help"
+	helpKeyShort = "h"
 
 	// VersionKey ...
-	VersionKey      string = "version"
-	versionKeyShort string = "v"
+	VersionKey      = "version"
+	versionKeyShort = "v"
 
-	// CollectionPathEnvKey ...
-	CollectionPathEnvKey string = "STEPMAN_COLLECTION"
 	// CollectionKey ...
-	CollectionKey      string = "collection"
-	collectionKeyShort string = "c"
+	CollectionKey      = "collection"
+	collectionKeyShort = "c"
 	// LocalCollectionKey ...
-	LocalCollectionKey string = "local"
+	LocalCollectionKey = "local"
 	// CopySpecJSONKey ...
-	CopySpecJSONKey string = "copy-spec-json"
+	CopySpecJSONKey = "copy-spec-json"
 
-	// DebugEnvKey ...
-	DebugEnvKey string = "STEPMAN_DEBUG"
 	// DebugKey ...
-	DebugKey      string = "debug"
-	debugKeyShort string = "d"
+	DebugKey      = "debug"
+	debugKeyShort = "d"
 
-	// LogLevelEnvKey ...
-	LogLevelEnvKey string = "LOGLEVEL"
 	// LogLevelKey ...
-	LogLevelKey      string = "loglevel"
-	logLevelKeyShort string = "l"
+	LogLevelKey      = "loglevel"
+	logLevelKeyShort = "l"
 
 	// IDKey ...
-	IDKey      string = "id"
-	idKeyShort string = "i"
+	IDKey      = "id"
+	idKeyShort = "i"
 
 	// PathKey ...
-	PathKey      string = "path"
-	pathKeyShort string = "p"
+	PathKey      = "path"
+	pathKeyShort = "p"
 
 	// CopyYMLKey ...
-	CopyYMLKey      string = "copyyml"
-	copyYMLKeyShort string = "y"
+	CopyYMLKey      = "copyyml"
+	copyYMLKeyShort = "y"
 
 	// UpdateKey ...
-	UpdateKey      string = "update"
-	updateKeyShort string = "u"
+	UpdateKey      = "update"
+	updateKeyShort = "u"
 
 	// TagKey ...
-	TagKey      string = "tag"
-	tagKeyShort string = "t"
+	TagKey      = "tag"
+	tagKeyShort = "t"
 
 	// GitKey ...
-	GitKey      string = "git"
-	gitKeyShort string = "g"
+	GitKey      = "git"
+	gitKeyShort = "g"
+
+	// StepIDKEy ...
+	StepIDKEy      = "stepid"
+	stepIDKeyShort = "s"
 )
 
 var (
@@ -116,6 +121,10 @@ var (
 	flGit = cli.StringFlag{
 		Name:  GitKey + ", " + gitKeyShort,
 		Usage: "Git clone url of the step repository.",
+	}
+	flStepID = cli.StringFlag{
+		Name:  StepIDKEy + ", " + stepIDKeyShort,
+		Usage: "ID of the step.",
 	}
 )
 

@@ -12,10 +12,18 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
+
+func printFinishCreate(share ShareModel, stepDir string) {
+	fmt.Println()
+	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) added to local steplib (%s).", share.StepID, share.StepTag, stepDir)
+	fmt.Println()
+	fmt.Println("   " + GuideTextForShareFinish())
+}
 
 func getStepIDFromGit(git string) string {
 	splits := strings.Split(git, "/")
@@ -25,6 +33,12 @@ func getStepIDFromGit(git string) string {
 }
 
 func create(c *cli.Context) {
+	share, err := ReadShareSteplibFromFile()
+	if err != nil {
+		log.Error(err)
+		log.Fatal("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
+	}
+
 	// Input validation
 	tag := c.String(TagKey)
 	if tag == "" {
@@ -34,6 +48,32 @@ func create(c *cli.Context) {
 	gitURI := c.String(GitKey)
 	if gitURI == "" {
 		log.Fatalln("[STEPMAN] - No step url specified")
+	}
+
+	stepID := c.String(StepIDKEy)
+	if stepID == "" {
+		stepID = getStepIDFromGit(gitURI)
+	}
+
+	route, found := stepman.ReadRoute(share.Collection)
+	if !found {
+		log.Fatalln("No route found for collectionURI (%s)", share.Collection)
+	}
+	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, stepID, tag)
+	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
+	if exist, err := pathutil.IsPathExists(stepYMLPathInSteplib); err != nil {
+		log.Fatal(err)
+	} else if exist {
+		log.Warnf("[STEPMAN] - step.yml already exist in path: %s.", stepDirInSteplib)
+		if val, err := goinp.AskForBool("Would you like to overwrite local version of step.yml? [yes/no]"); err != nil {
+			log.Fatalln("Error:", err)
+		} else {
+			if !val {
+				log.Errorln("Unfortunately we can't continue with sharing without an overwrite exist step.yml.")
+				log.Fatalln("Please finish your changes, run this command again and allow it to overwrite the exist step.yml!")
+				return
+			}
+		}
 	}
 
 	// Clone step to tmp dir
@@ -69,24 +109,12 @@ func create(c *cli.Context) {
 	}
 
 	// Copy step.yml to steplib
-	share, err := ReadShareSteplibFromFile()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	route, found := stepman.ReadRoute(share.Collection)
-	if !found {
-		log.Fatalln("No route found for collectionURI (%s)", share.Collection)
-	}
-
-	ID := getStepIDFromGit(gitURI)
-	share.StepID = ID
+	share.StepID = stepID
 	share.StepTag = tag
 	if err := WriteShareSteplibToFile(share); err != nil {
 		log.Fatal("[STEPMAN] - Failed to save share steplib to file:", err)
 	}
 
-	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, ID, tag)
 	log.Info("Step dir in collection:", stepDirInSteplib)
 	if exist, err := pathutil.IsPathExists(stepDirInSteplib); err != nil {
 		log.Fatal(err)
@@ -96,7 +124,14 @@ func create(c *cli.Context) {
 		}
 	}
 
-	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
+	log.Info("Checkout branch:", share.StepID)
+	collectionDir := stepman.GetCollectionBaseDirPath(route)
+	if err := cmdex.GitCheckout(collectionDir, share.StepID); err != nil {
+		if err := cmdex.GitCreateAndCheckoutBranch(collectionDir, share.StepID); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	file, err := os.OpenFile(stepYMLPathInSteplib, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal(err)
@@ -120,8 +155,5 @@ func create(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	fmt.Println()
-	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) added to local steplib (%s).", share.StepID, share.Collection)
-	log.Info("   Next call `stepman share finish` to commit your changes.")
-	fmt.Println()
+	printFinishCreate(share, stepDirInSteplib)
 }
