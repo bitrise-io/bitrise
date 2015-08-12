@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 // UnZIP ...
@@ -72,7 +74,11 @@ func UnZIP(src, dest string) error {
 
 // DownloadAndUnZIP ...
 func DownloadAndUnZIP(url, pth string) error {
-	srcFilePath := os.TempDir() + "target.zip"
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("")
+	if err != nil {
+		return err
+	}
+	srcFilePath := tmpDir + "/target.zip"
 	srcFile, err := os.Create(srcFilePath)
 	if err != nil {
 		return err
