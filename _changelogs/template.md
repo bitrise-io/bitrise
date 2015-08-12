@@ -18,13 +18,8 @@ Then:
 chmod +x /usr/local/bin/bitrise
 ```
 
-The first time it's mandatory to call the `setup` after the install,
-and as a best practice you should run the setup every time you install a new version of `bitrise`.
+That's all, you're ready to go!
 
-Doing the setup is as easy as:
-
-```
-bitrise setup
-```
-
-Once the setup finishes you have everything in place to use `bitrise`.
+Optionally, you can call `bitrise setup` to verify that everything what's required for `bitrise` to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call `bitrise run`.
