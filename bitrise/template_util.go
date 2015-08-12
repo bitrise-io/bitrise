@@ -27,18 +27,24 @@ type TemplateDataModel struct {
 	BuildResults  models.BuildRunResultsModel
 	IsBuildFailed bool
 	IsCI          bool
+	IsPR          bool
+	PullRequestID string
 }
 
-func createTemplateDataModel(buildResults models.BuildRunResultsModel, isCI bool) TemplateDataModel {
+func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateDataModel {
+	pullReqID := os.Getenv("PULL_REQUEST_ID")
+	isCI := (os.Getenv("CI") == "true")
 	return TemplateDataModel{
 		BuildResults:  buildResults,
 		IsBuildFailed: buildResults.IsBuildFailed(),
 		IsCI:          isCI,
+		PullRequestID: pullReqID,
+		IsPR:          (pullReqID != ""),
 	}
 }
 
 // EvaluateStepTemplateToBool ...
-func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResultsModel, isCI bool) (bool, error) {
+func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResultsModel) (bool, error) {
 	if expStr == "" {
 		return false, errors.New("EvaluateStepTemplateToBool: Invalid, empty input: expStr")
 	}
@@ -53,7 +59,7 @@ func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResul
 		return false, err
 	}
 
-	templateData := createTemplateDataModel(buildResults, isCI)
+	templateData := createTemplateDataModel(buildResults)
 	var resBuffer bytes.Buffer
 	if err := tmpl.Execute(&resBuffer, templateData); err != nil {
 		return false, err
