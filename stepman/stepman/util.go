@@ -88,15 +88,15 @@ func DownloadStep(collection models.StepCollectionModel, id, version, commithash
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			log.Debug("[STEPMAN] - Downloading step from:", downloadLocation.Src)
+			log.Debug("[STEPMAN] - Downloading step from: ", downloadLocation.Src)
 			if err := cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth); err != nil {
-				log.Warn("[STEPMAN] - Failed to download step.zip:", err)
+				log.Warn("[STEPMAN] - Failed to download step.zip: ", err)
 			} else {
 				success = true
 				return nil
 			}
 		case "git":
-			log.Debug("[STEPMAN] - Git clone step from:", downloadLocation.Src)
+			log.Debug("[STEPMAN] - Git clone step from: ", downloadLocation.Src)
 			if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash); err != nil {
 				log.Warnf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
