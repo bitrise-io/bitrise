@@ -84,7 +84,7 @@ func CheckIsXcodeCLTInstalled() error {
 		log.Warn("Once the installation is finished you should call the bitrise setup again.")
 		return err
 	}
-	xcodeSelectPth, err := cmdex.RunCommandAndReturnStdout("xcode-select", "-p")
+	xcodeSelectPth, err := cmdex.RunCommandAndReturnStdout("xcode-select", "-print-path")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get Xcode path")
