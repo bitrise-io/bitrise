@@ -50,19 +50,27 @@ func RunCommand(name string, args ...string) error {
 }
 
 // RunCommandAndReturnStdout ..
-func RunCommandAndReturnStdout(cmdName string, cmdArgs ...string) (string, error) {
-	cmd := exec.Command(cmdName, cmdArgs...)
+func RunCommandAndReturnStdout(name string, args ...string) (string, error) {
+	cmd := exec.Command(name, args...)
 	outBytes, err := cmd.Output()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
-// RunCommandAndReturnCombinedStdoutAndStderr ..
-func RunCommandAndReturnCombinedStdoutAndStderr(cmdName string, cmdArgs ...string) (string, error) {
-	cmd := exec.Command(cmdName, cmdArgs...)
+// RunCommandInDirAndReturnCombinedStdoutAndStderr ...
+func RunCommandInDirAndReturnCombinedStdoutAndStderr(dir, name string, args ...string) (string, error) {
+	cmd := exec.Command(name, args...)
+	if dir != "" {
+		cmd.Dir = dir
+	}
 	outBytes, err := cmd.CombinedOutput()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
+}
+
+// RunCommandAndReturnCombinedStdoutAndStderr ..
+func RunCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (string, error) {
+	return RunCommandInDirAndReturnCombinedStdoutAndStderr("", name, args...)
 }
 
 // RunBashCommand ...
