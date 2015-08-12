@@ -108,7 +108,7 @@ func GuideTextForShareCreate() string {
    This is all what's required to add your step (or a new version) to a StepLib.
 
    ` + colorstring.Yellow("Important") + `: You have to add the (version) tag to your Step's repository before you would call this!
-     You can do that at: ` + colorstring.Green("https://github.com/[your-username]/[step-repository]/tags") + `
+     You can do that at: https://github.com/[your-username]/[step-repository]/tags
 
    An example call:
      ` + colorstring.Green("stepman share create --tag 1.0.0 --git https://github.com/[your-username]/[step-repository].git --stepid my-awesome-step") + `
@@ -142,7 +142,7 @@ func GuideTextForFinish() string {
 func share(c *cli.Context) {
 	guide := `
 Do you want to ` + colorstring.Green("share ") + colorstring.Yellow("your ") + colorstring.Magenta("own ") + colorstring.Blue("Step") + ` with the world? Awesome!!
-To get started you can find a template Step repository at: ` + colorstring.Green("https://github.com/bitrise-io/bitrise-steplib/step-template/step.yml") + `
+To get started you can find a template Step repository at: ` + colorstring.Green("https://github.com/bitrise-io/stepman/tree/master/_step_template") + `
 
 Once you have your Step in a ` + colorstring.Yellow("public git repository") + ` you can share it with others.
 
