@@ -6,6 +6,7 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
@@ -13,25 +14,49 @@ import (
 var (
 	// IsCIMode ...
 	IsCIMode = false
+	// IsDebugMode ...
+	IsDebugMode = false
 )
 
 func before(c *cli.Context) error {
+	// Debug mode?
+	if c.Bool(DebugModeKey) {
+		// set for other tools, as an ENV
+		if err := os.Setenv(bitrise.DebugModeEnvKey, "true"); err != nil {
+			return err
+		}
+		IsDebugMode = true
+		log.Warn("=> Started in DEBUG mode")
+	}
+
 	// Log level
-	level, err := log.ParseLevel(c.String(LogLevelKey))
+	// If log level defined - use it
+	logLevelStr := c.String(LogLevelKey)
+	if logLevelStr == "" && IsDebugMode {
+		// if no Log Level defined and we're in Debug Mode - set loglevel to debug
+		logLevelStr = "debug"
+		log.Warn("=> LogLevel set to debug")
+	}
+	if logLevelStr == "" {
+		// if still empty: set the default
+		logLevelStr = "info"
+	}
+
+	level, err := log.ParseLevel(logLevelStr)
 	if err != nil {
 		return err
 	}
 
-	if err := os.Setenv(LogLevelEnvKey, level.String()); err != nil {
+	if err := os.Setenv(bitrise.LogLevelEnvKey, level.String()); err != nil {
 		log.Fatal("Failed to set log level env:", err)
 	}
 	log.SetLevel(level)
 
-	// CI
-	//  if CI mode indicated make sure we set the related env
-	//  so all other tools we use will also get it
+	// CI Mode check
 	if c.Bool(CIKey) {
-		if err := os.Setenv("CI", "true"); err != nil {
+		// if CI mode indicated make sure we set the related env
+		//  so all other tools we use will also get it
+		if err := os.Setenv(bitrise.CIModeEnvKey, "true"); err != nil {
 			return err
 		}
 		IsCIMode = true

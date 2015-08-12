@@ -32,8 +32,8 @@ type TemplateDataModel struct {
 }
 
 func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateDataModel {
-	pullReqID := os.Getenv("PULL_REQUEST_ID")
-	isCI := (os.Getenv("CI") == "true")
+	pullReqID := os.Getenv(PullRequestIDEnvKey)
+	isCI := (os.Getenv(CIModeEnvKey) == "true")
 	return TemplateDataModel{
 		BuildResults:  buildResults,
 		IsBuildFailed: buildResults.IsBuildFailed(),
