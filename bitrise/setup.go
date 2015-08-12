@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "0.9.3"
-	minStepmanVersion = "0.9.7"
+	minEnvmanVersion  = "0.9.4"
+	minStepmanVersion = "0.9.8"
 )
 
 // RunSetup ...
