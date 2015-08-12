@@ -325,7 +325,7 @@ func DownloadAndUnZIP(url, pth string) error {
 		return errors.New(errorMsg)
 	}
 
-	log.Info("Successfully downloaded step.zip")
+	log.Infof("Successfully downloaded step.zip (%s)", url)
 	if _, err := io.Copy(file, response.Body); err != nil {
 		return err
 	}
