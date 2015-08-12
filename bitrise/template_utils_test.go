@@ -105,7 +105,7 @@ func TestRegisteredFunctions(t *testing.T) {
 func TestCIFlagsAndEnvs(t *testing.T) {
 	defer func() {
 		// env cleanup
-		if err := os.Unsetenv("CI"); err != nil {
+		if err := os.Unsetenv(CIModeEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
 	}()
@@ -114,7 +114,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont := `{{.IsCI}}`
 	t.Log("IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "true"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err := EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -127,7 +127,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsCI}}`
 	t.Log("IsCI=fase; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "false"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -140,7 +140,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsCI}}`
 	t.Log("[unset] IsCI; propTempCont: ", propTempCont)
-	if err := os.Unsetenv("CI"); err != nil {
+	if err := os.Unsetenv(CIModeEnvKey); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -153,7 +153,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `$.IsCI`
 	t.Log("IsCI=true; short with $; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "true"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -166,7 +166,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `.IsCI`
 	t.Log("IsCI=true; short, no $; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "true"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -179,7 +179,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsCI`
 	t.Log("IsCI=true; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "true"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -192,7 +192,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsCI`
 	t.Log("IsCI=false; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv("CI", "false"); err != nil {
+	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
@@ -207,7 +207,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 func TestPullRequestFlagsAndEnvs(t *testing.T) {
 	defer func() {
 		// env cleanup
-		if err := os.Unsetenv("PULL_REQUEST_ID"); err != nil {
+		if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
 	}()
@@ -226,7 +226,7 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsPR}}`
 	t.Log("IsPR=true; propTempCont: ", propTempCont)
-	if err := os.Setenv("PULL_REQUEST_ID", "123"); err != nil {
+	if err := os.Setenv(PullRequestIDEnvKey, "123"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)

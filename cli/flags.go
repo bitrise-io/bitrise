@@ -1,16 +1,16 @@
 package cli
 
-import "github.com/codegangsta/cli"
+import (
+	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/codegangsta/cli"
+)
 
 const (
-	// CIEnvKey ...
-	CIEnvKey string = "CI"
 	// CIKey ...
 	CIKey string = "ci"
-	cKey  string = "c"
+	// DebugModeKey ...
+	DebugModeKey string = "debug"
 
-	// LogLevelEnvKey ...
-	LogLevelEnvKey string = "LOGLEVEL"
 	// LogLevelKey ...
 	LogLevelKey      string = "loglevel"
 	logLevelKeyShort string = "l"
@@ -36,17 +36,22 @@ var (
 	// App flags
 	flLogLevel = cli.StringFlag{
 		Name:   LogLevelKey + ", " + logLevelKeyShort,
-		Value:  "info",
 		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
-		EnvVar: LogLevelEnvKey,
+		EnvVar: bitrise.LogLevelEnvKey,
+	}
+	flDebugMode = cli.BoolFlag{
+		Name:   DebugModeKey,
+		Usage:  "If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug.",
+		EnvVar: bitrise.DebugModeEnvKey,
 	}
 	flTool = cli.BoolFlag{
-		Name:   CIKey + ", " + cKey,
+		Name:   CIKey,
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
-		EnvVar: CIEnvKey,
+		EnvVar: bitrise.CIModeEnvKey,
 	}
 	flags = []cli.Flag{
 		flLogLevel,
+		flDebugMode,
 		flTool,
 	}
 	// Command flags
