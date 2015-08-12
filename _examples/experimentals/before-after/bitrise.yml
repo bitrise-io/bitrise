@@ -1,4 +1,4 @@
-format_version: 1.0.0
+format_version: 0.9.8
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -9,7 +9,7 @@ app:
       is_expand: no
 
 workflows:
-  after-before-test:
+  target:
     title: "test title"
     summary: |
         This is a workflow summary.
