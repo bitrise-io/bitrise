@@ -18,9 +18,10 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printFinishCreate(share ShareModel, stepDir string) {
+func printFinishCreate(share ShareModel, stepDirInSteplib string) {
 	fmt.Println()
-	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) added to local steplib (%s).", share.StepID, share.StepTag, stepDir)
+	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) added to local StepLib (%s).", share.StepID, share.StepTag, stepDirInSteplib)
+	log.Infoln(" *      You can find your Step's step.yml at: " + colorstring.Greenf("%s/step.yml", stepDirInSteplib))
 	fmt.Println()
 	fmt.Println("   " + GuideTextForShareFinish())
 }

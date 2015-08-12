@@ -121,7 +121,7 @@ func GuideTextForShareCreate() string {
 // GuideTextForShareFinish ...
 func GuideTextForShareFinish() string {
 	//
-	guide := `Almost done! You should review your Step's description file (step.yml) which was created in the previous step,
+	guide := `Almost done! You should review your Step's step.yml file (the one added to the local StepLib),
    and once you're happy with it call: ` + colorstring.Blue("'stepman share finish'") + `
 
    This will commit & push the step.yml ` + colorstring.Yellow("into your forked StepLib repository") + `.
