@@ -59,7 +59,7 @@ func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) (int, error) {
 	}
 	args := []string{"--loglevel", logLevel, "run"}
 	args = append(args, cmd...)
-	return cmdex.RunCommandInDirWithExitCode(dir, "envman", args...)
+	return cmdex.RunCommandInDirAndReturnExitCode(dir, "envman", args...)
 }
 
 // RunEnvmanRun ...
