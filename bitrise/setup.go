@@ -84,15 +84,20 @@ func RunSetup(appVersion string) error {
 func doSetupOnOSX() error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
-	if err := CheckIsXcodeCLTInstalled(); err != nil {
-		return errors.New(fmt.Sprint("Xcode Command Line Tools not installed. Err:", err))
-	}
 	if err := CheckIsHomebrewInstalled(); err != nil {
-		return errors.New(fmt.Sprint("Homebrew not installed. Err:", err))
+		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
+
+	if err := PrintInstalledXcodeInfos(); err != nil {
+		return errors.New(fmt.Sprint("Failed to detect installed Xcode and Xcode Command Line Tools infos. Err:", err))
+	}
+	// if err := CheckIsXcodeCLTInstalled(); err != nil {
+	// 	return errors.New(fmt.Sprint("Xcode Command Line Tools not installed. Err:", err))
+	// }
 	// if err := checkIsAnsibleInstalled(); err != nil {
 	// 	return errors.New("Ansible failed to install")
 	// }
+
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
 		return errors.New(fmt.Sprint("Envman failed to install:", err))
 	}
