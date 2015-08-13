@@ -1,24 +1,24 @@
-format_version: 1.0.0
+format_version: 0.9.8
 workflows:
   build:
     steps:
     #   - https://github.com/bitrise-io/bitrise-steplib.git::git-clone:
     #     run_if: "{{ IS_TOOL == true }}"
-      - https://github.com/bitrise-io/bitrise-steplib.git::bash-script-runner@1.1.1:
+      - https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.0:
           inputs:
-            - __INPUT_FILE__: |
+            - content: |
                 bundle install
                 middleman build
-      - https://github.com/bitrise-io/bitrise-steplib.git::send-slack-msg:
+      - https://github.com/bitrise-io/bitrise-steplib.git::slack-message:
 
   deploy:
     envs:
       - S3_BUCKET: middleman-prod
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib.git::bash-script-runner@1.1.1:
+      - https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.0:
           inputs:
-            - __INPUT_FILE__: |
+            - content: |
                 bundle install
                 middleman build
-      - https://github.com/bitrise-io/bitrise-steplib.git::send-slack-msg:
+      - https://github.com/bitrise-io/bitrise-steplib.git::slack-message:
       - https://github.com/bitrise-io/bitrise-steplib.git::amazon-s3-bucket-sync:

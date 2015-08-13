@@ -1,4 +1,5 @@
-format_version: 1.0.0
+format_version: 0.9.8
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 app:
   envs:
   - BITRISE_PROJECT_TITLE: MyTit1
@@ -11,8 +12,11 @@ workflows:
   _:
     envs: []
     steps:
-      - https://github.com/bitrise-io/bitrise-steplib.git::timestamp@0.9.0:
-    #   - https://github.com/bitrise-io/bitrise-steplib.git::bash-script-runner@1.1.1:
-    #       source:
-    #         git: https://github.com/bitrise-io/steps-bash-script.git
-    #       is_always_run: false
+      - timestamp@0.9.0:
+      - script:
+          inputs:
+          - content: |
+                #!/bin/bash
+                set -v
+                echo ${UNIX_TIMESTAMP}
+                echo ${ISO_DATETIME}
