@@ -7,29 +7,29 @@ import (
 
 const (
 	// CIKey ...
-	CIKey string = "ci"
+	CIKey = "ci"
 	// DebugModeKey ...
-	DebugModeKey string = "debug"
+	DebugModeKey = "debug"
 
 	// LogLevelKey ...
-	LogLevelKey      string = "loglevel"
-	logLevelKeyShort string = "l"
+	LogLevelKey      = "loglevel"
+	logLevelKeyShort = "l"
 
 	// VersionKey ...
-	VersionKey      string = "version"
-	versionKeyShort string = "v"
+	VersionKey      = "version"
+	versionKeyShort = "v"
 
 	// PathKey ...
-	PathKey      string = "path"
-	pathKeyShort string = "p"
+	PathKey      = "path"
+	pathKeyShort = "p"
 
 	// InventoryKey ...
-	InventoryKey      string = "inventory"
-	inventoryShortKey string = "i"
+	InventoryKey      = "inventory"
+	inventoryShortKey = "i"
 
 	// HelpKey ...
-	HelpKey      string = "help"
-	helpKeyShort string = "h"
+	HelpKey      = "help"
+	helpKeyShort = "h"
 )
 
 var (
