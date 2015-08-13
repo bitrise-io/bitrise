@@ -54,7 +54,7 @@ func setup(c *cli.Context) {
 			log.Fatal("[STEPMAN] - Failed to create collection dir: ", pth, "| error: ", err)
 		}
 		log.Info("Collection dir created - OK.")
-		if err := stepman.RunCopyDir(collectionURI, pth, true); err != nil {
+		if err := cmdex.CopyDir(collectionURI, pth, true); err != nil {
 			log.Fatal("[STEPMAN] - Failed to setup local step spec:", err)
 		}
 	}
@@ -67,7 +67,7 @@ func setup(c *cli.Context) {
 		log.Info("Copying spec YML to path: ", copySpecJSONPath)
 
 		sourceSpecJSONPth := stepman.GetStepSpecPath(route)
-		if err := stepman.RunCopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
+		if err := cmdex.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
 			log.Fatalf("Failed to copy spec.json from (%s) to (%s)", sourceSpecJSONPth, copySpecJSONPath)
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
@@ -24,7 +24,7 @@ import (
 var DebugMode bool
 
 func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, error) {
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.StepModel{}, err
 	}
@@ -51,7 +51,7 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 
 // ParseStepCollection ...
 func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.StepCollectionModel{}, err
 	}
@@ -131,7 +131,7 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	return stepGroup, nil
 }
 
-func generateFormattedJSONForStepsSpec(route SteplibRoute, templateCollection models.StepCollectionModel) ([]byte, error) {
+func generateStepLib(route SteplibRoute, templateCollection models.StepCollectionModel) (models.StepCollectionModel, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
@@ -185,24 +185,10 @@ func generateFormattedJSONForStepsSpec(route SteplibRoute, templateCollection mo
 	})
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to walk through path:", err)
-		return []byte{}, err
+		return models.StepCollectionModel{}, err
 	}
-
-	// log.Debugf("  collected steps: %#v\n", stepHash)
 	collection.Steps = stepHash
-
-	var bytes []byte
-	// if DebugMode == true {
-	bytes, err = json.MarshalIndent(collection, "", "\t")
-	// } else {
-	// 	bytes, err = json.Marshal(collection)
-	// }
-	if err != nil {
-		log.Error("[STEPMAN] - Failed to parse json:", err)
-		return []byte{}, err
-	}
-
-	return bytes, nil
+	return collection, nil
 }
 
 // WriteStepSpecToFile ...
@@ -225,28 +211,16 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 		}
 	}
 
-	file, err := os.OpenFile(pth, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Error("[STEPMAN] - Failed to close file:", err)
-		}
-	}()
-
-	jsonContBytes, err := generateFormattedJSONForStepsSpec(route, templateCollection)
+	collection, err := generateStepLib(route, templateCollection)
 	if err != nil {
 		return err
 	}
 
-	_, err = file.Write(jsonContBytes)
+	bytes, err := json.MarshalIndent(collection, "", "\t")
 	if err != nil {
 		return err
 	}
-
-	return nil
+	return fileutil.WriteBytesToFile(pth, bytes)
 }
 
 // ReadStepSpec ...
@@ -258,17 +232,15 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 		return models.StepCollectionModel{}, errors.New("No route found for lib: " + uri)
 	}
 	pth := GetStepSpecPath(route)
-	file, err := os.Open(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.StepCollectionModel{}, err
 	}
-
-	var stepCollection models.StepCollectionModel
-	parser := json.NewDecoder(file)
-	if err = parser.Decode(&stepCollection); err != nil {
+	var stepLib models.StepCollectionModel
+	if err := json.Unmarshal(bytes, &stepLib); err != nil {
 		return models.StepCollectionModel{}, err
 	}
-	return stepCollection, err
+	return stepLib, nil
 }
 
 // ReGenerateStepSpec ...

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -11,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
@@ -89,7 +89,7 @@ func create(c *cli.Context) {
 	}
 
 	// Update step.yml
-	bytes, err := ioutil.ReadFile(tmp + "/step.yml")
+	bytes, err := fileutil.ReadBytesFromFile(tmp + "/step.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,24 +133,13 @@ func create(c *cli.Context) {
 		}
 	}
 
-	file, err := os.OpenFile(stepYMLPathInSteplib, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Error("[STEPMAN] - Failed to close file:", err)
-		}
-	}()
-
 	stepBytes, err := yaml.Marshal(stepModel)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := file.Write([]byte(stepBytes)); err != nil {
+	if err := fileutil.WriteBytesToFile(stepYMLPathInSteplib, stepBytes); err != nil {
 		log.Fatal(err)
 	}
-
 	// Update spec.json
 	if err := stepman.ReGenerateStepSpec(route); err != nil {
 		log.Fatal(err)
