@@ -2,11 +2,9 @@ package envman
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
 	"gopkg.in/yaml.v2"
@@ -112,18 +110,18 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	return nil
 }
 
-func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byte, error) {
+func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (models.EnvsYMLModel, error) {
 	envMapSlice := []models.EnvironmentItemModel{}
 	for _, env := range envs {
 		err := removeDefaults(&env)
 		if err != nil {
-			return []byte{}, err
+			return models.EnvsYMLModel{}, err
 		}
 
 		hasOptions := false
 		opts, err := env.GetOptions()
 		if err != nil {
-			return []byte{}, err
+			return models.EnvsYMLModel{}, err
 		}
 
 		if opts.Title != nil {
@@ -152,29 +150,29 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) ([]byt
 		envMapSlice = append(envMapSlice, env)
 	}
 
-	envYML := models.EnvsYMLModel{
+	return models.EnvsYMLModel{
 		Envs: envMapSlice,
-	}
-	bytes, err := yaml.Marshal(envYML)
-	if err != nil {
-		return []byte{}, err
-	}
-	return bytes, nil
+	}, nil
 }
 
 // -------------------
 // --- File methods
 
-// ClearPathIfExist ...
-func ClearPathIfExist(pth string) error {
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return err
-	} else if exist {
-		if err := os.RemoveAll(pth); err != nil {
-			return err
-		}
+// WriteEnvMapToFile ...
+func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
+	if pth == "" {
+		return errors.New("No path provided")
 	}
-	return nil
+
+	envYML, err := generateFormattedYMLForEnvModels(envs)
+	if err != nil {
+		return err
+	}
+	bytes, err := yaml.Marshal(envYML)
+	if err != nil {
+		return err
+	}
+	return fileutil.WriteBytesToFile(pth, bytes)
 }
 
 // InitAtPath ...
@@ -194,21 +192,15 @@ func InitAtPath(pth string) error {
 
 // ReadEnvs ...
 func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
-	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return []models.EnvironmentItemModel{}, err
-	} else if !isExists {
-		return []models.EnvironmentItemModel{}, errors.New("No environment variable list found")
-	}
-
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return []models.EnvironmentItemModel{}, err
 	}
+
 	var envsYML models.EnvsYMLModel
 	if err := yaml.Unmarshal(bytes, &envsYML); err != nil {
 		return []models.EnvironmentItemModel{}, err
 	}
-
 	for _, env := range envsYML.Envs {
 		if err := env.NormalizeEnvironmentItemModel(); err != nil {
 			return []models.EnvironmentItemModel{}, err
@@ -228,28 +220,4 @@ func ReadEnvsOrCreateEmptyList() ([]models.EnvironmentItemModel, error) {
 		return []models.EnvironmentItemModel{}, err
 	}
 	return envModels, nil
-}
-
-// WriteEnvMapToFile ...
-func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
-	if pth == "" {
-		return errors.New("No path provided")
-	}
-
-	file, err := os.Create(pth)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Fatalln("[ENVMAN] - Failed to close file:", err)
-		}
-	}()
-
-	if jsonContBytes, err := generateFormattedYMLForEnvModels(envs); err != nil {
-		return err
-	} else if _, err := file.Write(jsonContBytes); err != nil {
-		return err
-	}
-	return nil
 }

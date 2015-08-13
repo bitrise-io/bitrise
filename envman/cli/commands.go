@@ -5,19 +5,19 @@ import "github.com/codegangsta/cli"
 var (
 	commands = []cli.Command{
 		{
-			Name:      "init",
-			ShortName: "i",
-			Usage:     "Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.",
-			Action:    initCmd,
+			Name:    "init",
+			Aliases: []string{"i"},
+			Usage:   "Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.",
+			Action:  initEnvStore,
 			Flags: []cli.Flag{
 				flClear,
 			},
 		},
 		{
-			Name:      "add",
-			ShortName: "a",
-			Usage:     "Add new, or update an exist environment variable.",
-			Action:    addCmd,
+			Name:    "add",
+			Aliases: []string{"a"},
+			Usage:   "Add new, or update an exist environment variable.",
+			Action:  add,
 			Flags: []cli.Flag{
 				flKey,
 				flValue,
@@ -27,23 +27,23 @@ var (
 			},
 		},
 		{
-			Name:      "clear",
-			ShortName: "c",
-			Usage:     "Clear the envstore.",
-			Action:    clearCmd,
+			Name:    "clear",
+			Aliases: []string{"c"},
+			Usage:   "Clear the envstore.",
+			Action:  clear,
 		},
 		{
-			Name:      "print",
-			ShortName: "p",
-			Usage:     "Print out the environment variables in envstore.",
-			Action:    printCmd,
+			Name:    "print",
+			Aliases: []string{"p"},
+			Usage:   "Print out the environment variables in envstore.",
+			Action:  print,
 		},
 		{
 			Name:            "run",
-			ShortName:       "r",
+			Aliases:         []string{"r"},
 			Usage:           "Run the specified command with the environment variables stored in the envstore.",
 			SkipFlagParsing: true,
-			Action:          runCmd,
+			Action:          run,
 		},
 	}
 )

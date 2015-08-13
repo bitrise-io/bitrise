@@ -88,7 +88,7 @@ func logEnvs() error {
 	return nil
 }
 
-func addCmd(c *cli.Context) {
+func add(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
