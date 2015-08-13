@@ -25,7 +25,7 @@ func clearEnvs() error {
 	return nil
 }
 
-func clearCmd(c *cli.Context) {
+func clear(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := clearEnvs(); err != nil {

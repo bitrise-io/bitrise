@@ -3,15 +3,16 @@ package cli
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/codegangsta/cli"
 )
 
-func initCmd(c *cli.Context) {
+func initEnvStore(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	clear := c.Bool(ClearKey)
 	if clear {
-		if err := envman.ClearPathIfExist(envman.CurrentEnvStoreFilePath); err != nil {
+		if err := cmdex.RemoveFile(envman.CurrentEnvStoreFilePath); err != nil {
 			log.Fatal("[ENVMAN] - Failed to clear path:", err)
 		}
 	}

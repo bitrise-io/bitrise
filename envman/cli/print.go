@@ -40,7 +40,7 @@ func printEnvs() error {
 	return nil
 }
 
-func printCmd(c *cli.Context) {
+func print(c *cli.Context) {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := printEnvs(); err != nil {
