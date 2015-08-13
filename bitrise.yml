@@ -75,6 +75,8 @@ workflows:
               godep save
 
   create-release:
+    before_run:
+    - test
     steps:
     - script:
         title: Creating deploy
