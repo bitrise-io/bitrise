@@ -8,6 +8,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -59,57 +61,21 @@ func ReadRoute(uri string) (route SteplibRoute, found bool) {
 }
 
 func (routes SteplibRoutes) writeToFile() error {
-	if exist, err := pathutil.IsPathExists(StepManDirPath); err != nil {
-		return err
-	} else if !exist {
-		if err := os.MkdirAll(StepManDirPath, 0777); err != nil {
-			return err
-		}
-	}
-
-	file, err := os.OpenFile(routingFilePath, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Error("[STEPMAN] - Failed to close file:", err)
-		}
-	}()
-
 	routeMap := map[string]string{}
 	for _, route := range routes {
 		routeMap[route.SteplibURI] = route.FolderAlias
 	}
-
 	bytes, err := json.MarshalIndent(routeMap, "", "\t")
 	if err != nil {
-		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err
 	}
-
-	if _, err := file.Write(bytes); err != nil {
-		return err
-	}
-	return nil
-}
-
-// RemoveDir ...
-func RemoveDir(dirPth string) error {
-	if exist, err := pathutil.IsPathExists(dirPth); err != nil {
-		return err
-	} else if exist {
-		if err := os.RemoveAll(dirPth); err != nil {
-			return err
-		}
-	}
-	return nil
+	return fileutil.WriteBytesToFile(routingFilePath, bytes)
 }
 
 // CleanupRoute ...
 func CleanupRoute(route SteplibRoute) error {
 	pth := CollectionsDirPath + "/" + route.FolderAlias
-	if err := RemoveDir(pth); err != nil {
+	if err := cmdex.RemoveDir(pth); err != nil {
 		return err
 	}
 	if err := RemoveRoute(route); err != nil {
@@ -182,25 +148,19 @@ func GenerateFolderAlias() string {
 }
 
 func readRouteMap() (SteplibRoutes, error) {
-	if exist, err := pathutil.IsPathExists(routingFilePath); err != nil {
+	exist, err := pathutil.IsPathExists(routingFilePath)
+	if err != nil {
 		return SteplibRoutes{}, err
 	} else if !exist {
 		return SteplibRoutes{}, nil
 	}
 
-	file, e := os.Open(routingFilePath)
-	if e != nil {
-		return SteplibRoutes{}, e
+	bytes, err := fileutil.ReadBytesFromFile(routingFilePath)
+	if err != nil {
+		return SteplibRoutes{}, err
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Error("[STEPMAN] - Failed to close file:", err)
-		}
-	}()
-
 	var routeMap map[string]string
-	parser := json.NewDecoder(file)
-	if err := parser.Decode(&routeMap); err != nil {
+	if err := json.Unmarshal(bytes, &routeMap); err != nil {
 		return SteplibRoutes{}, err
 	}
 
@@ -217,14 +177,7 @@ func readRouteMap() (SteplibRoutes, error) {
 
 // CreateStepManDirIfNeeded ...
 func CreateStepManDirIfNeeded() error {
-	if exist, err := pathutil.IsPathExists(StepManDirPath); err != nil {
-		return err
-	} else if !exist {
-		if err := os.MkdirAll(StepManDirPath, 0777); err != nil {
-			return err
-		}
-	}
-	return nil
+	return os.MkdirAll(StepManDirPath, 0777)
 }
 
 // GetStepSpecPath ...

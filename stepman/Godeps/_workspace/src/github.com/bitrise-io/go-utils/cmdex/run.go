@@ -8,8 +8,8 @@ import (
 	"syscall"
 )
 
-// RunCommandInDir ...
-func RunCommandInDir(dir, name string, args ...string) error {
+// RunCommandInDirWithEnvsAndReturnExitCode ...
+func RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -17,17 +17,8 @@ func RunCommandInDir(dir, name string, args ...string) error {
 	if dir != "" {
 		cmd.Dir = dir
 	}
-	return cmd.Run()
-}
-
-// RunCommandInDirWithExitCode ...
-func RunCommandInDirWithExitCode(dir, name string, args ...string) (int, error) {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if dir != "" {
-		cmd.Dir = dir
+	if len(envs) > 0 {
+		cmd.Env = envs
 	}
 
 	cmdExitCode := 0
@@ -41,7 +32,30 @@ func RunCommandInDirWithExitCode(dir, name string, args ...string) (int, error) 
 		}
 		return cmdExitCode, err
 	}
+
 	return 0, nil
+}
+
+// RunCommandInDirAndReturnExitCode ...
+func RunCommandInDirAndReturnExitCode(dir, name string, args ...string) (int, error) {
+	return RunCommandInDirWithEnvsAndReturnExitCode([]string{}, dir, name, args...)
+}
+
+// RunCommandWithEnvsAndReturnExitCode ...
+func RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error) {
+	return RunCommandInDirWithEnvsAndReturnExitCode(envs, "", name, args...)
+}
+
+// RunCommandInDir ...
+func RunCommandInDir(dir, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if dir != "" {
+		cmd.Dir = dir
+	}
+	return cmd.Run()
 }
 
 // RunCommand ...

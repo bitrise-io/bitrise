@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -33,14 +32,7 @@ var (
 
 // DeleteShareSteplibFile ...
 func DeleteShareSteplibFile() error {
-	if exist, err := pathutil.IsPathExists(shareFilePath); err != nil {
-		return err
-	} else if exist {
-		if err := os.RemoveAll(shareFilePath); err != nil {
-			return err
-		}
-	}
-	return nil
+	return cmdex.RemoveDir(shareFilePath)
 }
 
 // ReadShareSteplibFromFile ...
@@ -51,7 +43,7 @@ func ReadShareSteplibFromFile() (ShareModel, error) {
 		return ShareModel{}, errors.New("No share steplib found")
 	}
 
-	bytes, err := ioutil.ReadFile(shareFilePath)
+	bytes, err := fileutil.ReadBytesFromFile(shareFilePath)
 	if err != nil {
 		return ShareModel{}, err
 	}
@@ -67,7 +59,7 @@ func ReadShareSteplibFromFile() (ShareModel, error) {
 // WriteShareSteplibToFile ...
 func WriteShareSteplibToFile(share ShareModel) error {
 	var bytes []byte
-	bytes, err := json.Marshal(share)
+	bytes, err := json.MarshalIndent(share, "", "\t")
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to parse json:", err)
 		return err

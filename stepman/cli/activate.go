@@ -4,6 +4,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
@@ -94,7 +95,7 @@ func activate(c *cli.Context) {
 		}
 	}
 
-	if err = stepman.RunCopyDir(srcFolder+"/", destFolder, true); err != nil {
+	if err = cmdex.CopyDir(srcFolder+"/", destFolder, true); err != nil {
 		log.Fatalln("[STEPMAN] - Failed to copy step:", err)
 	}
 
@@ -108,7 +109,7 @@ func activate(c *cli.Context) {
 
 		stepCollectionDir := stepman.GetStepCollectionDirPath(route, id, version)
 		stepYMLSrc := stepCollectionDir + "/step.yml"
-		if err = stepman.RunCopyFile(stepYMLSrc, copyYML); err != nil {
+		if err = cmdex.CopyFile(stepYMLSrc, copyYML); err != nil {
 			log.Fatalln("[STEPMAN] - Failed to copy step.yml:", err)
 		}
 	}
