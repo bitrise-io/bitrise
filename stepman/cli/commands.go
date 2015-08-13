@@ -51,6 +51,14 @@ var (
 			},
 		},
 		{
+			Name:   "audit",
+			Usage:  "Validates the step collection.",
+			Action: audit,
+			Flags: []cli.Flag{
+				flCollection,
+			},
+		},
+		{
 			Name:    "share",
 			Aliases: []string{"s"},
 			Usage:   "Publish your step.",
