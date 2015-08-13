@@ -185,6 +185,7 @@ func generateFormattedJSONForStepsSpec(route SteplibRoute, templateCollection mo
 	})
 	if err != nil {
 		log.Error("[STEPMAN] - Failed to walk through path:", err)
+		return []byte{}, err
 	}
 
 	// log.Debugf("  collected steps: %#v\n", stepHash)
