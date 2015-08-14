@@ -30,6 +30,9 @@ const (
 	// HelpKey ...
 	HelpKey      = "help"
 	helpKeyShort = "h"
+
+	// MinimalModeKey
+	MinimalModeKey = "minimal"
 )
 
 var (
@@ -62,6 +65,11 @@ var (
 	flInventory = cli.StringFlag{
 		Name:  InventoryKey + ", " + inventoryShortKey,
 		Usage: "Path of the inventory file.",
+	}
+	// Setup
+	flMinimalSetup = cli.BoolFlag{
+		Name:  MinimalModeKey,
+		Usage: "Minimal setup mode: skips more thorough checking, like brew update and brew doctor.",
 	}
 )
 

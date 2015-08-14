@@ -48,7 +48,7 @@ func CheckIsRubyGemsInstalled() error {
 }
 
 // CheckIsHomebrewInstalled ...
-func CheckIsHomebrewInstalled() error {
+func CheckIsHomebrewInstalled(isMinimalSetupMode bool) error {
 	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 	officialSiteURL := "http://brew.sh/"
 
@@ -68,28 +68,31 @@ func CheckIsHomebrewInstalled() error {
 		log.Infoln("")
 		return errors.New("Failed to get version")
 	}
-	// brew update
-	updateOutput, updateErr := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "update")
 
-	// brew doctor
-	doctorOutput, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
-	if err != nil {
-		// error, if it's not just a "newer CLT is avaiable"
-		if !strings.Contains(strings.ToLower(doctorOutput), "newer command line tools") {
-			fmt.Println("")
-			log.Warn("brew doctor returned an error:")
-			log.Warnf("%s", doctorOutput)
-			return errors.New("Failed to: brew doctor")
+	if !isMinimalSetupMode {
+		// brew update
+		updateOutput, updateErr := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "update")
+
+		// brew doctor
+		doctorOutput, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		if err != nil {
+			// error, if it's not just a "newer CLT is avaiable"
+			if !strings.Contains(strings.ToLower(doctorOutput), "newer command line tools") {
+				fmt.Println("")
+				log.Warn("brew doctor returned an error:")
+				log.Warnf("%s", doctorOutput)
+				return errors.New("Failed to: brew doctor")
+			}
+			log.Warnf("brew doctor reported a non critical issue: %s", doctorOutput)
 		}
-		log.Warnf("brew doctor reported a non critical issue: %s", doctorOutput)
-	}
 
-	// if brew doctor was OK but brew update failed
-	if updateErr != nil {
-		fmt.Println("")
-		log.Warn("brew update returned an error:")
-		log.Warnf("%s", updateOutput)
-		return errors.New("Failed to: brew update")
+		// if brew doctor was OK but brew update failed
+		if updateErr != nil {
+			fmt.Println("")
+			log.Warn("brew update returned an error:")
+			log.Warnf("%s", updateOutput)
+			return errors.New("Failed to: brew update")
+		}
 	}
 
 	log.Infoln(" * "+colorstring.Green("[OK]")+" Homebrew :", progInstallPth)

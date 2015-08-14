@@ -14,12 +14,12 @@ const (
 )
 
 // RunSetup ...
-func RunSetup(appVersion string) error {
+func RunSetup(appVersion string, isMinimalSetupMode bool) error {
 	log.Infoln("[BITRISE_CLI] - Setup")
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
 	case "darwin":
-		if err := doSetupOnOSX(); err != nil {
+		if err := doSetupOnOSX(isMinimalSetupMode); err != nil {
 			return err
 		}
 	case "linux":
@@ -81,10 +81,10 @@ func RunSetup(appVersion string) error {
 // 	return nil
 // }
 
-func doSetupOnOSX() error {
+func doSetupOnOSX(isMinimalSetupMode bool) error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
-	if err := CheckIsHomebrewInstalled(); err != nil {
+	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
 

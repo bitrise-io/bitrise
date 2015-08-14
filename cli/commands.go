@@ -9,6 +9,9 @@ var (
 			Aliases: []string{"s"},
 			Usage:   "Setup the current host. Install every required tool to run Workflows.",
 			Action:  doSetup,
+			Flags: []cli.Flag{
+				flMinimalSetup,
+			},
 		},
 		{
 			Name:    "init",
