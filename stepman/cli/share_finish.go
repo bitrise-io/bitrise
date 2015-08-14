@@ -59,7 +59,8 @@ func finish(c *cli.Context) {
 	}
 
 	log.Info("Do commit")
-	if err := cmdex.GitCommit(collectionDir, share.StepID+share.StepTag); err != nil {
+	msg := share.StepID + " " + share.StepTag
+	if err := cmdex.GitCommit(collectionDir, msg); err != nil {
 		log.Fatal(err)
 	}
 
