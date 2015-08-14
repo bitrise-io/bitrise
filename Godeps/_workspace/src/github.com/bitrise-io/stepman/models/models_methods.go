@@ -147,6 +147,16 @@ func (step *StepModel) FillMissingDefaults() error {
 	return nil
 }
 
+// IsStepExist ...
+func (collection StepCollectionModel) IsStepExist(id string) bool {
+	stepHash := collection.Steps
+	_, found := stepHash[id]
+	if !found {
+		return false
+	}
+	return true
+}
+
 // GetStep ...
 func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bool) {
 	stepHash := collection.Steps
