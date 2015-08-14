@@ -3,7 +3,7 @@
 Manage your Environment Variable collections. Switch between Environment Variable sets
 quickly and easily, or run a single command with a pre-defined set of Environment Variables.
 
-`envman` can also be used as a bridge between separate tools, one tool can register it's
+`envman` can also be used as a bridge between separate tools, one tool can register its
 outputs through `envman` and the next tool can access these as simple environment variables.
 
 **Public Beta:** this repository is still under active development,
