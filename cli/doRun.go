@@ -35,7 +35,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	for _, dep := range step.Dependencies {
 		switch dep.Manager {
 		case depManagerBrew:
-			err := bitrise.InstallWithBrewIfNeeded(dep.Name)
+			err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
 			if err != nil {
 				return 1, err
 			}
@@ -49,8 +49,6 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		default:
 			return 1, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 		}
-
-		log.Info(" * " + colorstring.Green("[OK] ") + "Dependency (" + dep.Name + ") installed")
 	}
 
 	// Add step envs
