@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "0.9.4"
+	minEnvmanVersion  = "0.9.5"
 	minStepmanVersion = "0.9.9"
 )
 
