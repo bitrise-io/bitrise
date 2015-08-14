@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -12,20 +10,20 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func createPullRequestURL(gitURI string) (string, error) {
-	if !strings.HasSuffix(gitURI, ".git") {
-		return "", errors.New("Git URI should have suffix `.git`")
-	}
-	pullURL := strings.TrimSuffix(gitURI, ".git")
-	pullURL = pullURL + "/pulls"
-	return pullURL, nil
-}
-
-func printFinishShare(pullURL string) {
+func printFinishShare() {
 	fmt.Println()
 	log.Info(" * " + colorstring.Green("[OK] ") + "Yeah!! You rock!!")
 	fmt.Println()
 	fmt.Println("   " + GuideTextForFinish())
+	fmt.Println()
+	msg := `   You can create a pull request in your forked StepLib repository,
+   if you used the main StepLib repository then your repository's url looks like: ` + `
+   ` + colorstring.Green("https://github.com/[your-username]/bitrise-steplib") + `
+
+   On GitHub you can find a ` + colorstring.Green("'Compare & pull request'") + ` button, in the ` + colorstring.Green("'Your recently pushed branches:'") + ` section,
+   which will bring you to the 'Open a pull request' page, where you can review and create your Pull Request.
+	`
+	fmt.Println(msg)
 }
 
 func finish(c *cli.Context) {
@@ -43,11 +41,7 @@ func finish(c *cli.Context) {
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
 	if err := cmdex.GitCheckIsNoChanges(collectionDir); err == nil {
 		log.Warn("No git changes!")
-		pullURL, err := createPullRequestURL(share.Collection)
-		if err != nil {
-			log.Fatal(err)
-		}
-		printFinishShare(pullURL)
+		printFinishShare()
 		return
 	}
 
@@ -68,9 +62,5 @@ func finish(c *cli.Context) {
 	if err := cmdex.GitPushToOrigin(collectionDir, share.StepID); err != nil {
 		log.Fatal(err)
 	}
-	pullURL, err := createPullRequestURL(share.Collection)
-	if err != nil {
-		log.Fatal(err)
-	}
-	printFinishShare(pullURL)
+	printFinishShare()
 }
