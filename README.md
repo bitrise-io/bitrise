@@ -2,12 +2,12 @@
 
 [![Join the chat at https://gitter.im/bitrise-io/bitrise](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bitrise-io/bitrise?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+Run your Bitrise automation workflows with this CLI tool on your own development device, and on
+your Continuous Integration tool / service.
+
 **Public Beta:** this repository is still under active development,
 frequent changes are expected, but we we don't plan to introduce breaking changes,
 unless really necessary. **Feedback is greatly appreciated!**
-
-Run your Bitrise workflow with this CLI tool on your own development device, and on
-your Continuous Integration tool / service.
 
 *Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
 with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
