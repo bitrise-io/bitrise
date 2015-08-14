@@ -8,4 +8,5 @@ curl -L https://github.com/bitrise-io/bitrise/releases/download/0.9.9/bitrise-$(
 
 chmod +x /usr/local/bin/bitrise
 
+# bitrise setup --minimal
 bitrise setup
