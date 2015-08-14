@@ -69,7 +69,7 @@ var (
 	// Setup
 	flMinimalSetup = cli.BoolFlag{
 		Name:  MinimalModeKey,
-		Usage: "Minimal setup mode: skips more thorough checking, like brew update and brew doctor.",
+		Usage: "Minimal setup mode: skips more thorough checking, like brew doctor.",
 	}
 )
 
