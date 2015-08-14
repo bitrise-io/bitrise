@@ -124,9 +124,6 @@ func GuideTextForShareFinish() string {
 // GuideTextForFinish ...
 func GuideTextForFinish() string {
 	guide := "Everything is ready! The only remaning thing is to " + colorstring.Blue("create a Pull Request") + `.
-
-   If you used the main StepLib repository then you can create a Pull Request
-   at: ` + colorstring.Green("https://github.com/bitrise-io/bitrise-steplib/pulls") + `
 	`
 	return guide
 }
