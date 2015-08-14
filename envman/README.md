@@ -1,6 +1,17 @@
 # envman
 
-**Technology Preview:** this repository is still under active development, breaking changes are expected and feedback is greatly appreciated!
+Manage your Environment Variable collections. Switch between Environment Variable sets
+quickly and easily, or run a single command with a pre-defined set of Environment Variables.
+
+`envman` can also be used as a bridge between separate tools, one tool can register it's
+outputs through `envman` and the next tool can access these as simple environment variables.
+
+**Public Beta:** this repository is still under active development,
+frequent changes are expected, but we we don't plan to introduce breaking changes,
+unless really necessary. **Feedback is greatly appreciated!**
+
+*Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
+with [bitrise](https://github.com/bitrise-io/bitrise) and [stepman](https://github.com/bitrise-io/stepman).*
 
 ## Who and for what?
 
