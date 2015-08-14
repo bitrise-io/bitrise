@@ -337,7 +337,7 @@ func doRun(c *cli.Context) {
 
 	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
-		if err := bitrise.RunSetup(c.App.Version); err != nil {
+		if err := bitrise.RunSetup(c.App.Version, false); err != nil {
 			log.Fatalln("Setup failed:", err)
 		}
 	}
