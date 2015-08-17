@@ -51,7 +51,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			return 1, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 		}
 
-		log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed", dep.Name)
+		log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
 	}
 
 	// Add step envs
