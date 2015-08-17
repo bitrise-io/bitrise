@@ -199,3 +199,6 @@ workflows:
             Build URL: ${BITRISE_BUILD_URL}
         - SLACK_ICON_EMOJI: ":white_check_mark:"
         - SLACK_ERROR_ICON_EMOJI: ":no_entry_sign:"
+  noop:
+    description: |-
+      Empty workflow, for quick testing.

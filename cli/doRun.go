@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -454,9 +455,13 @@ func doRun(c *cli.Context) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: startTime,
 	}
+
+	if err := setPredefinedEnvironments(); err != nil {
+		log.Fatalln("Failed to register pre-defined Environment Variables: ", err)
+	}
 	buildRunResults = activateAndRunWorkflow(workflowToRun, bitriseConfig, buildRunResults)
 
-	// // Build finished
+	// Build finished
 	bitrise.PrintSummary(buildRunResults)
 	if len(buildRunResults.FailedSteps) > 0 {
 		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
@@ -465,4 +470,13 @@ func doRun(c *cli.Context) {
 			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
 		}
 	}
+}
+
+func setPredefinedEnvironments() error {
+	formattedOutputFilePath := path.Join(bitrise.BitriseWorkDirPath, "formatted_output.md")
+	log.Debugln("=> formattedOutputFilePath: ", formattedOutputFilePath)
+	if err := os.Setenv("BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH", formattedOutputFilePath); err != nil {
+		return err
+	}
+	return nil
 }
