@@ -20,6 +20,41 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// AppendEnvironmentSlice ...
+func AppendEnvironmentSlice(slice, appendSlice []envmanModels.EnvironmentItemModel) []envmanModels.EnvironmentItemModel {
+	for _, env := range appendSlice {
+		slice = append(slice, env)
+	}
+	return slice
+}
+
+// CollectEnvironmentsFromFile ...
+func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, err
+	}
+
+	var envstore envmanModels.EnvsYMLModel
+	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
+		return []envmanModels.EnvironmentItemModel{}, err
+	}
+
+	for _, env := range envstore.Envs {
+		if err := env.Normalize(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+		if err := env.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+		if err := env.Validate(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+	}
+
+	return envstore.Envs, nil
+}
+
 // ExportEnvironmentsList ...
 func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error {
 	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
@@ -36,7 +71,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 		}
 
 		if value != "" {
-			if err := RunEnvmanAdd(key, value, *opts.IsExpand); err != nil {
+			if err := EnvmanAdd(InputEnvstorePath, key, value, *opts.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -57,6 +92,22 @@ func CleanupStepWorkDir() error {
 		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
 	}
 	return nil
+}
+
+// GetBuildFailedEnvironments ...
+func GetBuildFailedEnvironments(failed bool) []string {
+	statusStr := "0"
+	if failed {
+		statusStr = "1"
+	}
+
+	environments := []string{}
+	steplibBuildStatusEnv := "STEPLIB_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, steplibBuildStatusEnv)
+
+	bitriseBuildStatusEnv := "BITRISE_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, bitriseBuildStatusEnv)
+	return environments
 }
 
 // SetBuildFailedEnv ...
