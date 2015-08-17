@@ -53,7 +53,7 @@ As you can see there are plenty of extra fields like `summary`, `title`, `before
               echo "Welcome to Bitrise!"
 
 You can try running it again with `bitrise run myflippinawesomewf`. Let's carry on and add the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) that is used in the `steps-and-workflows` tutorial.
-Let's stick to a minimalist approach when adding the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) and only add `timestamp` as a new step in your Workflow. This will tell bitrise to search the default StepLib for a Step called `timestamp`, download the bash script of the Step and run it. You should always pay attention to the indentation! It is crucial to keep your yml well formatted to get the correct functionality.
+Let's stick to a minimalist approach when adding the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) and only add `timestamp` as a new step in your Workflow. This will tell bitrise to search the default StepLib for a Step called `timestamp`, download the bash script of the Step and run it. You should always pay attention to the indentation! It is crucial to keep your .yml well formatted to get the correct functionality.
 Now the Workflow should look like this:
 
     myflippinawesomewf:
@@ -68,7 +68,7 @@ Now the Workflow should look like this:
 
 Great job! Now let's see what happens when we run the workflow! We can see the `Generate time` step title and that it finished with Success. But what time is it? How could we see that? Let's do something about this and take a look at the Timestamp Step's yml.
 
-> When you are adding a new Step to your Workflow always check the yml first to see the inputs that it requires and the output it generates.
+> When you are adding a new Step to your Workflow always check the .yml first to see the inputs that it requires and the output it generates.
 
 If you take a look at the yml you can see that it creates two outputs with the given timestamp:
 
@@ -102,17 +102,16 @@ The outputs section tells us that we can access the generated timestamp using th
 
 Now even the geeky ones will know the time thanks to your UNIX_TIMESTAMP output! Great job! Your first Workflow is done!
 
-But before you close this tab let's put some twist in it shall we?
+But before you close this tab let's put some twist in it, shall we?
 
-As the saying goes: "It's good to know the time, but flooding a Slack channel with the current time is the best!"
+As the saying goes: "It's good to know the time, but flooding a conversation with a teammate on [Slack](https://slack.com/) with the current time is the best!"
 
-So our next step will be adding a Slack Step to notify a channel about the current time! **Keeping your private information is very important for us so we'll use the `.bitrise.secrets.yml` file for the Slack informations. Make sure to include the .bitrise.secrets.yml file in your .gitignore** Let's open the file (or create it if there's no `.bitrise.secrets.yml`). The following inputs are needed for running the slack-message Step:
+So our next step will be adding a [slack-message](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack-message/1.2.0) Step to notify the chosen teammate about the current time! **Keeping your private informations private is very important for us so we'll use the `.bitrise.secrets.yml` file to store the informations needed to send a message via [Slack](https://slack.com/). Make sure to include the `.bitrise.secrets.yml` file in your `.gitignore` file!** Let's open the file (or create it if there's no `.bitrise.secrets.yml`). The following inputs are needed for running the [slack-message](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack-message/1.2.0) Step:
 
 - SLACK_WEBHOOK_URL:
 - SLACK_CHANNEL:
 - SLACK_FROM_NAME:
 - SLACK_ERROR_FROM_NAME:
-- SLACK_ERROR_MESSAGE_TEXT:
 
 Now that you added the required inputs add the slack-message Step to the Workflow. When you're done the Workflow should look something like this:
 
@@ -136,5 +135,7 @@ Now that you added the required inputs add the slack-message Step to the Workflo
       - slack-message:
           inputs:
           - SLACK_MESSAGE_TEXT: "ISO_DATETIME: ${ISO_DATETIME}"
+          - SLACK_ERROR_MESSAGE_TEXT: "Whoooooops, There's no time!!!"
 
+You can notice that the [slack-message](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack-message/1.2.0) Step contains two message texts. One to send when everything went well and we can send the time and another to send when there was a problem getting the time.
 Well that's it! Run the workflow and wait for that awesome Slack message! Happy building!
