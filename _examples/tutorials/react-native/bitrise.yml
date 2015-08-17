@@ -1,0 +1,45 @@
+format_version: 0.9.9
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: mytestproject
+    opts:
+      is_expand: true
+  - BITRISE_DEV_BRANCH: master
+    opts:
+      is_expand: true
+workflows:
+  run-react-native:
+    steps:
+    - script:
+        title: clone
+        inputs:
+        - content: |-
+            #!/bin/bash
+            if [ ! -d viccesteszt ] ; then
+              git clone ${REPO_URL}
+            else
+              cd viccesteszt
+              git pull
+            fi
+    - script:
+        title: Install React Native
+        inputs:
+        - content: |-
+            #!/bin/bash
+            brew unlink node
+            brew uninstall node
+            brew install iojs
+            brew install --HEAD watchman
+            brew install flow
+            brew install node
+            projectName="viccesteszt/testProj"
+            cd $projectName
+            pwd
+            npm install react-native
+            launchctl unload "$HOME/Library/LaunchAgents/bitrise.tools.osx.xcuserver.plist"
+    - new-xcode-test:
+        inputs:
+        - project_path: ./viccesteszt/testProj/testProj.xcodeproj
+        - scheme: testProj
+    - slack-message:
