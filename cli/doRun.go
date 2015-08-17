@@ -330,6 +330,24 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 	return buildRunResults
 }
 
+// GetBitriseConfigFilePath ...
+func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
+	bitriseConfigPath := c.String(PathKey)
+
+	if bitriseConfigPath == "" {
+		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
+		bitriseConfigPath = bitrise.CurrentDir + "/" + DefaultBitriseConfigFileName
+
+		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
+			return "", err
+		} else if !exist {
+			return "", errors.New("No workflow yml found")
+		}
+	}
+
+	return bitriseConfigPath, nil
+}
+
 func doRun(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 	log.Debugln("[BITRISE_CLI] - Run")
@@ -344,17 +362,12 @@ func doRun(c *cli.Context) {
 	startTime := time.Now()
 
 	// Input validation
-	bitriseConfigPath := c.String(PathKey)
+	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+	if err != nil {
+		bitrise.PrintBuildFailedFatal(startTime, fmt.Errorf("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: %s", err))
+	}
 	if bitriseConfigPath == "" {
-		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
-		bitriseConfigPath = bitrise.CurrentDir + "/" + DefaultBitriseConfigFileName
-
-		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path:"+err.Error()))
-		} else if !exist {
-			log.Fatalln("[BITRISE_CLI] - No workflow yml found")
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - No workflow yml found"))
-		}
+		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: empty bitriseConfigPath"))
 	}
 
 	inventoryPath := c.String(InventoryKey)
@@ -408,7 +421,7 @@ func doRun(c *cli.Context) {
 		}
 	}
 
-	// Run work flow
+	// Run workflow
 	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 	if err != nil {
 		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to read Workflow: "+err.Error()))

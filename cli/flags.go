@@ -31,8 +31,15 @@ const (
 	HelpKey      = "help"
 	helpKeyShort = "h"
 
-	// MinimalModeKey
+	// MinimalModeKey ...
 	MinimalModeKey = "minimal"
+
+	// OuputFormatKey ...
+	OuputFormatKey = "format"
+	// OuputPathKey ...
+	OuputPathKey = "outpath"
+	// PrettyFormatKey ...
+	PrettyFormatKey = "pretty"
 )
 
 var (
@@ -70,6 +77,19 @@ var (
 	flMinimalSetup = cli.BoolFlag{
 		Name:  MinimalModeKey,
 		Usage: "Minimal setup mode: skips more thorough checking, like brew doctor.",
+	}
+	// Export
+	flFormat = cli.StringFlag{
+		Name:  OuputFormatKey,
+		Usage: "Output format. Accepted: json, yml",
+	}
+	flOutputPath = cli.StringFlag{
+		Name:  OuputPathKey,
+		Usage: "Output path, where the exported file will be saved.",
+	}
+	flPretty = cli.BoolFlag{
+		Name:  PrettyFormatKey,
+		Usage: "Pretty printed export?",
 	}
 )
 
