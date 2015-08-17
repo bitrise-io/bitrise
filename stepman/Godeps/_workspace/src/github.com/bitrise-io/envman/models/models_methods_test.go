@@ -116,7 +116,7 @@ func TestGetKeyValuePair(t *testing.T) {
 
 func TestParseFromInterfaceMap(t *testing.T) {
 	envOptions := EnvironmentItemOptionsModel{}
-	model := map[interface{}]interface{}{}
+	model := map[string]interface{}{}
 
 	// Normal
 	model["title"] = testTitle
@@ -127,16 +127,8 @@ func TestParseFromInterfaceMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Key is not string
-	model = map[interface{}]interface{}{}
-	model[true] = "false"
-	err = envOptions.ParseFromInterfaceMap(model)
-	if err == nil {
-		t.Fatal("Not a string key, should be error")
-	}
-
 	// title is not a string
-	model = map[interface{}]interface{}{}
+	model = map[string]interface{}{}
 	model["title"] = true
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
@@ -144,7 +136,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	}
 
 	// value_options is not a string slice
-	model = map[interface{}]interface{}{}
+	model = map[string]interface{}{}
 	model["value_options"] = []interface{}{true, false}
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
@@ -152,7 +144,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	}
 
 	// is_required is not a bool
-	model = map[interface{}]interface{}{}
+	model = map[string]interface{}{}
 	model["is_required"] = pointers.NewBoolPtr(testTrue)
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
@@ -160,7 +152,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	}
 
 	// other_key is not supported key
-	model = map[interface{}]interface{}{}
+	model = map[string]interface{}{}
 	model["other_key"] = testTrue
 	err = envOptions.ParseFromInterfaceMap(model)
 	if err == nil {
