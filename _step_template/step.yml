@@ -24,6 +24,9 @@ type_tags:
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
+dependencies:
+  - manager: brew
+    name: git
 inputs:
   - example_step_input: Default Value - you can leave this empty if you want to
     opts:
