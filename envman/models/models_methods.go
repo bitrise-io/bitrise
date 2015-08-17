@@ -59,13 +59,9 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 }
 
 // ParseFromInterfaceMap ...
-func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[interface{}]interface{}) error {
-	for key, value := range input {
-		keyStr, ok := key.(string)
-		if !ok {
-			return fmt.Errorf("Invalid key, should be a string: %#v", key)
-		}
-		log.Debugf("  ** processing (key:%#v) (value:%#v) (envSerModel:%#v)", key, value, envSerModel)
+func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[string]interface{}) error {
+	for keyStr, value := range input {
+		log.Debugf("  ** processing (key:%#v) (value:%#v) (envSerModel:%#v)", keyStr, value, envSerModel)
 		switch keyStr {
 		case "title":
 			castedValue, ok := value.(string)
@@ -117,7 +113,7 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			}
 			envSerModel.IsDontChangeValue = pointers.NewBoolPtr(castedValue)
 		default:
-			return fmt.Errorf("Not supported key found in options: %#v", key)
+			return fmt.Errorf("Not supported key found in options: %#v", keyStr)
 		}
 	}
 	return nil
@@ -139,20 +135,37 @@ func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error
 
 	// if it's read from a file (YAML/JSON) then it's most likely not the proper type
 	//  so cast it from the generic interface-interface map
-	optionsInterfaceMap, ok := value.(map[interface{}]interface{})
-	if !ok {
-		return EnvironmentItemOptionsModel{}, fmt.Errorf("Invalid options (value:%#v) - failed to map-interface cast", value)
+	normalizedOptsInterfaceMap := make(map[string]interface{})
+	isNormalizeOK := false
+	if optionsInterfaceMap, ok := value.(map[interface{}]interface{}); ok {
+		// Try to normalize every key to String
+		for key, value := range optionsInterfaceMap {
+			keyStr, ok := key.(string)
+			if !ok {
+				return EnvironmentItemOptionsModel{}, fmt.Errorf("Failed to cask Options key to String: %#v", key)
+			}
+			normalizedOptsInterfaceMap[keyStr] = value
+		}
+		isNormalizeOK = true
+	} else {
+		if castedTmp, ok := value.(map[string]interface{}); ok {
+			normalizedOptsInterfaceMap = castedTmp
+			isNormalizeOK = true
+		}
 	}
 
-	options := EnvironmentItemOptionsModel{}
-	err := options.ParseFromInterfaceMap(optionsInterfaceMap)
-	if err != nil {
-		return EnvironmentItemOptionsModel{}, err
+	if isNormalizeOK {
+		options := EnvironmentItemOptionsModel{}
+		err := options.ParseFromInterfaceMap(normalizedOptsInterfaceMap)
+		if err != nil {
+			return EnvironmentItemOptionsModel{}, err
+		}
+
+		log.Debugf("Parsed options: %#v\n", options)
+		return options, nil
 	}
 
-	log.Debugf("Parsed options: %#v\n", options)
-
-	return options, nil
+	return EnvironmentItemOptionsModel{}, fmt.Errorf("Invalid options (value:%#v) - failed to cast", value)
 }
 
 // Normalize ...
