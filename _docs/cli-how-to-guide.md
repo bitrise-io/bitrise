@@ -4,7 +4,7 @@ title: Bitrise Command Line Interface How to Guide
 
 # Installing Bitrise Command Line Interface
 
-Yes!!! Our Command Line Interface is now available via [Homebrew](https://github.com/Homebrew/homebrew/tree/master/share/doc/homebrew#readme)! You simply have to call the `brew install bitrise` command in your terminal. And BOOM! you can start using it right away!
+Yes!!! Our Command Line Interface is now available via [Homebrew](https://github.com/Homebrew/homebrew/tree/master/share/doc/homebrew#readme)! First call `brew update` and when it's done you simply have to call the `brew install bitrise` command in your terminal. And BOOM! you can start using it right away!
 
 If you choose to go the old fashioned way just check the [releases site](https://github.com/bitrise-io/bitrise/releases) for instructions.
 
