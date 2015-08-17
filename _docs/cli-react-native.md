@@ -7,12 +7,12 @@ title: Running React Native projects with Bitrise CommandLine Interface
 Check out our [sample workflow](../_examples/tutorials/react-native/bitrise.yml) that uses React Native. Some of the used variables were added to the `.bitrise.secrets.yml` before starting to run the workflow add the variables specific to your application. The list of variables:
 
 - REPO_URL:
-- SLACK_WEBHOOK_URL:
-- SLACK_CHANNEL:
-- SLACK_FROM_NAME:
-- SLACK_MESSAGE_TEXT:
-- SLACK_ERROR_FROM_NAME:
-- SLACK_ERROR_MESSAGE_TEXT:
+- webhook_url:
+- channel:
+- from_username:
+- message:
+- from_username_on_error:
+- message_on_error:
 
 Now that you configured your .yml let's see what is in the bitrise.yml file.
 

@@ -65,14 +65,14 @@ workflows:
   godep-update:
     steps:
     - script:
-          title: Dependency update
-          inputs:
-          - content: |-
-              #!/bin/bash
-              set -v
-              set -e
-              rm -rf ./Godeps
-              godep save
+        title: Dependency update
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            rm -rf ./Godeps
+            godep save
 
   create-release:
     before_run:
@@ -123,40 +123,28 @@ workflows:
             # register the version for next steps
             binversion="$(${BITRISE_BIN_NAME} -version)"
             envman add --key RELEASE_VERSION --value "${binversion}"
-    - slack-message@1.2.0:
+    - slack@2.0.0:
         title: Announce on Internal Slack channel
         inputs:
-        - SLACK_WEBHOOK_URL: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-          opts:
-            is_expand: true
-        - SLACK_CHANNEL: $INTERNAL_DEV_SLACK_CHANNEL
-          opts:
-            is_expand: true
-        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
-          opts:
-            is_expand: true
-        - SLACK_MESSAGE_TEXT: |
+        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
+        - channel: $INTERNAL_DEV_SLACK_CHANNEL
+        - from_username: ${BITRISE_BIN_NAME}
+        - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
 
             You can find it at ${GITHUB_RELEASES_URL}
-        - SLACK_ICON_EMOJI: ":rocket:"
-    - slack-message@1.2.0:
+        - emoji: ":rocket:"
+    - slack@2.0.0:
         title: Announce on Public Slack channel
         inputs:
-        - SLACK_WEBHOOK_URL: $PUBLIC_SLACK_WEBHOOK_URL
-          opts:
-            is_expand: true
-        - SLACK_CHANNEL: $PUBLIC_SLACK_CHANNEL
-          opts:
-            is_expand: true
-        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME}
-          opts:
-            is_expand: true
-        - SLACK_MESSAGE_TEXT: |
+        - webhook_url: $PUBLIC_SLACK_WEBHOOK_URL
+        - channel: $PUBLIC_SLACK_CHANNEL
+        - from_username: ${BITRISE_BIN_NAME}
+        - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
 
             You can find it at ${GITHUB_RELEASES_URL}
-        - SLACK_ICON_EMOJI: ":rocket:"
+        - emoji: ":rocket:"
 
   ci_step_template:
     steps:
@@ -175,30 +163,22 @@ workflows:
         title: Running CI script
         inputs:
         - content: bash _scripts/ci.sh
-    - slack-message:
+    - slack:
         inputs:
-        - SLACK_WEBHOOK_URL: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-          opts:
-            is_expand: true
-        - SLACK_CHANNEL: $INTERNAL_DEV_SLACK_CHANNEL
-          opts:
-            is_expand: true
-        - SLACK_FROM_NAME: ${BITRISE_BIN_NAME} - CI - OK
-          opts:
-            is_expand: true
-        - SLACK_ERROR_FROM_NAME: ${BITRISE_BIN_NAME} - CI - ERROR
-          opts:
-            is_expand: true
-        - SLACK_MESSAGE_TEXT: |-
+        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
+        - channel: $INTERNAL_DEV_SLACK_CHANNEL
+        - from_username: ${BITRISE_BIN_NAME} - CI - OK
+        - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
+        - emoji: ":white_check_mark:"
+        - emoji_on_error: ":no_entry_sign:"
+        - message: |-
             CI was successful on branch: *${BITRISE_GIT_BRANCH}*
 
             Build URL: ${BITRISE_BUILD_URL}
-        - SLACK_ERROR_MESSAGE_TEXT: |-
+        - message_on_error: |-
             CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
 
             Build URL: ${BITRISE_BUILD_URL}
-        - SLACK_ICON_EMOJI: ":white_check_mark:"
-        - SLACK_ERROR_ICON_EMOJI: ":no_entry_sign:"
   noop:
     description: |-
       Empty workflow, for quick testing.

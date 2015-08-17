@@ -42,4 +42,4 @@ workflows:
         inputs:
         - project_path: ./viccesteszt/testProj/testProj.xcodeproj
         - scheme: testProj
-    - slack-message:
+    - slack:
