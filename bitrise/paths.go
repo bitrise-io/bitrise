@@ -42,7 +42,6 @@ func initBitriseWorkPaths() error {
 		}
 	}
 	BitriseWorkDirPath = bitriseWorkDirPath
-	log.Debug("initBitriseWorkPaths: ", BitriseWorkDirPath)
 
 	bitriseWorkStepsDirPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "step_src"))
 	if err != nil {
