@@ -1,10 +1,12 @@
 package bitrise
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -110,20 +112,42 @@ func generateYAML(v interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-// ConfigModelFromBytes ...
-func ConfigModelFromBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) error {
+	if err := bitriseData.Normalize(); err != nil {
+		return err
+	}
+	if err := bitriseData.Validate(); err != nil {
+		return err
+	}
+	if err := bitriseData.FillMissingDefaults(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ConfigModelFromYAMLBytes ...
+func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
 	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
-	if err = bitriseData.Normalize(); err != nil {
+
+	if err = normalizeValidateFillMissingDefaults(&bitriseData); err != nil {
 		return
 	}
-	if err = bitriseData.Validate(); err != nil {
+
+	return
+}
+
+// ConfigModelFromJSONBytes ...
+func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
+	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
-	if err = bitriseData.FillMissingDefaults(); err != nil {
+
+	if err = normalizeValidateFillMissingDefaults(&bitriseData); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -140,7 +164,14 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 	if err != nil {
 		return models.BitriseDataModel{}, err
 	}
-	return ConfigModelFromBytes(bytes)
+
+	if strings.HasSuffix(pth, ".json") {
+		log.Debugln("=> Using JSON parser for: ", pth)
+		return ConfigModelFromJSONBytes(bytes)
+	}
+
+	log.Debugln("=> Using YAML parser for: ", pth)
+	return ConfigModelFromYAMLBytes(bytes)
 }
 
 // ReadSpecStep ...

@@ -191,7 +191,7 @@ func Test1Workflows(t *testing.T) {
       - script:
           title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func Test3Workflows(t *testing.T) {
       - script:
           title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -346,7 +346,7 @@ func TestRefeneceCycle(t *testing.T) {
       - before1
       - before2
   `
-	_, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	_, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err == nil {
 		t.Fatal("Should found workflow reference cycle")
 	}
@@ -436,7 +436,7 @@ func TestBuildStatusEnv(t *testing.T) {
       - script:
           title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -509,7 +509,7 @@ func TestFail(t *testing.T) {
             title: Should success
             is_always_run: true
     `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -560,7 +560,7 @@ func TestSuccess(t *testing.T) {
         - script:
             title: Should success
     `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -633,7 +633,7 @@ func TestBuildFailedMode(t *testing.T) {
       - script:
           title: Should skipped
     `
-	config, err := bitrise.ConfigModelFromBytes([]byte(configStr))
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}

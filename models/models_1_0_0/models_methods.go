@@ -119,6 +119,15 @@ func (workflow *WorkflowModel) Normalize() error {
 			return err
 		}
 	}
+	for _, aWfStepItem := range workflow.Steps {
+		_, stepData, err := GetStepIDStepDataPair(aWfStepItem)
+		if err != nil {
+			return err
+		}
+		if err := stepData.Normalize(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

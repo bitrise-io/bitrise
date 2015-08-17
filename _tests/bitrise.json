@@ -1,0 +1,82 @@
+{
+	"format_version": "0.9.8",
+	"default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
+	"app": {
+		"envs": [
+			{
+				"BITRISE_BIN_NAME": "bitrise",
+				"opts": {
+					"description": "",
+					"is_required": false,
+					"is_expand": false,
+					"is_dont_change_value": false
+				}
+			},
+			{
+				"GITHUB_RELEASES_URL": "https://github.com/bitrise-io/bitrise/releases",
+				"opts": {
+					"description": "",
+					"is_required": false,
+					"is_expand": false,
+					"is_dont_change_value": false
+				}
+			}
+		]
+	},
+	"workflows": {
+		"one": {
+			"title": "",
+			"summary": "",
+			"before_run": null,
+			"after_run": null,
+			"envs": null,
+			"steps": [
+				{
+					"script": {
+						"title": "Dependency update",
+						"source": {},
+						"inputs": [
+							{
+								"content": "#!/bin/bash\nset -v\nset -e\nrm -rf ./Godeps\ngodep save",
+								"opts": {}
+							}
+						]
+					}
+				}
+			]
+		},
+		"two": {
+			"title": "",
+			"summary": "",
+			"before_run": null,
+			"after_run": null,
+			"envs": null,
+			"steps": [
+				{
+					"script": {
+						"title": "Running go test ./...",
+						"source": {},
+						"inputs": [
+							{
+								"content": "#!/bin/bash\nset -v\ngo test ./...\n",
+								"opts": {}
+							}
+						]
+					}
+				},
+				{
+					"script": {
+						"title": "Running the TEST script",
+						"source": {},
+						"inputs": [
+							{
+								"content": "#!/bin/bash\nset -v\nbash ./_scripts/common/test.sh\n",
+								"opts": {}
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

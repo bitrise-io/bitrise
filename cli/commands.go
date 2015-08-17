@@ -29,5 +29,16 @@ var (
 				flInventory,
 			},
 		},
+		{
+			Name:   "export",
+			Usage:  "Export the bitrise configuration.",
+			Action: export,
+			Flags: []cli.Flag{
+				flPath,
+				flFormat,
+				flOutputPath,
+				flPretty,
+			},
+		},
 	}
 )
