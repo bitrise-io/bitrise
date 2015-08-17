@@ -9,7 +9,7 @@ workflows:
             - content: |
                 bundle install
                 middleman build
-      - https://github.com/bitrise-io/bitrise-steplib.git::slack-message:
+      - https://github.com/bitrise-io/bitrise-steplib.git::slack:
 
   deploy:
     envs:
@@ -20,5 +20,5 @@ workflows:
             - content: |
                 bundle install
                 middleman build
-      - https://github.com/bitrise-io/bitrise-steplib.git::slack-message:
+      - https://github.com/bitrise-io/bitrise-steplib.git::slack:
       - https://github.com/bitrise-io/bitrise-steplib.git::amazon-s3-bucket-sync:
