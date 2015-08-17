@@ -291,7 +291,6 @@ func InstallWithBrewIfNeeded(tool string, isCIMode bool) error {
 		return nil
 	}
 
-	log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) already installed", tool)
 	return nil
 }
 
