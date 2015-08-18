@@ -110,6 +110,15 @@ func GuideTextForShareCreate() string {
 	return guide
 }
 
+// GuideTextForAudit ...
+func GuideTextForAudit() string {
+	guide := "You can call " + colorstring.Blue("'stepman audit'") + `,
+   to perform a complete health-check on your StepLib before submitting your Pull Request.
+   This can help you catch issues which might prevent your Step to be accepted.
+   `
+	return guide
+}
+
 // GuideTextForShareFinish ...
 func GuideTextForShareFinish() string {
 	//
@@ -140,8 +149,9 @@ To share your Step just follow these steps (pun intended ;) :
 1. ` + GuideTextForStart() + `
 2. ` + GuideTextForShareStart() + `
 3. ` + GuideTextForShareCreate() + `
-4. ` + GuideTextForShareFinish() + `
-5. ` + GuideTextForFinish()
+4. ` + GuideTextForAudit() + `
+5. ` + GuideTextForShareFinish() + `
+6. ` + GuideTextForFinish()
 	fmt.Println(guide)
 }
 
