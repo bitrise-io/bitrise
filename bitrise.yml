@@ -123,7 +123,7 @@ workflows:
             # register the version for next steps
             binversion="$(${BITRISE_BIN_NAME} -version)"
             envman add --key RELEASE_VERSION --value "${binversion}"
-    - slack@2.0.0:
+    - slack@2.1.0:
         title: Announce on Internal Slack channel
         inputs:
         - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
@@ -134,7 +134,7 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ":rocket:"
-    - slack@2.0.0:
+    - slack@2.1.0:
         title: Announce on Public Slack channel
         inputs:
         - webhook_url: $PUBLIC_SLACK_WEBHOOK_URL

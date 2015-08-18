@@ -106,7 +106,7 @@ But before you close this tab let's put some twist in it, shall we?
 
 As the saying goes: "It's good to know the time, but flooding a conversation with a teammate on [Slack](https://slack.com/) with the current time is the best!"
 
-So our next step will be adding a [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.0.0) Step to notify the chosen teammate about the current time! **Keeping your private informations private is very important for us so we'll use the `.bitrise.secrets.yml` file to store the informations needed to send a message via [Slack](https://slack.com/). Make sure to include the `.bitrise.secrets.yml` file in your `.gitignore` file!** Let's open the file (or create it if there's no `.bitrise.secrets.yml`). The following inputs are needed for running the [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.0.0) Step:
+So our next step will be adding a [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.1.0) Step to notify the chosen teammate about the current time! **Keeping your private informations private is very important for us so we'll use the `.bitrise.secrets.yml` file to store the informations needed to send a message via [Slack](https://slack.com/). Make sure to include the `.bitrise.secrets.yml` file in your `.gitignore` file!** Let's open the file (or create it if there's no `.bitrise.secrets.yml`). The following inputs are needed for running the [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.1.0) Step:
 
 - webhook_url:
 - channel:
@@ -137,5 +137,5 @@ Now that you added the required inputs add the slack Step to the Workflow. When 
           - message: "ISO_DATETIME: ${ISO_DATETIME}"
           - message_on_error: "Whoooooops, There's no time!!!"
 
-You can notice that the [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.0.0) Step contains two message texts. One to send when everything went well and we can send the time and another to send when there was a problem getting the time.
+You can notice that the [slack](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/slack/2.1.0) Step contains two message texts. One to send when everything went well and we can send the time and another to send when there was a problem getting the time.
 Well that's it! Run the workflow and wait for that awesome Slack message! Happy building!
