@@ -21,20 +21,14 @@ func auditStep(step models.StepModel, stepID, version string) error {
 	return nil
 }
 
-func audit(c *cli.Context) {
-	// Input validation
-	collectionURI := c.String(CollectionKey)
-	if collectionURI == "" {
-		log.Fatalln("[STEPMAN] - No step collection specified")
-	}
-
-	if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
+func auditStepLib(gitURI string) error {
+	if exist, err := stepman.RootExistForCollection(gitURI); err != nil {
 		log.Fatal("[STEPMAN] - Failed to check routing:", err)
 	} else if !exist {
-		log.Fatalf("[STEPMAN] - Missing routing for collection, call 'stepman setup -c %s' before audit.", collectionURI)
+		log.Fatalf("[STEPMAN] - Missing routing for collection, call 'stepman setup -c %s' before audit.", gitURI)
 	}
 
-	collection, err := stepman.ReadStepSpec(collectionURI)
+	collection, err := stepman.ReadStepSpec(gitURI)
 	if err != nil {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec (spec.json)")
 	}
@@ -50,5 +44,18 @@ func audit(c *cli.Context) {
 				log.Infof(" * "+colorstring.Greenf("[OK] ")+"Success audit (%s) (%s)", stepID, version)
 			}
 		}
+	}
+	return nil
+}
+
+func audit(c *cli.Context) {
+	// Input validation
+	collectionURI := c.String(CollectionKey)
+	if collectionURI == "" {
+		log.Fatalln("[STEPMAN] - No step collection specified")
+	}
+
+	if err := auditStepLib(collectionURI); err != nil {
+		log.Fatalln("[STEPMAN] - Audit failed %s", err)
 	}
 }

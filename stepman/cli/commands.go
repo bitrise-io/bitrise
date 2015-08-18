@@ -85,6 +85,12 @@ var (
 					},
 				},
 				{
+					Name:    "audit",
+					Aliases: []string{"a"},
+					Usage:   "Validates the step collection.",
+					Action:  shareAudit,
+				},
+				{
 					Name:    "finish",
 					Aliases: []string{"f"},
 					Usage:   "Finish up.",
