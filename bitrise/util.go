@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -211,7 +210,7 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 		return models.BitriseDataModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.BitriseDataModel{}, err
 	}
@@ -233,7 +232,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 		return stepmanModels.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return stepmanModels.StepModel{}, err
 	}
