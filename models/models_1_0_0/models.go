@@ -20,13 +20,17 @@ type BitriseDataModel struct {
 
 // AppModel ...
 type AppModel struct {
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
 }
 
 // WorkflowModel ...
 type WorkflowModel struct {
-	Title        string                              `json:"title" yaml:"title"`
-	Summary      string                              `json:"summary" yaml:"summary"`
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	BeforeRun    []string                            `json:"before_run" yaml:"before_run"`
 	AfterRun     []string                            `json:"after_run" yaml:"after_run"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
