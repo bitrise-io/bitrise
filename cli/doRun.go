@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -29,6 +30,53 @@ const (
 	depManagerBrew     = "brew"
 	depManagerTryCheck = "_"
 )
+
+func printAboutUtilityWorkflos() {
+	log.Infoln("Note about utility workflows:")
+	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
+	log.Infoln(" these can't be triggered directly but can be used by other workflows")
+	log.Infoln(" in the before_run and after_run blocks.")
+}
+
+func printAvailableWorkflows(config models.BitriseDataModel) {
+	workflowNames := []string{}
+	utilityWorkflowNames := []string{}
+
+	for wfName := range config.Workflows {
+		if strings.HasPrefix(wfName, "_") {
+			utilityWorkflowNames = append(utilityWorkflowNames, wfName)
+		} else {
+			workflowNames = append(workflowNames, wfName)
+		}
+	}
+
+	if len(workflowNames) > 0 {
+		log.Infoln("The following workflows are available:")
+		for _, wfName := range workflowNames {
+			log.Infoln(" * " + wfName)
+		}
+
+		fmt.Println()
+		log.Infoln("You can run a selected workflow with:")
+		log.Infoln("-> bitrise run the-workflow-name")
+		fmt.Println()
+	} else {
+		log.Infoln("No workflows are available!")
+	}
+
+	if len(utilityWorkflowNames) > 0 {
+		log.Infoln("The following utility workflows also defined:")
+		for _, wfName := range utilityWorkflowNames {
+			log.Infoln(" * " + wfName)
+		}
+
+		fmt.Println()
+		printAboutUtilityWorkflos()
+		fmt.Println()
+	}
+
+	os.Exit(1)
+}
 
 // GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
@@ -408,7 +456,7 @@ func doRun(c *cli.Context) {
 	// Workflow selection
 	workflowToRunName := ""
 	if len(c.Args()) < 1 {
-		log.Infoln("No workfow specified!")
+		log.Errorln("No workfow specified!")
 	} else {
 		workflowToRunName = c.Args()[0]
 	}
@@ -447,14 +495,7 @@ func doRun(c *cli.Context) {
 	if workflowToRunName == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
-		log.Infoln("The following workflows are available:")
-		for wfName := range bitriseConfig.Workflows {
-			log.Infoln(" * " + wfName)
-		}
-		fmt.Println()
-		log.Infoln("You can run a selected workflow with:")
-		log.Infoln("-> bitrise run the-workflow-name")
-		os.Exit(1)
+		printAvailableWorkflows(bitriseConfig)
 	}
 
 	// App level environment
@@ -464,8 +505,22 @@ func doRun(c *cli.Context) {
 	if !exist {
 		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+workflowToRunName+") does not exist!"))
 	}
+
+	if strings.HasPrefix(workflowToRunName, "_") {
+		log.Error("Utility workflows can't be triggered directly")
+		fmt.Println()
+		printAboutUtilityWorkflos()
+		os.Exit(1)
+	}
+
 	if workflowToRun.Title == "" {
 		workflowToRun.Title = workflowToRunName
+	}
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", workflowToRunName); err != nil {
+		log.Fatal("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env:", err)
+	}
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", workflowToRun.Title); err != nil {
+		log.Fatal("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env:", err)
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
