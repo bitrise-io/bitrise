@@ -145,7 +145,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	stepCmd := stepDir + "/" + "step.sh"
 	log.Debug("OUTPUT:")
 	cmd := []string{"bash", stepCmd}
-	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitrise.BitriseWorkStepsDirPath, cmd, "panic"); err != nil {
+	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitrise.CurrentDir, cmd, "panic"); err != nil {
 		return exit, []envmanModels.EnvironmentItemModel{}, err
 	}
 
