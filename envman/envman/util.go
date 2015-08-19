@@ -97,6 +97,9 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if opts.Description != nil && *opts.Description == "" {
 		opts.Description = nil
 	}
+	if opts.Summary != nil && *opts.Summary == "" {
+		opts.Summary = nil
+	}
 	if opts.IsRequired != nil && *opts.IsRequired == models.DefaultIsRequired {
 		opts.IsRequired = nil
 	}
@@ -128,6 +131,9 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 			hasOptions = true
 		}
 		if opts.Description != nil {
+			hasOptions = true
+		}
+		if opts.Summary != nil {
 			hasOptions = true
 		}
 		if len(opts.ValueOptions) > 0 {
