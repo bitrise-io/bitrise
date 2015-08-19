@@ -10,21 +10,6 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-// Normalize ...
-func (config *BitriseDataModel) Normalize() error {
-	for _, workflow := range config.Workflows {
-		if err := workflow.Normalize(); err != nil {
-			return err
-		}
-	}
-	for _, env := range config.App.Environments {
-		if err := env.Normalize(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
 		if t == title {
@@ -81,6 +66,21 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 
 	workflowStack = removeWorkflowName(workflowID, workflowStack)
 
+	return nil
+}
+
+// Normalize ...
+func (config *BitriseDataModel) Normalize() error {
+	for _, workflow := range config.Workflows {
+		if err := workflow.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, env := range config.App.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -185,37 +185,25 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 		return err
 	}
 	if otherOptions.Title != nil {
-		if options.Title == nil {
-			options.Title = new(string)
-		}
-		*options.Title = *otherOptions.Title
+		options.Title = pointers.NewStringPtr(*otherOptions.Title)
 	}
 	if otherOptions.Description != nil {
-		if options.Description == nil {
-			options.Description = new(string)
-		}
-		*options.Description = *otherOptions.Description
+		options.Description = pointers.NewStringPtr(*otherOptions.Description)
+	}
+	if otherOptions.Summary != nil {
+		options.Summary = pointers.NewStringPtr(*otherOptions.Summary)
 	}
 	if len(otherOptions.ValueOptions) > 0 {
 		options.ValueOptions = otherOptions.ValueOptions
 	}
 	if otherOptions.IsRequired != nil {
-		if options.IsRequired == nil {
-			options.IsRequired = new(bool)
-		}
-		*options.IsRequired = *otherOptions.IsRequired
+		options.IsRequired = pointers.NewBoolPtr(*otherOptions.IsRequired)
 	}
 	if otherOptions.IsExpand != nil {
-		if options.IsExpand == nil {
-			options.IsExpand = new(bool)
-		}
-		*options.IsExpand = *otherOptions.IsExpand
+		options.IsExpand = pointers.NewBoolPtr(*otherOptions.IsExpand)
 	}
 	if otherOptions.IsDontChangeValue != nil {
-		if options.IsDontChangeValue == nil {
-			options.IsDontChangeValue = new(bool)
-		}
-		*options.IsDontChangeValue = *otherOptions.IsDontChangeValue
+		options.IsDontChangeValue = pointers.NewBoolPtr(*otherOptions.IsDontChangeValue)
 	}
 	(*env)[envmanModels.OptionsKey] = options
 	return nil

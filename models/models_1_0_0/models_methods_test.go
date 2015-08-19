@@ -24,6 +24,7 @@ const (
 
 	testTitle       = "test_title"
 	testDescription = "test_description"
+	testSummary     = "test_summary"
 	testTrue        = true
 	testFalse       = false
 )
@@ -51,6 +52,7 @@ func TestMergeEnvironmentWith(t *testing.T) {
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testFalse),
@@ -93,6 +95,9 @@ func TestMergeEnvironmentWith(t *testing.T) {
 	if *options.Description != *diffOptions.Description {
 		t.Fatal("Failed to merge Description")
 	}
+	if *options.Summary != *diffOptions.Summary {
+		t.Fatal("Failed to merge Summary")
+	}
 	if len(options.ValueOptions) != len(diffOptions.ValueOptions) {
 		t.Fatal("Failed to merge ValueOptions")
 	}
@@ -109,19 +114,19 @@ func TestMergeEnvironmentWith(t *testing.T) {
 
 func TestMergeStepWith(t *testing.T) {
 	desc := "desc 1"
+	summ := "sum 1"
 	website := "web/1"
 	fork := "fork/1"
 
-	defaultTrue := true
-
 	stepData := stepmanModels.StepModel{
 		Description:         pointers.NewStringPtr(desc),
+		Summary:             pointers.NewStringPtr(summ),
 		Website:             pointers.NewStringPtr(website),
 		SourceCodeURL:       pointers.NewStringPtr(fork),
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
-		IsRequiresAdminUser: pointers.NewBoolPtr(defaultTrue),
+		IsRequiresAdminUser: pointers.NewBoolPtr(true),
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
 				"KEY_1": "Value 1",
@@ -166,6 +171,18 @@ func TestMergeStepWith(t *testing.T) {
 
 	if *mergedStepData.Title != "name 2" {
 		t.Fatal("mergedStepData.Title incorrectly converted:", *mergedStepData.Title)
+	}
+	if *mergedStepData.Description != "desc 1" {
+		t.Fatal("mergedStepData.Description incorrectly converted:", *mergedStepData.Description)
+	}
+	if *mergedStepData.Summary != "sum 1" {
+		t.Fatal("mergedStepData.Summary incorrectly converted:", *mergedStepData.Summary)
+	}
+	if *mergedStepData.Website != "web/1" {
+		t.Fatal("mergedStepData.Website incorrectly converted:", *mergedStepData.Website)
+	}
+	if *mergedStepData.SourceCodeURL != "fork/1" {
+		t.Fatal("mergedStepData.SourceCodeURL incorrectly converted:", *mergedStepData.SourceCodeURL)
 	}
 	if mergedStepData.HostOsTags[0] != "linux" {
 		t.Fatal("mergedStepData.HostOsTags incorrectly converted:", mergedStepData.HostOsTags)

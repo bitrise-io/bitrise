@@ -15,6 +15,7 @@ var (
 	testValue2       = "test_value2"
 	testTitle        = "test_title"
 	testDescription  = "test_description"
+	testSummary      = "test_summary"
 	testValueOptions = []string{testKey2, testValue2}
 	testTrue         = true
 	testFalse        = false
@@ -27,6 +28,7 @@ func TestGetKeyValuePair(t *testing.T) {
 		OptionsKey: EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testFalse),
@@ -211,6 +213,7 @@ func TestNormalize(t *testing.T) {
 		OptionsKey: map[interface{}]interface{}{
 			"title":         testTitle,
 			"description":   testDescription,
+			"summary":       testSummary,
 			"value_options": testValueOptions,
 			"is_required":   testTrue,
 		},
@@ -232,6 +235,9 @@ func TestNormalize(t *testing.T) {
 	if opts.Description == nil || *opts.Description != testDescription {
 		t.Fatal("Description is nil, or not correct")
 	}
+	if opts.Summary == nil || *opts.Summary != testSummary {
+		t.Fatal("Summary is nil, or not correct")
+	}
 	if len(opts.ValueOptions) != len(testValueOptions) {
 		t.Fatal("ValueOptions element num is not correct, or not correct")
 	}
@@ -245,6 +251,7 @@ func TestNormalize(t *testing.T) {
 		OptionsKey: EnvironmentItemOptionsModel{
 			Title:        pointers.NewStringPtr(testTitle),
 			Description:  pointers.NewStringPtr(testDescription),
+			Summary:      pointers.NewStringPtr(testSummary),
 			ValueOptions: testValueOptions,
 			IsRequired:   pointers.NewBoolPtr(testTrue),
 		},
@@ -265,6 +272,9 @@ func TestNormalize(t *testing.T) {
 	}
 	if opts.Description == nil || *opts.Description != testDescription {
 		t.Fatal("Description is nil, or not correct")
+	}
+	if opts.Summary == nil || *opts.Summary != testSummary {
+		t.Fatal("Summary is nil, or not correct")
 	}
 	if len(opts.ValueOptions) != len(testValueOptions) {
 		t.Fatal("ValueOptions element num is not correct")
@@ -293,6 +303,9 @@ func TestNormalize(t *testing.T) {
 	}
 	if opts.Description != nil {
 		t.Fatal("Description is not nil")
+	}
+	if opts.Summary != nil {
+		t.Fatal("Summary is not nil")
 	}
 	if len(opts.ValueOptions) != 0 {
 		t.Fatal("ValueOptions element num is not correct")
@@ -323,6 +336,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	if opts.Description == nil || *opts.Description != "" {
 		t.Fatal("Failed to fill Description default value")
 	}
+	if opts.Summary == nil || *opts.Summary != "" {
+		t.Fatal("Failed to fill Summary default value")
+	}
 	if opts.IsRequired == nil || *opts.IsRequired != DefaultIsRequired {
 		t.Fatal("Failed to fill IsRequired default value")
 	}
@@ -339,6 +355,7 @@ func TestFillMissingDefaults(t *testing.T) {
 		OptionsKey: EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testTrue),
@@ -360,6 +377,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	if opts.Description == nil || *opts.Description != testDescription {
 		t.Fatal("Description is nil, or not correct")
 	}
+	if opts.Summary == nil || *opts.Summary != testSummary {
+		t.Fatal("Summary is nil, or not correct")
+	}
 	if len(opts.ValueOptions) != len(testValueOptions) {
 		t.Fatal("ValueOptions element num is not correct")
 	}
@@ -380,6 +400,7 @@ func TestValidate(t *testing.T) {
 		OptionsKey: EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testTrue),
