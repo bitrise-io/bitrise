@@ -13,21 +13,6 @@ import (
 // Test - Bitrise activateAndRunWorkflow
 // If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
-	// Envman setup
-	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.OutputEnvstorePath); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv(bitrise.EnvstorePathEnvKey); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
-
-	if err := bitrise.EnvmanInit(); err != nil {
-		t.Fatal(err)
-	}
-
 	workflow := models.WorkflowModel{}
 
 	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
@@ -53,7 +38,7 @@ func Test0Steps1Workflows(t *testing.T) {
 		FormatVersion:        "1.0.0",
 		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 		Workflows: map[string]models.WorkflowModel{
-			"zero_steps": models.WorkflowModel{},
+			"zero_steps": workflow,
 		},
 	}
 
@@ -64,7 +49,8 @@ func Test0Steps1Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	if len(buildRunResults.SuccessSteps) != 0 {
 		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
 	}
@@ -348,13 +334,13 @@ func Test3Workflows(t *testing.T) {
     after2:
       steps:
       - script:
-          title: Should skipped
+          title: Should be skipped
   `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -362,10 +348,8 @@ func Test3Workflows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -412,7 +396,7 @@ func TestRefeneceCycle(t *testing.T) {
   `
 	_, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err == nil {
-		t.Fatal("Should found workflow reference cycle")
+		t.Fatal("Should find workflow reference cycle")
 	}
 }
 
@@ -506,7 +490,7 @@ func TestBuildStatusEnv(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -514,10 +498,8 @@ func TestBuildStatusEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run results: %#v\n", buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
@@ -581,7 +563,7 @@ func TestFail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -589,11 +571,9 @@ func TestFail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
-	t.Log("Buil run results:", buildRunResults)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
+	t.Log("Build run results:", buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -634,7 +614,7 @@ func TestSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -642,10 +622,8 @@ func TestSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	if len(buildRunResults.SuccessSteps) != 1 {
 		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
 	}
@@ -709,7 +687,7 @@ func TestBuildFailedMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -717,11 +695,8 @@ func TestBuildFailedMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 2 {
 		t.Fatalf("Skipped step count (%d), should be (2)", len(buildRunResults.SkippedSteps))
@@ -790,7 +765,7 @@ func TestWorkflowEnvironments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -798,11 +773,8 @@ func TestWorkflowEnvironments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -870,7 +842,7 @@ workflows:
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -878,12 +850,8 @@ workflows:
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -939,7 +907,7 @@ workflows:
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -947,12 +915,8 @@ workflows:
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -1010,7 +974,7 @@ workflows:
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["target"]
+	_, found := config.Workflows["target"]
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
@@ -1018,12 +982,8 @@ workflows:
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -1088,7 +1048,7 @@ workflows:
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow, found := config.Workflows["out-test"]
+	_, found := config.Workflows["out-test"]
 	if !found {
 		t.Fatal("No workflow found with ID (out-test)")
 	}
@@ -1096,12 +1056,8 @@ workflows:
 		t.Fatal(err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
-	}
-
-	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
+	t.Log("Err: ", err)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
 		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
@@ -1125,11 +1081,11 @@ workflows:
 	}
 
 	// standard, Build Status ENV test
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
 		t.Log("BITRISE_BUILD_STATUS:", status)
 		t.Fatal("BUILD_STATUS envs are incorrect")
 	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
 		t.Log("STEPLIB_BUILD_STATUS:", status)
 		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}

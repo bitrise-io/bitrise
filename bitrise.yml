@@ -182,3 +182,13 @@ workflows:
   noop:
     description: |-
       Empty workflow, for quick testing.
+  fail-test:
+    description: |-
+      Fails.
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            exit 2

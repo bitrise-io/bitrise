@@ -420,7 +420,14 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 	return buildRunResults
 }
 
-func run(startTime time.Time, workflowToRunName string, bitriseConfig models.BitriseDataModel, secretEnvironments []envmanModels.EnvironmentItemModel) {
+func runWorkflowWithConfiguration(startTime time.Time, workflowToRunName string,
+	bitriseConfig models.BitriseDataModel, secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
+
+	if err := bitrise.InitPaths(); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to initialize required paths: %s", err)
+	}
+
+	//
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
 		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+workflowToRunName+") does not exist!"))
@@ -447,10 +454,10 @@ func run(startTime time.Time, workflowToRunName string, bitriseConfig models.Bit
 	environments := append(bitriseConfig.App.Environments, secretEnvironments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", workflowToRunName); err != nil {
-		log.Fatal("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env:", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
 	}
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", workflowToRun.Title); err != nil {
-		log.Fatal("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env:", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -466,12 +473,12 @@ func run(startTime time.Time, workflowToRunName string, bitriseConfig models.Bit
 	// Build finished
 	bitrise.PrintSummary(buildRunResults)
 	if len(buildRunResults.FailedSteps) > 0 {
-		log.Fatal("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
-	} else {
-		if len(buildRunResults.FailedSkippableSteps) > 0 {
-			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
-		}
+		return buildRunResults, errors.New("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
 	}
+	if len(buildRunResults.FailedSkippableSteps) > 0 {
+		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
+	}
+	return buildRunResults, nil
 }
 
 func doRun(c *cli.Context) {
@@ -560,5 +567,7 @@ func doRun(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	run(startTime, workflowToRunName, bitriseConfig, secretEnvironments)
+	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunName, bitriseConfig, secretEnvironments); err != nil {
+		log.Fatalln("Error: ", err)
+	}
 }

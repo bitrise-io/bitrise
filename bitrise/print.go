@@ -138,7 +138,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 
 		fmt.Println()
 		if failedStepCount > 0 {
-			log.Fatal("FINISHED but a couple of steps failed - Ouch")
+			log.Error("FINISHED but a couple of steps failed - Ouch")
 		} else {
 			log.Info("DONE - Congrats!!")
 			if failedSkippableStepCount > 0 {
