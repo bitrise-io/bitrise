@@ -273,8 +273,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepDir := bitrise.BitriseWorkStepsDirPath
 		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
 
-		// Old steps aren't mergeable and it's not required (old step's yml contains all information)
-		requireMerge := true
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 			stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
@@ -307,7 +305,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		} else if stepIDData.SteplibSource == "_" {
 			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
-			requireMerge = false
+			// Steplib independent steps are completly defined in workflow
+			stepYMLPth = ""
 
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
@@ -332,7 +331,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		mergedStep := workflowStep
-		if requireMerge {
+		if stepYMLPth != "" {
 			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 			log.Debugf("Spec read from YML: %#v\n", specStep)
 			if err != nil {
