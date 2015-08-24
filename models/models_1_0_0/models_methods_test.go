@@ -474,4 +474,23 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	if stepIDData.Version != "develop" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
 	}
+
+	//
+	// ----- Old step
+	stepCompositeIDString = "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0"
+	t.Log("OLD-STEP - stepCompositeIDString: ", stepCompositeIDString)
+	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
+	if err != nil {
+		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
+	}
+	t.Logf("stepIDData:%#v", stepIDData)
+	if stepIDData.SteplibSource != "_" {
+		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
+	}
+	if stepIDData.IDorURI != "https://github.com/bitrise-io/steps-timestamp.git" {
+		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
+	}
+	if stepIDData.Version != "1.0.0" {
+		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
 }
