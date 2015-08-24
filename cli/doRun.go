@@ -271,7 +271,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		stepDir := bitrise.BitriseWorkStepsDirPath
-		stepYMLPth := path.Join(bitrise.BitriseWorkDirPath + "current_step.yml")
+		stepYMLPth := path.Join(bitrise.BitriseWorkDirPath, "current_step.yml")
 
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
