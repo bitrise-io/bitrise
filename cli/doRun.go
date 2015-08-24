@@ -84,7 +84,7 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
-		bitriseConfigPath = bitrise.CurrentDir + "/" + DefaultBitriseConfigFileName
+		bitriseConfigPath = path.Join(bitrise.CurrentDir, DefaultBitriseConfigFileName)
 
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			return "", err
@@ -142,7 +142,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Run step
-	stepCmd := stepDir + "/" + "step.sh"
+	stepCmd := path.Join(stepDir, "step.sh")
 	log.Debug("OUTPUT:")
 	cmd := []string{"bash", stepCmd}
 	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitrise.CurrentDir, cmd, "panic"); err != nil {
@@ -271,7 +271,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		stepDir := bitrise.BitriseWorkStepsDirPath
-		stepYMLPth := bitrise.BitriseWorkDirPath + "/current_step.yml"
+		stepYMLPth := path.Join(bitrise.BitriseWorkDirPath + "current_step.yml")
 
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
@@ -287,7 +287,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-			if err := cmdex.CopyFile(stepAbsLocalPth+"/step.yml", stepYMLPth); err != nil {
+
+			if err := cmdex.CopyFile(path.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
@@ -298,7 +299,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := cmdex.CopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
+			if err := cmdex.CopyFile(path.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
@@ -445,7 +446,7 @@ func doRun(c *cli.Context) {
 	inventoryPath := c.String(InventoryKey)
 	if inventoryPath == "" {
 		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = bitrise.CurrentDir + "/" + DefaultSecretsFileName
+		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path: "+err.Error()))

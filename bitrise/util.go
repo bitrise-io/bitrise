@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -81,7 +82,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
-	stepYMLPth := BitriseWorkDirPath + "/current_step.yml"
+	stepYMLPth := path.Join(BitriseWorkDirPath, "current_step.yml")
 	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
