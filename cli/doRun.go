@@ -420,60 +420,14 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 	return buildRunResults
 }
 
-func doRun(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt(c.App.Version)
-	log.Debugln("[BITRISE_CLI] - Run")
-
-	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
-		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
-		if err := bitrise.RunSetup(c.App.Version, false); err != nil {
-			log.Fatalln("Setup failed:", err)
-		}
+func run(startTime time.Time, workflowToRunName string, bitriseConfig models.BitriseDataModel, secretEnvironments []envmanModels.EnvironmentItemModel) {
+	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
+	if !exist {
+		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+workflowToRunName+") does not exist!"))
 	}
 
-	startTime := time.Now()
-
-	// Input validation
-	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
-	if err != nil {
-		bitrise.PrintBuildFailedFatal(startTime, fmt.Errorf("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: %s", err))
-	}
-	if bitriseConfigPath == "" {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: empty bitriseConfigPath"))
-	}
-
-	secretEnvironments := []envmanModels.EnvironmentItemModel{}
-	inventoryPath := c.String(InventoryKey)
-	if inventoryPath == "" {
-		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
-
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path: "+err.Error()))
-		} else if !exist {
-			log.Debugln("[BITRISE_CLI] - No inventory yml found")
-			inventoryPath = ""
-		}
-	} else {
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path: "+err.Error()))
-		} else if !exist {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - No inventory yml found"))
-		}
-	}
-	if inventoryPath != "" {
-		secretEnvironments, err = bitrise.CollectEnvironmentsFromFile(inventoryPath)
-		if err != nil {
-			bitrise.PrintBuildFailedFatal(startTime, errors.New("Invalid invetory format: "+err.Error()))
-		}
-	}
-
-	// Workflow selection
-	workflowToRunName := ""
-	if len(c.Args()) < 1 {
-		log.Errorln("No workfow specified!")
-	} else {
-		workflowToRunName = c.Args()[0]
+	if workflowToRun.Title == "" {
+		workflowToRun.Title = workflowToRunName
 	}
 
 	// Envman setup
@@ -489,48 +443,9 @@ func doRun(c *cli.Context) {
 		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to run envman init"))
 	}
 
-	// Run workflow
-	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-	if err != nil {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to read Workflow: "+err.Error()))
-	}
-
-	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(c.App.Version, bitriseConfig.FormatVersion)
-	if err != nil {
-		log.Warn("bitrise CLI version: ", c.App.Version)
-		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
-		log.Fatalln("Failed to compare bitrise CLI's version with the bitrise.yml FormatVersion: ", err)
-	}
-	if !isConfigVersionOK {
-		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI's version (%s).", bitriseConfig.FormatVersion, c.App.Version)
-		log.Fatalln("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
-	}
-
-	// Check workflow
-	if workflowToRunName == "" {
-		// no workflow specified
-		//  list all the available ones and then exit
-		printAvailableWorkflows(bitriseConfig)
-	}
-
 	// App level environment
 	environments := append(bitriseConfig.App.Environments, secretEnvironments...)
 
-	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
-	if !exist {
-		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Specified Workflow ("+workflowToRunName+") does not exist!"))
-	}
-
-	if strings.HasPrefix(workflowToRunName, "_") {
-		log.Error("Utility workflows can't be triggered directly")
-		fmt.Println()
-		printAboutUtilityWorkflos()
-		os.Exit(1)
-	}
-
-	if workflowToRun.Title == "" {
-		workflowToRun.Title = workflowToRunName
-	}
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", workflowToRunName); err != nil {
 		log.Fatal("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env:", err)
 	}
@@ -557,4 +472,93 @@ func doRun(c *cli.Context) {
 			log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
 		}
 	}
+}
+
+func doRun(c *cli.Context) {
+	PrintBitriseHeaderASCIIArt(c.App.Version)
+	log.Debugln("[BITRISE_CLI] - Run")
+
+	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
+		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
+		if err := bitrise.RunSetup(c.App.Version, false); err != nil {
+			log.Fatalln("Setup failed:", err)
+		}
+	}
+
+	startTime := time.Now()
+
+	// Input validation
+	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+	if err != nil {
+		bitrise.PrintBuildFailedFatal(startTime, fmt.Errorf("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: %s", err))
+	}
+	if bitriseConfigPath == "" {
+		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: empty bitriseConfigPath"))
+	}
+
+	secretEnvironments := []envmanModels.EnvironmentItemModel{}
+	inventoryPath := c.String(InventoryKey)
+
+	// Workflow selection
+	workflowToRunName := ""
+	if len(c.Args()) < 1 {
+		log.Errorln("No workfow specified!")
+	} else {
+		workflowToRunName = c.Args()[0]
+	}
+
+	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+	if err != nil {
+		bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to read Workflow: "+err.Error()))
+	}
+
+	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(c.App.Version, bitriseConfig.FormatVersion)
+	if err != nil {
+		log.Warn("bitrise CLI version: ", c.App.Version)
+		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
+		log.Fatalln("Failed to compare bitrise CLI's version with the bitrise.yml FormatVersion: ", err)
+	}
+	if !isConfigVersionOK {
+		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI's version (%s).", bitriseConfig.FormatVersion, c.App.Version)
+		log.Fatalln("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+	}
+
+	if inventoryPath == "" {
+		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
+		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
+
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
+			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path: "+err.Error()))
+		} else if !exist {
+			log.Debugln("[BITRISE_CLI] - No inventory yml found")
+			inventoryPath = ""
+		}
+	} else {
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
+			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - Failed to check path: "+err.Error()))
+		} else if !exist {
+			bitrise.PrintBuildFailedFatal(startTime, errors.New("[BITRISE_CLI] - No inventory yml found"))
+		}
+	}
+	if inventoryPath != "" {
+		secretEnvironments, err = bitrise.CollectEnvironmentsFromFile(inventoryPath)
+		if err != nil {
+			bitrise.PrintBuildFailedFatal(startTime, errors.New("Invalid invetory format: "+err.Error()))
+		}
+	}
+
+	// Check workflow
+	if workflowToRunName == "" {
+		// no workflow specified
+		//  list all the available ones and then exit
+		printAvailableWorkflows(bitriseConfig)
+	}
+	if strings.HasPrefix(workflowToRunName, "_") {
+		log.Error("Utility workflows can't be triggered directly")
+		fmt.Println()
+		printAboutUtilityWorkflos()
+		os.Exit(1)
+	}
+
+	run(startTime, workflowToRunName, bitriseConfig, secretEnvironments)
 }
