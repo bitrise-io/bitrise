@@ -75,6 +75,12 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
 			envSerModel.Description = pointers.NewStringPtr(castedValue)
+		case "summary":
+			castedValue, ok := value.(string)
+			if !ok {
+				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+			}
+			envSerModel.Summary = pointers.NewStringPtr(castedValue)
 		case "value_options":
 			castedValue, ok := value.([]string)
 			if !ok {
@@ -186,6 +192,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	}
 	if options.Description == nil {
 		options.Description = pointers.NewStringPtr("")
+	}
+	if options.Summary == nil {
+		options.Summary = pointers.NewStringPtr("")
 	}
 	if options.IsRequired == nil {
 		options.IsRequired = pointers.NewBoolPtr(DefaultIsRequired)
