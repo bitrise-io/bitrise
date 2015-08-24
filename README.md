@@ -43,3 +43,7 @@ not yet committed into a repository, or from a repository directly.
 If you would like to share your awesome Step with others
 you can do so by calling `stepman share` and then following the
 guide it prints.
+
+## Documentation
+
+We added some documents to make it a bit easier to get started with Bitrise CLI. The documentation includes a quick and a little longer guides for CLI, a [React Native](http://facebook.github.io/react-native/) project workflow guide and an overview of the Step share process. You can find them in the [_docs](/_docs/) folder.
