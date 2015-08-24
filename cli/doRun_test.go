@@ -7,17 +7,47 @@ import (
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	envmanModels "github.com/bitrise-io/envman/models"
 )
 
+// Test - Bitrise activateAndRunWorkflow
+// If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
+	// Envman setup
+	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.OutputEnvstorePath); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv(bitrise.EnvstorePathEnvKey); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
+
+	if err := bitrise.EnvmanInit(); err != nil {
+		t.Fatal(err)
+	}
+
 	workflow := models.WorkflowModel{}
 
 	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
@@ -34,7 +64,7 @@ func Test0Steps1Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	if len(buildRunResults.SuccessSteps) != 0 {
 		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
 	}
@@ -58,13 +88,27 @@ func Test0Steps1Workflows(t *testing.T) {
 	}
 }
 
+// Test - Bitrise activateAndRunWorkflow
+// Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 
 	beforeWorkflow := models.WorkflowModel{}
 	afterWorkflow := models.WorkflowModel{}
@@ -91,7 +135,7 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	if len(buildRunResults.SuccessSteps) != 0 {
 		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
 	}
@@ -115,13 +159,27 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	}
 }
 
+// Test - Bitrise Validate workflow
+// Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
 
 	beforeWorkflow := models.WorkflowModel{
 		BeforeRun: []string{"target"},
@@ -158,6 +216,8 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 	}
 }
 
+// Test - Bitrise activateAndRunWorkflow
+// Trivial test with 1 workflow
 func Test1Workflows(t *testing.T) {
 	configStr := `
   format_version: 1.0.0
@@ -206,7 +266,7 @@ func Test1Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -230,6 +290,8 @@ func Test1Workflows(t *testing.T) {
 	}
 }
 
+// Test - Bitrise activateAndRunWorkflow
+// Trivial test with before, after workflows
 func Test3Workflows(t *testing.T) {
 	configStr := `
   format_version: 1.0.0
@@ -303,7 +365,7 @@ func Test3Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -327,6 +389,8 @@ func Test3Workflows(t *testing.T) {
 	}
 }
 
+// Test - Bitrise ConfigModelFromYAMLBytes
+// Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func TestRefeneceCycle(t *testing.T) {
 	configStr := `
   format_version: 1.0.0
@@ -352,6 +416,8 @@ func TestRefeneceCycle(t *testing.T) {
 	}
 }
 
+// Test - Bitrise BuildStatusEnv
+// Checks if BuildStatusEnv is set correctly
 func TestBuildStatusEnv(t *testing.T) {
 	configStr := `
   format_version: 1.0.0
@@ -451,7 +517,7 @@ func TestBuildStatusEnv(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	t.Logf("Build run results: %#v\n", buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
@@ -476,6 +542,8 @@ func TestBuildStatusEnv(t *testing.T) {
 	}
 }
 
+// Test - Bitrise activateAndRunWorkflow
+// Trivial fail test
 func TestFail(t *testing.T) {
 	configStr := `
     format_version: 1.0.0
@@ -524,7 +592,7 @@ func TestFail(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	t.Log("Buil run results:", buildRunResults)
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
@@ -549,6 +617,8 @@ func TestFail(t *testing.T) {
 	}
 }
 
+// Test - Bitrise activateAndRunWorkflow
+// Trivial success test
 func TestSuccess(t *testing.T) {
 	configStr := `
     format_version: 1.0.0
@@ -575,7 +645,7 @@ func TestSuccess(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	if len(buildRunResults.SuccessSteps) != 1 {
 		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
 	}
@@ -599,6 +669,8 @@ func TestSuccess(t *testing.T) {
 	}
 }
 
+// Test - Bitrise BuildStatusEnv
+// Checks if BuildStatusEnv is set correctly
 func TestBuildFailedMode(t *testing.T) {
 	configStr := `
   format_version: 1.0.0
@@ -649,7 +721,7 @@ func TestBuildFailedMode(t *testing.T) {
 		StartTime: time.Now(),
 	}
 
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 2 {
 		t.Fatalf("Skipped step count (%d), should be (2)", len(buildRunResults.SkippedSteps))
@@ -669,6 +741,308 @@ func TestBuildFailedMode(t *testing.T) {
 		t.Fatal("BUILD_STATUS envs are incorrect")
 	}
 	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+// Test - Bitrise Environments
+// Trivial test for workflow environment handling
+// Before workflows env should be visible in target and after workflow
+func TestWorkflowEnvironments(t *testing.T) {
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+  workflows:
+    before:
+      envs:
+      - BEFORE_ENV: beforeenv
+
+    target:
+      title: target
+      before_run:
+      - before
+      after_run:
+      - after
+      steps:
+      - script:
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
+                exit 1
+              fi
+
+    after:
+      steps:
+      - script:
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
+                exit 1
+              fi
+    `
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	t.Logf("Build run result: %#v", buildRunResults)
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+	if len(buildRunResults.SuccessSteps) != 2 {
+		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+// Test - Bitrise Environments
+// Test for same env in before and target workflow, actual workflow should overwrite environemnt and use own value
+func TestWorkflowEnvironmentOverWrite(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before:
+    envs:
+    - ENV: env1
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo ${ENV}
+            if [[ "$ENV" != "env1" ]] ; then
+              exit 1
+            fi
+
+  target:
+    title: target
+    envs:
+    - ENV: env2
+    before_run:
+    - before
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo ${ENV}
+            if [[ "$ENV" != "env2" ]] ; then
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	t.Logf("Build run result: %#v", buildRunResults)
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+	if len(buildRunResults.SuccessSteps) != 2 {
+		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+// Test - Bitrise Environments
+// Target workflows env should be visible in before and after workflow
+func TestTargetDefinedWorkflowEnvironment(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo ${ENV}
+            if [[ "$ENV" != "targetenv" ]] ; then
+              exit 3
+            fi
+
+  target:
+    title: target
+    envs:
+    - ENV: targetenv
+    before_run:
+    - before
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	t.Logf("Build run result: %#v", buildRunResults)
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+	if len(buildRunResults.SuccessSteps) != 1 {
+		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+// Test - Bitrise Environments
+// Step input should visible only for actual step and invisible for other steps
+func TestStepInputEnvironment(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before:
+    steps:
+    - script:
+        inputs:
+        - working_dir: $HOME
+
+  target:
+    title: target
+    before_run:
+    - before
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo ${ENV}
+            if [ ! -z "$working_dir" ] ; then
+              exit 3
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["target"]
+	if !found {
+		t.Fatal("No workflow found with title (target)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	t.Logf("Build run result: %#v", buildRunResults)
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+	if len(buildRunResults.SuccessSteps) != 2 {
+		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 0 {
+		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
+	}
+
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
 		t.Log("STEPLIB_BUILD_STATUS:", status)
 		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
 	}

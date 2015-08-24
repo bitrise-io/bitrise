@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -19,6 +19,33 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
+
+// CollectEnvironmentsFromFile ...
+func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, err
+	}
+
+	var envstore envmanModels.EnvsYMLModel
+	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
+		return []envmanModels.EnvironmentItemModel{}, err
+	}
+
+	for _, env := range envstore.Envs {
+		if err := env.Normalize(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+		if err := env.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+		if err := env.Validate(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+	}
+
+	return envstore.Envs, nil
+}
 
 // ExportEnvironmentsList ...
 func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error {
@@ -36,7 +63,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 		}
 
 		if value != "" {
-			if err := RunEnvmanAdd(key, value, *opts.IsExpand); err != nil {
+			if err := EnvmanAdd(InputEnvstorePath, key, value, *opts.IsExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -47,7 +74,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
-	stepYMLPth := BitriseWorkDirPath + "/current_step.yml"
+	stepYMLPth := path.Join(BitriseWorkDirPath, "current_step.yml")
 	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
@@ -57,6 +84,22 @@ func CleanupStepWorkDir() error {
 		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
 	}
 	return nil
+}
+
+// GetBuildFailedEnvironments ...
+func GetBuildFailedEnvironments(failed bool) []string {
+	statusStr := "0"
+	if failed {
+		statusStr = "1"
+	}
+
+	environments := []string{}
+	steplibBuildStatusEnv := "STEPLIB_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, steplibBuildStatusEnv)
+
+	bitriseBuildStatusEnv := "BITRISE_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, bitriseBuildStatusEnv)
+	return environments
 }
 
 // SetBuildFailedEnv ...
@@ -160,7 +203,7 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
 		return models.BitriseDataModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.BitriseDataModel{}, err
 	}
@@ -182,7 +225,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 		return stepmanModels.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
 	}
 
-	bytes, err := ioutil.ReadFile(pth)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return stepmanModels.StepModel{}, err
 	}

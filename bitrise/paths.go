@@ -10,8 +10,10 @@ import (
 )
 
 var (
-	// EnvstorePath ...
-	EnvstorePath string
+	// InputEnvstorePath ...
+	InputEnvstorePath string
+	// OutputEnvstorePath ...
+	OutputEnvstorePath string
 	// FormattedOutputPath ...
 	FormattedOutputPath string
 	// BitriseWorkDirPath ...
@@ -64,11 +66,17 @@ func init() {
 		log.Fatal("Failed to init bitrise paths:", err)
 	}
 
-	envstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "envstore.yml"))
+	inputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "input_envstore.yml"))
 	if err != nil {
 		log.Fatal("Failed to set envstore path:", err)
 	}
-	EnvstorePath = envstorePath
+	InputEnvstorePath = inputEnvstorePath
+
+	outputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "output_envstore.yml"))
+	if err != nil {
+		log.Fatal("Failed to set envstore path:", err)
+	}
+	OutputEnvstorePath = outputEnvstorePath
 
 	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formout.md"))
 	if err != nil {

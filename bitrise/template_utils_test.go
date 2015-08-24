@@ -237,3 +237,79 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 		t.Fatal("Invalid result")
 	}
 }
+
+func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
+	defer func() {
+		// env cleanup
+		if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+		if err := os.Unsetenv(CIModeEnvKey); err != nil {
+			t.Error("Failed to unset environment: ", err)
+		}
+	}()
+
+	buildRes := models.BuildRunResultsModel{}
+
+	propTempCont := `not .IsPR | and (not .IsCI)`
+	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
+	isYes, err := EvaluateStepTemplateToBool(propTempCont, buildRes)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `not .IsPR | and .IsCI`
+	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `not .IsPR | and .IsCI`
+	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+		t.Fatal("Failed to set test env! : ", err)
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `.IsPR | and .IsCI`
+	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+		t.Fatal("Failed to set test env! : ", err)
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isYes {
+		t.Fatal("Invalid result")
+	}
+
+	propTempCont = `.IsPR | and .IsCI`
+	t.Log("IsPR=true & IsCI=true; propTempCont: ", propTempCont)
+	if err := os.Setenv(PullRequestIDEnvKey, "123"); err != nil {
+		t.Fatal("Failed to set test env! : ", err)
+	}
+	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+		t.Fatal("Failed to set test env! : ", err)
+	}
+	isYes, err = EvaluateStepTemplateToBool(propTempCont, buildRes)
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isYes {
+		t.Fatal("Invalid result")
+	}
+}
