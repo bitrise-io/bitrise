@@ -40,7 +40,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Step manager"
-	app.Version = "0.9.11"
+	app.Version = "0.9.12"
 
 	app.Author = ""
 	app.Email = ""
