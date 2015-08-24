@@ -293,20 +293,25 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
-		} else if stepIDData.SteplibSource == "git" || stepIDData.SteplibSource == "_" {
-			log.Debugf("[BITRISE_CLI] - Remote/Old step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-			requireMerge = false
+		} else if stepIDData.SteplibSource == "git" {
+			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
 				continue
 			}
 
-			if stepIDData.SteplibSource == "git" {
-				requireMerge = true
-				if err := cmdex.CopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
-					registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
-					continue
-				}
+			if err := cmdex.CopyFile(stepDir+"/step.yml", stepYMLPth); err != nil {
+				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
+				continue
+			}
+		} else if stepIDData.SteplibSource == "_" {
+			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
+
+			requireMerge = false
+
+			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+				registerStepListItemRunResults(stepListItm, bitrise.StepRunResultCodeFailed, 1, err)
+				continue
 			}
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
