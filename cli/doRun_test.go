@@ -257,7 +257,7 @@ func Test1Workflows(t *testing.T) {
 	}
 	workflow, found := config.Workflows["trivial_fail"]
 	if !found {
-		t.Fatal("No workflow found with title (trivial_fail)")
+		t.Fatal("No workflow found with ID (trivial_fail)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -356,7 +356,7 @@ func Test3Workflows(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -508,7 +508,7 @@ func TestBuildStatusEnv(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -583,7 +583,7 @@ func TestFail(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -636,7 +636,7 @@ func TestSuccess(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -711,7 +711,7 @@ func TestBuildFailedMode(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -792,7 +792,7 @@ func TestWorkflowEnvironments(t *testing.T) {
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -872,7 +872,7 @@ workflows:
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -941,7 +941,7 @@ workflows:
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -1012,7 +1012,7 @@ workflows:
 	}
 	workflow, found := config.Workflows["target"]
 	if !found {
-		t.Fatal("No workflow found with title (target)")
+		t.Fatal("No workflow found with ID (target)")
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -1038,6 +1038,93 @@ workflows:
 		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
 	}
 
+	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
+		t.Log("BITRISE_BUILD_STATUS:", status)
+		t.Fatal("BUILD_STATUS envs are incorrect")
+	}
+	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
+		t.Log("STEPLIB_BUILD_STATUS:", status)
+		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+// Outputs exported with `envman add` should be accessible for subsequent Steps,
+//  except if the step failed.
+func TestStepOutputEnvironment(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  out-test:
+    title: Output Test
+    steps:
+    - script:
+        inputs:
+        - content: envman -l=debug add --key MY_TEST_1 --value 'Test value 1'
+    - script:
+        inputs:
+        - content: |-
+            if [[ "${MY_TEST_1}" != "Test value 1" ]] ; then
+              echo " [!] MY_TEST_1 invalid: ${MY_TEST_1}"
+              exit 1
+            fi
+    - script:
+        inputs:
+        - content: |-
+            envman add --key MY_TEST_2 --value 'Test value 2'
+            # exported output, but test fails
+            exit 22
+    - script:
+        is_always_run: true
+        inputs:
+        - content: |-
+            if [[ "${MY_TEST_2}" != "" ]] ; then
+              echo " [!] MY_TEST_2 invalid - expected empty, got: ${MY_TEST_2}"
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow, found := config.Workflows["out-test"]
+	if !found {
+		t.Fatal("No workflow found with ID (out-test)")
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime: time.Now(),
+	}
+
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
+	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
+	t.Logf("Build run result: %#v", buildRunResults)
+	if len(buildRunResults.SkippedSteps) != 0 {
+		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
+	}
+	if len(buildRunResults.SuccessSteps) != 3 {
+		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
+	}
+	if len(buildRunResults.FailedSteps) != 1 {
+		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
+	}
+	if len(buildRunResults.FailedSkippableSteps) != 0 {
+		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
+	}
+
+	// the exported output envs should NOT be exposed here, should NOT be available!
+	if envVal := os.Getenv("MY_TEST_1"); envVal != "" {
+		t.Fatal("MY_TEST_1 env is exposed, should NOT be! Value: ", envVal)
+	}
+	if envVal := os.Getenv("MY_TEST_2"); envVal != "" {
+		t.Fatal("MY_TEST_2 env is exposed, should NOT be! Value: ", envVal)
+	}
+
+	// standard, Build Status ENV test
 	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
 		t.Log("BITRISE_BUILD_STATUS:", status)
 		t.Fatal("BUILD_STATUS envs are incorrect")
