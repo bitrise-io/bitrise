@@ -22,7 +22,7 @@ with [bitrise](https://github.com/bitrise-io/bitrise) and [stepman](https://gith
 
 ## Install
 
-Check the latest release for instructions at: [https://github.com/bitrise-io/stepman/releases](https://github.com/bitrise-io/stepman/releases)
+Check the latest release for instructions at: [https://github.com/bitrise-io/envman/releases](https://github.com/bitrise-io/envman/releases)
 
 
 ## How? - Use cases
