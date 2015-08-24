@@ -882,7 +882,7 @@ workflows:
 		StartTime: time.Now(),
 	}
 
-	envs := bitrise.AppendEnvironmentSlice([]envmanModels.EnvironmentItemModel{}, workflow.Environments)
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
 	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
@@ -951,7 +951,7 @@ workflows:
 		StartTime: time.Now(),
 	}
 
-	envs := bitrise.AppendEnvironmentSlice([]envmanModels.EnvironmentItemModel{}, workflow.Environments)
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
 	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {
@@ -1022,7 +1022,7 @@ workflows:
 		StartTime: time.Now(),
 	}
 
-	envs := bitrise.AppendEnvironmentSlice([]envmanModels.EnvironmentItemModel{}, workflow.Environments)
+	envs := append([]envmanModels.EnvironmentItemModel{}, workflow.Environments...)
 	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &envs)
 	t.Logf("Build run result: %#v", buildRunResults)
 	if len(buildRunResults.SkippedSteps) != 0 {

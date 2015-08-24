@@ -131,7 +131,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Collect step inputs
-	environments = bitrise.AppendEnvironmentSlice(environments, step.Inputs)
+	environments = append(environments, step.Inputs...)
 
 	// Cleanup envstore
 	if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
@@ -359,7 +359,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				}
 			} else {
 				registerStepRunResults(mergedStep, bitrise.StepRunResultCodeSuccess, 0, nil)
-				*environments = bitrise.AppendEnvironmentSlice(*environments, outEnvironments)
+				*environments = append(*environments, outEnvironments...)
 			}
 		}
 	}
@@ -370,7 +370,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel) models.BuildRunResultsModel {
 	bitrise.PrintRunningWorkflow(workflow.Title)
 
-	*environments = bitrise.AppendEnvironmentSlice(*environments, workflow.Environments)
+	*environments = append(*environments, workflow.Environments...)
 	return activateAndRunSteps(workflow, steplibSource, buildRunResults, environments)
 }
 
@@ -499,7 +499,7 @@ func doRun(c *cli.Context) {
 	}
 
 	// App level environment
-	environments := bitrise.AppendEnvironmentSlice(bitriseConfig.App.Environments, secretEnvironments)
+	environments := append(bitriseConfig.App.Environments, secretEnvironments...)
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunName]
 	if !exist {
@@ -530,7 +530,7 @@ func doRun(c *cli.Context) {
 	if err := setPredefinedEnvironments(); err != nil {
 		log.Fatalln("Failed to register pre-defined Environment Variables: ", err)
 	}
-	environments = bitrise.AppendEnvironmentSlice(environments, workflowToRun.Environments)
+	environments = append(environments, workflowToRun.Environments...)
 	buildRunResults = activateAndRunWorkflow(workflowToRun, bitriseConfig, buildRunResults, &environments)
 
 	// Build finished

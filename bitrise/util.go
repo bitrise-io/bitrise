@@ -19,14 +19,6 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-// AppendEnvironmentSlice ...
-func AppendEnvironmentSlice(slice, appendSlice []envmanModels.EnvironmentItemModel) []envmanModels.EnvironmentItemModel {
-	for _, env := range appendSlice {
-		slice = append(slice, env)
-	}
-	return slice
-}
-
 // CollectEnvironmentsFromFile ...
 func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
