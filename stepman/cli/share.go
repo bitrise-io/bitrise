@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -26,24 +27,20 @@ const (
 	ShareFilename string = "share.json"
 )
 
-var (
-	shareFilePath string
-)
-
 // DeleteShareSteplibFile ...
 func DeleteShareSteplibFile() error {
-	return cmdex.RemoveDir(shareFilePath)
+	return cmdex.RemoveDir(getShareFilePath())
 }
 
 // ReadShareSteplibFromFile ...
 func ReadShareSteplibFromFile() (ShareModel, error) {
-	if exist, err := pathutil.IsPathExists(shareFilePath); err != nil {
+	if exist, err := pathutil.IsPathExists(getShareFilePath()); err != nil {
 		return ShareModel{}, err
 	} else if !exist {
 		return ShareModel{}, errors.New("No share steplib found")
 	}
 
-	bytes, err := fileutil.ReadBytesFromFile(shareFilePath)
+	bytes, err := fileutil.ReadBytesFromFile(getShareFilePath())
 	if err != nil {
 		return ShareModel{}, err
 	}
@@ -65,7 +62,7 @@ func WriteShareSteplibToFile(share ShareModel) error {
 		return err
 	}
 
-	return fileutil.WriteBytesToFile(shareFilePath, bytes)
+	return fileutil.WriteBytesToFile(getShareFilePath(), bytes)
 }
 
 // GuideTextForStart ...
@@ -155,6 +152,6 @@ To share your Step just follow these steps (pun intended ;) :
 	fmt.Println(guide)
 }
 
-func init() {
-	shareFilePath = stepman.StepManDirPath + "/" + ShareFilename
+func getShareFilePath() string {
+	return path.Join(stepman.GetStepmanDirPath(), ShareFilename)
 }
