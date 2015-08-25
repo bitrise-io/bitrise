@@ -2,8 +2,9 @@ package cli
 
 import "github.com/codegangsta/cli"
 
-func init() {
-	cli.AppHelpTemplate = `NAME: {{.Name}} - {{.Usage}}
+func initAppHelpTemplate() {
+	cli.AppHelpTemplate = `
+NAME: {{.Name}} - {{.Usage}}
 
 USAGE: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
 
