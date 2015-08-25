@@ -139,11 +139,6 @@ func SaveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
 	if err := fileutil.WriteBytesToFile(pth, contBytes); err != nil {
 		return err
 	}
-
-	log.Println()
-	log.Infoln("=> Init success!")
-	log.Infoln("File created at path:", pth)
-
 	return nil
 }
 
@@ -248,4 +243,92 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	}
 
 	return stepModel, nil
+}
+
+func fillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSource string) error {
+	// Create stepIDData
+	compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(*stepListItem)
+	if err != nil {
+		return err
+	}
+	stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
+	if err != nil {
+		return err
+	}
+
+	// Activate step - get step.yml
+	tempStepCloneDirPath, err := pathutil.NormalizedOSTempDirPath("step_clone")
+	if err != nil {
+		return err
+	}
+	tempStepYMLDirPath, err := pathutil.NormalizedOSTempDirPath("step_yml")
+	if err != nil {
+		return err
+	}
+	tempStepYMLFilePath := path.Join(tempStepYMLDirPath, "step.yml")
+
+	if stepIDData.SteplibSource == "path" {
+		stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
+		if err != nil {
+			return err
+		}
+		if err := cmdex.CopyFile(path.Join(stepAbsLocalPth, "step.yml"), tempStepYMLFilePath); err != nil {
+			return err
+		}
+	} else if stepIDData.SteplibSource == "git" {
+		if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
+			return err
+		}
+		if err := cmdex.CopyFile(path.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
+			return err
+		}
+	} else if stepIDData.SteplibSource == "_" {
+		// Steplib independent steps are completly defined in workflow
+		tempStepYMLFilePath = ""
+	} else if stepIDData.SteplibSource != "" {
+		if err := StepmanSetup(stepIDData.SteplibSource); err != nil {
+			return err
+		}
+		if err := StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
+			return err
+		}
+	} else {
+		return errors.New("Failed to fill step ouputs: unkown SteplibSource")
+	}
+
+	// Fill outputs
+	if tempStepYMLFilePath != "" {
+		specStep, err := ReadSpecStep(tempStepYMLFilePath)
+		if err != nil {
+			return err
+		}
+
+		workflowStep.Outputs = specStep.Outputs
+		(*stepListItem)[compositeStepIDStr] = workflowStep
+	}
+
+	// Cleanup
+	if err := cmdex.RemoveDir(tempStepCloneDirPath); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step clone dir: ", err))
+	}
+	if err := cmdex.RemoveDir(tempStepYMLDirPath); err != nil {
+		return errors.New(fmt.Sprint("Failed to remove step clone dir: ", err))
+	}
+
+	return nil
+}
+
+// RemoveConfigRedundantFieldsAndFillStepOutputs ...
+func RemoveConfigRedundantFieldsAndFillStepOutputs(config models.BitriseDataModel) error {
+	for _, workflow := range config.Workflows {
+		for _, stepListItem := range workflow.Steps {
+			if err := fillStepOutputs(&stepListItem, config.DefaultStepLibSource); err != nil {
+				return err
+			}
+		}
+	}
+	if err := config.RemoveRedundantFields(); err != nil {
+		return err
+	}
+	return nil
 }

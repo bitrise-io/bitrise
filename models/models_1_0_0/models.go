@@ -7,15 +7,18 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-// -------------------
-// --- bitrise models
+// StepListItemModel ...
+type StepListItemModel map[string]stepmanModels.StepModel
 
-// BitriseDataModel ...
-type BitriseDataModel struct {
-	FormatVersion        string                   `json:"format_version" yaml:"format_version"`
-	DefaultStepLibSource string                   `json:"default_step_lib_source" yaml:"default_step_lib_source"`
-	App                  AppModel                 `json:"app" yaml:"app"`
-	Workflows            map[string]WorkflowModel `json:"workflows" yaml:"workflows"`
+// WorkflowModel ...
+type WorkflowModel struct {
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	BeforeRun    []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
+	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
+	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 // AppModel ...
@@ -23,22 +26,16 @@ type AppModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
+	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
-// WorkflowModel ...
-type WorkflowModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	BeforeRun    []string                            `json:"before_run" yaml:"before_run"`
-	AfterRun     []string                            `json:"after_run" yaml:"after_run"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs" yaml:"envs"`
-	Steps        []StepListItemModel                 `json:"steps" yaml:"steps"`
+// BitriseDataModel ...
+type BitriseDataModel struct {
+	FormatVersion        string                   `json:"format_version" yaml:"format_version"`
+	DefaultStepLibSource string                   `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
+	App                  AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
+	Workflows            map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
-
-// StepListItemModel ...
-type StepListItemModel map[string]stepmanModels.StepModel
 
 // StepIDData ...
 // structured representation of a composite-step-id

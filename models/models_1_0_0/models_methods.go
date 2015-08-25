@@ -112,6 +112,151 @@ func (config *BitriseDataModel) FillMissingDefaults() error {
 	return nil
 }
 
+func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) error {
+	options, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+
+	hasOptions := false
+
+	if options.Title != nil {
+		if *options.Title == "" {
+			options.Title = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.Description != nil {
+		if *options.Description == "" {
+			options.Description = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.Summary != nil {
+		if *options.Summary == "" {
+			options.Summary = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsRequired != nil {
+		if *options.IsRequired == envmanModels.DefaultIsRequired {
+			options.IsRequired = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsExpand != nil {
+		if *options.IsExpand == envmanModels.DefaultIsExpand {
+			options.IsExpand = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsDontChangeValue != nil {
+		if *options.IsDontChangeValue == envmanModels.DefaultIsDontChangeValue {
+			options.IsDontChangeValue = nil
+		} else {
+			hasOptions = true
+		}
+	}
+
+	if hasOptions {
+		(*env)[envmanModels.OptionsKey] = options
+	} else {
+		delete(*env, envmanModels.OptionsKey)
+	}
+
+	return nil
+}
+
+func removeStepRedundantFields(step *stepmanModels.StepModel) error {
+	if step.Title != nil && *step.Title == "" {
+		step.Title = nil
+	}
+	if step.Description != nil && *step.Description == "" {
+		step.Description = nil
+	}
+	if step.Summary != nil && *step.Summary == "" {
+		step.Summary = nil
+	}
+	if step.Website != nil && *step.Website == "" {
+		step.Website = nil
+	}
+	if step.SourceCodeURL != nil && *step.SourceCodeURL == "" {
+		step.SourceCodeURL = nil
+	}
+	if step.SupportURL != nil && *step.SupportURL == "" {
+		step.SupportURL = nil
+	}
+	if step.IsRequiresAdminUser != nil && *step.IsRequiresAdminUser == stepmanModels.DefaultIsRequiresAdminUser {
+		step.IsRequiresAdminUser = nil
+	}
+	if step.IsAlwaysRun != nil && *step.IsAlwaysRun == stepmanModels.DefaultIsAlwaysRun {
+		step.IsAlwaysRun = nil
+	}
+	if step.IsSkippable != nil && *step.IsSkippable == stepmanModels.DefaultIsSkippable {
+		step.IsSkippable = nil
+	}
+	if step.RunIf != nil && *step.RunIf == "" {
+		step.RunIf = nil
+	}
+	for _, env := range step.Inputs {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+	for _, env := range step.Outputs {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (workflow *WorkflowModel) removeRedundantFields() error {
+	for _, env := range workflow.Environments {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+
+	for _, stepListItem := range workflow.Steps {
+		_, step, err := GetStepIDStepDataPair(stepListItem)
+		if err != nil {
+			return err
+		}
+		if err := removeStepRedundantFields(&step); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (app *AppModel) removeRedundantFields() error {
+	for _, env := range app.Environments {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RemoveRedundantFields ...
+func (config *BitriseDataModel) RemoveRedundantFields() error {
+	if err := config.App.removeRedundantFields(); err != nil {
+		return err
+	}
+	for _, workflow := range config.Workflows {
+		if err := workflow.removeRedundantFields(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Normalize ...
 func (workflow *WorkflowModel) Normalize() error {
 	for _, env := range workflow.Environments {
