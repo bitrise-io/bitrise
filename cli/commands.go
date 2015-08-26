@@ -40,5 +40,13 @@ var (
 				flPretty,
 			},
 		},
+		{
+			Name:   "normalize",
+			Usage:  "Normalize the bitrise configuration.",
+			Action: normalize,
+			Flags: []cli.Flag{
+				flPath,
+			},
+		},
 	}
 )

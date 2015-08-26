@@ -3,6 +3,8 @@ package models
 import (
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -33,6 +35,9 @@ var (
 	testValueOptions = []string{"test_valu_options1", "test_valu_options2"}
 )
 
+// ----------------------------
+// --- Validate
+
 // Workflow
 func TestValidate(t *testing.T) {
 	workflow := WorkflowModel{
@@ -44,6 +49,9 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// ----------------------------
+// --- Merge
 
 func TestMergeEnvironmentWith(t *testing.T) {
 	// Different keys
@@ -248,6 +256,9 @@ func TestGetInputByKey(t *testing.T) {
 		t.Fatal("(KEY_3) found, even it doesn't exist")
 	}
 }
+
+// ----------------------------
+// --- StepIDData
 
 func TestGetStepIDStepDataPair(t *testing.T) {
 	stepData := stepmanModels.StepModel{}
@@ -492,5 +503,438 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 	}
 	if stepIDData.Version != "1.0.0" {
 		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	}
+}
+
+// ----------------------------
+// --- RemoveRedundantFields
+
+func TestRemoveEnvironmentRedundantFields(t *testing.T) {
+	// Trivial remove - all fields should be default value
+	env := envmanModels.EnvironmentItemModel{
+		"TEST_KEY": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr(""),
+			Description:       pointers.NewStringPtr(""),
+			Summary:           pointers.NewStringPtr(""),
+			ValueOptions:      []string{},
+			IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
+			IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
+			IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
+		},
+	}
+
+	if err := removeEnvironmentRedundantFields(&env); err != nil {
+		t.Fatal("Failed to remove redundant fields:", err)
+	}
+
+	options, err := env.GetOptions()
+	if err != nil {
+		t.Fatal("Failed to get env options:", err)
+	}
+
+	if options.Title != nil {
+		t.Fatal("options.Title should be nil")
+	}
+	if options.Description != nil {
+		t.Fatal("options.Description should be nil")
+	}
+	if options.Summary != nil {
+		t.Fatal("options.Summary should be nil")
+	}
+	if len(options.ValueOptions) != 0 {
+		t.Fatal("options.ValueOptions should be empty")
+	}
+	if options.IsRequired != nil {
+		t.Fatal("options.IsRequired should be nil")
+	}
+	if options.IsExpand != nil {
+		t.Fatal("options.IsExpand should be nil")
+	}
+	if options.IsDontChangeValue != nil {
+		t.Fatal("options.IsDontChangeValue should be nil")
+	}
+
+	// Trivial don't remove - no fields should be default value
+	env = envmanModels.EnvironmentItemModel{
+		"TEST_KEY": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("t"),
+			Description:       pointers.NewStringPtr("d"),
+			Summary:           pointers.NewStringPtr("s"),
+			ValueOptions:      []string{"i"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+		},
+	}
+
+	if err := removeEnvironmentRedundantFields(&env); err != nil {
+		t.Fatal("Failed to remove redundant fields:", err)
+	}
+
+	options, err = env.GetOptions()
+	if err != nil {
+		t.Fatal("Failed to get env options:", err)
+	}
+
+	if *options.Title != "t" {
+		t.Fatal("options.Title should be: t")
+	}
+	if *options.Description != "d" {
+		t.Fatal("options.Description should be: d")
+	}
+	if *options.Summary != "s" {
+		t.Fatal("options.Summary should be: s")
+	}
+	if options.ValueOptions[0] != "i" {
+		t.Fatal("options.ValueOptions should be: {i}")
+	}
+	if *options.IsRequired != true {
+		t.Fatal("options.IsRequired should be: false")
+	}
+	if *options.IsExpand != false {
+		t.Fatal("options.IsExpand should be: false")
+	}
+	if *options.IsDontChangeValue != true {
+		t.Fatal("options.IsDontChangeValue should be: true")
+	}
+
+	// No options - opts field shouldn't exist
+	env = envmanModels.EnvironmentItemModel{
+		"TEST_KEY": "test_value",
+	}
+
+	if err := removeEnvironmentRedundantFields(&env); err != nil {
+		t.Fatal("Failed to remove redundant fields:", err)
+	}
+
+	_, ok := env[envmanModels.OptionsKey]
+	if ok {
+		t.Fatal("opts field shouldn't exist")
+	}
+}
+
+func TestRemoveStepRedundantFields(t *testing.T) {
+	step := stepmanModels.StepModel{
+		Title:         pointers.NewStringPtr(""),
+		Description:   pointers.NewStringPtr(""),
+		Summary:       pointers.NewStringPtr(""),
+		Website:       pointers.NewStringPtr(""),
+		SourceCodeURL: pointers.NewStringPtr(""),
+		SupportURL:    pointers.NewStringPtr(""),
+		Source: stepmanModels.StepSourceModel{
+			Git:    "",
+			Commit: "",
+		},
+		HostOsTags:      []string{},
+		ProjectTypeTags: []string{},
+		TypeTags:        []string{},
+		Dependencies: []stepmanModels.DependencyModel{
+			stepmanModels.DependencyModel{
+				Manager: "",
+				Name:    "",
+			},
+		},
+		IsRequiresAdminUser: pointers.NewBoolPtr(stepmanModels.DefaultIsRequiresAdminUser),
+		IsAlwaysRun:         pointers.NewBoolPtr(stepmanModels.DefaultIsAlwaysRun),
+		IsSkippable:         pointers.NewBoolPtr(stepmanModels.DefaultIsSkippable),
+		RunIf:               pointers.NewStringPtr(""),
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"IN": "in",
+				envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+					Title: pointers.NewStringPtr(""),
+				},
+			},
+		},
+		Outputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"OUT": "",
+				envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+					Description: pointers.NewStringPtr(""),
+				},
+			},
+		},
+	}
+
+	if err := removeStepRedundantFields(&step); err != nil {
+		t.Fatal("Failed to remove redundant fields:", err)
+	}
+
+	if step.Title != nil {
+		t.Fatal("step.Title should be nil")
+	}
+	if step.Description != nil {
+		t.Fatal("step.Description should be nil")
+	}
+	if step.Summary != nil {
+		t.Fatal("step.Summary should be nil")
+	}
+	if step.Website != nil {
+		t.Fatal("step.Website should be nil")
+	}
+	if step.SourceCodeURL != nil {
+		t.Fatal("step.SourceCodeURL should be nil")
+	}
+	if step.SupportURL != nil {
+		t.Fatal("step.SupportURL should be nil")
+	}
+	if step.Source.Git != "" || step.Source.Commit != "" {
+		t.Fatal("step.Source.Git && step.Source.Commit should be empty")
+	}
+	if len(step.HostOsTags) != 0 {
+		t.Fatal("len(step.HostOsTags) should be 0")
+	}
+	if len(step.ProjectTypeTags) != 0 {
+		t.Fatal("len(step.ProjectTypeTags) should be 0")
+	}
+	if len(step.TypeTags) != 0 {
+		t.Fatal("len(step.TypeTags) should be 0")
+	}
+	if step.IsRequiresAdminUser != nil {
+		t.Fatal("step.IsRequiresAdminUser should be nil")
+	}
+	if step.IsAlwaysRun != nil {
+		t.Fatal("step.IsAlwaysRun should be nil")
+	}
+	if step.IsSkippable != nil {
+		t.Fatal("step.IsSkippable should be nil")
+	}
+	if step.RunIf != nil {
+		t.Fatal("step.RunIf should be nil")
+	}
+
+	for _, input := range step.Inputs {
+		options, err := input.GetOptions()
+		if err != nil {
+			t.Fatal("Failed to get env options:", err)
+		}
+
+		if options.Title != nil {
+			t.Fatal("options.Title should be nil")
+		}
+		if options.Description != nil {
+			t.Fatal("options.Description should be nil")
+		}
+		if options.Summary != nil {
+			t.Fatal("options.Summary should be nil")
+		}
+		if len(options.ValueOptions) != 0 {
+			t.Fatal("options.ValueOptions should be empty")
+		}
+		if options.IsRequired != nil {
+			t.Fatal("options.IsRequired should be nil")
+		}
+		if options.IsExpand != nil {
+			t.Fatal("options.IsExpand should be nil")
+		}
+		if options.IsDontChangeValue != nil {
+			t.Fatal("options.IsDontChangeValue should be nil")
+		}
+	}
+
+	for _, output := range step.Outputs {
+		options, err := output.GetOptions()
+		if err != nil {
+			t.Fatal("Failed to get env options:", err)
+		}
+
+		if options.Title != nil {
+			t.Fatal("options.Title should be nil")
+		}
+		if options.Description != nil {
+			t.Fatal("options.Description should be nil")
+		}
+		if options.Summary != nil {
+			t.Fatal("options.Summary should be nil")
+		}
+		if len(options.ValueOptions) != 0 {
+			t.Fatal("options.ValueOptions should be empty")
+		}
+		if options.IsRequired != nil {
+			t.Fatal("options.IsRequired should be nil")
+		}
+		if options.IsExpand != nil {
+			t.Fatal("options.IsExpand should be nil")
+		}
+		if options.IsDontChangeValue != nil {
+			t.Fatal("options.IsDontChangeValue should be nil")
+		}
+	}
+}
+
+func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {
+	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
+		return
+	}
+	return
+}
+
+func TestRemoveWorkflowRedundantFields(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  summary: "sum"
+  envs:
+  - ENV_KEY: env_value
+    opts:
+      is_required: true
+
+workflows:
+  target:
+    envs:
+    - ENV_KEY: env_value
+      opts:
+        title: test_env
+    title: Output Test
+    steps:
+    - script:
+        description: test
+`
+
+	config, err := configModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.RemoveRedundantFields(); err != nil {
+		t.Fatal("Failed to remove redundant fields:", err)
+	}
+
+	if config.App.Title != "" {
+		t.Fatal("config.App.Title should be empty")
+	}
+	if config.App.Description != "" {
+		t.Fatal("config.App.Description should be empty")
+	}
+	if config.App.Summary != "sum" {
+		t.Fatal("config.App.Summary should be: sum")
+	}
+	for _, env := range config.App.Environments {
+		options, err := env.GetOptions()
+		if err != nil {
+			t.Fatal("Failed to get env options:", err)
+		}
+
+		if options.Title != nil {
+			t.Fatal("options.Title should be nil")
+		}
+		if options.Description != nil {
+			t.Fatal("options.Description should be nil")
+		}
+		if options.Summary != nil {
+			t.Fatal("options.Summary should be nil")
+		}
+		if len(options.ValueOptions) != 0 {
+			t.Fatal("options.ValueOptions should be empty")
+		}
+		if *options.IsRequired != true {
+			t.Fatal("options.IsRequired should be: true")
+		}
+		if options.IsExpand != nil {
+			t.Fatal("options.IsExpand should be nil")
+		}
+		if options.IsDontChangeValue != nil {
+			t.Fatal("options.IsDontChangeValue should be nil")
+		}
+	}
+
+	for _, workflow := range config.Workflows {
+		if workflow.Title != "Output Test" {
+			t.Fatal("workflow.Title should be: Output Test")
+		}
+		if workflow.Description != "" {
+			t.Fatal("workflow.Description should be empty")
+		}
+		if workflow.Summary != "" {
+			t.Fatal("workflow.Summary should be empty")
+		}
+
+		for _, env := range workflow.Environments {
+			options, err := env.GetOptions()
+			if err != nil {
+				t.Fatal("Failed to get env options:", err)
+			}
+
+			if *options.Title != "test_env" {
+				t.Fatal("options.Title should be: test_env")
+			}
+			if options.Description != nil {
+				t.Fatal("options.Description should be nil")
+			}
+			if options.Summary != nil {
+				t.Fatal("options.Summary should be nil")
+			}
+			if len(options.ValueOptions) != 0 {
+				t.Fatal("options.ValueOptions should be empty")
+			}
+			if options.IsRequired != nil {
+				t.Fatal("options.IsRequired should be: false")
+			}
+			if options.IsExpand != nil {
+				t.Fatal("options.IsExpand should be nil")
+			}
+			if options.IsDontChangeValue != nil {
+				t.Fatal("options.IsDontChangeValue should be nil")
+			}
+		}
+
+		for _, stepListItem := range workflow.Steps {
+			_, step, err := GetStepIDStepDataPair(stepListItem)
+			if err != nil {
+				t.Fatal("Faild to get step id data:", err)
+			}
+			if step.Title != nil {
+				t.Fatal("step.Title should be nil")
+			}
+			if *step.Description != "test" {
+				t.Fatal("step.Description should be: test")
+			}
+			if step.Summary != nil {
+				t.Fatal("step.Summary should be nil")
+			}
+			if step.Website != nil {
+				t.Fatal("step.Website should be nil")
+			}
+			if step.SourceCodeURL != nil {
+				t.Fatal("step.SourceCodeURL should be nil")
+			}
+			if step.SupportURL != nil {
+				t.Fatal("step.SupportURL should be nil")
+			}
+			if step.Source.Git != "" || step.Source.Commit != "" {
+				t.Fatal("step.Source.Git && step.Source.Commit should be empty")
+			}
+			if len(step.HostOsTags) != 0 {
+				t.Fatal("len(step.HostOsTags) should be 0")
+			}
+			if len(step.ProjectTypeTags) != 0 {
+				t.Fatal("len(step.ProjectTypeTags) should be 0")
+			}
+			if len(step.TypeTags) != 0 {
+				t.Fatal("len(step.TypeTags) should be 0")
+			}
+			if step.IsRequiresAdminUser != nil {
+				t.Fatal("step.IsRequiresAdminUser should be nil")
+			}
+			if step.IsAlwaysRun != nil {
+				t.Fatal("step.IsAlwaysRun should be nil")
+			}
+			if step.IsSkippable != nil {
+				t.Fatal("step.IsSkippable should be nil")
+			}
+			if step.RunIf != nil {
+				t.Fatal("step.RunIf should be nil")
+			}
+
+			if len(step.Inputs) != 0 {
+				t.Fatal("len(step.Inputs) should be 0")
+			}
+			if len(step.Outputs) != 0 {
+				t.Fatal("len(step.Outputs) should be 0")
+			}
+		}
 	}
 }
