@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	stepRunSummaryBoxMaxWidthChars = 50
+	// should not be under ~45
+	stepRunSummaryBoxWidthInChars = 65
 
 	// StepRunResultCodeSuccess ...
 	StepRunResultCodeSuccess = 0
@@ -35,63 +36,101 @@ func PrintRunningWorkflow(title string) {
 // PrintRunningStep ...
 func PrintRunningStep(title string, idx int) {
 	content := fmt.Sprintf("| (%d) %s |", idx, title)
-	if len(content) > stepRunSummaryBoxMaxWidthChars {
-		dif := len(content) - stepRunSummaryBoxMaxWidthChars
-		newLength := len(title) - dif - 3
-		title = title[0:newLength]
-		title = title + "..."
-		content = fmt.Sprintf("| (%d) %s |", idx, title)
+	charDiff := len(content) - stepRunSummaryBoxWidthInChars
+
+	if charDiff < 0 {
+		// shorter than desired - fill with space
+		content = fmt.Sprintf("| (%d) %s%s |", idx, title, strings.Repeat(" ", -charDiff))
+	} else if charDiff > 0 {
+		// longer than desired - trim title
+		trimmedTitleLength := len(title) - charDiff - 3
+		content = fmt.Sprintf("| (%d) %s... |", idx, title[0:trimmedTitleLength])
 	}
+
 	sep := strings.Repeat("-", len(content))
 	log.Info(sep)
 	log.Infof(content)
 	log.Info(sep)
+	log.Info("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
+	// fmt.Println()
+}
+
+//
+type coloringFn func(string) string
+
+func stepSummaryString(runStateIcon, stepTitle, runTimeString string, stepExitCode int, coloringFunc coloringFn) string {
+	contentLayout := ""
+	if stepExitCode == 0 {
+		contentLayout = fmt.Sprintf("| %s | %s | %s |", runStateIcon, stepTitle, runTimeString)
+	} else {
+		contentLayout = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, stepTitle, runTimeString, stepExitCode)
+	}
+	content := ""
+	charDiff := len(contentLayout) - stepRunSummaryBoxWidthInChars
+	if charDiff < 0 {
+		// shorter than desired - fill with space
+		if stepExitCode == 0 {
+			content = fmt.Sprintf("| %s | %s%s | %s |", runStateIcon, coloringFunc(stepTitle), strings.Repeat(" ", -charDiff), runTimeString)
+		} else {
+			content = fmt.Sprintf("| %s | %s%s | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle), strings.Repeat(" ", -charDiff), runTimeString, stepExitCode)
+		}
+		return content
+	} else if charDiff > 0 {
+		// longer than desired - trim stepTitle
+		trimmedTitleLength := len(stepTitle) - charDiff - 3
+		fmt.Println("trimmedTitleLength: ", trimmedTitleLength)
+		if stepExitCode == 0 {
+			content = fmt.Sprintf("| %s | %s... | %s |", runStateIcon, coloringFunc(stepTitle[0:trimmedTitleLength]), runTimeString)
+		} else {
+			content = fmt.Sprintf("| %s | %s... | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle[0:trimmedTitleLength]), runTimeString, stepExitCode)
+		}
+		return content
+	}
+
+	if stepExitCode == 0 {
+		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, coloringFunc(stepTitle), runTimeString)
+	} else {
+		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle), runTimeString, stepExitCode)
+	}
+	return content
 }
 
 // PrintStepSummary ..
-func PrintStepSummary(title string, resultCode int, duration time.Duration, exitCode int) {
-	runTime := TimeToFormattedSeconds(duration, " sec")
-	content := fmt.Sprintf("|...| %s | %s |", title, runTime)
-	if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedSkippable {
-		content = fmt.Sprintf("|...| %s | %s | exit code: %d |", title, runTime, exitCode)
-	}
-	if len(content) > stepRunSummaryBoxMaxWidthChars {
-		dif := len(content) - stepRunSummaryBoxMaxWidthChars
-		newLength := len(title) - dif - 3
-		title = title[0:newLength]
-		title = title + "..."
-		content = fmt.Sprintf("|...| %s | %s |", title, runTime)
-		if resultCode == StepRunResultCodeFailed || resultCode == StepRunResultCodeFailedSkippable {
-			content = fmt.Sprintf("|...| %s | %s | exit code: %d |", title, runTime, exitCode)
-		}
-	}
-	sep := strings.Repeat("-", len(content))
+func PrintStepSummary(title string, resultCode int, duration time.Duration, exitCode int, isLastStepInWorkflow bool) {
+	runTimeStr := TimeToFormattedSeconds(duration, " sec")
+
+	content := ""
 	switch resultCode {
 	case StepRunResultCodeSuccess:
-		runStateIcon := "✅"
-		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, colorstring.Green(title), runTime)
+		content = stepSummaryString("✅ ", title, runTimeStr, 0, colorstring.Green)
 		break
 	case StepRunResultCodeFailed:
-		runStateIcon := "❌"
-		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, colorstring.Red(title), runTime, exitCode)
+		content = stepSummaryString("🚫 ", title, runTimeStr, exitCode, colorstring.Red)
 		break
 	case StepRunResultCodeFailedSkippable:
-		runStateIcon := "❌"
-		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, colorstring.Yellow(title), runTime, exitCode)
+		content = stepSummaryString("⚠️ ", title, runTimeStr, exitCode, colorstring.Yellow)
 		break
 	case StepRunResultCodeSkipped, StepRunResultCodeSkippedWithRunIf:
-		runStateIcon := "➡"
-		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, colorstring.Blue(title), runTime)
+		content = stepSummaryString("➡", title, runTimeStr, 0, colorstring.Blue)
 		break
 	default:
 		log.Error("Unkown result code")
 		return
 	}
 
+	sep := strings.Repeat("-", stepRunSummaryBoxWidthInChars)
+
+	// fmt.Println()
+	log.Info("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
 	log.Info(sep)
 	log.Infof(content)
 	log.Info(sep)
-	fmt.Println()
+
+	if !isLastStepInWorkflow {
+		fmt.Println()
+		fmt.Println(strings.Repeat(" ", 42) + "▼")
+		fmt.Println()
+	}
 }
 
 // PrintBuildFailedFatal ...

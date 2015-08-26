@@ -62,7 +62,7 @@ workflows:
             godep restore
             go install
 
-  godep-update:
+  godeps-update:
     steps:
     - script:
         title: Dependency update
@@ -191,4 +191,25 @@ workflows:
         - content: |-
             #!/bin/bash
             set -v
+            exit 0
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
             exit 2
+    - script:
+        is_always_run: true
+        is_skippable: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        is_always_run: false
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            exit 0
