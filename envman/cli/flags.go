@@ -106,8 +106,7 @@ var (
 	}
 )
 
-func init() {
-	// Override default help and version flags
+func initHelpAndVersionFlags() {
 	cli.HelpFlag = cli.BoolFlag{
 		Name:  HelpKey + ", " + helpKeyShort,
 		Usage: "Show help.",
