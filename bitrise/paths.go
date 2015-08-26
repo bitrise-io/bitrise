@@ -6,7 +6,6 @@ import (
 	"path"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -93,10 +92,4 @@ func InitPaths() error {
 	CurrentDir = currentDir
 
 	return nil
-}
-
-func init() {
-	if err := InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths: %s", err)
-	}
 }
