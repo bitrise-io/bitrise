@@ -211,6 +211,17 @@ workflows:
         inputs:
         - content: envman add --key GOPATH --value "$(godep path):$GOPATH"
     - script:
+        title: Go Build & bitrise setup
+        inputs:
+        - content: |-
+            set -e
+            set -v
+            
+            # Build a test version
+            go build -o tmpbin
+            ./tmpbin setup
+            rm ./tmpbin
+    - script:
         title: Go Test
         inputs:
         - content: godep go test ./...
