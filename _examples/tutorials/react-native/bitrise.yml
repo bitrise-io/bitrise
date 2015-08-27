@@ -37,7 +37,6 @@ workflows:
             cd $projectName
             pwd
             npm install react-native
-            launchctl unload "$HOME/Library/LaunchAgents/bitrise.tools.osx.xcuserver.plist"
     - new-xcode-test:
         inputs:
         - project_path: ./viccesteszt/testProj/testProj.xcodeproj

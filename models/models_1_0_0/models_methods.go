@@ -10,6 +10,9 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// ----------------------------
+// --- Normalize
+
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
 		if t == title {
@@ -70,6 +73,25 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 }
 
 // Normalize ...
+func (workflow *WorkflowModel) Normalize() error {
+	for _, env := range workflow.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	for _, aWfStepItem := range workflow.Steps {
+		_, stepData, err := GetStepIDStepDataPair(aWfStepItem)
+		if err != nil {
+			return err
+		}
+		if err := stepData.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Normalize ...
 func (config *BitriseDataModel) Normalize() error {
 	for _, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
@@ -78,6 +100,20 @@ func (config *BitriseDataModel) Normalize() error {
 	}
 	for _, env := range config.App.Environments {
 		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ----------------------------
+// --- Validate
+
+// Validate ...
+func (workflow *WorkflowModel) Validate(title string) error {
+	// Validate envs
+	for _, env := range workflow.Environments {
+		if err := env.Validate(); err != nil {
 			return err
 		}
 	}
@@ -97,6 +133,22 @@ func (config *BitriseDataModel) Validate() error {
 	return nil
 }
 
+// ----------------------------
+// --- FillMissingDefaults
+
+// FillMissingDefaults ...
+func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
+	for _, env := range workflow.Environments {
+		if err := env.FillMissingDefaults(); err != nil {
+			return err
+		}
+	}
+	if workflow.Title == "" {
+		workflow.Title = title
+	}
+	return nil
+}
+
 // FillMissingDefaults ...
 func (config *BitriseDataModel) FillMissingDefaults() error {
 	for title, workflow := range config.Workflows {
@@ -112,48 +164,156 @@ func (config *BitriseDataModel) FillMissingDefaults() error {
 	return nil
 }
 
-// Normalize ...
-func (workflow *WorkflowModel) Normalize() error {
-	for _, env := range workflow.Environments {
-		if err := env.Normalize(); err != nil {
+// ----------------------------
+// --- RemoveRedundantFields
+
+func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) error {
+	options, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+
+	hasOptions := false
+
+	if options.Title != nil {
+		if *options.Title == "" {
+			options.Title = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.Description != nil {
+		if *options.Description == "" {
+			options.Description = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.Summary != nil {
+		if *options.Summary == "" {
+			options.Summary = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsRequired != nil {
+		if *options.IsRequired == envmanModels.DefaultIsRequired {
+			options.IsRequired = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsExpand != nil {
+		if *options.IsExpand == envmanModels.DefaultIsExpand {
+			options.IsExpand = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.IsDontChangeValue != nil {
+		if *options.IsDontChangeValue == envmanModels.DefaultIsDontChangeValue {
+			options.IsDontChangeValue = nil
+		} else {
+			hasOptions = true
+		}
+	}
+
+	if hasOptions {
+		(*env)[envmanModels.OptionsKey] = options
+	} else {
+		delete(*env, envmanModels.OptionsKey)
+	}
+
+	return nil
+}
+
+func removeStepRedundantFields(step *stepmanModels.StepModel) error {
+	if step.Title != nil && *step.Title == "" {
+		step.Title = nil
+	}
+	if step.Description != nil && *step.Description == "" {
+		step.Description = nil
+	}
+	if step.Summary != nil && *step.Summary == "" {
+		step.Summary = nil
+	}
+	if step.Website != nil && *step.Website == "" {
+		step.Website = nil
+	}
+	if step.SourceCodeURL != nil && *step.SourceCodeURL == "" {
+		step.SourceCodeURL = nil
+	}
+	if step.SupportURL != nil && *step.SupportURL == "" {
+		step.SupportURL = nil
+	}
+	if step.IsRequiresAdminUser != nil && *step.IsRequiresAdminUser == stepmanModels.DefaultIsRequiresAdminUser {
+		step.IsRequiresAdminUser = nil
+	}
+	if step.IsAlwaysRun != nil && *step.IsAlwaysRun == stepmanModels.DefaultIsAlwaysRun {
+		step.IsAlwaysRun = nil
+	}
+	if step.IsSkippable != nil && *step.IsSkippable == stepmanModels.DefaultIsSkippable {
+		step.IsSkippable = nil
+	}
+	if step.RunIf != nil && *step.RunIf == "" {
+		step.RunIf = nil
+	}
+	for _, env := range step.Inputs {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
 			return err
 		}
 	}
-	for _, aWfStepItem := range workflow.Steps {
-		_, stepData, err := GetStepIDStepDataPair(aWfStepItem)
+	for _, env := range step.Outputs {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (workflow *WorkflowModel) removeRedundantFields() error {
+	for _, env := range workflow.Environments {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
+			return err
+		}
+	}
+
+	for _, stepListItem := range workflow.Steps {
+		_, step, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
 			return err
 		}
-		if err := stepData.Normalize(); err != nil {
+		if err := removeStepRedundantFields(&step); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// FillMissingDefaults ...
-func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
-	for _, env := range workflow.Environments {
-		if err := env.FillMissingDefaults(); err != nil {
+func (app *AppModel) removeRedundantFields() error {
+	for _, env := range app.Environments {
+		if err := removeEnvironmentRedundantFields(&env); err != nil {
 			return err
 		}
-	}
-	if workflow.Title == "" {
-		workflow.Title = title
 	}
 	return nil
 }
 
-// Validate ...
-func (workflow *WorkflowModel) Validate(title string) error {
-	// Validate envs
-	for _, env := range workflow.Environments {
-		if err := env.Validate(); err != nil {
+// RemoveRedundantFields ...
+func (config *BitriseDataModel) RemoveRedundantFields() error {
+	if err := config.App.removeRedundantFields(); err != nil {
+		return err
+	}
+	for _, workflow := range config.Workflows {
+		if err := workflow.removeRedundantFields(); err != nil {
 			return err
 		}
 	}
 	return nil
 }
+
+// ----------------------------
+// --- Merge
 
 // MergeEnvironmentWith ...
 func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envmanModels.EnvironmentItemModel) error {
@@ -207,6 +367,34 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 	}
 	(*env)[envmanModels.OptionsKey] = options
 	return nil
+}
+
+func getInputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
+	for _, input := range step.Inputs {
+		k, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, false
+		}
+
+		if k == key {
+			return input, true
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, false
+}
+
+func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
+	for _, output := range step.Outputs {
+		k, _, err := output.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, false
+		}
+
+		if k == key {
+			return output, true
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, false
 }
 
 // MergeStepWith ...
@@ -295,33 +483,8 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	return step, nil
 }
 
-func getInputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
-	for _, input := range step.Inputs {
-		k, _, err := input.GetKeyValuePair()
-		if err != nil {
-			return envmanModels.EnvironmentItemModel{}, false
-		}
-
-		if k == key {
-			return input, true
-		}
-	}
-	return envmanModels.EnvironmentItemModel{}, false
-}
-
-func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
-	for _, output := range step.Outputs {
-		k, _, err := output.GetKeyValuePair()
-		if err != nil {
-			return envmanModels.EnvironmentItemModel{}, false
-		}
-
-		if k == key {
-			return output, true
-		}
-	}
-	return envmanModels.EnvironmentItemModel{}, false
-}
+// ----------------------------
+// --- StepIDData
 
 // GetStepIDStepDataPair ...
 func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModels.StepModel, error) {
@@ -402,6 +565,9 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		Version:       stepVersion,
 	}, nil
 }
+
+// ----------------------------
+// --- BuildRunResults
 
 // IsBuildFailed ...
 func (buildRes BuildRunResultsModel) IsBuildFailed() bool {

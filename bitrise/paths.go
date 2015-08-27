@@ -1,11 +1,11 @@
 package bitrise
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -61,32 +61,35 @@ func initBitriseWorkPaths() error {
 	return nil
 }
 
-func init() {
+// InitPaths ...
+func InitPaths() error {
 	if err := initBitriseWorkPaths(); err != nil {
-		log.Fatal("Failed to init bitrise paths:", err)
+		return fmt.Errorf("Failed to init bitrise paths: %s", err)
 	}
 
 	inputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "input_envstore.yml"))
 	if err != nil {
-		log.Fatal("Failed to set envstore path:", err)
+		return fmt.Errorf("Failed to set envstore path: %s", err)
 	}
 	InputEnvstorePath = inputEnvstorePath
 
 	outputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "output_envstore.yml"))
 	if err != nil {
-		log.Fatal("Failed to set envstore path:", err)
+		return fmt.Errorf("Failed to set envstore path: %s", err)
 	}
 	OutputEnvstorePath = outputEnvstorePath
 
 	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formout.md"))
 	if err != nil {
-		log.Fatal("Failed to set formatted output path:", err)
+		return fmt.Errorf("Failed to set formatted output path: %s", err)
 	}
 	FormattedOutputPath = formoutPath
 
 	currentDir, err := filepath.Abs("./")
 	if err != nil {
-		log.Fatal("Failed to set current dir:", err)
+		return fmt.Errorf("Failed to set current dir: %s", err)
 	}
 	CurrentDir = currentDir
+
+	return nil
 }

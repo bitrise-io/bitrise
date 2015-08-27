@@ -18,7 +18,19 @@ var (
 	IsDebugMode = false
 )
 
+func initLogFormatter() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		ForceColors:     true,
+		TimestampFormat: "15:04:05",
+	})
+}
+
 func before(c *cli.Context) error {
+	initLogFormatter()
+	initHelpAndVersionFlags()
+	initAppHelpTemplate()
+
 	// Debug mode?
 	if c.Bool(DebugModeKey) {
 		// set for other tools, as an ENV
@@ -62,6 +74,11 @@ func before(c *cli.Context) error {
 		IsCIMode = true
 		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
 	}
+
+	if err := bitrise.InitPaths(); err != nil {
+		log.Fatalf("Failed to initialize required paths: %s", err)
+	}
+
 	return nil
 }
 
