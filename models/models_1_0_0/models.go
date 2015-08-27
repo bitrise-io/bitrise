@@ -7,6 +7,19 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+const (
+	// StepRunStatusCodeSuccess ...
+	StepRunStatusCodeSuccess = 0
+	// StepRunStatusCodeFailed ...
+	StepRunStatusCodeFailed = 1
+	// StepRunStatusCodeFailedSkippable ...
+	StepRunStatusCodeFailedSkippable = 2
+	// StepRunStatusCodeSkipped ...
+	StepRunStatusCodeSkipped = 3
+	// StepRunStatusCodeSkippedWithRunIf ...
+	StepRunStatusCodeSkippedWithRunIf = 4
+)
+
 // StepListItemModel ...
 type StepListItemModel map[string]stepmanModels.StepModel
 
@@ -61,6 +74,9 @@ type BuildRunResultsModel struct {
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
 	StepName string
+	Status   int
+	Idx      int
+	RunTime  time.Duration
 	Error    error
 	ExitCode int
 }

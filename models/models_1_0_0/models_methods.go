@@ -574,18 +574,29 @@ func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 	return len(buildRes.FailedSteps) > 0
 }
 
-// Append ...
-func (buildRes *BuildRunResultsModel) Append(res BuildRunResultsModel) {
-	for _, success := range res.SuccessSteps {
-		buildRes.SuccessSteps = append(buildRes.SuccessSteps, success)
+// HasFailedSkippableSteps ...
+func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
+	return len(buildRes.FailedSkippableSteps) > 0
+}
+
+// ResultsCount ...
+func (buildRes BuildRunResultsModel) ResultsCount() int {
+	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
+}
+
+func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
+	results := append([]StepRunResultsModel{}, buildRes.SuccessSteps...)
+	results = append(results, buildRes.FailedSteps...)
+	results = append(results, buildRes.FailedSkippableSteps...)
+	return append(results, buildRes.SkippedSteps...)
+}
+
+//OrderedResults ...
+func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
+	results := make([]StepRunResultsModel, buildRes.ResultsCount())
+	unorderedResults := buildRes.unorderedResults()
+	for _, result := range unorderedResults {
+		results[result.Idx] = result
 	}
-	for _, failed := range res.FailedSteps {
-		buildRes.FailedSteps = append(buildRes.FailedSteps, failed)
-	}
-	for _, skippable := range res.FailedSkippableSteps {
-		buildRes.FailedSkippableSteps = append(buildRes.FailedSkippableSteps, skippable)
-	}
-	for _, skipped := range res.SkippedSteps {
-		buildRes.SkippedSteps = append(buildRes.SkippedSteps, skipped)
-	}
+	return results
 }
