@@ -4,11 +4,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 app:
   envs:
   - BITRISE_BIN_NAME: bitrise
-    opts:
-      is_expand: false
-  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/bitrise/releases
-    opts:
-      is_expand: false
+  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
 
 workflows:
 
@@ -155,30 +151,6 @@ workflows:
             cd ./_step_template
             bitrise run step
 
-  ci:
-    before_run:
-    - ci_step_template
-    steps:
-    - script:
-        title: Running CI script
-        inputs:
-        - content: bash _scripts/ci.sh
-    - slack:
-        inputs:
-        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-        - channel: $INTERNAL_DEV_SLACK_CHANNEL
-        - from_username: ${BITRISE_BIN_NAME} - CI - OK
-        - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
-        - emoji: ":white_check_mark:"
-        - emoji_on_error: ":no_entry_sign:"
-        - message: |-
-            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
-        - message_on_error: |-
-            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
   noop:
     description: |-
       Empty workflow, for quick testing.
@@ -213,3 +185,68 @@ workflows:
             #!/bin/bash
             set -v
             exit 0
+
+  ci:
+    before_run:
+    - ci_step_template
+    steps:
+    - script:
+        title: Install required testing tools
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            # Install dependencies
+            go get -u github.com/tools/godep
+
+            # Check for unhandled errors
+            go get -u github.com/kisielk/errcheck
+
+            # Go lint
+            go get -u github.com/golang/lint/golint
+    - script:
+        title: Godeps - GOPATH patch
+        inputs:
+        - content: envman add --key GOPATH --value "$(godep path):$GOPATH"
+    - script:
+        title: Go Build & bitrise setup
+        inputs:
+        - content: |-
+            set -e
+            set -v
+            
+            # Build a test version
+            go build -o tmpbin
+            ./tmpbin setup
+            rm ./tmpbin
+    - script:
+        title: Go Test
+        inputs:
+        - content: godep go test ./...
+    - script:
+        title: Err check
+        inputs:
+        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+    - script:
+        title: Go Lint
+        inputs:
+        - content: golint
+    - slack:
+        run_if: .IsCI
+        inputs:
+        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
+        - channel: $INTERNAL_DEV_SLACK_CHANNEL
+        - from_username: ${BITRISE_BIN_NAME} - CI - OK
+        - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
+        - emoji: ":white_check_mark:"
+        - emoji_on_error: ":no_entry_sign:"
+        - message: |-
+            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
+        - message_on_error: |-
+            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
