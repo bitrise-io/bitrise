@@ -35,6 +35,7 @@ func envStorePathInCurrentDir() (string, error) {
 
 func initLogFormatter() {
 	log.SetFormatter(&log.TextFormatter{
+		ForceColors:     true,
 		FullTimestamp:   true,
 		TimestampFormat: "15:04:05",
 	})
