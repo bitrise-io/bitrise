@@ -121,7 +121,11 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	var err error
+	buildRunResults, err = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	if err != nil {
+		t.Fatal("Failed to activate and run worfklow:", err)
+	}
 	if len(buildRunResults.SuccessSteps) != 0 {
 		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
 	}
@@ -252,7 +256,10 @@ func Test1Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	if err != nil {
+		t.Fatal("Failed to activate and run worfklow:", err)
+	}
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -1088,5 +1095,41 @@ workflows:
 	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
 		t.Log("STEPLIB_BUILD_STATUS:", status)
 		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+func TestLastWorkflowIDInConfig(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before:
+
+  target:
+    title: target
+    before_run:
+    - before
+    after_run:
+    - after1
+
+  after1:
+    after_run:
+    - after2
+
+  after2:
+  `
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	last, err := lastWorkflowIDInConfig("target", config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if last != "after2" {
+		t.Fatalf("Last workflow id is incorrect: (%s) should be (after2)", last)
 	}
 }
