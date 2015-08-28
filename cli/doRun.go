@@ -436,7 +436,6 @@ func activateAndRunWorkflow(workflow models.WorkflowModel, bitriseConfig models.
 }
 
 func lastWorkflowIDInConfig(workflowToRunID string, bitriseConfig models.BitriseDataModel) (string, error) {
-	fmt.Printf("********** Checking for last (%s)", workflowToRunID)
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
 		return "", errors.New("No worfklow exist with ID: " + workflowToRunID)
