@@ -10,7 +10,19 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func initLogFormatter() {
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors:     true,
+		FullTimestamp:   true,
+		TimestampFormat: "15:04:05",
+	})
+}
+
 func before(c *cli.Context) error {
+	initLogFormatter()
+	initHelpAndVersionFlags()
+	initAppHelpTemplate()
+
 	// Log level
 	if logLevel, err := log.ParseLevel(c.String(LogLevelKey)); err != nil {
 		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
