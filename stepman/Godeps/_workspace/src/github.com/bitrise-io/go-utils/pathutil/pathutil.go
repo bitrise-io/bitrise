@@ -32,10 +32,10 @@ func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	}
 	fileInf, err := os.Stat(pth)
 	if err == nil {
-		return nil, true, nil
+		return fileInf, true, nil
 	}
 	if os.IsNotExist(err) {
-		return fileInf, false, nil
+		return nil, false, nil
 	}
 	return fileInf, false, err
 }

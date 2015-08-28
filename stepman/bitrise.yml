@@ -70,7 +70,7 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ":rocket:"
-  godep-update:
+  godeps-update:
     steps:
     - script:
           title: Dependency update
