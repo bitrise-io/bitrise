@@ -384,8 +384,11 @@ func lastWorkflowIDInConfig(workflowToRunID string, bitriseConfig models.Bitrise
 	return workflowToRunID, nil
 }
 
-func runWorkflowWithConfiguration(startTime time.Time, workflowToRunID string,
-	bitriseConfig models.BitriseDataModel, secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
+func runWorkflowWithConfiguration(
+	startTime time.Time,
+	workflowToRunID string,
+	bitriseConfig models.BitriseDataModel,
+	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
 
 	if err := bitrise.InitPaths(); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to initialize required paths: %s", err)

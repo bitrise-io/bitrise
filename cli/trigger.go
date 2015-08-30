@@ -16,8 +16,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-const defaultTriggerMapFileName = "trigger-map.yml"
-
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
 	for _, triggerItem := range triggerMap {
