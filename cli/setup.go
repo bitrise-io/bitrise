@@ -24,7 +24,7 @@ func PrintBitriseHeaderASCIIArt(appVersion string) {
 	fmt.Println()
 }
 
-func doSetup(c *cli.Context) {
+func setup(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	if err := bitrise.RunSetup(c.App.Version, c.Bool(MinimalModeKey)); err != nil {

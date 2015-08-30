@@ -79,7 +79,7 @@ func InitPaths() error {
 	}
 	OutputEnvstorePath = outputEnvstorePath
 
-	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formout.md"))
+	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formatted_output.md"))
 	if err != nil {
 		return fmt.Errorf("Failed to set formatted output path: %s", err)
 	}
