@@ -1,0 +1,58 @@
+format_version: 0.9.8
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: false
+  workflow: master
+- pattern: feature/*
+  is_pull_request_allowed: true
+  workflow: feature
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: primary
+
+workflows:
+  master:
+    title: Master workflow
+    summary: Shuld triggered by master branches
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo 'This the master workflow'
+
+  feature:
+    title: Feature workflow
+    summary: Shoould triggered by feature branches
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo 'This is a feature workflow'
+
+  primary:
+    title: Primary workflow
+    before_run:
+    - before
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo 'This is the primary workflow'
+            echo 'time: ${ISO_DATETIME}'
+            
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo 'This is the primary workflow'
+            echo 'time: ${ISO_DATETIME}'
+
+  before:
+    title: Primary workflow
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::timestamp:

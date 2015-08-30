@@ -8,7 +8,7 @@ var (
 			Name:    "setup",
 			Aliases: []string{"s"},
 			Usage:   "Setup the current host. Install every required tool to run Workflows.",
-			Action:  doSetup,
+			Action:  setup,
 			Flags: []cli.Flag{
 				flMinimalSetup,
 			},
@@ -17,13 +17,23 @@ var (
 			Name:    "init",
 			Aliases: []string{"i"},
 			Usage:   "Generates a Workflow/app config file in the current directory, which then can be run immediately.",
-			Action:  doInit,
+			Action:  initConfig,
 		},
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
 			Usage:   "Runs a specified Workflow.",
-			Action:  doRun,
+			Action:  run,
+			Flags: []cli.Flag{
+				flPath,
+				flInventory,
+			},
+		},
+		{
+			Name:    "trigger",
+			Aliases: []string{"t"},
+			Usage:   "Triggers a specified Workflow.",
+			Action:  trigger,
 			Flags: []cli.Flag{
 				flPath,
 				flInventory,
