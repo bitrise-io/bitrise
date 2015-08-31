@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -247,7 +248,7 @@ func removeStepRedundantFields(step *stepmanModels.StepModel) error {
 	if step.SupportURL != nil && *step.SupportURL == "" {
 		step.SupportURL = nil
 	}
-	if step.PublishedAt != nil && *step.PublishedAt == "" {
+	if step.PublishedAt != nil && (*step.PublishedAt).Equal(time.Time{}) {
 		step.PublishedAt = nil
 	}
 	if step.IsRequiresAdminUser != nil && *step.IsRequiresAdminUser == stepmanModels.DefaultIsRequiresAdminUser {
@@ -424,9 +425,6 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	}
 	if otherStep.SupportURL != nil {
 		step.SupportURL = pointers.NewStringPtr(*otherStep.SupportURL)
-	}
-	if otherStep.PublishedAt != nil {
-		step.PublishedAt = pointers.NewStringPtr(*otherStep.PublishedAt)
 	}
 	if otherStep.Source.Git != "" {
 		step.Source.Git = otherStep.Source.Git

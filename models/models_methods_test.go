@@ -125,14 +125,12 @@ func TestMergeStepWith(t *testing.T) {
 	summ := "sum 1"
 	website := "web/1"
 	fork := "fork/1"
-	publishedAt := "today"
 
 	stepData := stepmanModels.StepModel{
 		Description:         pointers.NewStringPtr(desc),
 		Summary:             pointers.NewStringPtr(summ),
 		Website:             pointers.NewStringPtr(website),
 		SourceCodeURL:       pointers.NewStringPtr(fork),
-		PublishedAt:         pointers.NewStringPtr(publishedAt),
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
@@ -193,9 +191,6 @@ func TestMergeStepWith(t *testing.T) {
 	}
 	if *mergedStepData.SourceCodeURL != "fork/1" {
 		t.Fatal("mergedStepData.SourceCodeURL incorrectly converted:", *mergedStepData.SourceCodeURL)
-	}
-	if *mergedStepData.PublishedAt != "today" {
-		t.Fatal("mergedStepData.PublishedAt incorrectly converted:", *mergedStepData.PublishedAt)
 	}
 	if mergedStepData.HostOsTags[0] != "linux" {
 		t.Fatal("mergedStepData.HostOsTags incorrectly converted:", mergedStepData.HostOsTags)
@@ -628,7 +623,6 @@ func TestRemoveStepRedundantFields(t *testing.T) {
 		Website:       pointers.NewStringPtr(""),
 		SourceCodeURL: pointers.NewStringPtr(""),
 		SupportURL:    pointers.NewStringPtr(""),
-		PublishedAt:   pointers.NewStringPtr(""),
 		Source: stepmanModels.StepSourceModel{
 			Git:    "",
 			Commit: "",
