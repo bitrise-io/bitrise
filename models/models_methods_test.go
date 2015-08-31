@@ -2,6 +2,7 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -125,12 +126,14 @@ func TestMergeStepWith(t *testing.T) {
 	summ := "sum 1"
 	website := "web/1"
 	fork := "fork/1"
+	published := time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 	stepData := stepmanModels.StepModel{
 		Description:         pointers.NewStringPtr(desc),
 		Summary:             pointers.NewStringPtr(summ),
 		Website:             pointers.NewStringPtr(website),
 		SourceCodeURL:       pointers.NewStringPtr(fork),
+		PublishedAt:         pointers.NewTimePtr(published),
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
 		TypeTags:            []string{"test"},
@@ -191,6 +194,9 @@ func TestMergeStepWith(t *testing.T) {
 	}
 	if *mergedStepData.SourceCodeURL != "fork/1" {
 		t.Fatal("mergedStepData.SourceCodeURL incorrectly converted:", *mergedStepData.SourceCodeURL)
+	}
+	if (*mergedStepData.PublishedAt).Equal(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)) == false {
+		t.Fatal("mergedStepData.PublishedAt incorrectly converted:", *mergedStepData.PublishedAt)
 	}
 	if mergedStepData.HostOsTags[0] != "linux" {
 		t.Fatal("mergedStepData.HostOsTags incorrectly converted:", mergedStepData.HostOsTags)
@@ -623,6 +629,7 @@ func TestRemoveStepRedundantFields(t *testing.T) {
 		Website:       pointers.NewStringPtr(""),
 		SourceCodeURL: pointers.NewStringPtr(""),
 		SupportURL:    pointers.NewStringPtr(""),
+		PublishedAt:   pointers.NewTimePtr(time.Time{}),
 		Source: stepmanModels.StepSourceModel{
 			Git:    "",
 			Commit: "",
@@ -682,6 +689,9 @@ func TestRemoveStepRedundantFields(t *testing.T) {
 	}
 	if step.SupportURL != nil {
 		t.Fatal("step.SupportURL should be nil")
+	}
+	if step.PublishedAt != nil {
+		t.Fatal("step.PublishedAt should be nil")
 	}
 	if step.Source.Git != "" || step.Source.Commit != "" {
 		t.Fatal("step.Source.Git && step.Source.Commit should be empty")
@@ -1038,17 +1048,3 @@ trigger_map:
 		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
 	}
 }
-
-/*
-func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID string) (string, error) {
-	for _, item := range config.TriggerMap {
-		if glob.Glob(item.Pattern, pattern) {
-			if !item.IsPullRequestAllowed && pullRequestID != "" {
-				return "", fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
-			}
-			return item.WorkflowID, nil
-		}
-	}
-	return "", fmt.Errorf("Trigger filter (%s) not found in trigger map(%#v)", pattern, config.TriggerMap)
-}
-*/
