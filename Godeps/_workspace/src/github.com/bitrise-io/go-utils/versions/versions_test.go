@@ -20,6 +20,15 @@ func TestCompareVersions(t *testing.T) {
 		t.Fatal("Failed, res:", res, "| err:", err)
 	}
 
+	t.Log("1.0.0 <-> 0.9.8")
+	if res, err := CompareVersions("1.0.0", "0.9.8"); res != -1 || err != nil {
+		t.Fatal("Failed, res:", res, "| err:", err)
+	}
+	t.Log("0.9.8 <-> 1.0.0")
+	if res, err := CompareVersions("0.9.8", "1.0.0"); res != 1 || err != nil {
+		t.Fatal("Failed, res:", res, "| err:", err)
+	}
+
 	t.Log("Missing last num in first")
 	if res, err := CompareVersions("7.0", "7.0.2"); res != 1 || err != nil {
 		t.Fatal("Failed, res:", res, "| err:", err)
@@ -83,6 +92,24 @@ func TestIsVersionGreaterOrEqual(t *testing.T) {
 
 	t.Log("No - Trivial")
 	isGreaterOrEql, err = IsVersionGreaterOrEqual("1.0", "1.1")
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isGreaterOrEql {
+		t.Fatal("Invalid result")
+	}
+
+	t.Log("No - 1.0.0<->0.9.8")
+	isGreaterOrEql, err = IsVersionGreaterOrEqual("1.0.0", "0.9.8")
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isGreaterOrEql {
+		t.Fatal("Invalid result")
+	}
+
+	t.Log("No - 0.9.8<->1.0.0")
+	isGreaterOrEql, err = IsVersionGreaterOrEqual("0.9.8", "1.0.0")
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}

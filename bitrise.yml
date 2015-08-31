@@ -8,26 +8,36 @@ app:
 
 workflows:
 
-  test:
+  _test:
     steps:
     - script:
-        title: Running go test ./...
+        title: Godeps - GOPATH patch
         inputs:
-        - content: |
-            #!/bin/bash
+        - content: |-
+            set -e
             set -v
-            go test ./...
+            envman add --key ORIG_GOPATH --value "$GOPATH"
+            envman add --key GOPATH --value "$(godep path):$GOPATH"
     - script:
-        title: Running the TEST script
+        title: Go Test
         inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            bash ./_scripts/common/test.sh
+        - content: godep go test ./...
+    - script:
+        title: Err check
+        inputs:
+        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+    - script:
+        title: Go Lint
+        inputs:
+        - content: golint
+    - script:
+        title: Restore original GOPATH
+        inputs:
+        - content: envman add --key GOPATH --value "$ORIG_GOPATH"
 
   install:
     before_run:
-      - test
+      - _test
     steps:
     - script@0.9.0:
         title: Running go install
@@ -72,7 +82,7 @@ workflows:
 
   create-release:
     before_run:
-    - test
+    - _test
     steps:
     - script:
         title: Creating deploy
@@ -145,6 +155,7 @@ workflows:
   ci_step_template:
     steps:
     - script:
+        title: Run bitrise run on the step-template
         inputs:
         - content: |-
             #!/bin/bash
@@ -186,9 +197,7 @@ workflows:
             set -v
             exit 0
 
-  ci:
-    before_run:
-    - ci_step_template
+  _install_ci_tools:
     steps:
     - script:
         title: Install required testing tools
@@ -206,33 +215,13 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
-    - script:
-        title: Godeps - GOPATH patch
-        inputs:
-        - content: envman add --key GOPATH --value "$(godep path):$GOPATH"
-    - script:
-        title: Go Build & bitrise setup
-        inputs:
-        - content: |-
-            set -e
-            set -v
-            
-            # Build a test version
-            go build -o tmpbin
-            ./tmpbin setup
-            rm ./tmpbin
-    - script:
-        title: Go Test
-        inputs:
-        - content: godep go test ./...
-    - script:
-        title: Err check
-        inputs:
-        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
-    - script:
-        title: Go Lint
-        inputs:
-        - content: golint
+
+  ci:
+    before_run:
+    - ci_step_template
+    - _install_ci_tools
+    - _test
+    steps:
     - slack:
         run_if: .IsCI
         inputs:
