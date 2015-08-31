@@ -216,7 +216,7 @@ workflows:
         - content: |-
             set -e
             set -v
-            
+
             # Build a test version
             go build -o tmpbin
             ./tmpbin setup
