@@ -15,13 +15,22 @@ func WriteStringToFile(pth string, fileCont string) error {
 	return WriteBytesToFile(pth, []byte(fileCont))
 }
 
-// WriteBytesToFile ...
-func WriteBytesToFile(pth string, fileCont []byte) error {
+// WriteBytesToFileWithPermission ...
+func WriteBytesToFileWithPermission(pth string, fileCont []byte, perm os.FileMode) error {
 	if pth == "" {
 		return errors.New("No path provided")
 	}
 
-	file, err := os.Create(pth)
+	var file *os.File
+	var err error
+	if perm == 0 {
+		file, err = os.Create(pth)
+	} else {
+		// same as os.Create, but with a specified permission
+		//  the flags are copy-pasted from the official
+		//  os.Create func: https://golang.org/src/os/file.go?s=7327:7366#L244
+		file, err = os.OpenFile(pth, os.O_RDWR|os.O_CREATE|os.O_TRUNC, perm)
+	}
 	if err != nil {
 		return err
 	}
@@ -36,6 +45,11 @@ func WriteBytesToFile(pth string, fileCont []byte) error {
 	}
 
 	return nil
+}
+
+// WriteBytesToFile ...
+func WriteBytesToFile(pth string, fileCont []byte) error {
+	return WriteBytesToFileWithPermission(pth, fileCont, 0)
 }
 
 // AppendStringToFile ...
@@ -80,7 +94,7 @@ func ReadBytesFromFile(pth string) ([]byte, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return []byte{}, err
 	} else if !isExists {
-		return []byte{}, errors.New(fmt.Sprint("No file found at path", pth))
+		return []byte{}, fmt.Errorf("No file found at path: %s", pth)
 	}
 
 	bytes, err := ioutil.ReadFile(pth)
