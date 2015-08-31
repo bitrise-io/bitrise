@@ -427,9 +427,6 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.SupportURL = pointers.NewStringPtr(*otherStep.SupportURL)
 	}
 	if otherStep.PublishedAt != nil {
-		if step.PublishedAt == nil {
-			step.PublishedAt = pointers.NewTimePtr(time.Time{})
-		}
 		step.PublishedAt = pointers.NewTimePtr(*otherStep.PublishedAt)
 	}
 	if otherStep.Source.Git != "" {
