@@ -119,6 +119,9 @@ func (step *StepModel) FillMissingDefaults() error {
 	if step.SupportURL == nil {
 		step.SupportURL = pointers.NewStringPtr("")
 	}
+	if step.PublishedAt == nil {
+		step.PublishedAt = pointers.NewStringPtr("")
+	}
 	if step.IsRequiresAdminUser == nil {
 		step.IsRequiresAdminUser = pointers.NewBoolPtr(DefaultIsRequiresAdminUser)
 	}
