@@ -18,6 +18,9 @@ const (
 	StepRunStatusCodeSkipped = 3
 	// StepRunStatusCodeSkippedWithRunIf ...
 	StepRunStatusCodeSkippedWithRunIf = 4
+
+	// Version ...
+	Version = "1.0.0"
 )
 
 // StepListItemModel ...

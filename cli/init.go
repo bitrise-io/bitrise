@@ -90,7 +90,7 @@ func initConfig(c *cli.Context) {
 	scriptStepContent := `#!/bin/bash
 echo "Welcome to Bitrise!"`
 	bitriseConf := models.BitriseDataModel{
-		FormatVersion:        c.App.Version,
+		FormatVersion:        models.Version,
 		DefaultStepLibSource: defaultStepLibSource,
 		App: models.AppModel{
 			Environments: projectSettingsEnvs,
