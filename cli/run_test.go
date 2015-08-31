@@ -122,7 +122,7 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		StartTime: time.Now(),
 	}
 	var err error
-	buildRunResults, err = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
 	if err != nil {
 		t.Fatal("Failed to activate and run worfklow:", err)
 	}
@@ -256,7 +256,7 @@ func Test1Workflows(t *testing.T) {
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime: time.Now(),
 	}
-	buildRunResults, err = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
 	if err != nil {
 		t.Fatal("Failed to activate and run worfklow:", err)
 	}

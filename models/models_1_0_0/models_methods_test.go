@@ -938,3 +938,111 @@ workflows:
 		}
 	}
 }
+
+// ----------------------------
+// --- Trigger
+
+func TestWorkflowIDByPattern(t *testing.T) {
+	configStr := `
+format_version: 0.9.8
+
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: false
+  workflow: master
+- pattern: feature/*
+  is_pull_request_allowed: true
+  workflow: feature
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: primary
+`
+
+	config, err := configModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// empty pattern -> should select *
+	workflowID, err := config.WorkflowIDByPattern("", "")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "primary" {
+		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
+	}
+
+	// not exist patter pattern -> should select *
+	workflowID, err = config.WorkflowIDByPattern("test", "")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "primary" {
+		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
+	}
+
+	// select by exist pattern, no pull request -> should select master
+	workflowID, err = config.WorkflowIDByPattern("master", "")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "master" {
+		t.Fatalf("Triggered workflow id (%s), should be (master)", workflowID)
+	}
+
+	// select by exist pattern, with pull request -> should fail
+	workflowID, err = config.WorkflowIDByPattern("master", "pull_request_id")
+	if err == nil {
+		t.Fatal("Triggered with pull request, this patter should fail")
+	}
+
+	// select by exist pattern part  -> should select feautre/*
+	workflowID, err = config.WorkflowIDByPattern("feature/test", "pull_request_id")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "feature" {
+		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
+	}
+
+	// select by exist pattern part -> should select feautre/*
+	workflowID, err = config.WorkflowIDByPattern("feature/ ", "pull_request_id")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "feature" {
+		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
+	}
+
+	// select by exist pattern part -> should select feautre/*
+	workflowID, err = config.WorkflowIDByPattern("feature/", "pull_request_id")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "feature" {
+		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
+	}
+
+	// select by pattern part -> should select *
+	workflowID, err = config.WorkflowIDByPattern("feature", "pull_request_id")
+	if err != nil {
+		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
+	}
+	if workflowID != "primary" {
+		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
+	}
+}
+
+/*
+func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID string) (string, error) {
+	for _, item := range config.TriggerMap {
+		if glob.Glob(item.Pattern, pattern) {
+			if !item.IsPullRequestAllowed && pullRequestID != "" {
+				return "", fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
+			}
+			return item.WorkflowID, nil
+		}
+	}
+	return "", fmt.Errorf("Trigger filter (%s) not found in trigger map(%#v)", pattern, config.TriggerMap)
+}
+*/

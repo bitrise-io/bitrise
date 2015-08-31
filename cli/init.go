@@ -38,7 +38,7 @@ const (
     # You can prevent this with is_expand: no`
 )
 
-func doInit(c *cli.Context) {
+func initConfig(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
