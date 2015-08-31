@@ -93,7 +93,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Environment variable manager"
-	app.Version = "0.9.7"
+	app.Version = "0.9.8"
 
 	app.Author = ""
 	app.Email = ""
