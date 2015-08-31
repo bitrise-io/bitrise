@@ -580,7 +580,7 @@ func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID strin
 			return item.WorkflowID, nil
 		}
 	}
-	return "", fmt.Errorf("Trigger filter (%s) not found in trigger map(%#v)", pattern, config.TriggerMap)
+	return "", fmt.Errorf("Trigger (%s) did not match any of the defined patterns (%#v)", pattern, config.TriggerMap)
 }
 
 // ----------------------------
