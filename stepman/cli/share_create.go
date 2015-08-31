@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -105,6 +107,7 @@ func create(c *cli.Context) {
 		Git:    gitURI,
 		Commit: commit,
 	}
+	stepModel.PublishedAt = pointers.NewTimePtr(time.Now())
 	if err := stepModel.ValidateStep(true); err != nil {
 		log.Fatal(err)
 	}
