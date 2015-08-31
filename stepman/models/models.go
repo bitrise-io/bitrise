@@ -24,6 +24,7 @@ type StepModel struct {
 	Website             *string           `json:"website,omitempty" yaml:"website,omitempty"`
 	SourceCodeURL       *string           `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
 	SupportURL          *string           `json:"support_url,omitempty" yaml:"support_url,omitempty"`
+	PublishedAt         *string           `json:"published_at,omitempty" yaml:"published_at,omitempty"`
 	Source              StepSourceModel   `json:"source,omitempty" yaml:"source,omitempty"`
 	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`

@@ -187,6 +187,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	if step.SupportURL == nil || *step.SupportURL != "" {
 		t.Fatal("SourceCodeURL missing")
 	}
+	if step.PublishedAt == nil || *step.PublishedAt != "" {
+		t.Fatal("PublishedAt missing")
+	}
 	if step.IsRequiresAdminUser == nil || *step.IsRequiresAdminUser != DefaultIsRequiresAdminUser {
 		t.Fatal("IsRequiresAdminUser missing")
 	}
