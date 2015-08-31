@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
