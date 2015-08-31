@@ -48,7 +48,10 @@ func CompareVersions(version1, version2 string) (int, error) {
 
 		if num2 > num1 {
 			return 1, nil
+		} else if num2 < num1 {
+			return -1, nil
 		}
+
 		if i == cnt-1 {
 			// last one
 			if num2 == num1 {
