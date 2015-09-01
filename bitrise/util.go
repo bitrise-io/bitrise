@@ -234,7 +234,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 		return stepmanModels.StepModel{}, err
 	}
 
-	if err := stepModel.ValidateStep(false); err != nil {
+	if err := stepModel.Validate(false); err != nil {
 		return stepmanModels.StepModel{}, err
 	}
 
@@ -245,7 +245,58 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	return stepModel, nil
 }
 
-func fillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSource string) error {
+func getInputByKey(inputs []envmanModels.EnvironmentItemModel, key string) (envmanModels.EnvironmentItemModel, error) {
+	for _, input := range inputs {
+		aKey, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, err
+		}
+		if aKey == key {
+			return input, nil
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, fmt.Errorf("No Environmnet found for key (%s)", key)
+}
+
+func isStringSliceWithSameElements(s1, s2 []string) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+
+	m := make(map[string]bool, len(s1))
+	for _, s := range s1 {
+		m[s] = true
+	}
+
+	for _, s := range s2 {
+		v, found := m[s]
+		if !found || !v {
+			return false
+		}
+	}
+	return true
+}
+
+func isDependencySliceWithSameElements(s1, s2 []stepmanModels.DependencyModel) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+
+	for _, dep1 := range s1 {
+		for i, dep2 := range s2 {
+			if dep1.Manager == dep2.Manager && dep1.Name == dep2.Name {
+				continue
+			}
+			if i == len(s2)-1 {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSource string) error {
 	// Create stepIDData
 	compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(*stepListItem)
 	if err != nil {
@@ -303,6 +354,122 @@ func fillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSourc
 			return err
 		}
 
+		if *workflowStep.Title == *specStep.Title {
+			workflowStep.Title = nil
+		}
+		if *workflowStep.Description == *specStep.Description {
+			workflowStep.Description = nil
+		}
+		if *workflowStep.Summary == *specStep.Summary {
+			workflowStep.Summary = nil
+		}
+		if *workflowStep.Website == *specStep.Website {
+			workflowStep.Website = nil
+		}
+		if *workflowStep.SourceCodeURL == *specStep.SourceCodeURL {
+			workflowStep.SourceCodeURL = nil
+		}
+		if *workflowStep.SupportURL == *specStep.SupportURL {
+			workflowStep.SupportURL = nil
+		}
+		workflowStep.PublishedAt = nil
+		if workflowStep.Source.Git == specStep.Source.Git {
+			workflowStep.Source.Git = ""
+		}
+		if workflowStep.Source.Commit == specStep.Source.Commit {
+			workflowStep.Source.Commit = ""
+		}
+		if isStringSliceWithSameElements(workflowStep.HostOsTags, specStep.HostOsTags) {
+			workflowStep.HostOsTags = []string{}
+		}
+		if isStringSliceWithSameElements(workflowStep.ProjectTypeTags, specStep.ProjectTypeTags) {
+			workflowStep.ProjectTypeTags = []string{}
+		}
+		if isStringSliceWithSameElements(workflowStep.TypeTags, specStep.TypeTags) {
+			workflowStep.TypeTags = []string{}
+		}
+		if isDependencySliceWithSameElements(workflowStep.Dependencies, specStep.Dependencies) {
+			workflowStep.Dependencies = []stepmanModels.DependencyModel{}
+		}
+		if *workflowStep.IsRequiresAdminUser == *specStep.IsRequiresAdminUser {
+			workflowStep.IsRequiresAdminUser = nil
+		}
+		if *workflowStep.IsAlwaysRun == *specStep.IsAlwaysRun {
+			workflowStep.IsAlwaysRun = nil
+		}
+		if *workflowStep.IsSkippable == *specStep.IsSkippable {
+			workflowStep.IsSkippable = nil
+		}
+		if *workflowStep.RunIf == *specStep.RunIf {
+			workflowStep.RunIf = nil
+		}
+
+		for _, input := range workflowStep.Inputs {
+			wfKey, _, err := input.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			wfOptions, err := input.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			sInput, err := getInputByKey(specStep.Inputs, wfKey)
+			if err != nil {
+				return err
+			}
+
+			sOptions, err := sInput.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			hasOptions := false
+
+			if *wfOptions.Title == *sOptions.Title {
+				wfOptions.Title = nil
+			} else {
+				hasOptions = true
+			}
+
+			if *wfOptions.Description == *sOptions.Description {
+				wfOptions.Description = nil
+			} else {
+				hasOptions = true
+			}
+
+			if *wfOptions.Summary == *sOptions.Summary {
+				wfOptions.Summary = nil
+			} else {
+				hasOptions = true
+			}
+
+			if *wfOptions.IsRequired == *sOptions.IsRequired {
+				wfOptions.IsRequired = nil
+			} else {
+				hasOptions = true
+			}
+
+			if *wfOptions.IsExpand == *sOptions.IsExpand {
+				wfOptions.IsExpand = nil
+			} else {
+				hasOptions = true
+			}
+
+			if *wfOptions.IsDontChangeValue == *sOptions.IsDontChangeValue {
+				wfOptions.IsDontChangeValue = nil
+			} else {
+				hasOptions = true
+			}
+
+			if hasOptions {
+				input[envmanModels.OptionsKey] = wfOptions
+			} else {
+				delete(input, envmanModels.OptionsKey)
+			}
+		}
+
 		workflowStep.Outputs = specStep.Outputs
 		(*stepListItem)[compositeStepIDStr] = workflowStep
 	}
@@ -319,10 +486,10 @@ func fillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSourc
 }
 
 // RemoveConfigRedundantFieldsAndFillStepOutputs ...
-func RemoveConfigRedundantFieldsAndFillStepOutputs(config models.BitriseDataModel) error {
+func RemoveConfigRedundantFieldsAndFillStepOutputs(config *models.BitriseDataModel) error {
 	for _, workflow := range config.Workflows {
 		for _, stepListItem := range workflow.Steps {
-			if err := fillStepOutputs(&stepListItem, config.DefaultStepLibSource); err != nil {
+			if err := removeStepDefaultsAndFillStepOutputs(&stepListItem, config.DefaultStepLibSource); err != nil {
 				return err
 			}
 		}
@@ -330,5 +497,6 @@ func RemoveConfigRedundantFieldsAndFillStepOutputs(config models.BitriseDataMode
 	if err := config.RemoveRedundantFields(); err != nil {
 		return err
 	}
+
 	return nil
 }

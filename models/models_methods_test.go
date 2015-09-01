@@ -45,9 +45,49 @@ func TestValidate(t *testing.T) {
 		BeforeRun: []string{"befor1", "befor2", "befor3"},
 		AfterRun:  []string{"after1", "after2", "after3"},
 	}
-	err := workflow.Validate("title")
+	err := workflow.Validate()
 	if err != nil {
 		t.Fatal(err)
+	}
+	err = workflow.Validate()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  summary: "sum"
+  envs:
+  - ENV_KEY: env_value
+    BAD_KEY: value
+    opts:
+      is_required: true
+
+workflows:
+  target:
+    envs:
+    - ENV_KEY: env_value
+      opts:
+        title: test_env
+    title: Output Test
+    steps:
+    - script:
+        description: test
+`
+
+	config := BitriseDataModel{}
+	if err = yaml.Unmarshal([]byte(configStr), &config); err != nil {
+		t.Fatal("Failed to yaml.Unmarshal config string, err:", err)
+	}
+
+	if err := config.Normalize(); err != nil {
+		t.Fatal("Failed to Normalize config, err:", err)
+	}
+	if err := config.Validate(); err == nil {
+		t.Fatal("Validate should fail: invalid app environment")
 	}
 }
 
