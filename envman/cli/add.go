@@ -30,7 +30,7 @@ func addEnv(key string, value string, expand, replace bool) error {
 			IsExpand: pointers.NewBoolPtr(expand),
 		},
 	}
-	if err := newEnv.NormalizeEnvironmentItemModel(); err != nil {
+	if err := newEnv.NormalizeValidateFillDefaults(); err != nil {
 		return err
 	}
 

@@ -208,7 +208,7 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 		return []models.EnvironmentItemModel{}, err
 	}
 	for _, env := range envsYML.Envs {
-		if err := env.NormalizeEnvironmentItemModel(); err != nil {
+		if err := env.NormalizeValidateFillDefaults(); err != nil {
 			return []models.EnvironmentItemModel{}, err
 		}
 	}

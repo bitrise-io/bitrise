@@ -190,6 +190,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	if err != nil {
 		return err
 	}
+	if options.Title == nil {
+		options.Title = pointers.NewStringPtr("")
+	}
 	if options.Description == nil {
 		options.Description = pointers.NewStringPtr("")
 	}
@@ -225,8 +228,8 @@ func (env EnvironmentItemModel) Validate() error {
 	return nil
 }
 
-// NormalizeEnvironmentItemModel ...
-func (env EnvironmentItemModel) NormalizeEnvironmentItemModel() error {
+// NormalizeValidateFillDefaults ...
+func (env EnvironmentItemModel) NormalizeValidateFillDefaults() error {
 	if err := env.Normalize(); err != nil {
 		return err
 	}
