@@ -108,7 +108,7 @@ func create(c *cli.Context) {
 		Commit: commit,
 	}
 	stepModel.PublishedAt = pointers.NewTimePtr(time.Now())
-	if err := stepModel.ValidateStep(true); err != nil {
+	if err := stepModel.Validate(true); err != nil {
 		log.Fatal(err)
 	}
 
