@@ -129,7 +129,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err := ValidateStepInputOutputModel(env)
+	err := ValidateStepInputOutputModel(env, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env)
+	err = ValidateStepInputOutputModel(env, true)
 	if err == nil {
 		t.Fatal("Empty key, should fail")
 	}
@@ -165,7 +165,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env)
+	err = ValidateStepInputOutputModel(env, true)
 	if err == nil {
 		t.Fatal("Empty Title, should fail")
 	}
