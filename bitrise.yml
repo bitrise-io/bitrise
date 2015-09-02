@@ -29,7 +29,16 @@ workflows:
     - script:
         title: Go Lint
         inputs:
-        - content: golint
+        - content: |-
+            #!/bin/bash
+            set -e
+
+            golint_out="$(golint ./...)"
+            if [[ "${golint_out}" != "" ]] ; then
+              echo "=> Golint issues found:"
+              echo "${golint_out}"
+              exit 1
+            fi
     - script:
         title: Restore original GOPATH
         inputs:
