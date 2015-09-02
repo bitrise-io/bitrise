@@ -37,9 +37,6 @@ func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
 	if options.Title == nil || *options.Title == "" {
 		return errors.New("Invalid environment: missing or empty title")
 	}
-	if options.Summary == nil || *options.Summary == "" {
-		return errors.New("Invalid environment: missing or empty summary")
-	}
 
 	return nil
 }
