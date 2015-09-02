@@ -20,22 +20,20 @@ const (
 )
 
 // ValidateStepInputOutputModel ...
-func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
-	key, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-	if key == "" {
-		return errors.New("Invalid environment: empty env_key")
-	}
-
-	options, err := env.GetOptions()
-	if err != nil {
+func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel, checkRequiredFields bool) error {
+	if err := env.Validate(); err != nil {
 		return err
 	}
 
-	if options.Title == nil || *options.Title == "" {
-		return errors.New("Invalid environment: missing or empty title")
+	if checkRequiredFields {
+		options, err := env.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		if options.Title == nil || *options.Title == "" {
+			return errors.New("Invalid environment: missing or empty title")
+		}
 	}
 
 	return nil
@@ -100,11 +98,7 @@ func (step StepModel) Validate(checkRequiredFields bool) error {
 
 	for _, input := range step.Inputs {
 		var err error
-		if checkRequiredFields {
-			err = ValidateStepInputOutputModel(input)
-		} else {
-			err = input.Validate()
-		}
+		err = ValidateStepInputOutputModel(input, checkRequiredFields)
 		if err != nil {
 			return err
 		}
@@ -112,11 +106,7 @@ func (step StepModel) Validate(checkRequiredFields bool) error {
 
 	for _, output := range step.Outputs {
 		var err error
-		if checkRequiredFields {
-			err = ValidateStepInputOutputModel(output)
-		} else {
-			err = output.Validate()
-		}
+		err = ValidateStepInputOutputModel(output, checkRequiredFields)
 		if err != nil {
 			return err
 		}
