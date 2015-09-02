@@ -14,6 +14,23 @@ workflows:
             set -v
             set -e
             rm -rf ~/.stepman
+
+  regenerate-default-collection:
+    envs:
+    - DEFAULT_STEPLIB_GIT: https://github.com/bitrise-io/bitrise-steplib.git
+    before_run:
+    - delete-stepman-dir
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+            set -e
+            stepman steup -c
+
+
+
   create-release:
     steps:
     - script:
