@@ -1,13 +1,11 @@
-format_version: 0.9.10
+format_version: 1.0.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
 app:
   envs:
   - BITRISE_PROJECT_TITLE: ensure git changes
-    opts:
-      is_expand: true
   - BITRISE_DEV_BRANCH: master
-    opts:
-      is_expand: true
+
 workflows:
   test:
     title: ""
@@ -23,3 +21,16 @@ workflows:
         - content: |-
             #!/bin/bash
             echo "Welcome to Bitrise!"
+  test2:
+    title: ""
+    summary: ""
+    before_run: []
+    after_run: []
+    envs: []
+    steps:
+    - script:
+        title: pwd
+        inputs:
+        - content: |-
+            #!/bin/bash
+            pwd
