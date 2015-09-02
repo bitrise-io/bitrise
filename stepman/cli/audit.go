@@ -11,6 +11,10 @@ import (
 )
 
 func auditStep(step models.StepModel, stepID, version string) error {
+	if err := step.Validate(true); err != nil {
+		return err
+	}
+
 	pth, err := pathutil.NormalizedOSTempDirPath(stepID + version)
 	if err != nil {
 		return err
@@ -18,6 +22,7 @@ func auditStep(step models.StepModel, stepID, version string) error {
 	if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(step.Source.Git, pth, version, step.Source.Commit); err != nil {
 		return err
 	}
+
 	return nil
 }
 
