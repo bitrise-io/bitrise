@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -19,22 +20,20 @@ const (
 )
 
 // ValidateStepInputOutputModel ...
-func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel) error {
-	key, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-	if key == "" {
-		return errors.New("Invalid environment: empty env_key")
-	}
-
-	options, err := env.GetOptions()
-	if err != nil {
+func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel, checkRequiredFields bool) error {
+	if err := env.Validate(); err != nil {
 		return err
 	}
 
-	if options.Title == nil || *options.Title == "" {
-		return errors.New("Invalid environment: missing or empty title")
+	if checkRequiredFields {
+		options, err := env.GetOptions()
+		if err != nil {
+			return err
+		}
+
+		if options.Title == nil || *options.Title == "" {
+			return errors.New("Invalid environment: missing or empty title")
+		}
 	}
 
 	return nil
@@ -77,41 +76,58 @@ func (source StepSourceModel) ValidateSource() error {
 	return nil
 }
 
-// ValidateStep ...
-func (step StepModel) ValidateStep(isValidateStepSource bool) error {
-	if step.Title == nil || *step.Title == "" {
-		return errors.New("Invalid step: missing or empty required 'title' property")
-	}
-	if step.Summary == nil || *step.Summary == "" {
-		return errors.New("Invalid step: missing or empty required 'summary' property")
-	}
-	if step.Website == nil || *step.Website == "" {
-		return errors.New("Invalid step: missing or empty required 'website' property")
-	}
-	if isValidateStepSource {
+// Validate ...
+func (step StepModel) Validate(checkRequiredFields bool) error {
+	if checkRequiredFields {
+		if step.Title == nil || *step.Title == "" {
+			return errors.New("Invalid step: missing or empty required 'title' property")
+		}
+		if step.Summary == nil || *step.Summary == "" {
+			return errors.New("Invalid step: missing or empty required 'summary' property")
+		}
+		if step.Website == nil || *step.Website == "" {
+			return errors.New("Invalid step: missing or empty required 'website' property")
+		}
+		if step.PublishedAt == nil || (*step.PublishedAt).Equal(time.Time{}) {
+			return errors.New("Invalid step: missing or empty required 'PublishedAt' property")
+		}
 		if err := step.Source.ValidateSource(); err != nil {
 			return err
 		}
 	}
+
 	for _, input := range step.Inputs {
-		err := ValidateStepInputOutputModel(input)
+		var err error
+		err = ValidateStepInputOutputModel(input, checkRequiredFields)
 		if err != nil {
 			return err
 		}
 	}
+
 	for _, output := range step.Outputs {
-		err := ValidateStepInputOutputModel(output)
+		var err error
+		err = ValidateStepInputOutputModel(output, checkRequiredFields)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
 // FillMissingDefaults ...
 func (step *StepModel) FillMissingDefaults() error {
+	if step.Title == nil {
+		step.Title = pointers.NewStringPtr("")
+	}
 	if step.Description == nil {
 		step.Description = pointers.NewStringPtr("")
+	}
+	if step.Summary == nil {
+		step.Summary = pointers.NewStringPtr("")
+	}
+	if step.Website == nil {
+		step.Website = pointers.NewStringPtr("")
 	}
 	if step.SourceCodeURL == nil {
 		step.SourceCodeURL = pointers.NewStringPtr("")
