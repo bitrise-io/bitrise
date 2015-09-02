@@ -27,7 +27,7 @@ workflows:
             #!/bin/bash
             set -v
             set -e
-            stepman steup -c
+            stepman steup -c ${DEFAULT_STEPLIB_GIT}
 
 
 
