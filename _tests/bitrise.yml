@@ -6,6 +6,17 @@ app:
   - BITRISE_PROJECT_TITLE: ensure git changes
   - BITRISE_DEV_BRANCH: master
 
+trigger_map:
+- pattern: trig-test
+  is_pull_request_allowed: true
+  workflow: test
+- pattern: trig-fail
+  is_pull_request_allowed: true
+  workflow: fail-wf
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: test2
+
 workflows:
   test:
     title: ""
@@ -34,3 +45,17 @@ workflows:
         - content: |-
             #!/bin/bash
             pwd
+  fail-wf:
+    title: Failing workflow
+    summary: ""
+    before_run: []
+    after_run: []
+    envs: []
+    steps:
+    - script:
+        title: pwd
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "FAIL!!"
+            exit 1
