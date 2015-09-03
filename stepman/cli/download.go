@@ -7,8 +7,6 @@ import (
 )
 
 func download(c *cli.Context) {
-	log.Info("[STEPMAN] - Download")
-
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
