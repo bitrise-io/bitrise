@@ -36,7 +36,7 @@ func normalize(c *cli.Context) {
 	}
 
 	// Normalize
-	if err := bitrise.RemoveConfigRedundantFieldsAndFillStepOutputs(bitriseConfig); err != nil {
+	if err := bitrise.RemoveConfigRedundantFieldsAndFillStepOutputs(&bitriseConfig); err != nil {
 		log.Fatal("Failed to remove redundant fields:", err)
 	}
 	if err := bitrise.SaveConfigToFile(bitriseConfigPath, bitriseConfig); err != nil {
