@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -86,8 +87,13 @@ workflows:
 	if err := config.Normalize(); err != nil {
 		t.Fatal("Failed to Normalize config, err:", err)
 	}
-	if err := config.Validate(); err == nil {
-		t.Fatal("Validate should fail: invalid app environment")
+	err = config.Validate()
+	if err == nil {
+		t.Fatal("Validate should fail")
+	}
+	t.Logf("Validate error (%s), should be (%s)", err.Error(), "invalid app environment")
+	if !strings.Contains(err.Error(), "Invalid env: more than 2 fields:") {
+		t.Fatal("Validate error should be: invalid app environment")
 	}
 }
 
