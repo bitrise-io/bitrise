@@ -135,7 +135,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 	collection := models.StepCollectionModel{
 		FormatVersion:        templateCollection.FormatVersion,
 		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        route.SteplibURI,
+		SteplibSource:        templateCollection.SteplibSource,
 		DownloadLocations:    templateCollection.DownloadLocations,
 	}
 
