@@ -354,22 +354,22 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			return err
 		}
 
-		if *workflowStep.Title == *specStep.Title {
+		if workflowStep.Title != nil && specStep.Title != nil && *workflowStep.Title == *specStep.Title {
 			workflowStep.Title = nil
 		}
-		if *workflowStep.Description == *specStep.Description {
+		if workflowStep.Description != nil && specStep.Description != nil && *workflowStep.Description == *specStep.Description {
 			workflowStep.Description = nil
 		}
-		if *workflowStep.Summary == *specStep.Summary {
+		if workflowStep.Summary != nil && specStep.Summary != nil && *workflowStep.Summary == *specStep.Summary {
 			workflowStep.Summary = nil
 		}
-		if *workflowStep.Website == *specStep.Website {
+		if workflowStep.Website != nil && specStep.Website != nil && *workflowStep.Website == *specStep.Website {
 			workflowStep.Website = nil
 		}
-		if *workflowStep.SourceCodeURL == *specStep.SourceCodeURL {
+		if workflowStep.SourceCodeURL != nil && specStep.SourceCodeURL != nil && *workflowStep.SourceCodeURL == *specStep.SourceCodeURL {
 			workflowStep.SourceCodeURL = nil
 		}
-		if *workflowStep.SupportURL == *specStep.SupportURL {
+		if workflowStep.SupportURL != nil && specStep.SupportURL != nil && *workflowStep.SupportURL == *specStep.SupportURL {
 			workflowStep.SupportURL = nil
 		}
 		workflowStep.PublishedAt = nil
@@ -391,16 +391,16 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		if isDependencySliceWithSameElements(workflowStep.Dependencies, specStep.Dependencies) {
 			workflowStep.Dependencies = []stepmanModels.DependencyModel{}
 		}
-		if *workflowStep.IsRequiresAdminUser == *specStep.IsRequiresAdminUser {
+		if workflowStep.IsRequiresAdminUser != nil && specStep.IsRequiresAdminUser != nil && *workflowStep.IsRequiresAdminUser == *specStep.IsRequiresAdminUser {
 			workflowStep.IsRequiresAdminUser = nil
 		}
-		if *workflowStep.IsAlwaysRun == *specStep.IsAlwaysRun {
+		if workflowStep.IsAlwaysRun != nil && specStep.IsAlwaysRun != nil && *workflowStep.IsAlwaysRun == *specStep.IsAlwaysRun {
 			workflowStep.IsAlwaysRun = nil
 		}
-		if *workflowStep.IsSkippable == *specStep.IsSkippable {
+		if workflowStep.IsSkippable != nil && specStep.IsSkippable != nil && *workflowStep.IsSkippable == *specStep.IsSkippable {
 			workflowStep.IsSkippable = nil
 		}
-		if *workflowStep.RunIf == *specStep.RunIf {
+		if workflowStep.RunIf != nil && specStep.RunIf != nil && *workflowStep.RunIf == *specStep.RunIf {
 			workflowStep.RunIf = nil
 		}
 
@@ -427,37 +427,37 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 			hasOptions := false
 
-			if *wfOptions.Title == *sOptions.Title {
+			if wfOptions.Title != nil && sOptions.Title != nil && *wfOptions.Title == *sOptions.Title {
 				wfOptions.Title = nil
 			} else {
 				hasOptions = true
 			}
 
-			if *wfOptions.Description == *sOptions.Description {
+			if wfOptions.Description != nil && sOptions.Description != nil && *wfOptions.Description == *sOptions.Description {
 				wfOptions.Description = nil
 			} else {
 				hasOptions = true
 			}
 
-			if *wfOptions.Summary == *sOptions.Summary {
+			if wfOptions.Summary != nil && sOptions.Summary != nil && *wfOptions.Summary == *sOptions.Summary {
 				wfOptions.Summary = nil
 			} else {
 				hasOptions = true
 			}
 
-			if *wfOptions.IsRequired == *sOptions.IsRequired {
+			if wfOptions.IsRequired != nil && sOptions.IsRequired != nil && *wfOptions.IsRequired == *sOptions.IsRequired {
 				wfOptions.IsRequired = nil
 			} else {
 				hasOptions = true
 			}
 
-			if *wfOptions.IsExpand == *sOptions.IsExpand {
+			if wfOptions.IsExpand != nil && sOptions.IsExpand != nil && *wfOptions.IsExpand == *sOptions.IsExpand {
 				wfOptions.IsExpand = nil
 			} else {
 				hasOptions = true
 			}
 
-			if *wfOptions.IsDontChangeValue == *sOptions.IsDontChangeValue {
+			if wfOptions.IsDontChangeValue != nil && sOptions.IsDontChangeValue != nil && *wfOptions.IsDontChangeValue == *sOptions.IsDontChangeValue {
 				wfOptions.IsDontChangeValue = nil
 			} else {
 				hasOptions = true
