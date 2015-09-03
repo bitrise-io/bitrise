@@ -91,7 +91,6 @@ workflows:
 	if err == nil {
 		t.Fatal("Validate should fail")
 	}
-	t.Logf("Validate error (%s), should be (%s)", err.Error(), "invalid app environment")
 	if !strings.Contains(err.Error(), "Invalid env: more than 2 fields:") {
 		t.Fatal("Validate error should be: invalid app environment")
 	}
