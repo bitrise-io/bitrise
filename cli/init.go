@@ -6,14 +6,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/models"
-	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/goinp/goinp"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
 
@@ -36,7 +32,82 @@ const (
     #  just like $HOME would be expanded/replaced with your home
     #  directory path.
     # You can prevent this with is_expand: no`
+
+	defaultBitriseYMLContentFormat = `format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+# Configuration specified in 'app' will be used / will be available
+#  for every workflow.
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: "%s"
+  - BITRISE_DEV_BRANCH: "%s"
+
+
+# Trigger Map defines mapping between trigger patterns
+#  and workflows.
+# You can run workflows directly with bitrise: bitrise run workflow-name
+# Or you can 'trigger' a build: bitrise trigger some-pattern
+#
+# With this example 'trigger_map' if you 'bitrise trigger test'
+#  or 'bitrise trigger test-1' or specify any other pattern
+#  which starts with 'test' then the 'test' workflow will be used.
+# In any other case (ex: 'bitrise trigger something-else') the
+#  workflow called 'fallback' will be used.
+trigger_map:
+- pattern: test**
+  is_pull_request_allowed: true
+  workflow: test
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: fallback
+
+# Workflows are where you can define different, separate scenarios.
+workflows:
+  test:
+    steps:
+    - timestamp:
+        outputs:
+        - UNIX_TIMESTAMP:
+        - ISO_DATETIME:
+    - script:
+        title: Hello Bitrise!
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Welcome to Bitrise!"
+            echo "Current time is: ${ISO_DATETIME}"
+            echo
+            echo "Your specified Project Title is: ${BITRISE_PROJECT_TITLE}"
+            echo " and the primary development branch is: ${BITRISE_DEV_BRANCH}"
+  fallback:
+    steps:
+    - script:
+        title: Fallback
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "This is a the fallback workflow, used"
+            echo " if you 'bitrise trigger' a build but the pattern"
+            echo " does not match any other pattern in the trigger_map"
+`
 )
+
+func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string) (string, error) {
+	bitriseConfContent := fmt.Sprintf(defaultBitriseYMLContentFormat,
+		userInputProjectTitle, userInputDevBranch)
+
+	bitriseConfModel, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
+	if err != nil {
+		return "", err
+	}
+
+	if err := bitriseConfModel.Validate(); err != nil {
+		return "", err
+	}
+
+	return bitriseConfContent, nil
+}
 
 func initConfig(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
@@ -56,64 +127,25 @@ func initConfig(c *cli.Context) {
 		}
 	}
 
-	defaultExpand := true
-	projectSettingsEnvs := []envmanModels.EnvironmentItemModel{}
+	userInputProjectTitle := ""
+	userInputDevBranch := ""
 	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		projectTitleEnv := envmanModels.EnvironmentItemModel{
-			"BITRISE_PROJECT_TITLE": val,
-			"opts": envmanModels.EnvironmentItemOptionsModel{
-				IsExpand: pointers.NewBoolPtr(defaultExpand),
-			},
-		}
-		projectSettingsEnvs = append(projectSettingsEnvs, projectTitleEnv)
+		userInputProjectTitle = val
 	}
 	if val, err := goinp.AskForString("What's your development branch's name?"); err != nil {
 		log.Fatalln(err)
 	} else {
-		devBranchEnv := envmanModels.EnvironmentItemModel{
-			"BITRISE_DEV_BRANCH": val,
-			"opts": envmanModels.EnvironmentItemOptionsModel{
-				IsExpand: pointers.NewBoolPtr(defaultExpand),
-			},
-		}
-		projectSettingsEnvs = append(projectSettingsEnvs, devBranchEnv)
+		userInputDevBranch = val
 	}
 
-	// TODO:
-	//  generate a couple of base steps
-	//  * timestamp gen
-	//  * bash script - hello world
-
-	scriptStepTitle := "Hello Bitrise!"
-	scriptStepContent := `#!/bin/bash
-echo "Welcome to Bitrise!"`
-	bitriseConf := models.BitriseDataModel{
-		FormatVersion:        models.Version,
-		DefaultStepLibSource: defaultStepLibSource,
-		App: models.AppModel{
-			Environments: projectSettingsEnvs,
-		},
-		Workflows: map[string]models.WorkflowModel{
-			"test": models.WorkflowModel{
-				Steps: []models.StepListItemModel{
-					models.StepListItemModel{
-						"script": stepmanModels.StepModel{
-							Title: pointers.NewStringPtr(scriptStepTitle),
-							Inputs: []envmanModels.EnvironmentItemModel{
-								envmanModels.EnvironmentItemModel{
-									"content": scriptStepContent,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	bitriseConfContent, err := generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch)
+	if err != nil {
+		log.Fatalf("Invalid Bitrise YML: %s", err)
 	}
 
-	if err := bitrise.SaveConfigToFile(bitriseConfigFileRelPath, bitriseConf); err != nil {
+	if err := fileutil.WriteStringToFile(bitriseConfigFileRelPath, bitriseConfContent); err != nil {
 		log.Fatalln("Failed to init the bitrise config file:", err)
 	} else {
 		fmt.Println()
@@ -164,6 +196,8 @@ echo "Welcome to Bitrise!"`
 	fmt.Println(" open the " + DefaultBitriseConfigFileName + " config file,")
 	fmt.Println(" modify it and then run a workflow with:")
 	fmt.Println("-> bitrise run YOUR-WORKFLOW-NAME")
+	fmt.Println(" or trigger a build with a pattern:")
+	fmt.Println("-> bitrise trigger YOUR/PATTERN")
 }
 
 func saveSecretsToFile(pth, secretsStr string) (bool, error) {
