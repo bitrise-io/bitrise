@@ -87,7 +87,7 @@ workflows:
             set -v
             set -e
             rm -rf ./Godeps
-            godep save
+            godep save ./...
 
   create-release:
     before_run:

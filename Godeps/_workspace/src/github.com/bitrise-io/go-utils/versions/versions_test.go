@@ -2,23 +2,19 @@ package versions
 
 import (
 	"testing"
+
+	"github.com/bitrise-io/go-utils/testutil"
 )
 
 func TestCompareVersions(t *testing.T) {
-	t.Log("Trivial compare")
-	if res, err := CompareVersions("1.0.0", "1.0.1"); res != 1 || err != nil {
-		t.Fatal("Failed, res:", res, "| err:", err)
-	}
+	res, err := CompareVersions("1.0.0", "1.0.1")
+	testutil.EqualAndNoError(t, 1, res, err, "Trivial compare")
 
-	t.Log("Reverse compare")
-	if res, err := CompareVersions("1.0.2", "1.0.1"); res != -1 || err != nil {
-		t.Fatal("Failed, res:", res, "| err:", err)
-	}
+	res, err = CompareVersions("1.0.2", "1.0.1")
+	testutil.EqualAndNoError(t, -1, res, err, "Reverse compare")
 
-	t.Log("Equal compare")
-	if res, err := CompareVersions("1.0.2", "1.0.2"); res != 0 || err != nil {
-		t.Fatal("Failed, res:", res, "| err:", err)
-	}
+	res, err = CompareVersions("1.0.2", "1.0.2")
+	testutil.EqualAndNoError(t, 0, res, err, "Equal compare")
 
 	t.Log("1.0.0 <-> 0.9.8")
 	if res, err := CompareVersions("1.0.0", "0.9.8"); res != -1 || err != nil {

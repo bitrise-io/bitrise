@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/bitrise-io/bitrise",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -9,32 +12,32 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.7-4-g93cb295",
-			"Rev": "93cb295b6a0b4fc4a320ddf3fb1914edd324a67b"
+			"Comment": "0.9.7-7-ga629239",
+			"Rev": "a629239611531781e3c5b22cc42c3dca5568ab2b"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "9ca80b96c6bafd3b1d9223ca15c849fb4875dcd4"
+			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -42,8 +45,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.12-13-gfc89b93",
-			"Rev": "fc89b939b99c6c5db073ac68af342a17af100626"
+			"Comment": "0.9.12-19-ge722bdb",
+			"Rev": "e722bdb0e78eba04c2773e070a30b6e2fbbe1fe7"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
@@ -53,6 +56,16 @@
 		{
 			"ImportPath": "github.com/ryanuber/go-glob",
 			"Rev": "0067a9abd927e50aed5190662702f81231413ae0"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.0-40-g7c2b1e5",
+			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/require",
+			"Comment": "v1.0-40-g7c2b1e5",
+			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
