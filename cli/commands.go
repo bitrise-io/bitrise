@@ -20,10 +20,9 @@ var (
 			Action:  initConfig,
 		},
 		{
-			Name:    "validate",
-			Aliases: []string{"v"},
-			Usage:   "Validates a specified bitrise config.",
-			Action:  validate,
+			Name:   "validate",
+			Usage:  "Validates a specified bitrise config.",
+			Action: validate,
 			Flags: []cli.Flag{
 				flPath,
 			},
