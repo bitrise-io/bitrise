@@ -12,9 +12,6 @@ import (
 	glob "github.com/ryanuber/go-glob"
 )
 
-// ----------------------------
-// --- Normalize
-
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
 		if t == title {
@@ -74,6 +71,9 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 	return nil
 }
 
+// ----------------------------
+// --- Normalize
+
 // Normalize ...
 func (workflow *WorkflowModel) Normalize() error {
 	for _, env := range workflow.Environments {
@@ -81,12 +81,25 @@ func (workflow *WorkflowModel) Normalize() error {
 			return err
 		}
 	}
-	for _, aWfStepItem := range workflow.Steps {
-		_, stepData, err := GetStepIDStepDataPair(aWfStepItem)
+
+	for _, stepListItem := range workflow.Steps {
+		stepID, step, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
 			return err
 		}
-		if err := stepData.Normalize(); err != nil {
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+	}
+
+	return nil
+}
+
+// Normalize ...
+func (app *AppModel) Normalize() error {
+	for _, env := range app.Environments {
+		if err := env.Normalize(); err != nil {
 			return err
 		}
 	}
@@ -95,16 +108,16 @@ func (workflow *WorkflowModel) Normalize() error {
 
 // Normalize ...
 func (config *BitriseDataModel) Normalize() error {
+	if err := config.App.Normalize(); err != nil {
+		return err
+	}
+
 	for _, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return err
 		}
 	}
-	for _, env := range config.App.Environments {
-		if err := env.Normalize(); err != nil {
-			return err
-		}
-	}
+
 	return nil
 }
 
@@ -112,9 +125,30 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate(title string) error {
-	// Validate envs
+func (workflow *WorkflowModel) Validate() error {
 	for _, env := range workflow.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, stepListItem := range workflow.Steps {
+		stepID, step, err := GetStepIDStepDataPair(stepListItem)
+		if err != nil {
+			return err
+		}
+		if err := step.Validate(false); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+	}
+
+	return nil
+}
+
+// Validate ...
+func (app *AppModel) Validate() error {
+	for _, env := range app.Environments {
 		if err := env.Validate(); err != nil {
 			return err
 		}
@@ -124,14 +158,19 @@ func (workflow *WorkflowModel) Validate(title string) error {
 
 // Validate ...
 func (config *BitriseDataModel) Validate() error {
+	if err := config.App.Validate(); err != nil {
+		return err
+	}
+
 	for ID, workflow := range config.Workflows {
-		if err := workflow.Validate(ID); err != nil {
+		if err := workflow.Validate(); err != nil {
 			return err
 		}
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -140,29 +179,47 @@ func (config *BitriseDataModel) Validate() error {
 
 // FillMissingDefaults ...
 func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
+	// Don't call step.FillMissingDefaults()
+	// StepLib versions of steps (which are the default versions),
+	// contains different env defaults then normal envs
+	// example: isExpand = true by default for normal envs,
+	// but script step content input env isExpand = false by default
+
 	for _, env := range workflow.Environments {
 		if err := env.FillMissingDefaults(); err != nil {
 			return err
 		}
 	}
+
 	if workflow.Title == "" {
 		workflow.Title = title
+	}
+
+	return nil
+}
+
+// FillMissingDefaults ...
+func (app *AppModel) FillMissingDefaults() error {
+	for _, env := range app.Environments {
+		if err := env.FillMissingDefaults(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // FillMissingDefaults ...
 func (config *BitriseDataModel) FillMissingDefaults() error {
+	if err := config.App.FillMissingDefaults(); err != nil {
+		return err
+	}
+
 	for title, workflow := range config.Workflows {
 		if err := workflow.FillMissingDefaults(title); err != nil {
 			return err
 		}
 	}
-	for _, env := range config.App.Environments {
-		if err := env.FillMissingDefaults(); err != nil {
-			return err
-		}
-	}
+
 	return nil
 }
 
@@ -284,13 +341,14 @@ func (workflow *WorkflowModel) removeRedundantFields() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		_, step, err := GetStepIDStepDataPair(stepListItem)
+		stepID, step, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
 			return err
 		}
 		if err := removeStepRedundantFields(&step); err != nil {
 			return err
 		}
+		stepListItem[stepID] = step
 	}
 	return nil
 }
@@ -404,10 +462,6 @@ func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.Envi
 
 // MergeStepWith ...
 func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepModel, error) {
-	if err := step.FillMissingDefaults(); err != nil {
-		return stepmanModels.StepModel{}, err
-	}
-
 	if otherStep.Title != nil {
 		step.Title = pointers.NewStringPtr(*otherStep.Title)
 	}
@@ -511,6 +565,8 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModel
 //    * path::~/path/to/step/dir
 //  * direct git url and branch or tag:
 //    * git::https://github.com/bitrise-io/steps-timestamp.git@master
+//  * Steplib independent step:
+//    * _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
 //  * full ID with steplib, stepid and version:
 //    * https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
 //  * only stepid and version (requires a default steplib source to be provided):

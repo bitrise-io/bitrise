@@ -20,6 +20,14 @@ var (
 			Action:  initConfig,
 		},
 		{
+			Name:   "validate",
+			Usage:  "Validates a specified bitrise config.",
+			Action: validate,
+			Flags: []cli.Flag{
+				flPath,
+			},
+		},
+		{
 			Name:    "run",
 			Aliases: []string{"r"},
 			Usage:   "Runs a specified Workflow.",
