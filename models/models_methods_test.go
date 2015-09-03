@@ -59,14 +59,6 @@ func TestValidate(t *testing.T) {
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-app:
-  summary: "sum"
-  envs:
-  - ENV_KEY: env_value
-    BAD_KEY: value
-    opts:
-      is_required: true
-
 workflows:
   target:
     envs:
@@ -76,7 +68,10 @@ workflows:
     title: Output Test
     steps:
     - script:
-        description: test
+        title: Should fail
+        inputs:
+        - content: echo "Hello"
+          BAD_KEY: value
 `
 
 	config := BitriseDataModel{}

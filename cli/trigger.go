@@ -117,7 +117,7 @@ func trigger(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("Faild to select workflow by filter (%s), err: %s", triggerPattern, err)
 	}
-	log.Info("Triggered workflow id: ", workflowToRunID)
+	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
 	// Run selected configuration
 	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, secretEnvironments); err != nil {
