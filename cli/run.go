@@ -3,17 +3,13 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path"
 	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
-	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/versions"
 	"github.com/codegangsta/cli"
 )
 
@@ -98,57 +94,15 @@ func run(c *cli.Context) {
 	startTime := time.Now()
 
 	// Inventory validation
-	inventoryPath := c.String(InventoryKey)
-	if inventoryPath == "" {
-		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
-
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			log.Fatalln("Failed to check path:", err)
-		} else if !exist {
-			log.Debugln("[BITRISE_CLI] - No inventory yml found")
-			inventoryPath = ""
-		}
-	} else {
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			log.Fatalln("Failed to check path: ", err)
-		} else if !exist {
-			log.Fatalln("No inventory yml found")
-		}
-	}
-
-	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
-	if inventoryPath != "" {
-		var err error
-		inventoryEnvironments, err = bitrise.CollectEnvironmentsFromFile(inventoryPath)
-		if err != nil {
-			log.Fatalln("Invalid invetory format: ", err)
-		}
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(c)
+	if err != nil {
+		log.Fatalf("Failed to create inventory, err: %s", err)
 	}
 
 	// Config validation
-	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 	if err != nil {
-		log.Fatalf("Failed to get config (bitrise.yml) path: %s", err)
-	}
-	if bitriseConfigPath == "" {
-		log.Fatalln("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
-	}
-
-	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-	if err != nil {
-		log.Fatalln("[BITRISE_CLI] - Failed to read Workflow: ", err)
-	}
-
-	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.Version, bitriseConfig.FormatVersion)
-	if err != nil {
-		log.Warn("bitrise CLI model version: ", models.Version)
-		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
-		log.Fatalln("Failed to compare bitrise CLI models's version with the bitrise.yml FormatVersion: ", err)
-	}
-	if !isConfigVersionOK {
-		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s).", bitriseConfig.FormatVersion, models.Version)
-		log.Fatalln("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+		log.Fatalf("Failed to create bitrise cofing, err: %s", err)
 	}
 
 	// Workflow validation

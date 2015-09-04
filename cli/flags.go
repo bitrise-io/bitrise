@@ -27,6 +27,16 @@ const (
 	InventoryKey      = "inventory"
 	inventoryShortKey = "i"
 
+	// InventoryBase64Key ...
+	InventoryBase64Key = "inventory-base64"
+
+	// ConfigKey ...
+	ConfigKey      = "config"
+	configShortKey = "c"
+
+	// ConfigBase64Key ...
+	ConfigBase64Key = "config-base64"
+
 	// HelpKey ...
 	HelpKey      = "help"
 	helpKeyShort = "h"
@@ -67,11 +77,23 @@ var (
 	// Command flags
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
+		Usage: "[Deprecated!!! Use 'config'] Path where the workflow config file is located.",
+	}
+	flConfig = cli.StringFlag{
+		Name:  ConfigKey + ", " + configShortKey,
 		Usage: "Path where the workflow config file is located.",
+	}
+	flConfigBase64 = cli.StringFlag{
+		Name:  ConfigBase64Key,
+		Usage: "base64 decoded config data.",
 	}
 	flInventory = cli.StringFlag{
 		Name:  InventoryKey + ", " + inventoryShortKey,
 		Usage: "Path of the inventory file.",
+	}
+	flInventoryBase64 = cli.StringFlag{
+		Name:  InventoryBase64Key,
+		Usage: "base64 decoded inventory data.",
 	}
 	// Setup
 	flMinimalSetup = cli.BoolFlag{
