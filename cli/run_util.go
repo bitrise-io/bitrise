@@ -18,6 +18,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
@@ -60,6 +61,47 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 	}
 
 	return bitriseConfigPath, nil
+}
+
+// CreateBitriseConfigFromCLIParams ...
+func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, error) {
+	bitriseConfig := models.BitriseDataModel{}
+
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	if bitriseConfigBase64Data != "" {
+		config, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+		}
+		bitriseConfig = config
+	} else {
+		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
+		}
+		if bitriseConfigPath == "" {
+			return models.BitriseDataModel{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+		}
+
+		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to validate config: %s", err)
+		}
+		bitriseConfig = config
+	}
+
+	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.Version, bitriseConfig.FormatVersion)
+	if err != nil {
+		log.Warn("bitrise CLI model version: ", models.Version)
+		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to compare bitrise CLI models's version with the bitrise.yml FormatVersion: %s", err)
+	}
+	if !isConfigVersionOK {
+		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s).", bitriseConfig.FormatVersion, models.Version)
+		return models.BitriseDataModel{}, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+	}
+
+	return bitriseConfig, nil
 }
 
 // GetInventoryFromBase64Data ...
@@ -105,6 +147,36 @@ func GetInventoryFilePath(c *cli.Context) (string, error) {
 	}
 
 	return inventoryPath, nil
+}
+
+// CreateInventoryFromCLIParams ...
+func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentItemModel, error) {
+	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
+
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	if inventoryBase64Data != "" {
+		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory from base 64 data, err: %s", err)
+		}
+		inventoryEnvironments = inventory
+	} else {
+		inventoryPath, err := GetInventoryFilePath(c)
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory path: %s", err)
+		}
+
+		if inventoryPath != "" {
+			var err error
+			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
+			if err != nil {
+				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid invetory format: %s", err)
+			}
+			inventoryEnvironments = inventory
+		}
+	}
+
+	return inventoryEnvironments, nil
 }
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
