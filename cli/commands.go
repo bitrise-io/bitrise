@@ -25,6 +25,8 @@ var (
 			Action: validate,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 			},
 		},
 		{
@@ -34,7 +36,10 @@ var (
 			Action:  run,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 				flInventory,
+				flInventoryBase64,
 			},
 		},
 		{
@@ -44,7 +49,10 @@ var (
 			Action:  trigger,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 				flInventory,
+				flInventoryBase64,
 			},
 		},
 		{
@@ -53,6 +61,8 @@ var (
 			Action: export,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 				flFormat,
 				flOutputPath,
 				flPretty,
@@ -64,6 +74,8 @@ var (
 			Action: normalize,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 			},
 		},
 	}

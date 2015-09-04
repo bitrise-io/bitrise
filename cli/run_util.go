@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
@@ -15,13 +18,36 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
 )
 
+// GetBitriseConfigFromBase64Data ...
+func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, error) {
+	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
+	if err != nil {
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+	}
+
+	config, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
+	if err != nil {
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
+	}
+
+	return config, nil
+}
+
 // GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
-	bitriseConfigPath := c.String(PathKey)
+	bitriseConfigPath := c.String(ConfigKey)
+
+	if bitriseConfigPath == "" {
+		bitriseConfigPath = c.String(PathKey)
+		if bitriseConfigPath != "" {
+			log.Warn("'path' key is deprecated, use 'config' instead!")
+		}
+	}
 
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
@@ -35,6 +61,122 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 	}
 
 	return bitriseConfigPath, nil
+}
+
+// CreateBitriseConfigFromCLIParams ...
+func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, error) {
+	bitriseConfig := models.BitriseDataModel{}
+
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	if bitriseConfigBase64Data != "" {
+		config, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+		}
+		bitriseConfig = config
+	} else {
+		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
+		}
+		if bitriseConfigPath == "" {
+			return models.BitriseDataModel{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+		}
+
+		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		if err != nil {
+			return models.BitriseDataModel{}, fmt.Errorf("Failed to validate config: %s", err)
+		}
+		bitriseConfig = config
+	}
+
+	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.Version, bitriseConfig.FormatVersion)
+	if err != nil {
+		log.Warn("bitrise CLI model version: ", models.Version)
+		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to compare bitrise CLI models's version with the bitrise.yml FormatVersion: %s", err)
+	}
+	if !isConfigVersionOK {
+		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s).", bitriseConfig.FormatVersion, models.Version)
+		return models.BitriseDataModel{}, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+	}
+
+	return bitriseConfig, nil
+}
+
+// GetInventoryFromBase64Data ...
+func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {
+	inventoryBase64Bytes, err := base64.StdEncoding.DecodeString(inventoryBase64Str)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+	}
+
+	var envstore envmanModels.EnvsYMLModel
+	if err := yaml.Unmarshal(inventoryBase64Bytes, &envstore); err != nil {
+		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to unmasrhal bitrise inventory, error: %s", err)
+	}
+
+	for _, env := range envstore.Envs {
+		if err := env.Normalize(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
+		}
+		if err := env.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
+		}
+		if err := env.Validate(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
+		}
+	}
+
+	return envstore.Envs, nil
+}
+
+// GetInventoryFilePath ...
+func GetInventoryFilePath(c *cli.Context) (string, error) {
+	inventoryPath := c.String(InventoryKey)
+
+	if inventoryPath == "" {
+		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
+		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
+
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
+			return "", err
+		} else if !exist {
+			inventoryPath = ""
+		}
+	}
+
+	return inventoryPath, nil
+}
+
+// CreateInventoryFromCLIParams ...
+func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentItemModel, error) {
+	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
+
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	if inventoryBase64Data != "" {
+		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory from base 64 data, err: %s", err)
+		}
+		inventoryEnvironments = inventory
+	} else {
+		inventoryPath, err := GetInventoryFilePath(c)
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory path: %s", err)
+		}
+
+		if inventoryPath != "" {
+			var err error
+			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
+			if err != nil {
+				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid invetory format: %s", err)
+			}
+			inventoryEnvironments = inventory
+		}
+	}
+
+	return inventoryEnvironments, nil
 }
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
