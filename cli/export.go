@@ -7,20 +7,13 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/codegangsta/cli"
 )
 
 func export(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
-
-	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
-	if err != nil {
-		log.Fatalf("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: %s", err)
-	}
-	if bitriseConfigPath == "" {
-		log.Fatalln("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
-	}
 
 	outfilePth := c.String(OuputPathKey)
 	if outfilePth == "" {
@@ -31,14 +24,33 @@ func export(c *cli.Context) {
 		log.Fatalln("No output file format specified!")
 	}
 
-	// Run workflow
-	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-	if err != nil {
-		log.Fatalln("Failed to read config file: ", err)
+	bitriseConfig := models.BitriseDataModel{}
+
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	if bitriseConfigBase64Data != "" {
+		config, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		if err != nil {
+			log.Fatalf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+		}
+		bitriseConfig = config
+	} else {
+		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		if err != nil {
+			log.Fatalf("Failed to get config (bitrise.yml) path: %s", err)
+		}
+		if bitriseConfigPath == "" {
+			log.Fatalln("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+		}
+
+		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		if err != nil {
+			log.Fatalln("Failed to validate config: ", err)
+		}
+		bitriseConfig = config
 	}
-	log.Debugf("bitriseConfig: %#v", bitriseConfig)
 
 	// serialize
+	var err error
 	configBytes := []byte{}
 	if outFormat == "json" {
 		if c.Bool(PrettyFormatKey) {

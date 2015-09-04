@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
@@ -19,9 +22,31 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+// GetBitriseConfigFromBase64Data ...
+func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, error) {
+	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
+	if err != nil {
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+	}
+
+	config, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
+	if err != nil {
+		return models.BitriseDataModel{}, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
+	}
+
+	return config, nil
+}
+
 // GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
-	bitriseConfigPath := c.String(PathKey)
+	bitriseConfigPath := c.String(ConfigKey)
+
+	if bitriseConfigPath == "" {
+		bitriseConfigPath := c.String(PathKey)
+		if bitriseConfigPath != "" {
+			log.Warn("'path' key is deprecated, use 'config' instead!")
+		}
+	}
 
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
@@ -35,6 +60,51 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 	}
 
 	return bitriseConfigPath, nil
+}
+
+// GetInventoryFromBase64Data ...
+func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {
+	inventoryBase64Bytes, err := base64.StdEncoding.DecodeString(inventoryBase64Str)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+	}
+
+	var envstore envmanModels.EnvsYMLModel
+	if err := yaml.Unmarshal(inventoryBase64Bytes, &envstore); err != nil {
+		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to unmasrhal bitrise inventory, error: %s", err)
+	}
+
+	for _, env := range envstore.Envs {
+		if err := env.Normalize(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
+		}
+		if err := env.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
+		}
+		if err := env.Validate(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
+		}
+	}
+
+	return envstore.Envs, nil
+}
+
+// GetInventoryFilePath ...
+func GetInventoryFilePath(c *cli.Context) (string, error) {
+	inventoryPath := c.String(InventoryKey)
+
+	if inventoryPath == "" {
+		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
+		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
+
+		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
+			return "", err
+		} else if !exist {
+			inventoryPath = ""
+		}
+	}
+
+	return inventoryPath, nil
 }
 
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/codegangsta/cli"
 )
@@ -46,46 +44,55 @@ func trigger(c *cli.Context) {
 	// Input validation
 
 	// Inventory validation
-	inventoryPath := c.String(InventoryKey)
-	if inventoryPath == "" {
-		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
+	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
 
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			log.Fatalln("Failed to check path:", err)
-		} else if !exist {
-			log.Debugln("[BITRISE_CLI] - No inventory yml found")
-			inventoryPath = ""
-		}
-	} else {
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			log.Fatalln("Failed to check path: ", err)
-		} else if !exist {
-			log.Fatalln("No inventory yml found")
-		}
-	}
-
-	secretEnvironments := []envmanModels.EnvironmentItemModel{}
-	if inventoryPath != "" {
-		var err error
-		secretEnvironments, err = bitrise.CollectEnvironmentsFromFile(inventoryPath)
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	if inventoryBase64Data != "" {
+		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
 		if err != nil {
-			log.Fatalln("Invalid invetory format: ", err)
+			log.Fatalf("Failed to get inventory from base 64 data, err: %s", err)
+		}
+		inventoryEnvironments = inventory
+	} else {
+		inventoryPath, err := GetInventoryFilePath(c)
+		if err != nil {
+			log.Fatalf("Failed to get inventory path: %s", err)
+		}
+
+		if inventoryPath != "" {
+			var err error
+			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
+			if err != nil {
+				log.Fatalln("Invalid invetory format: ", err)
+			}
+			inventoryEnvironments = inventory
 		}
 	}
 
 	// Config validation
-	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
-	if err != nil {
-		log.Fatalf("Failed to get config (bitrise.yml) path: %s", err)
-	}
-	if bitriseConfigPath == "" {
-		log.Fatalln("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
-	}
+	bitriseConfig := models.BitriseDataModel{}
 
-	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-	if err != nil {
-		log.Fatalln("[BITRISE_CLI] - Failed to read Workflow: ", err)
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	if bitriseConfigBase64Data != "" {
+		config, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		if err != nil {
+			log.Fatalf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+		}
+		bitriseConfig = config
+	} else {
+		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		if err != nil {
+			log.Fatalf("Failed to get config (bitrise.yml) path: %s", err)
+		}
+		if bitriseConfigPath == "" {
+			log.Fatalln("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+		}
+
+		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		if err != nil {
+			log.Fatalln("Failed to validate config: ", err)
+		}
+		bitriseConfig = config
 	}
 	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.Version, bitriseConfig.FormatVersion)
 	if err != nil {
@@ -120,7 +127,7 @@ func trigger(c *cli.Context) {
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
 	// Run selected configuration
-	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, secretEnvironments); err != nil {
+	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
 		log.Fatalln("Error: ", err)
 	}
 }
