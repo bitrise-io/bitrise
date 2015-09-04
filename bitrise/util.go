@@ -273,8 +273,9 @@ func isStringSliceWithSameElements(s1, s2 []string) bool {
 		if !found || !v {
 			return false
 		}
+		delete(m, s)
 	}
-	return true
+	return len(m) == 0
 }
 
 func isDependencySliceWithSameElements(s1, s2 []stepmanModels.DependencyModel) bool {
@@ -453,6 +454,12 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 			if wfOptions.Summary != nil && sOptions.Summary != nil && *wfOptions.Summary == *sOptions.Summary {
 				wfOptions.Summary = nil
+			} else {
+				hasOptions = true
+			}
+
+			if isStringSliceWithSameElements(wfOptions.ValueOptions, sOptions.ValueOptions) {
+				wfOptions.ValueOptions = []string{}
 			} else {
 				hasOptions = true
 			}
