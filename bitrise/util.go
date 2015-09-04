@@ -404,8 +404,11 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			workflowStep.RunIf = nil
 		}
 
+		inputs := []envmanModels.EnvironmentItemModel{}
 		for _, input := range workflowStep.Inputs {
-			wfKey, _, err := input.GetKeyValuePair()
+			sameValue := false
+
+			wfKey, wfValue, err := input.GetKeyValuePair()
 			if err != nil {
 				return err
 			}
@@ -418,6 +421,15 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			sInput, err := getInputByKey(specStep.Inputs, wfKey)
 			if err != nil {
 				return err
+			}
+
+			_, sValue, err := sInput.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			if wfValue == sValue {
+				sameValue = true
 			}
 
 			sOptions, err := sInput.GetOptions()
@@ -463,13 +475,20 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 				hasOptions = true
 			}
 
-			if hasOptions {
-				input[envmanModels.OptionsKey] = wfOptions
+			if !hasOptions && sameValue {
+				// default env
 			} else {
-				delete(input, envmanModels.OptionsKey)
+				if hasOptions {
+					input[envmanModels.OptionsKey] = wfOptions
+				} else {
+					delete(input, envmanModels.OptionsKey)
+				}
+
+				inputs = append(inputs, input)
 			}
 		}
 
+		workflowStep.Inputs = inputs
 		workflowStep.Outputs = specStep.Outputs
 		(*stepListItem)[compositeStepIDStr] = workflowStep
 	}
