@@ -42,7 +42,7 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 	bitriseConfigPath := c.String(ConfigKey)
 
 	if bitriseConfigPath == "" {
-		bitriseConfigPath := c.String(PathKey)
+		bitriseConfigPath = c.String(PathKey)
 		if bitriseConfigPath != "" {
 			log.Warn("'path' key is deprecated, use 'config' instead!")
 		}
