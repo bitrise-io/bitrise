@@ -23,10 +23,12 @@ func normalize(c *cli.Context) {
 
 		bitriseConfigPath = c.String(ConfigKey)
 	} else {
-		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		configPath, err := GetBitriseConfigFilePath(c)
 		if err != nil {
 			log.Fatalf("Failed to get config (bitrise.yml) path: %s", err)
 		}
+		bitriseConfigPath = configPath
+
 		if bitriseConfigPath == "" {
 			log.Fatalln("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
 		}
