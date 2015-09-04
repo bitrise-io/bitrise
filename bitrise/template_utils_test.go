@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEvaluateStepTemplateToBool(t *testing.T) {
@@ -36,6 +37,41 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 		t.Fatal("Should return an error!")
 	} else {
 		t.Log("[expected] Error:", err)
+	}
+
+	// these all should be `true`
+	for _, expStr := range []string{
+		"true",
+		"1",
+		`"yes"`,
+		`"YES"`,
+		`"Yes"`,
+		`"YeS"`,
+		`"TRUE"`,
+		`"True"`,
+		`"TrUe"`,
+		`"y"`,
+	} {
+		isYes, err = EvaluateStepTemplateToBool(expStr, buildRes)
+		require.NoError(t, err)
+		require.Equal(t, true, isYes)
+	}
+
+	// these all should be `true`
+	for _, expStr := range []string{
+		"false",
+		"0",
+		`"no"`,
+		`"NO"`,
+		`"No"`,
+		`"FALSE"`,
+		`"False"`,
+		`"FaLse"`,
+		`"n"`,
+	} {
+		isYes, err = EvaluateStepTemplateToBool(expStr, buildRes)
+		require.NoError(t, err)
+		require.Equal(t, false, isYes)
 	}
 }
 
