@@ -206,7 +206,7 @@ workflows:
             set -v
             exit 0
 
-  _install_ci_tools:
+  install_ci_tools:
     steps:
     - script:
         title: Install required testing tools
@@ -228,7 +228,7 @@ workflows:
   ci:
     before_run:
     - ci_step_template
-    - _install_ci_tools
+    - install_ci_tools
     - _test
     steps:
     - slack:

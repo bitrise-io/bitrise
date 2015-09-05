@@ -1,0 +1,33 @@
+#
+# This experimental upload&download will only work with the new bitrise.io API!
+#
+format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  # define these in your .bitrise.secrets.yml
+  - BITRISE_APP_SLUG:
+  - BITRISE_APP_API_TOKEN:
+
+workflows:
+  download_from_bitrise_io:
+    steps:
+    - ensure-clean-git:
+    - script:
+        title: Downloading bitrise.yml ...
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            cp bitrise.yml bitrise.yml.backup
+            ret_content=$(curl --fail https://www.bitrise.io/api/app/${BITRISE_APP_SLUG}/config/download.yml?api_token=${BITRISE_APP_API_TOKEN})
+            echo "${ret_content}" > bitrise.yml
+  upload_to_bitrise_io:
+    steps:
+    - script:
+        title: Uploading bitrise.yml ...
+        inputs:
+        - content: |-
+            #!/bin/bash
+            curl --fail -X POST --data-urlencode "app_config_datastore_yaml=$(cat ./bitrise.yml)" https://www.bitrise.io/api/app/${BITRISE_APP_SLUG}/config/upload?api_token=${BITRISE_APP_API_TOKEN}
