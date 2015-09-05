@@ -27,6 +27,7 @@ is_skippable: false
 dependencies:
   - manager: brew
     name: git
+run_if: ""
 inputs:
   - example_step_input: Default Value - you can leave this empty if you want to
     opts:
@@ -35,6 +36,7 @@ inputs:
         Description of this input.
 
         Can be Markdown formatted text.
+      summary: ""
       is_expand: false
       is_required: true
       is_dont_change_value: true
@@ -46,6 +48,7 @@ outputs:
         Description of this output.
 
         Can be Markdown formatted text.
+      summary: ""
       is_expand: false
       is_required: true
       is_dont_change_value: true
