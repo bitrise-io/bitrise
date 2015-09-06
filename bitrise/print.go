@@ -3,6 +3,7 @@ package bitrise
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
@@ -166,11 +167,20 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
 	orderedResults := buildRunResults.OrderedResults()
+	tmpTime := time.Time{}
 	for _, stepRunResult := range orderedResults {
+		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
 	}
+	runtime := tmpTime.Sub(time.Time{})
 
 	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
+
+	runtimeStr := TimeToFormattedSeconds(runtime, " sec")
+	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runtimeStr))
+	log.Infof("| Total runtime: %s%s|", runtimeStr, strings.Repeat(" ", whitespaceWidth))
+	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
+
 	fmt.Println()
 }
 
