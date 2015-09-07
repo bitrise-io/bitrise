@@ -8,7 +8,10 @@ import (
 
 func normalize(c *cli.Context) {
 	// Input validation
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+	if err != nil {
+		log.Fatalf("Failed to get bitrise config path, err: %s", err)
+	}
 	if bitriseConfigPath == "" {
 		log.Fatal("No bitrise config path defined!")
 	}
