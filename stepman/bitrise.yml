@@ -97,7 +97,7 @@ workflows:
               set -v
               set -e
               rm -rf ./Godeps
-              godep save
+              godep save ./...
   ci:
     steps:
     - script:
