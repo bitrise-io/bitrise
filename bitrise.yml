@@ -169,7 +169,7 @@ workflows:
         - content: |-
             #!/bin/bash
             cd ./_step_template
-            bitrise run step
+            bitrise run test
 
   noop:
     description: |-
