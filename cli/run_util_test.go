@@ -3,6 +3,11 @@ package cli
 import (
 	"encoding/base64"
 	"testing"
+	"time"
+
+	"github.com/bitrise-io/bitrise/bitrise"
+	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetBitriseConfigFromBase64Data(t *testing.T) {
@@ -79,4 +84,27 @@ envs:
 	if *opts.IsExpand != true {
 		t.Fatal("Invalid IsExpand")
 	}
+}
+
+func TestInvalidStepID(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    title: Invalid step id
+    steps:
+    - invalid-step:
+    - invalid-step:
+    - invalid-step:
+`
+
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, 1, len(results.StepmanUpdates))
 }

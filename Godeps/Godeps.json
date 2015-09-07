@@ -36,10 +36,6 @@
 			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-utils/testutil",
-			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
-		},
-		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
 			"Rev": "3aa3ad1b857b5e4478d6f974a6201317a0eb0457"
 		},
