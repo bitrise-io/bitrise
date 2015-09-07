@@ -278,23 +278,36 @@ func isStringSliceWithSameElements(s1, s2 []string) bool {
 	return len(m) == 0
 }
 
+func isDependecyEqual(d1, d2 stepmanModels.DependencyModel) bool {
+	return (d1.Manager == d2.Manager && d1.Name == d2.Name)
+}
+
+func containsDependecy(m map[stepmanModels.DependencyModel]bool, d1 stepmanModels.DependencyModel) bool {
+	for d2 := range m {
+		if isDependecyEqual(d1, d2) {
+			return true
+		}
+	}
+	return false
+}
+
 func isDependencySliceWithSameElements(s1, s2 []stepmanModels.DependencyModel) bool {
 	if len(s1) != len(s2) {
 		return false
 	}
 
-	for _, dep1 := range s1 {
-		for i, dep2 := range s2 {
-			if dep1.Manager == dep2.Manager && dep1.Name == dep2.Name {
-				continue
-			}
-			if i == len(s2)-1 {
-				return false
-			}
-		}
+	m := make(map[stepmanModels.DependencyModel]bool, len(s1))
+	for _, s := range s1 {
+		m[s] = true
 	}
 
-	return true
+	for _, d := range s2 {
+		if containsDependecy(m, d) == false {
+			return false
+		}
+		delete(m, d)
+	}
+	return len(m) == 0
 }
 
 func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel, defaultStepLibSource string) error {
