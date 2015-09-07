@@ -6,6 +6,20 @@ app:
   - BITRISE_BIN_NAME: bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
 
+trigger_map:
+- pattern: ci/full
+  is_pull_request_allowed: true
+  workflow: ci
+- pattern: ci/quick
+  is_pull_request_allowed: true
+  workflow: _test
+- pattern: ci/step-template
+  is_pull_request_allowed: true
+  workflow: ci_step_template
+- pattern: "*"
+  is_pull_request_allowed: false
+  workflow: install
+
 workflows:
 
   _test:
