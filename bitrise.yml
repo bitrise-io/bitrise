@@ -46,7 +46,7 @@ workflows:
 
   install:
     before_run:
-      - _test
+    - _test
     steps:
     - script@0.9.0:
         title: Running go install
@@ -91,7 +91,7 @@ workflows:
 
   create-release:
     before_run:
-    - _test
+    - ci
     steps:
     - script:
         title: Creating deploy
@@ -169,7 +169,7 @@ workflows:
         - content: |-
             #!/bin/bash
             cd ./_step_template
-            bitrise run step
+            bitrise run test
 
   noop:
     description: |-

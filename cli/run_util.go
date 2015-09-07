@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -184,11 +185,16 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	// Check dependencies
 	for _, dep := range step.Dependencies {
+		isSkippedBecauseOfPlatform := false
 		switch dep.Manager {
 		case depManagerBrew:
-			err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
-			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, err
+			if runtime.GOOS == "darwin" {
+				err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
+				if err != nil {
+					return 1, []envmanModels.EnvironmentItemModel{}, err
+				}
+			} else {
+				isSkippedBecauseOfPlatform = true
 			}
 			break
 		case depManagerTryCheck:
@@ -201,7 +207,11 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 		}
 
-		log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
+		if isSkippedBecauseOfPlatform {
+			log.Debugf(" * Dependency (%s) skipped, manager (%s) not supported on this platform (%s)", dep.Name, dep.Manager, runtime.GOOS)
+		} else {
+			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
+		}
 	}
 
 	// Collect step inputs

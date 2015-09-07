@@ -1,6 +1,6 @@
-format_version: 0.9.8
+format_version: 1.0.0
 workflows:
-  step:
+  test:
     steps:
     - path::./:
         title: Step Test

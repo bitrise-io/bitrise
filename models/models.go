@@ -29,8 +29,8 @@ type StepListItemModel map[string]stepmanModels.StepModel
 // WorkflowModel ...
 type WorkflowModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	BeforeRun    []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
 	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
@@ -40,8 +40,8 @@ type WorkflowModel struct {
 // AppModel ...
 type AppModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
@@ -54,11 +54,16 @@ type TriggerMapItemModel struct {
 
 // BitriseDataModel ...
 type BitriseDataModel struct {
-	FormatVersion        string                   `json:"format_version" yaml:"format_version"`
-	DefaultStepLibSource string                   `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
-	TriggerMap           []TriggerMapItemModel    `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
-	App                  AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
-	Workflows            map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	FormatVersion        string `json:"format_version" yaml:"format_version"`
+	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
+	//
+	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	//
+	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
+	TriggerMap []TriggerMapItemModel    `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
+	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 // StepIDData ...
