@@ -1,22 +1,25 @@
-FROM ubuntu:14.04.2
+FROM golang:1.5-wheezy
+
+ENV PROJ_NAME stepman
 
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git mercurial golang
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git mercurial curl rsync ruby
 
-RUN mkdir /go
-RUN mkdir /go/bin
-RUN mkdir -p /go/src/github.com/bitrise-io/stepman
-RUN export GOPATH=/go
+# From the official Golang Dockerfile
+#  https://github.com/docker-library/golang/blob/master/1.4/Dockerfile
+RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
 ENV GOPATH /go
-RUN export PATH=$PATH:$GOPATH/bin
-ENV PATH $PATH:$GOPATH/bin
+ENV PATH /go/bin:$PATH
 
-WORKDIR /go/src/github.com/bitrise-io/stepman
+RUN mkdir -p /go/src/github.com/bitrise-io/$PROJ_NAME
+COPY . /go/src/github.com/bitrise-io/$PROJ_NAME
 
-COPY . /go/src/github.com/bitrise-io/stepman
-
-RUN go get ./...
+WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
+# godep
+RUN go get -u github.com/tools/godep
+RUN godep restore
+# install
 RUN go install
 
-CMD stepman --version
+CMD $PROJ_NAME --version
