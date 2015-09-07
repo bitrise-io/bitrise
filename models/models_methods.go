@@ -649,6 +649,11 @@ func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID strin
 // ----------------------------
 // --- BuildRunResults
 
+// IsStepLibUpdated ...
+func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
+	return (buildRes.StepmanUpdates[stepLib] > 0)
+}
+
 // IsBuildFailed ...
 func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 	return len(buildRes.FailedSteps) > 0

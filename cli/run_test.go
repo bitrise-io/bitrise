@@ -47,7 +47,8 @@ func Test0Steps1Workflows(t *testing.T) {
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
 	t.Log("Err: ", err)
@@ -119,7 +120,8 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
 	var err error
 	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
@@ -254,7 +256,8 @@ workflows:
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
 	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
 	if err != nil {
