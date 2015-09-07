@@ -11,34 +11,34 @@ import (
 func TestSsStringSliceWithSameElements(t *testing.T) {
 	s1 := []string{}
 	s2 := []string{}
-	require.Equal(t, isStringSliceWithSameElements(s1, s2), true, "this should be true")
+	require.Equal(t, true, isStringSliceWithSameElements(s1, s2))
 
 	s1 = []string{"1", "2", "3"}
 	s2 = []string{"2", "1"}
-	require.Equal(t, isStringSliceWithSameElements(s1, s2), false, "this should be false")
+	require.Equal(t, false, isStringSliceWithSameElements(s1, s2))
 
 	s2 = append(s2, "3")
-	require.Equal(t, isStringSliceWithSameElements(s1, s2), true, "this should be true")
+	require.Equal(t, true, isStringSliceWithSameElements(s1, s2))
 
 	s2 = []string{"1,", "1,", "1"}
-	require.Equal(t, isStringSliceWithSameElements(s1, s2), false, "this should be false")
+	require.Equal(t, false, isStringSliceWithSameElements(s1, s2))
 }
 
 func TestIsDependecyEqual(t *testing.T) {
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 
-	require.Equal(t, isDependecyEqual(d1, d2), true, "this should be true")
+	require.Equal(t, true, isDependecyEqual(d1, d2))
 
 	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
 	d2 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 
-	require.Equal(t, isDependecyEqual(d1, d2), false, "this should be false")
+	require.Equal(t, false, isDependecyEqual(d1, d2))
 
 	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 	d2 = stepmanModels.DependencyModel{Manager: "manager1", Name: "dep"}
 
-	require.Equal(t, isDependecyEqual(d1, d2), false, "this should be false")
+	require.Equal(t, false, isDependecyEqual(d1, d2))
 }
 
 func TestContainsDependecy(t *testing.T) {
@@ -51,15 +51,15 @@ func TestContainsDependecy(t *testing.T) {
 		d2: true,
 	}
 
-	require.Equal(t, containsDependecy(m, d1), true, "this should be true")
+	require.Equal(t, true, containsDependecy(m, d1))
 
-	require.Equal(t, containsDependecy(m, d3), false, "this should be false")
+	require.Equal(t, false, containsDependecy(m, d3))
 }
 
 func TestIsDependencySliceWithSameElements(t *testing.T) {
 	s1 := []stepmanModels.DependencyModel{}
 	s2 := []stepmanModels.DependencyModel{}
-	require.Equal(t, isDependencySliceWithSameElements(s1, s2), true, "this should be tru")
+	require.Equal(t, true, isDependencySliceWithSameElements(s1, s2))
 
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
 	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
@@ -67,13 +67,13 @@ func TestIsDependencySliceWithSameElements(t *testing.T) {
 
 	s1 = []stepmanModels.DependencyModel{d1, d2, d3}
 	s2 = []stepmanModels.DependencyModel{d2, d1}
-	require.Equal(t, isDependencySliceWithSameElements(s1, s2), false, "this should be false")
+	require.Equal(t, false, isDependencySliceWithSameElements(s1, s2))
 
 	s2 = append(s2, d3)
-	require.Equal(t, isDependencySliceWithSameElements(s1, s2), true, "this should be true")
+	require.Equal(t, true, isDependencySliceWithSameElements(s1, s2))
 
 	s2 = []stepmanModels.DependencyModel{d1, d1, d1}
-	require.Equal(t, isDependencySliceWithSameElements(s1, s2), false, "this should be false")
+	require.Equal(t, false, isDependencySliceWithSameElements(s1, s2))
 }
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
@@ -110,9 +110,8 @@ workflows:
         title: Should skipped
   `
 	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	workflow, found := config.Workflows["trivial_fail"]
 	if !found {
 		t.Fatal("No workflow found with title (trivial_fail)")
