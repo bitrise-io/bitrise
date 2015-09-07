@@ -235,7 +235,7 @@ workflows:
             set -e
             set -v
 
-            go build -o _bin/bin-for-ci
+            godep go build -o _bin/bin-for-ci
             ./_bin/bin-for-ci setup --minimal
             rm _bin/bin-for-ci
 
