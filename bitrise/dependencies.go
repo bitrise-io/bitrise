@@ -305,7 +305,14 @@ func DependencyTryCheckTool(tool string) error {
 		errMsg = "The full Xcode app is not installed, required for this step. You can install it from the App Store."
 		break
 	default:
-		cmd = exec.Command(tool)
+		cmdFields := strings.Fields(tool)
+		if len(cmdFields) >= 2 {
+			cmd = exec.Command(cmdFields[0], cmdFields[1:]...)
+		} else if len(cmdFields) == 1 {
+			cmd = exec.Command(cmdFields[0])
+		} else {
+			return fmt.Errorf("Invalid tool name (%s)", tool)
+		}
 	}
 
 	outBytes, err := cmd.CombinedOutput()
