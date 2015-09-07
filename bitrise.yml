@@ -225,8 +225,23 @@ workflows:
             # Go lint
             go get -u github.com/golang/lint/golint
 
+  _run_minimal_setup:
+    steps:
+    - script:
+        title: Setup --minimal, to install required tool versions.
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            go build -o _bin/bin-for-ci
+            ./_bin/bin-for-ci setup --minimal
+            rm _bin/bin-for-ci
+
   ci:
     before_run:
+    - _run_minimal_setup
     - ci_step_template
     - install_ci_tools
     - _test
