@@ -24,6 +24,38 @@ func TestSsStringSliceWithSameElements(t *testing.T) {
 	require.Equal(t, isStringSliceWithSameElements(s1, s2), false, "this should be false")
 }
 
+func TestIsDependecyEqual(t *testing.T) {
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+
+	require.Equal(t, isDependecyEqual(d1, d2), true, "this should be true")
+
+	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+
+	require.Equal(t, isDependecyEqual(d1, d2), false, "this should be false")
+
+	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+	d2 = stepmanModels.DependencyModel{Manager: "manager1", Name: "dep"}
+
+	require.Equal(t, isDependecyEqual(d1, d2), false, "this should be false")
+}
+
+func TestContainsDependecy(t *testing.T) {
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
+	d3 := stepmanModels.DependencyModel{Manager: "manager1", Name: "dep3"}
+
+	m := map[stepmanModels.DependencyModel]bool{
+		d1: false,
+		d2: true,
+	}
+
+	require.Equal(t, containsDependecy(m, d1), true, "this should be true")
+
+	require.Equal(t, containsDependecy(m, d3), false, "this should be false")
+}
+
 func TestIsDependencySliceWithSameElements(t *testing.T) {
 	s1 := []stepmanModels.DependencyModel{}
 	s2 := []stepmanModels.DependencyModel{}
