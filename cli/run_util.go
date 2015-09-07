@@ -343,6 +343,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 			continue
 		}
+		stepVersion := stepIDData.Version
 
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
@@ -401,6 +402,28 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
+			stepInfo, err := bitrise.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+			if err != nil {
+				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
+					registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					continue
+				}
+				// May StepLib should be updated
+				log.Info("Step info not found in StepLib (%s) -- Updating ...")
+				if err := bitrise.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+					registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					continue
+				}
+				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
+				stepInfo, err = bitrise.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+				if err != nil {
+					registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					continue
+				}
+			}
+
+			stepVersion = stepInfo.StepVersion
+
 			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
@@ -429,7 +452,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		// Run step
-		bitrise.PrintRunningStep(*mergedStep.Title, idx)
+		bitrise.PrintRunningStep(*mergedStep.Title, stepVersion, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, buildRunResults)
 			if err != nil {
@@ -526,6 +549,7 @@ func lastWorkflowIDInConfig(workflowToRunID string, bitriseConfig models.Bitrise
 	return workflowToRunID, nil
 }
 
+// RunWorkflowWithConfiguration ...
 func runWorkflowWithConfiguration(
 	startTime time.Time,
 	workflowToRunID string,
@@ -569,7 +593,8 @@ func runWorkflowWithConfiguration(
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: startTime,
+		StartTime:      startTime,
+		StepmanUpdates: map[string]int{},
 	}
 
 	environments = append(environments, workflowToRun.Environments...)

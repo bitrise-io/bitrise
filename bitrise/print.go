@@ -23,17 +23,17 @@ func PrintRunningWorkflow(title string) {
 }
 
 // PrintRunningStep ...
-func PrintRunningStep(title string, idx int) {
-	content := fmt.Sprintf("| (%d) %s |", idx, title)
+func PrintRunningStep(title, version string, idx int) {
+	content := fmt.Sprintf("| (%d) %s (%s) |", idx, title, version)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
 
 	if charDiff < 0 {
 		// shorter than desired - fill with space
-		content = fmt.Sprintf("| (%d) %s%s |", idx, title, strings.Repeat(" ", -charDiff))
+		content = fmt.Sprintf("| (%d) %s (%s)%s |", idx, title, version, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
 		trimmedTitleWidth := len(title) - charDiff - 3
-		content = fmt.Sprintf("| (%d) %s... |", idx, title[0:trimmedTitleWidth])
+		content = fmt.Sprintf("| (%d) %s... (%s) |", idx, title[0:trimmedTitleWidth], version)
 	}
 
 	sep := strings.Repeat("-", len(content))

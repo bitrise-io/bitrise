@@ -76,6 +76,7 @@ type StepIDData struct {
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	StartTime            time.Time
+	StepmanUpdates       map[string]int
 	SuccessSteps         []StepRunResultsModel
 	FailedSteps          []StepRunResultsModel
 	FailedSkippableSteps []StepRunResultsModel
