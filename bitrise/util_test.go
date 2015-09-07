@@ -3,7 +3,46 @@ package bitrise
 import (
 	"encoding/json"
 	"testing"
+
+	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/stretchr/testify/require"
 )
+
+func TestSsStringSliceWithSameElements(t *testing.T) {
+	s1 := []string{}
+	s2 := []string{}
+	require.Equal(t, isStringSliceWithSameElements(s1, s2), true, "this should be true")
+
+	s1 = []string{"1", "2", "3"}
+	s2 = []string{"2", "1"}
+	require.Equal(t, isStringSliceWithSameElements(s1, s2), false, "this should be false")
+
+	s2 = append(s2, "3")
+	require.Equal(t, isStringSliceWithSameElements(s1, s2), true, "this should be true")
+
+	s2 = []string{"1,", "1,", "1"}
+	require.Equal(t, isStringSliceWithSameElements(s1, s2), false, "this should be false")
+}
+
+func TestIsDependencySliceWithSameElements(t *testing.T) {
+	s1 := []stepmanModels.DependencyModel{}
+	s2 := []stepmanModels.DependencyModel{}
+	require.Equal(t, isDependencySliceWithSameElements(s1, s2), true, "this should be tru")
+
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
+	d3 := stepmanModels.DependencyModel{Manager: "manager1", Name: "dep3"}
+
+	s1 = []stepmanModels.DependencyModel{d1, d2, d3}
+	s2 = []stepmanModels.DependencyModel{d2, d1}
+	require.Equal(t, isDependencySliceWithSameElements(s1, s2), false, "this should be false")
+
+	s2 = append(s2, d3)
+	require.Equal(t, isDependencySliceWithSameElements(s1, s2), true, "this should be true")
+
+	s2 = []stepmanModels.DependencyModel{d1, d1, d1}
+	require.Equal(t, isDependencySliceWithSameElements(s1, s2), false, "this should be false")
+}
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
 	configStr := `
