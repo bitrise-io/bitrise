@@ -241,9 +241,9 @@ workflows:
 
   ci:
     before_run:
-    - _run_minimal_setup
     - ci_step_template
     - install_ci_tools
+    - _run_minimal_setup
     - _test
     steps:
     - slack:
