@@ -228,7 +228,7 @@ workflows:
   _run_minimal_setup:
     steps:
     - script:
-        title: Setup --minimal, to install required tool versions.
+        title: Setup --minimal, to install required tool (envman, stepman) versions.
         inputs:
         - content: |-
             #!/bin/bash
