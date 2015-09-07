@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "1.0.1"
+	Version = "1.0.0"
 )
 
 // StepListItemModel ...
@@ -54,14 +54,16 @@ type TriggerMapItemModel struct {
 
 // BitriseDataModel ...
 type BitriseDataModel struct {
-	FormatVersion        string                   `json:"format_version" yaml:"format_version"`
-	DefaultStepLibSource string                   `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
-	Title                string                   `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary              string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description          string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	TriggerMap           []TriggerMapItemModel    `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
-	App                  AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
-	Workflows            map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	FormatVersion        string `json:"format_version" yaml:"format_version"`
+	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
+	//
+	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	//
+	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
+	TriggerMap []TriggerMapItemModel    `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
+	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 // StepIDData ...
