@@ -141,9 +141,15 @@ if err != nil {
 ```
 import "os/exec"
 
-cmd := "echo 'some value' | envman add --key SOME_KEY --expand false"
-c := exec.Command("bash", "-c", cmd)
-err := c.Run()
+func RunPipedEnvmanAdd(keyStr, valueStr string) error {
+	envman := exec.Command("envman", "add", "--key", keyStr)
+	envman.Stdin = strings.NewReader(valueStr)
+	envman.Stdout = os.Stdout
+	envman.Stderr = os.Stderr
+	return envman.Run()
+}
+
+err := RunPipedEnvmanAdd("SOME_KEY", "some value")
 if err != nil {
 	// Handle error
 }
