@@ -218,6 +218,7 @@ func init() {
 | [Mail](https://github.com/zbindenren/logrus_mail) | Hook for sending exceptions via mail |
 | [Rollrus](https://github.com/heroku/rollrus) | Hook for sending errors to rollbar |
 | [Fluentd](https://github.com/evalphobia/logrus_fluent) | Hook for logging to fluentd |
+| [Mongodb](https://github.com/weekface/mgorus) | Hook for logging to mongodb |
 
 #### Level logging
 
@@ -273,7 +274,7 @@ init() {
   // do something here to set environment depending on an environment variable
   // or command-line flag
   if Environment == "production" {
-    log.SetFormatter(&logrus.JSONFormatter{})
+    log.SetFormatter(&log.JSONFormatter{})
   } else {
     // The TextFormatter is default, you don't actually have to do this.
     log.SetFormatter(&log.TextFormatter{})
@@ -316,7 +317,7 @@ type MyJSONFormatter struct {
 
 log.SetFormatter(new(MyJSONFormatter))
 
-func (f *JSONFormatter) Format(entry *Entry) ([]byte, error) {
+func (f *MyJSONFormatter) Format(entry *Entry) ([]byte, error) {
   // Note this doesn't include Time, Level and Message which are available on
   // the Entry. Consult `godoc` on information about those fields or read the
   // source of the official loggers.
