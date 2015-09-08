@@ -192,7 +192,7 @@ func TestMergeStepWith(t *testing.T) {
 
 	diffTitle := "name 2"
 	newSuppURL := "supp"
-	runIfStr := `{{getenv "CI" | eq "true"}}`
+	runIfStr := ""
 	stepDiffToMerge := stepmanModels.StepModel{
 		Title:      pointers.NewStringPtr(diffTitle),
 		HostOsTags: []string{"linux"},
@@ -215,70 +215,38 @@ func TestMergeStepWith(t *testing.T) {
 	}
 
 	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
-	if err != nil {
-		t.Fatal("Failed to convert: ", err)
-	}
+	require.Equal(t, nil, err)
 
 	t.Logf("-> MERGED Step Data: %#v\n", mergedStepData)
 
-	if *mergedStepData.Title != "name 2" {
-		t.Fatal("mergedStepData.Title incorrectly converted:", *mergedStepData.Title)
-	}
-	if *mergedStepData.Description != "desc 1" {
-		t.Fatal("mergedStepData.Description incorrectly converted:", *mergedStepData.Description)
-	}
-	if *mergedStepData.Summary != "sum 1" {
-		t.Fatal("mergedStepData.Summary incorrectly converted:", *mergedStepData.Summary)
-	}
-	if *mergedStepData.Website != "web/1" {
-		t.Fatal("mergedStepData.Website incorrectly converted:", *mergedStepData.Website)
-	}
-	if *mergedStepData.SourceCodeURL != "fork/1" {
-		t.Fatal("mergedStepData.SourceCodeURL incorrectly converted:", *mergedStepData.SourceCodeURL)
-	}
-	if (*mergedStepData.PublishedAt).Equal(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)) == false {
-		t.Fatal("mergedStepData.PublishedAt incorrectly converted:", *mergedStepData.PublishedAt)
-	}
-	if mergedStepData.HostOsTags[0] != "linux" {
-		t.Fatal("mergedStepData.HostOsTags incorrectly converted:", mergedStepData.HostOsTags)
-	}
-	if *mergedStepData.RunIf != `{{getenv "CI" | eq "true"}}` {
-		t.Fatal("mergedStepData.RunIf incorrectly converted:", *mergedStepData.RunIf)
-	}
-	if len(mergedStepData.Dependencies) != 1 {
-		t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
+	require.Equal(t, "name 2", *mergedStepData.Title)
+	require.Equal(t, "desc 1", *mergedStepData.Description)
+	require.Equal(t, "sum 1", *mergedStepData.Summary)
+	require.Equal(t, "web/1", *mergedStepData.Website)
+	require.Equal(t, "fork/1", *mergedStepData.SourceCodeURL)
+	require.Equal(t, true, (*mergedStepData.PublishedAt).Equal(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)))
+	require.Equal(t, "linux", mergedStepData.HostOsTags[0])
+	require.Equal(t, "", *mergedStepData.RunIf)
+	require.Equal(t, 1, len(mergedStepData.Dependencies))
 
-	} else {
-		dep := mergedStepData.Dependencies[0]
-		if dep.Manager != "brew" || dep.Name != "test" {
-			t.Fatal("mergedStepData.Dependencies incorrectly converted:", mergedStepData.Dependencies)
-		}
-	}
+	dep := mergedStepData.Dependencies[0]
+	require.Equal(t, "brew", dep.Manager)
+	require.Equal(t, "test", dep.Name)
 
-	//
+	// inputs
 	input0 := mergedStepData.Inputs[0]
 	key0, value0, err := input0.GetKeyValuePair()
-	if err != nil {
-		t.Fatal("Failed to get key-value:", err)
-	}
-	if key0 != "KEY_1" {
-		t.Fatal("Inputs[0].EnvKey incorrectly converted")
-	}
-	if value0 != "Value 1" {
-		t.Fatal("Inputs[0].Value incorrectly converted")
-	}
+
+	require.Equal(t, nil, err)
+	require.Equal(t, "KEY_1", key0)
+	require.Equal(t, "Value 1", value0)
 
 	input1 := mergedStepData.Inputs[1]
 	key1, value1, err := input1.GetKeyValuePair()
-	if err != nil {
-		t.Fatal("Failed to get key-value:", err)
-	}
-	if key1 != "KEY_2" {
-		t.Fatal("Inputs[1].EnvKey incorrectly converted")
-	}
-	if value1 != "Value 2 CHANGED" {
-		t.Fatal("Inputs[1].Value incorrectly converted")
-	}
+
+	require.Equal(t, nil, err)
+	require.Equal(t, "KEY_2", key1)
+	require.Equal(t, "Value 2 CHANGED", value1)
 }
 
 func TestGetInputByKey(t *testing.T) {
