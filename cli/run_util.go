@@ -384,6 +384,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
 			}
+
+			if stepVersion == "" {
+				stepVersion = "path"
+			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
@@ -395,6 +399,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
 			}
+
+			if stepVersion == "" {
+				stepVersion = "git"
+			}
 		} else if stepIDData.SteplibSource == "_" {
 			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -404,6 +412,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
+			}
+
+			if stepVersion == "" {
+				stepVersion = "_"
 			}
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
