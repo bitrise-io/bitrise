@@ -10,7 +10,7 @@ import (
 
 const (
 	minEnvmanVersion  = "0.9.8"
-	minStepmanVersion = "0.9.13"
+	minStepmanVersion = "0.9.14"
 )
 
 // RunSetup ...
