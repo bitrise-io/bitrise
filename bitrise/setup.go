@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "0.9.6"
-	minStepmanVersion = "0.9.11"
+	minEnvmanVersion  = "0.9.8"
+	minStepmanVersion = "0.9.13"
 )
 
 // RunSetup ...
@@ -110,5 +110,16 @@ func doSetupOnOSX(isMinimalSetupMode bool) error {
 }
 
 func doSetupOnLinux() error {
-	return errors.New("doSetupOnLinux -- Coming soon")
+	log.Infoln("Doing Linux specific setup")
+	log.Infoln("Checking required tools...")
+
+	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
+		return errors.New(fmt.Sprint("Envman failed to install:", err))
+	}
+	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
+		return errors.New(fmt.Sprint("Stepman failed to install:", err))
+	}
+	log.Infoln("All the required tools are installed!")
+
+	return nil
 }

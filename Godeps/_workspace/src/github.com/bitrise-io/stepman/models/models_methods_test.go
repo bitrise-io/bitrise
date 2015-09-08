@@ -2,6 +2,7 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -23,6 +24,7 @@ const (
 
 	testTitle       = "test_title"
 	testDescription = "test_description"
+	testSummary     = "test_summary"
 	testTrue        = true
 	testFalse       = false
 )
@@ -31,71 +33,83 @@ var (
 	testValueOptions = []string{testKey2, testValue2}
 )
 
-func TestValidateStep(t *testing.T) {
+func TestValidate(t *testing.T) {
 	step := StepModel{
-		Title:   pointers.NewStringPtr("title"),
-		Summary: pointers.NewStringPtr("summary"),
-		Website: pointers.NewStringPtr("website"),
+		Title:       pointers.NewStringPtr("title"),
+		Summary:     pointers.NewStringPtr("summary"),
+		Website:     pointers.NewStringPtr("website"),
+		PublishedAt: pointers.NewTimePtr(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)),
 		Source: StepSourceModel{
 			Git:    "https://github.com/bitrise-io/bitrise.git",
 			Commit: "1e1482141079fc12def64d88cb7825b8f1cb1dc3",
 		},
 	}
 
-	if err := step.ValidateStep(true); err != nil {
+	if err := step.Validate(true); err != nil {
 		t.Fatal(err)
 	}
 
 	step.Title = nil
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: no Title defined")
 	}
 	step.Title = new(string)
 
 	*step.Title = ""
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
+		t.Fatal("Invalid step: empty Title")
+	}
+
+	step.PublishedAt = nil
+	if err := step.Validate(true); err == nil {
+		t.Fatal("Invalid step: no Title defined")
+	}
+	step.PublishedAt = new(time.Time)
+
+	*step.PublishedAt = time.Time{}
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: empty Title")
 	}
 
 	step.Description = nil
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: no Description defined")
 	}
 	step.Description = new(string)
 
 	*step.Description = ""
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: empty Description")
 	}
 
 	step.Website = nil
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: no Website defined")
 	}
 	step.Website = new(string)
 
 	*step.Website = ""
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: empty Website")
 	}
 
 	step.Source.Git = ""
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: empty Source.Git")
 	}
 
 	step.Source.Git = "git@github.com:bitrise-io/bitrise.git"
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: Source.Git has invalid prefix")
 	}
 
 	step.Source.Git = "https://github.com/bitrise-io/bitrise"
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: Source.Git has invalid suffix")
 	}
 
 	step.Source.Commit = ""
-	if err := step.ValidateStep(true); err == nil {
+	if err := step.Validate(true); err == nil {
 		t.Fatal("Invalid step: empty Source.Commit")
 	}
 }
@@ -107,6 +121,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testFalse),
@@ -114,7 +129,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err := ValidateStepInputOutputModel(env)
+	err := ValidateStepInputOutputModel(env, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +140,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
 			Title:             pointers.NewStringPtr(testTitle),
 			Description:       pointers.NewStringPtr(testDescription),
+			Summary:           pointers.NewStringPtr(testSummary),
 			ValueOptions:      testValueOptions,
 			IsRequired:        pointers.NewBoolPtr(testTrue),
 			IsExpand:          pointers.NewBoolPtr(testFalse),
@@ -132,7 +148,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env)
+	err = ValidateStepInputOutputModel(env, true)
 	if err == nil {
 		t.Fatal("Empty key, should fail")
 	}
@@ -149,7 +165,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env)
+	err = ValidateStepInputOutputModel(env, true)
 	if err == nil {
 		t.Fatal("Empty Title, should fail")
 	}

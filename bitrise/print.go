@@ -6,24 +6,13 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const (
 	// should not be under ~45
 	stepRunSummaryBoxWidthInChars = 65
-
-	// StepRunResultCodeSuccess ...
-	StepRunResultCodeSuccess = 0
-	// StepRunResultCodeFailed ...
-	StepRunResultCodeFailed = 1
-	// StepRunResultCodeFailedSkippable ...
-	StepRunResultCodeFailedSkippable = 2
-	// StepRunResultCodeSkipped ...
-	StepRunResultCodeSkipped = 3
-	// StepRunResultCodeSkippedWithRunIf ...
-	StepRunResultCodeSkippedWithRunIf = 4
 )
 
 // PrintRunningWorkflow ...
@@ -34,17 +23,17 @@ func PrintRunningWorkflow(title string) {
 }
 
 // PrintRunningStep ...
-func PrintRunningStep(title string, idx int) {
-	content := fmt.Sprintf("| (%d) %s |", idx, title)
+func PrintRunningStep(title, version string, idx int) {
+	content := fmt.Sprintf("| (%d) %s (%s) |", idx, title, version)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
 
 	if charDiff < 0 {
 		// shorter than desired - fill with space
-		content = fmt.Sprintf("| (%d) %s%s |", idx, title, strings.Repeat(" ", -charDiff))
+		content = fmt.Sprintf("| (%d) %s (%s)%s |", idx, title, version, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedTitleLength := len(title) - charDiff - 3
-		content = fmt.Sprintf("| (%d) %s... |", idx, title[0:trimmedTitleLength])
+		trimmedTitleWidth := len(title) - charDiff - 3
+		content = fmt.Sprintf("| (%d) %s... (%s) |", idx, title[0:trimmedTitleWidth], version)
 	}
 
 	sep := strings.Repeat("-", len(content))
@@ -52,78 +41,105 @@ func PrintRunningStep(title string, idx int) {
 	log.Infof(content)
 	log.Info(sep)
 	log.Info("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
-	// fmt.Println()
 }
 
-//
-type coloringFn func(string) string
+func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
 
-func stepSummaryString(runStateIcon, stepTitle, runTimeString string, stepExitCode int, coloringFunc coloringFn) string {
-	contentLayout := ""
-	if stepExitCode == 0 {
-		contentLayout = fmt.Sprintf("| %s | %s | %s |", runStateIcon, stepTitle, runTimeString)
-	} else {
-		contentLayout = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, stepTitle, runTimeString, stepExitCode)
-	}
-	content := ""
-	charDiff := len(contentLayout) - stepRunSummaryBoxWidthInChars
-	if charDiff < 0 {
-		// shorter than desired - fill with space
-		if stepExitCode == 0 {
-			content = fmt.Sprintf("| %s | %s%s | %s |", runStateIcon, coloringFunc(stepTitle), strings.Repeat(" ", -charDiff), runTimeString)
-		} else {
-			content = fmt.Sprintf("| %s | %s%s | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle), strings.Repeat(" ", -charDiff), runTimeString, stepExitCode)
+	title := ""
+	switch stepRunResult.Status {
+	case models.StepRunStatusCodeSuccess:
+		title = stepRunResult.StepName
+		if len(title) > titleBoxWidth {
+			dif := len(title) - titleBoxWidth
+			title = title[:len(title)-dif-3] + "..."
 		}
-		return content
-	} else if charDiff > 0 {
-		// longer than desired - trim stepTitle
-		trimmedTitleLength := len(stepTitle) - charDiff - 3
-		fmt.Println("trimmedTitleLength: ", trimmedTitleLength)
-		if stepExitCode == 0 {
-			content = fmt.Sprintf("| %s | %s... | %s |", runStateIcon, coloringFunc(stepTitle[0:trimmedTitleLength]), runTimeString)
-		} else {
-			content = fmt.Sprintf("| %s | %s... | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle[0:trimmedTitleLength]), runTimeString, stepExitCode)
+		break
+	case models.StepRunStatusCodeFailed:
+		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
+		if len(title) > titleBoxWidth {
+			dif := len(title) - titleBoxWidth
+			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
+			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
 		}
-		return content
-	}
-
-	if stepExitCode == 0 {
-		content = fmt.Sprintf("| %s | %s | %s |", runStateIcon, coloringFunc(stepTitle), runTimeString)
-	} else {
-		content = fmt.Sprintf("| %s | %s | %s | exit code: %d |", runStateIcon, coloringFunc(stepTitle), runTimeString, stepExitCode)
-	}
-	return content
-}
-
-// PrintStepSummary ..
-func PrintStepSummary(title string, resultCode int, duration time.Duration, exitCode int, isLastStepInWorkflow bool) {
-	runTimeStr := TimeToFormattedSeconds(duration, " sec")
-
-	content := ""
-	switch resultCode {
-	case StepRunResultCodeSuccess:
-		content = stepSummaryString("✅ ", title, runTimeStr, 0, colorstring.Green)
 		break
-	case StepRunResultCodeFailed:
-		content = stepSummaryString("🚫 ", title, runTimeStr, exitCode, colorstring.Red)
+	case models.StepRunStatusCodeFailedSkippable:
+		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
+		if len(title) > titleBoxWidth {
+			dif := len(title) - titleBoxWidth
+			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
+			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
+		}
 		break
-	case StepRunResultCodeFailedSkippable:
-		content = stepSummaryString("⚠️ ", title, runTimeStr, exitCode, colorstring.Yellow)
-		break
-	case StepRunResultCodeSkipped, StepRunResultCodeSkippedWithRunIf:
-		content = stepSummaryString("➡", title, runTimeStr, 0, colorstring.Blue)
+	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
+		title = stepRunResult.StepName
+		if len(title) > titleBoxWidth {
+			dif := len(title) - titleBoxWidth
+			title = title[:len(title)-dif-3] + "..."
+		}
 		break
 	default:
 		log.Error("Unkown result code")
-		return
+		return ""
+	}
+	return title
+}
+
+func stepResultCell(stepRunResult models.StepRunResultsModel) string {
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
+
+	icon := ""
+	title := getTrimmedStepName(stepRunResult)
+	runTimeStr := TimeToFormattedSeconds(stepRunResult.RunTime, " sec")
+	coloringFunc := colorstring.Green
+	switch stepRunResult.Status {
+	case models.StepRunStatusCodeSuccess:
+		icon = "✅"
+		coloringFunc = colorstring.Green
+		break
+	case models.StepRunStatusCodeFailed:
+		icon = "🚫"
+		coloringFunc = colorstring.Red
+		break
+	case models.StepRunStatusCodeFailedSkippable:
+		icon = "⚠️"
+		coloringFunc = colorstring.Yellow
+		break
+	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
+		icon = "➡"
+		coloringFunc = colorstring.Blue
+		break
+	default:
+		log.Error("Unkown result code")
+		return ""
 	}
 
-	sep := strings.Repeat("-", stepRunSummaryBoxWidthInChars)
+	iconBox := fmt.Sprintf(" %s  ", icon)
 
-	// fmt.Println()
+	titleWhiteSpaceWidth := titleBoxWidth - len(title)
+	titleBox := fmt.Sprintf(" %s%s", coloringFunc(title), strings.Repeat(" ", titleWhiteSpaceWidth))
+
+	timeWhiteSpaceWidth := timeBoxWidth - len(runTimeStr) - 1
+	timeBox := fmt.Sprintf(" %s%s", runTimeStr, strings.Repeat(" ", timeWhiteSpaceWidth))
+
+	return fmt.Sprintf("|%s|%s|%s|", iconBox, titleBox, timeBox)
+}
+
+// PrintStepSummary ..
+func PrintStepSummary(stepRunResult models.StepRunResultsModel, isLastStepInWorkflow bool) {
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
+	sep := fmt.Sprintf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
+
 	log.Info("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
+
 	log.Info(sep)
-	log.Infof(content)
+	log.Infof(stepResultCell(stepRunResult))
 	log.Info(sep)
 
 	if !isLastStepInWorkflow {
@@ -133,78 +149,39 @@ func PrintStepSummary(title string, resultCode int, duration time.Duration, exit
 	}
 }
 
-// PrintBuildFailedFatal ...
-func PrintBuildFailedFatal(startTime time.Time, err error) {
-	runTime := time.Now().Sub(startTime)
-	log.Error("Build failed: " + err.Error())
-	log.Fatal("Total run time: " + runTime.String())
-}
-
 // PrintSummary ...
 func PrintSummary(buildRunResults models.BuildRunResultsModel) {
-	totalStepCount := 0
-	successStepCount := 0
-	failedStepCount := 0
-	failedSkippableStepCount := 0
-	skippedStepCount := 0
-
-	successStepCount += len(buildRunResults.SuccessSteps)
-	failedStepCount += len(buildRunResults.FailedSteps)
-	failedSkippableStepCount += len(buildRunResults.FailedSkippableSteps)
-	skippedStepCount += len(buildRunResults.SkippedSteps)
-	totalStepCount = successStepCount + failedStepCount + failedSkippableStepCount + skippedStepCount
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
 
 	fmt.Println()
-	log.Infoln("==> Summary:")
-	runTime := time.Now().Sub(buildRunResults.StartTime)
-	log.Info("Total run time: " + TimeToFormattedSeconds(runTime, " seconds"))
+	fmt.Println()
+	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
+	whitespaceWidth := (stepRunSummaryBoxWidthInChars - 2 - len("bitrise summary")) / 2
+	log.Infof("|%sbitrise summary%s|", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
+	log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
-	if totalStepCount > 0 {
-		log.Infof("Out of %d steps:", totalStepCount)
+	whitespaceWidth = stepRunSummaryBoxWidthInChars - len("|    | title") - len("| time (s) |")
+	log.Infof("|    | title%s| time (s) |", strings.Repeat(" ", whitespaceWidth))
+	log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
-		if successStepCount > 0 {
-			log.Info(colorstring.Greenf(" * %d was successful", successStepCount))
-		}
-		if failedStepCount > 0 {
-			log.Info(colorstring.Redf(" * %d failed", failedStepCount))
-		}
-		if failedSkippableStepCount > 0 {
-			log.Info(colorstring.Yellowf(" * %d failed but was marked as skippable and", failedSkippableStepCount))
-		}
-		if skippedStepCount > 0 {
-			log.Info(colorstring.Bluef(" * %d was skipped", skippedStepCount))
-		}
-
-		fmt.Println()
-		if failedStepCount > 0 {
-			log.Error("FINISHED but a couple of steps failed - Ouch")
-		} else {
-			log.Info("DONE - Congrats!!")
-			if failedSkippableStepCount > 0 {
-				log.Warn("P.S.: a couple of non imporatant steps failed")
-			}
-		}
+	orderedResults := buildRunResults.OrderedResults()
+	tmpTime := time.Time{}
+	for _, stepRunResult := range orderedResults {
+		tmpTime = tmpTime.Add(stepRunResult.RunTime)
+		log.Info(stepResultCell(stepRunResult))
 	}
-}
+	runtime := tmpTime.Sub(time.Time{})
 
-// PrintStepStatus ...
-func PrintStepStatus(stepRunResults models.BuildRunResultsModel) {
-	failedCount := len(stepRunResults.FailedSteps)
-	failedSkippableCount := len(stepRunResults.FailedSkippableSteps)
-	skippedCount := len(stepRunResults.SkippedSteps)
-	successCount := len(stepRunResults.SuccessSteps)
-	totalCount := successCount + failedCount + failedSkippableCount + skippedCount
+	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
-	log.Infof("Out of %d steps, %d was successful, %d failed, %d failed but was marked as skippable and %d was skipped",
-		totalCount,
-		successCount,
-		failedCount,
-		failedSkippableCount,
-		skippedCount)
+	runtimeStr := TimeToFormattedSeconds(runtime, " sec")
+	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runtimeStr))
+	log.Infof("| Total runtime: %s%s|", runtimeStr, strings.Repeat(" ", whitespaceWidth))
+	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
-	PrintStepStatusList("Failed steps:", stepRunResults.FailedSteps)
-	PrintStepStatusList("Failed but skippable steps:", stepRunResults.FailedSkippableSteps)
-	PrintStepStatusList("Skipped steps:", stepRunResults.SkippedSteps)
+	fmt.Println()
 }
 
 // PrintStepStatusList ...

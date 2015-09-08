@@ -1,33 +1,66 @@
-format_version: 0.9.8
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
   - BITRISE_BIN_NAME: bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
 
+trigger_map:
+- pattern: ci/full
+  is_pull_request_allowed: true
+  workflow: ci
+- pattern: ci/quick
+  is_pull_request_allowed: true
+  workflow: _test
+- pattern: ci/step-template
+  is_pull_request_allowed: true
+  workflow: ci_step_template
+- pattern: "*"
+  is_pull_request_allowed: false
+  workflow: install
+
 workflows:
 
-  test:
+  _test:
     steps:
     - script:
-        title: Running go test ./...
+        title: Godeps - GOPATH patch
         inputs:
-        - content: |
-            #!/bin/bash
+        - content: |-
+            set -e
             set -v
-            go test ./...
+            envman add --key ORIG_GOPATH --value "$GOPATH"
+            envman add --key GOPATH --value "$(godep path):$GOPATH"
     - script:
-        title: Running the TEST script
+        title: Go Test
         inputs:
-        - content: |
+        - content: godep go test ./...
+    - script:
+        title: Err check
+        inputs:
+        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+    - script:
+        title: Go Lint
+        inputs:
+        - content: |-
             #!/bin/bash
-            set -v
-            bash ./_scripts/common/test.sh
+            set -e
+
+            golint_out="$(golint ./...)"
+            if [[ "${golint_out}" != "" ]] ; then
+              echo "=> Golint issues found:"
+              echo "${golint_out}"
+              exit 1
+            fi
+    - script:
+        title: Restore original GOPATH
+        inputs:
+        - content: envman add --key GOPATH --value "$ORIG_GOPATH"
 
   install:
     before_run:
-      - test
+    - _test
     steps:
     - script@0.9.0:
         title: Running go install
@@ -68,11 +101,11 @@ workflows:
             set -v
             set -e
             rm -rf ./Godeps
-            godep save
+            godep save ./...
 
   create-release:
     before_run:
-    - test
+    - ci
     steps:
     - script:
         title: Creating deploy
@@ -145,11 +178,12 @@ workflows:
   ci_step_template:
     steps:
     - script:
+        title: Run bitrise run on the step-template
         inputs:
         - content: |-
             #!/bin/bash
             cd ./_step_template
-            bitrise run step
+            bitrise run test
 
   noop:
     description: |-
@@ -186,9 +220,7 @@ workflows:
             set -v
             exit 0
 
-  ci:
-    before_run:
-    - ci_step_template
+  install_ci_tools:
     steps:
     - script:
         title: Install required testing tools
@@ -206,33 +238,28 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
+
+  _run_minimal_setup:
+    steps:
     - script:
-        title: Godeps - GOPATH patch
-        inputs:
-        - content: envman add --key GOPATH --value "$(godep path):$GOPATH"
-    - script:
-        title: Go Build & bitrise setup
+        title: Setup --minimal, to install required tool (envman, stepman) versions.
         inputs:
         - content: |-
+            #!/bin/bash
             set -e
             set -v
-            
-            # Build a test version
-            go build -o tmpbin
-            ./tmpbin setup
-            rm ./tmpbin
-    - script:
-        title: Go Test
-        inputs:
-        - content: godep go test ./...
-    - script:
-        title: Err check
-        inputs:
-        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
-    - script:
-        title: Go Lint
-        inputs:
-        - content: golint
+
+            godep go build -o _bin/bin-for-ci
+            ./_bin/bin-for-ci setup --minimal
+            rm _bin/bin-for-ci
+
+  ci:
+    before_run:
+    - ci_step_template
+    - install_ci_tools
+    - _run_minimal_setup
+    - _test
+    steps:
     - slack:
         run_if: .IsCI
         inputs:

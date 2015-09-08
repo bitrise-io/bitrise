@@ -8,7 +8,7 @@ var (
 			Name:    "setup",
 			Aliases: []string{"s"},
 			Usage:   "Setup the current host. Install every required tool to run Workflows.",
-			Action:  doSetup,
+			Action:  setup,
 			Flags: []cli.Flag{
 				flMinimalSetup,
 			},
@@ -17,16 +17,42 @@ var (
 			Name:    "init",
 			Aliases: []string{"i"},
 			Usage:   "Generates a Workflow/app config file in the current directory, which then can be run immediately.",
-			Action:  doInit,
+			Action:  initConfig,
+		},
+		{
+			Name:   "validate",
+			Usage:  "Validates a specified bitrise config.",
+			Action: validate,
+			Flags: []cli.Flag{
+				flPath,
+				flConfig,
+				flConfigBase64,
+			},
 		},
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
 			Usage:   "Runs a specified Workflow.",
-			Action:  doRun,
+			Action:  run,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 				flInventory,
+				flInventoryBase64,
+			},
+		},
+		{
+			Name:    "trigger",
+			Aliases: []string{"t"},
+			Usage:   "Triggers a specified Workflow.",
+			Action:  trigger,
+			Flags: []cli.Flag{
+				flPath,
+				flConfig,
+				flConfigBase64,
+				flInventory,
+				flInventoryBase64,
 			},
 		},
 		{
@@ -35,6 +61,8 @@ var (
 			Action: export,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 				flFormat,
 				flOutputPath,
 				flPretty,
@@ -46,6 +74,8 @@ var (
 			Action: normalize,
 			Flags: []cli.Flag{
 				flPath,
+				flConfig,
+				flConfigBase64,
 			},
 		},
 	}

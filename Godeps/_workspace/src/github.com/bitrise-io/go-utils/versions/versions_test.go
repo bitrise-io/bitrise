@@ -2,21 +2,26 @@ package versions
 
 import (
 	"testing"
+
+	"github.com/bitrise-io/go-utils/testutil"
 )
 
 func TestCompareVersions(t *testing.T) {
-	t.Log("Trivial compare")
-	if res, err := CompareVersions("1.0.0", "1.0.1"); res != 1 || err != nil {
+	res, err := CompareVersions("1.0.0", "1.0.1")
+	testutil.EqualAndNoError(t, 1, res, err, "Trivial compare")
+
+	res, err = CompareVersions("1.0.2", "1.0.1")
+	testutil.EqualAndNoError(t, -1, res, err, "Reverse compare")
+
+	res, err = CompareVersions("1.0.2", "1.0.2")
+	testutil.EqualAndNoError(t, 0, res, err, "Equal compare")
+
+	t.Log("1.0.0 <-> 0.9.8")
+	if res, err := CompareVersions("1.0.0", "0.9.8"); res != -1 || err != nil {
 		t.Fatal("Failed, res:", res, "| err:", err)
 	}
-
-	t.Log("Reverse compare")
-	if res, err := CompareVersions("1.0.2", "1.0.1"); res != -1 || err != nil {
-		t.Fatal("Failed, res:", res, "| err:", err)
-	}
-
-	t.Log("Equal compare")
-	if res, err := CompareVersions("1.0.2", "1.0.2"); res != 0 || err != nil {
+	t.Log("0.9.8 <-> 1.0.0")
+	if res, err := CompareVersions("0.9.8", "1.0.0"); res != 1 || err != nil {
 		t.Fatal("Failed, res:", res, "| err:", err)
 	}
 
@@ -83,6 +88,24 @@ func TestIsVersionGreaterOrEqual(t *testing.T) {
 
 	t.Log("No - Trivial")
 	isGreaterOrEql, err = IsVersionGreaterOrEqual("1.0", "1.1")
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if isGreaterOrEql {
+		t.Fatal("Invalid result")
+	}
+
+	t.Log("No - 1.0.0<->0.9.8")
+	isGreaterOrEql, err = IsVersionGreaterOrEqual("1.0.0", "0.9.8")
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+	if !isGreaterOrEql {
+		t.Fatal("Invalid result")
+	}
+
+	t.Log("No - 0.9.8<->1.0.0")
+	isGreaterOrEql, err = IsVersionGreaterOrEqual("0.9.8", "1.0.0")
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}

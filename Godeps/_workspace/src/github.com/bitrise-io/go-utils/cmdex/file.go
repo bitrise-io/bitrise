@@ -18,7 +18,7 @@ func CopyDir(src, dst string, isOnlyContent bool) error {
 	if isOnlyContent && !strings.HasSuffix(src, "/") {
 		src = src + "/"
 	}
-	args := []string{"-r", src, dst}
+	args := []string{"-ar", src, dst}
 	return RunCommand("rsync", args...)
 }
 

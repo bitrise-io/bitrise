@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
-	models "github.com/bitrise-io/bitrise/models/models_1_0_0"
+	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
@@ -47,7 +47,8 @@ func Test0Steps1Workflows(t *testing.T) {
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
 	t.Log("Err: ", err)
@@ -119,9 +120,14 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	var err error
+	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	if err != nil {
+		t.Fatal("Failed to activate and run worfklow:", err)
+	}
 	if len(buildRunResults.SuccessSteps) != 0 {
 		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
 	}
@@ -206,36 +212,36 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 // Trivial test with 1 workflow
 func Test1Workflows(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    trivial_fail:
-      steps:
-      - script:
-          title: Should success
-      - script:
-          title: Should fail, but skippable
-          is_skippable: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
-      - script:
-          title: Should success
-      - script:
-          title: Should fail
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
-      - script:
-          title: Should success
-          is_always_run: true
-      - script:
-          title: Should skipped
+workflows:
+  trivial_fail:
+    steps:
+    - script:
+        title: Should success
+    - script:
+        title: Should fail, but skippable
+        is_skippable: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        title: Should success
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        title: Should success
+        is_always_run: true
+    - script:
+        title: Should skipped
   `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -250,9 +256,13 @@ func Test1Workflows(t *testing.T) {
 	}
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime: time.Now(),
+		StartTime:      time.Now(),
+		StepmanUpdates: map[string]int{},
 	}
-	buildRunResults = activateAndRunWorkflow(workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{})
+	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	if err != nil {
+		t.Fatal("Failed to activate and run worfklow:", err)
+	}
 	if len(buildRunResults.SuccessSteps) != 3 {
 		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
 	}
@@ -280,61 +290,61 @@ func Test1Workflows(t *testing.T) {
 // Trivial test with before, after workflows
 func Test3Workflows(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    before1:
-      steps:
-      - script:
-          title: Should success
-      - script:
-          title: Should fail, but skippable
-          is_skippable: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
-      - script:
-          title: Should success
+workflows:
+  before1:
+    steps:
+    - script:
+        title: Should success
+    - script:
+        title: Should fail, but skippable
+        is_skippable: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        title: Should success
 
-    before2:
-      steps:
-      - script:
-          title: Should success
+  before2:
+    steps:
+    - script:
+        title: Should success
 
-    target:
-      before_run:
-      - before1
-      - before2
-      after_run:
-      - after1
-      - after2
-      steps:
-      - script:
-          title: Should fail
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
+  target:
+    before_run:
+    - before1
+    - before2
+    after_run:
+    - after1
+    - after2
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
 
-    after1:
-      steps:
-      - script:
-          title: Should fail
-          is_always_run: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
+  after1:
+    steps:
+    - script:
+        title: Should fail
+        is_always_run: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
 
-    after2:
-      steps:
-      - script:
-          title: Should be skipped
+  after2:
+    steps:
+    - script:
+        title: Should be skipped
   `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -377,22 +387,22 @@ func Test3Workflows(t *testing.T) {
 // Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func TestRefeneceCycle(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    before1:
-      before_run:
-      - before2
+workflows:
+  before1:
+    before_run:
+    - before2
 
-    before2:
-      before_run:
-      - before1
+  before2:
+    before_run:
+    - before1
 
-    target:
-      before_run:
-      - before1
-      - before2
+  target:
+    before_run:
+    - before1
+    - before2
   `
 	_, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err == nil {
@@ -404,87 +414,87 @@ func TestRefeneceCycle(t *testing.T) {
 // Checks if BuildStatusEnv is set correctly
 func TestBuildStatusEnv(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    before1:
-      steps:
-      - script:
-          title: Should success
-      - script:
-          title: Should fail, but skippable
-          is_skippable: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
-      - script:
-          title: Should success
+workflows:
+  before1:
+    steps:
+    - script:
+        title: Should success
+    - script:
+        title: Should fail, but skippable
+        is_skippable: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        title: Should success
 
-    before2:
-      steps:
-      - script:
-          title: Should success
+  before2:
+    steps:
+    - script:
+        title: Should success
 
-    target:
-      steps:
-      - script:
-          title: Should success
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
-                exit 1
-              fi
-              if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
-                exit 1
-              fi
-      - script:
-          title: Should fail, but skippable
-          is_skippable: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              echo 'This is a before workflow'
-              exit 2
-      - script:
-          title: Should success
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
-                exit 1
-              fi
-              if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
-                exit 1
-              fi
-      - script:
-          title: Should fail
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
+  target:
+    steps:
+    - script:
+        title: Should success
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
               exit 1
-      - script:
-          title: Should success
-          is_always_run: true
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
-                echo "should fail"
-              fi
-              if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
-                echo "should fail"
-              fi
-      - script:
-          title: Should skipped
+            fi
+            if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+              exit 1
+            fi
+    - script:
+        title: Should fail, but skippable
+        is_skippable: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo 'This is a before workflow'
+            exit 2
+    - script:
+        title: Should success
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            if [[ "$BITRISE_BUILD_STATUS" != "0" ]] ; then
+              exit 1
+            fi
+            if [[ "$STEPLIB_BUILD_STATUS" != "0" ]] ; then
+              exit 1
+            fi
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 1
+    - script:
+        title: Should success
+        is_always_run: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            if [[ "$BITRISE_BUILD_STATUS" != "1" ]] ; then
+              echo "should fail"
+            fi
+            if [[ "$STEPLIB_BUILD_STATUS" != "1" ]] ; then
+              echo "should fail"
+            fi
+    - script:
+        title: Should skipped
   `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -528,36 +538,36 @@ func TestBuildStatusEnv(t *testing.T) {
 // Trivial fail test
 func TestFail(t *testing.T) {
 	configStr := `
-    format_version: 1.0.0
-    default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-    workflows:
-      target:
-        steps:
-        - script:
-            title: Should success
-        - script:
-            title: Should fail, but skippable
-            is_skippable: true
-            inputs:
-            - content: |
-                #!/bin/bash
-                set -v
-                exit 2
-        - script:
-            title: Should success
-        - script:
-            title: Should fail
-            inputs:
-            - content: |
-                #!/bin/bash
-                set -v
-                exit 1
-        - script:
-            title: Should skipped
-        - script:
-            title: Should success
-            is_always_run: true
+workflows:
+  target:
+    steps:
+    - script:
+        title: Should success
+    - script:
+        title: Should fail, but skippable
+        is_skippable: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
+    - script:
+        title: Should success
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 1
+    - script:
+        title: Should skipped
+    - script:
+        title: Should success
+        is_always_run: true
     `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -601,14 +611,14 @@ func TestFail(t *testing.T) {
 // Trivial success test
 func TestSuccess(t *testing.T) {
 	configStr := `
-    format_version: 1.0.0
-    default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-    workflows:
-      target:
-        steps:
-        - script:
-            title: Should success
+workflows:
+  target:
+    steps:
+    - script:
+        title: Should success
     `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -651,37 +661,37 @@ func TestSuccess(t *testing.T) {
 // Checks if BuildStatusEnv is set correctly
 func TestBuildFailedMode(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    before1:
-      title: before1
-      steps:
-      - script:
-          title: Should success
-      - script:
-          title: Should fail
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              exit 2
+workflows:
+  before1:
+    title: before1
+    steps:
+    - script:
+        title: Should success
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            exit 2
 
-    before2:
-      title: before2
-      steps:
-      - script:
-          title: Should skipped
+  before2:
+    title: before2
+    steps:
+    - script:
+        title: Should skipped
 
-    target:
-      title: target
-      before_run:
-      - before1
-      - before2
-      steps:
-      - script:
-          title: Should skipped
+  target:
+    title: target
+    before_run:
+    - before1
+    - before2
+    steps:
+    - script:
+        title: Should skipped
     `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -726,40 +736,40 @@ func TestBuildFailedMode(t *testing.T) {
 // Before workflows env should be visible in target and after workflow
 func TestWorkflowEnvironments(t *testing.T) {
 	configStr := `
-  format_version: 1.0.0
-  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-  workflows:
-    before:
-      envs:
-      - BEFORE_ENV: beforeenv
+workflows:
+  before:
+    envs:
+    - BEFORE_ENV: beforeenv
 
-    target:
-      title: target
-      before_run:
-      - before
-      after_run:
-      - after
-      steps:
-      - script:
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
-                exit 1
-              fi
+  target:
+    title: target
+    before_run:
+    - before
+    after_run:
+    - after
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
+              exit 1
+            fi
 
-    after:
-      steps:
-      - script:
-          inputs:
-          - content: |
-              #!/bin/bash
-              set -v
-              if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
-                exit 1
-              fi
+  after:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            if [[ "$BEFORE_ENV" != "beforeenv" ]] ; then
+              exit 1
+            fi
     `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
@@ -1088,5 +1098,41 @@ workflows:
 	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
 		t.Log("STEPLIB_BUILD_STATUS:", status)
 		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
+	}
+}
+
+func TestLastWorkflowIDInConfig(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before:
+
+  target:
+    title: target
+    before_run:
+    - before
+    after_run:
+    - after1
+
+  after1:
+    after_run:
+    - after2
+
+  after2:
+  `
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	last, err := lastWorkflowIDInConfig("target", config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if last != "after2" {
+		t.Fatalf("Last workflow id is incorrect: (%s) should be (after2)", last)
 	}
 }

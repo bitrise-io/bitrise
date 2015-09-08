@@ -3,7 +3,78 @@ package bitrise
 import (
 	"encoding/json"
 	"testing"
+
+	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/stretchr/testify/require"
 )
+
+func TestSsStringSliceWithSameElements(t *testing.T) {
+	s1 := []string{}
+	s2 := []string{}
+	require.Equal(t, true, isStringSliceWithSameElements(s1, s2))
+
+	s1 = []string{"1", "2", "3"}
+	s2 = []string{"2", "1"}
+	require.Equal(t, false, isStringSliceWithSameElements(s1, s2))
+
+	s2 = append(s2, "3")
+	require.Equal(t, true, isStringSliceWithSameElements(s1, s2))
+
+	s2 = []string{"1,", "1,", "1"}
+	require.Equal(t, false, isStringSliceWithSameElements(s1, s2))
+}
+
+func TestIsDependecyEqual(t *testing.T) {
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+
+	require.Equal(t, true, isDependecyEqual(d1, d2))
+
+	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+
+	require.Equal(t, false, isDependecyEqual(d1, d2))
+
+	d1 = stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
+	d2 = stepmanModels.DependencyModel{Manager: "manager1", Name: "dep"}
+
+	require.Equal(t, false, isDependecyEqual(d1, d2))
+}
+
+func TestContainsDependecy(t *testing.T) {
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
+	d3 := stepmanModels.DependencyModel{Manager: "manager1", Name: "dep3"}
+
+	m := map[stepmanModels.DependencyModel]bool{
+		d1: false,
+		d2: true,
+	}
+
+	require.Equal(t, true, containsDependecy(m, d1))
+
+	require.Equal(t, false, containsDependecy(m, d3))
+}
+
+func TestIsDependencySliceWithSameElements(t *testing.T) {
+	s1 := []stepmanModels.DependencyModel{}
+	s2 := []stepmanModels.DependencyModel{}
+	require.Equal(t, true, isDependencySliceWithSameElements(s1, s2))
+
+	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
+	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
+	d3 := stepmanModels.DependencyModel{Manager: "manager1", Name: "dep3"}
+
+	s1 = []stepmanModels.DependencyModel{d1, d2, d3}
+	s2 = []stepmanModels.DependencyModel{d2, d1}
+	require.Equal(t, false, isDependencySliceWithSameElements(s1, s2))
+
+	s2 = append(s2, d3)
+	require.Equal(t, true, isDependencySliceWithSameElements(s1, s2))
+
+	s2 = []stepmanModels.DependencyModel{d1, d1, d1}
+	require.Equal(t, false, isDependencySliceWithSameElements(s1, s2))
+}
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
 	configStr := `
@@ -39,9 +110,8 @@ workflows:
         title: Should skipped
   `
 	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	workflow, found := config.Workflows["trivial_fail"]
 	if !found {
 		t.Fatal("No workflow found with title (trivial_fail)")

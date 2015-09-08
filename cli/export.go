@@ -6,21 +6,12 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/codegangsta/cli"
 )
 
 func export(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
-
-	bitriseConfigPath, err := GetBitriseConfigFilePath(c)
-	if err != nil {
-		log.Fatalf("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: %s", err)
-	}
-	if bitriseConfigPath == "" {
-		log.Fatalln("[BITRISE_CLI] - Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
-	}
 
 	outfilePth := c.String(OuputPathKey)
 	if outfilePth == "" {
@@ -31,12 +22,11 @@ func export(c *cli.Context) {
 		log.Fatalln("No output file format specified!")
 	}
 
-	// Run workflow
-	bitriseConfig, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+	// Config validation
+	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 	if err != nil {
-		log.Fatalln("Failed to read config file: ", err)
+		log.Fatalf("Failed to create bitrise cofing, err: %s", err)
 	}
-	log.Debugf("bitriseConfig: %#v", bitriseConfig)
 
 	// serialize
 	configBytes := []byte{}
