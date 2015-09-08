@@ -8,6 +8,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEntryWithError(t *testing.T) {
+
+	assert := assert.New(t)
+
+	defer func() {
+		ErrorKey = "error"
+	}()
+
+	err := fmt.Errorf("kaboom at layer %d", 4711)
+
+	assert.Equal(err, WithError(err).Data["error"])
+
+	logger := New()
+	logger.Out = &bytes.Buffer{}
+	entry := NewEntry(logger)
+
+	assert.Equal(err, entry.WithError(err).Data["error"])
+
+	ErrorKey = "err"
+
+	assert.Equal(err, entry.WithError(err).Data["err"])
+
+}
+
 func TestEntryPanicln(t *testing.T) {
 	errBoom := fmt.Errorf("boom time")
 
@@ -50,18 +74,4 @@ func TestEntryPanicf(t *testing.T) {
 	logger.Out = &bytes.Buffer{}
 	entry := NewEntry(logger)
 	entry.WithField("err", errBoom).Panicf("kaboom %v", true)
-}
-
-func TestEntryLogLevel(t *testing.T) {
-  	out := &bytes.Buffer{}
-  	logger := New()
-  	logger.Out = out
-  	logger.Level = DebugLevel
-  	entry := NewEntry(logger)
-  	assert.Equal(t, DebugLevel, entry.Level)
-  	entry.Level = WarnLevel
-  	entry.Info("it should not be displayed")
-  	assert.Equal(t, "", out.String())
-  	entry.Warn("it should be displayed")
-  	assert.Contains(t, out.String(), "it should be displayed")
 }
