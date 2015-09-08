@@ -73,7 +73,7 @@ func trigger(c *cli.Context) {
 		log.Fatalf("Faild to select workflow by pattern (%s), err: %s", triggerPattern, err)
 	}
 	if !found {
-		log.Warnf("No workflow id match, to pattern (%s), try to use pattern as workflow id", triggerPattern)
+		log.Warnf("No match found in the trigger_map for pattern (%s), trying to use pattern as workflow ID...", triggerPattern)
 		workflowToRunID = triggerPattern
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
