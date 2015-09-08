@@ -10,6 +10,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -1003,6 +1004,9 @@ func TestWorkflowIDByPattern(t *testing.T) {
 format_version: 0.9.8
 
 trigger_map:
+- pattern: direct_test
+  is_pull_request_allowed: false
+  workflow: direct
 - pattern: master
   is_pull_request_allowed: false
   workflow: master
@@ -1020,71 +1024,54 @@ trigger_map:
 	}
 
 	// empty pattern -> should select *
-	workflowID, err := config.WorkflowIDByPattern("", "")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "primary" {
-		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
-	}
+	workflowID, found, err := config.WorkflowIDByPattern("", "")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "primary", workflowID)
 
 	// not exist patter pattern -> should select *
-	workflowID, err = config.WorkflowIDByPattern("test", "")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "primary" {
-		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("test", "")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "primary", workflowID)
 
 	// select by exist pattern, no pull request -> should select master
-	workflowID, err = config.WorkflowIDByPattern("master", "")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "master" {
-		t.Fatalf("Triggered workflow id (%s), should be (master)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("master", "")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "master", workflowID)
 
 	// select by exist pattern, with pull request -> should fail
-	workflowID, err = config.WorkflowIDByPattern("master", "pull_request_id")
-	if err == nil {
-		t.Fatal("Triggered with pull request, this patter should fail")
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("master", "pull_request_id")
+	require.NotEqual(t, nil, err)
 
 	// select by exist pattern part  -> should select feautre/*
-	workflowID, err = config.WorkflowIDByPattern("feature/test", "pull_request_id")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "feature" {
-		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("feature/test", "pull_request_id")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "feature", workflowID)
 
 	// select by exist pattern part -> should select feautre/*
-	workflowID, err = config.WorkflowIDByPattern("feature/ ", "pull_request_id")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "feature" {
-		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("feature/ ", "pull_request_id")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "feature", workflowID)
 
 	// select by exist pattern part -> should select feautre/*
-	workflowID, err = config.WorkflowIDByPattern("feature/", "pull_request_id")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "feature" {
-		t.Fatalf("Triggered workflow id (%s), should be (feature)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("feature/", "pull_request_id")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "feature", workflowID)
 
 	// select by pattern part -> should select *
-	workflowID, err = config.WorkflowIDByPattern("feature", "pull_request_id")
-	if err != nil {
-		t.Fatal("Faild to get workflowID, by trigger pattern, err:", err)
-	}
-	if workflowID != "primary" {
-		t.Fatalf("Triggered workflow id (%s), should be (primary)", workflowID)
-	}
+	workflowID, found, err = config.WorkflowIDByPattern("feature", "pull_request_id")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "primary", workflowID)
+
+	// select direct workflow -> should select primary
+	workflowID, found, err = config.WorkflowIDByPattern("direct", "pull_request_id")
+	require.Equal(t, nil, err)
+	require.Equal(t, true, found)
+	require.Equal(t, "primary", workflowID)
 }
