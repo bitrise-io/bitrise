@@ -53,7 +53,7 @@ workflows:
     envs: []
     steps:
     - script:
-        title: pwd
+        title: echo then fail
         inputs:
         - content: |-
             #!/bin/bash
