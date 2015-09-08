@@ -52,8 +52,8 @@ type StepModel struct {
 
 // StepGroupModel ...
 type StepGroupModel struct {
-	Versions            map[string]StepModel `json:"versions"`
 	LatestVersionNumber string               `json:"latest_version_number"`
+	Versions            map[string]StepModel `json:"versions"`
 }
 
 // StepHash ...
@@ -69,7 +69,7 @@ type DownloadLocationModel struct {
 type StepCollectionModel struct {
 	FormatVersion        string                  `json:"format_version" yaml:"format_version"`
 	GeneratedAtTimeStamp int64                   `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
-	Steps                StepHash                `json:"steps" yaml:"steps"`
 	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
 	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
+	Steps                StepHash                `json:"steps" yaml:"steps"`
 }
