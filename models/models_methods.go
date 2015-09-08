@@ -634,16 +634,16 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 // --- TriggerMap
 
 // WorkflowIDByPattern ...
-func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID string) (string, error) {
+func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID string) (string, bool, error) {
 	for _, item := range config.TriggerMap {
 		if glob.Glob(item.Pattern, pattern) {
 			if !item.IsPullRequestAllowed && pullRequestID != "" {
-				return "", fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
+				return "", true, fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
 			}
-			return item.WorkflowID, nil
+			return item.WorkflowID, true, nil
 		}
 	}
-	return "", fmt.Errorf("Trigger (%s) did not match any of the defined patterns (%#v)", pattern, config.TriggerMap)
+	return "", false, nil
 }
 
 // ----------------------------
