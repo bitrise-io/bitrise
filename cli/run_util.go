@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
@@ -353,7 +354,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 			continue
 		}
-		stepVersion := stepIDData.Version
+		stepVersionForInfoPrint := stepIDData.Version
 
 		log.Debugf("[BITRISE_CLI] - Running Step: %#v", workflowStep)
 
@@ -385,8 +386,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if stepVersion == "" {
-				stepVersion = "path"
+			if len(stepIDData.IDorURI) > 20 {
+				stepVersionForInfoPrint = fmt.Sprintf("path:...%s", stringutil.MaxLastChars(stepIDData.IDorURI, 17))
+			} else {
+				stepVersionForInfoPrint = fmt.Sprintf("path:%s", stepIDData.IDorURI)
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -400,8 +403,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if stepVersion == "" {
-				stepVersion = "git"
+			stepVersionForInfoPrint = fmt.Sprintf("git:...%s", stringutil.MaxLastChars(stepIDData.IDorURI, 10))
+			if stepIDData.Version != "" {
+				stepVersionForInfoPrint = stepVersionForInfoPrint + "@" + stepIDData.Version
 			}
 		} else if stepIDData.SteplibSource == "_" {
 			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -414,8 +418,13 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if stepVersion == "" {
-				stepVersion = "_"
+			stepVersionForInfoPrint = "_"
+			if stepIDData.Version != "" {
+				if len(stepIDData.Version) > 20 {
+					stepVersionForInfoPrint = stepVersionForInfoPrint + "@..." + stringutil.MaxLastChars(stepIDData.Version, 17)
+				} else {
+					stepVersionForInfoPrint = stepVersionForInfoPrint + "@" + stepIDData.Version
+				}
 			}
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
@@ -444,7 +453,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				}
 			}
 
-			stepVersion = stepInfo.StepVersion
+			stepVersionForInfoPrint = stepInfo.StepVersion
 
 			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -474,7 +483,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		// Run step
-		bitrise.PrintRunningStep(*mergedStep.Title, stepVersion, idx)
+		bitrise.PrintRunningStep(*mergedStep.Title, stepVersionForInfoPrint, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, buildRunResults)
 			if err != nil {

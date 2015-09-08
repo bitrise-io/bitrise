@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/stringutil"
 )
 
 const (
@@ -24,6 +25,9 @@ func PrintRunningWorkflow(title string) {
 
 // PrintRunningStep ...
 func PrintRunningStep(title, version string, idx int) {
+	if len(version) > 25 {
+		version = "..." + stringutil.MaxLastChars(version, 22)
+	}
 	content := fmt.Sprintf("| (%d) %s (%s) |", idx, title, version)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
 
@@ -33,7 +37,11 @@ func PrintRunningStep(title, version string, idx int) {
 	} else if charDiff > 0 {
 		// longer than desired - trim title
 		trimmedTitleWidth := len(title) - charDiff - 3
-		content = fmt.Sprintf("| (%d) %s... (%s) |", idx, title[0:trimmedTitleWidth], version)
+		if trimmedTitleWidth < 0 {
+			log.Errorf("Step Version too long, can't present title at all! : %s", version)
+		} else {
+			content = fmt.Sprintf("| (%d) %s... (%s) |", idx, title[0:trimmedTitleWidth], version)
+		}
 	}
 
 	sep := strings.Repeat("-", len(content))
