@@ -60,7 +60,7 @@ description: |-
 
 app:
   envs:
-  - BITRISE_PROJECT_TITLE: "%s"
+  - BITRISE_APP_TITLE: "%s"
   - BITRISE_DEV_BRANCH: "%s"
 
 trigger_map:
@@ -94,7 +94,7 @@ workflows:
             echo "Welcome to Bitrise!"
             echo "Current time is: ${ISO_DATETIME}"
             echo
-            echo "Your specified Project Title is: ${BITRISE_PROJECT_TITLE}"
+            echo "Your specified Project Title is: ${BITRISE_APP_TITLE}"
             echo " and the primary development branch is: ${BITRISE_DEV_BRANCH}"
   fallback:
     description: |-
@@ -151,7 +151,7 @@ func initConfig(c *cli.Context) {
 
 	userInputProjectTitle := ""
 	userInputDevBranch := ""
-	if val, err := goinp.AskForString("What's the BITRISE_PROJECT_TITLE?"); err != nil {
+	if val, err := goinp.AskForString("What's the BITRISE_APP_TITLE?"); err != nil {
 		log.Fatalln(err)
 	} else {
 		userInputProjectTitle = val

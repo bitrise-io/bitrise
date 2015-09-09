@@ -15,7 +15,7 @@ func Test(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, "", bitriseConfContent)
 	require.Contains(t, bitriseConfContent, fmt.Sprintf("format_version: %s", models.Version))
-	require.Contains(t, bitriseConfContent, `- BITRISE_PROJECT_TITLE: "App Title"`)
+	require.Contains(t, bitriseConfContent, `- BITRISE_APP_TITLE: "App Title"`)
 	require.Contains(t, bitriseConfContent, `- BITRISE_DEV_BRANCH: "master"`)
 
 	bitriseConfModel, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
