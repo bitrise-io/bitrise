@@ -10,14 +10,14 @@ SetpID is a unique identifier of a step. In your Workflow you have to include th
 ### StepID format in the yml
 
 - For Steps from the [StepLib](https://github.com/bitrise-io/bitrise-steplib)
-  - `https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.1:`
-    - This is the full StepID format: step-lib-source::StepID@version:
-  - `::script@0.9.0:` and `script@0.9.0:`
-    - If the `default_step_lib_source` is defined (by default it is and refers to our [StepLib](https://github.com/bitrise-io/bitrise-steplib)), you can simply omit the <step-lib-source> and even the `::` separator.
-  - `script@:` and `script:`
-    - If there is only one version of a step or if you always want to use the latest version you can even remove the version and the `@` separator too. And if you take a look at the generated bitrise.yml you can see that this is the format it uses (the only step in the Workflow is `- script:`)
+  - You can use the full StepID format. (step-lib-source::StepID@version:)
+    - `https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.1:`
+  - If the `default_step_lib_source` is defined (by default it is and refers to our [StepLib](https://github.com/bitrise-io/bitrise-steplib)), you can simply omit the step-lib-source and even the `::` separator. (::StepID@version:)
+    - `::script@0.9.0:` and `script@0.9.0:`
+  - If there is only one version of a step or if you always want to use the latest version you can even remove the version and the `@` separator too. And if you take a look at the generated bitrise.yml you can see that this is the format it uses (StepID@: - the only step in the generated Workflow is `- script:`)
+    - `script@:` and `script:`
 - For Steps that are not in the [StepLib](https://github.com/bitrise-io/bitrise-steplib) and are stored online
-  - The format to download and run a step is git::<clone-url>@<branch>
+  - The format to download and run a step is git::clone-url@branch
     - `git::https://github.com/bitrise-io/steps-timestamp.git@master`
       - In this case we are using the HTTPS clone url to clone the master branch in the Step's repository
     - `git::git@github.com:bitrise-io/steps-timestamp.git@master`
