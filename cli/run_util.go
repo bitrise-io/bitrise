@@ -496,7 +496,15 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 		outEnvironments := []envmanModels.EnvironmentItemModel{}
-		if buildRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
+
+		isAlwaysRun := stepmanModels.DefaultIsAlwaysRun
+		if mergedStep.IsAlwaysRun != nil {
+			isAlwaysRun = *mergedStep.IsAlwaysRun
+		} else {
+			log.Warn("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
+		}
+
+		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
 			registerStepRunResults(mergedStep, models.StepRunStatusCodeSkipped, 0, err, isLastStep)
 		} else {
 			exit, out, err := runStep(mergedStep, stepIDData, stepDir, *environments)
