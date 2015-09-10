@@ -11,7 +11,7 @@ SetpID is a unique identifier of a step. In your Workflow you have to include th
 
 - For Steps from the [StepLib](https://github.com/bitrise-io/bitrise-steplib)
   - `https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.1:`
-    - This is the full StepID format: <step-lib-source>::StepID@version:
+    - This is the full StepID format: step-lib-source::StepID@version:
   - `::script@0.9.0:` and `script@0.9.0:`
     - If the `default_step_lib_source` is defined (by default it is and refers to our [StepLib](https://github.com/bitrise-io/bitrise-steplib)), you can simply omit the <step-lib-source> and even the `::` separator.
   - `script@:` and `script:`
