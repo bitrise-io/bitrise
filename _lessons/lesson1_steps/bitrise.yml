@@ -1,0 +1,91 @@
+format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: lesson_1
+    opts:
+      is_expand: true
+  - BITRISE_DEV_BRANCH: master
+    opts:
+      is_expand: true
+workflows:
+  steplib_steps:
+    steps:
+      - https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.0:
+          title: "Full ID"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - ::script@0.9.0:
+          title: "Using default_step_lib_source"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script@0.9.0:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script@:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script:
+          title: "Using default_step_lib_source, without ::"
+          inputs:
+          - content: |
+              #/bin/bash
+              echo "Welcome to Bitrise!"
+      - script:
+          title: "ok"
+      - git::https://github.com/bitrise-io/steps-timestamp.git@master:
+          title: "remote_git-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
+      - script:
+          title: "ok"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+
+      - git-clone:
+          title: "Clone timestamp repo for local use"
+          run_if: true
+          inputs:
+          - repository_url: https://github.com/bitrise-io/steps-timestamp
+          - clone_into_dir: steps-timestamp
+          - branch: master
+      - path::./steps-timestamp:
+          title: "relative_pth-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
+      - script:
+          title: "ok"
+      - path::~/Documents/Development/bitrise-cli/_lessons/lesson1_steps/steps-timestamp:
+          title: "local_time-stamp-test"
+      - path::$HOME/Documents/Development/bitrise-cli/_lessons/lesson1_steps/steps-timestamp:
+          title: "local_time-stamp-test"
+      - script:
+          title: "print time"
+          inputs:
+          - content: |
+              #/bin/bash
+              set -e
+              echo "ISO_DATETIME: ${ISO_DATETIME}"
