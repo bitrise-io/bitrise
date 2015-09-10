@@ -103,11 +103,12 @@ func InitPaths() error {
 	}
 
 	// BITRISE_DEPLOY_DIR
-	deployDir, err := filepath.Abs(path.Join(CurrentDir, "build"))
-	if err != nil {
-		return fmt.Errorf("Failed to set deploy dir: %s", err)
-	}
 	if os.Getenv(BitriseDeployDirEnvKey) == "" {
+		deployDir, err := pathutil.NormalizedOSTempDirPath("build")
+		if err != nil {
+			return fmt.Errorf("Failed to set deploy dir: %s", err)
+		}
+
 		if err := os.Setenv(BitriseDeployDirEnvKey, deployDir); err != nil {
 			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR: %s", err)
 		}

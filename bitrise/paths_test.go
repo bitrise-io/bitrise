@@ -2,8 +2,6 @@ package bitrise
 
 import (
 	"os"
-	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,15 +26,12 @@ func TestInitPaths(t *testing.T) {
 	//
 	// BITRISE_DEPLOY_DIR
 
-	// Unset BITRISE_DEPLOY_DIR -> after InitPaths BITRISE_DEPLOY_DIR should be ./build
-	deployDir, err := filepath.Abs(path.Join(CurrentDir, "build"))
-	require.Equal(t, nil, err)
-
+	// Unset BITRISE_DEPLOY_DIR -> after InitPaths BITRISE_DEPLOY_DIR should be temp dir
 	if os.Getenv(BitriseDeployDirEnvKey) != "" {
 		require.Equal(t, nil, os.Unsetenv(BitriseDeployDirEnvKey))
 	}
 	require.Equal(t, nil, InitPaths())
-	require.Equal(t, deployDir, os.Getenv(BitriseDeployDirEnvKey))
+	require.NotEqual(t, "", os.Getenv(BitriseDeployDirEnvKey))
 
 	// Set BITRISE_DEPLOY_DIR -> after InitPaths BITRISE_DEPLOY_DIR should keep content
 	require.Equal(t, nil, os.Setenv(BitriseDeployDirEnvKey, "$HOME/test"))
