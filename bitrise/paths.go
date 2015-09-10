@@ -31,6 +31,8 @@ const (
 	FormattedOutputPathEnvKey = "BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH"
 	// BitriseSourceDirEnvKey ...
 	BitriseSourceDirEnvKey = "BITRISE_SOURCE_DIR"
+	// BitriseDeployDirEnvKey ...
+	BitriseDeployDirEnvKey = "BITRISE_DEPLOY_DIR"
 )
 
 func initBitriseWorkPaths() error {
@@ -93,9 +95,21 @@ func InitPaths() error {
 	}
 	CurrentDir = currentDir
 
+	// BITRISE_SOURCE_DIR
 	if os.Getenv(BitriseSourceDirEnvKey) == "" {
 		if err := os.Setenv(BitriseSourceDirEnvKey, currentDir); err != nil {
 			return fmt.Errorf("Failed to set BITRISE_SOURCE_DIR: %s", err)
+		}
+	}
+
+	// BITRISE_DEPLOY_DIR
+	deployDir, err := filepath.Abs(path.Join(CurrentDir, "build"))
+	if err != nil {
+		return fmt.Errorf("Failed to set deploy dir: %s", err)
+	}
+	if os.Getenv(BitriseDeployDirEnvKey) == "" {
+		if err := os.Setenv(BitriseDeployDirEnvKey, deployDir); err != nil {
+			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR: %s", err)
 		}
 	}
 
