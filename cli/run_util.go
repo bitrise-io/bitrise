@@ -412,8 +412,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 			// Steplib independent steps are completly defined in workflow
 			stepYMLPth = ""
-
-			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := workflowStep.FillMissingDefaults(); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
 			}
