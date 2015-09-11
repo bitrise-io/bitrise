@@ -417,6 +417,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
+			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+				continue
+			}
+
 			stepVersionForInfoPrint = "_"
 			if stepIDData.Version != "" {
 				if len(stepIDData.Version) > 20 {
