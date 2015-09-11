@@ -15,6 +15,10 @@ func TestSetupForVersionChecks(t *testing.T) {
 	}
 
 	fakeHomePth := path.Join(currPth, "_FAKE_HOME")
+	if err := os.RemoveAll(fakeHomePth); err != nil {
+		t.Error("Failed to remove FAKE HOME: ", err)
+	}
+
 	err = os.Mkdir(fakeHomePth, 0777)
 	if err != nil {
 		t.Fatal("Failed to create fake HOME: ", err)

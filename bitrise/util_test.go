@@ -8,6 +8,76 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
+	configStr := `
+  format_version: 1.0.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+  workflows:
+    remove_test:
+      steps:
+      - script:
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+            opts:
+              is_expand: true
+      - timestamp:
+          title: Generate timestamps
+    `
+	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
+
+	for workflowID, workflow := range config.Workflows {
+		if workflowID == "remove_test" {
+			for _, stepListItem := range workflow.Steps {
+				for stepID, step := range stepListItem {
+					if stepID == "script" {
+						for _, input := range step.Inputs {
+							key, _, err := input.GetKeyValuePair()
+							require.Equal(t, nil, err)
+
+							if key == "content" {
+								opts, err := input.GetOptions()
+								require.Equal(t, nil, err)
+
+								// script content should keep is_expand: true, becouse it's diffenet from spec default
+								require.Equal(t, true, *opts.IsExpand)
+							}
+						}
+					} else if stepID == "timestamp" {
+						// timestamp title should be nil, becouse it's the same as spec value
+						require.Equal(t, (*string)(nil), step.Title)
+
+						for _, output := range step.Outputs {
+							key, _, err := output.GetKeyValuePair()
+							require.Equal(t, nil, err)
+
+							if key == "UNIX_TIMESTAMP" {
+								// timestamp outputs should filled with key-value & opts.Title
+								opts, err := output.GetOptions()
+								require.Equal(t, nil, err)
+
+								require.Equal(t, "unix style", *opts.Title)
+								require.Equal(t, (*bool)(nil), opts.IsExpand)
+								require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
+								require.Equal(t, (*bool)(nil), opts.IsRequired)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// timestamp outputs should filled with key-value & opts.Title
+
+}
+
 func TestSsStringSliceWithSameElements(t *testing.T) {
 	s1 := []string{}
 	s2 := []string{}
@@ -127,72 +197,72 @@ workflows:
 func TestConfigModelFromJSONBytes(t *testing.T) {
 	configStr := `
 {
-	"format_version": "1.0.0",
-	"default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
-	"app": {
-		"envs": null
-	},
-	"workflows": {
-		"trivial_fail": {
-			"title": "",
-			"summary": "",
-			"before_run": null,
-			"after_run": null,
-			"envs": null,
-			"steps": [
-				{
-					"script": {
-						"title": "Should success",
-						"source": {}
-					}
-				},
-				{
-					"script": {
-						"title": "Should fail, but skippable",
-						"source": {},
-						"is_skippable": true,
-						"inputs": [
-							{
-								"content": "#!/bin/bash\nset -v\nexit 2\n",
-								"opts": {}
-							}
-						]
-					}
-				},
-				{
-					"script": {
-						"title": "Should success",
-						"source": {}
-					}
-				},
-				{
-					"script": {
-						"title": "Should fail",
-						"source": {},
-						"inputs": [
-							{
-								"content": "#!/bin/bash\nset -v\nexit 2\n",
-								"opts": {}
-							}
-						]
-					}
-				},
-				{
-					"script": {
-						"title": "Should success",
-						"source": {},
-						"is_always_run": true
-					}
-				},
-				{
-					"script": {
-						"title": "Should skipped",
-						"source": {}
-					}
-				}
-			]
-		}
-	}
+  "format_version": "1.0.0",
+  "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
+  "app": {
+    "envs": null
+  },
+  "workflows": {
+    "trivial_fail": {
+      "title": "",
+      "summary": "",
+      "before_run": null,
+      "after_run": null,
+      "envs": null,
+      "steps": [
+        {
+          "script": {
+            "title": "Should success",
+            "source": {}
+          }
+        },
+        {
+          "script": {
+            "title": "Should fail, but skippable",
+            "source": {},
+            "is_skippable": true,
+            "inputs": [
+              {
+                "content": "#!/bin/bash\nset -v\nexit 2\n",
+                "opts": {}
+              }
+            ]
+          }
+        },
+        {
+          "script": {
+            "title": "Should success",
+            "source": {}
+          }
+        },
+        {
+          "script": {
+            "title": "Should fail",
+            "source": {},
+            "inputs": [
+              {
+                "content": "#!/bin/bash\nset -v\nexit 2\n",
+                "opts": {}
+              }
+            ]
+          }
+        },
+        {
+          "script": {
+            "title": "Should success",
+            "source": {},
+            "is_always_run": true
+          }
+        },
+        {
+          "script": {
+            "title": "Should skipped",
+            "source": {}
+          }
+        }
+      ]
+    }
+  }
 }
   `
 	config, err := ConfigModelFromJSONBytes([]byte(configStr))
@@ -253,44 +323,44 @@ workflows:
 func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
 	configStr := `
 {
-	"format_version": "1.0.0",
-	"default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
-	"app": {
-		"envs": [
-			{
-				"BITRISE_BIN_NAME": "bitrise",
-				"opts": {
-					"is_expand": false
-				}
-			},
-			{
-				"GITHUB_RELEASES_URL": "https://github.com/bitrise-io/bitrise/releases",
-				"opts": {
-					"is_expand": false
-				}
-			}
-		]
-	},
-	"workflows": {
-		"test": {
-			"steps": [
-				{
-					"script": {
-						"title": "Should fail, but skippable",
-						"is_skippable": true,
-						"inputs": [
-							{
-								"content": "echo \"Hello World\"",
-								"opts": {
-									"is_expand": false
-								}
-							}
-						]
-					}
-				}
-			]
-		}
-	}
+  "format_version": "1.0.0",
+  "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
+  "app": {
+    "envs": [
+      {
+        "BITRISE_BIN_NAME": "bitrise",
+        "opts": {
+          "is_expand": false
+        }
+      },
+      {
+        "GITHUB_RELEASES_URL": "https://github.com/bitrise-io/bitrise/releases",
+        "opts": {
+          "is_expand": false
+        }
+      }
+    ]
+  },
+  "workflows": {
+    "test": {
+      "steps": [
+        {
+          "script": {
+            "title": "Should fail, but skippable",
+            "is_skippable": true,
+            "inputs": [
+              {
+                "content": "echo \"Hello World\"",
+                "opts": {
+                  "is_expand": false
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
 }
 `
 	config, err := ConfigModelFromJSONBytes([]byte(configStr))

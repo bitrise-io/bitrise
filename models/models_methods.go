@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -286,69 +285,16 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 	return nil
 }
 
-func removeStepRedundantFields(step *stepmanModels.StepModel) error {
-	if step.Title != nil && *step.Title == "" {
-		step.Title = nil
-	}
-	if step.Description != nil && *step.Description == "" {
-		step.Description = nil
-	}
-	if step.Summary != nil && *step.Summary == "" {
-		step.Summary = nil
-	}
-	if step.Website != nil && *step.Website == "" {
-		step.Website = nil
-	}
-	if step.SourceCodeURL != nil && *step.SourceCodeURL == "" {
-		step.SourceCodeURL = nil
-	}
-	if step.SupportURL != nil && *step.SupportURL == "" {
-		step.SupportURL = nil
-	}
-	if step.PublishedAt != nil && (*step.PublishedAt).Equal(time.Time{}) {
-		step.PublishedAt = nil
-	}
-	if step.IsRequiresAdminUser != nil && *step.IsRequiresAdminUser == stepmanModels.DefaultIsRequiresAdminUser {
-		step.IsRequiresAdminUser = nil
-	}
-	if step.IsAlwaysRun != nil && *step.IsAlwaysRun == stepmanModels.DefaultIsAlwaysRun {
-		step.IsAlwaysRun = nil
-	}
-	if step.IsSkippable != nil && *step.IsSkippable == stepmanModels.DefaultIsSkippable {
-		step.IsSkippable = nil
-	}
-	if step.RunIf != nil && *step.RunIf == "" {
-		step.RunIf = nil
-	}
-	for _, env := range step.Inputs {
-		if err := removeEnvironmentRedundantFields(&env); err != nil {
-			return err
-		}
-	}
-	for _, env := range step.Outputs {
-		if err := removeEnvironmentRedundantFields(&env); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (workflow *WorkflowModel) removeRedundantFields() error {
+	// Don't call step.RemoveRedundantFields()
+	// StepLib versions of steps (which are the default versions),
+	// contains different env defaults then normal envs
+	// example: isExpand = true by default for normal envs,
+	// but script step content input env isExpand = false by default
 	for _, env := range workflow.Environments {
 		if err := removeEnvironmentRedundantFields(&env); err != nil {
 			return err
 		}
-	}
-
-	for _, stepListItem := range workflow.Steps {
-		stepID, step, err := GetStepIDStepDataPair(stepListItem)
-		if err != nil {
-			return err
-		}
-		if err := removeStepRedundantFields(&step); err != nil {
-			return err
-		}
-		stepListItem[stepID] = step
 	}
 	return nil
 }
