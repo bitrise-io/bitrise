@@ -18,7 +18,7 @@ trigger_map:
   workflow: ci_step_template
 - pattern: "*"
   is_pull_request_allowed: false
-  workflow: install
+  workflow: ci
 
 workflows:
 
@@ -254,8 +254,13 @@ workflows:
             ./_bin/bin-for-ci setup --minimal
             rm _bin/bin-for-ci
 
+  _git_clone_repo:
+    steps:
+    - git-clone:
+
   ci:
     before_run:
+    - _git_clone_repo
     - ci_step_template
     - install_ci_tools
     - _run_minimal_setup
