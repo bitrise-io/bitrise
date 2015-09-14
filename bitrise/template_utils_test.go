@@ -248,6 +248,11 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 		}
 	}()
 
+	// env cleanup
+	if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
+		t.Error("Failed to unset environment: ", err)
+	}
+
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{.IsPR}}`

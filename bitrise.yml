@@ -258,7 +258,7 @@ workflows:
     steps:
     - git-clone:
 
-  ci:
+  ci_old:
     before_run:
     - _git_clone_repo
     - ci_step_template
@@ -275,6 +275,86 @@ workflows:
         - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
         - emoji: ":white_check_mark:"
         - emoji_on_error: ":no_entry_sign:"
+        - message: |-
+            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
+        - message_on_error: |-
+            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
+
+  ci:
+    envs:
+    - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
+    - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
+    steps:
+    - git-clone: {}
+    - script:
+        title: Symlink bitrise
+        run_if: ".IsCI"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            mkdir -p $BITRISE_IO_GO_PATH
+            ln -s $BITRISE_SOURCE_DIR $BITRISE_PATH
+          opts:
+            is_expand: true
+    - script:
+        title: Install required testing tools
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            # Install dependencies
+            go get -u github.com/tools/godep
+
+            # Check for unhandled errors
+            go get -u github.com/kisielk/errcheck
+
+            # Go lint
+            go get -u github.com/golang/lint/golint
+    - script:
+        title: Godeps - GOPATH patch
+        inputs:
+        - content: envman add --key GOPATH --value "$(godep path):$GOPATH"
+    - script:
+        title: Go Test
+        inputs:
+        - content: godep go test ./...
+        - working_dir: $BITRISE_PATH
+    - script:
+        title: Err check
+        inputs:
+        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+        - working_dir: $BITRISE_PATH
+    - script:
+        title: Go Lint
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            golint_out="$(golint ./...)"
+            if [[ "${golint_out}" != "" ]] ; then
+              echo "=> Golint issues found:"
+              echo "${golint_out}"
+              exit 1
+            fi
+        - working_dir: $BITRISE_PATH
+    - slack:
+        run_if: ".IsCI"
+        inputs:
+        - webhook_url: "$SLACK_WEBHOOK_URL"
+        - channel: "$SLACK_CHANNEL"
+        - from_username: "${BITRISE_BIN_NAME} - CI - OK"
+        - from_username_on_error: "${BITRISE_BIN_NAME} - CI - ERROR"
         - message: |-
             CI was successful on branch: *${BITRISE_GIT_BRANCH}*
 
