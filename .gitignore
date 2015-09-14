@@ -3,3 +3,4 @@ _temp/
 .bitrise.secrets.yml
 _bin
 .envstore.yml
+_FAKE_HOME/
