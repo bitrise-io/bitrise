@@ -288,6 +288,14 @@ workflows:
     envs:
     - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
     - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
+    - SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+      opts:
+        title: SLACK_WEBHOOK_URL
+        is_expand: false
+    - SLACK_CHANNEL: "#bitrise-dev-lifeline"
+      opts:
+        title: SLACK_CHANNEL
+        is_expand: false
     steps:
     - git-clone: {}
     - script:
