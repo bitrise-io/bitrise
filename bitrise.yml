@@ -335,12 +335,13 @@ workflows:
         title: Go Test
         inputs:
         - content: godep go test ./...
-        - working_dir: $BITRISE_PATH
     - script:
         title: Err check
         inputs:
-        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
-        - working_dir: $BITRISE_PATH
+        - content: |-
+            cd $BITRISE_PATH
+            errcheck -asserts=true -blank=true $(godep go list ./...)
+            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Lint
         inputs:
@@ -355,7 +356,6 @@ workflows:
               echo "${golint_out}"
               exit 1
             fi
-        - working_dir: $BITRISE_PATH
     - slack:
         run_if: ".IsCI"
         inputs:
