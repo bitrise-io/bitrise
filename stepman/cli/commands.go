@@ -70,6 +70,14 @@ var (
 			},
 		},
 		{
+			Name:   "step-list",
+			Usage:  "List of available steps.",
+			Action: list,
+			Flags: []cli.Flag{
+				flCollection,
+			},
+		},
+		{
 			Name:    "share",
 			Aliases: []string{"s"},
 			Usage:   "Publish your step.",
