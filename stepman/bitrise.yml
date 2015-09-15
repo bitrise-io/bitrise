@@ -10,6 +10,14 @@ app:
   envs:
   - BITRISE_BIN_NAME: stepman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
+  - SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+    opts:
+      title: SLACK_WEBHOOK_URL
+      is_expand: false
+  - SLACK_CHANNEL: "#bitrise-dev-lifeline"
+    opts:
+      title: SLACK_CHANNEL
+      is_expand: false
 
 workflows:
   delete-stepman-dir:
