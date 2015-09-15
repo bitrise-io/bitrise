@@ -20,11 +20,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	// VerifiedAssetsBaseURL ...
-	VerifiedAssetsBaseURL = "https://bitrise-steplib-collection.s3.amazonaws.com/steps/"
-)
-
 // DebugMode ...
 var DebugMode bool
 
@@ -170,27 +165,29 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 				}
 
 				// Check for asserts
-				assetsFolderPth := path.Join(stepsSpecDir, components[0], components[1], "assets")
-				exist, err := pathutil.IsPathExists(assetsFolderPth)
-				if err != nil {
-					return err
-				}
-				if exist {
-					assetsMap := map[string]string{}
-					err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
-						_, file := filepath.Split(pth)
-						if pth != assetsFolderPth && file != "" {
-							assetsMap[file] = path.Join(VerifiedAssetsBaseURL, id, "assets", file)
-						}
-						return nil
-					})
-
+				if collection.AssetsDownloadBaseURI != "" {
+					assetsFolderPth := path.Join(stepsSpecDir, components[0], components[1], "assets")
+					exist, err := pathutil.IsPathExists(assetsFolderPth)
 					if err != nil {
-						log.Debugf("  Failed to add assets, at (%s) | Error: %v", assetsFolderPth, err)
 						return err
 					}
+					if exist {
+						assetsMap := map[string]string{}
+						err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
+							_, file := filepath.Split(pth)
+							if pth != assetsFolderPth && file != "" {
+								assetsMap[file] = path.Join(collection.AssetsDownloadBaseURI, id, "assets", file)
+							}
+							return nil
+						})
 
-					step.AssetDownloadURI = assetsMap
+						if err != nil {
+							log.Debugf("  Failed to add assets, at (%s) | Error: %v", assetsFolderPth, err)
+							return err
+						}
+
+						step.AssetDownloadURI = assetsMap
+					}
 				}
 
 				// Add to stepgroup
