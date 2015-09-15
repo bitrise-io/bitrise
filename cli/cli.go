@@ -16,6 +16,8 @@ var (
 	IsCIMode = false
 	// IsDebugMode ...
 	IsDebugMode = false
+	// IsPullRequestMode ...
+	IsPullRequestMode = false
 )
 
 func initLogFormatter() {
@@ -78,6 +80,9 @@ func before(c *cli.Context) error {
 	if err := bitrise.InitPaths(); err != nil {
 		log.Fatalf("Failed to initialize required paths: %s", err)
 	}
+
+	// Pull Request Mode check
+	IsPullRequestMode = (os.Getenv(bitrise.PullRequestIDEnvKey) != "")
 
 	return nil
 }
