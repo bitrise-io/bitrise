@@ -1,0 +1,54 @@
+format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: lesson_2
+    opts:
+      is_expand: true
+  - BITRISE_DEV_BRANCH: master
+    opts:
+      is_expand: true
+workflows:
+  _setup:
+    description: Clone repo
+    steps:
+    - script:
+        title: clone
+        run_if: |-
+          {{enveq "$XCODE_PROJECT_PATH" ""}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo $XCODE_PROJECT_PATH
+            if [ ! -d $PROJECT_FOLDER ] ; then
+              git clone ${REPO_URL}
+            else
+              cd $PROJECT_FOLDER
+              git pull
+            fi
+  test:
+    before_run:
+      - _setup
+    after_run:
+      - _cleanup
+    steps:
+    - xcode-test:
+        title: Run Xcode test
+        inputs:
+        - project_path: ${XCODE_PROJECT_PATH}
+        - scheme: ${XCODE_PROJECT_SCHEME}
+        - simulator_device: iPhone 6
+        - simulator_os_version: latest
+        - is_clean_build: "no"
+  _cleanup:
+    description: |-
+      This is a utility workflow. It runs a script to delete the folders created in the setup.
+    steps:
+    - script:
+        title: Cleanup folder
+        description: |-
+          A script step to delete the downloaded Step folder.
+        inputs:
+        - content: |-
+            #!/bin/bash
+            rm -rf $PROJECT_TITLE
