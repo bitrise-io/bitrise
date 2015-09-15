@@ -978,7 +978,7 @@ workflows:
             #!/bin/bash
             set -v
             echo ${ENV}
-            if [ ! -z "$working_dir" != x ] ; then
+            if [ ! -z "$working_dir" ] ; then
               echo ${working_dir}
               exit 3
             fi
