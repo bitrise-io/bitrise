@@ -61,6 +61,10 @@ const (
 	// StepIDKEy ...
 	StepIDKEy      = "stepid"
 	stepIDKeyShort = "s"
+
+	// FormatKEy ...
+	FormatKEy      = "format"
+	formatKeyShort = "f"
 )
 
 var (
@@ -125,6 +129,11 @@ var (
 	flStepID = cli.StringFlag{
 		Name:  StepIDKEy + ", " + stepIDKeyShort,
 		Usage: "ID of the step.",
+	}
+	flFormat = cli.StringFlag{
+		Name:  FormatKEy + ", " + formatKeyShort,
+		Usage: "Output format (options: raw, json).",
+		Value: "raw",
 	}
 )
 

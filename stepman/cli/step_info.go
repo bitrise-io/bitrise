@@ -9,6 +9,13 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+const (
+	// OutputFormatRaw ...
+	OutputFormatRaw = "raw"
+	// OutputFormatJSON ...
+	OutputFormatJSON = "json"
+)
+
 // StepInfoModel ...
 type StepInfoModel struct {
 	StepID        string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
@@ -16,7 +23,21 @@ type StepInfoModel struct {
 	LatestVersion string `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
 }
 
-func getStepInfoString(id, version, latest string) (string, error) {
+func printRawStepInfo(id, version, latest string) error {
+	return nil
+}
+
+func printJSONStepInfo(id, version, latest string) error {
+	stepInfoString, err := getStepInfoJSONString(id, version, latest)
+	if err != nil {
+		log.Fatal("Failed to generate step info, err:", err)
+	}
+
+	fmt.Println(stepInfoString)
+	return nil
+}
+
+func getStepInfoJSONString(id, version, latest string) (string, error) {
 	stepInfo := StepInfoModel{
 		StepID:        id,
 		StepVersion:   version,
@@ -40,6 +61,11 @@ func stepInfo(c *cli.Context) {
 	id := c.String(IDKey)
 	if id == "" {
 		log.Fatal("[STEPMAN] - Missing step id")
+	}
+
+	format := c.String(FormatKEy)
+	if !(format == OutputFormatRaw || format == OutputFormatJSON) {
+		log.Fatalf("[STEPMAN] - Invalid format: %s", format)
 	}
 
 	version := c.String(VersionKey)
@@ -74,7 +100,17 @@ func stepInfo(c *cli.Context) {
 		version = latest
 	}
 
-	stepInfoString, err := getStepInfoString(id, version, latest)
+	switch format {
+	case OutputFormatRaw:
+		printRawStepInfo(id, version, latest)
+		break
+	case OutputFormatJSON:
+		printJSONStepInfo(id, version, latest)
+		break
+	default:
+		log.Fatalf("[STEPMAN] - Invalid format: %s", format)
+	}
+	stepInfoString, err := getStepInfoJSONString(id, version, latest)
 	if err != nil {
 		log.Fatal("Failed to generate step info, err:", err)
 	}
