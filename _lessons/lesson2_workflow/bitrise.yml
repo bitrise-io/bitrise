@@ -14,17 +14,16 @@ workflows:
     steps:
     - script:
         title: clone
-        run_if: |-
-          {{enveq "$XCODE_PROJECT_PATH" ""}}
         inputs:
         - content: |-
             #!/bin/bash
-            echo $XCODE_PROJECT_PATH
             if [ ! -d $PROJECT_FOLDER ] ; then
               git clone ${REPO_URL}
+              envman add --key XCODE_PROJECT_PATH --value $BITRISE_SOURCE_DIR/$PROJECT_FOLDER/${PROJECT_TITLE}.xcodeproj
             else
               cd $PROJECT_FOLDER
               git pull
+              envman add --key XCODE_PROJECT_PATH --value $BITRISE_SOURCE_DIR/$PROJECT_FOLDER/${PROJECT_TITLE}.xcodeproj
             fi
   test:
     before_run:
