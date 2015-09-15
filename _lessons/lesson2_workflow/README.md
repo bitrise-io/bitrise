@@ -1,6 +1,7 @@
 # Lesson 2 - The flow of work in your Workflow
 
-<div style="text-align: left;display: inline-block; width: 50%;">[Back to Lesson 1](../lesson1_steps)</div><div style="text-align: right;display: inline-block; width: 50%;">[Lesson 3 - The ins and outs with environment variables](../lesson3_input_output_env)</div>
+[Back to Lesson 1](../lesson1_steps)
+[Lesson 3 - The ins and outs with environment variables](../lesson3_input_output_env)
 
 Basically Workflows are groups of steps. There are main Workflows, that contain the Steps which provide the main functionality. There are utility Workflows that we use to prepare everything for the main Workflow, to clean up or to send notification containing the build status. The utility Workflows begin with '_' and these Workflows can't be run using the `bitrise run <workflowname>` command.
 
@@ -75,4 +76,5 @@ Wow! We're done! Weeell not quite. If you try to run the Workflow you can see, t
 
 Aaaaand yeah! All done! Great job! *Drop mic*
 
-<div style="text-align: left;display: inline-block; width: 50%;">[Back to Lesson 1](../lesson1_steps)</div><div style="text-align: right;display: inline-block; width: 50%;">[Lesson 3 - The ins and outs with environment variables](../lesson3_input_output_env)</div>
+[Back to Lesson 1](../lesson1_steps)
+[Lesson 3 - The ins and outs with environment variables](../lesson3_input_output_env)
