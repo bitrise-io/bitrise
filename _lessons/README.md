@@ -1,6 +1,6 @@
 # Welcome to Bitrise CLI
 
-<div style="text-align: right;display: inline-block; width: 100%;">[Lesson 1 - The first Steps](doc:lesson-1-the-first-steps)</div>
+<div style="text-align: right;display: inline-block; width: 100%;">[Lesson 1 - The first Steps](./lesson1_steps)</div>
 
 Captain's log, bitdate 110912.5.
 We begin our mission discovering a new universe, full of new opportunities and new ways to improve ourselves and our day-to-day routines. We’ve prepared for this day for a long time.
@@ -19,4 +19,4 @@ A journey has never had such an easy start. We’ve just traveled to the planet 
 - Stay in control even in hard times when the engines are on fire (due to errors) in [lesson4](./lesson4_errors) - Scotty, where are you?!
 - And take a look at one of our journeys through a complete Workflow in [lesson5](./lesson5_complex_wf) - Are you ready for the Kobayashi Maru?
 
-<div style="text-align: right;display: inline-block; width: 100%;">[Lesson 1 - The first Steps](doc:lesson-1-the-first-steps)</div>
+<div style="text-align: right;display: inline-block; width: 100%;">[Lesson 1 - The first Steps](./lesson1_steps)</div>
