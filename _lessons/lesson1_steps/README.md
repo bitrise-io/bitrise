@@ -1,6 +1,6 @@
 # Lesson 1 - The first Steps
 
-<div style="text-align: left;display: inline-block; width: 50%;">[Back to the Welcome page](../)</div><div style="text-align: right;display: inline-block; width: 50%;">[Lesson 2 - The flow of work in your Workflow](../lesson2_workflow)</div>
+[Back to the Welcome page](../)[Lesson 2 - The flow of work in your Workflow](../lesson2_workflow)
 
 First of all let's talk about Steps. Steps are the building blocks of a [Bitrise](https://bitrise.io) Workflow. At [Bitrise](https://bitrise.io) we know how important it is to have plenty of opportunities to customize the automation process as we also worked as a mobile app development agency. The need for a wide variety of customization in the automation of the development and deployment workflows is what leads to the creation of [Bitrise](https://bitrise.io). We are eager to provide you with Steps that can help you with automation throughout the application lifecycle and this is where our Step Library comes into view. We created the open source [StepLib](https://github.com/bitrise-io/bitrise-steplib) to give you the basic Steps that you need in creating a Workflow to boost your productivity. Yes, it is open source, you can fork it, add your own Steps or even use another public fork of it! Also when you add a useful Step to your fork and you think other developers could make good use of it, don’t hesitate to send us a pull request!
 
