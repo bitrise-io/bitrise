@@ -8,6 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/stretchr/testify/require"
 )
 
 // Test - Bitrise activateAndRunWorkflow
@@ -971,12 +972,14 @@ workflows:
     - before
     steps:
     - script:
+        title: "${working_dir} should not exist"
         inputs:
         - content: |
             #!/bin/bash
             set -v
             echo ${ENV}
-            if [ ! -z "$working_dir" ] ; then
+            if [ ! -z "$working_dir" != x ] ; then
+              echo ${working_dir}
               exit 3
             fi
 `
@@ -990,6 +993,10 @@ workflows:
 	}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
+	}
+
+	if os.Getenv("working_dir") != "" {
+		require.Equal(t, nil, os.Unsetenv("working_dir"))
 	}
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})

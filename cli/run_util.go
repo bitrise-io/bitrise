@@ -412,6 +412,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 			// Steplib independent steps are completly defined in workflow
 			stepYMLPth = ""
+			if err := workflowStep.FillMissingDefaults(); err != nil {
+				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+				continue
+			}
 
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -496,7 +500,15 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 		outEnvironments := []envmanModels.EnvironmentItemModel{}
-		if buildRunResults.IsBuildFailed() && !*mergedStep.IsAlwaysRun {
+
+		isAlwaysRun := stepmanModels.DefaultIsAlwaysRun
+		if mergedStep.IsAlwaysRun != nil {
+			isAlwaysRun = *mergedStep.IsAlwaysRun
+		} else {
+			log.Warn("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
+		}
+
+		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
 			registerStepRunResults(mergedStep, models.StepRunStatusCodeSkipped, 0, err, isLastStep)
 		} else {
 			exit, out, err := runStep(mergedStep, stepIDData, stepDir, *environments)

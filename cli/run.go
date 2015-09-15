@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -51,6 +52,8 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 			workflowNames = append(workflowNames, wfName)
 		}
 	}
+	sort.Strings(workflowNames)
+	sort.Strings(utilityWorkflowNames)
 
 	if len(workflowNames) > 0 {
 		log.Infoln("The following workflows are available:")

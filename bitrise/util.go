@@ -63,7 +63,13 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 		}
 
 		if value != "" {
-			if err := EnvmanAdd(InputEnvstorePath, key, value, *opts.IsExpand); err != nil {
+			isExpand := envmanModels.DefaultIsExpand
+			if opts.IsExpand != nil {
+				isExpand = *opts.IsExpand
+			} else {
+				log.Warn("Env (%s - %s) opts.IsExpand is nil, should not!", key, value)
+			}
+			if err := EnvmanAdd(InputEnvstorePath, key, value, isExpand); err != nil {
 				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 				return err
 			}
@@ -509,7 +515,32 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		}
 
 		workflowStep.Inputs = inputs
-		workflowStep.Outputs = specStep.Outputs
+
+		// We need only key-value and title from spec outputs
+		outputs := []envmanModels.EnvironmentItemModel{}
+		for _, output := range specStep.Outputs {
+			sKey, sValue, err := output.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			sOptions, err := output.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			newOutput := envmanModels.EnvironmentItemModel{
+				sKey: sValue,
+				envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+					Title: sOptions.Title,
+				},
+			}
+
+			outputs = append(outputs, newOutput)
+		}
+
+		workflowStep.Outputs = outputs
+
 		(*stepListItem)[compositeStepIDStr] = workflowStep
 	}
 
