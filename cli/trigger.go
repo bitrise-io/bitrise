@@ -67,14 +67,9 @@ func trigger(c *cli.Context) {
 		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
 	}
 
-	pullRequestID := os.Getenv(bitrise.PullRequestIDEnvKey)
-	workflowToRunID, found, err := bitriseConfig.WorkflowIDByPattern(triggerPattern, pullRequestID)
+	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
 	if err != nil {
 		log.Fatalf("Faild to select workflow by pattern (%s), err: %s", triggerPattern, err)
-	}
-	if !found {
-		log.Warnf("No match found in the trigger_map for pattern (%s), trying to use pattern as workflow ID...", triggerPattern)
-		workflowToRunID = triggerPattern
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 

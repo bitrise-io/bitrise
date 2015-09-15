@@ -8,7 +8,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	glob "github.com/ryanuber/go-glob"
 )
 
 func containsWorkflowName(title string, workflowStack []string) bool {
@@ -574,22 +573,6 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		IDorURI:       stepIDOrURI,
 		Version:       stepVersion,
 	}, nil
-}
-
-// ----------------------------
-// --- TriggerMap
-
-// WorkflowIDByPattern ...
-func (config *BitriseDataModel) WorkflowIDByPattern(pattern, pullRequestID string) (string, bool, error) {
-	for _, item := range config.TriggerMap {
-		if glob.Glob(item.Pattern, pattern) {
-			if !item.IsPullRequestAllowed && pullRequestID != "" {
-				return "", true, fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
-			}
-			return item.WorkflowID, true, nil
-		}
-	}
-	return "", false, nil
 }
 
 // ----------------------------

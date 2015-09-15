@@ -23,7 +23,31 @@ import (
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
+	"github.com/ryanuber/go-glob"
 )
+
+// GetWorkflowIDByPattern ...
+func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (string, error) {
+	// Check for workflow ID in trigger map
+	for _, item := range config.TriggerMap {
+		if glob.Glob(item.Pattern, pattern) {
+			if !item.IsPullRequestAllowed && IsPullRequestMode {
+				return "", fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
+			}
+			return item.WorkflowID, nil
+		}
+	}
+
+	// Check for direct workflow selection
+	_, exist := config.Workflows[pattern]
+	if !exist {
+		return "", fmt.Errorf("Specified Workflow (%s) does not exist!", pattern)
+	} else if IsPullRequestMode {
+		return "", fmt.Errorf("Run triggered by pull request (pattern: %s), but no matching pattern found", pattern)
+	}
+
+	return pattern, nil
+}
 
 // GetBitriseConfigFromBase64Data ...
 func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, error) {
