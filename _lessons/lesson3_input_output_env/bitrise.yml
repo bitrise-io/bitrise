@@ -1,0 +1,39 @@
+format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+app:
+  envs:
+  - BITRISE_PROJECT_TITLE: lesson_3 $HOME
+    opts:
+      is_expand: true
+  - BITRISE_DEV_BRANCH: master
+    opts:
+      is_expand: true
+workflows:
+  example-envs:
+    envs: []
+    steps:
+      - script:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Hello world!"
+               echo "BITRISE_PROJECT_TITLE (HOME should NOT be expanded): ${BITRISE_PROJECT_TITLE}"
+               export EXP_TEST='Exported value'
+               echo "EXP_TEST: ${EXP_TEST}"
+      - script:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Second script/step"
+               echo "BITRISE_DEV_BRANCH: ${BITRISE_DEV_BRANCH}"
+               echo "EXP_TEST (should be empty): ${EXP_TEST}"
+      - script:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo "Read from .bitrise.secrets.yml: ${BITRISE_SECRET_TEST1}"
+      - script:
+         inputs:
+           - content: |
+               #!/bin/bash
+               echo 'This ENV should NOT be expanded: ${BITRISE_PROJECT_TITLE}'
