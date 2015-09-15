@@ -1,9 +1,24 @@
 format_version: 0.9.10
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: ci
+
 app:
   envs:
   - BITRISE_BIN_NAME: stepman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
+  - SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+    opts:
+      title: SLACK_WEBHOOK_URL
+      is_expand: false
+  - SLACK_CHANNEL: "#bitrise-dev-lifeline"
+    opts:
+      title: SLACK_CHANNEL
+      is_expand: false
+
 workflows:
   delete-stepman-dir:
     steps:
@@ -100,7 +115,24 @@ workflows:
               rm -rf ./Godeps
               godep save ./...
   ci:
+    envs:
+    - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
+    - STEPMAN_PATH: $BITRISE_IO_GO_PATH/stepman
     steps:
+    - git-clone: {}
+    - script:
+        title: Symlink stepman
+        run_if: ".IsCI"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            mkdir -p $BITRISE_IO_GO_PATH
+            ln -s $BITRISE_SOURCE_DIR $STEPMAN_PATH
+          opts:
+            is_expand: true
     - script:
         title: Install required testing tools
         inputs:
@@ -128,13 +160,17 @@ workflows:
     - script:
         title: Err check
         inputs:
-        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+        - content: |-
+            cd $STEPMAN_PATH
+            errcheck -asserts=true -blank=true $(godep go list ./...)
+            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Lint
         inputs:
         - content: |-
             #!/bin/bash
             set -e
+            set -v
 
             golint_out="$(golint ./...)"
             if [[ "${golint_out}" != "" ]] ; then
@@ -143,14 +179,12 @@ workflows:
               exit 1
             fi
     - slack:
-        run_if: .IsCI
+        run_if: ".IsCI"
         inputs:
-        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-        - channel: $INTERNAL_DEV_SLACK_CHANNEL
-        - from_username: ${BITRISE_BIN_NAME} - CI - OK
-        - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
-        - emoji: ":white_check_mark:"
-        - emoji_on_error: ":no_entry_sign:"
+        - webhook_url: "$SLACK_WEBHOOK_URL"
+        - channel: "$SLACK_CHANNEL"
+        - from_username: "${BITRISE_BIN_NAME} - CI - OK"
+        - from_username_on_error: "${BITRISE_BIN_NAME} - CI - ERROR"
         - message: |-
             CI was successful on branch: *${BITRISE_GIT_BRANCH}*
 
