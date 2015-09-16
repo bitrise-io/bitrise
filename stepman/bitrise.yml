@@ -1,4 +1,4 @@
-format_version: 0.9.10
+format_version: 1.0.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
@@ -47,6 +47,19 @@ workflows:
             stepman steup -c ${DEFAULT_STEPLIB_GIT}
 
 
+
+  create-release-with-docker-compose:
+    steps:
+    - script:
+        title: Creating deploy
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            docker-compose build --no-cache app
+            docker-compose run --rm app bitrise run create-release
 
   create-release:
     steps:

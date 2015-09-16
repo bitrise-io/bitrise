@@ -6,6 +6,12 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install git mercurial curl rsync ruby
 
+#
+# Install Bitrise CLI
+RUN curl -L https://github.com/bitrise-io/bitrise/releases/download/1.0.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+RUN chmod +x /usr/local/bin/bitrise
+RUN bitrise setup --minimal
+
 # From the official Golang Dockerfile
 #  https://github.com/docker-library/golang/blob/master/1.4/Dockerfile
 RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
