@@ -22,15 +22,33 @@ func TestPrintRunningWorkflow(t *testing.T) {
 }
 
 func TestPrintRunningStep(t *testing.T) {
-	PrintRunningStep("", "", 0)
-	PrintRunningStep(longStr, "", 0)
-	PrintRunningStep("", longStr, 0)
-	PrintRunningStep(longStr, longStr, 0)
+	stepInfo := models.StepInfoModel{
+		ID:      "",
+		Version: "",
+	}
+	PrintRunningStep(stepInfo, 0)
+
+	stepInfo.ID = longStr
+	stepInfo.Version = ""
+	PrintRunningStep(stepInfo, 0)
+
+	stepInfo.ID = ""
+	stepInfo.Version = longStr
+	PrintRunningStep(stepInfo, 0)
+
+	stepInfo.ID = longStr
+	stepInfo.Version = longStr
+	PrintRunningStep(stepInfo, 0)
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
+	stepInfo := models.StepInfoModel{
+		ID:      longStr,
+		Version: longStr,
+	}
+
 	result := models.StepRunResultsModel{
-		StepName: longStr,
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
@@ -39,10 +57,11 @@ func TestGetTrimmedStepName(t *testing.T) {
 	}
 
 	stepName := getTrimmedStepName(result)
-	require.Equal(t, "This is a very long string,\nthis is a very ...", stepName)
+	require.Equal(t, "This is a very ... (...s a very long string.\n)", stepName)
 
+	stepInfo.ID = ""
 	result = models.StepRunResultsModel{
-		StepName: "",
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
@@ -51,12 +70,17 @@ func TestGetTrimmedStepName(t *testing.T) {
 	}
 
 	stepName = getTrimmedStepName(result)
-	require.Equal(t, "", stepName)
+	require.Equal(t, " (...s a very long string.\n)", stepName)
 }
 
 func TestStepResultCell(t *testing.T) {
+	stepInfo := models.StepInfoModel{
+		ID:      longStr,
+		Version: longStr,
+	}
+
 	result := models.StepRunResultsModel{
-		StepName: longStr,
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeFailed,
 		Idx:      0,
 		RunTime:  10000000,
@@ -65,10 +89,11 @@ func TestStepResultCell(t *testing.T) {
 	}
 
 	cell := stepResultCell(result)
-	require.Equal(t, "| 🚫  | \x1b[31;1mThis is a very long string,\n... (exit code: 1)\x1b[0m| 0.01 sec |", cell)
+	require.Equal(t, "| 🚫  | \x1b[31;1m... (...s a very long string.\n) (exit code: 1)\x1b[0m| 0.01 sec |", cell)
 
+	stepInfo.ID = ""
 	result = models.StepRunResultsModel{
-		StepName: "",
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
@@ -77,12 +102,17 @@ func TestStepResultCell(t *testing.T) {
 	}
 
 	cell = stepResultCell(result)
-	require.Equal(t, "| ✅  | \x1b[32;1m\x1b[0m                                              | 0.00 sec |", cell)
+	require.Equal(t, "| ✅  | \x1b[32;1m (...s a very long string.\n)\x1b[0m                  | 0.00 sec |", cell)
 }
 
 func TestPrintStepSummary(t *testing.T) {
+	stepInfo := models.StepInfoModel{
+		ID:      longStr,
+		Version: longStr,
+	}
+
 	result := models.StepRunResultsModel{
-		StepName: longStr,
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
@@ -92,8 +122,9 @@ func TestPrintStepSummary(t *testing.T) {
 	PrintStepSummary(result, true)
 	PrintStepSummary(result, false)
 
+	stepInfo.ID = ""
 	result = models.StepRunResultsModel{
-		StepName: "",
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
@@ -107,16 +138,23 @@ func TestPrintStepSummary(t *testing.T) {
 func TestPrintSummary(t *testing.T) {
 	PrintSummary(models.BuildRunResultsModel{})
 
+	stepInfo := models.StepInfoModel{
+		ID:      longStr,
+		Version: longStr,
+	}
+
 	result1 := models.StepRunResultsModel{
-		StepName: longStr,
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
 		Error:    errors.New(longStr),
 		ExitCode: 1,
 	}
+
+	stepInfo.ID = ""
 	result2 := models.StepRunResultsModel{
-		StepName: "",
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
@@ -136,16 +174,23 @@ func TestPrintSummary(t *testing.T) {
 func TestPrintStepStatusList(t *testing.T) {
 	PrintStepStatusList("", []models.StepRunResultsModel{})
 
+	stepInfo := models.StepInfoModel{
+		ID:      longStr,
+		Version: longStr,
+	}
+
 	result1 := models.StepRunResultsModel{
-		StepName: longStr,
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
 		Error:    errors.New(longStr),
 		ExitCode: 1,
 	}
+
+	stepInfo.ID = ""
 	result2 := models.StepRunResultsModel{
-		StepName: "",
+		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
