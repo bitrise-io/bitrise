@@ -134,7 +134,8 @@ workflows:
     - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
     - STEPMAN_PATH: $BITRISE_IO_GO_PATH/stepman
     steps:
-    - git-clone: {}
+    - git-clone:
+        run_if: ".IsCI"
     - script:
         title: Symlink stepman
         run_if: ".IsCI"

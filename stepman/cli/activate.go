@@ -37,13 +37,7 @@ func activate(c *cli.Context) {
 		log.Fatalln("[STEPMAN] - Failed to read steps spec (spec.json)")
 	}
 
-	stepFound := false
-	if version == "" {
-		stepFound = collection.IsStepExist(id)
-	} else {
-		_, stepFound = collection.GetStep(id, version)
-	}
-
+	_, stepFound := collection.GetStep(id, version)
 	if !stepFound {
 		if !update {
 			if version == "" {
@@ -64,12 +58,7 @@ func activate(c *cli.Context) {
 			log.Fatalf("Failed to update collection (%s), err: %s", collectionURI, err)
 		}
 
-		if version == "" {
-			stepFound = collection.IsStepExist(id)
-		} else {
-			_, stepFound = collection.GetStep(id, version)
-		}
-
+		_, stepFound := collection.GetStep(id, version)
 		if !stepFound {
 			if version != "" {
 				log.Fatalf("[STEPMAN] - Even the updated collection doesn't contain step (id:%s) (version:%s)", id, version)

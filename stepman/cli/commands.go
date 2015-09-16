@@ -30,6 +30,7 @@ var (
 			Action: list,
 			Flags: []cli.Flag{
 				flCollection,
+				flFormat,
 			},
 		},
 		{
@@ -42,6 +43,7 @@ var (
 				flID,
 				flVersion,
 				flFormat,
+				flShort,
 			},
 		},
 		{

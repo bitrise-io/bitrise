@@ -16,11 +16,13 @@ import (
 
 const (
 	// StepmanDirname ...
-	StepmanDirname string = ".stepman"
+	StepmanDirname = ".stepman"
 	// RoutingFilename ...
-	RoutingFilename string = "routing.json"
+	RoutingFilename = "routing.json"
 	// CollectionsDirname ...
-	CollectionsDirname string = "step_collections"
+	CollectionsDirname = "step_collections"
+	// VerifiedStepLibURI ...
+	VerifiedStepLibURI = "https://github.com/bitrise-io/bitrise-steplib"
 )
 
 // SteplibRoute ...
