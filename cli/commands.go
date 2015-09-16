@@ -27,6 +27,8 @@ var (
 				flPath,
 				flConfig,
 				flConfigBase64,
+				flInventory,
+				flInventoryBase64,
 			},
 		},
 		{

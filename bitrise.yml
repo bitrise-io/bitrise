@@ -17,7 +17,7 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: ci_step_template
 - pattern: "*"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: ci
 
 workflows:
