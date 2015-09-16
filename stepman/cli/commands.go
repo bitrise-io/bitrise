@@ -25,6 +25,15 @@ var (
 			},
 		},
 		{
+			Name:   "step-list",
+			Usage:  "List of available steps.",
+			Action: list,
+			Flags: []cli.Flag{
+				flCollection,
+				flFormat,
+			},
+		},
+		{
 			Name:    "step-info",
 			Aliases: []string{"i"},
 			Usage:   "Provides information (step ID, last version, given version) about specified step.",
@@ -33,6 +42,8 @@ var (
 				flCollection,
 				flID,
 				flVersion,
+				flFormat,
+				flShort,
 			},
 		},
 		{
@@ -65,14 +76,6 @@ var (
 			Name:   "audit",
 			Usage:  "Validates the step collection.",
 			Action: audit,
-			Flags: []cli.Flag{
-				flCollection,
-			},
-		},
-		{
-			Name:   "step-list",
-			Usage:  "List of available steps.",
-			Action: list,
 			Flags: []cli.Flag{
 				flCollection,
 			},

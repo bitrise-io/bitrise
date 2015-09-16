@@ -75,3 +75,22 @@ type StepCollectionModel struct {
 	AssetsDownloadBaseURI string                  `json:"assets_download_base_uri" yaml:"assets_download_base_uri"`
 	Steps                 StepHash                `json:"steps" yaml:"steps"`
 }
+
+// EnvInfoModel ...
+type EnvInfoModel struct {
+	Env         string `json:"env,omitempty" yaml:"env,omitempty"`
+	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+}
+
+// StepInfoModel ...
+type StepInfoModel struct {
+	ID          string         `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Version     string         `json:"step_version,omitempty" yaml:"step_version,omitempty"`
+	Latest      string         `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
+	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
+	Source      string         `json:"source,omitempty" yaml:"source,omitempty"`
+	StepLib     string         `json:"steplib,omitempty" yaml:"steplib,omitempty"`
+	Inputs      []EnvInfoModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs     []EnvInfoModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+}

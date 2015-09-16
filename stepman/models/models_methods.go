@@ -164,13 +164,9 @@ func (step *StepModel) FillMissingDefaults() error {
 }
 
 // IsStepExist ...
-func (collection StepCollectionModel) IsStepExist(id string) bool {
-	stepHash := collection.Steps
-	_, found := stepHash[id]
-	if !found {
-		return false
-	}
-	return true
+func (collection StepCollectionModel) IsStepExist(id, version string) bool {
+	_, found := collection.GetStep(id, version)
+	return found
 }
 
 // GetStep ...
@@ -180,10 +176,16 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 	if !found {
 		return StepModel{}, false
 	}
+
+	if version == "" {
+		version = stepVersions.LatestVersionNumber
+	}
+
 	step, found := stepVersions.Versions[version]
 	if !found {
 		return StepModel{}, false
 	}
+
 	return step, true
 }
 

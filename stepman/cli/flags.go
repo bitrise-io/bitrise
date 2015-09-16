@@ -61,6 +61,17 @@ const (
 	// StepIDKEy ...
 	StepIDKEy      = "stepid"
 	stepIDKeyShort = "s"
+
+	// ShortKey ...
+	ShortKey = "short"
+
+	// FormatKey ...
+	FormatKey      = "format"
+	formatKeyShort = "f"
+	// OutputFormatRaw ...
+	OutputFormatRaw = "raw"
+	// OutputFormatJSON ...
+	OutputFormatJSON = "json"
 )
 
 var (
@@ -125,6 +136,15 @@ var (
 	flStepID = cli.StringFlag{
 		Name:  StepIDKEy + ", " + stepIDKeyShort,
 		Usage: "ID of the step.",
+	}
+	flFormat = cli.StringFlag{
+		Name:  FormatKey + ", " + formatKeyShort,
+		Usage: "Output format (options: raw, json).",
+		Value: "raw",
+	}
+	flShort = cli.BoolFlag{
+		Name:  ShortKey,
+		Usage: "Show short version of infos.",
 	}
 )
 
