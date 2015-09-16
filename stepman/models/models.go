@@ -28,9 +28,9 @@ type StepModel struct {
 	SourceCodeURL *string `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
 	SupportURL    *string `json:"support_url,omitempty" yaml:"support_url,omitempty"`
 	// auto-generated at share
-	PublishedAt      *time.Time        `json:"published_at,omitempty" yaml:"published_at,omitempty"`
-	Source           StepSourceModel   `json:"source,omitempty" yaml:"source,omitempty"`
-	AssetDownloadURI map[string]string `json:"asset_download_uri,omitempty" yaml:"asset_download_uri,omitempty"`
+	PublishedAt *time.Time        `json:"published_at,omitempty" yaml:"published_at,omitempty"`
+	Source      StepSourceModel   `json:"source,omitempty" yaml:"source,omitempty"`
+	AssetURLs   map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
 	//
 	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`

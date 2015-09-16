@@ -186,7 +186,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 							return err
 						}
 
-						step.AssetDownloadURI = assetsMap
+						step.AssetURLs = assetsMap
 					}
 				}
 
