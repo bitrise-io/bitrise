@@ -88,6 +88,16 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	return titleBox
 }
 
+func stepNoteCell(stepRunResult models.StepRunResultsModel) string {
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
+
+	stepInfo := stepRunResult.StepInfo
+	whitespaceWidth := titleBoxWidth - len(fmt.Sprintf(" version: %s | latest: %s ", stepInfo.Version, stepInfo.Latest))
+	return fmt.Sprintf("| version: %s | latest: %s%s|", stepInfo.Version, stepInfo.Latest, strings.Repeat(" ", whitespaceWidth))
+}
+
 func stepResultCell(stepRunResult models.StepRunResultsModel) string {
 	iconBoxWidth := len("    ")
 	timeBoxWidth := len(" time (s) ")
@@ -172,10 +182,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
+		if stepRunResult.Error != nil {
+			log.Info(stepNoteCell(stepRunResult))
+		}
+		log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 	}
 	runtime := tmpTime.Sub(time.Time{})
-
-	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
 	runtimeStr := TimeToFormattedSeconds(runtime, " sec")
 	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runtimeStr))
