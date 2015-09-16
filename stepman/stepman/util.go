@@ -164,7 +164,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 					return parseErr
 				}
 
-				// Check for asserts
+				// Check for assets
 				if collection.AssetsDownloadBaseURI != "" {
 					assetsFolderPth := path.Join(stepsSpecDir, components[0], components[1], "assets")
 					exist, err := pathutil.IsPathExists(assetsFolderPth)
