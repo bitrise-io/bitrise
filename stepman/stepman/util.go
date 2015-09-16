@@ -133,18 +133,19 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 
 func generateStepLib(route SteplibRoute, templateCollection models.StepCollectionModel) (models.StepCollectionModel, error) {
 	collection := models.StepCollectionModel{
-		FormatVersion:        templateCollection.FormatVersion,
-		GeneratedAtTimeStamp: time.Now().Unix(),
-		SteplibSource:        templateCollection.SteplibSource,
-		DownloadLocations:    templateCollection.DownloadLocations,
+		FormatVersion:         templateCollection.FormatVersion,
+		GeneratedAtTimeStamp:  time.Now().Unix(),
+		SteplibSource:         templateCollection.SteplibSource,
+		DownloadLocations:     templateCollection.DownloadLocations,
+		AssetsDownloadBaseURI: templateCollection.AssetsDownloadBaseURI,
 	}
 
 	stepHash := models.StepHash{}
 
 	stepsSpecDir := GetCollectionBaseDirPath(route)
 	log.Debugln("  stepsSpecDir: ", stepsSpecDir)
-	err := filepath.Walk(stepsSpecDir, func(path string, f os.FileInfo, err error) error {
-		truncatedPath := strings.Replace(path, stepsSpecDir+"/", "", -1)
+	err := filepath.Walk(stepsSpecDir, func(pth string, f os.FileInfo, err error) error {
+		truncatedPath := strings.Replace(pth, stepsSpecDir+"/", "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
 		if matchErr != nil {
 			return matchErr
@@ -157,11 +158,39 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 				version := components[2]
 
 				log.Debugf("Start parsing (StepId:%s) (Version:%s)", id, version)
-				step, parseErr := parseStepYml(route.SteplibURI, path, id, version)
+				step, parseErr := parseStepYml(route.SteplibURI, pth, id, version)
 				if parseErr != nil {
 					log.Debugf("  Failed to parse StepId: %v Version: %v", id, version)
 					return parseErr
 				}
+
+				// Check for assets
+				if collection.AssetsDownloadBaseURI != "" {
+					assetsFolderPth := path.Join(stepsSpecDir, components[0], components[1], "assets")
+					exist, err := pathutil.IsPathExists(assetsFolderPth)
+					if err != nil {
+						return err
+					}
+					if exist {
+						assetsMap := map[string]string{}
+						err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
+							_, file := filepath.Split(pth)
+							if pth != assetsFolderPth && file != "" {
+								assetsMap[file] = path.Join(collection.AssetsDownloadBaseURI, id, "assets", file)
+							}
+							return nil
+						})
+
+						if err != nil {
+							log.Debugf("  Failed to add assets, at (%s) | Error: %v", assetsFolderPth, err)
+							return err
+						}
+
+						step.AssetURLs = assetsMap
+					}
+				}
+
+				// Add to stepgroup
 				stepGroup, found := stepHash[id]
 				if !found {
 					stepGroup = models.StepGroupModel{

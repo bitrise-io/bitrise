@@ -23,6 +23,7 @@ workflows:
   delete-stepman-dir:
     steps:
     - script:
+        title: "Delete local stepman dir"
         inputs:
         - content: |-
             #!/bin/bash
@@ -37,6 +38,7 @@ workflows:
     - delete-stepman-dir
     steps:
     - script:
+        title: "Setup stepman"
         inputs:
         - content: |-
             #!/bin/bash
