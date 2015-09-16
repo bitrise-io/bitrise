@@ -7,30 +7,12 @@ import (
 	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
-// EnvInfoModel ...
-type EnvInfoModel struct {
-	Env         string `json:"env,omitempty" yaml:"env,omitempty"`
-	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-}
-
-// StepInfoModel ...
-type StepInfoModel struct {
-	ID          string         `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	Version     string         `json:"step_version,omitempty" yaml:"step_version,omitempty"`
-	Latest      string         `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
-	Source      string         `json:"source,omitempty" yaml:"source,omitempty"`
-	StepLib     string         `json:"steplib,omitempty" yaml:"steplib,omitempty"`
-	Inputs      []EnvInfoModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Outputs     []EnvInfoModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-}
-
-func printRawStepInfo(stepInfo StepInfoModel, isShort bool) error {
+func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 	fmt.Println(colorstring.Bluef("Step info in StepLib (%s):", stepInfo.StepLib))
 
 	fmt.Printf("%s: %s\n", colorstring.Blue("ID"), stepInfo.ID)
@@ -69,7 +51,7 @@ func printRawStepInfo(stepInfo StepInfoModel, isShort bool) error {
 	return nil
 }
 
-func printJSONStepInfo(stepInfo StepInfoModel, isShort bool) error {
+func printJSONStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 	bytes, err := json.Marshal(stepInfo)
 	if err != nil {
 		return err
@@ -79,20 +61,20 @@ func printJSONStepInfo(stepInfo StepInfoModel, isShort bool) error {
 	return nil
 }
 
-func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]EnvInfoModel, error) {
-	envInfos := []EnvInfoModel{}
+func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]models.EnvInfoModel, error) {
+	envInfos := []models.EnvInfoModel{}
 	for _, env := range envs {
 		key, _, err := env.GetKeyValuePair()
 		if err != nil {
-			return []EnvInfoModel{}, err
+			return []models.EnvInfoModel{}, err
 		}
 
 		options, err := env.GetOptions()
 		if err != nil {
-			return []EnvInfoModel{}, err
+			return []models.EnvInfoModel{}, err
 		}
 
-		envInfo := EnvInfoModel{
+		envInfo := models.EnvInfoModel{
 			Env:         key,
 			Description: *options.Description,
 		}
@@ -159,7 +141,7 @@ func stepInfo(c *cli.Context) {
 			log.Fatalf("[STEPMAN] - Failed to get step (id:%s) output infos, err: %s", id, err)
 		}
 
-		stepInfo := StepInfoModel{
+		stepInfo := models.StepInfoModel{
 			ID:          id,
 			Version:     version,
 			Latest:      latest,
