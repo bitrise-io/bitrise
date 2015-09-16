@@ -56,36 +56,26 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
 
-	title := ""
+	stepInfo := stepRunResult.StepInfo
+
+	title := stepInfo.ID
+	version := stepInfo.Version
+	titleBox := ""
 	switch stepRunResult.Status {
-	case models.StepRunStatusCodeSuccess:
-		title = stepRunResult.StepName
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
+	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
+		titleBox = fmt.Sprintf("%s (%s)", title, version)
+		if len(titleBox) > titleBoxWidth {
+			dif := len(titleBox) - titleBoxWidth
 			title = title[:len(title)-dif-3] + "..."
+			titleBox = fmt.Sprintf("%s (%s)", title, version)
 		}
 		break
-	case models.StepRunStatusCodeFailed:
-		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
-			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
-			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
-	case models.StepRunStatusCodeFailedSkippable:
-		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
-			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
-			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
-	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		title = stepRunResult.StepName
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
+	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
+		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
+		if len(titleBox) > titleBoxWidth {
+			dif := len(titleBox) - titleBoxWidth
 			title = title[:len(title)-dif-3] + "..."
+			titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
 		}
 		break
 	default:
@@ -196,11 +186,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 func PrintStepStatusList(header string, stepList []models.StepRunResultsModel) {
 	if len(stepList) > 0 {
 		log.Infof(header)
-		for _, step := range stepList {
-			if step.Error != nil {
-				log.Infof(" * Step: (%s) | error: (%v)", step.StepName, step.Error)
+		for _, stepResult := range stepList {
+			stepInfo := stepResult.StepInfo
+			if stepResult.Error != nil {
+				log.Infof(" * Step: (%s) | error: (%v)", stepInfo.ID, stepResult.Error)
 			} else {
-				log.Infof(" * Step: (%s)", step.StepName)
+				log.Infof(" * Step: (%s)", stepInfo.ID)
 			}
 		}
 	}

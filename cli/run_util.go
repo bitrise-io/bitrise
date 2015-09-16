@@ -278,8 +278,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			step.Title = pointers.NewStringPtr("ERROR! Step title is nil!")
 		}
 
+		stepInfo := models.StepInfoModel{
+			ID: *step.Title,
+		}
+
 		stepResults := models.StepRunResultsModel{
-			StepName: *step.Title,
+			StepInfo: stepInfo,
 			Status:   resultCode,
 			Idx:      buildRunResults.ResultsCount(),
 			RunTime:  time.Now().Sub(stepStartTime),
@@ -323,8 +327,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			break
 		}
 
+		stepInfo := models.StepInfoModel{
+			ID: name,
+		}
+
 		stepResults := models.StepRunResultsModel{
-			StepName: name,
+			StepInfo: stepInfo,
 			Status:   resultCode,
 			Idx:      buildRunResults.ResultsCount(),
 			RunTime:  time.Now().Sub(stepStartTime),
@@ -481,7 +489,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				}
 			}
 
-			stepVersionForInfoPrint = stepInfo.StepVersion
+			stepVersionForInfoPrint = stepInfo.Version
 
 			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)

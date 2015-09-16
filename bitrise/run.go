@@ -8,15 +8,9 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 )
-
-// StepInfoModel ...
-type StepInfoModel struct {
-	StepID        string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	StepVersion   string `json:"step_version,omitempty" yaml:"step_version,omitempty"`
-	LatestVersion string `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-}
 
 // ------------------
 // --- Stepman
@@ -44,18 +38,18 @@ func StepmanUpdate(collection string) error {
 }
 
 // StepmanStepInfo ...
-func StepmanStepInfo(collection, stepID, stepVersion string) (StepInfoModel, error) {
+func StepmanStepInfo(collection, stepID, stepVersion string) (models.StepInfoModel, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+		return models.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
 	}
 
-	stepInfo := StepInfoModel{}
+	stepInfo := models.StepInfoModel{}
 	if err := json.Unmarshal([]byte(out), &stepInfo); err != nil {
-		return StepInfoModel{}, err
+		return models.StepInfoModel{}, err
 	}
 
 	return stepInfo, nil
