@@ -85,7 +85,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		log.Error("Unkown result code")
 		return ""
 	}
-	return title
+	return titleBox
 }
 
 func stepResultCell(stepRunResult models.StepRunResultsModel) string {
