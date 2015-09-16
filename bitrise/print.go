@@ -155,7 +155,7 @@ func PrintStepSummary(stepRunResult models.StepRunResultsModel, isLastStepInWork
 
 	log.Info(sep)
 	log.Infof(stepResultCell(stepRunResult))
-	if stepRunResult.Error != nil && stepRunResult.StepInfo.UpdateAvailable() {
+	if stepRunResult.Error != nil && stepRunResult.StepInfo.IsUpdateAvailable() {
 		log.Info(stepNoteCell(stepRunResult))
 	}
 	log.Info(sep)
@@ -189,7 +189,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
-		if stepRunResult.Error != nil && stepRunResult.StepInfo.UpdateAvailable() {
+		if stepRunResult.Error != nil && stepRunResult.StepInfo.IsUpdateAvailable() {
 			log.Info(stepNoteCell(stepRunResult))
 		}
 		log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/versions"
@@ -616,15 +617,15 @@ func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
 	return results
 }
 
-// UpdateAvailable ...
-func (stepInfo StepInfoModel) UpdateAvailable() bool {
+// IsUpdateAvailable ...
+func (stepInfo StepInfoModel) IsUpdateAvailable() bool {
 	if stepInfo.Latest == "" {
 		return false
 	}
 
 	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.Latest)
 	if err != nil {
-		fmt.Printf("Failed to compare versions, err: %s\n", err)
+		log.Debugf("Failed to compare versions, err: %s", err)
 	}
 
 	return (res == 1)
