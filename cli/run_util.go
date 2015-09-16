@@ -18,7 +18,6 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -267,23 +266,37 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	return 0, stepOutputs, nil
 }
 
+func getStepID(stepListItem models.StepListItemModel) (string, error) {
+	stepIDDataStr, step, err := models.GetStepIDStepDataPair(stepListItem)
+	if err != nil {
+		return "", err
+	}
+
+	ID := stepIDDataStr
+	if step.Title != nil && *step.Title != "" {
+		ID = *step.Title
+	}
+	return ID, nil
+}
+
 func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel, isLastWorkflow bool) models.BuildRunResultsModel {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	var stepStartTime time.Time
 
-	registerStepRunResults := func(step stepmanModels.StepModel, resultCode, exitCode int, err error, isLastStep bool) {
-		if step.Title == nil {
-			log.Error("Step title is nil, should not happend!")
-			step.Title = pointers.NewStringPtr("ERROR! Step title is nil!")
-		}
+	// hold pointer to current step info, for easy usage in local register step run result methods
+	// the value is filled with the current running step info
+	var stepInfoPtr models.StepInfoModel
 
-		stepInfo := models.StepInfoModel{
-			ID: *step.Title,
+	registerStepRunResults := func(step stepmanModels.StepModel, resultCode, exitCode int, err error, isLastStep bool) {
+		stepInfoCopy := models.StepInfoModel{
+			ID:      stepInfoPtr.ID,
+			Version: stepInfoPtr.Version,
+			Latest:  stepInfoPtr.Latest,
 		}
 
 		stepResults := models.StepRunResultsModel{
-			StepInfo: stepInfo,
+			StepInfo: stepInfoCopy,
 			Status:   resultCode,
 			Idx:      buildRunResults.ResultsCount(),
 			RunTime:  time.Now().Sub(stepStartTime),
@@ -296,19 +309,19 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailed:
-			log.Errorf("Step (%s) failed, error: (%v)", *step.Title, err)
+			log.Errorf("Step (%s) failed, error: (%v)", stepInfoCopy.ID, err)
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailedSkippable:
-			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", *step.Title, err)
+			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", stepInfoCopy.ID, err)
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkipped:
-			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", *step.Title)
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.ID)
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
-			log.Warn("The step's (" + *step.Title + ") Run-If expression evaluated to false - skipping")
+			log.Warn("The step's (" + stepInfoCopy.ID + ") Run-If expression evaluated to false - skipping")
 			log.Info("The Run-If expression was: ", colorstring.Blue(*step.RunIf))
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
@@ -321,18 +334,14 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	}
 
 	registerStepListItemRunResults := func(stepListItem models.StepListItemModel, resultCode, exitCode int, err error, isLastStep bool) {
-		name := ""
-		for key := range stepListItem {
-			name = key
-			break
-		}
-
-		stepInfo := models.StepInfoModel{
-			ID: name,
+		stepInfoCopy := models.StepInfoModel{
+			ID:      stepInfoPtr.ID,
+			Version: stepInfoPtr.Version,
+			Latest:  stepInfoPtr.Latest,
 		}
 
 		stepResults := models.StepRunResultsModel{
-			StepInfo: stepInfo,
+			StepInfo: stepInfoCopy,
 			Status:   resultCode,
 			Idx:      buildRunResults.ResultsCount(),
 			RunTime:  time.Now().Sub(stepStartTime),
@@ -345,19 +354,19 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailed:
-			log.Errorf("Step (%s) failed, error: (%v)", name, err)
+			log.Errorf("Step (%s) failed, error: (%v)", stepInfoCopy.ID, err)
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailedSkippable:
-			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", name, err)
+			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", stepInfoCopy.ID, err)
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkipped:
-			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", name)
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.ID)
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
-			log.Warn("The step's (" + name + ") Run-If expression evaluated to false - skipping")
+			log.Warn("The step's (" + stepInfoCopy.ID + ") Run-If expression evaluated to false - skipping")
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		default:
@@ -371,17 +380,21 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	for idx, stepListItm := range workflow.Steps {
 		stepStartTime = time.Now()
 		isLastStep := isLastWorkflow && (idx == len(workflow.Steps)-1)
+		stepInfoPtr = models.StepInfoModel{}
 
 		if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
 			log.Error("Failed to set Build Status envs")
 		}
 
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
+		stepInfoPtr.ID = compositeStepIDStr
 		if err != nil {
 			registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 			continue
 		}
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
+		stepInfoPtr.ID = stepIDData.IDorURI
+		stepInfoPtr.Version = stepIDData.Version
 		if err != nil {
 			registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 			continue
@@ -423,6 +436,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			} else {
 				stepVersionForInfoPrint = fmt.Sprintf("path:%s", stepIDData.IDorURI)
 			}
+			stepInfoPtr.Version = stepVersionForInfoPrint
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
@@ -439,6 +453,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			if stepIDData.Version != "" {
 				stepVersionForInfoPrint = stepVersionForInfoPrint + "@" + stepIDData.Version
 			}
+			stepInfoPtr.Version = stepVersionForInfoPrint
 		} else if stepIDData.SteplibSource == "_" {
 			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -462,6 +477,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					stepVersionForInfoPrint = stepVersionForInfoPrint + "@" + stepIDData.Version
 				}
 			}
+			stepInfoPtr.Version = stepVersionForInfoPrint
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.StepmanSetup(stepIDData.SteplibSource); err != nil {
@@ -490,6 +506,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 
 			stepVersionForInfoPrint = stepInfo.Version
+			stepInfoPtr.Version = stepVersionForInfoPrint
 
 			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepListItemRunResults(stepListItm, models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -519,7 +536,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		// Run step
-		bitrise.PrintRunningStep(*mergedStep.Title, stepVersionForInfoPrint, idx)
+		bitrise.PrintRunningStep(stepInfoPtr, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, buildRunResults)
 			if err != nil {

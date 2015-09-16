@@ -126,9 +126,9 @@ workflows:
     steps:
       - script:
           title: "ok"
-      - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp:
+      - path::/Users/godrei/develop/go/src/github.com/bitrise-io/bitrise/_examples/tutorials/steps-and-workflows/steps-timestamp:
           title: "local_time-stamp-test"
-      - path::$HOME/develop/go/src/github.com/bitrise-io/steps-timestamp:
+      - path::/Users/godrei/develop/go/src/github.com/bitrise-io/bitrise/_examples/tutorials/steps-and-workflows/steps-timestamp:
           title: "local_time-stamp-test"
       - script:
           title: "print time"

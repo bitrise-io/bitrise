@@ -24,7 +24,10 @@ func PrintRunningWorkflow(title string) {
 }
 
 // PrintRunningStep ...
-func PrintRunningStep(title, version string, idx int) {
+func PrintRunningStep(stepInfo models.StepInfoModel, idx int) {
+	title := stepInfo.ID
+	version := stepInfo.Version
+
 	if len(version) > 25 {
 		version = "..." + stringutil.MaxLastChars(version, 22)
 	}
