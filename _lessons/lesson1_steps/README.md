@@ -1,6 +1,6 @@
 # Lesson 1 - The first Steps
 
-[Back to the Welcome page](../)
+[Back to the CLI Lessons Introduction page](../)
 
 [Lesson 2 - The flow of work in your Workflow](../lesson2_workflow)
 
@@ -32,6 +32,6 @@ For Steps on your machine:
     - path::~/develop/go/src/github.com/bitrise-io/steps-timestamp
     - path::$HOME/develop/go/src/github.com/bitrise-io/steps-timestamp
 
-[Back to the Welcome page](../)
+[Back to the CLI Lessons Introduction page](../)
 
 [Lesson 2 - The flow of work in your Workflow](../lesson2_workflow)
