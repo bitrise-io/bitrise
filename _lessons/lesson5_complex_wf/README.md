@@ -1,5 +1,9 @@
 # Lesson 5 - A complex Workflow
 
+[Back to Lesson 4](../lesson4_errors)
+
+[Lesson 6 - Pull the trigger on the Workflow](../lesson6_triggers)
+
 Let's spice things up a little bit with a more complex bitrise.yml. We will create a Workflow for an iOS project just like in [lesson2](../lesson2_workflow), but this time we'll prepare it for running on our local machine and also on [Bitrise](https://bitrise.io) (Yeah, just for fun we'll run different Steps locally and on the CI server), also we'll add some more main Workflows so that we can use the Archive, Analyze and Test features of Xcode and combine these into a single Workflow by using the before_run / after_run fields.
 
 First of all let's summarize what we want.
@@ -123,3 +127,7 @@ master:
           PULL_REQUEST_ID : ${PULL_REQUEST_ID}
 
 This lesson showed you how to handle the local and the CI server Workflows. Move on to the next lesson and see how you can define triggers to run a Workflow using the given trigger. For example trigger a build using the `test` Workflow when a push comes any feature branch.
+
+[Back to Lesson 4](../lesson4_errors)
+
+[Lesson 6 - Pull the trigger on the Workflow](../lesson6_triggers)
