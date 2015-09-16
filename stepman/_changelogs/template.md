@@ -9,7 +9,7 @@
 To install this version, run the following commands (in a bash shell):
 
 ```
-curl -L https://github.com/bitrise-io/stepman/releases/download/{{version}}/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+curl -fL https://github.com/bitrise-io/stepman/releases/download/{{version}}/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
 ```
 
 Then:
