@@ -63,6 +63,9 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 
 	title := stepInfo.ID
 	version := stepInfo.Version
+	if len(version) > 25 {
+		version = "..." + stringutil.MaxLastChars(version, 22)
+	}
 	titleBox := ""
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
@@ -74,11 +77,11 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		}
 		break
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
-		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
+		titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
 			title = title[:len(title)-dif-3] + "..."
-			titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
+			titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
 		}
 		break
 	default:
@@ -91,11 +94,12 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 func stepNoteCell(stepRunResult models.StepRunResultsModel) string {
 	iconBoxWidth := len("    ")
 	timeBoxWidth := len(" time (s) ")
-	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 2
 
 	stepInfo := stepRunResult.StepInfo
-	whitespaceWidth := titleBoxWidth - len(fmt.Sprintf(" version: %s | latest: %s ", stepInfo.Version, stepInfo.Latest))
-	return fmt.Sprintf("| version: %s | latest: %s%s|", stepInfo.Version, stepInfo.Latest, strings.Repeat(" ", whitespaceWidth))
+	whitespaceWidth := titleBoxWidth - len(fmt.Sprintf("update available %s -> %s", stepInfo.Version, stepInfo.Latest))
+	content := colorstring.Yellow(fmt.Sprintf(" Update available: %s -> %s%s", stepInfo.Version, stepInfo.Latest, strings.Repeat(" ", whitespaceWidth)))
+	return fmt.Sprintf("|%s|%s|%s|", strings.Repeat("-", iconBoxWidth), content, strings.Repeat("-", timeBoxWidth))
 }
 
 func stepResultCell(stepRunResult models.StepRunResultsModel) string {
@@ -151,6 +155,9 @@ func PrintStepSummary(stepRunResult models.StepRunResultsModel, isLastStepInWork
 
 	log.Info(sep)
 	log.Infof(stepResultCell(stepRunResult))
+	if stepRunResult.Error != nil && stepRunResult.StepInfo.UpdateAvailable() {
+		log.Info(stepNoteCell(stepRunResult))
+	}
 	log.Info(sep)
 
 	if !isLastStepInWorkflow {
@@ -182,7 +189,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
-		if stepRunResult.Error != nil {
+		if stepRunResult.Error != nil && stepRunResult.StepInfo.UpdateAvailable() {
 			log.Info(stepNoteCell(stepRunResult))
 		}
 		log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))

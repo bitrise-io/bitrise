@@ -7,6 +7,7 @@ import (
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -613,4 +614,18 @@ func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
 		results[result.Idx] = result
 	}
 	return results
+}
+
+// UpdateAvailable ...
+func (stepInfo StepInfoModel) UpdateAvailable() bool {
+	if stepInfo.Latest == "" {
+		return false
+	}
+
+	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.Latest)
+	if err != nil {
+		fmt.Printf("Failed to compare versions, err: %s\n", err)
+	}
+
+	return (res == 1)
 }
