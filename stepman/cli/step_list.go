@@ -17,7 +17,7 @@ type StepListModel struct {
 }
 
 func printRawStepList(stepList StepListModel, isShort bool) {
-	fmt.Println(colorstring.Bluef("Step in StepLib (%s):\n", stepList.StepLib))
+	fmt.Println(colorstring.Bluef("Step in StepLib (%s):", stepList.StepLib))
 	for _, stepID := range stepList.Steps {
 		fmt.Printf("%s\n", stepID)
 	}

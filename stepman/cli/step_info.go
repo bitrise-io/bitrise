@@ -64,6 +64,8 @@ func printRawStepInfo(stepInfo StepInfoModel, isShort bool) error {
 			}
 		}
 	}
+	fmt.Println()
+	fmt.Println()
 	return nil
 }
 
