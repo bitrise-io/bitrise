@@ -9,8 +9,6 @@ import (
 	"runtime"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
@@ -136,24 +134,12 @@ func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.Envir
 		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
 	}
 
-	var envstore envmanModels.EnvsYMLModel
-	if err := yaml.Unmarshal(inventoryBase64Bytes, &envstore); err != nil {
-		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to unmasrhal bitrise inventory, error: %s", err)
+	inventory, err := bitrise.InventoryModelFromYAMLBytes(inventoryBase64Bytes)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	for _, env := range envstore.Envs {
-		if err := env.Normalize(); err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
-		}
-		if err := env.FillMissingDefaults(); err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
-		}
-		if err := env.Validate(); err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
-		}
-	}
-
-	return envstore.Envs, nil
+	return inventory.Envs, nil
 }
 
 // GetInventoryFilePath ...
@@ -635,7 +621,7 @@ func runWorkflowWithConfiguration(
 	}
 
 	// App level environment
-	environments := append(bitriseConfig.App.Environments, secretEnvironments...)
+	environments := append(secretEnvironments, bitriseConfig.App.Environments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", workflowToRunID); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)

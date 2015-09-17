@@ -20,6 +20,27 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// InventoryModelFromYAMLBytes ...
+func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsYMLModel, err error) {
+	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
+		return
+	}
+
+	for _, env := range inventory.Envs {
+		if err := env.Normalize(); err != nil {
+			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
+		}
+		if err := env.FillMissingDefaults(); err != nil {
+			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
+		}
+		if err := env.Validate(); err != nil {
+			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
+		}
+	}
+
+	return
+}
+
 // CollectEnvironmentsFromFile ...
 func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)

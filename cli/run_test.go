@@ -11,6 +11,126 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEnvOrders(t *testing.T) {
+	//
+	// Only secret env - secret env should be use
+	inventoryStr := `
+envs:
+- ENV_ORDER_TEST: "should be the 1."
+`
+
+	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 1." ]] ; then
+              exit 1
+            fi
+
+`
+
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// Secret env & app env also defined - app env should be use
+	inventoryStr = `
+envs:
+- ENV_ORDER_TEST: "should be the 1."
+`
+
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+workflows:
+  test:
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
+              exit 1
+            fi
+
+`
+
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// Secret env & app env && workflow env also defined - workflow env should be use
+	inventoryStr = `
+envs:
+- ENV_ORDER_TEST: "should be the 1."
+`
+
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 3." ]] ; then
+              exit 1
+            fi
+
+`
+
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+}
+
 // Test - Bitrise activateAndRunWorkflow
 // If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
