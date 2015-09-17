@@ -26,10 +26,10 @@ func printRawValidation(validation ValidationModel) {
 		fmt.Println(colorstring.Blue("Config validation result:"))
 		configValidation := *validation.Config
 		if configValidation.IsValid {
-			fmt.Printf("is valid: %v\n", configValidation.IsValid)
+			fmt.Printf("is valid: %s\n", colorstring.Greenf("%v", configValidation.IsValid))
 		} else {
-			fmt.Println(colorstring.Redf("is valid: %v", configValidation.IsValid))
-			fmt.Println(colorstring.Redf("error: %s", configValidation.Error))
+			fmt.Printf("is valid: %s\n", colorstring.Redf("%v", configValidation.IsValid))
+			fmt.Printf("error: %s\n", colorstring.Red(configValidation.Error))
 		}
 		fmt.Println()
 	}
@@ -38,10 +38,10 @@ func printRawValidation(validation ValidationModel) {
 		fmt.Println(colorstring.Blue("Secret validation result:"))
 		secretValidation := *validation.Secrets
 		if secretValidation.IsValid {
-			fmt.Printf("is valid: %v\n", secretValidation.IsValid)
+			fmt.Printf("is valid: %s\n", colorstring.Greenf("%v", secretValidation.IsValid))
 		} else {
-			fmt.Println(colorstring.Redf("is valid: %v", secretValidation.IsValid))
-			fmt.Println(colorstring.Redf("error: %s", secretValidation.Error))
+			fmt.Printf("is valid: %s\n", colorstring.Redf("%v", secretValidation.IsValid))
+			fmt.Printf("error: %s\n", colorstring.Red(secretValidation.Error))
 		}
 	}
 }
