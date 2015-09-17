@@ -30,7 +30,6 @@ workflows:
   test:
     steps:
     - script:
-        title: Should fail
         inputs:
         - content: |
             #!/bin/bash
@@ -70,7 +69,6 @@ workflows:
   test:
     steps:
     - script:
-        title: Should fail
         inputs:
         - content: |
             #!/bin/bash
@@ -112,13 +110,56 @@ workflows:
     - ENV_ORDER_TEST: "should be the 3."
     steps:
     - script:
-        title: Should fail
         inputs:
         - content: |
             #!/bin/bash
             set -v
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
             if [[ "$ENV_ORDER_TEST" != "should be the 3." ]] ; then
+              exit 1
+            fi
+
+`
+
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// Secret env & app env && workflow env && step output env also defined - step output env should be use
+	inventoryStr = `
+envs:
+- ENV_ORDER_TEST: "should be the 1."
+`
+
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 4." ]] ; then
               exit 1
             fi
 
