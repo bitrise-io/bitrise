@@ -6,17 +6,12 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
-// StepListModel ...
-type StepListModel struct {
-	StepLib string   `json:"steplib,omitempty" yaml:"steplib,omitempty"`
-	Steps   []string `json:"steps,omitempty" yaml:"steps,omitempty"`
-}
-
-func printRawStepList(stepList StepListModel, isShort bool) {
+func printRawStepList(stepList models.StepListModel, isShort bool) {
 	fmt.Println(colorstring.Bluef("Step in StepLib (%s):", stepList.StepLib))
 	for _, stepID := range stepList.Steps {
 		fmt.Printf("%s\n", stepID)
@@ -25,7 +20,7 @@ func printRawStepList(stepList StepListModel, isShort bool) {
 	fmt.Println()
 }
 
-func printJSONStepList(stepList StepListModel, isShort bool) error {
+func printJSONStepList(stepList models.StepListModel, isShort bool) error {
 	bytes, err := json.Marshal(stepList)
 	if err != nil {
 		return err
@@ -48,7 +43,7 @@ func listSteps(stepLibURI, format string) error {
 	}
 
 	// List
-	stepList := StepListModel{
+	stepList := models.StepListModel{
 		StepLib: stepLibURI,
 	}
 	for stepID := range stepLib.Steps {
