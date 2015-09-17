@@ -94,3 +94,9 @@ type StepInfoModel struct {
 	Inputs      []EnvInfoModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs     []EnvInfoModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
+
+// StepListModel ...
+type StepListModel struct {
+	StepLib string   `json:"steplib,omitempty" yaml:"steplib,omitempty"`
+	Steps   []string `json:"steps,omitempty" yaml:"steps,omitempty"`
+}
