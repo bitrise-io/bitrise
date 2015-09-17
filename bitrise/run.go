@@ -42,6 +42,23 @@ func StepmanUpdate(collection string) error {
 	return cmdex.RunCommand("stepman", args...)
 }
 
+// StepmanPrintRawStepInfo ...
+func StepmanPrintRawStepInfo(collection, stepID, stepVersion string) error {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
+		"--id", stepID, "--version", stepVersion}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+	}
+
+	fmt.Println(out)
+	return nil
+}
+
 // StepmanStepInfo ...
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
 	if collection == "" {
@@ -61,6 +78,42 @@ func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.Step
 	}
 
 	return stepInfo, nil
+}
+
+// StepmanPrintRawStepList ...
+func StepmanPrintRawStepList(collection string) error {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return fmt.Errorf("Failed to run stepman step-list, err: %s", err)
+	}
+
+	fmt.Println(out)
+	return nil
+}
+
+// StepmanStepList ...
+func StepmanStepList(collection string) (stepmanModels.StepListModel, error) {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return stepmanModels.StepListModel{}, fmt.Errorf("Failed to run stepman step-list, err: %s", err)
+	}
+
+	stepList := stepmanModels.StepListModel{}
+	if err := json.Unmarshal([]byte(out), &stepList); err != nil {
+		return stepmanModels.StepListModel{}, err
+	}
+
+	return stepList, nil
 }
 
 // ------------------
