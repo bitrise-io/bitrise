@@ -8,8 +8,13 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/cmdex"
+	stepmanModels "github.com/bitrise-io/stepman/models"
+)
+
+const (
+	// VerifiedStepLibURI ...
+	VerifiedStepLibURI = "https://github.com/bitrise-io/bitrise-steplib"
 )
 
 // ------------------
@@ -38,18 +43,21 @@ func StepmanUpdate(collection string) error {
 }
 
 // StepmanStepInfo ...
-func StepmanStepInfo(collection, stepID, stepVersion string) (models.StepInfoModel, error) {
+func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
-		"--id", stepID, "--version", stepVersion}
+		"--id", stepID, "--version", stepVersion, "--format", "json"}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return models.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+		return stepmanModels.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
 	}
 
-	stepInfo := models.StepInfoModel{}
+	stepInfo := stepmanModels.StepInfoModel{}
 	if err := json.Unmarshal([]byte(out), &stepInfo); err != nil {
-		return models.StepInfoModel{}, err
+		return stepmanModels.StepInfoModel{}, err
 	}
 
 	return stepInfo, nil

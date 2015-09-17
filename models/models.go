@@ -88,16 +88,9 @@ type BuildRunResultsModel struct {
 	SkippedSteps         []StepRunResultsModel
 }
 
-// StepInfoModel ...
-type StepInfoModel struct {
-	ID      string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	Version string `json:"step_version,omitempty" yaml:"step_version,omitempty"`
-	Latest  string `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-}
-
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
-	StepInfo StepInfoModel
+	StepInfo stepmanModels.StepInfoModel
 	Status   int
 	Idx      int
 	RunTime  time.Duration

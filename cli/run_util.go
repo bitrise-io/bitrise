@@ -275,12 +275,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 	// Holds pointer to current step info, for easy usage in local register step run result methods.
 	// The value is filled with the current running step info.
-	var stepInfoPtr models.StepInfoModel
+	var stepInfoPtr stepmanModels.StepInfoModel
 
 	// ------------------------------------------
 	// In function method - Registration methods, for register step run results.
 	registerStepRunResults := func(runIf string, resultCode, exitCode int, err error, isLastStep bool) {
-		stepInfoCopy := models.StepInfoModel{
+		stepInfoCopy := stepmanModels.StepInfoModel{
 			ID:      stepInfoPtr.ID,
 			Version: stepInfoPtr.Version,
 			Latest:  stepInfoPtr.Latest,
@@ -332,7 +332,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		// Per step variables
 		stepStartTime = time.Now()
 		isLastStep := isLastWorkflow && (idx == len(workflow.Steps)-1)
-		stepInfoPtr = models.StepInfoModel{}
+		stepInfoPtr = stepmanModels.StepInfoModel{}
 
 		// Per step cleanup
 		if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
