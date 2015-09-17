@@ -29,6 +29,7 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				flFormat,
 			},
 		},
 		{
