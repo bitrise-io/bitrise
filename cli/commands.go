@@ -29,6 +29,7 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				flFormat,
 			},
 		},
 		{
@@ -78,6 +79,28 @@ var (
 				flPath,
 				flConfig,
 				flConfigBase64,
+			},
+		},
+		{
+			Name:   "step-list",
+			Usage:  "List of available steps.",
+			Action: stepList,
+			Flags: []cli.Flag{
+				flCollection,
+				flFormat,
+			},
+		},
+		{
+			Name:    "step-info",
+			Aliases: []string{"i"},
+			Usage:   "Provides information (step ID, last version, given version) about specified step.",
+			Action:  stepInfo,
+			Flags: []cli.Flag{
+				flCollection,
+				flID,
+				flVersion,
+				flFormat,
+				flShort,
 			},
 		},
 	}
