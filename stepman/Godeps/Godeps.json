@@ -1,9 +1,6 @@
 {
 	"ImportPath": "github.com/bitrise-io/stepman",
 	"GoVersion": "go1.5.1",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -33,6 +30,10 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
+			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/urlutil",
 			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
 		},
 		{

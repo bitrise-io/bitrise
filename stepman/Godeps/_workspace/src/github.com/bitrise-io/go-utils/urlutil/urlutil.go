@@ -8,6 +8,10 @@ import (
 
 // Join ...
 func Join(elems ...string) (string, error) {
+	if len(elems) < 1 {
+		return "", errors.New("No elements defined to Join")
+	}
+
 	url, err := url.Parse(elems[0])
 	if err != nil {
 		return "", err
@@ -25,7 +29,7 @@ func Join(elems ...string) (string, error) {
 	pathStr := ""
 	if url.Path != "" {
 		pathStr = clearPrefix(url.Path)
-		pathStr = clearSuffix(url.Path)
+		pathStr = clearSuffix(pathStr)
 	}
 
 	combined := schemeStr + "://" + hostStr
