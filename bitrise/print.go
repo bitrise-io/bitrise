@@ -9,12 +9,28 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
+	"github.com/bitrise-io/go-utils/versions"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 const (
 	// should not be under ~45
 	stepRunSummaryBoxWidthInChars = 65
 )
+
+// IsUpdateAvailable ...
+func IsUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
+	if stepInfo.Latest == "" {
+		return false
+	}
+
+	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.Latest)
+	if err != nil {
+		log.Debugf("Failed to compare versions, err: %s", err)
+	}
+
+	return (res == 1)
+}
 
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
@@ -24,7 +40,7 @@ func PrintRunningWorkflow(title string) {
 }
 
 // PrintRunningStep ...
-func PrintRunningStep(stepInfo models.StepInfoModel, idx int) {
+func PrintRunningStep(stepInfo stepmanModels.StepInfoModel, idx int) {
 	title := stepInfo.ID
 	version := stepInfo.Version
 
@@ -155,7 +171,7 @@ func PrintStepSummary(stepRunResult models.StepRunResultsModel, isLastStepInWork
 
 	log.Info(sep)
 	log.Infof(stepResultCell(stepRunResult))
-	if stepRunResult.Error != nil && stepRunResult.StepInfo.IsUpdateAvailable() {
+	if stepRunResult.Error != nil && IsUpdateAvailable(stepRunResult.StepInfo) {
 		log.Info(stepNoteCell(stepRunResult))
 	}
 	log.Info(sep)
@@ -189,7 +205,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
-		if stepRunResult.Error != nil && stepRunResult.StepInfo.IsUpdateAvailable() {
+		if stepRunResult.Error != nil && IsUpdateAvailable(stepRunResult.StepInfo) {
 			log.Info(stepNoteCell(stepRunResult))
 		}
 		log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))

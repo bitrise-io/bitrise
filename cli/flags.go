@@ -6,6 +6,12 @@ import (
 )
 
 const (
+	// OutputFormatRaw ...
+	OutputFormatRaw = "raw"
+	// OutputFormatJSON ...
+	OutputFormatJSON = "json"
+	// CollectionPathEnvKey ...
+	CollectionPathEnvKey = "STEPMAN_COLLECTION"
 	// CIKey ...
 	CIKey = "ci"
 	// DebugModeKey ...
@@ -22,6 +28,10 @@ const (
 	// PathKey ...
 	PathKey      = "path"
 	pathKeyShort = "p"
+
+	// CollectionKey ...
+	CollectionKey      = "collection"
+	collectionKeyShort = "c"
 
 	// InventoryKey ...
 	InventoryKey      = "inventory"
@@ -50,6 +60,12 @@ const (
 	OuputPathKey = "outpath"
 	// PrettyFormatKey ...
 	PrettyFormatKey = "pretty"
+
+	// IDKey ...
+	IDKey      = "id"
+	idKeyShort = "i"
+	// ShortKey ...
+	ShortKey = "short"
 )
 
 var (
@@ -78,6 +94,11 @@ var (
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
 		Usage: "[Deprecated!!! Use 'config'] Path where the workflow config file is located.",
+	}
+	flCollection = cli.StringFlag{
+		Name:   CollectionKey + ", " + collectionKeyShort,
+		Usage:  "Collection of step.",
+		EnvVar: CollectionPathEnvKey,
 	}
 	flConfig = cli.StringFlag{
 		Name:  ConfigKey + ", " + configShortKey,
@@ -112,6 +133,18 @@ var (
 	flPretty = cli.BoolFlag{
 		Name:  PrettyFormatKey,
 		Usage: "Pretty printed export?",
+	}
+	flID = cli.StringFlag{
+		Name:  IDKey + ", " + idKeyShort,
+		Usage: "Step id.",
+	}
+	flVersion = cli.StringFlag{
+		Name:  VersionKey + ", " + versionKeyShort,
+		Usage: "Step version.",
+	}
+	flShort = cli.BoolFlag{
+		Name:  ShortKey,
+		Usage: "Show short version of infos.",
 	}
 )
 
