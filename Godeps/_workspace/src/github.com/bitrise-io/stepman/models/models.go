@@ -28,8 +28,9 @@ type StepModel struct {
 	SourceCodeURL *string `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
 	SupportURL    *string `json:"support_url,omitempty" yaml:"support_url,omitempty"`
 	// auto-generated at share
-	PublishedAt *time.Time      `json:"published_at,omitempty" yaml:"published_at,omitempty"`
-	Source      StepSourceModel `json:"source,omitempty" yaml:"source,omitempty"`
+	PublishedAt *time.Time        `json:"published_at,omitempty" yaml:"published_at,omitempty"`
+	Source      StepSourceModel   `json:"source,omitempty" yaml:"source,omitempty"`
+	AssetURLs   map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
 	//
 	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
@@ -67,9 +68,29 @@ type DownloadLocationModel struct {
 
 // StepCollectionModel ...
 type StepCollectionModel struct {
-	FormatVersion        string                  `json:"format_version" yaml:"format_version"`
-	GeneratedAtTimeStamp int64                   `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
-	SteplibSource        string                  `json:"steplib_source" yaml:"steplib_source"`
-	DownloadLocations    []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
-	Steps                StepHash                `json:"steps" yaml:"steps"`
+	FormatVersion         string                  `json:"format_version" yaml:"format_version"`
+	GeneratedAtTimeStamp  int64                   `json:"generated_at_timestamp" yaml:"generated_at_timestamp"`
+	SteplibSource         string                  `json:"steplib_source" yaml:"steplib_source"`
+	DownloadLocations     []DownloadLocationModel `json:"download_locations" yaml:"download_locations"`
+	AssetsDownloadBaseURI string                  `json:"assets_download_base_uri" yaml:"assets_download_base_uri"`
+	Steps                 StepHash                `json:"steps" yaml:"steps"`
+}
+
+// EnvInfoModel ...
+type EnvInfoModel struct {
+	Env         string `json:"env,omitempty" yaml:"env,omitempty"`
+	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+}
+
+// StepInfoModel ...
+type StepInfoModel struct {
+	ID          string         `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Version     string         `json:"step_version,omitempty" yaml:"step_version,omitempty"`
+	Latest      string         `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
+	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
+	Source      string         `json:"source,omitempty" yaml:"source,omitempty"`
+	StepLib     string         `json:"steplib,omitempty" yaml:"steplib,omitempty"`
+	Inputs      []EnvInfoModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs     []EnvInfoModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
