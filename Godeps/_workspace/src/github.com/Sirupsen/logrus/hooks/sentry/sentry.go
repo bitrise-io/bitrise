@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 	"github.com/getsentry/raven-go"
 )
 

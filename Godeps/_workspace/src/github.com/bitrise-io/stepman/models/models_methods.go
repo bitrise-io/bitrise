@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/pointers"
+	envmanModels "github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/bitrise-io/go-utils/pointers"
 )
 
 const (

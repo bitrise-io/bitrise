@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/bitrise-io/go-utils/pointers"
 )
 
 const (
