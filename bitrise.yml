@@ -23,6 +23,9 @@ trigger_map:
 - pattern: ci/step-template
   is_pull_request_allowed: true
   workflow: ci_step_template
+- pattern: ci_breaking_change
+  is_pull_request_allowed: true
+  workflow: ci_breaking_change
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: ci
@@ -69,24 +72,12 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
-    - script:
-        title: Setup --minimal
-        summary: Install required tool (envman, stepman) versions.
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go build -o _bin/bin-for-ci
-            ./_bin/bin-for-ci setup --minimal
-            rm _bin/bin-for-ci
 
   # Bitrise Test and Install
   #
   # Used fot testing and installing prepared bitrise.
   # go test, errcheck, go lint, go install, run step-template.
-  test_and_install:
+  test_and_install_breaking_change:
     steps:
     - script:
         title: GOPATH patch
@@ -98,15 +89,6 @@ workflows:
 
             envman add --key ORIG_GOPATH --value "$GOPATH"
             envman add --key GOPATH --value "$(godep path):$GOPATH"
-    - script:
-        title: Go Test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go test ./...
     - script:
         title: Err check
         inputs:
@@ -142,11 +124,90 @@ workflows:
             set -e
             set -v
 
+            godep go build -o _bin/bin-for-ci
+            ./_bin/bin-for-ci setup --minimal
+            rm _bin/bin-for-ci
+
             if [[ "${CI}" != "0" ]] ; then
               cd $BITRISE_PATH
             fi
             godep go install
             cd $BITRISE_SOURCE_DIR
+
+            godep go test ./...
+
+            cd ./_step_template
+            bitrise run test
+
+  # Bitrise Test and Install
+  #
+  # Used fot testing and installing prepared bitrise.
+  # go test, errcheck, go lint, go install, run step-template.
+  test_and_install:
+    steps:
+    - script:
+        title: GOPATH patch
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            envman add --key ORIG_GOPATH --value "$GOPATH"
+            envman add --key GOPATH --value "$(godep path):$GOPATH"
+    - script:
+        title: Err check
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            if [[ "${CI}" != "0" ]] ; then
+              cd $BITRISE_PATH
+            fi
+            errcheck -asserts=true -blank=true $(godep go list ./...)
+            cd $BITRISE_SOURCE_DIR
+    - script:
+        title: Go Lint
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            golint_out="$(golint ./...)"
+            if [[ "${golint_out}" != "" ]] ; then
+              echo "=> Golint issues found:"
+              echo "${golint_out}"
+              exit 1
+            fi
+    - script:
+        title: Running go install
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            set -v
+
+            godep go build -o _bin/bin-for-ci
+            ./_bin/bin-for-ci setup --minimal
+            rm _bin/bin-for-ci
+
+            if [[ "${CI}" != "0" ]] ; then
+              cd $BITRISE_PATH
+            fi
+            godep go install
+            cd $BITRISE_SOURCE_DIR
+    - script:
+        title: Go Test
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            godep go test ./...
     - script:
         title: Step-template test
         inputs:
@@ -157,6 +218,15 @@ workflows:
 
             cd ./_step_template
             bitrise run test
+
+  # Bitrise ci
+  #
+  # Used for bitrise continous integration.
+  # Prepare and Setup, Test and Install, notification.
+  ci_breaking_change:
+    before_run:
+    - _prepare_and_setup
+    - test_and_install_breaking_change
 
   # Bitrise ci
   #
