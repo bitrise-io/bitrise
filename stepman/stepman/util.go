@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/urlutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
@@ -176,7 +177,11 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 						err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
 							_, file := filepath.Split(pth)
 							if pth != assetsFolderPth && file != "" {
-								assetsMap[file] = path.Join(collection.AssetsDownloadBaseURI, id, "assets", file)
+								assetURI, err := urlutil.Join(collection.AssetsDownloadBaseURI, id, "assets", file)
+								if err != nil {
+									return err
+								}
+								assetsMap[file] = assetURI
 							}
 							return nil
 						})
