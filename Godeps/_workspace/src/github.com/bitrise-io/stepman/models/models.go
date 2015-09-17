@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	envmanModels "github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/models"
 )
 
 // StepSourceModel ...

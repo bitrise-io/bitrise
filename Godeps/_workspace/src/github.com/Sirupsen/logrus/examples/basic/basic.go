@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 )
 
 var log = logrus.New()

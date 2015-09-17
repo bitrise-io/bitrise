@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/Godeps/_workspace/src/github.com/Sirupsen/logrus/hooks/airbrake"
+	"github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus/hooks/airbrake"
 )
 
 var log = logrus.New()
