@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/models"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +23,7 @@ func TestPrintRunningWorkflow(t *testing.T) {
 }
 
 func TestPrintRunningStep(t *testing.T) {
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      "",
 		Version: "",
 	}
@@ -42,7 +43,7 @@ func TestPrintRunningStep(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
 	}
@@ -74,7 +75,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 }
 
 func TestStepResultCell(t *testing.T) {
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
 	}
@@ -106,7 +107,7 @@ func TestStepResultCell(t *testing.T) {
 }
 
 func TestPrintStepSummary(t *testing.T) {
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
 	}
@@ -138,7 +139,7 @@ func TestPrintStepSummary(t *testing.T) {
 func TestPrintSummary(t *testing.T) {
 	PrintSummary(models.BuildRunResultsModel{})
 
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
 	}
@@ -174,7 +175,7 @@ func TestPrintSummary(t *testing.T) {
 func TestPrintStepStatusList(t *testing.T) {
 	PrintStepStatusList("", []models.StepRunResultsModel{})
 
-	stepInfo := models.StepInfoModel{
+	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
 	}
