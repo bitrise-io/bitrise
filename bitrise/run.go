@@ -9,14 +9,13 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-// StepInfoModel ...
-type StepInfoModel struct {
-	StepID        string `json:"step_id,omitempty" yaml:"step_id,omitempty"`
-	StepVersion   string `json:"step_version,omitempty" yaml:"step_version,omitempty"`
-	LatestVersion string `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-}
+const (
+	// VerifiedStepLibURI ...
+	VerifiedStepLibURI = "https://github.com/bitrise-io/bitrise-steplib"
+)
 
 // ------------------
 // --- Stepman
@@ -43,22 +42,78 @@ func StepmanUpdate(collection string) error {
 	return cmdex.RunCommand("stepman", args...)
 }
 
-// StepmanStepInfo ...
-func StepmanStepInfo(collection, stepID, stepVersion string) (StepInfoModel, error) {
+// StepmanPrintRawStepInfo ...
+func StepmanPrintRawStepInfo(collection, stepID, stepVersion string) error {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+		return fmt.Errorf("Failed to run stepman step-info, err: %s", err)
 	}
 
-	stepInfo := StepInfoModel{}
+	fmt.Println(out)
+	return nil
+}
+
+// StepmanStepInfo ...
+func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
+		"--id", stepID, "--version", stepVersion, "--format", "json"}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return stepmanModels.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+	}
+
+	stepInfo := stepmanModels.StepInfoModel{}
 	if err := json.Unmarshal([]byte(out), &stepInfo); err != nil {
-		return StepInfoModel{}, err
+		return stepmanModels.StepInfoModel{}, err
 	}
 
 	return stepInfo, nil
+}
+
+// StepmanPrintRawStepList ...
+func StepmanPrintRawStepList(collection string) error {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return fmt.Errorf("Failed to run stepman step-list, err: %s", err)
+	}
+
+	fmt.Println(out)
+	return nil
+}
+
+// StepmanStepList ...
+func StepmanStepList(collection string) (stepmanModels.StepListModel, error) {
+	if collection == "" {
+		collection = VerifiedStepLibURI
+	}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	if err != nil {
+		return stepmanModels.StepListModel{}, fmt.Errorf("Failed to run stepman step-list, err: %s", err)
+	}
+
+	stepList := stepmanModels.StepListModel{}
+	if err := json.Unmarshal([]byte(out), &stepList); err != nil {
+		return stepmanModels.StepListModel{}, err
+	}
+
+	return stepList, nil
 }
 
 // ------------------

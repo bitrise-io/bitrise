@@ -90,7 +90,7 @@ type BuildRunResultsModel struct {
 
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
-	StepName string
+	StepInfo stepmanModels.StepInfoModel
 	Status   int
 	Idx      int
 	RunTime  time.Duration

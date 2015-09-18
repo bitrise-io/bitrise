@@ -9,12 +9,28 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
+	"github.com/bitrise-io/go-utils/versions"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 const (
 	// should not be under ~45
 	stepRunSummaryBoxWidthInChars = 65
 )
+
+// IsUpdateAvailable ...
+func IsUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
+	if stepInfo.Latest == "" {
+		return false
+	}
+
+	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.Latest)
+	if err != nil {
+		log.Debugf("Failed to compare versions, err: %s", err)
+	}
+
+	return (res == 1)
+}
 
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
@@ -24,7 +40,10 @@ func PrintRunningWorkflow(title string) {
 }
 
 // PrintRunningStep ...
-func PrintRunningStep(title, version string, idx int) {
+func PrintRunningStep(stepInfo stepmanModels.StepInfoModel, idx int) {
+	title := stepInfo.ID
+	version := stepInfo.Version
+
 	if len(version) > 25 {
 		version = "..." + stringutil.MaxLastChars(version, 22)
 	}
@@ -56,43 +75,47 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
 
-	title := ""
+	stepInfo := stepRunResult.StepInfo
+
+	title := stepInfo.ID
+	version := stepInfo.Version
+	if len(version) > 25 {
+		version = "..." + stringutil.MaxLastChars(version, 22)
+	}
+	titleBox := ""
 	switch stepRunResult.Status {
-	case models.StepRunStatusCodeSuccess:
-		title = stepRunResult.StepName
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
+	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
+		titleBox = fmt.Sprintf("%s (%s)", title, version)
+		if len(titleBox) > titleBoxWidth {
+			dif := len(titleBox) - titleBoxWidth
 			title = title[:len(title)-dif-3] + "..."
+			titleBox = fmt.Sprintf("%s (%s)", title, version)
 		}
 		break
-	case models.StepRunStatusCodeFailed:
-		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
-			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
-			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
-	case models.StepRunStatusCodeFailedSkippable:
-		title = fmt.Sprintf("%s (exit code: %d)", stepRunResult.StepName, stepRunResult.ExitCode)
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
-			title = title[:len(stepRunResult.StepName)-dif-3] + "..."
-			title = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
-	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		title = stepRunResult.StepName
-		if len(title) > titleBoxWidth {
-			dif := len(title) - titleBoxWidth
+	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
+		titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
+		if len(titleBox) > titleBoxWidth {
+			dif := len(titleBox) - titleBoxWidth
 			title = title[:len(title)-dif-3] + "..."
+			titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
 		}
 		break
 	default:
 		log.Error("Unkown result code")
 		return ""
 	}
-	return title
+	return titleBox
+}
+
+func stepNoteCell(stepRunResult models.StepRunResultsModel) string {
+	iconBoxWidth := len("    ")
+	timeBoxWidth := len(" time (s) ")
+	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 2
+
+	stepInfo := stepRunResult.StepInfo
+	whitespaceWidth := titleBoxWidth - len(fmt.Sprintf("update available %s -> %s", stepInfo.Version, stepInfo.Latest))
+	content := colorstring.Yellow(fmt.Sprintf(" Update available: %s -> %s%s", stepInfo.Version, stepInfo.Latest, strings.Repeat(" ", whitespaceWidth)))
+	return fmt.Sprintf("|%s|%s|%s|", strings.Repeat("-", iconBoxWidth), content, strings.Repeat("-", timeBoxWidth))
 }
 
 func stepResultCell(stepRunResult models.StepRunResultsModel) string {
@@ -148,6 +171,9 @@ func PrintStepSummary(stepRunResult models.StepRunResultsModel, isLastStepInWork
 
 	log.Info(sep)
 	log.Infof(stepResultCell(stepRunResult))
+	if stepRunResult.Error != nil && IsUpdateAvailable(stepRunResult.StepInfo) {
+		log.Info(stepNoteCell(stepRunResult))
+	}
 	log.Info(sep)
 
 	if !isLastStepInWorkflow {
@@ -179,10 +205,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Info(stepResultCell(stepRunResult))
+		if stepRunResult.Error != nil && IsUpdateAvailable(stepRunResult.StepInfo) {
+			log.Info(stepNoteCell(stepRunResult))
+		}
+		log.Infof("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 	}
 	runtime := tmpTime.Sub(time.Time{})
-
-	log.Infof("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
 	runtimeStr := TimeToFormattedSeconds(runtime, " sec")
 	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runtimeStr))
@@ -196,11 +224,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 func PrintStepStatusList(header string, stepList []models.StepRunResultsModel) {
 	if len(stepList) > 0 {
 		log.Infof(header)
-		for _, step := range stepList {
-			if step.Error != nil {
-				log.Infof(" * Step: (%s) | error: (%v)", step.StepName, step.Error)
+		for _, stepResult := range stepList {
+			stepInfo := stepResult.StepInfo
+			if stepResult.Error != nil {
+				log.Infof(" * Step: (%s) | error: (%v)", stepInfo.ID, stepResult.Error)
 			} else {
-				log.Infof(" * Step: (%s)", step.StepName)
+				log.Infof(" * Step: (%s)", stepInfo.ID)
 			}
 		}
 	}
