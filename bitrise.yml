@@ -7,14 +7,6 @@ app:
   - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
   - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
-  - SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
-    opts:
-      title: SLACK_WEBHOOK_URL
-      is_expand: false
-  - SLACK_CHANNEL: "#bitrise-dev-lifeline"
-    opts:
-      title: SLACK_CHANNEL
-      is_expand: false
 
 trigger_map:
 - pattern: ci/quick
@@ -245,8 +237,8 @@ workflows:
         title: Slack notifications
         run_if: ".IsCI"
         inputs:
-        - webhook_url: "$SLACK_WEBHOOK_URL"
-        - channel: "$SLACK_CHANNEL"
+        - webhook_url: "$INTERNAL_DEV_SLACK_WEBHOOK_URL"
+        - channel: "$INTERNAL_DEV_SLACK_CHANNEL"
         - from_username: "${BITRISE_BIN_NAME} - CI - OK"
         - from_username_on_error: "${BITRISE_BIN_NAME} - CI - ERROR"
         - message: |-
@@ -340,8 +332,8 @@ workflows:
     - slack@2.1.0:
         title: Announce on Internal Slack channel
         inputs:
-        - webhook_url: "$SLACK_WEBHOOK_URL"
-        - channel: "$SLACK_CHANNEL"
+        - webhook_url: "$INTERNAL_DEV_SLACK_WEBHOOK_URL"
+        - channel: "$INTERNAL_DEV_SLACK_CHANNEL"
         - from_username: ${BITRISE_BIN_NAME}
         - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
@@ -351,8 +343,8 @@ workflows:
     - slack@2.1.0:
         title: Announce on Public Slack channel
         inputs:
-        - webhook_url: "$SLACK_WEBHOOK_URL"
-        - channel: "$SLACK_CHANNEL"
+        - webhook_url: "$PUBLIC_SLACK_WEBHOOK_URL"
+        - channel: "$PUBLIC_SLACK_CHANNEL"
         - from_username: ${BITRISE_BIN_NAME}
         - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
