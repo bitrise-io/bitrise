@@ -23,7 +23,7 @@ trigger_map:
 - pattern: ci/step-template
   is_pull_request_allowed: true
   workflow: ci_step_template
-- pattern: ci_breaking_change
+- pattern: "breaking*"
   is_pull_request_allowed: true
   workflow: ci_breaking_change
 - pattern: "*"

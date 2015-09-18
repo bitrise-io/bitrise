@@ -1,15 +1,196 @@
 package cli
 
 import (
+	"fmt"
 	"os"
+	"path"
 	"testing"
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
+
+func TestBitriseSourceDir(t *testing.T) {
+	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
+	if err != nil {
+		t.Fatal("Failed to get curr abs path: ", err)
+	}
+
+	testPths := []string{}
+	for i := 0; i < 4; i++ {
+		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
+		if err := os.RemoveAll(testPth); err != nil {
+			t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
+		}
+
+		err := os.Mkdir(testPth, 0777)
+		if err != nil {
+			t.Fatalf("Failed to create %s, err: %s: ", testPth, err)
+		}
+		defer func() {
+			err := os.RemoveAll(testPth)
+			if err != nil {
+				t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
+			}
+		}()
+
+		testPths = append(testPths, testPth)
+	}
+
+	//
+	// BITRISE_SOURCE_DIR defined in Secret
+	inventoryStr := `
+envs:
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
+`
+	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[0] + `" ]] ; then
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// BITRISE_SOURCE_DIR defined in Secret, and in App
+	inventoryStr = `
+envs:
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
+`
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[1] + `" ]] ; then
+              exit 1
+            fi
+`
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
+	inventoryStr = `
+envs:
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
+`
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
+
+workflows:
+  test:
+    envs:
+    - BITRISE_SOURCE_DIR: "` + testPths[2] + `"
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[2] + `" ]] ; then
+              exit 1
+            fi
+`
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// BITRISE_SOURCE_DIR defined in secret, App, Workflow and Step
+	inventoryStr = `
+envs:
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
+`
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
+
+workflows:
+  test:
+    envs:
+    - BITRISE_SOURCE_DIR: "` + testPths[2] + `"
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            envman add --key BITRISE_SOURCE_DIR --value ` + testPths[3] + `
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[3] + `" ]] ; then
+              exit 1
+            fi
+`
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+}
 
 func TestEnvOrders(t *testing.T) {
 	//
