@@ -190,6 +190,32 @@ func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentIte
 	return inventoryEnvironments, nil
 }
 
+func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
+	bitriseSourceDir := os.Getenv(bitrise.BitriseSourceDirEnvKey)
+	for i := len(envlist) - 1; i >= 0; i-- {
+		env := envlist[i]
+
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return bitriseSourceDir, err
+		}
+
+		if key == bitrise.BitriseSourceDirEnvKey {
+			opts, err := env.GetOptions()
+			if err != nil {
+				return bitriseSourceDir, err
+			}
+
+			bitriseSourceDir = value
+			if opts.IsExpand != nil && *opts.IsExpand {
+				bitriseSourceDir = os.ExpandEnv(value)
+			}
+			return bitriseSourceDir, nil
+		}
+	}
+	return bitriseSourceDir, nil
+}
+
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -237,9 +263,16 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 
 	// Run step
 	stepCmd := path.Join(stepDir, "step.sh")
-	log.Debug("OUTPUT:")
 	cmd := []string{"bash", stepCmd}
-	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitrise.CurrentDir, cmd, "panic"); err != nil {
+	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
+	if err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, err
+	}
+	if bitriseSourceDir == "" {
+		bitriseSourceDir = bitrise.CurrentDir
+	}
+
+	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd, "panic"); err != nil {
 		return exit, []envmanModels.EnvironmentItemModel{}, err
 	}
 
