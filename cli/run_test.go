@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -24,17 +25,24 @@ func TestBitriseSourceDir(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
 		if err := os.RemoveAll(testPth); err != nil {
-			t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
+			t.Fatalf("Failed to remove %s, err: %s: ", testPth, err)
 		}
 
 		err := os.Mkdir(testPth, 0777)
 		if err != nil {
 			t.Fatalf("Failed to create %s, err: %s: ", testPth, err)
 		}
+		// eval symlinks: the Go generated temp folder on OS X is a symlink
+		//  from /var/ to /private/var/
+		testPth, err = filepath.EvalSymlinks(testPth)
+		if err != nil {
+			t.Fatalf("Failed to EvalSymlinks for (path:%s), err: %s", testPth, err)
+		}
+
 		defer func() {
 			err := os.RemoveAll(testPth)
 			if err != nil {
-				t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
+				t.Fatalf("Failed to remove %s, err: %s: ", testPth, err)
 			}
 		}()
 
@@ -138,6 +146,51 @@ workflows:
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
             if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[2] + `" ]] ; then
+              exit 1
+            fi
+`
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+
+	//
+	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
+	//  BUT the value is empty in Workflow and App Envs - Secrets should be used!
+	inventoryStr = `
+envs:
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
+`
+	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - BITRISE_SOURCE_DIR:
+
+workflows:
+  test:
+    envs:
+    - BITRISE_SOURCE_DIR: ""
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[0] + `" ]] ; then
+              echo "-> BITRISE_SOURCE_DIR missmatch!"
+              exit 1
+            fi
+            curr_pwd="$(pwd)"
+            if [[ "${curr_pwd}" != "` + testPths[0] + `" ]] ; then
+              echo "-> pwd missmatch! : curr_pwd : ${curr_pwd}"
               exit 1
             fi
 `
