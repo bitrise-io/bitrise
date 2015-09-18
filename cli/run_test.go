@@ -10,34 +10,41 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBitriseSourceDir(t *testing.T) {
-	home := os.Getenv("HOME")
-	for i := 1; i < 4; i++ {
-		testPth := path.Join(home, fmt.Sprintf("test%d", i))
+	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
+	if err != nil {
+		t.Fatal("Failed to get curr abs path: ", err)
+	}
+
+	for i := 0; i < 4; i++ {
+		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
 		if err := os.RemoveAll(testPth); err != nil {
-			t.Errorf("Failed to remove $HOME/test%d, err: %s: ", i, err)
+			t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
 		}
 
 		err := os.Mkdir(testPth, 0777)
 		if err != nil {
-			t.Fatalf("Failed to create $HOME/test%d, err: %s: ", i, err)
+			t.Fatalf("Failed to create %s, err: %s: ", testPth, err)
 		}
 		defer func() {
 			err := os.RemoveAll(testPth)
 			if err != nil {
-				t.Errorf("Failed to remove $HOME/test%d, err: %s: ", i, err)
+				t.Errorf("Failed to remove %s, err: %s: ", testPth, err)
 			}
 		}()
+
+		require.Equal(t, nil, os.Setenv(fmt.Sprintf("TEST_PATH%d", i), testPth))
 	}
 
 	//
 	// BITRISE_SOURCE_DIR defined in Secret
 	inventoryStr := `
 envs:
-- BITRISE_SOURCE_DIR: "$HOME"
+- BITRISE_SOURCE_DIR: "$TEST_PATH0"
 `
 	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -55,7 +62,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$HOME" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH0" ]] ; then
               exit 1
             fi
 `
@@ -69,7 +76,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in Secret, and in App
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$HOME"
+- BITRISE_SOURCE_DIR: "$TEST_PATH0"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -80,7 +87,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$HOME/test1"
+  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
 
 workflows:
   test:
@@ -91,7 +98,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$HOME/test1" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH1" ]] ; then
               exit 1
             fi
 `
@@ -105,7 +112,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$HOME"
+- BITRISE_SOURCE_DIR: "$TEST_PATH0"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -116,12 +123,12 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$HOME/test1"
+  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
 
 workflows:
   test:
     envs:
-    - BITRISE_SOURCE_DIR: "$HOME/test2"
+    - BITRISE_SOURCE_DIR: "$TEST_PATH2"
     steps:
     - script:
         inputs:
@@ -129,7 +136,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$HOME/test2" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH2" ]] ; then
               exit 1
             fi
 `
@@ -143,7 +150,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in secret, App, Workflow and Step
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$HOME"
+- BITRISE_SOURCE_DIR: "$TEST_PATH0"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -154,26 +161,26 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$HOME/test1"
+  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
 
 workflows:
   test:
     envs:
-    - BITRISE_SOURCE_DIR: "$HOME/test2"
+    - BITRISE_SOURCE_DIR: "$TEST_PATH2"
     steps:
     - script:
         inputs:
         - content: |
             #!/bin/bash
             set -v
-            envman add --key BITRISE_SOURCE_DIR --value $HOME/test3
+            envman add --key BITRISE_SOURCE_DIR --value $TEST_PATH3
     - script:
         inputs:
         - content: |
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$HOME/test3" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH3" ]] ; then
               exit 1
             fi
 `
