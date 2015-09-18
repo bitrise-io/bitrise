@@ -12,12 +12,19 @@ RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
 ENV GOPATH /go
 ENV PATH /go/bin:$PATH
 
+# Install required (testing) tools
+#  Install dependencies
+RUN go get -u github.com/tools/godep
+#  Check for unhandled errors
+RUN go get -u github.com/kisielk/errcheck
+#  Go lint
+RUN go get -u github.com/golang/lint/golint
+
 RUN mkdir -p /go/src/github.com/bitrise-io/$PROJ_NAME
 COPY . /go/src/github.com/bitrise-io/$PROJ_NAME
 
 WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
 # godep
-RUN go get -u github.com/tools/godep
 RUN godep restore
 # install
 RUN go install

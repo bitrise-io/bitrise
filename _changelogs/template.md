@@ -9,7 +9,7 @@
 To install this version, run the following commands (in a bash shell):
 
 ```
-curl -L https://github.com/bitrise-io/bitrise/releases/download/{{version}}/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/{{version}}/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
 ```
 
 Then:
