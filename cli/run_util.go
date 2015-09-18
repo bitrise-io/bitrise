@@ -201,10 +201,6 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 		}
 
 		if key == bitrise.BitriseSourceDirEnvKey {
-			opts, err := env.GetOptions()
-			if err != nil {
-				return bitriseSourceDir, err
-			}
 			return value, nil
 		}
 	}
