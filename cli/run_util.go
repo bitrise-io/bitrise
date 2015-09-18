@@ -205,12 +205,7 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 			if err != nil {
 				return bitriseSourceDir, err
 			}
-
-			bitriseSourceDir = value
-			if opts.IsExpand != nil && *opts.IsExpand {
-				bitriseSourceDir = os.ExpandEnv(value)
-			}
-			return bitriseSourceDir, nil
+			return value, nil
 		}
 	}
 	return bitriseSourceDir, nil
