@@ -10,3 +10,20 @@
 * new command: `step-list` (lis of available steps in Step Lib) `bitrise step-list`
 * new command: `step-info` (infos about defined step) `bitrise step-info --id script --version 0.9.0`
 * revision of `normalize`, to generate a better list/shorter output list
+* __NEW__ : `$BITRISE_SOURCE_DIR` now updated per step, and can be changed by the steps. `$BITRISE_SOURCE_DIR` can be use for defining a new working directory. Example: if you want to create CI workflow for your Go project you have to switch your working directory to the proper one, located inside the `$GOPATH` (this is a Go requirement). You can find an example below. This feature is still a bit in "experimental" stage, and we might add new capabilities in the future. Right now, if you want to re-define the `$BITRISE_SOURCE_DIR` you have to set an **absolute** path, no expansion will be performed on the specified value! So, you should **NOT** store a reference like `$GOPATH/src/your/project/path` as it's value, but the actual, absolute path!
+
+
+## Changing `$BITRISE_SOURCE_DIR` for a Go project (example)
+
+* Git clone your go project repository, to proper Go path (`$GOPATH/src/your/project/path`), or move it if it's already cloned (ex: in a CI environment)
+* Define `$BITRISE_SOURCE_DIR` to this path
+with a `script` step (or any other way):
+```
+ - script:
+     inputs:
+     - content: |
+         #!/bin/bash
+         set -v
+         envman add --key BITRISE_SOURCE_DIR --value $GOPATH/src/your/project/path
+```
+* Now you can call go test, go install, ... in next steps! The new `$BITRISE_SOURCE_DIR` will be respected, and the next steps will run at the specified `$BITRISE_SOURCE_DIR` dir path.
