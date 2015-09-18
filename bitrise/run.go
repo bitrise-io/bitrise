@@ -127,18 +127,18 @@ func EnvmanInit() error {
 }
 
 // EnvmanInitAtPath ...
-func EnvmanInitAtPath(pth string) error {
+func EnvmanInitAtPath(envstorePth string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", pth, "init", "--clear"}
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "init", "--clear"}
 	return cmdex.RunCommand("envman", args...)
 }
 
 // EnvmanAdd ...
-func EnvmanAdd(pth, key, value string, expand bool) error {
+func EnvmanAdd(envstorePth, key, value string, expand bool) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", pth, "add", "--key", key, "--append"}
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--append"}
 	if !expand {
-		args = []string{"--loglevel", logLevel, "--path", pth, "add", "--key", key, "--no-expand", "--append"}
+		args = []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--no-expand", "--append"}
 	}
 
 	envman := exec.Command("envman", args...)
@@ -149,20 +149,20 @@ func EnvmanAdd(pth, key, value string, expand bool) error {
 }
 
 // EnvmanRun ...
-func EnvmanRun(pth, dir string, cmd []string, logLevel string) (int, error) {
+func EnvmanRun(envstorePth, workDirPth string, cmd []string, logLevel string) (int, error) {
 	if logLevel == "" {
 		logLevel = log.GetLevel().String()
 	}
-	args := []string{"--loglevel", logLevel, "--path", pth, "run"}
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmd...)
 
-	return cmdex.RunCommandInDirAndReturnExitCode(dir, "envman", args...)
+	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
 }
 
 // EnvmanEnvstoreTest ...
-func EnvmanEnvstoreTest(pth string) error {
+func EnvmanEnvstoreTest(envstorePth string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", pth, "print"}
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "print"}
 	cmd := exec.Command("envman", args...)
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
