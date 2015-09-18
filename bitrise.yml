@@ -31,12 +31,12 @@ trigger_map:
   workflow: ci
 
 workflows:
-
-  # Prepare and Setup
-  #
-  # Used fot bitrise-io.
-  # Git clone bitrise, install envman & stepman, bitrise setup.
   _prepare_and_setup:
+    description: |-
+      Prepare and Setup
+
+      Used fot bitrise-io.
+      Git clone bitrise, install envman & stepman, bitrise setup.
     steps:
     - git-clone:
         title: Git Clone bitrise
@@ -73,11 +73,12 @@ workflows:
             # Go lint
             go get -u github.com/golang/lint/golint
 
-  # Bitrise Test and Install
-  #
-  # Used fot testing and installing prepared bitrise.
-  # go test, errcheck, go lint, go install, run step-template.
   test_and_install_breaking_change:
+    description: |-
+      Bitrise Test and Install
+
+      Used fot testing and installing prepared bitrise.
+      go test, errcheck, go lint, go install, run step-template.
     steps:
     - script:
         title: GOPATH patch
@@ -139,11 +140,12 @@ workflows:
             cd ./_step_template
             bitrise run test
 
-  # Bitrise Test and Install
-  #
-  # Used fot testing and installing prepared bitrise.
-  # go test, errcheck, go lint, go install, run step-template.
   test_and_install:
+    description: |-
+      Bitrise Test and Install
+
+      Used fot testing and installing prepared bitrise.
+      go test, errcheck, go lint, go install, run step-template.
     steps:
     - script:
         title: GOPATH patch
@@ -219,20 +221,22 @@ workflows:
             cd ./_step_template
             bitrise run test
 
-  # Bitrise ci
-  #
-  # Used for bitrise continous integration.
-  # Prepare and Setup, Test and Install, notification.
   ci_breaking_change:
+    description: |-
+      Bitrise ci
+
+      Used for bitrise continous integration.
+      Prepare and Setup, Test and Install, notification.
     before_run:
     - _prepare_and_setup
     - test_and_install_breaking_change
 
-  # Bitrise ci
-  #
-  # Used for bitrise continous integration.
-  # Prepare and Setup, Test and Install, notification.
   ci:
+    description: |-
+      Bitrise ci
+
+      Used for bitrise continous integration.
+      Prepare and Setup, Test and Install, notification.
     before_run:
     - _prepare_and_setup
     - test_and_install
@@ -254,10 +258,11 @@ workflows:
 
             Build URL: ${BITRISE_BUILD_URL}
 
-  # Dependenci Update
-  #
-  # Used for updating bitrise dependencies with godep
   godeps-update:
+    description: |-
+      Dependenci Update
+
+      Used for updating bitrise dependencies with godep
     steps:
     - script:
         title: Dependency update
@@ -271,11 +276,12 @@ workflows:
             rm -rf ./Godeps
             godep save ./...
 
-  # Create Bitrise release
-  #
-  # Used for publishing new version of bitrise
-  # CI, deploy, changelog
   create-release:
+    description: |-
+      Create Bitrise release
+
+      Used for publishing new version of bitrise
+      CI, deploy, changelog
     before_run:
     - ci
     steps:
@@ -312,11 +318,12 @@ workflows:
             end
         - runner_bin: ruby
 
-  # Announce Bitrise release
-  #
-  # Used for notifying about new version of bitrise
-  # deploy, notifications
   announce-release:
+    description: |-
+      Announce Bitrise release
+
+      Used for notifying about new version of bitrise
+      deploy, notifications
     steps:
     - script:
         title: Creating deploy
@@ -353,15 +360,17 @@ workflows:
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ":rocket:"
 
-  # Noop
-  # empty workflow
   noop:
-    Title: Empty workflow, for quick testing.
+    title: Empty workflow, for quick testing
+    description: |-
+      Noop
+      empty workflow
 
-  # Fail test
-  # workflow will fail
   fail-test:
-    Title: Fails.
+    title: Fails
+    description: |-
+      Fail test
+      workflow will fail
     steps:
     - script:
         inputs:
