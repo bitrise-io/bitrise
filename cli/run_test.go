@@ -20,6 +20,7 @@ func TestBitriseSourceDir(t *testing.T) {
 		t.Fatal("Failed to get curr abs path: ", err)
 	}
 
+	testPths := []string{}
 	for i := 0; i < 4; i++ {
 		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
 		if err := os.RemoveAll(testPth); err != nil {
@@ -37,14 +38,14 @@ func TestBitriseSourceDir(t *testing.T) {
 			}
 		}()
 
-		require.Equal(t, nil, os.Setenv(fmt.Sprintf("TEST_PATH%d", i), testPth))
+		testPths = append(testPths, testPth)
 	}
 
 	//
 	// BITRISE_SOURCE_DIR defined in Secret
 	inventoryStr := `
 envs:
-- BITRISE_SOURCE_DIR: "$TEST_PATH0"
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
 	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -62,7 +63,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH0" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[0] + `" ]] ; then
               exit 1
             fi
 `
@@ -76,7 +77,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in Secret, and in App
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$TEST_PATH0"
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -87,7 +88,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
 
 workflows:
   test:
@@ -98,7 +99,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH1" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[1] + `" ]] ; then
               exit 1
             fi
 `
@@ -112,7 +113,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$TEST_PATH0"
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -123,12 +124,12 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
 
 workflows:
   test:
     envs:
-    - BITRISE_SOURCE_DIR: "$TEST_PATH2"
+    - BITRISE_SOURCE_DIR: "` + testPths[2] + `"
     steps:
     - script:
         inputs:
@@ -136,7 +137,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH2" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[2] + `" ]] ; then
               exit 1
             fi
 `
@@ -150,7 +151,7 @@ workflows:
 	// BITRISE_SOURCE_DIR defined in secret, App, Workflow and Step
 	inventoryStr = `
 envs:
-- BITRISE_SOURCE_DIR: "$TEST_PATH0"
+- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
 	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 	require.Equal(t, nil, err)
@@ -161,26 +162,26 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
   envs:
-  - BITRISE_SOURCE_DIR: "$TEST_PATH1"
+  - BITRISE_SOURCE_DIR: "` + testPths[1] + `"
 
 workflows:
   test:
     envs:
-    - BITRISE_SOURCE_DIR: "$TEST_PATH2"
+    - BITRISE_SOURCE_DIR: "` + testPths[2] + `"
     steps:
     - script:
         inputs:
         - content: |
             #!/bin/bash
             set -v
-            envman add --key BITRISE_SOURCE_DIR --value $TEST_PATH3
+            envman add --key BITRISE_SOURCE_DIR --value ` + testPths[3] + `
     - script:
         inputs:
         - content: |
             #!/bin/bash
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "$TEST_PATH3" ]] ; then
+            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[3] + `" ]] ; then
               exit 1
             fi
 `
