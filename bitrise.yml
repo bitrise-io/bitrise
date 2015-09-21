@@ -9,6 +9,7 @@ app:
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
+  - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
 trigger_map:
 - pattern: "*"
@@ -147,7 +148,7 @@ workflows:
         run_if: ".IsCI"
         inputs:
         - webhook_url: "$INTERNAL_DEV_SLACK_WEBHOOK_URL"
-        - channel: "$INTERNAL_DEV_SLACK_CHANNEL"
+        - channel: "$INTERNAL_DEV_LIFELINE_SLACK_CHANNEL"
         - from_username: "${BITRISE_BIN_NAME} - CI - OK"
         - from_username_on_error: "${BITRISE_BIN_NAME} - CI - ERROR"
         - message: |-
