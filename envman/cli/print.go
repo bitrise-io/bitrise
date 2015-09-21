@@ -23,10 +23,8 @@ func printJSONEnvs(envList models.EnvsJSONListModel) error {
 
 func printRawEnvs(envList models.EnvsJSONListModel) {
 	fmt.Println()
-	for _, envMap := range envList {
-		for key, value := range envMap {
-			fmt.Printf("%s: %s\n", key, value)
-		}
+	for key, value := range envList {
+		fmt.Printf("%s: %s\n", key, value)
 	}
 	fmt.Println()
 }
@@ -48,7 +46,7 @@ func convertToEnsJSONModel(envs []models.EnvironmentItemModel, expand bool) (mod
 			value = expandEnvsInString(value)
 		}
 
-		JSONModels = append(JSONModels, map[string]string{key: value})
+		JSONModels[key] = value
 
 		if err := os.Setenv(key, value); err != nil {
 			return models.EnvsJSONListModel{}, err

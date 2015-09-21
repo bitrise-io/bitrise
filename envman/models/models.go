@@ -20,4 +20,4 @@ type EnvsYMLModel struct {
 }
 
 // EnvsJSONListModel ...
-type EnvsJSONListModel []map[string]string
+type EnvsJSONListModel map[string]string
