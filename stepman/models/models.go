@@ -78,9 +78,11 @@ type StepCollectionModel struct {
 
 // EnvInfoModel ...
 type EnvInfoModel struct {
-	Env         string `json:"env,omitempty" yaml:"env,omitempty"`
-	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	Env          string   `json:"env,omitempty" yaml:"env,omitempty"`
+	Title        string   `json:"title,omitempty" yaml:"title,omitempty"`
+	Description  string   `json:"description,omitempty" yaml:"description,omitempty"`
+	ValueOptions []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
+	DefaultValue string   `json:"default_value,omitempty" yaml:"default_value,omitempty"`
 }
 
 // StepInfoModel ...
