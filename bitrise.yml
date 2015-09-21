@@ -7,6 +7,8 @@ app:
   - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
   - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
+  - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+  - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
 
 trigger_map:
 - pattern: "*"
@@ -23,19 +25,20 @@ workflows:
     steps:
     - git-clone:
         title: Git Clone bitrise
+        inputs:
+        - clone_into_dir: $BITRISE_PATH
+          opts:
+            is_expand: true
     - script:
-        title: Symlink bitrise
         run_if: ".IsCI"
+        title: cd to bitrise go path
         inputs:
         - content: |-
             #!/bin/bash
             set -e
             set -v
 
-            mkdir -p $BITRISE_IO_GO_PATH
-            ln -s $BITRISE_SOURCE_DIR $BITRISE_PATH
-          opts:
-            is_expand: true
+            envman add --key BITRISE_SOURCE_DIR --value $BITRISE_PATH
     - script:
         title: Install required testing tools
         run_if: ".IsCI"
@@ -81,11 +84,7 @@ workflows:
             set -e
             set -v
 
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
             errcheck -asserts=true -blank=true $(godep go list ./...)
-            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Lint
         inputs:
@@ -112,11 +111,7 @@ workflows:
             ./_bin/bin-for-ci setup --minimal
             rm _bin/bin-for-ci
 
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
             godep go install
-            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Test
         inputs:
