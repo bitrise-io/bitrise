@@ -97,7 +97,6 @@ var (
 			Action:  stepInfo,
 			Flags: []cli.Flag{
 				flCollection,
-				flID,
 				flVersion,
 				flFormat,
 				flShort,

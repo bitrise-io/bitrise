@@ -24,9 +24,11 @@ func stepInfo(c *cli.Context) {
 		collectionURI = bitriseConfig.DefaultStepLibSource
 	}
 
-	id := c.String(IDKey)
-	if id == "" {
-		log.Fatal("Missing step id")
+	id := ""
+	if len(c.Args()) < 1 {
+		log.Fatalln("No step specified!")
+	} else {
+		id = c.Args()[0]
 	}
 
 	format := c.String(OuputFormatKey)
