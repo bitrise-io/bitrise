@@ -264,7 +264,12 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd, "panic"); err != nil {
-		return exit, []envmanModels.EnvironmentItemModel{}, err
+		stepOutputs, err := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
+		if err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		return exit, stepOutputs, err
 	}
 
 	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
