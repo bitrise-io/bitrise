@@ -86,7 +86,7 @@ func StepmanPrintRawStepList(collection string) error {
 		collection = VerifiedStepLibURI
 	}
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection}
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
 		return fmt.Errorf("Failed to run stepman step-list, err: %s", err)
