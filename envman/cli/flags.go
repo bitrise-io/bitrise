@@ -52,6 +52,15 @@ const (
 	// VersionKey ...
 	VersionKey      = "version"
 	versionKeyShort = "v"
+
+	// ExpandKey ...
+	ExpandKey = "expand"
+	// FormatKey ...
+	FormatKey = "format"
+	// OutputFormatRaw ...
+	OutputFormatRaw = "raw"
+	// OutputFormatJSON ...
+	OutputFormatJSON = "json"
 )
 
 var (
@@ -103,6 +112,14 @@ var (
 	flClear = cli.BoolFlag{
 		Name:  ClearKey + ", " + clearKeyShort,
 		Usage: "If flag is set, 'envman init' removes envstore if exist.",
+	}
+	flFormat = cli.StringFlag{
+		Name:  FormatKey,
+		Usage: "Output format (options: raw, json).",
+	}
+	flExpand = cli.BoolFlag{
+		Name:  ExpandKey,
+		Usage: "If flag is set, expanded envs will use.",
 	}
 )
 

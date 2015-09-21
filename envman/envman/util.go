@@ -196,13 +196,8 @@ func InitAtPath(pth string) error {
 	return nil
 }
 
-// ReadEnvs ...
-func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
-	bytes, err := fileutil.ReadBytesFromFile(pth)
-	if err != nil {
-		return []models.EnvironmentItemModel{}, err
-	}
-
+// ParseEnvsYML ...
+func ParseEnvsYML(bytes []byte) ([]models.EnvironmentItemModel, error) {
 	var envsYML models.EnvsYMLModel
 	if err := yaml.Unmarshal(bytes, &envsYML); err != nil {
 		return []models.EnvironmentItemModel{}, err
@@ -213,6 +208,16 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 		}
 	}
 	return envsYML.Envs, nil
+}
+
+// ReadEnvs ...
+func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return []models.EnvironmentItemModel{}, err
+	}
+
+	return ParseEnvsYML(bytes)
 }
 
 // ReadEnvsOrCreateEmptyList ...
