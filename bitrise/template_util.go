@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/goinp/goinp"
 )
@@ -17,6 +18,26 @@ var (
 			return os.Getenv(key)
 		},
 		"enveq": func(key, expectedValue string) bool {
+			envList, err := EnvmanJSONPrint(InputEnvstorePath)
+			if err != nil {
+				log.Errorf("Faild to get env list, err: %s", err)
+			}
+			outputEnvList, err := EnvmanJSONPrint(OutputEnvstorePath)
+			if err != nil {
+				log.Errorf("Faild to get env list, err: %s", err)
+			}
+			for outputKey, outputValue := range outputEnvList {
+				envList[outputKey] = outputValue
+			}
+
+			if len(envList) > 0 {
+				for aKey, value := range envList {
+					if aKey == key {
+						return value == expectedValue
+					}
+				}
+			}
+
 			return (os.Getenv(key) == expectedValue)
 		},
 	}

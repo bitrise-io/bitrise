@@ -15,6 +15,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestStepOutputsInTemplate(t *testing.T) {
+	inventoryStr := `
+envs:
+- TEMPLATE_TEST0: "true"
+`
+	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+	require.Equal(t, nil, err)
+
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - TEMPLATE_TEST1: "true"
+
+workflows:
+  test:
+    envs:
+    - TEMPLATE_TEST2: "true"
+    steps:
+    - script:
+        title: "Envman add"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            envman add --key TEMPLATE_TEST3 --value "true"
+    - script:
+        title: "TEMPLATE_TEST0"
+        run_if: "{{enveq \"TEMPLATE_TEST0\" \"true\"}}"
+    - script:
+        title: "TEMPLATE_TEST1"
+        run_if: "{{enveq \"TEMPLATE_TEST1\" \"true\"}}"
+    - script:
+        title: "TEMPLATE_TEST2"
+        run_if: "{{enveq \"TEMPLATE_TEST2\" \"true\"}}"
+    - script:
+        title: "TEMPLATE_TEST3"
+        run_if: "{{enveq \"TEMPLATE_TEST3\" \"true\"}}"
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	require.Equal(t, nil, err)
+	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
 func TestFailedStepOutputs(t *testing.T) {
 	configStr := `
 format_version: 1.0.0
