@@ -7,17 +7,10 @@ app:
   - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
   - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
+  - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+  - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
 
 trigger_map:
-- pattern: ci/quick
-  is_pull_request_allowed: true
-  workflow: _test
-- pattern: ci/step-template
-  is_pull_request_allowed: true
-  workflow: ci_step_template
-- pattern: "breaking*"
-  is_pull_request_allowed: true
-  workflow: ci_breaking_change
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: ci
@@ -32,19 +25,20 @@ workflows:
     steps:
     - git-clone:
         title: Git Clone bitrise
+        inputs:
+        - clone_into_dir: $BITRISE_PATH
+          opts:
+            is_expand: true
     - script:
-        title: Symlink bitrise
         run_if: ".IsCI"
+        title: cd to bitrise go path
         inputs:
         - content: |-
             #!/bin/bash
             set -e
             set -v
 
-            mkdir -p $BITRISE_IO_GO_PATH
-            ln -s $BITRISE_SOURCE_DIR $BITRISE_PATH
-          opts:
-            is_expand: true
+            envman add --key BITRISE_SOURCE_DIR --value $BITRISE_PATH
     - script:
         title: Install required testing tools
         run_if: ".IsCI"
@@ -64,73 +58,6 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
-
-  test_and_install_breaking_change:
-    description: |-
-      Bitrise Test and Install
-
-      Used fot testing and installing prepared bitrise.
-      go test, errcheck, go lint, go install, run step-template.
-    steps:
-    - script:
-        title: GOPATH patch
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            envman add --key ORIG_GOPATH --value "$GOPATH"
-            envman add --key GOPATH --value "$(godep path):$GOPATH"
-    - script:
-        title: Err check
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
-            errcheck -asserts=true -blank=true $(godep go list ./...)
-            cd $BITRISE_SOURCE_DIR
-    - script:
-        title: Go Lint
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            golint_out="$(golint ./...)"
-            if [[ "${golint_out}" != "" ]] ; then
-              echo "=> Golint issues found:"
-              echo "${golint_out}"
-              exit 1
-            fi
-    - script:
-        title: Running go install
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go build -o _bin/bin-for-ci
-            ./_bin/bin-for-ci setup --minimal
-            rm _bin/bin-for-ci
-
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
-            godep go install
-            cd $BITRISE_SOURCE_DIR
-
-            godep go test ./...
-
-            cd ./_step_template
-            bitrise run test
 
   test_and_install:
     description: |-
@@ -157,11 +84,7 @@ workflows:
             set -e
             set -v
 
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
             errcheck -asserts=true -blank=true $(godep go list ./...)
-            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Lint
         inputs:
@@ -188,11 +111,7 @@ workflows:
             ./_bin/bin-for-ci setup --minimal
             rm _bin/bin-for-ci
 
-            if [[ "${CI}" != "0" ]] ; then
-              cd $BITRISE_PATH
-            fi
             godep go install
-            cd $BITRISE_SOURCE_DIR
     - script:
         title: Go Test
         inputs:
@@ -212,16 +131,6 @@ workflows:
 
             cd ./_step_template
             bitrise run test
-
-  ci_breaking_change:
-    description: |-
-      Bitrise ci
-
-      Used for bitrise continous integration.
-      Prepare and Setup, Test and Install, notification.
-    before_run:
-    - _prepare_and_setup
-    - test_and_install_breaking_change
 
   ci:
     description: |-
