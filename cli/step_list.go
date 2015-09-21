@@ -13,7 +13,16 @@ func stepList(c *cli.Context) {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		collectionURI = bitrise.VerifiedStepLibURI
+		bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
+		if err != nil {
+			log.Fatalf("No collection defined and faild to read bitrise cofing, err: %s", err)
+		}
+
+		if bitriseConfig.DefaultStepLibSource == "" {
+			log.Fatal("No collection defined and no default collection found in bitrise cofing")
+		}
+
+		collectionURI = bitriseConfig.DefaultStepLibSource
 	}
 
 	format := c.String(OuputFormatKey)
