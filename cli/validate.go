@@ -110,7 +110,7 @@ func validate(c *cli.Context) {
 			Error:   errMsg,
 		}
 	} else {
-		log.Warn("No config found for validation")
+		log.Debug("No config found for validation")
 	}
 
 	pth, err = GetInventoryFilePath(c)
