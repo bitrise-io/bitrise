@@ -19,7 +19,7 @@ func printRawEnvInfo(env models.EnvInfoModel) {
 		fmt.Printf("- %s\n", colorstring.Green(env.Env))
 	}
 	if len(env.ValueOptions) > 0 {
-		fmt.Printf("  %s:\n", colorstring.Green("value options:"))
+		fmt.Printf("  %s:\n", colorstring.Green("value options"))
 		for _, option := range env.ValueOptions {
 			fmt.Printf("  - %s\n", option)
 		}
