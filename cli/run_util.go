@@ -466,7 +466,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					continue
 				}
 				// May StepLib should be updated
-				log.Info("Step info not found in StepLib (%s) -- Updating ...")
+				log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
 				if err := bitrise.StepmanUpdate(stepIDData.SteplibSource); err != nil {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
 					continue
