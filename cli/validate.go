@@ -90,7 +90,11 @@ func validate(c *cli.Context) {
 
 	validation := ValidationModel{}
 
-	if c.String(ConfigBase64Key) != "" || c.String(ConfigKey) != "" || c.String(PathKey) != "" {
+	pth, err := GetBitriseConfigFilePath(c)
+	if err != nil && err.Error() != "No workflow yml found" {
+		log.Fatalf("Faild to get config path, err: %s", err)
+	}
+	if pth != "" || (pth == "" && c.String(ConfigBase64Key) != "") {
 		// Config validation
 		isValid := true
 		errMsg := ""
@@ -105,9 +109,15 @@ func validate(c *cli.Context) {
 			IsValid: isValid,
 			Error:   errMsg,
 		}
+	} else {
+		log.Warn("No config found for validation")
 	}
 
-	if c.String(InventoryBase64Key) != "" || c.String(InventoryKey) != "" {
+	pth, err = GetInventoryFilePath(c)
+	if err != nil {
+		log.Fatalf("Faild to get secrets path, err: %s", err)
+	}
+	if pth != "" || c.String(InventoryBase64Key) != "" {
 		// Inventory validation
 		isValid := true
 		errMsg := ""
@@ -122,6 +132,10 @@ func validate(c *cli.Context) {
 			IsValid: isValid,
 			Error:   errMsg,
 		}
+	}
+
+	if validation.Config == nil && validation.Secrets == nil {
+		log.Fatal("No config or secrets found for validation")
 	}
 
 	switch format {
