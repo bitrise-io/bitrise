@@ -12,6 +12,24 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func printRawEnvInfo(env models.EnvInfoModel) {
+	if env.DefaultValue != "" {
+		fmt.Printf("- %s: %s\n", colorstring.Green(env.Env), env.DefaultValue)
+	} else {
+		fmt.Printf("- %s\n", colorstring.Green(env.Env))
+	}
+	if len(env.ValueOptions) > 0 {
+		fmt.Printf("  %s:\n", colorstring.Green("value options:"))
+		for _, option := range env.ValueOptions {
+			fmt.Printf("  - %s\n", option)
+		}
+	}
+	if env.Description != "" {
+		fmt.Printf("  %s:\n", colorstring.Green("description"))
+		fmt.Printf("  %s\n", env.Description)
+	}
+}
+
 func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 	fmt.Println(colorstring.Bluef("Step info in StepLib (%s):", stepInfo.StepLib))
 
@@ -27,22 +45,14 @@ func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 		if len(stepInfo.Inputs) > 0 {
 			fmt.Printf("%s:\n", colorstring.Blue("inputs"))
 			for _, input := range stepInfo.Inputs {
-				fmt.Printf("- %s\n", colorstring.Green(input.Env))
-				if input.Description != "" {
-					fmt.Printf("  %s:\n", colorstring.Green("description"))
-					fmt.Printf("  %s\n", input.Description)
-				}
+				printRawEnvInfo(input)
 			}
 		}
 
 		if len(stepInfo.Outputs) > 0 {
 			fmt.Printf("%s:\n", colorstring.Blue("outputs"))
-			for _, input := range stepInfo.Outputs {
-				fmt.Printf("- %s\n", colorstring.Green(input.Env))
-				if input.Description != "" {
-					fmt.Printf("  %s:\n", colorstring.Green("description"))
-					fmt.Printf("  %s\n", input.Description)
-				}
+			for _, output := range stepInfo.Outputs {
+				printRawEnvInfo(output)
 			}
 		}
 	}
@@ -64,7 +74,7 @@ func printJSONStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]models.EnvInfoModel, error) {
 	envInfos := []models.EnvInfoModel{}
 	for _, env := range envs {
-		key, _, err := env.GetKeyValuePair()
+		key, value, err := env.GetKeyValuePair()
 		if err != nil {
 			return []models.EnvInfoModel{}, err
 		}
@@ -75,8 +85,10 @@ func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]models.EnvInfoMode
 		}
 
 		envInfo := models.EnvInfoModel{
-			Env:         key,
-			Description: *options.Description,
+			Env:          key,
+			Description:  *options.Description,
+			ValueOptions: options.ValueOptions,
+			DefaultValue: value,
 		}
 		envInfos = append(envInfos, envInfo)
 	}
@@ -99,8 +111,10 @@ func stepInfo(c *cli.Context) {
 	}
 
 	format := c.String(FormatKey)
-	if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("[STEPMAN] - Invalid format: %s", format)
+	if format == "" {
+		format = OutputFormatRaw
+	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
+		log.Fatalf("Invalid format: %s", format)
 	}
 
 	version := c.String(VersionKey)

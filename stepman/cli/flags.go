@@ -140,7 +140,6 @@ var (
 	flFormat = cli.StringFlag{
 		Name:  FormatKey + ", " + formatKeyShort,
 		Usage: "Output format (options: raw, json).",
-		Value: "raw",
 	}
 	flShort = cli.BoolFlag{
 		Name:  ShortKey,
