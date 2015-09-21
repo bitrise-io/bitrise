@@ -15,6 +15,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestFailedStepOutputs(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        is_skippable: true
+        title: "Envman add"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            envman add --key FAILED_OUTPUT_TEST --value "failed step output"
+            exit 1
+    - script:
+        title: "Test failed output"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "FAILED_OUTPUT_TEST: $FAILED_OUTPUT_TEST"
+            if [[ "$FAILED_OUTPUT_TEST" != "failed step output" ]] ; then
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
 func TestBitriseSourceDir(t *testing.T) {
 	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
 	if err != nil {
@@ -1420,8 +1459,7 @@ workflows:
 	}
 }
 
-// Outputs exported with `envman add` should be accessible for subsequent Steps,
-//  except if the step failed.
+// Outputs exported with `envman add` should be accessible for subsequent Steps.
 func TestStepOutputEnvironment(t *testing.T) {
 	configStr := `
 format_version: 1.0.0
@@ -1451,56 +1489,32 @@ workflows:
         is_always_run: true
         inputs:
         - content: |-
-            if [[ "${MY_TEST_2}" != "" ]] ; then
-              echo " [!] MY_TEST_2 invalid - expected empty, got: ${MY_TEST_2}"
+            if [[ "${MY_TEST_2}" != "Test value 2" ]] ; then
               exit 1
             fi
 `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 	_, found := config.Workflows["out-test"]
-	if !found {
-		t.Fatal("No workflow found with ID (out-test)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
+
+	err = config.Validate()
+	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 3 {
-		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 1 {
-		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.Equal(t, "[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch", err.Error())
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 
 	// the exported output envs should NOT be exposed here, should NOT be available!
-	if envVal := os.Getenv("MY_TEST_1"); envVal != "" {
-		t.Fatal("MY_TEST_1 env is exposed, should NOT be! Value: ", envVal)
-	}
-	if envVal := os.Getenv("MY_TEST_2"); envVal != "" {
-		t.Fatal("MY_TEST_2 env is exposed, should NOT be! Value: ", envVal)
-	}
+	require.Equal(t, "", os.Getenv("MY_TEST_1"))
+	require.Equal(t, "", os.Getenv("MY_TEST_2"))
 
 	// standard, Build Status ENV test
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 func TestLastWorkflowIDInConfig(t *testing.T) {

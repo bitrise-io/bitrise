@@ -264,7 +264,12 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd, "panic"); err != nil {
-		return exit, []envmanModels.EnvironmentItemModel{}, err
+		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
+		if envErr != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, envErr
+		}
+
+		return exit, stepOutputs, err
 	}
 
 	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
@@ -518,7 +523,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 		}
-		outEnvironments := []envmanModels.EnvironmentItemModel{}
 
 		isAlwaysRun := stepmanModels.DefaultIsAlwaysRun
 		if mergedStep.IsAlwaysRun != nil {
@@ -530,8 +534,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
 			registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep)
 		} else {
-			exit, out, err := runStep(mergedStep, stepIDData, stepDir, *environments)
-			outEnvironments = out
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, *environments)
+			*environments = append(*environments, outEnvironments...)
 			if err != nil {
 				if *mergedStep.IsSkippable {
 					registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, exit, err, isLastStep)
@@ -540,7 +544,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				}
 			} else {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeSuccess, 0, nil, isLastStep)
-				*environments = append(*environments, outEnvironments...)
 			}
 		}
 	}
