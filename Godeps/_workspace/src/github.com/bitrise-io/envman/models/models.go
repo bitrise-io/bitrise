@@ -18,3 +18,6 @@ type EnvironmentItemModel map[string]interface{}
 type EnvsYMLModel struct {
 	Envs []EnvironmentItemModel `yaml:"envs"`
 }
+
+// EnvsJSONListModel ...
+type EnvsJSONListModel map[string]string
