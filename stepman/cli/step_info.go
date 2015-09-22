@@ -34,7 +34,7 @@ func printRawEnvInfo(env models.EnvInfoModel) {
 	}
 }
 
-func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
+func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) {
 	fmt.Println(colorstring.Bluef("Step info in StepLib (%s):", stepInfo.StepLib))
 
 	fmt.Printf("%s: %s\n", colorstring.Blue("ID"), stepInfo.ID)
@@ -62,7 +62,6 @@ func printRawStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
 	}
 	fmt.Println()
 	fmt.Println()
-	return nil
 }
 
 func printJSONStepInfo(stepInfo models.StepInfoModel, isShort bool) error {
@@ -176,7 +175,9 @@ func stepInfo(c *cli.Context) {
 			printRawStepInfo(stepInfo, isShort)
 			break
 		case OutputFormatJSON:
-			printJSONStepInfo(stepInfo, isShort)
+			if err := printJSONStepInfo(stepInfo, isShort); err != nil {
+				log.Fatalf("Failed to print step info, err: %s", err)
+			}
 			break
 		default:
 			log.Fatalf("[STEPMAN] - Invalid format: %s", format)
