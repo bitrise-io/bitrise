@@ -12,6 +12,15 @@ app:
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
 trigger_map:
+- pattern: "/release"
+  is_pull_request_allowed: false
+  workflow: create-release
+- pattern: "/release/docker-compose"
+  is_pull_request_allowed: false
+  workflow: create-release-with-docker-compose
+- pattern: "/release/announce"
+  is_pull_request_allowed: false
+  workflow: announce-release
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: ci
@@ -188,6 +197,19 @@ workflows:
             go get -u ./...
             rm -rf ./Godeps
             godep save ./...
+
+  create-release-with-docker-compose:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            docker-compose build --no-cache app
+
+            docker-compose run --rm app bitrise run create-release
 
   create-release:
     description: |-
