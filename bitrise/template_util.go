@@ -12,26 +12,28 @@ import (
 	"github.com/bitrise-io/goinp/goinp"
 )
 
+func getEnv(key string) string {
+	envList, err := EnvmanJSONPrint(InputEnvstorePath)
+	if err != nil {
+		log.Errorf("Faild to get env list, err: %s", err)
+	}
+	if len(envList) > 0 {
+		for aKey, value := range envList {
+			if aKey == key {
+				return value
+			}
+		}
+	}
+	return os.Getenv(key)
+}
+
 var (
 	templateFuncMap = template.FuncMap{
 		"getenv": func(key string) string {
-			return os.Getenv(key)
+			return getEnv(key)
 		},
 		"enveq": func(key, expectedValue string) bool {
-			envList, err := EnvmanJSONPrint(InputEnvstorePath)
-			if err != nil {
-				log.Errorf("Faild to get env list, err: %s", err)
-			}
-
-			if len(envList) > 0 {
-				for aKey, value := range envList {
-					if aKey == key {
-						return value == expectedValue
-					}
-				}
-			}
-
-			return (os.Getenv(key) == expectedValue)
+			return (getEnv(key) == expectedValue)
 		},
 	}
 )
