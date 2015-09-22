@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/bitrise-io/stepman",
 	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -9,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.8-15-g1242452",
-			"Rev": "12424526ce2392fdb32389ade9e421ff4b1d25e8"
+			"Comment": "0.9.9",
+			"Rev": "dd37e94ca1cef383e7172827587fdefe58a98eef"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -48,6 +51,16 @@
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-143-ga65b733",
 			"Rev": "a65b733b303f0055f8d324d805f393cd3e7a7904"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.0-40-g7c2b1e5",
+			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/require",
+			"Comment": "v1.0-40-g7c2b1e5",
+			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
