@@ -14,16 +14,20 @@ import (
 
 func printRawEnvInfo(env models.EnvInfoModel) {
 	if env.DefaultValue != "" {
-		fmt.Printf("- %s: %s\n", colorstring.Green(env.Env), env.DefaultValue)
+		fmt.Printf("- %s: %s\n", colorstring.Green(env.Key), env.DefaultValue)
 	} else {
-		fmt.Printf("- %s\n", colorstring.Green(env.Env))
+		fmt.Printf("- %s\n", colorstring.Green(env.Key))
 	}
+
+	fmt.Printf("  %s: %v\n", colorstring.Green("is expand"), env.IsExpand)
+
 	if len(env.ValueOptions) > 0 {
 		fmt.Printf("  %s:\n", colorstring.Green("value options"))
 		for _, option := range env.ValueOptions {
 			fmt.Printf("  - %s\n", option)
 		}
 	}
+
 	if env.Description != "" {
 		fmt.Printf("  %s:\n", colorstring.Green("description"))
 		fmt.Printf("  %s\n", env.Description)
@@ -85,10 +89,11 @@ func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]models.EnvInfoMode
 		}
 
 		envInfo := models.EnvInfoModel{
-			Env:          key,
+			Key:          key,
 			Description:  *options.Description,
 			ValueOptions: options.ValueOptions,
 			DefaultValue: value,
+			IsExpand:     *options.IsExpand,
 		}
 		envInfos = append(envInfos, envInfo)
 	}
