@@ -46,6 +46,17 @@ var (
 			},
 		},
 		{
+			Name:   "trigger-check",
+			Usage:  "Prints out which workflow will triggered by specified pattern.",
+			Action: triggerCheck,
+			Flags: []cli.Flag{
+				flPath,
+				flConfig,
+				flConfigBase64,
+				flFormat,
+			},
+		},
+		{
 			Name:    "trigger",
 			Aliases: []string{"t"},
 			Usage:   "Triggers a specified Workflow.",
