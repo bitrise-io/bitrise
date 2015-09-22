@@ -22,13 +22,13 @@ var (
 			if err != nil {
 				log.Errorf("Faild to get env list, err: %s", err)
 			}
-			outputEnvList, err := EnvmanJSONPrint(OutputEnvstorePath)
-			if err != nil {
-				log.Errorf("Faild to get env list, err: %s", err)
-			}
-			for outputKey, outputValue := range outputEnvList {
-				envList[outputKey] = outputValue
-			}
+			// outputEnvList, err := EnvmanJSONPrint(OutputEnvstorePath)
+			// if err != nil {
+			// 	log.Errorf("Faild to get env list, err: %s", err)
+			// }
+			// for outputKey, outputValue := range outputEnvList {
+			// 	envList[outputKey] = outputValue
+			// }
 
 			if len(envList) > 0 {
 				for aKey, value := range envList {
@@ -47,6 +47,7 @@ var (
 type TemplateDataModel struct {
 	BuildResults  models.BuildRunResultsModel
 	IsBuildFailed bool
+	IsBuildOK     bool
 	IsCI          bool
 	IsPR          bool
 	PullRequestID string
@@ -55,9 +56,11 @@ type TemplateDataModel struct {
 func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateDataModel {
 	pullReqID := os.Getenv(PullRequestIDEnvKey)
 	isCI := (os.Getenv(CIModeEnvKey) == "true")
+	isBuildOK := !buildResults.IsBuildFailed()
 	return TemplateDataModel{
 		BuildResults:  buildResults,
-		IsBuildFailed: buildResults.IsBuildFailed(),
+		IsBuildFailed: !isBuildOK,
+		IsBuildOK:     isBuildOK,
 		IsCI:          isCI,
 		PullRequestID: pullReqID,
 		IsPR:          (pullReqID != ""),

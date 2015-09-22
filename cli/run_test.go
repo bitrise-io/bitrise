@@ -45,16 +45,25 @@ workflows:
             envman add --key TEMPLATE_TEST3 --value "true"
     - script:
         title: "TEMPLATE_TEST0"
-        run_if: "{{enveq \"TEMPLATE_TEST0\" \"true\"}}"
+        run_if: |-
+          {{enveq "TEMPLATE_TEST0" "true"}}
     - script:
         title: "TEMPLATE_TEST1"
-        run_if: "{{enveq \"TEMPLATE_TEST1\" \"true\"}}"
+        run_if: |-
+          {{enveq "TEMPLATE_TEST1" "true"}}
     - script:
         title: "TEMPLATE_TEST2"
-        run_if: "{{enveq \"TEMPLATE_TEST2\" \"true\"}}"
+        run_if: |-
+          {{enveq "TEMPLATE_TEST2" "true"}}
     - script:
         title: "TEMPLATE_TEST3"
-        run_if: "{{enveq \"TEMPLATE_TEST3\" \"true\"}}"
+        run_if: |-
+          {{enveq "TEMPLATE_TEST3" "true"}}
+    - script:
+        title: "TEMPLATE_TEST_NO_VALUE"
+        run_if: |-
+          {{enveq "TEMPLATE_TEST_NO_VALUE" "true"}}
+
 `
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
@@ -64,7 +73,7 @@ workflows:
 	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
 }
 
 func TestFailedStepOutputs(t *testing.T) {
