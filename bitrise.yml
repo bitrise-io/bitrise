@@ -22,7 +22,7 @@ workflows:
       Prepare and Setup
 
       Used fot bitrise-io.
-      Git clone bitrise, install envman & stepman, bitrise setup.
+      Git clone bitrise, cd to bitrise GOPATH, install testing tools, install envman.
     steps:
     - git-clone:
         title: Git Clone bitrise
@@ -59,13 +59,24 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
+    - script:
+        title: Install envman
+        run_if: ".IsCI"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            curl -fL https://github.com/bitrise-io/envman/releases/download/0.9.9/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+            chmod +x /usr/local/bin/envman
 
   test_and_install:
     description: |-
       Bitrise Test and Install
 
       Used fot testing and installing prepared bitrise.
-      go test, errcheck, go lint, go install, run step-template.
+      Errcheck, go lint, bitrise setup, go test, run step-template.
     steps:
     - script:
         title: GOPATH patch
