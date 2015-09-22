@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -169,11 +170,20 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string, logLevel string) (i
 	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
 }
 
-// EnvmanEnvstoreTest ...
-func EnvmanEnvstoreTest(envstorePth string) error {
+// EnvmanJSONPrint ...
+func EnvmanJSONPrint(envstorePth string) (envmanModels.EnvsJSONListModel, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "print"}
-	cmd := exec.Command("envman", args...)
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "print", "--format", "json", "--expand"}
+
+	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
+	if err != nil {
+		return envmanModels.EnvsJSONListModel{}, fmt.Errorf("Failed to run envman print, err: %s", err)
+	}
+
+	envList := envmanModels.EnvsJSONListModel{}
+	if err := json.Unmarshal([]byte(out), &envList); err != nil {
+		return envmanModels.EnvsJSONListModel{}, err
+	}
+
+	return envList, nil
 }
