@@ -100,6 +100,7 @@ var (
 				flVersion,
 				flFormat,
 				flShort,
+				flStepYML,
 			},
 		},
 	}

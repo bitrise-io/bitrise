@@ -7,17 +7,33 @@ import (
 	"strings"
 	"text/template"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/goinp/goinp"
 )
 
+func getEnv(key string) string {
+	envList, err := EnvmanJSONPrint(InputEnvstorePath)
+	if err != nil {
+		log.Errorf("Faild to get env list, err: %s", err)
+	}
+	if len(envList) > 0 {
+		for aKey, value := range envList {
+			if aKey == key {
+				return value
+			}
+		}
+	}
+	return os.Getenv(key)
+}
+
 var (
 	templateFuncMap = template.FuncMap{
 		"getenv": func(key string) string {
-			return os.Getenv(key)
+			return getEnv(key)
 		},
 		"enveq": func(key, expectedValue string) bool {
-			return (os.Getenv(key) == expectedValue)
+			return (getEnv(key) == expectedValue)
 		},
 	}
 )
@@ -26,20 +42,25 @@ var (
 type TemplateDataModel struct {
 	BuildResults  models.BuildRunResultsModel
 	IsBuildFailed bool
+	IsBuildOK     bool
 	IsCI          bool
 	IsPR          bool
 	PullRequestID string
 }
 
 func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateDataModel {
-	pullReqID := os.Getenv(PullRequestIDEnvKey)
+	isBuildOK := !buildResults.IsBuildFailed()
 	isCI := (os.Getenv(CIModeEnvKey) == "true")
+	pullReqID := os.Getenv(PullRequestIDEnvKey)
+	IsPullRequestMode := (pullReqID != "")
+
 	return TemplateDataModel{
 		BuildResults:  buildResults,
-		IsBuildFailed: buildResults.IsBuildFailed(),
+		IsBuildFailed: !isBuildOK,
+		IsBuildOK:     isBuildOK,
 		IsCI:          isCI,
 		PullRequestID: pullReqID,
-		IsPR:          (pullReqID != ""),
+		IsPR:          IsPullRequestMode,
 	}
 }
 

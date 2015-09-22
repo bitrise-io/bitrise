@@ -459,7 +459,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			stepInfo, err := bitrise.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+			stepInfo, err := bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err != nil {
 				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -472,7 +472,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					continue
 				}
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
-				stepInfo, err = bitrise.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+				stepInfo, err = bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 				if err != nil {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
 					continue
