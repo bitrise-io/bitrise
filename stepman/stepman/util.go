@@ -24,7 +24,8 @@ import (
 // DebugMode ...
 var DebugMode bool
 
-func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, error) {
+// ParseStepYml ...
+func ParseStepYml(pth string, validate bool) (models.StepModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.StepModel{}, err
@@ -39,8 +40,10 @@ func parseStepYml(collectionURI, pth, id, version string) (models.StepModel, err
 		return models.StepModel{}, err
 	}
 
-	if err := stepModel.Validate(true); err != nil {
-		return models.StepModel{}, err
+	if validate {
+		if err := stepModel.Validate(true); err != nil {
+			return models.StepModel{}, err
+		}
 	}
 
 	if err := stepModel.FillMissingDefaults(); err != nil {
@@ -159,7 +162,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 				version := components[2]
 
 				log.Debugf("Start parsing (StepId:%s) (Version:%s)", id, version)
-				step, parseErr := parseStepYml(route.SteplibURI, pth, id, version)
+				step, parseErr := ParseStepYml(pth, true)
 				if parseErr != nil {
 					log.Debugf("  Failed to parse StepId: %v Version: %v", id, version)
 					return parseErr

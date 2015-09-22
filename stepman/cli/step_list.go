@@ -76,8 +76,10 @@ func list(c *cli.Context) {
 	}
 
 	format := c.String(FormatKey)
-	if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("[STEPMAN] - Invalid format: %s", format)
+	if format == "" {
+		format = OutputFormatRaw
+	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
+		log.Fatalf("Invalid format: %s", format)
 	}
 
 	for _, URI := range stepLibURIs {
