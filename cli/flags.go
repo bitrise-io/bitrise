@@ -66,6 +66,9 @@ const (
 	idKeyShort = "i"
 	// ShortKey ...
 	ShortKey = "short"
+
+	// StepYMLKey ...
+	StepYMLKey = "step-yml"
 )
 
 var (
@@ -145,6 +148,10 @@ var (
 	flShort = cli.BoolFlag{
 		Name:  ShortKey,
 		Usage: "Show short version of infos.",
+	}
+	flStepYML = cli.StringFlag{
+		Name:  StepYMLKey,
+		Usage: "Path of step.yml",
 	}
 )
 
