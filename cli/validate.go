@@ -85,14 +85,14 @@ func validate(c *cli.Context) {
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("Invalid format: %s", format)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
 	}
 
 	validation := ValidationModel{}
 
 	pth, err := GetBitriseConfigFilePath(c)
 	if err != nil && err.Error() != "No workflow yml found" {
-		log.Fatalf("Faild to get config path, err: %s", err)
+		registerFatal(fmt.Sprintf("Faild to get config path, err: %s", err), format)
 	}
 	if pth != "" || (pth == "" && c.String(ConfigBase64Key) != "") {
 		// Config validation
@@ -115,7 +115,7 @@ func validate(c *cli.Context) {
 
 	pth, err = GetInventoryFilePath(c)
 	if err != nil {
-		log.Fatalf("Faild to get secrets path, err: %s", err)
+		registerFatal(fmt.Sprintf("Faild to get secrets path, err: %s", err), format)
 	}
 	if pth != "" || c.String(InventoryBase64Key) != "" {
 		// Inventory validation
@@ -135,21 +135,21 @@ func validate(c *cli.Context) {
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
-		log.Fatal("No config or secrets found for validation")
+		registerFatal("No config or secrets found for validation", format)
 	}
 
 	switch format {
 	case OutputFormatRaw:
 		if err := printRawValidation(validation); err != nil {
-			log.Fatalf("Validation failed, err: %s", err)
+			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), format)
 		}
 		break
 	case OutputFormatJSON:
 		if err := printJSONValidation(validation); err != nil {
-			log.Fatalf("Validation failed, err: %s", err)
+			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), format)
 		}
 		break
 	default:
-		log.Fatalf("Invalid format: %s", format)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
 	}
 }
