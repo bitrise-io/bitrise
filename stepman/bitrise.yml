@@ -5,7 +5,7 @@ app:
   envs:
   - BITRISE_BIN_NAME: stepman
   - BITRISE_IO_GO_PATH: $GOPATH/src/github.com/bitrise-io
-  - STEPMAN_PATH: $BITRISE_IO_GO_PATH/bitrise
+  - STEPMAN_PATH: $BITRISE_IO_GO_PATH/$BITRISE_BIN_NAME
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
