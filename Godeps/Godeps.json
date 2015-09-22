@@ -12,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.8-15-g1242452",
-			"Rev": "12424526ce2392fdb32389ade9e421ff4b1d25e8"
+			"Comment": "0.9.8-32-gda75b63",
+			"Rev": "da75b63ccc922ed2e68e8c0e25d5cf20b481bcd1"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -49,8 +49,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.16",
-			"Rev": "2515a682909c5a0fa23e433f38c224a8204cfc2c"
+			"Comment": "0.9.16-4-gfe2e5aa",
+			"Rev": "fe2e5aa3626f8e7cfb12d3cf852e1dad51fcbb6b"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
@@ -63,13 +63,13 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-40-g7c2b1e5",
-			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
+			"Comment": "v1.0-42-gb8dc1ce",
+			"Rev": "b8dc1cecf15bdaf1988d9e87aa7cd98d899a06d6"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.0-40-g7c2b1e5",
-			"Rev": "7c2b1e5640dcf2631213ca962d892bffa1e08860"
+			"Comment": "v1.0-42-gb8dc1ce",
+			"Rev": "b8dc1cecf15bdaf1988d9e87aa7cd98d899a06d6"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
