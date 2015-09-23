@@ -18,7 +18,30 @@ type DependencyModel struct {
 	Name    string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
-// StepModel ...0
+// BrewDepModel ...
+type BrewDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Tap  string `json:"tap,omitempty" yaml:"tap,omitempty"`
+}
+
+// BrewCaskDepModel ...
+type BrewCaskDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// AptGetDepModel ...
+type AptGetDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// DepsModel ...
+type DepsModel struct {
+	Brew     []BrewDepModel     `json:"brew,omitempty" yaml:"brew,omitempty"`
+	BrewCask []BrewCaskDepModel `json:"brew_cask,omitempty" yaml:"brew_cask,omitempty"`
+	AptGet   []AptGetDepModel   `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
+}
+
+// StepModel ...
 type StepModel struct {
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     *string `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -36,6 +59,7 @@ type StepModel struct {
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string          `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
 	Dependencies        []DependencyModel `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Deps                DepsModel         `json:"deps,omitempty" yaml:"deps,omitempty"`
 	IsRequiresAdminUser *bool             `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
 	// IsAlwaysRun : if true then this step will always run,
 	//  even if a previous step fails.
