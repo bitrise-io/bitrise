@@ -21,12 +21,6 @@ type DependencyModel struct {
 // BrewDepModel ...
 type BrewDepModel struct {
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-	Tap  string `json:"tap,omitempty" yaml:"tap,omitempty"`
-}
-
-// BrewCaskDepModel ...
-type BrewCaskDepModel struct {
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 // AptGetDepModel ...
@@ -36,9 +30,8 @@ type AptGetDepModel struct {
 
 // DepsModel ...
 type DepsModel struct {
-	Brew     []BrewDepModel     `json:"brew,omitempty" yaml:"brew,omitempty"`
-	BrewCask []BrewCaskDepModel `json:"brew_cask,omitempty" yaml:"brew_cask,omitempty"`
-	AptGet   []AptGetDepModel   `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
+	Brew   []BrewDepModel   `json:"brew,omitempty" yaml:"brew,omitempty"`
+	AptGet []AptGetDepModel `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
 }
 
 // StepModel ...
