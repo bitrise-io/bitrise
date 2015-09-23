@@ -186,7 +186,10 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
-	// Check dependencies
+	// Check dependencies -- deprecated
+	if len(step.Dependencies) > 0 {
+		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
+	}
 	for _, dep := range step.Dependencies {
 		isSkippedBecauseOfPlatform := false
 		switch dep.Manager {
@@ -214,6 +217,25 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			log.Debugf(" * Dependency (%s) skipped, manager (%s) not supported on this platform (%s)", dep.Name, dep.Manager, runtime.GOOS)
 		} else {
 			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
+		}
+	}
+
+	// Check dependencies -- deprecated
+	if len(step.Deps.Brew) > 0 {
+		if err := bitrise.InstallBrewDependencies(step.Deps.Brew, IsCIMode); err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
+	}
+
+	if len(step.Deps.BrewCask) > 0 {
+		if err := bitrise.InstallBrewCaskDependencies(step.Deps.BrewCask, IsCIMode); err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
+	}
+
+	if len(step.Deps.AptGet) > 0 {
+		if err := bitrise.InstallAptGetDependencies(step.Deps.AptGet); err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
 		}
 	}
 

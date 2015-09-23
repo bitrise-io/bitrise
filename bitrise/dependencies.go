@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 // CheckProgramInstalledPath ...
@@ -324,5 +325,72 @@ func DependencyTryCheckTool(tool string) error {
 		return fmt.Errorf("Dependency check failed for: %s", tool)
 	}
 
+	return nil
+}
+
+// InstallBrewDependencies ...
+func InstallBrewDependencies(deps []stepmanModels.BrewDepModel, isCIMode bool) error {
+	for _, dep := range deps {
+		if dep.Tap == "" {
+			if err := InstallWithBrewIfNeeded(dep.Name, isCIMode); err != nil {
+				return err
+			}
+		} else {
+			// Install with brew tap -- comin soon
+		}
+	}
+	return nil
+}
+
+func checkWithBrewVaskProgramInstalled(tool string) error {
+	cmd := exec.Command("brew", "cask", "list", tool)
+
+	if outBytes, err := cmd.CombinedOutput(); err != nil {
+		log.Debugf("%s", outBytes)
+		return err
+	}
+
+	return nil
+}
+
+// InstallWithBrewCaskIfNeeded ...
+func InstallWithBrewCaskIfNeeded(tool string, isCIMode bool) error {
+	if err := checkWithBrewVaskProgramInstalled(tool); err != nil {
+		if !isCIMode {
+			log.Infof("This step requires %s, which is not installed", tool)
+			allow, err := goinp.AskForBool("Would you like to install (" + tool + ") with brew cask ? [yes/no]")
+			if err != nil {
+				return err
+			}
+			if !allow {
+				return errors.New("(" + tool + ") is required for step")
+			}
+		}
+
+		log.Infof("Installing required dependency (%s) with brew ...", tool)
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "cask", "install", tool); err != nil {
+			log.Errorf("Failed to install tool (%s)", tool)
+			log.Errorf("Output was: %s", out)
+			return err
+		}
+		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", tool)
+		return nil
+	}
+
+	return nil
+}
+
+// InstallBrewCaskDependencies ...
+func InstallBrewCaskDependencies(deps []stepmanModels.BrewCaskDepModel, isCIMode bool) error {
+	for _, dep := range deps {
+		if err := InstallWithBrewCaskIfNeeded(dep.Name, isCIMode); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// InstallAptGetDependencies ...
+func InstallAptGetDependencies(deps []stepmanModels.AptGetDepModel) error {
 	return nil
 }
