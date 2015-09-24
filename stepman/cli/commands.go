@@ -25,6 +25,14 @@ var (
 			},
 		},
 		{
+			Name:   "collections",
+			Usage:  "List of localy available collections.",
+			Action: collections,
+			Flags: []cli.Flag{
+				flFormat,
+			},
+		},
+		{
 			Name:   "step-list",
 			Usage:  "List of available steps.",
 			Action: list,
