@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/codegangsta/cli"
 )
@@ -62,7 +61,7 @@ func stepInfo(c *cli.Context) {
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("Invalid format: %s", format)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
 	}
 
 	YMLPath := c.String(StepYMLKey)
@@ -70,7 +69,7 @@ func stepInfo(c *cli.Context) {
 		//
 		// Local step info
 		if err := printLocalStepInfo(YMLPath, format); err != nil {
-			log.Fatalf("Faild to print step info, err: %s", err)
+			registerFatal(fmt.Sprintf("Faild to print step info, err: %s", err), format)
 		}
 	} else {
 		//
@@ -79,11 +78,11 @@ func stepInfo(c *cli.Context) {
 		if collectionURI == "" {
 			bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 			if err != nil {
-				log.Fatalf("No collection defined and faild to read bitrise cofing, err: %s", err)
+				registerFatal(fmt.Sprintf("No collection defined and faild to read bitrise cofing, err: %s", err), format)
 			}
 
 			if bitriseConfig.DefaultStepLibSource == "" {
-				log.Fatal("No collection defined and no default collection found in bitrise cofing")
+				registerFatal("No collection defined and no default collection found in bitrise cofing", format)
 			}
 
 			collectionURI = bitriseConfig.DefaultStepLibSource
@@ -91,7 +90,7 @@ func stepInfo(c *cli.Context) {
 
 		id := ""
 		if len(c.Args()) < 1 {
-			log.Fatalln("No step specified!")
+			registerFatal("No step specified!", format)
 		} else {
 			id = c.Args()[0]
 		}
@@ -99,7 +98,7 @@ func stepInfo(c *cli.Context) {
 		version := c.String(VersionKey)
 
 		if err := printStepLibStep(collectionURI, id, version, format); err != nil {
-			log.Fatalf("Faild to print step info, err: %s", err)
+			registerFatal(fmt.Sprintf("Faild to print step info, err: %s", err), format)
 		}
 	}
 }

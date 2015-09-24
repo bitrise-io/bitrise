@@ -267,33 +267,6 @@ func checkWithBrewProgramInstalled(tool string) error {
 	return nil
 }
 
-// InstallWithBrewIfNeeded ...
-func InstallWithBrewIfNeeded(tool string, isCIMode bool) error {
-	if err := checkWithBrewProgramInstalled(tool); err != nil {
-		if !isCIMode {
-			log.Infof("This step requires %s, which is not installed", tool)
-			allow, err := goinp.AskForBool("Would you like to install (" + tool + ") with brew ? [yes/no]")
-			if err != nil {
-				return err
-			}
-			if !allow {
-				return errors.New("(" + tool + ") is required for step")
-			}
-		}
-		args := []string{"install", tool}
-		log.Infof("Installing required dependency (%s) with brew ...", tool)
-		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", args...); err != nil {
-			log.Errorf("Failed to install tool (%s)", tool)
-			log.Errorf("Output was: %s", out)
-			return err
-		}
-		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", tool)
-		return nil
-	}
-
-	return nil
-}
-
 // DependencyTryCheckTool ...
 func DependencyTryCheckTool(tool string) error {
 	var cmd *exec.Cmd
@@ -322,6 +295,70 @@ func DependencyTryCheckTool(tool string) error {
 		}
 		log.Infof("Output was: %s", outBytes)
 		return fmt.Errorf("Dependency check failed for: %s", tool)
+	}
+
+	return nil
+}
+
+// InstallWithBrewIfNeeded ...
+func InstallWithBrewIfNeeded(tool string, isCIMode bool) error {
+	if err := checkWithBrewProgramInstalled(tool); err != nil {
+		if !isCIMode {
+			log.Infof("This step requires %s, which is not installed", tool)
+			allow, err := goinp.AskForBool("Would you like to install (" + tool + ") with brew ? [yes/no]")
+			if err != nil {
+				return err
+			}
+			if !allow {
+				return errors.New("(" + tool + ") is required for step")
+			}
+		}
+
+		log.Infof("(%s) isn't installed, installing...", tool)
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", tool); err != nil {
+			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", tool, out, err)
+			return err
+		}
+		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", tool)
+		return nil
+	}
+
+	log.Infof("(%s) already installed", tool)
+	return nil
+}
+
+// InstallWithAptGetIfNeeded ...
+func InstallWithAptGetIfNeeded(tool string, isCIMode bool) error {
+	if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", tool); err != nil {
+		if err.Error() == "exit status 1" && out == "" {
+			// Tool isn't installed -- install it...
+			if !isCIMode {
+				log.Infof("This step requires %s, which is not installed", tool)
+				allow, err := goinp.AskForBool("Would you like to install (" + tool + ") with brew ? [yes/no]")
+				if err != nil {
+					return err
+				}
+				if !allow {
+					return errors.New("(" + tool + ") is required for step")
+				}
+			}
+
+			log.Infof("(%s) isn't installed, installing...", tool)
+			if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", tool); err != nil {
+				log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", tool, out, err)
+				return err
+			}
+
+			log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", tool)
+		} else {
+			// which failed
+			log.Errorf("which (%s) failed -- out: (%s) err: (%s)", tool, out, err)
+			return err
+		}
+	} else if out != "" {
+		log.Infof("(%s) already installed (%s)", tool, out)
+	} else {
+		log.Warnf("which (%s) -- out (%s)", tool, out)
 	}
 
 	return nil

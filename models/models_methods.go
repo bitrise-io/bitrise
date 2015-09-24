@@ -437,6 +437,9 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	if len(otherStep.Dependencies) > 0 {
 		step.Dependencies = otherStep.Dependencies
 	}
+	if len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0 || len(otherStep.Deps.CheckOnly) > 0 {
+		step.Deps = otherStep.Deps
+	}
 	if len(otherStep.HostOsTags) > 0 {
 		step.HostOsTags = otherStep.HostOsTags
 	}

@@ -30,7 +30,7 @@ func export(c *cli.Context) {
 
 	// serialize
 	configBytes := []byte{}
-	if outFormat == "json" {
+	if outFormat == OutputFormatJSON {
 		if c.Bool(PrettyFormatKey) {
 			configBytes, err = json.MarshalIndent(bitriseConfig, "", "\t")
 		} else {
@@ -39,7 +39,7 @@ func export(c *cli.Context) {
 		if err != nil {
 			log.Fatalln("Failed to generate JSON: ", err)
 		}
-	} else if outFormat == "yaml" {
+	} else if outFormat == OutputFormatYML {
 		configBytes, err = yaml.Marshal(bitriseConfig)
 		if err != nil {
 			log.Fatalln("Failed to generate YAML: ", err)
