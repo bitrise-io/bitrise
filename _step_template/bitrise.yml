@@ -1,7 +1,24 @@
 format_version: 1.0.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
 workflows:
   test:
     steps:
+    - script:
+        title: Switch working dir to test/_tmp dir
+        description: |-
+          To prevent step testing issues, like referencing relative
+          files with just './some-file', which would work for local tests
+          but not if the step is included in another bitrise.yml!
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            test_workdir_pth="$(pwd)/_tmp"
+            echo " * test_workdir_pth: ${test_workdir_pth}"
+            set -v
+            mkdir -p "${test_workdir_pth}"
+            envman add --key BITRISE_SOURCE_DIR --value "${test_workdir_pth}"
     - path::./:
         title: Step Test
         description: |-

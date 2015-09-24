@@ -1,6 +1,8 @@
 # My Awesome Step
 
-The new My Awesome Step step.
+My Awesome Step is a solid starting code base for
+a new Step.
+
 
 ## How to use this Step
 
