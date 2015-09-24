@@ -18,7 +18,29 @@ type DependencyModel struct {
 	Name    string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
-// StepModel ...0
+// BrewDepModel ...
+type BrewDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// AptGetDepModel ...
+type AptGetDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// CheckOnlyDepModel ...
+type CheckOnlyDepModel struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// DepsModel ...
+type DepsModel struct {
+	Brew      []BrewDepModel      `json:"brew,omitempty" yaml:"brew,omitempty"`
+	AptGet    []AptGetDepModel    `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
+	CheckOnly []CheckOnlyDepModel `json:"check_only,omitempty" yaml:"check_only,omitempty"`
+}
+
+// StepModel ...
 type StepModel struct {
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     *string `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -36,6 +58,7 @@ type StepModel struct {
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string          `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
 	Dependencies        []DependencyModel `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Deps                DepsModel         `json:"deps,omitempty" yaml:"deps,omitempty"`
 	IsRequiresAdminUser *bool             `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
 	// IsAlwaysRun : if true then this step will always run,
 	//  even if a previous step fails.
@@ -78,11 +101,12 @@ type StepCollectionModel struct {
 
 // EnvInfoModel ...
 type EnvInfoModel struct {
-	Env          string   `json:"env,omitempty" yaml:"env,omitempty"`
+	Key          string   `json:"key,omitempty" yaml:"key,omitempty"`
 	Title        string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Description  string   `json:"description,omitempty" yaml:"description,omitempty"`
 	ValueOptions []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 	DefaultValue string   `json:"default_value,omitempty" yaml:"default_value,omitempty"`
+	IsExpand     bool     `json:"is_expand" yaml:"is_expand"`
 }
 
 // StepInfoModel ...

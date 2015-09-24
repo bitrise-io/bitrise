@@ -186,34 +186,74 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
-	// Check dependencies
-	for _, dep := range step.Dependencies {
-		isSkippedBecauseOfPlatform := false
-		switch dep.Manager {
-		case depManagerBrew:
-			if runtime.GOOS == "darwin" {
-				err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
+	// Check & Install Step Dependencies
+	if len(step.Dependencies) > 0 {
+		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
+	}
+
+	if len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0 {
+		//
+		// New dependency handling
+		for _, checkOnlyDep := range step.Deps.CheckOnly {
+			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, err
+			}
+		}
+
+		switch runtime.GOOS {
+		case "darwin":
+			for _, brewDep := range step.Deps.Brew {
+				log.Infof("Start installing (%s) with brew", brewDep.Name)
+				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, IsCIMode); err != nil {
+					log.Infof("Failed to install (%s) with brew", brewDep.Name)
+					return 1, []envmanModels.EnvironmentItemModel{}, err
+				}
+				log.Infof("Successfully installed (%s) with brew", brewDep.Name)
+			}
+		case "linux":
+			for _, aptGetDep := range step.Deps.AptGet {
+				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
+				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep.Name, IsCIMode); err != nil {
+					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
+					return 1, []envmanModels.EnvironmentItemModel{}, err
+				}
+				log.Infof("Successfully installed (%s) with apt-get", aptGetDep.Name)
+			}
+		default:
+			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Unsupported os")
+		}
+	} else if len(step.Dependencies) > 0 {
+		log.Info("Deprecated dependencies found")
+		//
+		// Deprecated dependency handling
+		for _, dep := range step.Dependencies {
+			isSkippedBecauseOfPlatform := false
+			switch dep.Manager {
+			case depManagerBrew:
+				if runtime.GOOS == "darwin" {
+					err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
+					if err != nil {
+						return 1, []envmanModels.EnvironmentItemModel{}, err
+					}
+				} else {
+					isSkippedBecauseOfPlatform = true
+				}
+				break
+			case depManagerTryCheck:
+				err := bitrise.DependencyTryCheckTool(dep.Name)
 				if err != nil {
 					return 1, []envmanModels.EnvironmentItemModel{}, err
 				}
-			} else {
-				isSkippedBecauseOfPlatform = true
+				break
+			default:
+				return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 			}
-			break
-		case depManagerTryCheck:
-			err := bitrise.DependencyTryCheckTool(dep.Name)
-			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, err
-			}
-			break
-		default:
-			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
-		}
 
-		if isSkippedBecauseOfPlatform {
-			log.Debugf(" * Dependency (%s) skipped, manager (%s) not supported on this platform (%s)", dep.Name, dep.Manager, runtime.GOOS)
-		} else {
-			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
+			if isSkippedBecauseOfPlatform {
+				log.Debugf(" * Dependency (%s) skipped, manager (%s) not supported on this platform (%s)", dep.Name, dep.Manager, runtime.GOOS)
+			} else {
+				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", dep.Name)
+			}
 		}
 	}
 
