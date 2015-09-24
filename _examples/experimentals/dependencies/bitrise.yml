@@ -1,4 +1,4 @@
-format_version: 0.9.8
+format_version: 1.1.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -9,6 +9,61 @@ app:
       is_expand: no
 
 workflows:
+  _cleanup:
+    title: Cleanup workflow
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -v
+
+            OUTPUT="$(which apt-get)"
+            echo "$OUTPUT"
+            if [ "$OUTPUT" != "" ]; then
+                sudo apt-get -y remove cmake
+            fi
+
+            OUTPUT="$(which brew)"
+            echo "$OUTPUT"
+            if [ "$OUTPUT" != "" ]; then
+                brew uninstall cmake
+            fi
+
+  test:
+    before_run:
+    - _cleanup
+    title: Test dependencies workflow
+    steps:
+    - script:
+        deps:
+          brew:
+          - name: cmake
+        inputs:
+          - content: |-
+              #!/bin/bash
+              set -v
+
+              OUTPUT="$(which cmake)"
+              echo "$OUTPUT"
+              if [ "$OUTPUT" == "" ]; then
+                  exit 1
+              fi
+    - script:
+        deps:
+          apt_get:
+          - name: cmake
+        inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+
+              OUTPUT="$(which cmake)"
+              echo "$OUTPUT"
+              if [ "$OUTPUT" == "" ]; then
+                  exit 1
+              fi
+
   dependencies_test:
     title: "test title"
     summary: |
