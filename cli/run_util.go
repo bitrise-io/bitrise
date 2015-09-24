@@ -191,9 +191,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
 
-	log.Infof("Step deps: %#v", step.Deps)
 	if len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0 {
-		log.Info("New dependencies found")
 		//
 		// New dependency handling
 		for _, checkOnlyDep := range step.Deps.CheckOnly {
@@ -224,7 +222,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		default:
 			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Unsupported os")
 		}
-	} else {
+	} else if len(step.Dependencies) > 0 {
 		log.Info("Deprecated dependencies found")
 		//
 		// Deprecated dependency handling
@@ -522,7 +520,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 
 			mergedStep, err = models.MergeStepWith(specStep, workflowStep)
-			log.Infof("Mergedstep.deps: %#v", mergedStep.Deps)
 			if err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue

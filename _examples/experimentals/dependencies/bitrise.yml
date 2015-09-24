@@ -16,19 +16,20 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -v
 
             OUTPUT="$(which apt-get)"
-            echo "$OUTPUT"
             if [ "$OUTPUT" != "" ]; then
+                echo "apt-get remove cmake"
                 sudo apt-get -y remove cmake
             fi
 
             OUTPUT="$(which brew)"
-            echo "$OUTPUT"
             if [ "$OUTPUT" != "" ]; then
+                echo "brew remove cmake"
                 brew uninstall cmake
             fi
+
+            echo $(which cmake)
 
   test:
     before_run:
@@ -39,22 +40,10 @@ workflows:
         deps:
           brew:
           - name: cmake
-        inputs:
-          - content: |-
-              #!/bin/bash
-              set -v
-
-              OUTPUT="$(which cmake)"
-              echo "$OUTPUT"
-              if [ "$OUTPUT" == "" ]; then
-                  exit 1
-              fi
-    - script:
-        deps:
           apt_get:
           - name: cmake
         inputs:
-          - content: |
+          - content: |-
               #!/bin/bash
               set -v
 

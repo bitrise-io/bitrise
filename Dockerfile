@@ -4,7 +4,7 @@ ENV PROJ_NAME bitrise
 
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install curl git mercurial rsync ruby
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install curl git mercurial rsync ruby sudo
 
 # From the official Golang Dockerfile
 #  https://github.com/docker-library/golang/blob/master/1.4/Dockerfile
