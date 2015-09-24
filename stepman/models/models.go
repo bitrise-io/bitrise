@@ -35,9 +35,9 @@ type CheckOnlyDepModel struct {
 
 // DepsModel ...
 type DepsModel struct {
-	Brew     []BrewDepModel      `json:"brew,omitempty" yaml:"brew,omitempty"`
-	AptGet   []AptGetDepModel    `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
-	TryCheck []CheckOnlyDepModel `json:"check_only,omitempty" yaml:"check_only,omitempty"`
+	Brew      []BrewDepModel      `json:"brew,omitempty" yaml:"brew,omitempty"`
+	AptGet    []AptGetDepModel    `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
+	CheckOnly []CheckOnlyDepModel `json:"check_only,omitempty" yaml:"check_only,omitempty"`
 }
 
 // StepModel ...
