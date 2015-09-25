@@ -177,7 +177,7 @@ func EnvmanJSONPrint(envstorePth string) (envmanModels.EnvsJSONListModel, error)
 
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
 	if err != nil {
-		return envmanModels.EnvsJSONListModel{}, fmt.Errorf("Failed to run envman print, err: %s", err)
+		return envmanModels.EnvsJSONListModel{}, fmt.Errorf("Failed to run envman print, out: %s, err: %s", out, err)
 	}
 
 	envList := envmanModels.EnvsJSONListModel{}

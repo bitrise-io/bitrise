@@ -183,7 +183,7 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 	return bitriseSourceDir, nil
 }
 
-func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel) (int, []envmanModels.EnvironmentItemModel, error) {
+func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel, buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -258,7 +258,30 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Collect step inputs
-	environments = append(environments, step.Inputs...)
+	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
+	for _, input := range step.Inputs {
+		key, value, err := input.GetKeyValuePair()
+		if err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		options, err := input.GetOptions()
+		if err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		if options.IsTemplate != nil && *options.IsTemplate {
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, PullReqID, buildRunResults)
+			if err != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, err
+			}
+
+			input[key] = evaluatedValue
+		}
+
+		evaluatedInputs = append(evaluatedInputs, input)
+	}
+	environments = append(environments, evaluatedInputs...)
 
 	// Cleanup envstore
 	if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
@@ -529,7 +552,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		// Run step
 		bitrise.PrintRunningStep(stepInfoPtr, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			isRun, err := bitrise.EvaluateStepTemplateToBool(*mergedStep.RunIf, buildRunResults)
+			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, PullReqID, buildRunResults)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep)
 				continue
@@ -550,7 +573,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
 			registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep)
 		} else {
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, *environments)
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, *environments, buildRunResults)
 			*environments = append(*environments, outEnvironments...)
 			if err != nil {
 				if *mergedStep.IsSkippable {

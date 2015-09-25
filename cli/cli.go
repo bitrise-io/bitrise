@@ -18,6 +18,9 @@ var (
 	IsDebugMode = false
 	// IsPullRequestMode ...
 	IsPullRequestMode = false
+
+	// PullReqID ...
+	PullReqID = ""
 )
 
 func initLogFormatter() {
@@ -82,7 +85,8 @@ func before(c *cli.Context) error {
 	}
 
 	// Pull Request Mode check
-	IsPullRequestMode = (os.Getenv(bitrise.PullRequestIDEnvKey) != "")
+	PullReqID = os.Getenv(bitrise.PullRequestIDEnvKey)
+	IsPullRequestMode = (PullReqID != "")
 
 	return nil
 }
