@@ -65,6 +65,7 @@ func TestMergeEnvironmentWith(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(false),
 			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(true),
 		},
 	}
 	env := envmanModels.EnvironmentItemModel{
@@ -92,6 +93,7 @@ func TestMergeEnvironmentWith(t *testing.T) {
 	require.Equal(t, *diffOptions.IsRequired, *options.IsRequired)
 	require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
 	require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
+	require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
 }
 
 func TestMergeStepWith(t *testing.T) {
@@ -458,39 +460,22 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
 			IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
 			IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
+			IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplat),
 		},
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	options, err := env.GetOptions()
-	if err != nil {
-		t.Fatal("Failed to get env options:", err)
-	}
+	require.Equal(t, nil, err)
 
-	if options.Title != nil {
-		t.Fatal("options.Title should be nil")
-	}
-	if options.Description != nil {
-		t.Fatal("options.Description should be nil")
-	}
-	if options.Summary != nil {
-		t.Fatal("options.Summary should be nil")
-	}
-	if len(options.ValueOptions) != 0 {
-		t.Fatal("options.ValueOptions should be empty")
-	}
-	if options.IsRequired != nil {
-		t.Fatal("options.IsRequired should be nil")
-	}
-	if options.IsExpand != nil {
-		t.Fatal("options.IsExpand should be nil")
-	}
-	if options.IsDontChangeValue != nil {
-		t.Fatal("options.IsDontChangeValue should be nil")
-	}
+	require.Equal(t, (*string)(nil), options.Title)
+	require.Equal(t, (*string)(nil), options.Description)
+	require.Equal(t, (*string)(nil), options.Summary)
+	require.Equal(t, 0, len(options.ValueOptions))
+	require.Equal(t, (*bool)(nil), options.IsRequired)
+	require.Equal(t, (*bool)(nil), options.IsExpand)
+	require.Equal(t, (*bool)(nil), options.IsDontChangeValue)
+	require.Equal(t, (*bool)(nil), options.IsTemplate)
 
 	// Trivial don't remove - no fields should be default value
 	env = envmanModels.EnvironmentItemModel{
@@ -503,53 +488,31 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(false),
 			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(true),
 		},
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	options, err = env.GetOptions()
-	if err != nil {
-		t.Fatal("Failed to get env options:", err)
-	}
+	require.Equal(t, nil, err)
 
-	if *options.Title != "t" {
-		t.Fatal("options.Title should be: t")
-	}
-	if *options.Description != "d" {
-		t.Fatal("options.Description should be: d")
-	}
-	if *options.Summary != "s" {
-		t.Fatal("options.Summary should be: s")
-	}
-	if options.ValueOptions[0] != "i" {
-		t.Fatal("options.ValueOptions should be: {i}")
-	}
-	if *options.IsRequired != true {
-		t.Fatal("options.IsRequired should be: false")
-	}
-	if *options.IsExpand != false {
-		t.Fatal("options.IsExpand should be: false")
-	}
-	if *options.IsDontChangeValue != true {
-		t.Fatal("options.IsDontChangeValue should be: true")
-	}
+	require.Equal(t, "t", *options.Title)
+	require.Equal(t, "d", *options.Description)
+	require.Equal(t, "s", *options.Summary)
+	require.Equal(t, "i", options.ValueOptions[0])
+	require.Equal(t, true, *options.IsRequired)
+	require.Equal(t, false, *options.IsExpand)
+	require.Equal(t, true, *options.IsDontChangeValue)
+	require.Equal(t, true, *options.IsTemplate)
 
 	// No options - opts field shouldn't exist
 	env = envmanModels.EnvironmentItemModel{
 		"TEST_KEY": "test_value",
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	_, ok := env[envmanModels.OptionsKey]
-	if ok {
-		t.Fatal("opts field shouldn't exist")
-	}
+	require.Equal(t, false, ok)
 }
 
 func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {
