@@ -9,6 +9,7 @@ type EnvironmentItemOptionsModel struct {
 	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
 	IsExpand          *bool    `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
+	IsTemplate        *bool    `json:"is_template,omitempty" yaml:"is_template,omitempty"`
 }
 
 // EnvironmentItemModel ...

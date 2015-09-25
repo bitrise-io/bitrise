@@ -6,31 +6,7 @@ import (
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-)
-
-const (
-	testKey    = "test_key"
-	testValue  = "test_value"
-	testKey1   = "test_key1"
-	testValue1 = "test_value1"
-	testKey2   = "test_key2"
-	testValue2 = "test_value2"
-
-	title   = "name 1"
-	desc    = "desc 1"
-	website = "web/1"
-	git     = "https://git.url"
-	fork    = "fork/1"
-
-	testTitle       = "test_title"
-	testDescription = "test_description"
-	testSummary     = "test_summary"
-	testTrue        = true
-	testFalse       = false
-)
-
-var (
-	testValueOptions = []string{testKey2, testValue2}
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidate(t *testing.T) {
@@ -45,135 +21,100 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	if err := step.Validate(true); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, step.Validate(true))
 
 	step.Title = nil
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: no Title defined")
-	}
-	step.Title = new(string)
+	require.NotEqual(t, nil, step.Validate(true))
 
+	step.Title = new(string)
 	*step.Title = ""
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Title")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.PublishedAt = nil
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: no Title defined")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 	step.PublishedAt = new(time.Time)
 
 	*step.PublishedAt = time.Time{}
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Title")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Description = nil
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: no Description defined")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 	step.Description = new(string)
 
 	*step.Description = ""
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Description")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Website = nil
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: no Website defined")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 	step.Website = new(string)
 
 	*step.Website = ""
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Website")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Source.Git = ""
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Source.Git")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Source.Git = "git@github.com:bitrise-io/bitrise.git"
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: Source.Git has invalid prefix")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Source.Git = "https://github.com/bitrise-io/bitrise"
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: Source.Git has invalid suffix")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 
 	step.Source.Commit = ""
-	if err := step.Validate(true); err == nil {
-		t.Fatal("Invalid step: empty Source.Commit")
-	}
+	require.NotEqual(t, nil, step.Validate(true))
 }
 
 func TestValidateStepInputOutputModel(t *testing.T) {
 	// Filled env
 	env := envmanModels.EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
 		},
 	}
 
-	err := ValidateStepInputOutputModel(env, true)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, ValidateStepInputOutputModel(env, true))
 
 	// Empty key
 	env = envmanModels.EnvironmentItemModel{
-		"": testValue,
+		"": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env, true)
-	if err == nil {
-		t.Fatal("Empty key, should fail")
-	}
+	require.NotEqual(t, nil, ValidateStepInputOutputModel(env, true))
 
 	// Title is empty
 	env = envmanModels.EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Description:       pointers.NewStringPtr(testDescription),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
+			Description:       pointers.NewStringPtr("test_description"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
 		},
 	}
 
-	err = ValidateStepInputOutputModel(env, true)
-	if err == nil {
-		t.Fatal("Empty Title, should fail")
-	}
+	require.NotEqual(t, nil, ValidateStepInputOutputModel(env, true))
 }
 
 func TestFillMissingDefaults(t *testing.T) {
 	title := "name 1"
-	// desc := "desc 1"
+	// "desc 1" := ""desc 1" 1"
 	website := "web/1"
 	git := "https://git.url"
 	// fork := "fork/1"
@@ -189,10 +130,7 @@ func TestFillMissingDefaults(t *testing.T) {
 		TypeTags:        []string{"test"},
 	}
 
-	err := step.FillMissingDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, step.FillMissingDefaults())
 
 	if step.Description == nil || *step.Description != "" {
 		t.Fatal("Description missing")
@@ -221,12 +159,12 @@ func TestGetStep(t *testing.T) {
 	defaultIsRequiresAdminUser := DefaultIsRequiresAdminUser
 
 	step := StepModel{
-		Title:         pointers.NewStringPtr(title),
-		Description:   pointers.NewStringPtr(desc),
-		Website:       pointers.NewStringPtr(website),
-		SourceCodeURL: pointers.NewStringPtr(fork),
+		Title:         pointers.NewStringPtr("name 1"),
+		Description:   pointers.NewStringPtr("desc 1"),
+		Website:       pointers.NewStringPtr("web/1"),
+		SourceCodeURL: pointers.NewStringPtr("fork/1"),
 		Source: StepSourceModel{
-			Git: git,
+			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
@@ -270,10 +208,8 @@ func TestGetStep(t *testing.T) {
 		},
 	}
 
-	step, found := collection.GetStep("step", "1.0.0")
-	if !found {
-		t.Fatal("Step not found (step) (1.0.0)")
-	}
+	_, found := collection.GetStep("step", "1.0.0")
+	require.Equal(t, true, found)
 }
 
 func TestGetDownloadLocations(t *testing.T) {
@@ -281,12 +217,12 @@ func TestGetDownloadLocations(t *testing.T) {
 
 	// Zip & git download locations
 	step := StepModel{
-		Title:         pointers.NewStringPtr(title),
-		Description:   pointers.NewStringPtr(desc),
-		Website:       pointers.NewStringPtr(website),
-		SourceCodeURL: pointers.NewStringPtr(fork),
+		Title:         pointers.NewStringPtr("name 1"),
+		Description:   pointers.NewStringPtr("desc 1"),
+		Website:       pointers.NewStringPtr("web/1"),
+		SourceCodeURL: pointers.NewStringPtr("fork/1"),
 		Source: StepSourceModel{
-			Git: git,
+			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
@@ -331,9 +267,7 @@ func TestGetDownloadLocations(t *testing.T) {
 	}
 
 	locations, err := collection.GetDownloadLocations("step", "1.0.0")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
 	zipFound := false
 	gitFount := false
@@ -348,7 +282,7 @@ func TestGetDownloadLocations(t *testing.T) {
 			zipFound = true
 			zipIdx = idx
 		} else if location.Type == "git" {
-			if location.Src != git {
+			if location.Src != "https://git.url" {
 				t.Fatalf("Incorrect git location (%s)", location.Src)
 			}
 			gitFount = true
@@ -356,12 +290,8 @@ func TestGetDownloadLocations(t *testing.T) {
 		}
 	}
 
-	if zipFound == false {
-		t.Fatal("No zip location found")
-	}
-	if gitFount == false {
-		t.Fatal("No zip location found")
-	}
+	require.Equal(t, true, zipFound)
+	require.Equal(t, true, gitFount)
 	if gitIdx < zipIdx {
 		t.Fatal("Incorrect download locations order")
 	}
@@ -371,12 +301,12 @@ func TestGetLatestStepVersion(t *testing.T) {
 	defaultIsRequiresAdminUser := DefaultIsRequiresAdminUser
 
 	step := StepModel{
-		Title:         pointers.NewStringPtr(title),
-		Description:   pointers.NewStringPtr(desc),
-		Website:       pointers.NewStringPtr(website),
-		SourceCodeURL: pointers.NewStringPtr(fork),
+		Title:         pointers.NewStringPtr("name 1"),
+		Description:   pointers.NewStringPtr("desc 1"),
+		Website:       pointers.NewStringPtr("web/1"),
+		SourceCodeURL: pointers.NewStringPtr("fork/1"),
 		Source: StepSourceModel{
-			Git: git,
+			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
 		ProjectTypeTags:     []string{"ios"},
@@ -423,10 +353,6 @@ func TestGetLatestStepVersion(t *testing.T) {
 	}
 
 	latest, err := collection.GetLatestStepVersion("step")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if latest != "2.0.0" {
-		t.Fatalf("Latest version (%s), should be (2.0.0)", latest)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, "2.0.0", latest)
 }
