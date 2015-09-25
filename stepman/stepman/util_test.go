@@ -5,15 +5,12 @@ import (
 
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/models"
-)
-
-const (
-	title = "name 1"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAddStepVersionToStepGroup(t *testing.T) {
 	step := models.StepModel{
-		Title: pointers.NewStringPtr(title),
+		Title: pointers.NewStringPtr("name 1"),
 	}
 
 	group := models.StepGroupModel{
@@ -25,13 +22,7 @@ func TestAddStepVersionToStepGroup(t *testing.T) {
 	}
 
 	group, err := addStepVersionToStepGroup(step, "2.1.0", group)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(group.Versions) != 3 {
-		t.Fatal("Failed to add new version")
-	}
-	if group.LatestVersionNumber != "2.1.0" {
-		t.Fatal("Failed to set latest version")
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, 3, len(group.Versions))
+	require.Equal(t, "2.1.0", group.LatestVersionNumber)
 }
