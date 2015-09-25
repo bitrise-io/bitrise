@@ -7,21 +7,6 @@ import (
 	"github.com/bitrise-io/go-utils/pointers"
 )
 
-var (
-	testKey          = "test_key"
-	testValue        = "test_value"
-	testKey1         = "test_key1"
-	testValue1       = "test_value1"
-	testKey2         = "test_key2"
-	testValue2       = "test_value2"
-	testTitle        = "test_title"
-	testDescription  = "test_description"
-	testValueOptions = []string{testKey2, testValue2}
-	testTrue         = true
-	testFalse        = false
-	testEmptyString  = ""
-)
-
 func countOfEnvInEnvSlice(env models.EnvironmentItemModel, envSlice []models.EnvironmentItemModel) (cnt int, err error) {
 	for _, e := range envSlice {
 		key, value, err := env.GetKeyValuePair()
@@ -131,10 +116,10 @@ func TestRemoveDefaults(t *testing.T) {
 
 	// Filled env
 	env := models.EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testEmptyString),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr(""),
 			ValueOptions:      []string{},
 			IsRequired:        pointers.NewBoolPtr(defaultIsRequired),
 			IsExpand:          pointers.NewBoolPtr(defaultIsExpand),

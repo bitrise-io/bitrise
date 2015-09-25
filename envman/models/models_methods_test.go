@@ -4,116 +4,67 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pointers"
-)
-
-var (
-	testKey          = "test_key"
-	testValue        = "test_value"
-	testKey1         = "test_key1"
-	testValue1       = "test_value1"
-	testKey2         = "test_key2"
-	testValue2       = "test_value2"
-	testTitle        = "test_title"
-	testDescription  = "test_description"
-	testSummary      = "test_summary"
-	testValueOptions = []string{testKey2, testValue2}
-	testTrue         = true
-	testFalse        = false
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetKeyValuePair(t *testing.T) {
 	// Filled env
 	env := EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(false),
 		},
 	}
 
 	key, value, err := env.GetKeyValuePair()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if key != testKey {
-		t.Fatalf("Key (%s) should be: %s", key, testKey)
-	}
-	if value != testValue {
-		t.Fatalf("Value (%s) should be: %s", value, testValue)
-	}
+	require.Equal(t, "test_key", key)
+	require.Equal(t, "test_value", value)
 
 	// More then 2 fields
 	env = EnvironmentItemModel{
-		testKey:  testValue,
-		testKey1: testValue1,
-		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
-		},
+		"test_key":  "test_value",
+		"test_key1": "test_value1",
+		OptionsKey:  EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")},
 	}
 
 	key, value, err = env.GetKeyValuePair()
-	if err == nil {
-		t.Fatal("More then 2 fields, should get error")
-	}
+	require.NotEqual(t, nil, err)
 
 	// 2 key-value fields
 	env = EnvironmentItemModel{
-		testKey:  testValue,
-		testKey1: testValue1,
+		"test_key":  "test_value",
+		"test_key1": "test_value1",
 	}
 
 	key, value, err = env.GetKeyValuePair()
-	if err == nil {
-		t.Fatal("More then 2 fields, should get error")
-	}
+	require.NotEqual(t, nil, err)
 
 	// Not string value
-	env = EnvironmentItemModel{
-		testKey: true,
-	}
+	env = EnvironmentItemModel{"test_key": true}
 
 	key, value, err = env.GetKeyValuePair()
-	if err == nil {
-		t.Fatal("More then 2 fields, should get error")
-	}
+	require.NotEqual(t, nil, err)
 
 	// Empty key
-	env = EnvironmentItemModel{
-		"": testValue,
-	}
+	env = EnvironmentItemModel{"": "test_value"}
 
 	key, value, err = env.GetKeyValuePair()
-	if err == nil {
-		t.Fatal("Empty key, should get error")
-	}
+	require.NotEqual(t, nil, err)
 
 	// Missing key-value
-	env = EnvironmentItemModel{
-		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
-		},
-	}
+	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
 
 	key, value, err = env.GetKeyValuePair()
-	if err == nil {
-		t.Fatal("No key-valu set, should get error")
-	}
+	require.NotEqual(t, nil, err)
 }
 
 func TestParseFromInterfaceMap(t *testing.T) {
@@ -121,312 +72,248 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	model := map[string]interface{}{}
 
 	// Normal
-	model["title"] = testTitle
-	model["value_options"] = testValueOptions
-	model["is_expand"] = testTrue
-	err := envOptions.ParseFromInterfaceMap(model)
-	if err != nil {
-		t.Fatal(err)
-	}
+	model["title"] = "test_title"
+	model["value_options"] = []string{"test_key2", "test_value2"}
+	model["is_expand"] = true
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// title is not a string
 	model = map[string]interface{}{}
 	model["title"] = true
-	err = envOptions.ParseFromInterfaceMap(model)
-	if err == nil {
-		t.Fatal("Title value is not a string, should be error")
-	}
+	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// value_options is not a string slice
 	model = map[string]interface{}{}
 	model["value_options"] = []interface{}{true, false}
-	err = envOptions.ParseFromInterfaceMap(model)
-	if err == nil {
-		t.Fatal("value_options is not a string slice, should be error")
-	}
+	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// is_required is not a bool
 	model = map[string]interface{}{}
-	model["is_required"] = pointers.NewBoolPtr(testTrue)
-	err = envOptions.ParseFromInterfaceMap(model)
-	if err == nil {
-		t.Fatal("is_required is not a bool, should be error")
-	}
+	model["is_required"] = pointers.NewBoolPtr(true)
+	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// other_key is not supported key
 	model = map[string]interface{}{}
-	model["other_key"] = testTrue
-	err = envOptions.ParseFromInterfaceMap(model)
-	if err == nil {
-		t.Fatal("other_key is not a supported key, should be error")
-	}
+	model["other_key"] = true
+	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
 }
 
 func TestGetOptions(t *testing.T) {
 	// Filled env
 	env := EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:    pointers.NewStringPtr(testTitle),
-			IsExpand: pointers.NewBoolPtr(testFalse),
+			Title:    pointers.NewStringPtr("test_title"),
+			IsExpand: pointers.NewBoolPtr(false),
 		},
 	}
 	opts, err := env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if opts.Title == nil || *opts.Title != testTitle {
-		t.Fatal("Title is nil, or not correct")
-	}
-	if opts.IsExpand == nil || *opts.IsExpand != testFalse {
-		t.Fatal("IsExpand is nil, or not correct")
-	}
+	require.NotEqual(t, nil, opts.Title)
+	require.Equal(t, "test_title", *opts.Title)
+
+	require.NotEqual(t, nil, opts.IsExpand)
+	require.Equal(t, false, *opts.IsExpand)
 
 	// Missing opts
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 	}
 	_, err = env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
 	// Wrong opts
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: map[interface{}]interface{}{
-			"title": testTitle,
-			"test":  testDescription,
+			"title": "test_title",
+			"test":  "test_description",
 		},
 	}
 	_, err = env.GetOptions()
-	if err == nil {
-		t.Fatal(err)
-	}
+	require.NotEqual(t, nil, err)
 }
 
 func TestNormalize(t *testing.T) {
 	// Filled with map[string]interface{} options
 	env := EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: map[interface{}]interface{}{
-			"title":         testTitle,
-			"description":   testDescription,
-			"summary":       testSummary,
-			"value_options": testValueOptions,
-			"is_required":   testTrue,
+			"title":         "test_title",
+			"description":   "test_description",
+			"summary":       "test_summary",
+			"value_options": []string{"test_key2", "test_value2"},
+			"is_required":   true,
 		},
 	}
 
-	err := env.Normalize()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env.Normalize())
 
 	opts, err := env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if opts.Title == nil || *opts.Title != testTitle {
-		t.Fatal("Title is nil, or not correct")
-	}
-	if opts.Description == nil || *opts.Description != testDescription {
-		t.Fatal("Description is nil, or not correct")
-	}
-	if opts.Summary == nil || *opts.Summary != testSummary {
-		t.Fatal("Summary is nil, or not correct")
-	}
-	if len(opts.ValueOptions) != len(testValueOptions) {
-		t.Fatal("ValueOptions element num is not correct, or not correct")
-	}
-	if opts.IsRequired == nil || *opts.IsRequired != testTrue {
-		t.Fatal("IsRequired is nil, or not correct")
-	}
+	require.NotEqual(t, nil, opts.Title)
+	require.Equal(t, "test_title", *opts.Title)
+
+	require.NotEqual(t, nil, opts.Description)
+	require.Equal(t, "test_description", *opts.Description)
+
+	require.NotEqual(t, nil, opts.Summary)
+	require.Equal(t, "test_summary", *opts.Summary)
+
+	require.Equal(t, 2, len(opts.ValueOptions))
+
+	require.NotEqual(t, nil, opts.IsRequired)
+	require.Equal(t, true, *opts.IsRequired)
 
 	// Filled with EnvironmentItemOptionsModel options
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:        pointers.NewStringPtr(testTitle),
-			Description:  pointers.NewStringPtr(testDescription),
-			Summary:      pointers.NewStringPtr(testSummary),
-			ValueOptions: testValueOptions,
-			IsRequired:   pointers.NewBoolPtr(testTrue),
+			Title:        pointers.NewStringPtr("test_title"),
+			Description:  pointers.NewStringPtr("test_description"),
+			Summary:      pointers.NewStringPtr("test_summary"),
+			ValueOptions: []string{"test_key2", "test_value2"},
+			IsRequired:   pointers.NewBoolPtr(true),
 		},
 	}
 
-	err = env.Normalize()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env.Normalize())
 
 	opts, err = env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if opts.Title == nil || *opts.Title != testTitle {
-		t.Fatal("Title is nil, or not correct")
-	}
-	if opts.Description == nil || *opts.Description != testDescription {
-		t.Fatal("Description is nil, or not correct")
-	}
-	if opts.Summary == nil || *opts.Summary != testSummary {
-		t.Fatal("Summary is nil, or not correct")
-	}
-	if len(opts.ValueOptions) != len(testValueOptions) {
-		t.Fatal("ValueOptions element num is not correct")
-	}
-	if opts.IsRequired == nil || *opts.IsRequired != testTrue {
-		t.Fatal("IsRequired is nil, or not correct")
-	}
+	require.NotEqual(t, nil, opts.Title)
+	require.Equal(t, "test_title", *opts.Title)
+
+	require.NotEqual(t, nil, opts.Description)
+	require.Equal(t, "test_description", *opts.Description)
+
+	require.NotEqual(t, nil, opts.Summary)
+	require.Equal(t, "test_summary", *opts.Summary)
+
+	require.Equal(t, 2, len(opts.ValueOptions))
+
+	require.NotEqual(t, nil, opts.IsRequired)
+	require.Equal(t, true, *opts.IsRequired)
 
 	// Empty options
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 	}
 
-	err = env.Normalize()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env.Normalize())
 
 	opts, err = env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if opts.Title != nil {
-		t.Fatal("Title is not nil")
-	}
-	if opts.Description != nil {
-		t.Fatal("Description is not nil")
-	}
-	if opts.Summary != nil {
-		t.Fatal("Summary is not nil")
-	}
-	if len(opts.ValueOptions) != 0 {
-		t.Fatal("ValueOptions element num is not correct")
-	}
-	if opts.IsRequired != nil {
-		t.Fatal("IsRequired is not nil")
-	}
+	require.Equal(t, (*string)(nil), opts.Title)
+	require.Equal(t, (*string)(nil), opts.Description)
+	require.Equal(t, (*string)(nil), opts.Summary)
+	require.Equal(t, 0, len(opts.ValueOptions))
+	require.Equal(t, (*bool)(nil), opts.IsRequired)
+	require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
+	require.Equal(t, (*bool)(nil), opts.IsExpand)
+	require.Equal(t, (*bool)(nil), opts.IsTemplate)
 }
 
 func TestFillMissingDefaults(t *testing.T) {
 	// Empty env
 	env := EnvironmentItemModel{
-		testKey: testValue,
-	}
-	err := env.FillMissingDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
-	opts, err := env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
+		"test_key": "test_value",
 	}
 
-	// required
-	//  if opts.Title == nil || *opts.Title != "" {
-	//  	t.Fatal("Failed to fill Title default value")
-	//  }
-	if opts.Description == nil || *opts.Description != "" {
-		t.Fatal("Failed to fill Description default value")
-	}
-	if opts.Summary == nil || *opts.Summary != "" {
-		t.Fatal("Failed to fill Summary default value")
-	}
-	if opts.IsRequired == nil || *opts.IsRequired != DefaultIsRequired {
-		t.Fatal("Failed to fill IsRequired default value")
-	}
-	if opts.IsExpand == nil || *opts.IsExpand != DefaultIsExpand {
-		t.Fatal("Failed to fill IsExpand default value")
-	}
-	if opts.IsDontChangeValue == nil || *opts.IsDontChangeValue != DefaultIsDontChangeValue {
-		t.Fatal("Failed to fill IsDontChangeValue default value")
-	}
+	require.Equal(t, nil, env.FillMissingDefaults())
+
+	opts, err := env.GetOptions()
+	require.Equal(t, nil, err)
+
+	require.NotEqual(t, nil, opts.Description)
+	require.Equal(t, "", *opts.Description)
+
+	require.NotEqual(t, nil, opts.Summary)
+	require.Equal(t, "", *opts.Summary)
+
+	require.NotEqual(t, nil, opts.IsRequired)
+	require.Equal(t, DefaultIsRequired, *opts.IsRequired)
+
+	require.NotEqual(t, nil, opts.IsExpand)
+	require.Equal(t, DefaultIsExpand, *opts.IsExpand)
+
+	require.NotEqual(t, nil, opts.IsDontChangeValue)
+	require.Equal(t, DefaultIsDontChangeValue, *opts.IsDontChangeValue)
+
+	require.NotEqual(t, nil, opts.IsTemplate)
+	require.Equal(t, DefaultIsDontChangeValue, *opts.IsTemplate)
 
 	// Filled env
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testTrue),
-			IsDontChangeValue: pointers.NewBoolPtr(testFalse),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(true),
+			IsDontChangeValue: pointers.NewBoolPtr(false),
 		},
 	}
-	err = env.FillMissingDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
-	opts, err = env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if opts.Title == nil || *opts.Title != testTitle {
-		t.Fatal("Title is nil, or not correct")
-	}
-	if opts.Description == nil || *opts.Description != testDescription {
-		t.Fatal("Description is nil, or not correct")
-	}
-	if opts.Summary == nil || *opts.Summary != testSummary {
-		t.Fatal("Summary is nil, or not correct")
-	}
-	if len(opts.ValueOptions) != len(testValueOptions) {
-		t.Fatal("ValueOptions element num is not correct")
-	}
-	if opts.IsRequired == nil || *opts.IsRequired != testTrue {
-		t.Fatal("IsRequired is nil, or not correct")
-	}
-	if opts.IsExpand == nil || *opts.IsExpand != testTrue {
-		t.Fatal("IsExpand is nil, or not correct")
-	}
-	if opts.IsDontChangeValue == nil || *opts.IsDontChangeValue != testFalse {
-		t.Fatal("IsDontChangeValue is nil, or not correct")
-	}
+	require.Equal(t, nil, env.FillMissingDefaults())
+
+	opts, err = env.GetOptions()
+	require.Equal(t, nil, err)
+
+	require.NotEqual(t, nil, opts.Title)
+	require.Equal(t, "test_title", *opts.Title)
+
+	require.NotEqual(t, nil, opts.Description)
+	require.Equal(t, "test_description", *opts.Description)
+
+	require.NotEqual(t, nil, opts.Summary)
+	require.Equal(t, "test_summary", *opts.Summary)
+
+	require.Equal(t, 2, len(opts.ValueOptions))
+
+	require.NotEqual(t, nil, opts.IsRequired)
+	require.Equal(t, true, *opts.IsRequired)
+
+	require.NotEqual(t, nil, opts.IsExpand)
+	require.Equal(t, true, *opts.IsExpand)
+
+	require.NotEqual(t, nil, opts.IsDontChangeValue)
+	require.Equal(t, false, *opts.IsDontChangeValue)
+
+	require.NotEqual(t, nil, opts.IsTemplate)
+	require.Equal(t, false, *opts.IsTemplate)
 }
 
 func TestValidate(t *testing.T) {
 	// No key-value
 	env := EnvironmentItemModel{
 		OptionsKey: EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testTrue),
-			IsDontChangeValue: pointers.NewBoolPtr(testFalse),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(true),
+			IsDontChangeValue: pointers.NewBoolPtr(false),
 		},
 	}
-	err := env.Validate()
-	if err == nil {
-		t.Fatal("Should be invalid env, no key-value")
-	}
+	require.NotEqual(t, nil, env.Validate())
 
 	// Empty key
 	env = EnvironmentItemModel{
-		"": testValue,
+		"": "test_value",
 	}
-	err = env.Validate()
-	if err == nil {
-		t.Fatal("Should be invalid env, no empty key")
-	}
+	require.NotEqual(t, nil, env.Validate())
 
 	// Valid env
 	env = EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 	}
-	err = env.Validate()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env.Validate())
 }
