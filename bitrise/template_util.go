@@ -12,19 +12,14 @@ import (
 	"github.com/bitrise-io/goinp/goinp"
 )
 
-func getEnv(key string) string {
-	envList, err := EnvmanJSONPrint(InputEnvstorePath)
-	if err != nil {
-		log.Errorf("Faild to get env list, err: %s", err)
-	}
-	if len(envList) > 0 {
-		for aKey, value := range envList {
-			if aKey == key {
-				return value
-			}
-		}
-	}
-	return os.Getenv(key)
+// TemplateDataModel ...
+type TemplateDataModel struct {
+	BuildResults  models.BuildRunResultsModel
+	IsBuildFailed bool
+	IsBuildOK     bool
+	IsCI          bool
+	IsPR          bool
+	PullRequestID string
 }
 
 var (
@@ -38,20 +33,23 @@ var (
 	}
 )
 
-// TemplateDataModel ...
-type TemplateDataModel struct {
-	BuildResults  models.BuildRunResultsModel
-	IsBuildFailed bool
-	IsBuildOK     bool
-	IsCI          bool
-	IsPR          bool
-	PullRequestID string
+func getEnv(key string) string {
+	envList, err := EnvmanJSONPrint(InputEnvstorePath)
+	if err != nil && !strings.Contains(err.Error(), "Faild to read envs, error: No file found at path") {
+		log.Errorf("Faild to get env list, err: %s", err)
+	}
+	if len(envList) > 0 {
+		for aKey, value := range envList {
+			if aKey == key {
+				return value
+			}
+		}
+	}
+	return os.Getenv(key)
 }
 
-func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateDataModel {
+func createTemplateDataModel(isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) TemplateDataModel {
 	isBuildOK := !buildResults.IsBuildFailed()
-	isCI := (os.Getenv(CIModeEnvKey) == "true")
-	pullReqID := os.Getenv(PullRequestIDEnvKey)
 	IsPullRequestMode := (pullReqID != "")
 
 	return TemplateDataModel{
@@ -64,23 +62,23 @@ func createTemplateDataModel(buildResults models.BuildRunResultsModel) TemplateD
 	}
 }
 
-// EvaluateStepTemplateToBool ...
-func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResultsModel) (bool, error) {
+// EvaluateTemplateToBool ...
+func EvaluateTemplateToBool(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) (bool, error) {
 	if expStr == "" {
-		return false, errors.New("EvaluateStepTemplateToBool: Invalid, empty input: expStr")
+		return false, errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
 	}
 
 	if !strings.Contains(expStr, "{{") {
 		expStr = "{{" + expStr + "}}"
 	}
 
-	tmpl := template.New("EvaluateStepTemplateToBool").Funcs(templateFuncMap)
+	tmpl := template.New("EvaluateTemplateToBool").Funcs(templateFuncMap)
 	tmpl, err := tmpl.Parse(expStr)
 	if err != nil {
 		return false, err
 	}
 
-	templateData := createTemplateDataModel(buildResults)
+	templateData := createTemplateDataModel(isCI, pullReqID, buildResults)
 	var resBuffer bytes.Buffer
 	if err := tmpl.Execute(&resBuffer, templateData); err != nil {
 		return false, err
@@ -88,4 +86,29 @@ func EvaluateStepTemplateToBool(expStr string, buildResults models.BuildRunResul
 	resString := resBuffer.String()
 
 	return goinp.ParseBool(resString)
+}
+
+// EvaluateTemplateToString ...
+func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) (string, error) {
+	if expStr == "" {
+		return "", errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
+	}
+
+	if !strings.Contains(expStr, "{{") {
+		expStr = "{{" + expStr + "}}"
+	}
+
+	tmpl := template.New("EvaluateTemplateToBool").Funcs(templateFuncMap)
+	tmpl, err := tmpl.Parse(expStr)
+	if err != nil {
+		return "", err
+	}
+
+	templateData := createTemplateDataModel(isCI, pullReqID, buildResults)
+	var resBuffer bytes.Buffer
+	if err := tmpl.Execute(&resBuffer, templateData); err != nil {
+		return "", err
+	}
+
+	return resBuffer.String(), nil
 }

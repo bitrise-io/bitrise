@@ -14,12 +14,14 @@ const (
 )
 
 const (
-	//DefaultIsRequired ...
-	DefaultIsRequired = false
 	// DefaultIsExpand ...
 	DefaultIsExpand = true
+	//DefaultIsRequired ...
+	DefaultIsRequired = false
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
+	// DefaultIsTemplat ...
+	DefaultIsTemplat = false
 )
 
 // GetKeyValuePair ...
@@ -118,6 +120,12 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
 			}
 			envSerModel.IsDontChangeValue = pointers.NewBoolPtr(castedValue)
+		case "is_template":
+			castedValue, ok := value.(bool)
+			if !ok {
+				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+			}
+			envSerModel.IsTemplate = pointers.NewBoolPtr(castedValue)
 		default:
 			return fmt.Errorf("Not supported key found in options: %#v", keyStr)
 		}
@@ -207,6 +215,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	}
 	if options.IsDontChangeValue == nil {
 		options.IsDontChangeValue = pointers.NewBoolPtr(DefaultIsDontChangeValue)
+	}
+	if options.IsTemplate == nil {
+		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplat)
 	}
 	(*env)[OptionsKey] = options
 	return nil

@@ -274,6 +274,13 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
+	if options.IsTemplate != nil {
+		if *options.IsTemplate == envmanModels.DefaultIsTemplat {
+			options.IsTemplate = nil
+		} else {
+			hasOptions = true
+		}
+	}
 
 	if hasOptions {
 		(*env)[envmanModels.OptionsKey] = options
@@ -372,6 +379,9 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 	}
 	if otherOptions.IsDontChangeValue != nil {
 		options.IsDontChangeValue = pointers.NewBoolPtr(*otherOptions.IsDontChangeValue)
+	}
+	if otherOptions.IsTemplate != nil {
+		options.IsTemplate = pointers.NewBoolPtr(*otherOptions.IsTemplate)
 	}
 	(*env)[envmanModels.OptionsKey] = options
 	return nil

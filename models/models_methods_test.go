@@ -13,31 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testKey    = "test_key"
-	testValue  = "test_value"
-	testKey1   = "test_key1"
-	testValue1 = "test_value1"
-	testKey2   = "test_key2"
-	testValue2 = "test_value2"
-
-	title   = "name 1"
-	desc    = "desc 1"
-	website = "web/1"
-	git     = "https://git.url"
-	fork    = "fork/1"
-
-	testTitle       = "test_title"
-	testDescription = "test_description"
-	testSummary     = "test_summary"
-	testTrue        = true
-	testFalse       = false
-)
-
-var (
-	testValueOptions = []string{"test_valu_options1", "test_valu_options2"}
-)
-
 // ----------------------------
 // --- Validate
 
@@ -47,14 +22,7 @@ func TestValidate(t *testing.T) {
 		BeforeRun: []string{"befor1", "befor2", "befor3"},
 		AfterRun:  []string{"after1", "after2", "after3"},
 	}
-	err := workflow.Validate()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = workflow.Validate()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, workflow.Validate())
 
 	configStr := `
 format_version: 1.0.0
@@ -76,20 +44,10 @@ workflows:
 `
 
 	config := BitriseDataModel{}
-	if err = yaml.Unmarshal([]byte(configStr), &config); err != nil {
-		t.Fatal("Failed to yaml.Unmarshal config string, err:", err)
-	}
-
-	if err := config.Normalize(); err != nil {
-		t.Fatal("Failed to Normalize config, err:", err)
-	}
-	err = config.Validate()
-	if err == nil {
-		t.Fatal("Validate should fail")
-	}
-	if !strings.Contains(err.Error(), "Invalid env: more than 2 fields:") {
-		t.Fatal("Validate error should be: invalid app environment")
-	}
+	require.Equal(t, nil, yaml.Unmarshal([]byte(configStr), &config))
+	require.Equal(t, nil, config.Normalize())
+	require.NotEqual(t, nil, config.Validate())
+	require.Equal(t, true, strings.Contains(config.Validate().Error(), "Invalid env: more than 2 fields:"))
 }
 
 // ----------------------------
@@ -98,68 +56,44 @@ workflows:
 func TestMergeEnvironmentWith(t *testing.T) {
 	// Different keys
 	diffEnv := envmanModels.EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testDescription),
-			Summary:           pointers.NewStringPtr(testSummary),
-			ValueOptions:      testValueOptions,
-			IsRequired:        pointers.NewBoolPtr(testTrue),
-			IsExpand:          pointers.NewBoolPtr(testFalse),
-			IsDontChangeValue: pointers.NewBoolPtr(testTrue),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_valu_options1", "test_valu_options2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(true),
 		},
 	}
 	env := envmanModels.EnvironmentItemModel{
-		testKey1: testValue,
+		"test_key1": "test_value",
 	}
-
-	err := MergeEnvironmentWith(&env, diffEnv)
-	if err == nil {
-		t.Fatal("Different keys, should case of error")
-	}
+	require.NotEqual(t, nil, MergeEnvironmentWith(&env, diffEnv))
 
 	// Normal merge
 	env = envmanModels.EnvironmentItemModel{
-		testKey:                 testValue,
+		"test_key":              "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{},
 	}
-
-	err = MergeEnvironmentWith(&env, diffEnv)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, MergeEnvironmentWith(&env, diffEnv))
 
 	options, err := env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
 	diffOptions, err := diffEnv.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
-	if *options.Title != *diffOptions.Title {
-		t.Fatal("Failed to merge Title")
-	}
-	if *options.Description != *diffOptions.Description {
-		t.Fatal("Failed to merge Description")
-	}
-	if *options.Summary != *diffOptions.Summary {
-		t.Fatal("Failed to merge Summary")
-	}
-	if len(options.ValueOptions) != len(diffOptions.ValueOptions) {
-		t.Fatal("Failed to merge ValueOptions")
-	}
-	if *options.IsRequired != *diffOptions.IsRequired {
-		t.Fatal("Failed to merge IsRequired")
-	}
-	if *options.IsExpand != *diffOptions.IsExpand {
-		t.Fatal("Failed to merge IsExpand")
-	}
-	if *options.IsDontChangeValue != *diffOptions.IsDontChangeValue {
-		t.Fatal("Failed to merge IsDontChangeValue")
-	}
+	require.Equal(t, *diffOptions.Title, *options.Title)
+	require.Equal(t, *diffOptions.Description, *options.Description)
+	require.Equal(t, *diffOptions.Summary, *options.Summary)
+	require.Equal(t, len(diffOptions.ValueOptions), len(options.ValueOptions))
+	require.Equal(t, *diffOptions.IsRequired, *options.IsRequired)
+	require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
+	require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
+	require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
 }
 
 func TestMergeStepWith(t *testing.T) {
@@ -197,7 +131,7 @@ func TestMergeStepWith(t *testing.T) {
 		Title:      pointers.NewStringPtr(diffTitle),
 		HostOsTags: []string{"linux"},
 		Source: stepmanModels.StepSourceModel{
-			Git: git,
+			Git: "https://git.url",
 		},
 		Dependencies: []stepmanModels.DependencyModel{
 			stepmanModels.DependencyModel{
@@ -262,14 +196,10 @@ func TestGetInputByKey(t *testing.T) {
 	}
 
 	_, found := getInputByKey(stepData, "KEY_1")
-	if found == false {
-		t.Fatal("Failed to find env (KEY_1)")
-	}
+	require.Equal(t, true, found)
 
 	_, found = getInputByKey(stepData, "KEY_3")
-	if found {
-		t.Fatal("(KEY_3) found, even it doesn't exist")
-	}
+	require.Equal(t, false, found)
 }
 
 // ----------------------------
@@ -283,12 +213,8 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	}
 
 	id, _, err := GetStepIDStepDataPair(stepListItem)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id != "step1" {
-		t.Fatalf("Invalid step id (%s) found", id)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, "step1", id)
 
 	stepListItem = StepListItemModel{
 		"step1": stepData,
@@ -296,9 +222,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	}
 
 	id, _, err = GetStepIDStepDataPair(stepListItem)
-	if err == nil {
-		t.Fatal("2 key-value, should case of error")
-	}
+	require.NotEqual(t, nil, err)
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
@@ -536,39 +460,22 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
 			IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
 			IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
+			IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplat),
 		},
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	options, err := env.GetOptions()
-	if err != nil {
-		t.Fatal("Failed to get env options:", err)
-	}
+	require.Equal(t, nil, err)
 
-	if options.Title != nil {
-		t.Fatal("options.Title should be nil")
-	}
-	if options.Description != nil {
-		t.Fatal("options.Description should be nil")
-	}
-	if options.Summary != nil {
-		t.Fatal("options.Summary should be nil")
-	}
-	if len(options.ValueOptions) != 0 {
-		t.Fatal("options.ValueOptions should be empty")
-	}
-	if options.IsRequired != nil {
-		t.Fatal("options.IsRequired should be nil")
-	}
-	if options.IsExpand != nil {
-		t.Fatal("options.IsExpand should be nil")
-	}
-	if options.IsDontChangeValue != nil {
-		t.Fatal("options.IsDontChangeValue should be nil")
-	}
+	require.Equal(t, (*string)(nil), options.Title)
+	require.Equal(t, (*string)(nil), options.Description)
+	require.Equal(t, (*string)(nil), options.Summary)
+	require.Equal(t, 0, len(options.ValueOptions))
+	require.Equal(t, (*bool)(nil), options.IsRequired)
+	require.Equal(t, (*bool)(nil), options.IsExpand)
+	require.Equal(t, (*bool)(nil), options.IsDontChangeValue)
+	require.Equal(t, (*bool)(nil), options.IsTemplate)
 
 	// Trivial don't remove - no fields should be default value
 	env = envmanModels.EnvironmentItemModel{
@@ -581,53 +488,31 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(false),
 			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(true),
 		},
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	options, err = env.GetOptions()
-	if err != nil {
-		t.Fatal("Failed to get env options:", err)
-	}
+	require.Equal(t, nil, err)
 
-	if *options.Title != "t" {
-		t.Fatal("options.Title should be: t")
-	}
-	if *options.Description != "d" {
-		t.Fatal("options.Description should be: d")
-	}
-	if *options.Summary != "s" {
-		t.Fatal("options.Summary should be: s")
-	}
-	if options.ValueOptions[0] != "i" {
-		t.Fatal("options.ValueOptions should be: {i}")
-	}
-	if *options.IsRequired != true {
-		t.Fatal("options.IsRequired should be: false")
-	}
-	if *options.IsExpand != false {
-		t.Fatal("options.IsExpand should be: false")
-	}
-	if *options.IsDontChangeValue != true {
-		t.Fatal("options.IsDontChangeValue should be: true")
-	}
+	require.Equal(t, "t", *options.Title)
+	require.Equal(t, "d", *options.Description)
+	require.Equal(t, "s", *options.Summary)
+	require.Equal(t, "i", options.ValueOptions[0])
+	require.Equal(t, true, *options.IsRequired)
+	require.Equal(t, false, *options.IsExpand)
+	require.Equal(t, true, *options.IsDontChangeValue)
+	require.Equal(t, true, *options.IsTemplate)
 
 	// No options - opts field shouldn't exist
 	env = envmanModels.EnvironmentItemModel{
 		"TEST_KEY": "test_value",
 	}
-
-	if err := removeEnvironmentRedundantFields(&env); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
 	_, ok := env[envmanModels.OptionsKey]
-	if ok {
-		t.Fatal("opts field shouldn't exist")
-	}
+	require.Equal(t, false, ok)
 }
 
 func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {

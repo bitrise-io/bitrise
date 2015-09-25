@@ -126,3 +126,13 @@ type StepListModel struct {
 	StepLib string   `json:"steplib,omitempty" yaml:"steplib,omitempty"`
 	Steps   []string `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
+
+// StepLibURIModel ...
+type StepLibURIModel struct {
+	URI string `json:"uri,omitempty" yaml:"uri,omitempty"`
+}
+
+// StepLibURIsModel ...
+type StepLibURIsModel struct {
+	StepLibURIs []StepLibURIModel `json:"steplibs,omitempty" yaml:"steplibs,omitempty"`
+}

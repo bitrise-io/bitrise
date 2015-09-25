@@ -10,6 +10,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEvaluateInputs(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    envs:
+    - TEST_KEY: "test value"
+    steps:
+    - script:
+        title: "Template test"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            {{if .IsCI}}
+            exit 1
+            {{else}}
+            exit 0
+            {{end}}
+          opts:
+            is_template: true
+    - script:
+        title: "Template test"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            {{if enveq "TEST_KEY" "test value"}}
+            exit 0
+            {{else}}
+            exit 1
+            {{end}}
+          opts:
+            is_template: true
+`
+
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, nil, err)
+
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+}
+
 func TestGetWorkflowIDByPattern(t *testing.T) {
 	configStr := `
 trigger_map:
