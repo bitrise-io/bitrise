@@ -5,21 +5,7 @@ import (
 
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-)
-
-var (
-	testKey          = "test_key"
-	testValue        = "test_value"
-	testKey1         = "test_key1"
-	testValue1       = "test_value1"
-	testKey2         = "test_key2"
-	testValue2       = "test_value2"
-	testTitle        = "test_title"
-	testDescription  = "test_description"
-	testValueOptions = []string{testKey2, testValue2}
-	testTrue         = true
-	testFalse        = false
-	testEmptyString  = ""
+	"github.com/stretchr/testify/require"
 )
 
 func countOfEnvInEnvSlice(env models.EnvironmentItemModel, envSlice []models.EnvironmentItemModel) (cnt int, err error) {
@@ -64,64 +50,38 @@ func TestUpdateOrAddToEnvlist(t *testing.T) {
 	env1 := models.EnvironmentItemModel{
 		"test_key1": "test_value1",
 	}
-	err := env1.FillMissingDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env1.FillMissingDefaults())
 
 	env2 := models.EnvironmentItemModel{
 		"test_key2": "test_value2",
 	}
-	err = env2.FillMissingDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, env2.FillMissingDefaults())
 
 	// Should add to list, but not override
 	oldEnvSlice := []models.EnvironmentItemModel{env1, env2}
 	newEnvSlice, err := UpdateOrAddToEnvlist(oldEnvSlice, env1, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
 	env1Cnt, err := countOfEnvKeyInEnvSlice(env1, newEnvSlice)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if env1Cnt != 2 {
-		t.Fatalf("Failed to proper add env, %d x (test_key1)", env1Cnt)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, 2, env1Cnt)
 
 	env2Cnt, err := countOfEnvKeyInEnvSlice(env2, newEnvSlice)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if env2Cnt != 1 {
-		t.Fatalf("Failed to proper add env, %d x (test_key2)", env2Cnt)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, env2Cnt)
 
 	// Should update list
 	oldEnvSlice = []models.EnvironmentItemModel{env1, env2}
 	newEnvSlice, err = UpdateOrAddToEnvlist(oldEnvSlice, env1, true)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, err)
 
 	env1Cnt, err = countOfEnvKeyInEnvSlice(env1, newEnvSlice)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if env1Cnt != 1 {
-		t.Fatalf("Failed to proper add env, %d x (test_key1)", env1Cnt)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, env1Cnt)
 
 	env2Cnt, err = countOfEnvKeyInEnvSlice(env2, newEnvSlice)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if env2Cnt != 1 {
-		t.Fatalf("Failed to proper add env, %d x (test_key2)", env2Cnt)
-	}
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, env2Cnt)
 }
 
 func TestRemoveDefaults(t *testing.T) {
@@ -131,10 +91,10 @@ func TestRemoveDefaults(t *testing.T) {
 
 	// Filled env
 	env := models.EnvironmentItemModel{
-		testKey: testValue,
+		"test_key": "test_value",
 		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(testTitle),
-			Description:       pointers.NewStringPtr(testEmptyString),
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr(""),
 			ValueOptions:      []string{},
 			IsRequired:        pointers.NewBoolPtr(defaultIsRequired),
 			IsExpand:          pointers.NewBoolPtr(defaultIsExpand),
@@ -142,52 +102,19 @@ func TestRemoveDefaults(t *testing.T) {
 		},
 	}
 
-	err := removeDefaults(&env)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, nil, removeDefaults(&env))
 
 	opts, err := env.GetOptions()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if opts.Title == nil {
-		t.Fatal("Removed Title")
-	}
-	if opts.Description != nil {
-		t.Fatal("Failed to remove default Description")
-	}
-	if opts.IsRequired != nil {
-		t.Fatal("Failed to remove default IsRequired")
-	}
-	if opts.IsExpand != nil {
-		t.Fatal("Failed to remove default IsExpand")
-	}
-	if opts.IsDontChangeValue != nil {
-		t.Fatal("Failed to remove default IsDontChangeValue")
-	}
-}
+	require.Equal(t, nil, err)
 
-// func TestGenerateFormattedYMLForEnvModels(t *testing.T) {
-// 	t.Log("TestGenerateFormattedYMLForEnvModels")
-// }
-//
-// func TestClearPathIfExist(t *testing.T) {
-// 	t.Log("TestClearPathIfExist")
-// }
-//
-// func TestInitAtPath(t *testing.T) {
-// 	t.Log("TestInitAtPath")
-// }
-//
-// func TestReadEnvs(t *testing.T) {
-// 	t.Log("TestReadEnvs")
-// }
-//
-// func TestReadEnvsOrCreateEmptyList(t *testing.T) {
-// 	t.Log("TestReadEnvsOrCreateEmptyList")
-// }
-//
-// func TestWriteEnvMapToFile(t *testing.T) {
-// 	t.Log("TestWriteEnvMapToFile")
-// }
+	require.NotEqual(t, (*string)(nil), opts.Title)
+	require.Equal(t, "test_title", *opts.Title)
+	require.Equal(t, (*string)(nil), opts.Description)
+	require.Equal(t, (*string)(nil), opts.Summary)
+	require.Equal(t, 0, len(opts.ValueOptions))
+	require.Equal(t, (*bool)(nil), opts.IsRequired)
+	require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
+	require.Equal(t, (*bool)(nil), opts.IsExpand)
+	require.Equal(t, (*bool)(nil), opts.IsTemplate)
+
+}
