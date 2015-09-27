@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/goinp/goinp"
 )
 
@@ -22,22 +22,7 @@ type TemplateDataModel struct {
 	PullRequestID string
 }
 
-var (
-	templateFuncMap = template.FuncMap{
-		"getenv": func(key string) string {
-			return getEnv(key)
-		},
-		"enveq": func(key, expectedValue string) bool {
-			return (getEnv(key) == expectedValue)
-		},
-	}
-)
-
-func getEnv(key string) string {
-	envList, err := EnvmanJSONPrint(InputEnvstorePath)
-	if err != nil && !strings.Contains(err.Error(), "Faild to read envs, error: No file found at path") {
-		log.Errorf("Faild to get env list, err: %s", err)
-	}
+func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
 	if len(envList) > 0 {
 		for aKey, value := range envList {
 			if aKey == key {
@@ -62,40 +47,23 @@ func createTemplateDataModel(isCI bool, pullReqID string, buildResults models.Bu
 	}
 }
 
-// EvaluateTemplateToBool ...
-func EvaluateTemplateToBool(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) (bool, error) {
-	if expStr == "" {
-		return false, errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
-	}
-
-	if !strings.Contains(expStr, "{{") {
-		expStr = "{{" + expStr + "}}"
-	}
-
-	tmpl := template.New("EvaluateTemplateToBool").Funcs(templateFuncMap)
-	tmpl, err := tmpl.Parse(expStr)
-	if err != nil {
-		return false, err
-	}
-
-	templateData := createTemplateDataModel(isCI, pullReqID, buildResults)
-	var resBuffer bytes.Buffer
-	if err := tmpl.Execute(&resBuffer, templateData); err != nil {
-		return false, err
-	}
-	resString := resBuffer.String()
-
-	return goinp.ParseBool(resString)
-}
-
 // EvaluateTemplateToString ...
-func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) (string, error) {
+func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (string, error) {
 	if expStr == "" {
 		return "", errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
 	}
 
 	if !strings.Contains(expStr, "{{") {
 		expStr = "{{" + expStr + "}}"
+	}
+
+	var templateFuncMap = template.FuncMap{
+		"getenv": func(key string) string {
+			return getEnv(key, envList)
+		},
+		"enveq": func(key, expectedValue string) bool {
+			return (getEnv(key, envList) == expectedValue)
+		},
 	}
 
 	tmpl := template.New("EvaluateTemplateToBool").Funcs(templateFuncMap)
@@ -111,4 +79,14 @@ func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildR
 	}
 
 	return resBuffer.String(), nil
+}
+
+// EvaluateTemplateToBool ...
+func EvaluateTemplateToBool(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (bool, error) {
+	resString, err := EvaluateTemplateToString(expStr, isCI, pullReqID, buildResults, envList)
+	if err != nil {
+		return false, err
+	}
+
+	return goinp.ParseBool(resString)
 }
