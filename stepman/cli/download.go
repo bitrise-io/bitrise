@@ -33,9 +33,9 @@ func download(c *cli.Context) {
 
 		latest, err := collection.GetLatestStepVersion(id)
 		if err != nil {
-			log.Fatal("[STEPMAN] - Failed to get step latest version:", err)
+			log.Fatal("[STEPMAN] - Failed to get step latest version: ", err)
 		}
-		log.Debug("[STEPMAN] - Latest version of step:", latest)
+		log.Debug("[STEPMAN] - Latest version of step: ", latest)
 		version = latest
 	}
 
