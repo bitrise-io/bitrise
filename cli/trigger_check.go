@@ -41,7 +41,7 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 			return item.WorkflowID, nil
 		}
 	}
-	return "", fmt.Errorf("Run triggered by pull request (pattern: %s), but no matching pattern found", pattern)
+	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
 }
 
 func triggerCheck(c *cli.Context) {

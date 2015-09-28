@@ -168,12 +168,12 @@ workflows:
 	require.Equal(t, "feature", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+	require.NotEqual(t, nil, err)
+	require.Equal(t, "", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.Equal(t, nil, err)
-	require.Equal(t, "test", workflowID)
+	require.NotEqual(t, nil, err)
+	require.Equal(t, "", workflowID)
 
 	// Pull request mode
 	IsPullRequestMode = true
