@@ -2,16 +2,13 @@ package bitrise
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 // ------------------
@@ -43,10 +40,10 @@ func StepmanUpdate(collection string) error {
 func StepmanPrintRawStepLibStepInfo(collection, stepID, stepVersion string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
-		"--id", stepID, "--version", stepVersion}
+		"--id", stepID, "--version", stepVersion, "--format", "raw"}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+		return err
 	}
 
 	fmt.Println(out)
@@ -56,10 +53,10 @@ func StepmanPrintRawStepLibStepInfo(collection, stepID, stepVersion string) erro
 // StepmanPrintRawLocalStepInfo ...
 func StepmanPrintRawLocalStepInfo(pth string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth}
+	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "raw"}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return fmt.Errorf("Failed to run stepman step-info, err: %s", err)
+		return err
 	}
 
 	fmt.Println(out)
@@ -67,42 +64,32 @@ func StepmanPrintRawLocalStepInfo(pth string) error {
 }
 
 // StepmanStepLibStepInfo ...
-func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
-	args := []string{"--debug", "--loglevel", "panic", "step-info", "--collection", collection,
+func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
+	args := []string{"--debug", "--loglevel", "debug", "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(outBuffer, errBuffer, "stepman", args...); err != nil {
-		return stepmanModels.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, out: %s err: %s", errBuffer.String(), err)
+	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
-	stepInfo := stepmanModels.StepInfoModel{}
-	if err := json.Unmarshal(outBuffer.Bytes(), &stepInfo); err != nil {
-		return stepmanModels.StepInfoModel{}, err
-	}
-
-	return stepInfo, nil
+	return outBuffer.String(), nil
 }
 
 // StepmanLocalStepInfo ...
-func StepmanLocalStepInfo(pth string) (stepmanModels.StepInfoModel, error) {
-	args := []string{"--debug", "--loglevel", "panic", "step-info", "--step-yml", pth, "--format", "json"}
+func StepmanLocalStepInfo(pth string) (string, error) {
+	args := []string{"--debug", "--loglevel", "debug", "step-info", "--step-yml", pth, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(outBuffer, errBuffer, "stepman", args...); err != nil {
-		return stepmanModels.StepInfoModel{}, fmt.Errorf("Failed to run stepman step-info, out: %s err: %s", errBuffer.String(), err)
+	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
-	stepInfo := stepmanModels.StepInfoModel{}
-	if err := json.Unmarshal(outBuffer.Bytes(), &stepInfo); err != nil {
-		return stepmanModels.StepInfoModel{}, err
-	}
-
-	return stepInfo, nil
+	return outBuffer.String(), nil
 }
 
 // StepmanPrintRawStepList ...
@@ -111,7 +98,7 @@ func StepmanPrintRawStepList(collection string) error {
 	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
 	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return fmt.Errorf("Failed to run stepman step-list, err: %s", err)
+		return err
 	}
 
 	fmt.Println(out)
@@ -119,22 +106,17 @@ func StepmanPrintRawStepList(collection string) error {
 }
 
 // StepmanStepList ...
-func StepmanStepList(collection string) (stepmanModels.StepListModel, error) {
-	args := []string{"--debug", "--loglevel", "panic", "step-list", "--collection", collection, "--format", "json"}
+func StepmanStepList(collection string) (string, error) {
+	args := []string{"--debug", "--loglevel", "debug", "step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(outBuffer, errBuffer, "stepman", args...); err != nil {
-		return stepmanModels.StepListModel{}, fmt.Errorf("Failed to run stepman step-info, out: %s err: %s", errBuffer.String(), err)
+	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
-	stepList := stepmanModels.StepListModel{}
-	if err := json.Unmarshal(outBuffer.Bytes(), &stepList); err != nil {
-		return stepmanModels.StepListModel{}, err
-	}
-
-	return stepList, nil
+	return outBuffer.String(), nil
 }
 
 // ------------------
@@ -170,31 +152,23 @@ func EnvmanAdd(envstorePth, key, value string, expand bool) error {
 }
 
 // EnvmanRun ...
-func EnvmanRun(envstorePth, workDirPth string, cmd []string, logLevel string) (int, error) {
-	if logLevel == "" {
-		logLevel = log.GetLevel().String()
-	}
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
+func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
+	args := []string{"--loglevel", "panic", "--path", envstorePth, "run"}
 	args = append(args, cmd...)
 
 	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
 }
 
 // EnvmanJSONPrint ...
-func EnvmanJSONPrint(envstorePth string) (envmanModels.EnvsJSONListModel, error) {
-	args := []string{"--loglevel", "panic", "--path", envstorePth, "print", "--format", "json", "--expand"}
+func EnvmanJSONPrint(envstorePth string) (string, error) {
+	args := []string{"--loglevel", "debug", "--path", envstorePth, "print", "--format", "json", "--expand"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(outBuffer, errBuffer, "stepman", args...); err != nil {
-		return envmanModels.EnvsJSONListModel{}, fmt.Errorf("Failed to run envman print, out: %s, err: %s", errBuffer.String(), err)
+	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "envman", args...); err != nil {
+		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
-	envList := envmanModels.EnvsJSONListModel{}
-	if err := json.Unmarshal(outBuffer.Bytes(), &envList); err != nil {
-		return envmanModels.EnvsJSONListModel{}, err
-	}
-
-	return envList, nil
+	return outBuffer.String(), nil
 }
