@@ -3,6 +3,7 @@ package bitrise
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -71,7 +72,7 @@ func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, err
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -85,7 +86,7 @@ func StepmanLocalStepInfo(pth string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -112,7 +113,7 @@ func StepmanStepList(collection string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "stepman", args...); err != nil {
+	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -166,7 +167,7 @@ func EnvmanJSONPrint(envstorePth string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithBuffers(&outBuffer, &errBuffer, "envman", args...); err != nil {
+	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "envman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
