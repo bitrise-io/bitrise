@@ -9,14 +9,16 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printFinishAudit(share ShareModel) {
+func printFinishAudit(share ShareModel, toolMode bool) {
 	fmt.Println()
 	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) is valid.", share.StepID, share.StepTag)
 	fmt.Println()
-	fmt.Println("   " + GuideTextForShareFinish())
+	fmt.Println("   " + GuideTextForShareFinish(toolMode))
 }
 
 func shareAudit(c *cli.Context) {
+	toolMode := c.Bool(ToolMode)
+
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Error(err)
@@ -32,5 +34,5 @@ func shareAudit(c *cli.Context) {
 		log.Fatalln("[STEPMAN] - Audit failed %s", err)
 	}
 
-	printFinishAudit(share)
+	printFinishAudit(share, toolMode)
 }

@@ -94,6 +94,9 @@ var (
 			Aliases: []string{"s"},
 			Usage:   "Publish your step.",
 			Action:  share,
+			Flags: []cli.Flag{
+				flToolMode,
+			},
 			Subcommands: []cli.Command{
 				{
 					Name:    "start",
@@ -102,6 +105,7 @@ var (
 					Action:  start,
 					Flags: []cli.Flag{
 						flCollection,
+						flToolMode,
 					},
 				},
 				{
@@ -113,6 +117,7 @@ var (
 						flTag,
 						flGit,
 						flStepID,
+						flToolMode,
 					},
 				},
 				{
@@ -120,12 +125,18 @@ var (
 					Aliases: []string{"a"},
 					Usage:   "Validates the step collection.",
 					Action:  shareAudit,
+					Flags: []cli.Flag{
+						flToolMode,
+					},
 				},
 				{
 					Name:    "finish",
 					Aliases: []string{"f"},
 					Usage:   "Finish up.",
 					Action:  finish,
+					Flags: []cli.Flag{
+						flToolMode,
+					},
 				},
 			},
 		},

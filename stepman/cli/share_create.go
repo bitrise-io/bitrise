@@ -20,12 +20,12 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printFinishCreate(share ShareModel, stepDirInSteplib string) {
+func printFinishCreate(share ShareModel, stepDirInSteplib string, toolMode bool) {
 	fmt.Println()
 	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) added to local StepLib (%s).", share.StepID, share.StepTag, stepDirInSteplib)
 	log.Infoln(" *      You can find your Step's step.yml at: " + colorstring.Greenf("%s/step.yml", stepDirInSteplib))
 	fmt.Println()
-	fmt.Println("   " + GuideTextForShareFinish())
+	fmt.Println("   " + GuideTextForShareFinish(toolMode))
 }
 
 func getStepIDFromGit(git string) string {
@@ -36,6 +36,8 @@ func getStepIDFromGit(git string) string {
 }
 
 func create(c *cli.Context) {
+	toolMode := c.Bool(ToolMode)
+
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Error(err)
@@ -56,6 +58,9 @@ func create(c *cli.Context) {
 	stepID := c.String(StepIDKEy)
 	if stepID == "" {
 		stepID = getStepIDFromGit(gitURI)
+	}
+	if stepID == "" {
+		log.Fatalln("No step id specified")
 	}
 
 	route, found := stepman.ReadRoute(share.Collection)
@@ -148,5 +153,5 @@ func create(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	printFinishCreate(share, stepDirInSteplib)
+	printFinishCreate(share, stepDirInSteplib, toolMode)
 }
