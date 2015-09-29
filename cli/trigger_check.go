@@ -41,16 +41,7 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 			return item.WorkflowID, nil
 		}
 	}
-
-	// Check for direct workflow selection
-	_, exist := config.Workflows[pattern]
-	if !exist {
-		return "", fmt.Errorf("Specified Workflow (%s) does not exist!", pattern)
-	} else if IsPullRequestMode {
-		return "", fmt.Errorf("Run triggered by pull request (pattern: %s), but no matching pattern found", pattern)
-	}
-
-	return pattern, nil
+	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
 }
 
 func triggerCheck(c *cli.Context) {
