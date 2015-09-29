@@ -65,6 +65,9 @@ const (
 	// ShortKey ...
 	ShortKey = "short"
 
+	// ToolMode ...
+	ToolMode = "toolmode"
+
 	// FormatKey ...
 	FormatKey      = "format"
 	formatKeyShort = "f"
@@ -151,6 +154,10 @@ var (
 	flStepYML = cli.StringFlag{
 		Name:  StepYMLKey,
 		Usage: "Path of step.yml",
+	}
+	flToolMode = cli.BoolFlag{
+		Name:  ToolMode,
+		Usage: "Stepman called as tool.",
 	}
 )
 

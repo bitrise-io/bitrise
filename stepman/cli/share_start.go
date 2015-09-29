@@ -11,15 +11,17 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printFinishStart(specPth string) {
+func printFinishStart(specPth string, toolMode bool) {
 	fmt.Println()
 	log.Info(" * "+colorstring.Green("[OK]")+" You can find your StepLib repo at: ", specPth)
 	fmt.Println()
-	fmt.Println("   " + GuideTextForShareCreate())
+	fmt.Println("   " + GuideTextForShareCreate(toolMode))
 }
 
 func start(c *cli.Context) {
 	// Input validation
+	toolMode := c.Bool(ToolMode)
+
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
 		log.Fatalln("[STEPMAN] - No step collection specified")
@@ -94,5 +96,5 @@ func start(c *cli.Context) {
 	}
 
 	isSuccess = true
-	printFinishStart(pth)
+	printFinishStart(pth, toolMode)
 }
