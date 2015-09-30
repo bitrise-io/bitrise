@@ -12,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.9-4-gc58637a",
-			"Rev": "c58637a11dc9586631ee7f185ca5200b1c22caf5"
+			"Comment": "0.9.9-6-g8098976",
+			"Rev": "80989761ae2bcb72e38eec54e45b3ca696ef7b50"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -49,8 +49,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.16-22-g75ed40a",
-			"Rev": "75ed40af11d514c928e29af71607985339467672"
+			"Comment": "0.9.16-26-ga715ec7",
+			"Rev": "a715ec7179f5c9797a6b6339e68eab7a8c48bd24"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",

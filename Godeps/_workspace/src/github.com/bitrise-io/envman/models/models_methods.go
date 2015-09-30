@@ -24,6 +24,11 @@ const (
 	DefaultIsTemplat = false
 )
 
+func castValueToString(v interface{}) string {
+	value := fmt.Sprintf("%v", v)
+	return value
+}
+
 // GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	if len(env) > 2 {
@@ -44,7 +49,10 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 				if value == nil {
 					valueStr = ""
 				} else {
-					return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
+					valueStr = castValueToString(value)
+					if valueStr == "" {
+						return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
+					}
 				}
 			}
 
@@ -96,7 +104,10 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				for _, interfItm := range interfArr {
 					castedItm, ok := interfItm.(string)
 					if !ok {
-						return fmt.Errorf("Invalid value in value_options (%#v), not a string: %#v", interfArr, interfItm)
+						castedItm = castValueToString(interfItm)
+						if castedItm == "" {
+							return fmt.Errorf("Invalid value in value_options (%#v), not a string: %#v", interfArr, interfItm)
+						}
 					}
 					castedValue = append(castedValue, castedItm)
 				}
