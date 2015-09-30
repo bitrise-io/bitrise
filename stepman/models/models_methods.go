@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,6 +19,15 @@ const (
 	// DefaultIsSkippable ...
 	DefaultIsSkippable = false
 )
+
+// CreateFromJSON ...
+func (stepInfo StepInfoModel) CreateFromJSON(jsonStr string) (StepInfoModel, error) {
+	info := StepInfoModel{}
+	if err := json.Unmarshal([]byte(jsonStr), &info); err != nil {
+		return StepInfoModel{}, err
+	}
+	return info, nil
+}
 
 // ValidateStepInputOutputModel ...
 func ValidateStepInputOutputModel(env envmanModels.EnvironmentItemModel, checkRequiredFields bool) error {
