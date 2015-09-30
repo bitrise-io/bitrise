@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -23,6 +24,15 @@ const (
 	// DefaultIsTemplat ...
 	DefaultIsTemplat = false
 )
+
+// CreateFromJSON ...
+func (envList EnvsJSONListModel) CreateFromJSON(jsonStr string) (EnvsJSONListModel, error) {
+	list := EnvsJSONListModel{}
+	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
+		return EnvsJSONListModel{}, err
+	}
+	return list, nil
+}
 
 func castValueToString(v interface{}) string {
 	value := fmt.Sprintf("%v", v)
