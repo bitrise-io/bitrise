@@ -66,7 +66,8 @@ func StepmanPrintRawLocalStepInfo(pth string) error {
 
 // StepmanStepLibStepInfo ...
 func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
-	args := []string{"--debug", "--loglevel", "debug", "step-info", "--collection", collection,
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "json"}
 
 	var outBuffer bytes.Buffer
@@ -81,7 +82,8 @@ func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, err
 
 // StepmanLocalStepInfo ...
 func StepmanLocalStepInfo(pth string) (string, error) {
-	args := []string{"--debug", "--loglevel", "debug", "step-info", "--step-yml", pth, "--format", "json"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -108,7 +110,8 @@ func StepmanPrintRawStepList(collection string) error {
 
 // StepmanStepList ...
 func StepmanStepList(collection string) (string, error) {
-	args := []string{"--debug", "--loglevel", "debug", "step-list", "--collection", collection, "--format", "json"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -162,7 +165,8 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
 
 // EnvmanJSONPrint ...
 func EnvmanJSONPrint(envstorePth string) (string, error) {
-	args := []string{"--loglevel", "debug", "--path", envstorePth, "print", "--format", "json", "--expand"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "print", "--format", "json", "--expand"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
