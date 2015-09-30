@@ -38,7 +38,7 @@ func stepList(c *cli.Context) {
 		}
 		break
 	case OutputFormatJSON:
-		outStr, err := bitrise.StepmanStepList(collectionURI)
+		outStr, err := bitrise.StepmanJSONStepList(collectionURI)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}

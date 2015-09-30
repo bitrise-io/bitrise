@@ -15,9 +15,9 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 		}
 		break
 	case OutputFormatJSON:
-		outStr, err := bitrise.StepmanStepLibStepInfo(collectionURI, id, version)
+		outStr, err := bitrise.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
-			return fmt.Errorf("StepmanStepLibStepInfo failed, err: %s", err)
+			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
 		fmt.Println(outStr)
 		break
@@ -35,9 +35,9 @@ func printLocalStepInfo(pth, format string) error {
 		}
 		break
 	case OutputFormatJSON:
-		outStr, err := bitrise.StepmanLocalStepInfo(pth)
+		outStr, err := bitrise.StepmanJSONLocalStepInfo(pth)
 		if err != nil {
-			return fmt.Errorf("StepmanLocalStepInfo failed, err: %s", err)
+			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
 		}
 		fmt.Println(outStr)
 		break

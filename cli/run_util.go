@@ -2,7 +2,6 @@ package cli
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -284,9 +283,9 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
 
-			envList := envmanModels.EnvsJSONListModel{}
-			if err := json.Unmarshal([]byte(outStr), &envList); err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("json.Unmarshal failed, err: %s", err)
+			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
 
 			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, PullReqID, buildRunResults, envList)
@@ -512,10 +511,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			outStr, err := bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+			outStr, err := bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err != nil {
 				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
-					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanStepLibStepInfo failed, err: %s", err), isLastStep)
+					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep)
 					continue
 				}
 				// May StepLib should be updated
@@ -525,16 +524,16 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					continue
 				}
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
-				outStr, err = bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+				outStr, err = bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 				if err != nil {
-					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanStepLibStepInfo failed, err: %s", err), isLastStep)
+					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep)
 					continue
 				}
 			}
 
-			stepInfo := stepmanModels.StepInfoModel{}
-			if err := json.Unmarshal([]byte(outStr), &stepInfo); err != nil {
-				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanStepLibStepInfo failed, err: %s", err), isLastStep)
+			stepInfo, err := stepmanModels.StepInfoModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep)
 			}
 
 			stepInfoPtr.Version = stepInfo.Version
@@ -576,9 +575,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err), isLastStep)
 			}
 
-			envList := envmanModels.EnvsJSONListModel{}
-			if err := json.Unmarshal([]byte(outStr), &envList); err != nil {
-				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("json.Unmarshal failed, err: %s", err), isLastStep)
+			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep)
 			}
 
 			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, PullReqID, buildRunResults, envList)

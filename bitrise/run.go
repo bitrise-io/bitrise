@@ -64,8 +64,8 @@ func StepmanPrintRawLocalStepInfo(pth string) error {
 	return nil
 }
 
-// StepmanStepLibStepInfo ...
-func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
+// StepmanJSONStepLibStepInfo ...
+func StepmanJSONStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "json"}
@@ -80,8 +80,8 @@ func StepmanStepLibStepInfo(collection, stepID, stepVersion string) (string, err
 	return outBuffer.String(), nil
 }
 
-// StepmanLocalStepInfo ...
-func StepmanLocalStepInfo(pth string) (string, error) {
+// StepmanJSONLocalStepInfo ...
+func StepmanJSONLocalStepInfo(pth string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "json"}
 
@@ -108,8 +108,8 @@ func StepmanPrintRawStepList(collection string) error {
 	return nil
 }
 
-// StepmanStepList ...
-func StepmanStepList(collection string) (string, error) {
+// StepmanJSONStepList ...
+func StepmanJSONStepList(collection string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
 
@@ -157,7 +157,8 @@ func EnvmanAdd(envstorePth, key, value string, expand bool) error {
 
 // EnvmanRun ...
 func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
-	args := []string{"--loglevel", "panic", "--path", envstorePth, "run"}
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmd...)
 
 	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
