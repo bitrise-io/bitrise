@@ -112,6 +112,7 @@ type EnvInfoModel struct {
 // StepInfoModel ...
 type StepInfoModel struct {
 	ID          string         `json:"step_id,omitempty" yaml:"step_id,omitempty"`
+	Title       string         `json:"step_title,omitempty" yaml:"step_title,omitempty"`
 	Version     string         `json:"step_version,omitempty" yaml:"step_version,omitempty"`
 	Latest      string         `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
 	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
