@@ -22,6 +22,37 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error {
+	for _, env := range envs {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+
+		if !IsCIMode {
+			if key == bitrise.CIModeEnvKey && value == "true" {
+				IsCIMode = true
+			}
+		}
+
+		if !IsPullRequestMode {
+			if key == bitrise.PullRequestIDEnvKey && value != "" {
+				PullReqID = value
+				IsPullRequestMode = true
+			}
+		}
+	}
+
+	if IsCIMode {
+		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
+	}
+	if IsPullRequestMode {
+		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
+	}
+
+	return nil
+}
+
 // GetBitriseConfigFromBase64Data ...
 func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
