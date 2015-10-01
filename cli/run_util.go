@@ -312,9 +312,14 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			envList, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
+			outStr, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
 			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, err
+				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
+			}
+
+			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
 
 			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, PullReqID, buildRunResults, envList)
@@ -344,7 +349,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		bitriseSourceDir = bitrise.CurrentDir
 	}
 
-	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd, "panic"); err != nil {
+	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -377,9 +382,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	// In function method - Registration methods, for register step run results.
 	registerStepRunResults := func(runIf string, resultCode, exitCode int, err error, isLastStep bool) {
 		stepInfoCopy := stepmanModels.StepInfoModel{
-			ID:      stepInfoPtr.ID,
-			Version: stepInfoPtr.Version,
-			Latest:  stepInfoPtr.Latest,
+			ID:            stepInfoPtr.ID,
+			Title:         stepInfoPtr.Title,
+			Version:       stepInfoPtr.Version,
+			Latest:        stepInfoPtr.Latest,
+			SupportURL:    stepInfoPtr.SupportURL,
+			SourceCodeURL: stepInfoPtr.SourceCodeURL,
 		}
 
 		stepResults := models.StepRunResultsModel{
@@ -396,19 +404,19 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailed:
-			log.Errorf("Step (%s) failed, error: (%v)", stepInfoCopy.ID, err)
+			log.Errorf("Step (%s) failed, error: (%v)", stepInfoCopy.Title, err)
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailedSkippable:
-			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", stepInfoCopy.ID, err)
+			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", stepInfoCopy.Title, err)
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkipped:
-			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.ID)
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.Title)
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
-			log.Warn("The step's (" + stepInfoCopy.ID + ") Run-If expression evaluated to false - skipping")
+			log.Warn("The step's (" + stepInfoCopy.Title + ") Run-If expression evaluated to false - skipping")
 			if runIf != "" {
 				log.Info("The Run-If expression was: ", colorstring.Blue(runIf))
 			}
@@ -419,7 +427,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			return
 		}
 
-		bitrise.PrintStepSummary(stepResults, isLastStep)
+		bitrise.PrintRunningStepFooter(stepResults, isLastStep)
 	}
 
 	// ------------------------------------------
@@ -447,7 +455,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		stepInfoPtr.ID = compositeStepIDStr
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
-			stepInfoPtr.ID = *workflowStep.Title
+			stepInfoPtr.Title = *workflowStep.Title
 		}
 		if err != nil {
 			registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -457,9 +465,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		stepInfoPtr.ID = stepIDData.IDorURI
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
-			stepInfoPtr.ID = *workflowStep.Title
+			stepInfoPtr.Title = *workflowStep.Title
 		}
 		stepInfoPtr.Version = stepIDData.Version
+		stepInfoPtr.StepLib = stepIDData.SteplibSource
 		if err != nil {
 			registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
 			continue
@@ -540,10 +549,20 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			stepInfo, err := bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+			isLatestVersionOfStep := (stepIDData.Version == "")
+			if isLatestVersionOfStep && !buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
+				log.Infof("Step uses latest version -- Updating StepLib ...")
+				if err := bitrise.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					continue
+				}
+				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
+			}
+
+			outStr, err := bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err != nil {
 				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
-					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep)
 					continue
 				}
 				// May StepLib should be updated
@@ -553,11 +572,17 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 					continue
 				}
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
-				stepInfo, err = bitrise.StepmanStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+
+				outStr, err = bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 				if err != nil {
-					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
+					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep)
 					continue
 				}
+			}
+
+			stepInfo, err := stepmanModels.StepInfoModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep)
 			}
 
 			stepInfoPtr.Version = stepInfo.Version
@@ -591,12 +616,20 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		}
 
+		stepInfoPtr.SupportURL = *mergedStep.SupportURL
+		stepInfoPtr.SourceCodeURL = *mergedStep.SourceCodeURL
+
 		// Run step
-		bitrise.PrintRunningStep(stepInfoPtr, idx)
+		bitrise.PrintRunningStepHeader(stepInfoPtr, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			envList, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
+			outStr, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
 			if err != nil {
-				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep)
+				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err), isLastStep)
+			}
+
+			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			if err != nil {
+				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep)
 			}
 
 			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, PullReqID, buildRunResults, envList)
