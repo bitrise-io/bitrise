@@ -7,13 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCastValueToString(t *testing.T) {
-	require.Equal(t, "1", castValueToString(1))
-	require.Equal(t, "1.1", castValueToString(1.1))
-	require.Equal(t, "true", castValueToString(true))
-	require.Equal(t, "false", castValueToString("false"))
-}
-
 func TestGetKeyValuePair(t *testing.T) {
 	// Filled env
 	env := EnvironmentItemModel{
@@ -100,6 +93,18 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	model = map[string]interface{}{}
 	model["is_required"] = pointers.NewBoolPtr(true)
 	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
+
+	model = map[string]interface{}{}
+	model["is_required"] = "YeS"
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+
+	model = map[string]interface{}{}
+	model["is_required"] = "NO"
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+
+	model = map[string]interface{}{}
+	model["is_required"] = "y"
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// other_key is not supported key
 	model = map[string]interface{}{}
