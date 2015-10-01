@@ -1,10 +1,12 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/parseutil"
 	"github.com/bitrise-io/go-utils/pointers"
 )
 
@@ -23,6 +25,15 @@ const (
 	// DefaultIsTemplat ...
 	DefaultIsTemplat = false
 )
+
+// CreateFromJSON ...
+func (envList EnvsJSONListModel) CreateFromJSON(jsonStr string) (EnvsJSONListModel, error) {
+	list := EnvsJSONListModel{}
+	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
+		return EnvsJSONListModel{}, err
+	}
+	return list, nil
+}
 
 // GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
@@ -44,7 +55,10 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 				if value == nil {
 					valueStr = ""
 				} else {
-					return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
+					valueStr = parseutil.CastToString(value)
+					if valueStr == "" {
+						return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
+					}
 				}
 			}
 
@@ -96,7 +110,10 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				for _, interfItm := range interfArr {
 					castedItm, ok := interfItm.(string)
 					if !ok {
-						return fmt.Errorf("Invalid value in value_options (%#v), not a string: %#v", interfArr, interfItm)
+						castedItm = parseutil.CastToString(interfItm)
+						if castedItm == "" {
+							return fmt.Errorf("Invalid value in value_options (%#v), not a string: %#v", interfArr, interfItm)
+						}
 					}
 					castedValue = append(castedValue, castedItm)
 				}
@@ -105,25 +122,61 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 		case "is_required":
 			castedValue, ok := value.(bool)
 			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				castedStr := parseutil.CastToString(value)
+				if castedStr != "" {
+					casted, err := parseutil.ParseBool(castedStr)
+					if err != nil {
+						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
+					}
+					castedValue = casted
+				} else {
+					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				}
 			}
 			envSerModel.IsRequired = pointers.NewBoolPtr(castedValue)
 		case "is_expand":
 			castedValue, ok := value.(bool)
 			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				castedStr := parseutil.CastToString(value)
+				if castedStr != "" {
+					casted, err := parseutil.ParseBool(castedStr)
+					if err != nil {
+						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
+					}
+					castedValue = casted
+				} else {
+					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				}
 			}
 			envSerModel.IsExpand = pointers.NewBoolPtr(castedValue)
 		case "is_dont_change_value":
 			castedValue, ok := value.(bool)
 			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				castedStr := parseutil.CastToString(value)
+				if castedStr != "" {
+					casted, err := parseutil.ParseBool(castedStr)
+					if err != nil {
+						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
+					}
+					castedValue = casted
+				} else {
+					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				}
 			}
 			envSerModel.IsDontChangeValue = pointers.NewBoolPtr(castedValue)
 		case "is_template":
 			castedValue, ok := value.(bool)
 			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				castedStr := parseutil.CastToString(value)
+				if castedStr != "" {
+					casted, err := parseutil.ParseBool(castedStr)
+					if err != nil {
+						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
+					}
+					castedValue = casted
+				} else {
+					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+				}
 			}
 			envSerModel.IsTemplate = pointers.NewBoolPtr(castedValue)
 		default:

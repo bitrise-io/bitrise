@@ -40,6 +40,9 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 				PullReqID = value
 				IsPullRequestMode = true
 			}
+			if key == bitrise.PRModeEnvKey && value == "true" {
+				IsPullRequestMode = true
+			}
 		}
 	}
 

@@ -101,7 +101,9 @@ func run(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("Failed to create inventory, err: %s", err)
 	}
-	checkCIAndPRModeFromSecrets(inventoryEnvironments)
+	if err := checkCIAndPRModeFromSecrets(inventoryEnvironments); err != nil {
+		log.Fatalf("Failed to check  PR and CI mode, err: %s", err)
+	}
 
 	// Config validation
 	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)

@@ -85,6 +85,10 @@ func before(c *cli.Context) error {
 	// Pull Request Mode check
 	PullReqID = os.Getenv(bitrise.PullRequestIDEnvKey)
 	IsPullRequestMode = (PullReqID != "")
+	IsPR := os.Getenv(bitrise.PRModeEnvKey)
+	if IsPR == "true" {
+		IsPullRequestMode = true
+	}
 
 	return nil
 }

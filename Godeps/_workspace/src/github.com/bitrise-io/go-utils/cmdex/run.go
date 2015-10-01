@@ -2,11 +2,20 @@ package cmdex
 
 import (
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 )
+
+// RunCommandWithWriters ...
+func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = outWriter
+	cmd.Stderr = errWriter
+	return cmd.Run()
+}
 
 // RunCommandInDirWithEnvsAndReturnExitCode ...
 func RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error) {
