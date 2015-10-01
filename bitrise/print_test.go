@@ -74,7 +74,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 	require.Equal(t, " (...s a very long string.\n)", stepName)
 }
 
-func TestgetRunningStepFooterMainSection(t *testing.T) {
+func TestGetRunningStepFooterMainSection(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
 		ID:      longStr,
 		Version: longStr,
@@ -90,7 +90,7 @@ func TestgetRunningStepFooterMainSection(t *testing.T) {
 	}
 
 	cell := getRunningStepFooterMainSection(result)
-	require.Equal(t, "| 🚫  | \x1b[31;1m... (...s a very long string.\n) (exit code: 1)\x1b[0m| 0.01 sec |", cell)
+	require.Equal(t, "| 🚫  | \x1b[31;1mThis is a very ... (...s a very long string.\n) (exit code: 1)\x1b[0m| 0.01 sec |", cell)
 
 	stepInfo.ID = ""
 	result = models.StepRunResultsModel{
@@ -103,7 +103,7 @@ func TestgetRunningStepFooterMainSection(t *testing.T) {
 	}
 
 	cell = getRunningStepFooterMainSection(result)
-	require.Equal(t, "| ✅  | \x1b[32;1m (...s a very long string.\n)\x1b[0m                  | 0.00 sec |", cell)
+	require.Equal(t, "| ✅  | \x1b[32;1m (...s a very long string.\n)\x1b[0m                                 | 0.00 sec |", cell)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {

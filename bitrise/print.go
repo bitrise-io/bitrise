@@ -41,11 +41,8 @@ func PrintRunningWorkflow(title string) {
 
 func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
 	title := stepInfo.Title
-	version := stepInfo.Version
+	version := stringutil.MaxLastCharsWithDots(stepInfo.Version, 25)
 
-	if len(version) > 25 {
-		version = "..." + stringutil.MaxLastChars(version, 22)
-	}
 	content := fmt.Sprintf("| (%d) %s (%s) |", idx, title, version)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
 
@@ -54,11 +51,11 @@ func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx i
 		content = fmt.Sprintf("| (%d) %s (%s)%s |", idx, title, version, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedTitleWidth := len(title) - charDiff - 3
-		if trimmedTitleWidth < 0 {
+		trimmedTitleWidth := len(title) - charDiff
+		if trimmedTitleWidth < 4 {
 			log.Errorf("Step Version too long, can't present title at all! : %s", version)
 		} else {
-			content = fmt.Sprintf("| (%d) %s... (%s) |", idx, title[0:trimmedTitleWidth], version)
+			content = fmt.Sprintf("| (%d) %s (%s) |", idx, stringutil.MaxFirstCharsWithDots(title, trimmedTitleWidth), version)
 		}
 	}
 	return content
@@ -77,11 +74,11 @@ func getRunningStepHeaderSubSection(stepInfo stepmanModels.StepInfoModel) string
 		idRow = fmt.Sprintf("| id: %s%s |", id, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedWidth := len(id) - charDiff - 3
-		if trimmedWidth < 0 {
+		trimmedWidth := len(id) - charDiff
+		if trimmedWidth < 4 {
 			log.Errorf("Step id too long, can't present id at all! : %s", id)
 		} else {
-			idRow = fmt.Sprintf("| id: %s... |", id[:trimmedWidth])
+			idRow = fmt.Sprintf("| id: %s |", stringutil.MaxFirstCharsWithDots(id, trimmedWidth))
 		}
 	}
 
@@ -92,11 +89,11 @@ func getRunningStepHeaderSubSection(stepInfo stepmanModels.StepInfoModel) string
 		versionRow = fmt.Sprintf("| version: %s%s |", version, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedWidth := len(version) - charDiff - 3
-		if trimmedWidth < 0 {
+		trimmedWidth := len(version) - charDiff
+		if trimmedWidth < 4 {
 			log.Errorf("Step version too long, can't present version at all! : %s", version)
 		} else {
-			versionRow = fmt.Sprintf("| id: %s... |", version[:trimmedWidth])
+			versionRow = fmt.Sprintf("| id: %s |", stringutil.MaxFirstCharsWithDots(version, trimmedWidth))
 		}
 	}
 
@@ -107,11 +104,11 @@ func getRunningStepHeaderSubSection(stepInfo stepmanModels.StepInfoModel) string
 		collectionRow = fmt.Sprintf("| collection: %s%s |", collection, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedWidth := len(collection) - charDiff - 3
-		if trimmedWidth < 0 {
+		trimmedWidth := len(collection) - charDiff
+		if trimmedWidth < 4 {
 			log.Errorf("Step collection too long, can't present collection at all! : %s", version)
 		} else {
-			collectionRow = fmt.Sprintf("| collection: ...%s |", collection[len(collection)-trimmedWidth:])
+			collectionRow = fmt.Sprintf("| collection: %s |", stringutil.MaxLastCharsWithDots(collection, trimmedWidth))
 		}
 	}
 
@@ -122,11 +119,11 @@ func getRunningStepHeaderSubSection(stepInfo stepmanModels.StepInfoModel) string
 		timeRow = fmt.Sprintf("| time: %s%s |", logTime, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
-		trimmedWidth := len(logTime) - charDiff - 3
-		if trimmedWidth < 0 {
+		trimmedWidth := len(logTime) - charDiff
+		if trimmedWidth < 4 {
 			log.Errorf("Time too long, can't present time at all! : %s", version)
 		} else {
-			timeRow = fmt.Sprintf("| time: %s... |", logTime[:trimmedWidth])
+			timeRow = fmt.Sprintf("| time: %s |", stringutil.MaxFirstCharsWithDots(logTime, trimmedWidth))
 		}
 	}
 
@@ -153,17 +150,15 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	stepInfo := stepRunResult.StepInfo
 
 	title := stepInfo.ID
-	version := stepInfo.Version
-	if len(version) > 25 {
-		version = "..." + stringutil.MaxLastChars(version, 22)
-	}
+	version := stringutil.MaxLastCharsWithDots(stepInfo.Version, 25)
+
 	titleBox := ""
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
 		titleBox = fmt.Sprintf("%s (%s)", title, version)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
-			title = title[:len(title)-dif-3] + "..."
+			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
 			titleBox = fmt.Sprintf("%s (%s)", title, version)
 		}
 		break
@@ -171,7 +166,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
-			title = title[:len(title)-dif-3] + "..."
+			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
 			titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
 		}
 		break
@@ -252,11 +247,11 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel, is
 			issueRow = fmt.Sprintf("| Issue tracker: %s%s |", stepInfo.SupportURL, strings.Repeat(" ", -charDiff))
 		} else if charDiff > 0 {
 			// longer than desired - trim title
-			trimmedWidth := len(stepInfo.SupportURL) - charDiff - 3
-			if trimmedWidth < 0 {
+			trimmedWidth := len(stepInfo.SupportURL) - charDiff
+			if trimmedWidth < 4 {
 				log.Errorf("Support url too long, can't present support url at all! : %s", stepInfo.SupportURL)
 			} else {
-				issueRow = fmt.Sprintf("| Issue tracker: ...%s |", stepInfo.SupportURL[len(stepInfo.SupportURL)-trimmedWidth:])
+				issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SupportURL, len(stepInfo.SupportURL)-trimmedWidth))
 			}
 		}
 	}
@@ -269,11 +264,11 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel, is
 			sourceRow = fmt.Sprintf("| Source: %s%s |", stepInfo.SourceCodeURL, strings.Repeat(" ", -charDiff))
 		} else if charDiff > 0 {
 			// longer than desired - trim title
-			trimmedWidth := len(stepInfo.SourceCodeURL) - charDiff - 3
-			if trimmedWidth < 0 {
+			trimmedWidth := len(stepInfo.SourceCodeURL) - charDiff
+			if trimmedWidth < 4 {
 				log.Errorf("Source url too long, can't present source url at all! : %s", stepInfo.SourceCodeURL)
 			} else {
-				sourceRow = fmt.Sprintf("| Source: ...%s |", stepInfo.SourceCodeURL[len(stepInfo.SourceCodeURL)-trimmedWidth:])
+				sourceRow = fmt.Sprintf("| Source: ...%s |", stringutil.MaxLastCharsWithDots(stepInfo.SourceCodeURL, len(stepInfo.SourceCodeURL)-trimmedWidth))
 			}
 		}
 	}
@@ -333,8 +328,8 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	fmt.Println()
 	fmt.Println()
 	fmt.Printf("+%s+\n", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
-	whitespaceWidth := (stepRunSummaryBoxWidthInChars - 2 - len("bitrise summary")) / 2
-	fmt.Printf("|%sbitrise summary%s|\n", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
+	whitespaceWidth := (stepRunSummaryBoxWidthInChars - 2 - len("bitrise summary ")) / 2
+	fmt.Printf("|%sbitrise summary %s|\n", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
 	fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
 	whitespaceWidth = stepRunSummaryBoxWidthInChars - len("|    | title") - len("| time (s) |")
