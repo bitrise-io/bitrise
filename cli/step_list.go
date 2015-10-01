@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -39,17 +38,11 @@ func stepList(c *cli.Context) {
 		}
 		break
 	case OutputFormatJSON:
-		stepInfo, err := bitrise.StepmanStepList(collectionURI)
+		outStr, err := bitrise.StepmanJSONStepList(collectionURI)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}
-		bytes, err := json.Marshal(stepInfo)
-		if err != nil {
-			if err != nil {
-				registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
-			}
-		}
-		fmt.Println(string(bytes))
+		fmt.Println(outStr)
 		break
 	default:
 		log.Fatalf("Invalid format: %s", format)

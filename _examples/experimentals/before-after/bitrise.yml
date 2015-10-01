@@ -9,13 +9,14 @@ app:
 workflows:
   after:
     steps:
-    - script:
+    - script@0.9.1:
         title: Running the After script
         inputs:
         - content: |
             #!/bin/bash
             echo "STEPLIB_BUILD_STATUS: ${STEPLIB_BUILD_STATUS}"
             echo "BITRISE_BUILD_STATUS: ${BITRISE_BUILD_STATUS}"
+            exit 1
   before:
     envs:
     - BITRISE_PROJECT: MyTit1

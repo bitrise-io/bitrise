@@ -133,6 +133,8 @@ workflows:
             rm _bin/bin-for-ci
 
             godep go install
+
+            bitrise setup --minimal
     - script:
         title: Go Test
         inputs:
