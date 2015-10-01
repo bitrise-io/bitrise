@@ -12,36 +12,40 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.9-4-gc58637a",
-			"Rev": "c58637a11dc9586631ee7f185ca5200b1c22caf5"
+			"Comment": "0.9.9-9-g9980e7b",
+			"Rev": "9980e7b524f17d790e1fce41a6da8a694d2952be"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -49,8 +53,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.16-22-g75ed40a",
-			"Rev": "75ed40af11d514c928e29af71607985339467672"
+			"Comment": "0.9.16-31-g1f8bc5d",
+			"Rev": "1f8bc5d021b56a66b50e60e5a6da9420f4ff61c6"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",

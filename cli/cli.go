@@ -7,7 +7,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
 
@@ -77,7 +76,6 @@ func before(c *cli.Context) error {
 			return err
 		}
 		IsCIMode = true
-		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
 	}
 
 	if err := bitrise.InitPaths(); err != nil {
@@ -87,6 +85,10 @@ func before(c *cli.Context) error {
 	// Pull Request Mode check
 	PullReqID = os.Getenv(bitrise.PullRequestIDEnvKey)
 	IsPullRequestMode = (PullReqID != "")
+	IsPR := os.Getenv(bitrise.PRModeEnvKey)
+	if IsPR == "true" {
+		IsPullRequestMode = true
+	}
 
 	return nil
 }
