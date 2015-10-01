@@ -292,9 +292,6 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Collect step inputs
-	if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
-	}
 	if err := bitrise.ExportEnvironmentsList(environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
@@ -450,6 +447,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		//
 		// Preparing the step
+
+		if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
+			registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
+			continue
+		}
 
 		// Get step id & version data
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
