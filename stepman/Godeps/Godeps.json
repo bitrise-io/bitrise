@@ -12,36 +12,40 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.9-4-gc58637a",
-			"Rev": "c58637a11dc9586631ee7f185ca5200b1c22caf5"
+			"Comment": "0.9.10-2-g2e18704",
+			"Rev": "2e187040287e6115369c8d2d25132c05ab279857"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/urlutil",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "ec56446cd65e186ba414ffb6a77acc2c0ae5ff85"
+			"Rev": "88a07029055e857fa11aa29dfdfdfd37c540e242"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -54,13 +58,13 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-42-gb8dc1ce",
-			"Rev": "b8dc1cecf15bdaf1988d9e87aa7cd98d899a06d6"
+			"Comment": "v1.0-49-g2b15294",
+			"Rev": "2b15294402a895a4224659d181866f545991021e"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.0-42-gb8dc1ce",
-			"Rev": "b8dc1cecf15bdaf1988d9e87aa7cd98d899a06d6"
+			"Comment": "v1.0-49-g2b15294",
+			"Rev": "2b15294402a895a4224659d181866f545991021e"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
