@@ -460,7 +460,7 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
 			IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
 			IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
-			IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplat),
+			IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplate),
 		},
 	}
 	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
