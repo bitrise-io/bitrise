@@ -458,6 +458,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepInfoPtr.ID = compositeStepIDStr
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
 			stepInfoPtr.Title = *workflowStep.Title
+		} else {
+			stepInfoPtr.Title = compositeStepIDStr
 		}
 		if err != nil {
 			registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep)
@@ -468,6 +470,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		stepInfoPtr.ID = stepIDData.IDorURI
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
 			stepInfoPtr.Title = *workflowStep.Title
+		} else {
+			stepInfoPtr.Title = stepIDData.IDorURI
 		}
 		stepInfoPtr.Version = stepIDData.Version
 		stepInfoPtr.StepLib = stepIDData.SteplibSource
@@ -587,6 +591,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep)
 			}
 
+			stepInfoPtr.ID = stepInfo.ID
+			if stepInfoPtr.Title == "" {
+				stepInfoPtr.Title = stepInfo.ID
+			}
 			stepInfoPtr.Version = stepInfo.Version
 			stepInfoPtr.Latest = stepInfo.Latest
 
