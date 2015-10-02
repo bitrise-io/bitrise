@@ -24,27 +24,27 @@ func TestPrintRunningWorkflow(t *testing.T) {
 
 func TestPrintRunningStepHeader(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      "",
+		Title:   "",
 		Version: "",
 	}
 	PrintRunningStepHeader(stepInfo, 0)
 
-	stepInfo.ID = longStr
+	stepInfo.Title = longStr
 	stepInfo.Version = ""
 	PrintRunningStepHeader(stepInfo, 0)
 
-	stepInfo.ID = ""
+	stepInfo.Title = ""
 	stepInfo.Version = longStr
 	PrintRunningStepHeader(stepInfo, 0)
 
-	stepInfo.ID = longStr
+	stepInfo.Title = longStr
 	stepInfo.Version = longStr
 	PrintRunningStepHeader(stepInfo, 0)
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
+		Title:   longStr,
 		Version: longStr,
 	}
 
@@ -58,9 +58,9 @@ func TestGetTrimmedStepName(t *testing.T) {
 	}
 
 	stepName := getTrimmedStepName(result)
-	require.Equal(t, "This is a very long string,\nth... (...s a very long string.\n)", stepName)
+	require.Equal(t, "This is a very long string,\nthis is a very long string,\nth...", stepName)
 
-	stepInfo.ID = ""
+	stepInfo.Title = ""
 	result = models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
@@ -71,12 +71,12 @@ func TestGetTrimmedStepName(t *testing.T) {
 	}
 
 	stepName = getTrimmedStepName(result)
-	require.Equal(t, " (...s a very long string.\n)", stepName)
+	require.Equal(t, "", stepName)
 }
 
 func TestGetRunningStepFooterMainSection(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
+		Title:   longStr,
 		Version: longStr,
 	}
 
@@ -90,9 +90,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	}
 
 	cell := getRunningStepFooterMainSection(result)
-	require.Equal(t, "| 🚫  | \x1b[31;1mThis is a very ... (...s a very long string.\n) (exit code: 1)\x1b[0m| 0.01 sec |", cell)
+	require.Equal(t, "| 🚫  | \x1b[31;1mThis is a very long string,\nthis is a very ... (exit code: 1)\x1b[0m| 0.01 sec |", cell)
 
-	stepInfo.ID = ""
+	stepInfo.Title = ""
 	result = models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
@@ -103,12 +103,12 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	}
 
 	cell = getRunningStepFooterMainSection(result)
-	require.Equal(t, "| ✅  | \x1b[32;1m (...s a very long string.\n)\x1b[0m                                 | 0.00 sec |", cell)
+	require.Equal(t, "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |", cell)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
+		Title:   longStr,
 		Version: longStr,
 	}
 
@@ -123,7 +123,7 @@ func TestPrintRunningStepFooter(t *testing.T) {
 	PrintRunningStepFooter(result, true)
 	PrintRunningStepFooter(result, false)
 
-	stepInfo.ID = ""
+	stepInfo.Title = ""
 	result = models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
@@ -140,7 +140,7 @@ func TestPrintSummary(t *testing.T) {
 	PrintSummary(models.BuildRunResultsModel{})
 
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
+		Title:   longStr,
 		Version: longStr,
 	}
 
@@ -153,7 +153,7 @@ func TestPrintSummary(t *testing.T) {
 		ExitCode: 1,
 	}
 
-	stepInfo.ID = ""
+	stepInfo.Title = ""
 	result2 := models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
@@ -170,33 +170,4 @@ func TestPrintSummary(t *testing.T) {
 	}
 
 	PrintSummary(buildResults)
-}
-
-func TestPrintStepStatusList(t *testing.T) {
-	PrintStepStatusList("", []models.StepRunResultsModel{})
-
-	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
-		Version: longStr,
-	}
-
-	result1 := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  10000000,
-		Error:    errors.New(longStr),
-		ExitCode: 1,
-	}
-
-	stepInfo.ID = ""
-	result2 := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  0,
-		Error:    nil,
-		ExitCode: 0,
-	}
-	PrintStepStatusList(longStr, []models.StepRunResultsModel{result1, result2})
 }

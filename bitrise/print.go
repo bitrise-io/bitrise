@@ -41,21 +41,20 @@ func PrintRunningWorkflow(title string) {
 
 func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
 	title := stepInfo.Title
-	version := stringutil.MaxLastCharsWithDots(stepInfo.Version, 25)
 
-	content := fmt.Sprintf("| (%d) %s (%s) |", idx, title, version)
+	content := fmt.Sprintf("| (%d) %s |", idx, title)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
 
 	if charDiff < 0 {
 		// shorter than desired - fill with space
-		content = fmt.Sprintf("| (%d) %s (%s)%s |", idx, title, version, strings.Repeat(" ", -charDiff))
+		content = fmt.Sprintf("| (%d) %s%s |", idx, title, strings.Repeat(" ", -charDiff))
 	} else if charDiff > 0 {
 		// longer than desired - trim title
 		trimmedTitleWidth := len(title) - charDiff
 		if trimmedTitleWidth < 4 {
-			log.Errorf("Step Version too long, can't present title at all! : %s", version)
+			log.Errorf("Step title too long, can't present title at all! : %s", title)
 		} else {
-			content = fmt.Sprintf("| (%d) %s (%s) |", idx, stringutil.MaxFirstCharsWithDots(title, trimmedTitleWidth), version)
+			content = fmt.Sprintf("| (%d) %s |", idx, stringutil.MaxFirstCharsWithDots(title, trimmedTitleWidth))
 		}
 	}
 	return content
@@ -149,25 +148,24 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 
 	stepInfo := stepRunResult.StepInfo
 
-	title := stepInfo.ID
-	version := stringutil.MaxLastCharsWithDots(stepInfo.Version, 25)
+	title := stepInfo.Title
 
 	titleBox := ""
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		titleBox = fmt.Sprintf("%s (%s)", title, version)
+		titleBox = fmt.Sprintf("%s", title)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
 			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s (%s)", title, version)
+			titleBox = fmt.Sprintf("%s", title)
 		}
 		break
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
-		titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
+		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
 			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s (%s) (exit code: %d)", title, version, stepRunResult.ExitCode)
+			titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
 		}
 		break
 	default:
@@ -186,6 +184,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 	title := getTrimmedStepName(stepRunResult)
 	runTimeStr := TimeToFormattedSeconds(stepRunResult.RunTime, " sec")
 	coloringFunc := colorstring.Green
+
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess:
 		icon = "✅"
@@ -308,8 +307,11 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	fmt.Println(sep)
 	if stepRunResult.Error != nil {
 		isUpdateAvailable := IsUpdateAvailable(stepRunResult.StepInfo)
-		fmt.Println(getRunningStepFooterSubSection(stepRunResult, isUpdateAvailable))
-		fmt.Println(sep)
+		footerSubSection := getRunningStepFooterSubSection(stepRunResult, isUpdateAvailable)
+		if footerSubSection != "" {
+			fmt.Println(footerSubSection)
+			fmt.Println(sep)
+		}
 	}
 
 	if !isLastStepInWorkflow {
@@ -344,8 +346,11 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 		if stepRunResult.Error != nil {
 			isUpdateAvailable := IsUpdateAvailable(stepRunResult.StepInfo)
-			fmt.Println(getRunningStepFooterSubSection(stepRunResult, isUpdateAvailable))
-			fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
+			footerSubSection := getRunningStepFooterSubSection(stepRunResult, isUpdateAvailable)
+			if footerSubSection != "" {
+				fmt.Println(footerSubSection)
+				fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
+			}
 		}
 	}
 	runtime := tmpTime.Sub(time.Time{})
@@ -356,19 +361,4 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	fmt.Printf("+%s+\n", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
 	fmt.Println()
-}
-
-// PrintStepStatusList ...
-func PrintStepStatusList(header string, stepList []models.StepRunResultsModel) {
-	if len(stepList) > 0 {
-		log.Infof(header)
-		for _, stepResult := range stepList {
-			stepInfo := stepResult.StepInfo
-			if stepResult.Error != nil {
-				log.Infof(" * Step: (%s) | error: (%v)", stepInfo.ID, stepResult.Error)
-			} else {
-				log.Infof(" * Step: (%s)", stepInfo.ID)
-			}
-		}
-	}
 }
