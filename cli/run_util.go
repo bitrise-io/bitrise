@@ -231,17 +231,17 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, err
 			}
+			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", checkOnlyDep.Name)
 		}
 
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
-				log.Infof("Start installing (%s) with brew", brewDep.Name)
 				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
 					return 1, []envmanModels.EnvironmentItemModel{}, err
 				}
-				log.Infof("Successfully installed (%s) with brew", brewDep.Name)
+				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", brewDep.Name)
 			}
 		case "linux":
 			for _, aptGetDep := range step.Deps.AptGet {
@@ -250,7 +250,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
 					return 1, []envmanModels.EnvironmentItemModel{}, err
 				}
-				log.Infof("Successfully installed (%s) with apt-get", aptGetDep.Name)
+				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.Name)
 			}
 		default:
 			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Unsupported os")
