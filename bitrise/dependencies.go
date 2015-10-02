@@ -322,8 +322,6 @@ func InstallWithBrewIfNeeded(tool string, isCIMode bool) error {
 		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", tool)
 		return nil
 	}
-
-	log.Infof("(%s) already installed", tool)
 	return nil
 }
 
@@ -356,7 +354,7 @@ func InstallWithAptGetIfNeeded(tool string, isCIMode bool) error {
 			return err
 		}
 	} else if out != "" {
-		log.Infof("(%s) already installed (%s)", tool, out)
+		// already installed
 	} else {
 		log.Warnf("which (%s) -- out (%s)", tool, out)
 	}
