@@ -12,6 +12,10 @@ func TestSetupForVersionChecks(t *testing.T) {
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
 	require.Equal(t, nil, err)
 
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+
 	require.Equal(t, nil, os.Setenv("HOME", fakeHomePth))
 
 	require.Equal(t, false, CheckIsSetupWasDoneForVersion("0.9.7"))
