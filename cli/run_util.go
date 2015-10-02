@@ -231,6 +231,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, err
 			}
+			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", checkOnlyDep.Name)
 		}
 
 		switch runtime.GOOS {
