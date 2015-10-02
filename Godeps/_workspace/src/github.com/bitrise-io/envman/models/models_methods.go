@@ -22,8 +22,8 @@ const (
 	DefaultIsRequired = false
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
-	// DefaultIsTemplat ...
-	DefaultIsTemplat = false
+	// DefaultIsTemplate ...
+	DefaultIsTemplate = false
 )
 
 // CreateFromJSON ...
@@ -270,7 +270,7 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 		options.IsDontChangeValue = pointers.NewBoolPtr(DefaultIsDontChangeValue)
 	}
 	if options.IsTemplate == nil {
-		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplat)
+		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplate)
 	}
 	(*env)[OptionsKey] = options
 	return nil
