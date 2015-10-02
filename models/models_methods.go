@@ -275,7 +275,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 		}
 	}
 	if options.IsTemplate != nil {
-		if *options.IsTemplate == envmanModels.DefaultIsTemplat {
+		if *options.IsTemplate == envmanModels.DefaultIsTemplate {
 			options.IsTemplate = nil
 		} else {
 			hasOptions = true
