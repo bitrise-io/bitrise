@@ -16,7 +16,6 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/codegangsta/cli"
@@ -522,11 +521,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if len(stepIDData.IDorURI) > 20 {
-				stepInfoPtr.Version = fmt.Sprintf("path:...%s", stringutil.MaxLastChars(stepIDData.IDorURI, 17))
-			} else {
-				stepInfoPtr.Version = fmt.Sprintf("path:%s", stepIDData.IDorURI)
-			}
+			stepInfoPtr.Version = ""
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
@@ -539,10 +534,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			stepInfoPtr.Version = fmt.Sprintf("git:...%s", stringutil.MaxLastChars(stepIDData.IDorURI, 10))
-			if stepIDData.Version != "" {
-				stepInfoPtr.Version = stepInfoPtr.Version + "@" + stepIDData.Version
-			}
+			stepInfoPtr.Version = stepIDData.Version
 		} else if stepIDData.SteplibSource == "_" {
 			log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -558,14 +550,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			stepInfoPtr.Version = "_"
-			if stepIDData.Version != "" {
-				if len(stepIDData.Version) > 20 {
-					stepInfoPtr.Version = stepInfoPtr.Version + "@..." + stringutil.MaxLastChars(stepIDData.Version, 17)
-				} else {
-					stepInfoPtr.Version = stepInfoPtr.Version + "@" + stepIDData.Version
-				}
-			}
+			stepInfoPtr.Version = stepIDData.Version
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err := bitrise.StepmanSetup(stepIDData.SteplibSource); err != nil {
