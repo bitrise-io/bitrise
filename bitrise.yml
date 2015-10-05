@@ -28,11 +28,6 @@ trigger_map:
 
 workflows:
   _prepare_and_setup:
-    description: |-
-      Prepare and Setup
-
-      Used fot bitrise-io.
-      Git clone bitrise, cd to bitrise GOPATH, install testing tools, install envman.
     steps:
     - git-clone:
         title: Git Clone bitrise
@@ -77,11 +72,6 @@ workflows:
             chmod +x /usr/local/bin/envman
 
   test_and_install:
-    description: |-
-      Bitrise Test and Install
-
-      Used fot testing and installing prepared bitrise.
-      Errcheck, go lint, bitrise setup, go test, run step-template.
     steps:
     - script:
         title: GOPATH patch
@@ -137,11 +127,6 @@ workflows:
             bitrise run test
 
   ci:
-    description: |-
-      Bitrise ci
-
-      Used for bitrise continous integration.
-      Prepare and Setup, Test and Install, notification.
     before_run:
     - _prepare_and_setup
     - test_and_install
