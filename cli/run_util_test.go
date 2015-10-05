@@ -124,12 +124,12 @@ workflows:
 	require.Equal(t, "feature", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	require.Equal(t, nil, err)
+	require.Equal(t, "primary", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	require.Equal(t, nil, err)
+	require.Equal(t, "primary", workflowID)
 
 	configStr = `
   trigger_map:
