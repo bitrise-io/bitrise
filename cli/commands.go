@@ -114,5 +114,40 @@ var (
 				flStepYML,
 			},
 		},
+		{
+			Name:   "share",
+			Usage:  "Publish your step.",
+			Action: share,
+			Subcommands: []cli.Command{
+				{
+					Name:   "start",
+					Usage:  "Preparations for publishing.",
+					Action: start,
+					Flags: []cli.Flag{
+						flCollection,
+					},
+				},
+				{
+					Name:   "create",
+					Usage:  "Create your change - add it to your own copy of the collection.",
+					Action: create,
+					Flags: []cli.Flag{
+						flTag,
+						flGit,
+						flStepID,
+					},
+				},
+				{
+					Name:   "audit",
+					Usage:  "Validates the step collection.",
+					Action: shareAudit,
+				},
+				{
+					Name:   "finish",
+					Usage:  "Finish up.",
+					Action: finish,
+				},
+			},
+		},
 	}
 )
