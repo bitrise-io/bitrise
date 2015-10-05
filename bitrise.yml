@@ -10,6 +10,7 @@ app:
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
+  - RUN_CI_FROM_SCRIPT: "false"
 
 trigger_map:
 - pattern: "/release"
@@ -39,16 +40,11 @@ workflows:
         - clone_into_dir: $BITRISE_PATH
           opts:
             is_expand: true
-    - script:
+    - change-workdir:
         run_if: ".IsCI"
         title: cd to bitrise go path
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            envman add --key BITRISE_SOURCE_DIR --value $BITRISE_PATH
+        - path: $BITRISE_PATH
     - script:
         title: Install required testing tools
         run_if: ".IsCI"
@@ -121,21 +117,6 @@ workflows:
               exit 1
             fi
     - script:
-        title: Running go install
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go build -o _bin/bin-for-ci
-            ./_bin/bin-for-ci setup --minimal
-            rm _bin/bin-for-ci
-
-            godep go install
-
-            bitrise setup --minimal
-    - script:
         title: Go Test
         inputs:
         - content: |-
@@ -165,6 +146,22 @@ workflows:
     - _prepare_and_setup
     - test_and_install
     steps:
+    - script:
+        title: Running go install
+        run_if: "{{enveq `RUN_CI_FROM_SCRIPT` `false` | and .IsCI}}"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            set -v
+
+            godep go install
+
+            $GOPATH/bin/bitrise setup --minimal
+
+            envman add --key RUN_CI_FROM_SCRIPT --value "true"
+
+            $GOPATH/bin/bitrise run ci
     - slack:
         title: Slack notifications
         run_if: ".IsCI"
