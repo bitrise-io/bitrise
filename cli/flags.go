@@ -73,6 +73,16 @@ const (
 
 	// StepYMLKey ...
 	StepYMLKey = "step-yml"
+
+	//
+	// Stepman share
+
+	// TagKey ...
+	TagKey = "tag"
+	// GitKey ...
+	GitKey = "git"
+	// StepIDKey ...
+	StepIDKey = "stepid"
 )
 
 var (
@@ -161,6 +171,20 @@ var (
 	flStepYML = cli.StringFlag{
 		Name:  StepYMLKey,
 		Usage: "Path of step.yml",
+	}
+
+	// Stepman share
+	flTag = cli.StringFlag{
+		Name:  TagKey,
+		Usage: "Git (version) tag.",
+	}
+	flGit = cli.StringFlag{
+		Name:  GitKey,
+		Usage: "Git clone url of the step repository.",
+	}
+	flStepID = cli.StringFlag{
+		Name:  StepIDKey,
+		Usage: "ID of the step.",
 	}
 )
 

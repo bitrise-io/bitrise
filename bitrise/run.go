@@ -123,6 +123,44 @@ func StepmanJSONStepList(collection string) (string, error) {
 	return outBuffer.String(), nil
 }
 
+//
+// Share
+
+// StepmanShare ...
+func StepmanShare() error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "share", "--toolmode"}
+	return cmdex.RunCommand("stepman", args...)
+}
+
+// StepmanShareAudit ...
+func StepmanShareAudit() error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "share", "audit", "--toolmode"}
+	return cmdex.RunCommand("stepman", args...)
+}
+
+// StepmanShareCreate ...
+func StepmanShareCreate(tag, git, stepID string) error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "share", "create", "--tag", tag, "--git", git, "stepid", stepID, "--toolmode"}
+	return cmdex.RunCommand("stepman", args...)
+}
+
+// StepmanShareFinish ...
+func StepmanShareFinish() error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "share", "finish", "--toolmode"}
+	return cmdex.RunCommand("stepman", args...)
+}
+
+// StepmanShareStart ...
+func StepmanShareStart(collection string) error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "share", "start", "--collection", collection, "--toolmode"}
+	return cmdex.RunCommand("stepman", args...)
+}
+
 // ------------------
 // --- Envman
 
