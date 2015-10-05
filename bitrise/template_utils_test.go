@@ -14,16 +14,16 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{eq 1 1}}`
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, isYes)
 
 	propTempCont = `{{eq 1 2}}`
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, false, isYes)
 
-	isYes, err = EvaluateTemplateToBool("", false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool("", false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.NotEqual(t, nil, err)
 
 	// these all should be `true`
@@ -39,7 +39,7 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 		`"TrUe"`,
 		`"y"`,
 	} {
-		isYes, err = EvaluateTemplateToBool(expStr, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+		isYes, err = EvaluateTemplateToBool(expStr, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 		require.NoError(t, err)
 		require.Equal(t, true, isYes)
 	}
@@ -56,7 +56,7 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 		`"FaLse"`,
 		`"n"`,
 	} {
-		isYes, err = EvaluateTemplateToBool(expStr, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+		isYes, err = EvaluateTemplateToBool(expStr, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 		require.NoError(t, err)
 		require.Equal(t, false, isYes)
 	}
@@ -72,25 +72,25 @@ func TestRegisteredFunctions(t *testing.T) {
 
 	propTempCont := `{{getenv "TEST_KEY" | eq "Test value"}}`
 	require.Equal(t, nil, os.Setenv("TEST_KEY", "Test value"))
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, isYes)
 
 	propTempCont = `{{getenv "TEST_KEY" | eq "A different value"}}`
 	require.Equal(t, nil, os.Setenv("TEST_KEY", "Test value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, false, isYes)
 
 	propTempCont = `{{enveq "TEST_KEY" "enveq value"}}`
 	require.Equal(t, nil, os.Setenv("TEST_KEY", "enveq value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, isYes)
 
 	propTempCont = `{{enveq "TEST_KEY" "different enveq value"}}`
 	require.Equal(t, nil, os.Setenv("TEST_KEY", "enveq value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, false, isYes)
 }
@@ -110,7 +110,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err := EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err := EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -123,7 +123,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -136,7 +136,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Unsetenv(CIModeEnvKey); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -149,7 +149,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -162,7 +162,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -175,7 +175,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -188,7 +188,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -214,7 +214,7 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 
 	propTempCont := `{{.IsPR}}`
 	t.Log("IsPR [undefined]; propTempCont: ", propTempCont)
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -227,7 +227,7 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(PullRequestIDEnvKey, "123"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "123", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, true, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -251,7 +251,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont := `not .IsPR | and (not .IsCI)`
 	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -261,7 +261,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsPR | and .IsCI`
 	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -274,7 +274,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -287,7 +287,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -303,7 +303,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, "123", buildRes, envmanModels.EnvsJSONListModel{})
+	isYes, err = EvaluateTemplateToBool(propTempCont, true, true, buildRes, envmanModels.EnvsJSONListModel{})
 	if err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
@@ -316,7 +316,7 @@ func TestEvaluateTemplateToString(t *testing.T) {
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := ""
-	value, err := EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err := EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.NotEqual(t, nil, err)
 
 	propTempCont = `
@@ -324,7 +324,7 @@ func TestEvaluateTemplateToString(t *testing.T) {
 value in case of IsCI
 {{ end }}
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, strings.Contains(value, "value in case of IsCI"))
 
@@ -335,11 +335,11 @@ value in case of IsCI
 value in case of not IsCI
 {{ end }}
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, strings.Contains(value, "value in case of IsCI"))
 
-	value, err = EvaluateTemplateToString(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, strings.Contains(value, "value in case of not IsCI"))
 
@@ -349,11 +349,11 @@ This is
 value in case of IsCI
 {{ end }}
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of IsCI")))
 
-	value, err = EvaluateTemplateToString(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is")))
 
@@ -364,11 +364,11 @@ value in case of IsCI
 {{ end }}
 after end
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of IsCI")))
 
-	value, err = EvaluateTemplateToString(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "after end")))
 
@@ -380,11 +380,11 @@ value in case of IsCI
 value in case of not IsCI
 {{ end }}
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of IsCI")))
 
-	value, err = EvaluateTemplateToString(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of not IsCI")))
 
@@ -397,11 +397,11 @@ value in case of not IsCI
 {{ end }}
 mode
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of IsCI") && strings.Contains(value, "mode")))
 
-	value, err = EvaluateTemplateToString(propTempCont, false, "", buildRes, envmanModels.EnvsJSONListModel{})
+	value, err = EvaluateTemplateToString(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, (strings.Contains(value, "This is") && strings.Contains(value, "value in case of not IsCI") && strings.Contains(value, "mode")))
 }

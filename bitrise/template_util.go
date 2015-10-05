@@ -33,22 +33,20 @@ func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
 	return os.Getenv(key)
 }
 
-func createTemplateDataModel(isCI bool, pullReqID string, buildResults models.BuildRunResultsModel) TemplateDataModel {
+func createTemplateDataModel(isCI, isPR bool, buildResults models.BuildRunResultsModel) TemplateDataModel {
 	isBuildOK := !buildResults.IsBuildFailed()
-	IsPullRequestMode := (pullReqID != "")
 
 	return TemplateDataModel{
 		BuildResults:  buildResults,
 		IsBuildFailed: !isBuildOK,
 		IsBuildOK:     isBuildOK,
 		IsCI:          isCI,
-		PullRequestID: pullReqID,
-		IsPR:          IsPullRequestMode,
+		IsPR:          isPR,
 	}
 }
 
 // EvaluateTemplateToString ...
-func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (string, error) {
+func EvaluateTemplateToString(expStr string, isCI, isPR bool, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (string, error) {
 	if expStr == "" {
 		return "", errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
 	}
@@ -72,7 +70,7 @@ func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildR
 		return "", err
 	}
 
-	templateData := createTemplateDataModel(isCI, pullReqID, buildResults)
+	templateData := createTemplateDataModel(isCI, isPR, buildResults)
 	var resBuffer bytes.Buffer
 	if err := tmpl.Execute(&resBuffer, templateData); err != nil {
 		return "", err
@@ -82,8 +80,8 @@ func EvaluateTemplateToString(expStr string, isCI bool, pullReqID string, buildR
 }
 
 // EvaluateTemplateToBool ...
-func EvaluateTemplateToBool(expStr string, isCI bool, pullReqID string, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (bool, error) {
-	resString, err := EvaluateTemplateToString(expStr, isCI, pullReqID, buildResults, envList)
+func EvaluateTemplateToBool(expStr string, isCI, isPR bool, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (bool, error) {
+	resString, err := EvaluateTemplateToString(expStr, isCI, isPR, buildResults, envList)
 	if err != nil {
 		return false, err
 	}
