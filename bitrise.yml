@@ -1,4 +1,4 @@
-format_version: 1.1.0
+format_version: 1.0.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
@@ -10,7 +10,6 @@ app:
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
-  - RUN_CI_FROM_SCRIPT: "false"
 
 trigger_map:
 - pattern: "/release"
@@ -116,6 +115,15 @@ workflows:
 
             godep go test ./...
     - script:
+        title: revert GOPATH patch
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            envman add --key GOPATH --value "$ORIG_GOPATH"
+    - script:
         title: Step-template test
         inputs:
         - content: |-
@@ -131,22 +139,6 @@ workflows:
     - _prepare_and_setup
     - test_and_install
     steps:
-    - script:
-        title: Running go install
-        run_if: "{{enveq `RUN_CI_FROM_SCRIPT` `false` | and .IsCI}}"
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go install
-
-            $GOPATH/bin/bitrise setup --minimal
-
-            envman add --key RUN_CI_FROM_SCRIPT --value "true"
-
-            $GOPATH/bin/bitrise run ci
     - slack:
         title: Slack notifications
         run_if: ".IsCI"

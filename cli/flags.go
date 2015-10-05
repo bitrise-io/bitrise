@@ -16,6 +16,8 @@ const (
 	CollectionPathEnvKey = "STEPMAN_COLLECTION"
 	// CIKey ...
 	CIKey = "ci"
+	// PRKey ...
+	PRKey = "pr"
 	// DebugModeKey ...
 	DebugModeKey = "debug"
 
@@ -90,10 +92,15 @@ var (
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
 		EnvVar: bitrise.CIModeEnvKey,
 	}
+	flPRMode = cli.BoolFlag{
+		Name:  PRKey,
+		Usage: "If true bitrise runs in pull request mode.",
+	}
 	flags = []cli.Flag{
 		flLogLevel,
 		flDebugMode,
 		flTool,
+		flPRMode,
 	}
 	// Command flags
 	flPath = cli.StringFlag{
