@@ -36,7 +36,6 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 
 		if !IsPullRequestMode {
 			if key == bitrise.PullRequestIDEnvKey && value != "" {
-				PullReqID = value
 				IsPullRequestMode = true
 			}
 			if key == bitrise.PRModeEnvKey && value == "true" {
@@ -322,7 +321,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
 
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, PullReqID, buildRunResults, envList)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, err
 			}
@@ -646,7 +645,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, PullReqID, buildRunResults, envList)
+			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false)
 				continue

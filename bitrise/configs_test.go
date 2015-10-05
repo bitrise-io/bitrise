@@ -11,8 +11,10 @@ import (
 func TestSetupForVersionChecks(t *testing.T) {
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
 	require.Equal(t, nil, err)
+	originalHome := os.Getenv("HOME")
 
 	defer func() {
+		require.Equal(t, nil, os.Setenv("HOME", originalHome))
 		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
 	}()
 
