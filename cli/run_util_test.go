@@ -70,7 +70,7 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: feature
 - pattern: "*"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: primary
 
 workflows:
@@ -112,8 +112,8 @@ workflows:
 	IsPullRequestMode = true
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	require.Equal(t, nil, err)
+	require.Equal(t, "primary", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
 	require.Equal(t, nil, err)
@@ -124,12 +124,12 @@ workflows:
 	require.Equal(t, "feature", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	require.Equal(t, nil, err)
+	require.Equal(t, "primary", workflowID)
 
 	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	require.Equal(t, nil, err)
+	require.Equal(t, "primary", workflowID)
 
 	configStr = `
   trigger_map:

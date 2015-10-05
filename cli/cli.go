@@ -83,8 +83,20 @@ func before(c *cli.Context) error {
 	}
 
 	// Pull Request Mode check
+	if c.Bool(PRKey) {
+		// if PR mode indicated make sure we set the related env
+		//  so all other tools we use will also get it
+		if err := os.Setenv(bitrise.PRModeEnvKey, "true"); err != nil {
+			return err
+		}
+		IsPullRequestMode = true
+	}
+
 	PullReqID = os.Getenv(bitrise.PullRequestIDEnvKey)
-	IsPullRequestMode = (PullReqID != "")
+	if PullReqID != "" {
+		IsPullRequestMode = true
+	}
+
 	IsPR := os.Getenv(bitrise.PRModeEnvKey)
 	if IsPR == "true" {
 		IsPullRequestMode = true

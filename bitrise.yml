@@ -1,4 +1,4 @@
-format_version: 1.1.0
+format_version: 1.0.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
@@ -27,11 +27,6 @@ trigger_map:
 
 workflows:
   _prepare_and_setup:
-    description: |-
-      Prepare and Setup
-
-      Used fot bitrise-io.
-      Git clone bitrise, cd to bitrise GOPATH, install testing tools, install envman.
     steps:
     - git-clone:
         title: Git Clone bitrise
@@ -39,16 +34,11 @@ workflows:
         - clone_into_dir: $BITRISE_PATH
           opts:
             is_expand: true
-    - script:
+    - change-workdir:
         run_if: ".IsCI"
         title: cd to bitrise go path
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            envman add --key BITRISE_SOURCE_DIR --value $BITRISE_PATH
+        - path: $BITRISE_PATH
     - script:
         title: Install required testing tools
         run_if: ".IsCI"
@@ -81,11 +71,6 @@ workflows:
             chmod +x /usr/local/bin/envman
 
   test_and_install:
-    description: |-
-      Bitrise Test and Install
-
-      Used fot testing and installing prepared bitrise.
-      Errcheck, go lint, bitrise setup, go test, run step-template.
     steps:
     - script:
         title: GOPATH patch
@@ -121,21 +106,6 @@ workflows:
               exit 1
             fi
     - script:
-        title: Running go install
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go build -o _bin/bin-for-ci
-            ./_bin/bin-for-ci setup --minimal
-            rm _bin/bin-for-ci
-
-            godep go install
-
-            bitrise setup --minimal
-    - script:
         title: Go Test
         inputs:
         - content: |-
@@ -144,6 +114,15 @@ workflows:
             set -v
 
             godep go test ./...
+    - script:
+        title: revert GOPATH patch
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            envman add --key GOPATH --value "$ORIG_GOPATH"
     - script:
         title: Step-template test
         inputs:
@@ -156,11 +135,6 @@ workflows:
             bitrise run test
 
   ci:
-    description: |-
-      Bitrise ci
-
-      Used for bitrise continous integration.
-      Prepare and Setup, Test and Install, notification.
     before_run:
     - _prepare_and_setup
     - test_and_install

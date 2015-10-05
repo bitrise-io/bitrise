@@ -32,14 +32,18 @@ func registerFatal(errorMsg, format string) {
 
 // GetWorkflowIDByPattern ...
 func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (string, error) {
-	// Check for workflow ID in trigger map
+	matchFoundButPullRequestModeNotAllowed := false
 	for _, item := range config.TriggerMap {
 		if glob.Glob(item.Pattern, pattern) {
-			if !item.IsPullRequestAllowed && IsPullRequestMode {
-				return "", fmt.Errorf("Trigger pattern (%s) match found, but pull request is not enabled", pattern)
+			if IsPullRequestMode && !item.IsPullRequestAllowed {
+				matchFoundButPullRequestModeNotAllowed = true
+				continue
 			}
 			return item.WorkflowID, nil
 		}
+	}
+	if matchFoundButPullRequestModeNotAllowed {
+		return "", fmt.Errorf("Run triggered by pattern: (%s) in pull request mode, but matching workflow disabled in pull request mode", pattern)
 	}
 	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
 }
