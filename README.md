@@ -1,7 +1,5 @@
 # Bitrise (offline) CLI
 
-[![Join the chat at https://gitter.im/bitrise-io/bitrise](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bitrise-io/bitrise?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 Run your Bitrise automation workflows with this CLI tool on your own development device, and on
 your Continuous Integration tool / service.
 
