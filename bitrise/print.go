@@ -250,7 +250,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel, is
 			if trimmedWidth < 4 {
 				log.Errorf("Support url too long, can't present support url at all! : %s", stepInfo.SupportURL)
 			} else {
-				issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SupportURL, len(stepInfo.SupportURL)-trimmedWidth))
+				issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SupportURL, trimmedWidth))
 			}
 		}
 	}
@@ -267,7 +267,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel, is
 			if trimmedWidth < 4 {
 				log.Errorf("Source url too long, can't present source url at all! : %s", stepInfo.SourceCodeURL)
 			} else {
-				sourceRow = fmt.Sprintf("| Source: ...%s |", stringutil.MaxLastCharsWithDots(stepInfo.SourceCodeURL, len(stepInfo.SourceCodeURL)-trimmedWidth))
+				sourceRow = fmt.Sprintf("| Source: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SourceCodeURL, trimmedWidth))
 			}
 		}
 	}
