@@ -22,7 +22,7 @@ func registerFatal(errorMsg, format string) {
 	} else {
 		bytes, err := json.Marshal(msg)
 		if err != nil {
-			log.Fatalf("Faild to parse error model, err: %s", err)
+			log.Fatalf("Failed to parse error model, err: %s", err)
 		}
 
 		fmt.Println(string(bytes))
@@ -76,7 +76,7 @@ func triggerCheck(c *cli.Context) {
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Faild to select workflow by pattern (%s), err: %s", triggerPattern, err), format)
+		registerFatal(err.Error(), format)
 	}
 
 	switch format {
@@ -90,7 +90,7 @@ func triggerCheck(c *cli.Context) {
 		}
 		bytes, err := json.Marshal(triggerModel)
 		if err != nil {
-			registerFatal(fmt.Sprintf("Faild to parse trigger model, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), format)
 		}
 
 		fmt.Println(string(bytes))

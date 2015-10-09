@@ -635,7 +635,7 @@ workflows:
 		for _, stepListItem := range workflow.Steps {
 			_, step, err := GetStepIDStepDataPair(stepListItem)
 			if err != nil {
-				t.Fatal("Faild to get step id data:", err)
+				t.Fatal("Failed to get step id data:", err)
 			}
 			if step.Title != nil {
 				t.Fatal("step.Title should be nil")

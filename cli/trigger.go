@@ -72,7 +72,7 @@ func trigger(c *cli.Context) {
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
 	if err != nil {
-		log.Fatalf("Faild to select workflow by pattern (%s), err: %s", triggerPattern, err)
+		log.Fatalf(err.Error())
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
