@@ -62,22 +62,13 @@ func printRawValidation(validation ValidationModel) error {
 	return nil
 }
 
-func printJSONValidation(validation ValidationModel) error {
+func printJSONValidation(validation ValidationModel) {
 	bytes, err := json.Marshal(validation)
 	if err != nil {
-		return err
+		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), OutputFormatJSON)
 	}
 
 	fmt.Println(string(bytes))
-	if (validation.Config != nil && !validation.Config.IsValid) &&
-		(validation.Secrets != nil && !validation.Secrets.IsValid) {
-		return errors.New("Config and secrets are invalid")
-	} else if validation.Config != nil && !validation.Config.IsValid {
-		return errors.New("Config is invalid")
-	} else if validation.Secrets != nil && !validation.Secrets.IsValid {
-		return errors.New("Secret is invalid")
-	}
-	return nil
 }
 
 func validate(c *cli.Context) {
@@ -145,9 +136,7 @@ func validate(c *cli.Context) {
 		}
 		break
 	case OutputFormatJSON:
-		if err := printJSONValidation(validation); err != nil {
-			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), format)
-		}
+		printJSONValidation(validation)
 		break
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
