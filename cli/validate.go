@@ -83,7 +83,7 @@ func validate(c *cli.Context) {
 
 	pth, err := GetBitriseConfigFilePath(c)
 	if err != nil && err.Error() != "No workflow yml found" {
-		registerFatal(fmt.Sprintf("Faild to get config path, err: %s", err), format)
+		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), format)
 	}
 	if pth != "" || (pth == "" && c.String(ConfigBase64Key) != "") {
 		// Config validation
@@ -106,7 +106,7 @@ func validate(c *cli.Context) {
 
 	pth, err = GetInventoryFilePath(c)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Faild to get secrets path, err: %s", err), format)
+		registerFatal(fmt.Sprintf("Failed to get secrets path, err: %s", err), format)
 	}
 	if pth != "" || c.String(InventoryBase64Key) != "" {
 		// Inventory validation
