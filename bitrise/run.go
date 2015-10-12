@@ -143,7 +143,7 @@ func StepmanShareAudit() error {
 // StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "create", "--tag", tag, "--git", git, "stepid", stepID, "--toolmode"}
+	args := []string{"--loglevel", logLevel, "share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
 	return cmdex.RunCommand("stepman", args...)
 }
 
