@@ -97,7 +97,6 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
 
             golint_out="$(golint ./...)"
             if [[ "${golint_out}" != "" ]] ; then
