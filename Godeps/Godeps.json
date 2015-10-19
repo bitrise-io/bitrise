@@ -7,8 +7,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.7",
-			"Rev": "418b41d23a1bf978c06faea5313ba194650ac088"
+			"Comment": "v0.8.7-30-g4643a7e",
+			"Rev": "4643a7efec9b8fd7548882e7b30095711343100f"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
@@ -53,13 +53,13 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.17-2-gfb6b688",
-			"Rev": "fb6b688e657ce9ab4274eb9546fe228bbb126bfa"
+			"Comment": "0.9.17-3-g266202b",
+			"Rev": "266202b1ea0f3de40667d40258dca9623900759e"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-143-ga65b733",
-			"Rev": "a65b733b303f0055f8d324d805f393cd3e7a7904"
+			"Comment": "1.2.0-159-gcffab77",
+			"Rev": "cffab77ecb4f963ced9e30344eb2b9282ef36887"
 		},
 		{
 			"ImportPath": "github.com/ryanuber/go-glob",
@@ -67,13 +67,13 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-49-g2b15294",
-			"Rev": "2b15294402a895a4224659d181866f545991021e"
+			"Comment": "v1.0-51-gf3960ab",
+			"Rev": "f3960ab1f9664ecc4e27c78af27cc9063d745a43"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.0-49-g2b15294",
-			"Rev": "2b15294402a895a4224659d181866f545991021e"
+			"Comment": "v1.0-51-gf3960ab",
+			"Rev": "f3960ab1f9664ecc4e27c78af27cc9063d745a43"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
