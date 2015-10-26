@@ -81,6 +81,9 @@ func run(c *cli.Context) {
 		log.Debugln("[ENVMAN] - Executing command:", cmdToExecute)
 
 		if exit, err := runCommandModel(cmdToExecute); err != nil {
+			if exit == 0 {
+				exit = 1
+			}
 			os.Exit(exit)
 		}
 
