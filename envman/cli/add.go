@@ -28,7 +28,7 @@ func validateEnv(key string, value string, envList []models.EnvironmentItemModel
 		return errors.New("Key is not specified, required.")
 	}
 
-	configs, err := envman.ReadConfigs()
+	configs, err := envman.GetConfigs()
 	if err != nil {
 		return err
 	}

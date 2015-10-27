@@ -24,7 +24,7 @@ func TestCheckIfConfigsSaved(t *testing.T) {
 	require.Equal(t, true, exist)
 }
 
-func TestReadConfigs(t *testing.T) {
+func TestGetConfigs(t *testing.T) {
 	configsPth := getEnvmanConfigsFilePath()
 	exist, err := pathutil.IsPathExists(configsPth)
 	require.Equal(t, nil, err)
@@ -32,11 +32,11 @@ func TestReadConfigs(t *testing.T) {
 		require.Equal(t, nil, os.RemoveAll(configsPth))
 	}
 
-	_, err = ReadConfigs()
+	_, err = GetConfigs()
 	require.NotEqual(t, nil, err)
 
 	require.Equal(t, nil, SaveDefaultConfigs())
-	configs, err := ReadConfigs()
+	configs, err := GetConfigs()
 	require.Equal(t, nil, err)
 	require.Equal(t, defaultEnvBytesLimitInKB, configs.EnvBytesLimitInKB)
 	require.Equal(t, defaultEnvListBytesLimitInKB, configs.EnvListBytesLimitInKB)

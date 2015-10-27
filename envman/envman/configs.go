@@ -15,8 +15,8 @@ const (
 	defaultEnvListBytesLimitInKB = 100
 )
 
-// Configs ...
-type Configs struct {
+// ConfigsModel ...
+type ConfigsModel struct {
 	EnvBytesLimitInKB     int `json:"env_bytes_limit_in_kb,omitempty" yaml:"env_bytes_limit_in_kb,omitempty"`
 	EnvListBytesLimitInKB int `json:"env_list_bytes_limit_in_kb,omitempty" yaml:"env_list_bytes_limit_in_kb,omitempty"`
 }
@@ -48,26 +48,44 @@ func CheckIfConfigsSaved() bool {
 		return false
 	}
 
-	var configs Configs
+	var configs ConfigsModel
 	if err := json.Unmarshal(bytes, &configs); err != nil {
 		return false
 	}
 	return true
 }
 
-// ReadConfigs ...
-func ReadConfigs() (Configs, error) {
+// GetConfigs ...
+func GetConfigs() (ConfigsModel, error) {
 	configPth := getEnvmanConfigsFilePath()
 	bytes, err := fileutil.ReadBytesFromFile(configPth)
 	if err != nil {
-		return Configs{}, err
+		return ConfigsModel{}, err
 	}
 
-	var configs Configs
-	if err := json.Unmarshal(bytes, &configs); err != nil {
-		return Configs{}, err
+	type ConfigsFileMode struct {
+		EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty" yaml:"env_bytes_limit_in_kb,omitempty"`
+		EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty" yaml:"env_list_bytes_limit_in_kb,omitempty"`
 	}
-	return configs, nil
+
+	var configs ConfigsFileMode
+	if err := json.Unmarshal(bytes, &configs); err != nil {
+		return ConfigsModel{}, err
+	}
+
+	defaultConfigs := ConfigsModel{
+		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
+		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
+	}
+
+	if configs.EnvBytesLimitInKB != nil {
+		defaultConfigs.EnvBytesLimitInKB = *configs.EnvBytesLimitInKB
+	}
+	if configs.EnvListBytesLimitInKB != nil {
+		defaultConfigs.EnvListBytesLimitInKB = *configs.EnvListBytesLimitInKB
+	}
+
+	return defaultConfigs, nil
 }
 
 // SaveDefaultConfigs ...
@@ -76,7 +94,7 @@ func SaveDefaultConfigs() error {
 		return err
 	}
 
-	defaultConfigs := Configs{
+	defaultConfigs := ConfigsModel{
 		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
 		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
 	}
