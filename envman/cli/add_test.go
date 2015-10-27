@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -28,39 +29,41 @@ func TestEnvListSizeInBytes(t *testing.T) {
 }
 
 func TestValidateEnv(t *testing.T) {
+	require.Equal(t, nil, envman.SaveDefaultConfigs())
+
 	// Valid
-	value := strings.Repeat("a", (20 * 1024))
+	str20KBytes := strings.Repeat("a", (20 * 1024))
 	env1 := models.EnvironmentItemModel{
-		"key": value,
+		"key": str20KBytes,
 	}
 	envs := []models.EnvironmentItemModel{env1}
 
-	require.Equal(t, nil, validateEnv("key", value, envs))
+	require.Equal(t, nil, validateEnv("key", str20KBytes, envs))
 
 	// List oversize
 	for i := 0; i < 4; i++ {
 		env := models.EnvironmentItemModel{
-			"key": value,
+			"key": str20KBytes,
 		}
 		envs = append(envs, env)
 	}
 
-	require.NotEqual(t, nil, validateEnv("key", value, envs))
+	require.NotEqual(t, nil, validateEnv("key", str20KBytes, envs))
 
 	// List oversize + to big value
-	value = strings.Repeat("a", (10 * 1024))
+	str10Kbytes := strings.Repeat("a", (10 * 1024))
 	env1 = models.EnvironmentItemModel{
-		"key": value,
+		"key": str10Kbytes,
 	}
 	envs = []models.EnvironmentItemModel{}
 	for i := 0; i < 8; i++ {
 		env := models.EnvironmentItemModel{
-			"key": value,
+			"key": str10Kbytes,
 		}
 		envs = append(envs, env)
 	}
 
-	value2 := strings.Repeat("a", (21 * 1024))
+	str21Kbytes := strings.Repeat("a", (21 * 1024))
 
-	require.NotEqual(t, nil, validateEnv("key", value2, envs))
+	require.NotEqual(t, nil, validateEnv("key", str21Kbytes, envs))
 }
