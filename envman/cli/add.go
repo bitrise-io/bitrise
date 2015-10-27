@@ -11,15 +11,58 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func addEnv(key string, value string, expand, replace bool) error {
-	// Validate input
+func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
+	valueSizeInBytes := 0
+	for _, env := range envs {
+		_, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return 0, err
+		}
+		valueSizeInBytes += len([]byte(value))
+	}
+	return valueSizeInBytes, nil
+}
+
+func validateEnv(key string, value string, envList []models.EnvironmentItemModel) error {
 	if key == "" {
 		return errors.New("Key is not specified, required.")
 	}
 
+	configs, err := envman.ReadConfigs()
+	if err != nil {
+		return err
+	}
+
+	valueSizeInBytes := len([]byte(value))
+	if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
+		valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
+		log.Warnf("environment value (%s) too large", value)
+		log.Warnf("environment value size (%#v (KB)) - alloved size (%#v (KB))", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
+		value = "environment value too large - rejected"
+	}
+
+	envListSizeInBytes, err := envListSizeInBytes(envList)
+	if err != nil {
+		return err
+	}
+	if envListSizeInBytes+valueSizeInBytes > configs.EnvListBytesLimitInKB*1024 {
+		listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(valueSizeInBytes)/1024
+		log.Warn("environment list too large")
+		log.Warnf("environment list size (%#v (KB)) - alloved size (%#v (KB))", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
+		return errors.New("environment list too large")
+	}
+	return nil
+}
+
+func addEnv(key string, value string, expand, replace bool) error {
 	// Load envs, or create if not exist
 	environments, err := envman.ReadEnvsOrCreateEmptyList()
 	if err != nil {
+		return err
+	}
+
+	// Validate input
+	if err := validateEnv(key, value, environments); err != nil {
 		return err
 	}
 
