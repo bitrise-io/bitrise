@@ -112,6 +112,16 @@ workflows:
 
             godep go test ./...
     - script:
+        title: Test-build
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            mkdir ./_tmp
+            go build -o ./_tmp/ci-bin
+            rm ./_tmp/ci-bin
+    - script:
         title: revert GOPATH patch
         inputs:
         - content: |-
@@ -130,16 +140,6 @@ workflows:
 
             cd ./_step_template
             bitrise run test
-    - script:
-        title: Test-build
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-            mkdir ./_tmp
-            go build -o ./_tmp/ci-bin
-            rm ./_tmp/ci-bin
 
   ci:
     before_run:
