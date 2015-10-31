@@ -132,6 +132,10 @@ workflows:
 
             cd ./_step_template
             bitrise run test
+    - script:
+        title: Go install
+        inputs:
+        - content: go install
 
   ci:
     before_run:
