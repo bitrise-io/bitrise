@@ -144,7 +144,7 @@ workflows:
   ci:
     before_run:
     - _prepare_and_setup
-    - test_and_install
+    - test
     steps:
     - slack:
         title: Slack notifications
