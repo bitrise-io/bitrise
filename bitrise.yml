@@ -58,19 +58,17 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
-    - script:
-        title: Install envman
-        run_if: ".IsCI"
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            curl -fL https://github.com/bitrise-io/envman/releases/download/0.9.9/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
-            chmod +x /usr/local/bin/envman
 
   test_and_install:
+    before_run:
+    - test
+    steps:
+    - script:
+        title: Go install
+        inputs:
+        - content: go install
+
+  test:
     steps:
     - script:
         title: GOPATH patch
@@ -133,9 +131,15 @@ workflows:
             cd ./_step_template
             bitrise run test
     - script:
-        title: Go install
+        title: Test-build
         inputs:
-        - content: go install
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            mkdir ./_tmp
+            go build -o ./_tmp/ci-bin
+            rm ./_tmp/ci-bin
 
   ci:
     before_run:
