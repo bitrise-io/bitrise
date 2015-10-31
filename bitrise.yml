@@ -118,7 +118,7 @@ workflows:
             #!/bin/bash
             set -e
             set -v
-            mkdir ./_tmp
+            mkdir -p ./_tmp
             go build -o ./_tmp/ci-bin
             rm ./_tmp/ci-bin
     - script:
