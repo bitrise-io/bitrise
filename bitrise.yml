@@ -122,6 +122,9 @@ workflows:
             go build -o ./_tmp/ci-bin
             ./_tmp/ci-bin setup --minimal
             rm ./_tmp/ci-bin
+
+            # setup for the original bitrise as well
+            bitrise setup --minimal
     - script:
         title: revert GOPATH patch
         inputs:
