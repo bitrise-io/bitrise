@@ -57,7 +57,7 @@ func runCommandModel(cmdModel CommandModel) (int, error) {
 }
 
 func run(c *cli.Context) {
-	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debug("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if len(c.Args()) > 0 {
 		doCmdEnvs, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
@@ -78,14 +78,18 @@ func run(c *cli.Context) {
 			Argumentums:  doArgs,
 		}
 
-		log.Debugln("[ENVMAN] - Executing command:", cmdToExecute)
+		log.Debug("[ENVMAN] - Executing command:", cmdToExecute)
 
 		if exit, err := runCommandModel(cmdToExecute); err != nil {
-			log.Error("[ENVMAN] - Failed to execute command:", err)
+			log.Debug("[ENVMAN] - Failed to execute command:", err)
+			if exit == 0 {
+				log.Error("[ENVMAN] - Failed to execute command:", err)
+				exit = 1
+			}
 			os.Exit(exit)
 		}
 
-		log.Debugln("[ENVMAN] - Command executed")
+		log.Debug("[ENVMAN] - Command executed")
 	} else {
 		log.Fatal("[ENVMAN] - No command specified")
 	}
