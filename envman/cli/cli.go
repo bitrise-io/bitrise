@@ -69,6 +69,12 @@ func before(c *cli.Context) error {
 		log.Info("[ENVMAN] - Tool mode on")
 	}
 
+	if configsSaved := envman.CheckIfConfigsSaved(); !configsSaved {
+		if err := envman.SaveDefaultConfigs(); err != nil {
+			log.Fatal("[ENVMAN] - Failed to init configs:", err)
+		}
+	}
+
 	return nil
 }
 
