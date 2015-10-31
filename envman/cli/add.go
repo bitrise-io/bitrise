@@ -23,39 +23,39 @@ func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
 	return valueSizeInBytes, nil
 }
 
-func validateEnv(key string, value string, envList []models.EnvironmentItemModel) error {
+func validateEnv(key, value string, envList []models.EnvironmentItemModel) (string, error) {
 	if key == "" {
-		return errors.New("Key is not specified, required.")
+		return "", errors.New("Key is not specified, required.")
 	}
 
 	configs, err := envman.GetConfigs()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	valueSizeInBytes := len([]byte(value))
 	if configs.EnvBytesLimitInKB > 0 {
 		if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
 			valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
-			log.Warnf("environment value (%s) too large", value)
-			log.Warnf("environment value size (%#v (KB)) - alloved size (%#v (KB))", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
-			value = "environment value too large - rejected"
+			log.Warnf("environment value (%s...) too large", value[0:100])
+			log.Warnf("environment value size (%#v KB) - max allowed size: %#v KB", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
+			return "environment value too large - rejected", nil
 		}
 	}
 
 	if configs.EnvListBytesLimitInKB > 0 {
 		envListSizeInBytes, err := envListSizeInBytes(envList)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if envListSizeInBytes+valueSizeInBytes > configs.EnvListBytesLimitInKB*1024 {
 			listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(valueSizeInBytes)/1024
 			log.Warn("environment list too large")
-			log.Warnf("environment list size (%#v (KB)) - alloved size (%#v (KB))", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
-			return errors.New("environment list too large")
+			log.Warnf("environment list size (%#v KB) - max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
+			return "", errors.New("environment list too large")
 		}
 	}
-	return nil
+	return value, nil
 }
 
 func addEnv(key string, value string, expand, replace bool) error {
@@ -66,9 +66,11 @@ func addEnv(key string, value string, expand, replace bool) error {
 	}
 
 	// Validate input
-	if err := validateEnv(key, value, environments); err != nil {
+	validatedValue, err := validateEnv(key, value, environments)
+	if err != nil {
 		return err
 	}
+	value = validatedValue
 
 	// Add or update envlist
 	newEnv := models.EnvironmentItemModel{

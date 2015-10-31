@@ -1,10 +1,10 @@
 package cli
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -29,28 +29,33 @@ func TestEnvListSizeInBytes(t *testing.T) {
 }
 
 func TestValidateEnv(t *testing.T) {
-	require.Equal(t, nil, envman.SaveDefaultConfigs())
-
-	// Valid
+	// Valid - max allowed
 	str20KBytes := strings.Repeat("a", (20 * 1024))
 	env1 := models.EnvironmentItemModel{
 		"key": str20KBytes,
 	}
 	envs := []models.EnvironmentItemModel{env1}
 
-	require.Equal(t, nil, validateEnv("key", str20KBytes, envs))
+	valValue, err := validateEnv("key", str20KBytes, envs)
+	require.NoError(t, err)
+	require.Equal(t, str20KBytes, valValue)
 
 	// List oversize
-	for i := 0; i < 4; i++ {
-		env := models.EnvironmentItemModel{
-			"key": str20KBytes,
-		}
-		envs = append(envs, env)
+	//  first create a large, but valid env set
+	for i := 0; i < 3; i++ {
+		envs = append(envs, env1)
 	}
 
-	require.NotEqual(t, nil, validateEnv("key", str20KBytes, envs))
+	valValue, err = validateEnv("key", str20KBytes, envs)
+	require.NoError(t, err)
+	require.Equal(t, str20KBytes, valValue)
 
-	// List oversize + to big value
+	// append one more -> too large
+	envs = append(envs, env1)
+	_, err = validateEnv("key", str20KBytes, envs)
+	require.Equal(t, errors.New("environment list too large"), err)
+
+	// List oversize + too big value
 	str10Kbytes := strings.Repeat("a", (10 * 1024))
 	env1 = models.EnvironmentItemModel{
 		"key": str10Kbytes,
@@ -65,5 +70,7 @@ func TestValidateEnv(t *testing.T) {
 
 	str21Kbytes := strings.Repeat("a", (21 * 1024))
 
-	require.NotEqual(t, nil, validateEnv("key", str21Kbytes, envs))
+	valValue, err = validateEnv("key", str21Kbytes, envs)
+	require.NoError(t, err)
+	require.Equal(t, "environment value too large - rejected", valValue)
 }

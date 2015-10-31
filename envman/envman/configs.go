@@ -17,8 +17,8 @@ const (
 
 // ConfigsModel ...
 type ConfigsModel struct {
-	EnvBytesLimitInKB     int `json:"env_bytes_limit_in_kb,omitempty" yaml:"env_bytes_limit_in_kb,omitempty"`
-	EnvListBytesLimitInKB int `json:"env_list_bytes_limit_in_kb,omitempty" yaml:"env_list_bytes_limit_in_kb,omitempty"`
+	EnvBytesLimitInKB     int `json:"env_bytes_limit_in_kb,omitempty"`
+	EnvListBytesLimitInKB int `json:"env_list_bytes_limit_in_kb,omitempty"`
 }
 
 func getEnvmanConfigsDirPath() string {
@@ -40,65 +40,94 @@ func ensureEnvmanConfigDirExists() error {
 	return nil
 }
 
-// CheckIfConfigsSaved ...
-func CheckIfConfigsSaved() bool {
-	configPth := getEnvmanConfigsFilePath()
-	bytes, err := fileutil.ReadBytesFromFile(configPth)
-	if err != nil {
-		return false
-	}
+// // CheckIfConfigsSaved ...
+// func CheckIfConfigsSaved() bool {
+// 	configPth := getEnvmanConfigsFilePath()
+// 	bytes, err := fileutil.ReadBytesFromFile(configPth)
+// 	if err != nil {
+// 		return false
+// 	}
+//
+// 	var configs ConfigsModel
+// 	if err := json.Unmarshal(bytes, &configs); err != nil {
+// 		return false
+// 	}
+// 	return true
+// }
 
-	var configs ConfigsModel
-	if err := json.Unmarshal(bytes, &configs); err != nil {
-		return false
+func createDefaultConfigsModel() ConfigsModel {
+	return ConfigsModel{
+		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
+		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
 	}
-	return true
 }
 
 // GetConfigs ...
 func GetConfigs() (ConfigsModel, error) {
 	configPth := getEnvmanConfigsFilePath()
+	defaultConfigs := createDefaultConfigsModel()
+
+	if isExist, err := pathutil.IsPathExists(configPth); err != nil {
+		return ConfigsModel{}, err
+	} else if !isExist {
+		return defaultConfigs, nil
+	}
+
 	bytes, err := fileutil.ReadBytesFromFile(configPth)
 	if err != nil {
 		return ConfigsModel{}, err
 	}
 
 	type ConfigsFileMode struct {
-		EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty" yaml:"env_bytes_limit_in_kb,omitempty"`
-		EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty" yaml:"env_list_bytes_limit_in_kb,omitempty"`
+		EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty"`
+		EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty"`
 	}
 
-	var configs ConfigsFileMode
-	if err := json.Unmarshal(bytes, &configs); err != nil {
+	var userConfigs ConfigsFileMode
+	if err := json.Unmarshal(bytes, &userConfigs); err != nil {
 		return ConfigsModel{}, err
 	}
 
-	defaultConfigs := ConfigsModel{
-		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
-		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
+	if userConfigs.EnvBytesLimitInKB != nil {
+		defaultConfigs.EnvBytesLimitInKB = *userConfigs.EnvBytesLimitInKB
 	}
-
-	if configs.EnvBytesLimitInKB != nil {
-		defaultConfigs.EnvBytesLimitInKB = *configs.EnvBytesLimitInKB
-	}
-	if configs.EnvListBytesLimitInKB != nil {
-		defaultConfigs.EnvListBytesLimitInKB = *configs.EnvListBytesLimitInKB
+	if userConfigs.EnvListBytesLimitInKB != nil {
+		defaultConfigs.EnvListBytesLimitInKB = *userConfigs.EnvListBytesLimitInKB
 	}
 
 	return defaultConfigs, nil
 }
 
-// SaveDefaultConfigs ...
-func SaveDefaultConfigs() error {
+// // SaveDefaultConfigs ...
+// func SaveDefaultConfigs() error {
+// 	return SaveConfigs(ConfigsModel{
+// 		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
+// 		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
+// 	})
+// }
+
+// // InitConfigsIfRequired ...
+// func InitConfigsIfRequired() error {
+// 	if configsSaved := CheckIfConfigsSaved(); !configsSaved {
+// 		defaultConf := ConfigsModel{
+// 			EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
+// 			EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
+// 		}
+// 		if err := envman.SaveConfigs(defaultConf); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+
+// saveConfigs ...
+//  only used for unit testing at the moment
+func saveConfigs(configModel ConfigsModel) error {
 	if err := ensureEnvmanConfigDirExists(); err != nil {
 		return err
 	}
 
-	defaultConfigs := ConfigsModel{
-		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
-		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
-	}
-	bytes, err := json.Marshal(defaultConfigs)
+	bytes, err := json.Marshal(configModel)
 	if err != nil {
 		return err
 	}

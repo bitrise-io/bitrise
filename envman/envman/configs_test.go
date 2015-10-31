@@ -8,40 +8,64 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCheckIfConfigsSaved(t *testing.T) {
-	configsPth := getEnvmanConfigsFilePath()
-	exist, err := pathutil.IsPathExists(configsPth)
-	require.Equal(t, nil, err)
-	if exist {
-		require.Equal(t, nil, os.RemoveAll(configsPth))
-	}
-
-	exist = CheckIfConfigsSaved()
-	require.Equal(t, false, exist)
-
-	require.Equal(t, nil, SaveDefaultConfigs())
-	exist = CheckIfConfigsSaved()
-	require.Equal(t, true, exist)
-}
+// func TestCheckIfConfigsSaved(t *testing.T) {
+// 	configsPth := getEnvmanConfigsFilePath()
+// 	exist, err := pathutil.IsPathExists(configsPth)
+// 	require.Equal(t, nil, err)
+// 	if exist {
+// 		require.Equal(t, nil, os.RemoveAll(configsPth))
+// 	}
+//
+// 	exist = CheckIfConfigsSaved()
+// 	require.Equal(t, false, exist)
+//
+// 	require.Equal(t, nil, SaveDefaultConfigs())
+// 	exist = CheckIfConfigsSaved()
+// 	require.Equal(t, true, exist)
+// }
 
 func TestGetConfigs(t *testing.T) {
-	configsPth := getEnvmanConfigsFilePath()
-	exist, err := pathutil.IsPathExists(configsPth)
-	require.Equal(t, nil, err)
-	if exist {
-		require.Equal(t, nil, os.RemoveAll(configsPth))
-	}
+	// fake home, to save the configs into
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	t.Logf("fakeHomePth: %s", fakeHomePth)
+	require.NoError(t, err)
+	originalHome := os.Getenv("HOME")
+	defer func() {
+		require.NoError(t, os.Setenv("HOME", originalHome))
+		require.NoError(t, os.RemoveAll(fakeHomePth))
+	}()
+	require.Equal(t, nil, os.Setenv("HOME", fakeHomePth))
 
-	_, err = GetConfigs()
-	require.NotEqual(t, nil, err)
+	configPth := getEnvmanConfigsFilePath()
+	t.Logf("configPth: %s", configPth)
 
-	require.Equal(t, nil, SaveDefaultConfigs())
+	// --- TESTING
+
+	baseConf, err := GetConfigs()
+	t.Logf("baseConf: %#v", baseConf)
+	require.NoError(t, err)
+	require.Equal(t, defaultEnvBytesLimitInKB, baseConf.EnvBytesLimitInKB)
+	require.Equal(t, defaultEnvListBytesLimitInKB, baseConf.EnvListBytesLimitInKB)
+
+	// modify it
+	baseConf.EnvBytesLimitInKB = 123
+	baseConf.EnvListBytesLimitInKB = 321
+
+	// save to file
+	require.NoError(t, saveConfigs(baseConf))
+
+	// read it back
 	configs, err := GetConfigs()
-	require.Equal(t, nil, err)
-	require.Equal(t, defaultEnvBytesLimitInKB, configs.EnvBytesLimitInKB)
-	require.Equal(t, defaultEnvListBytesLimitInKB, configs.EnvListBytesLimitInKB)
+	t.Logf("configs: %#v", configs)
+	require.NoError(t, err)
+	require.Equal(t, configs, baseConf)
+	require.Equal(t, 123, configs.EnvBytesLimitInKB)
+	require.Equal(t, 321, configs.EnvListBytesLimitInKB)
+
+	// delete the tmp config file
+	require.NoError(t, os.Remove(configPth))
 }
 
-func TestSaveDefaultConfigs(t *testing.T) {
-	require.Equal(t, nil, SaveDefaultConfigs())
-}
+// func TestSaveDefaultConfigs(t *testing.T) {
+// 	require.Equal(t, nil, SaveDefaultConfigs())
+// }
