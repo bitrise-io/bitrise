@@ -120,6 +120,7 @@ workflows:
             set -v
             mkdir -p ./_tmp
             go build -o ./_tmp/ci-bin
+            ./_tmp/ci-bin setup --minimal
             rm ./_tmp/ci-bin
     - script:
         title: revert GOPATH patch
