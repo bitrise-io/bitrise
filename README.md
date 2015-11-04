@@ -3,10 +3,6 @@
 Run your Bitrise automation workflows with this CLI tool on your own development device, and on
 your Continuous Integration tool / service.
 
-**Public Beta:** this repository is still under active development,
-frequent changes are expected, but we we don't plan to introduce breaking changes,
-unless really necessary. **Feedback is greatly appreciated!**
-
 *Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
 with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
 
