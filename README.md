@@ -6,6 +6,8 @@ your Continuous Integration tool / service.
 *Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
 with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
 
+For a nice & quick intro you should check: [https://www.bitrise.io/cli](https://www.bitrise.io/cli)
+
 
 ## Install and Setup
 
