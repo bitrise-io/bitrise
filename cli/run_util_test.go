@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -86,7 +87,7 @@ workflows:
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
-	IsPullRequestMode = false
+	configs.IsPullRequestMode = false
 
 	workflowID, err := GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -109,7 +110,7 @@ workflows:
 	require.Equal(t, "primary", workflowID)
 
 	// Pull request mode
-	IsPullRequestMode = true
+	configs.IsPullRequestMode = true
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -153,7 +154,7 @@ workflows:
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
-	IsPullRequestMode = false
+	configs.IsPullRequestMode = false
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -176,7 +177,7 @@ workflows:
 	require.Equal(t, "", workflowID)
 
 	// Pull request mode
-	IsPullRequestMode = true
+	configs.IsPullRequestMode = true
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.NotEqual(t, nil, err)

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
@@ -17,7 +18,7 @@ func registerFatal(errorMsg, format string) {
 		"error": errorMsg,
 	}
 
-	if format == OutputFormatRaw {
+	if format == configs.OutputFormatRaw {
 		log.Fatal(msg["error"])
 	} else {
 		bytes, err := json.Marshal(msg)
@@ -35,7 +36,7 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 	matchFoundButPullRequestModeNotAllowed := false
 	for _, item := range config.TriggerMap {
 		if glob.Glob(item.Pattern, pattern) {
-			if IsPullRequestMode && !item.IsPullRequestAllowed {
+			if configs.IsPullRequestMode && !item.IsPullRequestAllowed {
 				matchFoundButPullRequestModeNotAllowed = true
 				continue
 			}
@@ -51,9 +52,9 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 func triggerCheck(c *cli.Context) {
 	format := c.String(OuputFormatKey)
 	if format == "" {
-		format = OutputFormatRaw
-	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
+		format = configs.OutputFormatRaw
+	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
 	}
 
 	// Config validation
@@ -80,10 +81,10 @@ func triggerCheck(c *cli.Context) {
 	}
 
 	switch format {
-	case OutputFormatRaw:
+	case configs.OutputFormatRaw:
 		fmt.Printf("%s -> %s\n", triggerPattern, colorstring.Blue(workflowToRunID))
 		break
-	case OutputFormatJSON:
+	case configs.OutputFormatJSON:
 		triggerModel := map[string]string{
 			"pattern":  triggerPattern,
 			"workflow": workflowToRunID,
@@ -96,7 +97,7 @@ func triggerCheck(c *cli.Context) {
 		fmt.Println(string(bytes))
 		break
 	default:
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
 	}
 
 }

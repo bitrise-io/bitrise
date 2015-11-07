@@ -7,16 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/codegangsta/cli"
-)
-
-var (
-	// IsCIMode ...
-	IsCIMode = false
-	// IsDebugMode ...
-	IsDebugMode = false
-	// IsPullRequestMode ...
-	IsPullRequestMode = false
 )
 
 func initLogFormatter() {
@@ -38,14 +30,14 @@ func before(c *cli.Context) error {
 		if err := os.Setenv(bitrise.DebugModeEnvKey, "true"); err != nil {
 			return err
 		}
-		IsDebugMode = true
+		configs.IsDebugMode = true
 		log.Warn("=> Started in DEBUG mode")
 	}
 
 	// Log level
 	// If log level defined - use it
 	logLevelStr := c.String(LogLevelKey)
-	if logLevelStr == "" && IsDebugMode {
+	if logLevelStr == "" && configs.IsDebugMode {
 		// if no Log Level defined and we're in Debug Mode - set loglevel to debug
 		logLevelStr = "debug"
 		log.Warn("=> LogLevel set to debug")
@@ -72,7 +64,7 @@ func before(c *cli.Context) error {
 		if err := os.Setenv(bitrise.CIModeEnvKey, "true"); err != nil {
 			return err
 		}
-		IsCIMode = true
+		configs.IsCIMode = true
 	}
 
 	if err := bitrise.InitPaths(); err != nil {
@@ -86,17 +78,17 @@ func before(c *cli.Context) error {
 		if err := os.Setenv(bitrise.PRModeEnvKey, "true"); err != nil {
 			return err
 		}
-		IsPullRequestMode = true
+		configs.IsPullRequestMode = true
 	}
 
 	pullReqID := os.Getenv(bitrise.PullRequestIDEnvKey)
 	if pullReqID != "" {
-		IsPullRequestMode = true
+		configs.IsPullRequestMode = true
 	}
 
 	IsPR := os.Getenv(bitrise.PRModeEnvKey)
 	if IsPR == "true" {
-		IsPullRequestMode = true
+		configs.IsPullRequestMode = true
 	}
 
 	return nil
