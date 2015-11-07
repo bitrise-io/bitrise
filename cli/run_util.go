@@ -11,6 +11,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -28,26 +29,26 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 			return err
 		}
 
-		if !IsCIMode {
+		if !configs.IsCIMode {
 			if key == bitrise.CIModeEnvKey && value == "true" {
-				IsCIMode = true
+				configs.IsCIMode = true
 			}
 		}
 
-		if !IsPullRequestMode {
+		if !configs.IsPullRequestMode {
 			if key == bitrise.PullRequestIDEnvKey && value != "" {
-				IsPullRequestMode = true
+				configs.IsPullRequestMode = true
 			}
 			if key == bitrise.PRModeEnvKey && value == "true" {
-				IsPullRequestMode = true
+				configs.IsPullRequestMode = true
 			}
 		}
 	}
 
-	if IsCIMode {
+	if configs.IsCIMode {
 		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
 	}
-	if IsPullRequestMode {
+	if configs.IsPullRequestMode {
 		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
 	}
 
@@ -236,7 +237,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
-				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, IsCIMode); err != nil {
+				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
 					return 1, []envmanModels.EnvironmentItemModel{}, err
 				}
@@ -245,7 +246,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		case "linux":
 			for _, aptGetDep := range step.Deps.AptGet {
 				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
-				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep.Name, IsCIMode); err != nil {
+				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep.Name, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
 					return 1, []envmanModels.EnvironmentItemModel{}, err
 				}
@@ -263,7 +264,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			switch dep.Manager {
 			case depManagerBrew:
 				if runtime.GOOS == "darwin" {
-					err := bitrise.InstallWithBrewIfNeeded(dep.Name, IsCIMode)
+					err := bitrise.InstallWithBrewIfNeeded(dep.Name, configs.IsCIMode)
 					if err != nil {
 						return 1, []envmanModels.EnvironmentItemModel{}, err
 					}
@@ -321,7 +322,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
 
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, IsCIMode, IsPullRequestMode, buildRunResults, envList)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, err
 			}
@@ -645,7 +646,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, IsCIMode, IsPullRequestMode, buildRunResults, envList)
+			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false)
 				continue

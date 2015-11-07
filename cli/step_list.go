@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/codegangsta/cli"
 )
 
@@ -12,9 +13,9 @@ func stepList(c *cli.Context) {
 	// Input validation
 	format := c.String(OuputFormatKey)
 	if format == "" {
-		format = OutputFormatRaw
-	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
+		format = configs.OutputFormatRaw
+	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
 	}
 
 	collectionURI := c.String(CollectionKey)
@@ -32,12 +33,12 @@ func stepList(c *cli.Context) {
 	}
 
 	switch format {
-	case OutputFormatRaw:
+	case configs.OutputFormatRaw:
 		if err := bitrise.StepmanPrintRawStepList(collectionURI); err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}
 		break
-	case OutputFormatJSON:
+	case configs.OutputFormatJSON:
 		outStr, err := bitrise.StepmanJSONStepList(collectionURI)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
@@ -46,6 +47,6 @@ func stepList(c *cli.Context) {
 		break
 	default:
 		log.Fatalf("Invalid format: %s", format)
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
 	}
 }

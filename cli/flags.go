@@ -6,12 +6,6 @@ import (
 )
 
 const (
-	// OutputFormatRaw ...
-	OutputFormatRaw = "raw"
-	// OutputFormatJSON ...
-	OutputFormatJSON = "json"
-	// OutputFormatYML ...
-	OutputFormatYML = "yml"
 	// CollectionPathEnvKey ...
 	CollectionPathEnvKey = "STEPMAN_COLLECTION"
 	// CIKey ...
@@ -59,7 +53,8 @@ const (
 	MinimalModeKey = "minimal"
 
 	// OuputFormatKey ...
-	OuputFormatKey = "format"
+	OuputFormatKey      = "format"
+	ouputFormatKeyShort = "f"
 	// OuputPathKey ...
 	OuputPathKey = "outpath"
 	// PrettyFormatKey ...
@@ -113,6 +108,10 @@ var (
 		flPRMode,
 	}
 	// Command flags
+	flOutputFormat = cli.StringFlag{
+		Name:  OuputFormatKey + ", " + ouputFormatKeyShort,
+		Usage: "Output format. Accepted: raw (default), json",
+	}
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
 		Usage: "[Deprecated!!! Use 'config'] Path where the workflow config file is located.",

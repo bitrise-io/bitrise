@@ -86,7 +86,7 @@ workflows:
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
-	IsPullRequestMode = false
+	configs.IsPullRequestMode = false
 
 	workflowID, err := GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -109,7 +109,7 @@ workflows:
 	require.Equal(t, "primary", workflowID)
 
 	// Pull request mode
-	IsPullRequestMode = true
+	configs.IsPullRequestMode = true
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -153,7 +153,7 @@ workflows:
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
-	IsPullRequestMode = false
+	configs.IsPullRequestMode = false
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.Equal(t, nil, err)
@@ -176,7 +176,7 @@ workflows:
 	require.Equal(t, "", workflowID)
 
 	// Pull request mode
-	IsPullRequestMode = true
+	configs.IsPullRequestMode = true
 
 	workflowID, err = GetWorkflowIDByPattern(config, "master")
 	require.NotEqual(t, nil, err)

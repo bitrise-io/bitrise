@@ -6,6 +6,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/codegangsta/cli"
 )
@@ -30,7 +31,7 @@ func export(c *cli.Context) {
 
 	// serialize
 	configBytes := []byte{}
-	if outFormat == OutputFormatJSON {
+	if outFormat == configs.OutputFormatJSON {
 		if c.Bool(PrettyFormatKey) {
 			configBytes, err = json.MarshalIndent(bitriseConfig, "", "\t")
 		} else {
@@ -39,7 +40,7 @@ func export(c *cli.Context) {
 		if err != nil {
 			log.Fatalln("Failed to generate JSON: ", err)
 		}
-	} else if outFormat == OutputFormatYML {
+	} else if outFormat == configs.OutputFormatYML {
 		configBytes, err = yaml.Marshal(bitriseConfig)
 		if err != nil {
 			log.Fatalln("Failed to generate YAML: ", err)

@@ -20,6 +20,14 @@ var (
 			Action:  initConfig,
 		},
 		{
+			Name:   "version",
+			Usage:  "Prints the version",
+			Action: printVersionCmd,
+			Flags: []cli.Flag{
+				flOutputFormat,
+			},
+		},
+		{
 			Name:   "validate",
 			Usage:  "Validates a specified bitrise config.",
 			Action: validate,

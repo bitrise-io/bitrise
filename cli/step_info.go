@@ -4,17 +4,18 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/codegangsta/cli"
 )
 
 func printStepLibStep(collectionURI, id, version, format string) error {
 	switch format {
-	case OutputFormatRaw:
+	case configs.OutputFormatRaw:
 		if err := bitrise.StepmanPrintRawStepLibStepInfo(collectionURI, id, version); err != nil {
 			return err
 		}
 		break
-	case OutputFormatJSON:
+	case configs.OutputFormatJSON:
 		outStr, err := bitrise.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
@@ -29,12 +30,12 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 
 func printLocalStepInfo(pth, format string) error {
 	switch format {
-	case OutputFormatRaw:
+	case configs.OutputFormatRaw:
 		if err := bitrise.StepmanPrintRawLocalStepInfo(pth); err != nil {
 			return err
 		}
 		break
-	case OutputFormatJSON:
+	case configs.OutputFormatJSON:
 		outStr, err := bitrise.StepmanJSONLocalStepInfo(pth)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
@@ -50,9 +51,9 @@ func printLocalStepInfo(pth, format string) error {
 func stepInfo(c *cli.Context) {
 	format := c.String(OuputFormatKey)
 	if format == "" {
-		format = OutputFormatRaw
-	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
+		format = configs.OutputFormatRaw
+	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
 	}
 
 	YMLPath := c.String(StepYMLKey)
