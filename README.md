@@ -31,6 +31,25 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 * Flexibility should also be kept in mind, but only if it does not affect the previous two points.
 
 
+## Tooling support & JSON output format
+
+`bitrise` CLI commands support a `--format=[format]` parameter.
+This is intended mainly for tooling support, by adding `--format=json` you'll
+get a JSON formatted output on Standard Output.
+
+**This is still work-in-progress, we're working on providing
+the `--format` param to every command except `run`**.
+
+Every error, warning etc. message will go to StdErr; and on the StdOut
+you should only get the valid JSON output.
+
+An example calling the `version` command:
+
+`$ bitrise version --format=json`
+
+Will print `{"version":"1.2.4"}` to the Standard Output (StdOut).
+
+
 ## Share your Step
 
 You can use your own Step as you can see in the `_examples`, even if it's
