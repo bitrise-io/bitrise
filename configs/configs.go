@@ -38,7 +38,7 @@ const (
 func ConfigureOutputFormat(c *cli.Context) error {
 	outFmt := c.String(OuputFormatKey)
 	switch outFmt {
-	case OutputFormatRaw, OutputFormatJSON:
+	case OutputFormatRaw, OutputFormatJSON, OutputFormatYML:
 		// valid
 		OutputFormat = outFmt
 	case "":

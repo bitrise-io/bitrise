@@ -110,7 +110,7 @@ var (
 	// Command flags
 	flOutputFormat = cli.StringFlag{
 		Name:  OuputFormatKey + ", " + ouputFormatKeyShort,
-		Usage: "Output format. Accepted: raw (default), json",
+		Usage: "Output format. Accepted: raw (default), json, yml",
 	}
 	flPath = cli.StringFlag{
 		Name:  PathKey + ", " + pathKeyShort,
