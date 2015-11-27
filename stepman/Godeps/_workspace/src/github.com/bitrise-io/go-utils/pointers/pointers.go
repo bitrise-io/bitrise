@@ -22,3 +22,10 @@ func NewTimePtr(val time.Time) *time.Time {
 	*ptrValue = val
 	return ptrValue
 }
+
+// NewIntPtr ...
+func NewIntPtr(val int) *int {
+	ptrValue := new(int)
+	*ptrValue = val
+	return ptrValue
+}

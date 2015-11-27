@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"fmt"
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -10,7 +13,56 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func auditStep(step models.StepModel, stepID, version string) error {
+func auditStepBeforeShare(pth string) error {
+	stepModel, err := stepman.ParseStepYml(pth, false)
+	if err != nil {
+		return err
+	}
+	if err := stepModel.ValidateForShare(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func detectStepIDAndVersionFromPath(pth string) (stepID, stepVersion string, err error) {
+	pathComps := strings.Split(pth, "/")
+	if len(pathComps) < 4 {
+		err = fmt.Errorf("Path should contain at least 4 components: steps, step-id, step-version, step.yml: %s", pth)
+		return
+	}
+	// we only care about the last 4 component of the path
+	pathComps = pathComps[len(pathComps)-4:]
+	if pathComps[0] != "steps" {
+		err = fmt.Errorf("Invalid step.yml path, 'steps' should be included right before the step-id: %s", pth)
+		return
+	}
+	if pathComps[3] != "step.yml" {
+		err = fmt.Errorf("Invalid step.yml path, should end with 'step.yml': %s", pth)
+		return
+	}
+	stepID = pathComps[1]
+	stepVersion = pathComps[2]
+	return
+}
+
+func auditStepBeforeSharePullRequest(pth string) error {
+	stepID, version, err := detectStepIDAndVersionFromPath(pth)
+	if err != nil {
+		return err
+	}
+
+	stepModel, err := stepman.ParseStepYml(pth, false)
+	if err != nil {
+		return err
+	}
+
+	if err := auditStepModelBeforeSharePullRequest(stepModel, stepID, version); err != nil {
+		return err
+	}
+	return nil
+}
+
+func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {
 	if err := step.Validate(true); err != nil {
 		return err
 	}
@@ -19,35 +71,41 @@ func auditStep(step models.StepModel, stepID, version string) error {
 	if err != nil {
 		return err
 	}
-	if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(step.Source.Git, pth, version, step.Source.Commit); err != nil {
+	if err := cmdex.GitCloneTag(step.Source.Git, pth, version); err != nil {
 		return err
+	}
+	latestCommit, err := cmdex.GitGetLatestCommitHashOnHead(pth)
+	if err != nil {
+		return err
+	}
+	if latestCommit != step.Source.Commit {
+		return fmt.Errorf("Step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)
 	}
 
 	return nil
 }
 
-func auditStepLib(gitURI string) error {
+func auditStepLibBeforeSharePullRequest(gitURI string) error {
 	if exist, err := stepman.RootExistForCollection(gitURI); err != nil {
-		log.Fatal("[STEPMAN] - Failed to check routing:", err)
+		return err
 	} else if !exist {
-		log.Fatalf("[STEPMAN] - Missing routing for collection, call 'stepman setup -c %s' before audit.", gitURI)
+		return fmt.Errorf("Missing routing for collection, call 'stepman setup -c %s' before audit.", gitURI)
 	}
 
 	collection, err := stepman.ReadStepSpec(gitURI)
 	if err != nil {
-		log.Fatalln("[STEPMAN] - Failed to read steps spec (spec.json)")
+		return err
 	}
 
 	for stepID, stepGroup := range collection.Steps {
 		log.Debugf("Start audit StepGrup, with ID: (%s)", stepID)
 		for version, step := range stepGroup.Versions {
 			log.Debugf("Start audit Step (%s) (%s)", stepID, version)
-			if err := auditStep(step, stepID, version); err != nil {
+			if err := auditStepModelBeforeSharePullRequest(step, stepID, version); err != nil {
 				log.Errorf(" * "+colorstring.Redf("[FAILED] ")+"Failed audit (%s) (%s)", stepID, version)
-				log.Fatalf("   Error: %s", err.Error())
-			} else {
-				log.Infof(" * "+colorstring.Greenf("[OK] ")+"Success audit (%s) (%s)", stepID, version)
+				return fmt.Errorf("   Error: %s", err.Error())
 			}
+			log.Infof(" * "+colorstring.Greenf("[OK] ")+"Success audit (%s) (%s)", stepID, version)
 		}
 	}
 	return nil
@@ -55,12 +113,39 @@ func auditStepLib(gitURI string) error {
 
 func audit(c *cli.Context) {
 	// Input validation
-	collectionURI := c.String(CollectionKey)
-	if collectionURI == "" {
-		log.Fatalln("[STEPMAN] - No step collection specified")
-	}
+	beforePR := c.Bool("before-pr")
 
-	if err := auditStepLib(collectionURI); err != nil {
-		log.Fatalln("[STEPMAN] - Audit failed %s", err)
+	collectionURI := c.String("collection")
+	if collectionURI != "" {
+		if beforePR {
+			log.Warnln("before-pr flag is used only for Step audit")
+		}
+
+		if err := auditStepLibBeforeSharePullRequest(collectionURI); err != nil {
+			log.Fatalf("Audit Step Collection failed, err: %s", err)
+		}
+	} else {
+		stepYMLPath := c.String("step-yml")
+		if stepYMLPath != "" {
+			if exist, err := pathutil.IsPathExists(stepYMLPath); err != nil {
+				log.Fatalf("Failed to check path (%s), err: %s", stepYMLPath, err)
+			} else if !exist {
+				log.Fatalf("step.yml doesn't exist at: %s", stepYMLPath)
+			}
+
+			if beforePR {
+				if err := auditStepBeforeSharePullRequest(stepYMLPath); err != nil {
+					log.Fatalf("Step audit failed, err: %s", err)
+				}
+			} else {
+				if err := auditStepBeforeShare(stepYMLPath); err != nil {
+					log.Fatalf("Step audit failed, err: %s", err)
+				}
+			}
+
+			log.Infof(" * "+colorstring.Greenf("[OK] ")+"Success audit (%s)", stepYMLPath)
+		} else {
+			log.Fatalln("'stepman audit' command needs --collection or --step-yml flag")
+		}
 	}
 }

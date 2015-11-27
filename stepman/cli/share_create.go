@@ -3,8 +3,11 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path"
+	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"gopkg.in/yaml.v2"
 
@@ -20,9 +23,11 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+const maxSummaryLength = 100
+
 func printFinishCreate(share ShareModel, stepDirInSteplib string, toolMode bool) {
 	fmt.Println()
-	log.Infof(" * "+colorstring.Green("[OK]")+" Your step (%s) (%s) added to local StepLib (%s).", share.StepID, share.StepTag, stepDirInSteplib)
+	log.Infof(" * "+colorstring.Green("[OK]")+" Your Step (%s) (%s) added to local StepLib (%s).", share.StepID, share.StepTag, stepDirInSteplib)
 	log.Infoln(" *      You can find your Step's step.yml at: " + colorstring.Greenf("%s/step.yml", stepDirInSteplib))
 	fmt.Println()
 	fmt.Println("   " + GuideTextForShareFinish(toolMode))
@@ -41,18 +46,18 @@ func create(c *cli.Context) {
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Error(err)
-		log.Fatal("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
+		log.Fatalln("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
 	}
 
 	// Input validation
 	tag := c.String(TagKey)
 	if tag == "" {
-		log.Fatalln("[STEPMAN] - No step tag specified")
+		log.Fatalln("No Step tag specified")
 	}
 
 	gitURI := c.String(GitKey)
 	if gitURI == "" {
-		log.Fatalln("[STEPMAN] - No step url specified")
+		log.Fatalln("No Step url specified")
 	}
 
 	stepID := c.String(StepIDKEy)
@@ -60,21 +65,25 @@ func create(c *cli.Context) {
 		stepID = getStepIDFromGit(gitURI)
 	}
 	if stepID == "" {
-		log.Fatalln("No step id specified")
+		log.Fatalln("No Step id specified")
+	}
+	r := regexp.MustCompile(`[a-z0-9-]+`)
+	if find := r.FindString(stepID); find != stepID {
+		log.Fatalln("StepID doesn't conforms to: [a-z0-9-]")
 	}
 
 	route, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		log.Fatalln("No route found for collectionURI (%s)", share.Collection)
+		log.Fatalf("No route found for collectionURI (%s)", share.Collection)
 	}
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, stepID, tag)
-	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
+	stepYMLPathInSteplib := path.Join(stepDirInSteplib, "step.yml")
 	if exist, err := pathutil.IsPathExists(stepYMLPathInSteplib); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to check step.yml path in steplib, err: %s", err)
 	} else if exist {
-		log.Warnf("[STEPMAN] - step.yml already exist in path: %s.", stepDirInSteplib)
-		if val, err := goinp.AskForBool("Would you like to overwrite local version of step.yml? [yes/no]"); err != nil {
-			log.Fatalln("Error:", err)
+		log.Warnf("Step already exist in path: %s.", stepDirInSteplib)
+		if val, err := goinp.AskForBool("Would you like to overwrite local version of Step? [yes/no]"); err != nil {
+			log.Fatalf("Failed to get bool, err: %s", err)
 		} else {
 			if !val {
 				log.Errorln("Unfortunately we can't continue with sharing without an overwrite exist step.yml.")
@@ -84,52 +93,78 @@ func create(c *cli.Context) {
 		}
 	}
 
-	// Clone step to tmp dir
+	// Clone Step to tmp dir
 	tmp, err := pathutil.NormalizedOSTempDirPath("")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get temp directory, err: %s", err)
 	}
 
-	log.Infof("Cloning step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
-	if err := cmdex.GitCloneTagOrBranch(gitURI, tmp, tag); err != nil {
-		log.Fatal(err)
+	log.Infof("Cloning Step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
+	if err := cmdex.GitCloneTag(gitURI, tmp, tag); err != nil {
+		log.Fatalf("Git clone failed, err: %s", err)
 	}
 
 	// Update step.yml
-	bytes, err := fileutil.ReadBytesFromFile(tmp + "/step.yml")
+	tmpStepYMLPath := path.Join(tmp, "step.yml")
+	bytes, err := fileutil.ReadBytesFromFile(tmpStepYMLPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to read Step from file, err: %s", err)
 	}
 	var stepModel models.StepModel
 	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to unmarchal Step, err: %s", err)
 	}
+
 	commit, err := cmdex.GitGetCommitHashOfHEAD(tmp)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get commit hash, err: %s", err)
 	}
 	stepModel.Source = models.StepSourceModel{
 		Git:    gitURI,
 		Commit: commit,
 	}
 	stepModel.PublishedAt = pointers.NewTimePtr(time.Now())
+
+	// Validate step-yml
 	if err := stepModel.Validate(true); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to validate Step, err: %s", err)
+	}
+	for _, input := range stepModel.Inputs {
+		key, value, err := input.GetKeyValuePair()
+		if err != nil {
+			log.Fatalf("Failed to get Step input key-value pair, err: %s", err)
+		}
+
+		options, err := input.GetOptions()
+		if err != nil {
+			log.Fatalf("Failed to get Step input (%s) options, err: %s", key, err)
+		}
+
+		if len(options.ValueOptions) > 0 && value == "" {
+			log.Warn("Step input with 'value_options', should contains default value!")
+			log.Fatalf("Missing default value for Step input (%s).", key)
+		}
+	}
+	if strings.Contains(*stepModel.Summary, "\n") {
+		log.Warningln("Step summary should be one line!")
+	}
+	if utf8.RuneCountInString(*stepModel.Summary) > maxSummaryLength {
+		log.Warningf("Step summary should contains maximum (%d) characters, actual: (%d)!", maxSummaryLength, utf8.RuneCountInString(*stepModel.Summary))
 	}
 
 	// Copy step.yml to steplib
 	share.StepID = stepID
 	share.StepTag = tag
 	if err := WriteShareSteplibToFile(share); err != nil {
-		log.Fatal("[STEPMAN] - Failed to save share steplib to file:", err)
+		log.Fatalf("Failed to save share steplib to file, err: %s", err)
 	}
 
 	log.Info("Step dir in collection:", stepDirInSteplib)
 	if exist, err := pathutil.IsPathExists(stepDirInSteplib); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to check path (%s), err: %s", stepDirInSteplib, err)
 	} else if !exist {
 		if err := os.MkdirAll(stepDirInSteplib, 0777); err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to create path (%s), err: %s", stepDirInSteplib, err)
 		}
 	}
 
@@ -137,20 +172,21 @@ func create(c *cli.Context) {
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
 	if err := cmdex.GitCheckout(collectionDir, share.StepID); err != nil {
 		if err := cmdex.GitCreateAndCheckoutBranch(collectionDir, share.StepID); err != nil {
-			log.Fatal(err)
+			log.Fatalf("Git failed to create and checkout branch, err: %s", err)
 		}
 	}
 
 	stepBytes, err := yaml.Marshal(stepModel)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to marcshal Step model, err: %s", err)
 	}
 	if err := fileutil.WriteBytesToFile(stepYMLPathInSteplib, stepBytes); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to write Step to file, err: %s", err)
 	}
+
 	// Update spec.json
 	if err := stepman.ReGenerateStepSpec(route); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to re-create steplib, err: %s", err)
 	}
 
 	printFinishCreate(share, stepDirInSteplib, toolMode)

@@ -83,10 +83,22 @@ var (
 		},
 		{
 			Name:   "audit",
-			Usage:  "Validates the step collection.",
+			Usage:  "Validates Step or Step Collection.",
 			Action: audit,
 			Flags: []cli.Flag{
-				flCollection,
+				cli.StringFlag{
+					Name:   CollectionKey + ", " + collectionKeyShort,
+					Usage:  "For validating Step Collection before share.",
+					EnvVar: CollectionPathEnvKey,
+				},
+				cli.StringFlag{
+					Name:  "step-yml",
+					Usage: "For validating Step before share or before share Pull Request.",
+				},
+				cli.BoolFlag{
+					Name:  "before-pr",
+					Usage: "If flag is set, Step Pull Request required fields will be checked to. Note: only for Step audit.",
+				},
 			},
 		},
 		{
