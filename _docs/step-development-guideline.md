@@ -8,7 +8,7 @@ and just set the default value to the Environment Variable you want to use in th
 An example:
 
 The Xcode Archive step generates a `$BITRISE_IPA_PATH` output environment variable.
-**You should not** use this environment variable in your step directly,
+**You should not** use this environment variable in your Step's code directly,
 instead you should declare an input for your Step in `step.yml` and just set the default
 value to `$BITRISE_IPA_PATH`. Example:
 
