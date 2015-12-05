@@ -26,7 +26,7 @@ and you also let the user of your Step to easily declare these inputs,
 instead of searching in the code for the required Environment Variable.
 
 
-## Do not use submodules, or require any other resource, downloaded on-demand
+## Do not use submodules, or require any other resource downloaded on-demand
 
 As a Step runs frequently in a CI / automation environment you should try to make your Step as stable as possible.
 This includes the resources / tools used by your Step as well, not just the core code.
