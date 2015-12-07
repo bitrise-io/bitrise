@@ -36,7 +36,33 @@ func GitCloneTagOrBranch(uri, pth, tagOrBranch string) error {
 	if tagOrBranch == "" {
 		return errors.New("Git Clone 'tag or branch' missing")
 	}
-	return RunCommand("git", []string{"clone", "--recursive", "--branch", tagOrBranch, uri, pth}...)
+	return RunCommand("git", "clone", "--recursive", "--branch", tagOrBranch, uri, pth)
+}
+
+// GitCloneTag ...
+func GitCloneTag(uri, pth, tag string) error {
+	if uri == "" {
+		return errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return errors.New("Git Clone 'path' missing")
+	}
+	if tag == "" {
+		return errors.New("Git Clone 'tag or branch' missing")
+	}
+	if err := RunCommand("git", "clone", "--recursive", "--branch", tag, uri, pth); err != nil {
+		return fmt.Errorf("Git clone failed, err: %s", err)
+	}
+
+	out, err := RunCommandInDirAndReturnCombinedStdoutAndStderr(pth, "git", "branch")
+	if err != nil {
+		return fmt.Errorf("Failed to get git branches, err: %s", err)
+	}
+
+	if out != "* (no branch)" {
+		return fmt.Errorf("Current HEAD is not detached head, current branch should be: '* (no branch)', got: %s", out)
+	}
+	return nil
 }
 
 // GitCloneTagOrBranchAndValidateCommitHash ...
@@ -79,7 +105,7 @@ func GitCloneTagOrBranchAndValidateCommitHash(uri, pth, version, commithash stri
 
 // GitPull ...
 func GitPull(pth string) error {
-	err := RunCommandInDir(pth, "git", []string{"pull"}...)
+	err := RunCommandInDir(pth, "git", "pull")
 	if err != nil {
 		log.Printf(" [!] Git pull failed, error (%v)", err)
 		return err
@@ -92,11 +118,11 @@ func GitUpdate(git, pth string) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
-		fmt.Println("[STEPMAN] - Git path does not exist, do clone")
+		fmt.Println("Git path does not exist, do clone")
 		return GitClone(git, pth)
 	}
 
-	fmt.Println("[STEPMAN] - Git path exist, do pull")
+	fmt.Println("Git path exist, do pull")
 	return GitPull(pth)
 }
 
