@@ -15,6 +15,59 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDeleteEnvironment(t *testing.T) {
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        is_skippable: true
+        title: "Envman add DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            envman add --key DELETE_TEST --value "delete test"
+    - script:
+        title: "Test env DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "DELETE_TEST: $DELETE_TEST"
+            if [ -z "$DELETE_TEST" ] ; then
+              exit 1
+            fi
+    - script:
+        title: "Delete env DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            envman add --key DELETE_TEST --value ""
+    - script:
+        title: "Test env DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "DELETE_TEST: $DELETE_TEST"
+            if [ ! -z "$DELETE_TEST" ] ; then
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, nil, err)
+	require.Equal(t, 4, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
 func TestStepOutputsInTemplate(t *testing.T) {
 	inventoryStr := `
 envs:
@@ -246,51 +299,6 @@ workflows:
             set -v
             echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
             if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[2] + `" ]] ; then
-              exit 1
-            fi
-`
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
-
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
-
-	//
-	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
-	//  BUT the value is empty in Workflow and App Envs - Secrets should be used!
-	inventoryStr = `
-envs:
-- BITRISE_SOURCE_DIR: "` + testPths[0] + `"
-`
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
-
-	configStr = `
-format_version: 1.0.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-app:
-  envs:
-  - BITRISE_SOURCE_DIR:
-
-workflows:
-  test:
-    envs:
-    - BITRISE_SOURCE_DIR: ""
-    steps:
-    - script:
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            echo "BITRISE_SOURCE_DIR: $BITRISE_SOURCE_DIR"
-            if [[ "$BITRISE_SOURCE_DIR" != "` + testPths[0] + `" ]] ; then
-              echo "-> BITRISE_SOURCE_DIR missmatch!"
-              exit 1
-            fi
-            curr_pwd="$(pwd)"
-            if [[ "${curr_pwd}" != "` + testPths[0] + `" ]] ; then
-              echo "-> pwd missmatch! : curr_pwd : ${curr_pwd}"
               exit 1
             fi
 `
@@ -1541,6 +1549,7 @@ workflows:
               exit 1
             fi
     - script:
+        title: Should fail
         inputs:
         - content: |-
             envman add --key MY_TEST_2 --value 'Test value 2'
