@@ -17,13 +17,13 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 		fmt.Printf("⚡️ %s\n", colorstring.Green(name))
 
 		if workflow["summary"] == "" {
-			workflow["summary"] = "No summary available."
+			workflow["summary"] = colorstring.Yellow("No summary available.")
 		}
 		fmt.Printf("  Summary: %s\n", workflow["summary"])
 
 		if !minimal {
 			if workflow["description"] == "" {
-				workflow["description"] = "No description available."
+				workflow["description"] = colorstring.Yellow("No description available.")
 			}
 			fmt.Printf("  Description: %s\n", workflow["description"])
 		}
