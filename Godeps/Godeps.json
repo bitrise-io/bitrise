@@ -1,14 +1,14 @@
 {
 	"ImportPath": "github.com/bitrise-io/bitrise",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5.2",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.7-37-g6f383a9",
-			"Rev": "6f383a9b2998dd6f401704269c3e6e192f6175ad"
+			"Comment": "v0.8.7-53-g446d1c1",
+			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
@@ -17,35 +17,35 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "4d4d681f3b478115c054e0d9b6ea6e378e25b794"
+			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -58,8 +58,8 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-163-g70e3fa5",
-			"Rev": "70e3fa51ebed95df8c0fbe1519c1c1f9bc16bb13"
+			"Comment": "1.2.0-179-g0302d39",
+			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -75,17 +75,17 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-79-ge7a1d88",
-			"Rev": "e7a1d8890c7638d7bb50e3e498de4a1e913a28cf"
+			"Comment": "v1.0-85-ga1f9799",
+			"Rev": "a1f97990ddc16022ec7610326dd9bce31332c116"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.0-79-ge7a1d88",
-			"Rev": "e7a1d8890c7638d7bb50e3e498de4a1e913a28cf"
+			"Comment": "v1.0-85-ga1f9799",
+			"Rev": "a1f97990ddc16022ec7610326dd9bce31332c116"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "53feefa2559fb8dfa8d81baad31be332c97d6c77"
+			"Rev": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4"
 		}
 	]
 }

@@ -382,7 +382,7 @@ func isEmpty(object interface{}) bool {
 // Empty asserts that the specified object is empty.  I.e. nil, "", false, 0 or either
 // a slice or a channel with len == 0.
 //
-// assert.Empty(t, obj)
+//  assert.Empty(t, obj)
 //
 // Returns whether the assertion was successful (true) or not (false).
 func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
@@ -399,9 +399,9 @@ func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
 // NotEmpty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or either
 // a slice or a channel with len == 0.
 //
-// if assert.NotEmpty(t, obj) {
-//   assert.Equal(t, "two", obj[1])
-// }
+//  if assert.NotEmpty(t, obj) {
+//    assert.Equal(t, "two", obj[1])
+//  }
 //
 // Returns whether the assertion was successful (true) or not (false).
 func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
@@ -460,7 +460,7 @@ func True(t TestingT, value bool, msgAndArgs ...interface{}) bool {
 
 }
 
-// False asserts that the specified value is true.
+// False asserts that the specified value is false.
 //
 //    assert.False(t, myBool, "myBool should be false")
 //
@@ -961,6 +961,7 @@ func diff(expected interface{}, actual interface{}) string {
 		return ""
 	}
 
+	spew.Config.SortKeys = true
 	e := spew.Sdump(expected)
 	a := spew.Sdump(actual)
 
