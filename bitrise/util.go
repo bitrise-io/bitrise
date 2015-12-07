@@ -83,17 +83,15 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 			return err
 		}
 
-		if value != "" {
-			isExpand := envmanModels.DefaultIsExpand
-			if opts.IsExpand != nil {
-				isExpand = *opts.IsExpand
-			} else {
-				log.Warn("Env (%s - %s) opts.IsExpand is nil, should not!", key, value)
-			}
-			if err := EnvmanAdd(InputEnvstorePath, key, value, isExpand); err != nil {
-				log.Errorln("[BITRISE_CLI] - Failed to run envman add")
-				return err
-			}
+		isExpand := envmanModels.DefaultIsExpand
+		if opts.IsExpand != nil {
+			isExpand = *opts.IsExpand
+		} else {
+			log.Warn("Env (%s - %s) opts.IsExpand is nil, should not!", key, value)
+		}
+		if err := EnvmanAdd(InputEnvstorePath, key, value, isExpand); err != nil {
+			log.Errorln("[BITRISE_CLI] - Failed to run envman add")
+			return err
 		}
 	}
 	return nil
