@@ -11,10 +11,12 @@ import (
 func printStepLibStep(collectionURI, id, version, format string) error {
 	switch format {
 	case configs.OutputFormatRaw:
-		if err := bitrise.StepmanPrintRawStepLibStepInfo(collectionURI, id, version); err != nil {
-			return err
+		out, err := bitrise.StepmanRawStepLibStepInfo(collectionURI, id, version)
+		if out != "" {
+			fmt.Println("Step info:")
+			fmt.Printf("%s", out)
 		}
-		break
+		return err
 	case configs.OutputFormatJSON:
 		outStr, err := bitrise.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
@@ -31,10 +33,12 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 func printLocalStepInfo(pth, format string) error {
 	switch format {
 	case configs.OutputFormatRaw:
-		if err := bitrise.StepmanPrintRawLocalStepInfo(pth); err != nil {
-			return err
+		out, err := bitrise.StepmanRawLocalStepInfo(pth)
+		if out != "" {
+			fmt.Println("Step info:")
+			fmt.Printf("%s", out)
 		}
-		break
+		return err
 	case configs.OutputFormatJSON:
 		outStr, err := bitrise.StepmanJSONLocalStepInfo(pth)
 		if err != nil {

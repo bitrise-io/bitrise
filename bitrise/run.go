@@ -37,31 +37,19 @@ func StepmanUpdate(collection string) error {
 	return cmdex.RunCommand("stepman", args...)
 }
 
-// StepmanPrintRawStepLibStepInfo ...
-func StepmanPrintRawStepLibStepInfo(collection, stepID, stepVersion string) error {
+// StepmanRawStepLibStepInfo ...
+func StepmanRawStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "raw"}
-	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(out)
-	return nil
+	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
-// StepmanPrintRawLocalStepInfo ...
-func StepmanPrintRawLocalStepInfo(pth string) error {
+// StepmanRawLocalStepInfo ...
+func StepmanRawLocalStepInfo(pth string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "raw"}
-	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(out)
-	return nil
+	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepLibStepInfo ...
@@ -95,17 +83,11 @@ func StepmanJSONLocalStepInfo(pth string) (string, error) {
 	return outBuffer.String(), nil
 }
 
-// StepmanPrintRawStepList ...
-func StepmanPrintRawStepList(collection string) error {
+// StepmanRawStepList ...
+func StepmanRawStepList(collection string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
-	out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(out)
-	return nil
+	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...

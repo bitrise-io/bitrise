@@ -34,7 +34,12 @@ func stepList(c *cli.Context) {
 
 	switch format {
 	case configs.OutputFormatRaw:
-		if err := bitrise.StepmanPrintRawStepList(collectionURI); err != nil {
+		out, err := bitrise.StepmanRawStepList(collectionURI)
+		if out != "" {
+			fmt.Println("Step list:")
+			fmt.Printf("%s", out)
+		}
+		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}
 		break
