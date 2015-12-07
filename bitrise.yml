@@ -169,7 +169,7 @@ workflows:
 
   godeps-update:
     description: |-
-      Dependenci Update
+      Dependency Update
 
       Used for updating bitrise dependencies with godep
     steps:
