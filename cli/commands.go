@@ -123,6 +123,21 @@ var (
 			},
 		},
 		{
+			Name:   "workflows",
+			Usage:  "List of available workflows in config.",
+			Action: workflowList,
+			Flags: []cli.Flag{
+				flPath,
+				flConfig,
+				flConfigBase64,
+				flFormat,
+				cli.BoolFlag{
+					Name:  MinimalModeKey,
+					Usage: "Print only workflow summary.",
+				},
+			},
+		},
+		{
 			Name:   "share",
 			Usage:  "Publish your step.",
 			Action: share,
