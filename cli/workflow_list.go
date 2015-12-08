@@ -15,19 +15,10 @@ import (
 func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {
 	printRawWorkflowMap := func(name string, workflow map[string]string) {
 		fmt.Printf("⚡️ %s\n", colorstring.Green(name))
-
-		if workflow["summary"] == "" {
-			workflow["summary"] = colorstring.Yellow("No summary available.")
-		}
-		fmt.Printf("  Summary: %s\n", workflow["summary"])
-
+		fmt.Printf("  %s: %s\n", colorstring.Yellow("Summary"), workflow["summary"])
 		if !minimal {
-			if workflow["description"] == "" {
-				workflow["description"] = colorstring.Yellow("No description available.")
-			}
-			fmt.Printf("  Description: %s\n", workflow["description"])
+			fmt.Printf("  %s: %s\n", colorstring.Yellow("Description"), workflow["description"])
 		}
-
 		fmt.Println()
 	}
 
