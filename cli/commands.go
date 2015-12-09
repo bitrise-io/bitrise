@@ -172,5 +172,24 @@ var (
 				},
 			},
 		},
+		{
+			Name:   "plugin-install",
+			Usage:  "Installs plugin.",
+			Action: pluginInstall,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "source",
+					Usage: "Plugin binary source url.",
+				},
+				cli.StringFlag{
+					Name:  "name",
+					Usage: "Plugin name.",
+				},
+				cli.StringFlag{
+					Name:  "type",
+					Usage: "Plugin type.",
+				},
+			},
+		},
 	}
 )

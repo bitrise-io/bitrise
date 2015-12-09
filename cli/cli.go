@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/codegangsta/cli"
 )
 
@@ -115,6 +116,52 @@ func Run() {
 
 	app.Flags = flags
 	app.Commands = commands
+
+	app.Action = func(c *cli.Context) {
+		pluginName, pluginType, pluginArgs, isPlugin := plugins.ParsePlugin(c.Args())
+		if isPlugin {
+			log.SetLevel(log.DebugLevel)
+			log.Debugln()
+			log.Debugf("Try to run bitrise plugin: (%s) (type: %s) with args: (%v)", pluginName, pluginType, pluginArgs)
+
+			pluginNames, err := plugins.AllPluginNames()
+			if err != nil {
+				log.Fatal("Plugin finished, err:", err)
+			}
+			if len(pluginNames) > 0 {
+				log.Debugln()
+				log.Debugf("Available plugins:")
+				log.Debugf("-----------------")
+				for _, pluginName := range pluginNames {
+					log.Debugf(" * %s", pluginName)
+				}
+			} else {
+				log.Debugln("No plugins found!")
+			}
+
+			plugin, err := plugins.GetPlugin(pluginName, pluginType)
+			if err != nil {
+				log.Fatal("Plugin finished, err:", err)
+			}
+			log.Debugln()
+			log.Debugf("Plugin: %v", plugin)
+
+			bitriseInfos, pluginOutput, err := plugins.RunPlugin(plugin, pluginArgs)
+			log.Debugln()
+			log.Debugf("bitriseInfos: %s", bitriseInfos)
+
+			log.Debugln("pluginOutput:")
+			log.Infof("%s", pluginOutput)
+
+			if err != nil {
+				log.Fatal("Plugin finished, err:", err)
+			}
+
+			os.Exit(0)
+		} else {
+			cli.ShowAppHelp(c)
+		}
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal("Finished with Error:", err)
