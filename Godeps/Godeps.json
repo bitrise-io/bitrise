@@ -53,8 +53,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.17-3-g266202b",
-			"Rev": "266202b1ea0f3de40667d40258dca9623900759e"
+			"Comment": "0.9.17-7-gad697ee",
+			"Rev": "ad697ee4aa219110f68cbf37efc2000842d2ce5d"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
@@ -67,7 +67,7 @@
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
-			"Rev": "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
+			"Rev": "e8554b8641db39598be7f6342874b958f12ae1d4"
 		},
 		{
 			"ImportPath": "github.com/ryanuber/go-glob",
@@ -75,13 +75,13 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-85-ga1f9799",
-			"Rev": "a1f97990ddc16022ec7610326dd9bce31332c116"
+			"Comment": "v1.0-88-ge3a8ff8",
+			"Rev": "e3a8ff8ce36581f87a15341206f205b1da467059"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.0-85-ga1f9799",
-			"Rev": "a1f97990ddc16022ec7610326dd9bce31332c116"
+			"Comment": "v1.0-88-ge3a8ff8",
+			"Rev": "e3a8ff8ce36581f87a15341206f205b1da467059"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
