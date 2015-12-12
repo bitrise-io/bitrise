@@ -99,7 +99,11 @@ func DownloadPluginFromURL(url, dst string) error {
 
 // InstallPlugin ...
 func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) {
-	pluginPath := GetPluginPath(pluginName, pluginType)
+	pluginPath, err := GetPluginPath(pluginName, pluginType)
+	if err != nil {
+		return "", err
+	}
+
 	if err := DownloadPluginFromURL(pluginSource, pluginPath); err != nil {
 		return "", err
 	}
@@ -114,7 +118,11 @@ func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) 
 
 // DeletePlugin ...
 func DeletePlugin(pluginName, pluginType string) error {
-	pluginPath := GetPluginPath(pluginName, pluginType)
+	pluginPath, err := GetPluginPath(pluginName, pluginType)
+	if err != nil {
+		return err
+	}
+
 	if exists, err := pathutil.IsPathExists(pluginPath); err != nil {
 		return fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
 	} else if !exists {
@@ -128,7 +136,11 @@ func ListPlugins() (map[string][]Plugin, error) {
 	collectPlugin := func(dir, pluginType string) ([]Plugin, error) {
 		plugins := []Plugin{}
 
-		pluginsPath := GetPluginPath("", pluginType)
+		pluginsPath, err := GetPluginPath("", pluginType)
+		if err != nil {
+			return []Plugin{}, err
+		}
+
 		files, err := ioutil.ReadDir(pluginsPath)
 		if err != nil {
 			return []Plugin{}, err
@@ -148,7 +160,11 @@ func ListPlugins() (map[string][]Plugin, error) {
 	}
 
 	pluginMap := map[string][]Plugin{}
-	pluginsPath := GetPluginsDir()
+	pluginsPath, err := GetPluginsDir()
+	if err != nil {
+		return map[string][]Plugin{}, err
+	}
+
 	pluginTypes := []string{TypeGeneric, TypeInit, TypeRun}
 	for _, pType := range pluginTypes {
 		ps, err := collectPlugin(pluginsPath, pType)
@@ -199,7 +215,11 @@ func ParseArgs(args []string) (string, string, []string, bool) {
 
 // GetPlugin ...
 func GetPlugin(name, pluginType string) (Plugin, bool, error) {
-	pluginPath := GetPluginPath(name, pluginType)
+	pluginPath, err := GetPluginPath(name, pluginType)
+	if err != nil {
+		return Plugin{}, false, err
+	}
+
 	if exists, err := pathutil.IsPathExists(pluginPath); err != nil {
 		return Plugin{}, false, fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
 	} else if !exists {

@@ -8,7 +8,7 @@ import (
 )
 
 // GetPluginsDir ...
-func GetPluginsDir() string {
+func GetPluginsDir() (string, error) {
 	if err := bitrise.EnsureBitriseConfigDirExists(); err != nil {
 		log.Errorf("Failed to ensure bitrise configs dir, err: %s", err)
 	}
@@ -17,22 +17,24 @@ func GetPluginsDir() string {
 	pluginsDir := path.Join(bitriseDir, "plugins")
 
 	if err := bitrise.EnsureDir(pluginsDir); err != nil {
-		log.Errorf("Failed to ensure path (%s), err: %s", pluginsDir, err)
-		return ""
+		return "", err
 	}
 
-	return pluginsDir
+	return pluginsDir, nil
 }
 
 // GetPluginPath ...
-func GetPluginPath(name, pluginType string) string {
-	pluginsPath := GetPluginsDir()
+func GetPluginPath(name, pluginType string) (string, error) {
+	pluginsPath, err := GetPluginsDir()
+	if err != nil {
+		return "", err
+	}
+
 	pluginTypeDir := path.Join(pluginsPath, pluginType)
 
 	if err := bitrise.EnsureDir(pluginTypeDir); err != nil {
-		log.Errorf("Failed to ensure path (%s), err: %s", pluginTypeDir, err)
-		return ""
+		return "", err
 	}
 
-	return path.Join(pluginTypeDir, name)
+	return path.Join(pluginTypeDir, name), nil
 }
