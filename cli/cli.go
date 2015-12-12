@@ -118,46 +118,36 @@ func Run() {
 	app.Commands = commands
 
 	app.Action = func(c *cli.Context) {
-		pluginName, pluginType, pluginArgs, isPlugin := plugins.ParsePlugin(c.Args())
+		pluginName, pluginType, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
 			log.SetLevel(log.DebugLevel)
 			log.Debugln()
 			log.Debugf("Try to run bitrise plugin: (%s) (type: %s) with args: (%v)", pluginName, pluginType, pluginArgs)
 
-			pluginNames, err := plugins.AllPluginNames()
-			if err != nil {
-				log.Fatal("Plugin finished, err:", err)
-			}
-			if len(pluginNames) > 0 {
-				log.Debugln()
-				log.Debugf("Available plugins:")
-				log.Debugf("-----------------")
-				for _, pluginName := range pluginNames {
-					log.Debugf(" * %s", pluginName)
-				}
-			} else {
-				log.Debugln("No plugins found!")
-			}
+			printableName := plugins.PrintableName(pluginName, pluginType)
+			log.Debugf("Plugin: %v", printableName)
 
-			plugin, err := plugins.GetPlugin(pluginName, pluginType)
+			plugin, found, err := plugins.GetPlugin(pluginName, pluginType)
 			if err != nil {
-				log.Fatal("Plugin finished, err:", err)
+				log.Fatalf("Failed to get plugin (%s), err: %s", printableName, err)
 			}
-			log.Debugln()
-			log.Debugf("Plugin: %v", plugin)
+			if !found {
+				log.Errorf("Plugin (%s) not installed", printableName)
+				log.Info("Installed plugins:")
+				pluginList(c)
+				os.Exit(1)
+			}
 
 			bitriseInfos, pluginOutput, err := plugins.RunPlugin(plugin, pluginArgs)
-			log.Debugln()
-			log.Debugf("bitriseInfos: %s", bitriseInfos)
+			log.Debug("bitriseInfos:")
+			log.Debugf("%s", bitriseInfos)
 
 			log.Debugln("pluginOutput:")
 			log.Infof("%s", pluginOutput)
 
 			if err != nil {
-				log.Fatal("Plugin finished, err:", err)
+				log.Fatalf("Failed to run plugin (%s), err: %s", printableName, err)
 			}
-
-			os.Exit(0)
 		} else {
 			cli.ShowAppHelp(c)
 		}

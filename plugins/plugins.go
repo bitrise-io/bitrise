@@ -16,13 +16,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// Plugin ...
-type Plugin struct {
-	Path string
-	Name string
-	Type string
-}
-
 func getOsAndArch() (string, string, error) {
 	osOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("uname", "-s")
 	if err != nil {
@@ -64,24 +57,29 @@ func DownloadPluginFromURL(url, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer output.Close()
+	defer func() {
+		if err := output.Close(); err != nil {
+			log.Errorf("Failed to close file, err: %s", err)
+		}
+	}()
 
 	success := false
 	var response *http.Response
 	for _, aURL := range urls {
-		log.Infof("")
-		log.Infof(" => Downloading (%s) to (%s)", aURL, dst)
 
 		response, err = http.Get(aURL)
+		if response != nil {
+			defer func() {
+				if err := response.Body.Close(); err != nil {
+					log.Errorf("Failed to close response body, err: %s", err)
+				}
+			}()
+		}
+
 		if err != nil {
 			log.Errorf("%s", err)
 		} else {
 			success = true
-		}
-		if response != nil {
-			defer response.Body.Close()
-		}
-		if success {
 			break
 		}
 	}
@@ -89,29 +87,23 @@ func DownloadPluginFromURL(url, dst string) error {
 		return err
 	}
 
-	n, err := io.Copy(output, response.Body)
-	if err != nil {
+	if _, err := io.Copy(output, response.Body); err != nil {
 		return err
 	}
 	if err := cmdex.CopyFile(output.Name(), dst); err != nil {
 		return err
 	}
 
-	log.Infof(" (i) %d bytes downloaded", n)
 	return nil
 }
 
 // InstallPlugin ...
 func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) {
 	pluginPath := GetPluginPath(pluginName, pluginType)
-	fmt.Println()
-	log.Infoln(" => Download plugin")
 	if err := DownloadPluginFromURL(pluginSource, pluginPath); err != nil {
 		return "", err
 	}
 
-	fmt.Println()
-	log.Infoln(" => Change plugin permission")
 	if err := os.Chmod(pluginPath, 0777); err != nil {
 		return "", err
 	}
@@ -123,8 +115,57 @@ func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) 
 	return printableName, nil
 }
 
-// ParsePlugin ...
-func ParsePlugin(args []string) (string, string, []string, bool) {
+// DeletePlugin ...
+func DeletePlugin(pluginName, pluginType string) error {
+	pluginPath := GetPluginPath(pluginName, pluginType)
+	if exists, err := pathutil.IsPathExists(pluginPath); err != nil {
+		return fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
+	} else if !exists {
+		return fmt.Errorf("Plugin (%s) not installed", PrintableName(pluginName, pluginType))
+	}
+	return os.Remove(pluginPath)
+}
+
+// ListPlugins ...
+func ListPlugins() (map[string][]Plugin, error) {
+	collectPlugin := func(dir, pluginType string) ([]Plugin, error) {
+		plugins := []Plugin{}
+
+		pluginsPath := path.Join(dir, pluginType)
+		files, err := ioutil.ReadDir(pluginsPath)
+		if err != nil {
+			return []Plugin{}, err
+		}
+		for _, file := range files {
+			if !strings.HasPrefix(file.Name(), ".") {
+				plugin, found, err := GetPlugin(file.Name(), pluginType)
+				if err != nil {
+					return []Plugin{}, err
+				}
+				if found {
+					plugins = append(plugins, plugin)
+				}
+			}
+		}
+		return plugins, nil
+	}
+
+	pluginMap := map[string][]Plugin{}
+	pluginsPath := GetPluginsPath()
+	pluginTypes := []string{"custom", "init", "run"}
+	for _, pType := range pluginTypes {
+		ps, err := collectPlugin(pluginsPath, pType)
+		if err != nil {
+			return map[string][]Plugin{}, err
+		}
+		pluginMap[pType] = ps
+	}
+
+	return pluginMap, nil
+}
+
+// ParseArgs ...
+func ParseArgs(args []string) (string, string, []string, bool) {
 	const bitrisePluginPrefix = ":"
 
 	log.Debugf("args: %v", args)
@@ -159,54 +200,13 @@ func ParsePlugin(args []string) (string, string, []string, bool) {
 	return "", "", []string{}, false
 }
 
-// AllPluginNames ...
-func AllPluginNames() ([]string, error) {
-	collectPlugin := func(dir, pluginType string) ([]string, error) {
-		pluginNames := []string{}
-
-		pluginsPath := path.Join(dir, pluginType)
-		files, err := ioutil.ReadDir(pluginsPath)
-		if err != nil {
-			return []string{}, fmt.Errorf("Failed to read plugins dir (%s), err: %s", pluginsPath, err)
-		}
-		for _, file := range files {
-			if !strings.HasPrefix(file.Name(), ".") {
-				pluginName := file.Name()
-				switch pluginType {
-				case "custom":
-					pluginName = ":" + pluginName
-				case "init":
-					pluginName = "init:" + pluginName
-				case "run":
-					pluginName = "run:" + pluginName
-				}
-				pluginNames = append(pluginNames, pluginName)
-			}
-		}
-		return pluginNames, nil
-	}
-
-	pluginNames := []string{}
-	pluginsPath := GetPluginsPath()
-	pluginTypes := []string{"custom", "init", "run"}
-	for _, pType := range pluginTypes {
-		ps, err := collectPlugin(pluginsPath, pType)
-		if err != nil {
-			return []string{}, fmt.Errorf("Failed to collect plugins (%s), err: %s", pType, err)
-		}
-		pluginNames = append(pluginNames, ps...)
-	}
-
-	return pluginNames, nil
-}
-
 // GetPlugin ...
-func GetPlugin(name, pluginType string) (Plugin, error) {
+func GetPlugin(name, pluginType string) (Plugin, bool, error) {
 	pluginPath := GetPluginPath(name, pluginType)
 	if exists, err := pathutil.IsPathExists(pluginPath); err != nil {
-		return Plugin{}, fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
+		return Plugin{}, false, fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
 	} else if !exists {
-		return Plugin{}, fmt.Errorf("Plugin executable not found at: %s", pluginPath)
+		return Plugin{}, false, nil
 	}
 
 	plugin := Plugin{
@@ -215,7 +215,7 @@ func GetPlugin(name, pluginType string) (Plugin, error) {
 		Type: pluginType,
 	}
 
-	return plugin, nil
+	return plugin, true, nil
 }
 
 // RunPlugin ...

@@ -27,6 +27,7 @@ func pluginInstall(c *cli.Context) {
 	}
 
 	// Install
+	log.Infof("=> Installing plugin (%s) ...", plugins.PrintableName(pluginName, pluginType))
 	printableName, err := plugins.InstallPlugin(pluginSource, pluginName, pluginType)
 	if err != nil {
 		log.Fatalln("Failed to install plugin, err: %s", err)
