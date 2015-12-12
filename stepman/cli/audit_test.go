@@ -23,19 +23,19 @@ func TestValidateStepCommitHash(t *testing.T) {
 			Commit: "756f39f76f94d525aaea2fc2d0c5a23799f8ec97",
 		},
 	}
-	if err := auditStep(stepSlack, "slack", "2.1.0"); err != nil {
+	if err := auditStepModelBeforeSharePullRequest(stepSlack, "slack", "2.1.0"); err != nil {
 		t.Fatal("Step audit failed:", err)
 	}
 
 	// Slack step - invalid hash
 	stepSlack.Source.Commit = "should fail commit"
-	if err := auditStep(stepSlack, "slack", "2.1.0"); err == nil {
+	if err := auditStepModelBeforeSharePullRequest(stepSlack, "slack", "2.1.0"); err == nil {
 		t.Fatal("Step audit should fail")
 	}
 
 	// Slack step - empty hash
 	stepSlack.Source.Commit = ""
-	if err := auditStep(stepSlack, "slack", "2.1.0"); err == nil {
+	if err := auditStepModelBeforeSharePullRequest(stepSlack, "slack", "2.1.0"); err == nil {
 		t.Fatal("Step audit should fail")
 	}
 }
