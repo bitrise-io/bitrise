@@ -147,13 +147,11 @@ func ListPlugins() (map[string][]Plugin, error) {
 		}
 		for _, file := range files {
 			if !strings.HasPrefix(file.Name(), ".") {
-				plugin, found, err := GetPlugin(file.Name(), pluginType)
+				plugin, err := GetPlugin(file.Name(), pluginType)
 				if err != nil {
 					return []Plugin{}, err
 				}
-				if found {
-					plugins = append(plugins, plugin)
-				}
+				plugins = append(plugins, plugin)
 			}
 		}
 		return plugins, nil
@@ -214,16 +212,16 @@ func ParseArgs(args []string) (string, string, []string, bool) {
 }
 
 // GetPlugin ...
-func GetPlugin(name, pluginType string) (Plugin, bool, error) {
+func GetPlugin(name, pluginType string) (Plugin, error) {
 	pluginPath, err := GetPluginPath(name, pluginType)
 	if err != nil {
-		return Plugin{}, false, err
+		return Plugin{}, err
 	}
 
 	if exists, err := pathutil.IsPathExists(pluginPath); err != nil {
-		return Plugin{}, false, fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
+		return Plugin{}, fmt.Errorf("Failed to check dir (%s), err: %s", pluginPath, err)
 	} else if !exists {
-		return Plugin{}, false, nil
+		return Plugin{}, nil
 	}
 
 	plugin := Plugin{
@@ -232,7 +230,7 @@ func GetPlugin(name, pluginType string) (Plugin, bool, error) {
 		Type: pluginType,
 	}
 
-	return plugin, true, nil
+	return plugin, nil
 }
 
 // RunPlugin ...

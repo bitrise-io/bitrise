@@ -127,15 +127,9 @@ func Run() {
 			printableName := plugins.PrintableName(pluginName, pluginType)
 			log.Debugf("Plugin: %v", printableName)
 
-			plugin, found, err := plugins.GetPlugin(pluginName, pluginType)
+			plugin, err := plugins.GetPlugin(pluginName, pluginType)
 			if err != nil {
 				log.Fatalf("Failed to get plugin (%s), err: %s", printableName, err)
-			}
-			if !found {
-				log.Errorf("Plugin (%s) not installed", printableName)
-				log.Info("Installed plugins:")
-				pluginList(c)
-				os.Exit(1)
 			}
 
 			bitriseInfos, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
