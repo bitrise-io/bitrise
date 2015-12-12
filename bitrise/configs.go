@@ -12,23 +12,30 @@ const (
 	bitriseVersionSetupStateFileName = "setup.version"
 )
 
-func getBitriseConfigsDirPath() string {
+// GetBitriseConfigsDirPath ...
+func GetBitriseConfigsDirPath() string {
 	return path.Join(pathutil.UserHomeDir(), ".bitrise")
 }
 
 func getBitriseConfigVersionSetupFilePath() string {
-	return path.Join(getBitriseConfigsDirPath(), bitriseVersionSetupStateFileName)
+	return path.Join(GetBitriseConfigsDirPath(), bitriseVersionSetupStateFileName)
 }
 
-func ensureBitriseConfigDirExists() error {
-	confDirPth := getBitriseConfigsDirPath()
-	isExists, err := pathutil.IsDirExists(confDirPth)
+// EnsureDir ...
+func EnsureDir(dir string) error {
+	isExists, err := pathutil.IsDirExists(dir)
 	if !isExists || err != nil {
-		if err := os.MkdirAll(confDirPth, 0777); err != nil {
+		if err := os.MkdirAll(dir, 0777); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// EnsureBitriseConfigDirExists ...
+func EnsureBitriseConfigDirExists() error {
+	confDirPth := GetBitriseConfigsDirPath()
+	return EnsureDir(confDirPth)
 }
 
 // CheckIsSetupWasDoneForVersion ...
@@ -43,7 +50,7 @@ func CheckIsSetupWasDoneForVersion(ver string) bool {
 
 // SaveSetupSuccessForVersion ...
 func SaveSetupSuccessForVersion(ver string) error {
-	if err := ensureBitriseConfigDirExists(); err != nil {
+	if err := EnsureBitriseConfigDirExists(); err != nil {
 		return err
 	}
 	configPth := getBitriseConfigVersionSetupFilePath()

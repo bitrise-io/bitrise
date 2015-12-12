@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/codegangsta/cli"
 )
 
@@ -115,6 +116,33 @@ func Run() {
 
 	app.Flags = flags
 	app.Commands = commands
+
+	app.Action = func(c *cli.Context) {
+		pluginName, pluginType, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
+		if isPlugin {
+			log.SetLevel(log.DebugLevel)
+			log.Debugln()
+			log.Debugf("Try to run bitrise plugin: (%s) (type: %s) with args: (%v)", pluginName, pluginType, pluginArgs)
+
+			printableName := plugins.PrintableName(pluginName, pluginType)
+			log.Debugf("Plugin: %v", printableName)
+
+			plugin, err := plugins.GetPlugin(pluginName, pluginType)
+			if err != nil {
+				log.Fatalf("Failed to get plugin (%s), err: %s", printableName, err)
+			}
+
+			bitriseInfos, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
+			log.Debug("bitriseInfos:")
+			log.Debugf("%s", bitriseInfos)
+
+			if err != nil {
+				log.Fatalf("Failed to run plugin (%s), err: %s", printableName, err)
+			}
+		} else {
+			cli.ShowAppHelp(c)
+		}
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal("Finished with Error:", err)

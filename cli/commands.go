@@ -172,5 +172,40 @@ var (
 				},
 			},
 		},
+		{
+			Name:  "plugin",
+			Usage: "Plugin handling.",
+			Subcommands: []cli.Command{
+				{
+					Name:   "install",
+					Usage:  "Intsall bitrise plugin.",
+					Action: pluginInstall,
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "source",
+							Usage: "Plugin binary source url.",
+						},
+						cli.StringFlag{
+							Name:  "name",
+							Usage: "Plugin name.",
+						},
+						cli.StringFlag{
+							Name:  "type",
+							Usage: "Plugin type.",
+						},
+					},
+				},
+				{
+					Name:   "delete",
+					Usage:  "Delete bitrise plugin.",
+					Action: pluginDelete,
+				},
+				{
+					Name:   "list",
+					Usage:  "List installed bitrise plugins.",
+					Action: pluginList,
+				},
+			},
+		},
 	}
 )
