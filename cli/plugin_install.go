@@ -23,7 +23,7 @@ func pluginInstall(c *cli.Context) {
 
 	pluginType := c.String("type")
 	if pluginType == "" {
-		pluginType = "custom"
+		pluginType = plugins.TypeGeneric
 	}
 
 	// Install

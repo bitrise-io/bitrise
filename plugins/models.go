@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	// TypeCustom ...
-	TypeCustom = "custom"
+
+	// TypeGeneric ...
+	TypeGeneric = "_"
 
 	// TypeInit ...
 	TypeInit = "init"
@@ -26,7 +27,7 @@ type Plugin struct {
 // PrintableName ...
 func (plugin Plugin) PrintableName() string {
 	switch plugin.Type {
-	case TypeCustom:
+	case TypeGeneric:
 		return fmt.Sprintf(":%s", plugin.Name)
 	default:
 		return fmt.Sprintf("%s:%s", plugin.Type, plugin.Name)
@@ -40,7 +41,7 @@ func ParsePrintableName(printableName string) (string, string, error) {
 	}
 
 	if strings.HasPrefix(printableName, ":") {
-		return strings.TrimPrefix(printableName, ":"), TypeCustom, nil
+		return strings.TrimPrefix(printableName, ":"), TypeGeneric, nil
 	}
 
 	splits := strings.Split(printableName, ":")
@@ -54,7 +55,7 @@ func ParsePrintableName(printableName string) (string, string, error) {
 // PrintableName ...
 func PrintableName(pluginName, pluginType string) string {
 	switch pluginType {
-	case TypeCustom:
+	case TypeGeneric:
 		return fmt.Sprintf(":%s", pluginName)
 	default:
 		return fmt.Sprintf("%s:%s", pluginType, pluginName)

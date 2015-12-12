@@ -138,12 +138,9 @@ func Run() {
 				os.Exit(1)
 			}
 
-			bitriseInfos, pluginOutput, err := plugins.RunPlugin(plugin, pluginArgs)
+			bitriseInfos, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
 			log.Debug("bitriseInfos:")
 			log.Debugf("%s", bitriseInfos)
-
-			log.Debugln("pluginOutput:")
-			log.Infof("%s", pluginOutput)
 
 			if err != nil {
 				log.Fatalf("Failed to run plugin (%s), err: %s", printableName, err)

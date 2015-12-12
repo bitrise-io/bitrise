@@ -108,10 +108,7 @@ func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) 
 		return "", err
 	}
 
-	printableName := ":" + pluginName
-	if pluginType != "custom" {
-		printableName = pluginType + printableName
-	}
+	printableName := PrintableName(pluginName, pluginType)
 	return printableName, nil
 }
 
@@ -131,7 +128,7 @@ func ListPlugins() (map[string][]Plugin, error) {
 	collectPlugin := func(dir, pluginType string) ([]Plugin, error) {
 		plugins := []Plugin{}
 
-		pluginsPath := path.Join(dir, pluginType)
+		pluginsPath := GetPluginPath("", pluginType)
 		files, err := ioutil.ReadDir(pluginsPath)
 		if err != nil {
 			return []Plugin{}, err
@@ -151,8 +148,8 @@ func ListPlugins() (map[string][]Plugin, error) {
 	}
 
 	pluginMap := map[string][]Plugin{}
-	pluginsPath := GetPluginsPath()
-	pluginTypes := []string{"custom", "init", "run"}
+	pluginsPath := GetPluginsDir()
+	pluginTypes := []string{TypeGeneric, TypeInit, TypeRun}
 	for _, pType := range pluginTypes {
 		ps, err := collectPlugin(pluginsPath, pType)
 		if err != nil {
@@ -180,10 +177,10 @@ func ParseArgs(args []string) (string, string, []string, bool) {
 			}
 		}
 
-		// custom plugins
+		// generic plugins
 		if strings.HasPrefix(plugin, bitrisePluginPrefix) {
 			pluginName := strings.TrimPrefix(plugin, bitrisePluginPrefix)
-			return pluginName, "custom", pluginArgs, true
+			return pluginName, TypeGeneric, pluginArgs, true
 		}
 
 		// typed plugins
@@ -219,21 +216,20 @@ func GetPlugin(name, pluginType string) (Plugin, bool, error) {
 }
 
 // RunPlugin ...
-func RunPlugin(plugin Plugin, args []string) (string, string, error) {
+func RunPlugin(bitriseVersion string, plugin Plugin, args []string) (string, error) {
 	var outBuffer bytes.Buffer
-	var errBuffer bytes.Buffer
 
 	bitriseInfos := map[string]string{
-		"version": "1.2.4",
+		"version": bitriseVersion,
 	}
 	bitriseInfosStr, err := json.Marshal(bitriseInfos)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	pluginArgs := []string{string(bitriseInfosStr)}
 	pluginArgs = append(pluginArgs, args...)
 
-	err = cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), plugin.Path, pluginArgs...)
-	return outBuffer.String(), errBuffer.String(), err
+	err = cmdex.RunCommandWithWriters(io.Writer(&outBuffer), os.Stderr, plugin.Path, pluginArgs...)
+	return outBuffer.String(), err
 }

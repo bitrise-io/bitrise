@@ -1,43 +1,38 @@
 package plugins
 
 import (
-	"os"
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/bitrise/bitrise"
 )
 
-var pluginsPath string
-
-func getBitriseConfigsDirPath() string {
-	return path.Join(pathutil.UserHomeDir(), ".bitrise")
-}
-
-func ensureBitriseConfigDirExists() error {
-	confDirPth := getBitriseConfigsDirPath()
-	isExists, err := pathutil.IsDirExists(confDirPth)
-	if !isExists || err != nil {
-		if err := os.MkdirAll(confDirPth, 0777); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// GetPluginsPath ...
-func GetPluginsPath() string {
-	if err := ensureBitriseConfigDirExists(); err != nil {
+// GetPluginsDir ...
+func GetPluginsDir() string {
+	if err := bitrise.EnsureBitriseConfigDirExists(); err != nil {
 		log.Errorf("Failed to ensure bitrise configs dir, err: %s", err)
 	}
 
-	bitriseDir := getBitriseConfigsDirPath()
+	bitriseDir := bitrise.GetBitriseConfigsDirPath()
+	pluginsDir := path.Join(bitriseDir, "plugins")
 
-	return path.Join(bitriseDir, "plugins")
+	if err := bitrise.EnsureDir(pluginsDir); err != nil {
+		log.Errorf("Failed to ensure path (%s), err: %s", pluginsDir, err)
+		return ""
+	}
+
+	return pluginsDir
 }
 
 // GetPluginPath ...
 func GetPluginPath(name, pluginType string) string {
-	pluginsPath := GetPluginsPath()
-	return path.Join(pluginsPath, pluginType, name)
+	pluginsPath := GetPluginsDir()
+	pluginTypeDir := path.Join(pluginsPath, pluginType)
+
+	if err := bitrise.EnsureDir(pluginTypeDir); err != nil {
+		log.Errorf("Failed to ensure path (%s), err: %s", pluginTypeDir, err)
+		return ""
+	}
+
+	return path.Join(pluginTypeDir, name)
 }
