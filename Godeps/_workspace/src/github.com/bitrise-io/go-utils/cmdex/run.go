@@ -9,6 +9,15 @@ import (
 	"syscall"
 )
 
+// RunCommandWithReaderAndWriters ...
+func RunCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.Writer, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = inReader
+	cmd.Stdout = outWriter
+	cmd.Stderr = errWriter
+	return cmd.Run()
+}
+
 // RunCommandWithWriters ...
 func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
