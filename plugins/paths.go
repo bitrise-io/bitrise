@@ -5,6 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 // GetPluginsDir ...
@@ -16,7 +17,7 @@ func GetPluginsDir() (string, error) {
 	bitriseDir := bitrise.GetBitriseConfigsDirPath()
 	pluginsDir := path.Join(bitriseDir, "plugins")
 
-	if err := bitrise.EnsureDir(pluginsDir); err != nil {
+	if err := pathutil.EnsureDirExist(pluginsDir); err != nil {
 		return "", err
 	}
 
@@ -32,7 +33,7 @@ func GetPluginPath(name, pluginType string) (string, error) {
 
 	pluginTypeDir := path.Join(pluginsPath, pluginType)
 
-	if err := bitrise.EnsureDir(pluginTypeDir); err != nil {
+	if err := pathutil.EnsureDirExist(pluginTypeDir); err != nil {
 		return "", err
 	}
 

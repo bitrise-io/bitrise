@@ -107,7 +107,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = "1.3.0-pre"
+	app.Version = "1.3.0"
 
 	app.Author = ""
 	app.Email = ""
@@ -132,9 +132,8 @@ func Run() {
 				log.Fatalf("Failed to get plugin (%s), err: %s", printableName, err)
 			}
 
-			bitriseInfos, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
-			log.Debug("bitriseInfos:")
-			log.Debugf("%s", bitriseInfos)
+			messageFromPlugin, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
+			log.Debugf("message from plugin: %s", messageFromPlugin)
 
 			if err != nil {
 				log.Fatalf("Failed to run plugin (%s), err: %s", printableName, err)

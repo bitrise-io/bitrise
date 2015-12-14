@@ -7,13 +7,16 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/versions"
 )
 
 func getOsAndArch() (string, string, error) {
@@ -31,66 +34,80 @@ func getOsAndArch() (string, string, error) {
 }
 
 // DownloadPluginFromURL ....
-func DownloadPluginFromURL(url, dst string) error {
-	tokens := strings.Split(url, "/")
+func DownloadPluginFromURL(URL, dst string) error {
+	url, err := url.Parse(URL)
+	if err != nil {
+		return err
+	}
+
+	scheme := url.Scheme
+	tokens := strings.Split(URL, "/")
 	fileName := tokens[len(tokens)-1]
 
-	OS, arch, err := getOsAndArch()
-	if err != nil {
-		return err
-	}
-
-	urlWithSuffix := url
-	urlSuffix := fmt.Sprintf("-%s-%s", OS, arch)
-	if !strings.HasSuffix(url, urlSuffix) {
-		urlWithSuffix = urlWithSuffix + urlSuffix
-	}
-
-	urls := []string{urlWithSuffix, url}
-
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("plugin")
-	if err != nil {
-		return err
-	}
-	tmpDst := path.Join(tmpDir, fileName)
-	output, err := os.Create(tmpDst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := output.Close(); err != nil {
-			log.Errorf("Failed to close file, err: %s", err)
-		}
-	}()
-
-	success := false
-	var response *http.Response
-	for _, aURL := range urls {
-
-		response, err = http.Get(aURL)
-		if response != nil {
-			defer func() {
-				if err := response.Body.Close(); err != nil {
-					log.Errorf("Failed to close response body, err: %s", err)
-				}
-			}()
-		}
-
+	tmpDstFilePath := ""
+	if scheme != "file" {
+		OS, arch, err := getOsAndArch()
 		if err != nil {
-			log.Errorf("%s", err)
-		} else {
-			success = true
-			break
+			return err
 		}
-	}
-	if !success {
-		return err
+
+		urlWithSuffix := URL
+		urlSuffix := fmt.Sprintf("-%s-%s", OS, arch)
+		if !strings.HasSuffix(URL, urlSuffix) {
+			urlWithSuffix = urlWithSuffix + urlSuffix
+		}
+
+		urls := []string{urlWithSuffix, URL}
+
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("plugin")
+		if err != nil {
+			return err
+		}
+		tmpDst := path.Join(tmpDir, fileName)
+		output, err := os.Create(tmpDst)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := output.Close(); err != nil {
+				log.Errorf("Failed to close file, err: %s", err)
+			}
+		}()
+
+		success := false
+		var response *http.Response
+		for _, aURL := range urls {
+
+			response, err = http.Get(aURL)
+			if response != nil {
+				defer func() {
+					if err := response.Body.Close(); err != nil {
+						log.Errorf("Failed to close response body, err: %s", err)
+					}
+				}()
+			}
+
+			if err != nil {
+				log.Errorf("%s", err)
+			} else {
+				success = true
+				break
+			}
+		}
+		if !success {
+			return err
+		}
+
+		if _, err := io.Copy(output, response.Body); err != nil {
+			return err
+		}
+
+		tmpDstFilePath = output.Name()
+	} else {
+		tmpDstFilePath = strings.Replace(URL, scheme+"://", "", -1)
 	}
 
-	if _, err := io.Copy(output, response.Body); err != nil {
-		return err
-	}
-	if err := cmdex.CopyFile(output.Name(), dst); err != nil {
+	if err := cmdex.CopyFile(tmpDstFilePath, dst); err != nil {
 		return err
 	}
 
@@ -98,7 +115,32 @@ func DownloadPluginFromURL(url, dst string) error {
 }
 
 // InstallPlugin ...
-func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) {
+func InstallPlugin(bitriseVersion, pluginSource, pluginName, pluginType string) (string, error) {
+	checkMinMaxVersion := func(requiredMin, requiredMax, current string) (bool, error) {
+		if requiredMin != "" {
+			// 1 if version 2 is greater then version 1, -1 if not
+			greater, err := versions.CompareVersions(current, requiredMin)
+			if err != nil {
+				return false, err
+			}
+			if greater == 1 {
+				return false, fmt.Errorf("Required min version (%s) - current (%s)", requiredMin, current)
+			}
+		}
+
+		if requiredMax != "" {
+			greater, err := versions.CompareVersions(requiredMax, current)
+			if err != nil {
+				return false, err
+			}
+			if greater == 1 {
+				return false, fmt.Errorf("Allowed max version (%s) - current (%s)", requiredMax, current)
+			}
+		}
+
+		return true, nil
+	}
+
 	pluginPath, err := GetPluginPath(pluginName, pluginType)
 	if err != nil {
 		return "", err
@@ -110,6 +152,63 @@ func InstallPlugin(pluginSource, pluginName, pluginType string) (string, error) 
 
 	if err := os.Chmod(pluginPath, 0777); err != nil {
 		return "", err
+	}
+
+	plugin, err := GetPlugin(pluginName, pluginType)
+	if err != nil {
+		return "", err
+	}
+
+	messageFromPlugin, err := RunPlugin(bitriseVersion, plugin, []string{"requirements"})
+	if err != nil {
+		return "", err
+	}
+	if messageFromPlugin != "" {
+		log.Infoln("=> Checking plugin requirements...")
+		log.Debugf("requirements messageFromPlugin: %s", messageFromPlugin)
+
+		envmanVersion, err := bitrise.EnvmanVersion()
+		if err != nil {
+			return "", err
+		}
+
+		stepmanVersion, err := bitrise.StepmanVersion()
+		if err != nil {
+			return "", err
+		}
+
+		currentVersionMap := map[string]string{
+			"bitrise": bitriseVersion,
+			"envman":  envmanVersion,
+			"stepman": stepmanVersion,
+		}
+
+		type Requirement struct {
+			ToolName   string
+			MinVersion string
+			MaxVersion string
+		}
+
+		var requirements []Requirement
+		if err := json.Unmarshal([]byte(messageFromPlugin), &requirements); err != nil {
+			return "", err
+		}
+
+		for _, requirement := range requirements {
+			toolName := requirement.ToolName
+			minVersion := requirement.MinVersion
+			maxVersion := requirement.MaxVersion
+			currentVersion := currentVersionMap[toolName]
+
+			ok, err := checkMinMaxVersion(minVersion, maxVersion, currentVersion)
+			if err != nil {
+				return "", fmt.Errorf("%s requirements failed, err: %s", toolName, err)
+			}
+
+			if !ok {
+				log.Infof(" (i) %s min version: %s / max version: %s - current  version: %s", toolName, minVersion, maxVersion, bitriseVersion)
+			}
+		}
 	}
 
 	printableName := PrintableName(pluginName, pluginType)
@@ -244,10 +343,10 @@ func RunPlugin(bitriseVersion string, plugin Plugin, args []string) (string, err
 	if err != nil {
 		return "", err
 	}
+	if err := os.Setenv("BITRISE_PLUGINS_MESSAGE", string(bitriseInfosStr)); err != nil {
+		return "", err
+	}
 
-	pluginArgs := []string{string(bitriseInfosStr)}
-	pluginArgs = append(pluginArgs, args...)
-
-	err = cmdex.RunCommandWithWriters(io.Writer(&outBuffer), os.Stderr, plugin.Path, pluginArgs...)
+	err = cmdex.RunCommandWithWriters(io.Writer(&outBuffer), os.Stderr, plugin.Path, args...)
 	return outBuffer.String(), err
 }

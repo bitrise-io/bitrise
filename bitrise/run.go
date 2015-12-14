@@ -15,6 +15,13 @@ import (
 // ------------------
 // --- Stepman
 
+// StepmanVersion ...
+func StepmanVersion() (string, error) {
+	logLevel := log.GetLevel().String()
+	args := []string{"--debug", "--loglevel", logLevel, "--version"}
+	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+}
+
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
 	logLevel := log.GetLevel().String()
@@ -145,6 +152,13 @@ func StepmanShareStart(collection string) error {
 
 // ------------------
 // --- Envman
+
+// EnvmanVersion ...
+func EnvmanVersion() (string, error) {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--version"}
+	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
+}
 
 // EnvmanInit ...
 func EnvmanInit() error {
