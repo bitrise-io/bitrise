@@ -20,6 +20,7 @@ func TestGetKeyValuePair(t *testing.T) {
 			IsExpand:          pointers.NewBoolPtr(false),
 			IsDontChangeValue: pointers.NewBoolPtr(true),
 			IsTemplate:        pointers.NewBoolPtr(false),
+			SkipIfEmpty:       pointers.NewBoolPtr(false),
 		},
 	}
 
@@ -82,7 +83,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	// title is not a string
 	model = map[string]interface{}{}
 	model["title"] = true
-	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// value_options is not a string slice
 	model = map[string]interface{}{}
@@ -104,6 +105,10 @@ func TestParseFromInterfaceMap(t *testing.T) {
 
 	model = map[string]interface{}{}
 	model["is_required"] = "y"
+	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+
+	model = map[string]interface{}{}
+	model["skip_if_empty"] = "true"
 	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
 
 	// other_key is not supported key
@@ -159,6 +164,7 @@ func TestNormalize(t *testing.T) {
 			"summary":       "test_summary",
 			"value_options": []string{"test_key2", "test_value2"},
 			"is_required":   true,
+			"skip_if_empty": false,
 		},
 	}
 
@@ -180,6 +186,8 @@ func TestNormalize(t *testing.T) {
 
 	require.NotEqual(t, nil, opts.IsRequired)
 	require.Equal(t, true, *opts.IsRequired)
+
+	require.Equal(t, false, *opts.SkipIfEmpty)
 
 	// Filled with EnvironmentItemOptionsModel options
 	env = EnvironmentItemModel{
@@ -230,6 +238,7 @@ func TestNormalize(t *testing.T) {
 	require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
 	require.Equal(t, (*bool)(nil), opts.IsExpand)
 	require.Equal(t, (*bool)(nil), opts.IsTemplate)
+	require.Equal(t, (*bool)(nil), opts.SkipIfEmpty)
 }
 
 func TestFillMissingDefaults(t *testing.T) {
@@ -261,6 +270,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	require.NotEqual(t, nil, opts.IsTemplate)
 	require.Equal(t, DefaultIsDontChangeValue, *opts.IsTemplate)
 
+	require.NotEqual(t, nil, opts.SkipIfEmpty)
+	require.Equal(t, DefaultSkipIfEmpty, *opts.SkipIfEmpty)
+
 	// Filled env
 	env = EnvironmentItemModel{
 		"test_key": "test_value",
@@ -272,6 +284,8 @@ func TestFillMissingDefaults(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(true),
 			IsDontChangeValue: pointers.NewBoolPtr(false),
+			IsTemplate:        pointers.NewBoolPtr(false),
+			SkipIfEmpty:       pointers.NewBoolPtr(false),
 		},
 	}
 
@@ -302,6 +316,9 @@ func TestFillMissingDefaults(t *testing.T) {
 
 	require.NotEqual(t, nil, opts.IsTemplate)
 	require.Equal(t, false, *opts.IsTemplate)
+
+	require.NotEqual(t, nil, opts.SkipIfEmpty)
+	require.Equal(t, false, *opts.SkipIfEmpty)
 }
 
 func TestValidate(t *testing.T) {
