@@ -1,7 +1,6 @@
 package bitrise
 
 import (
-	"os"
 	"path"
 
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -21,21 +20,10 @@ func getBitriseConfigVersionSetupFilePath() string {
 	return path.Join(GetBitriseConfigsDirPath(), bitriseVersionSetupStateFileName)
 }
 
-// EnsureDir ...
-func EnsureDir(dir string) error {
-	isExists, err := pathutil.IsDirExists(dir)
-	if !isExists || err != nil {
-		if err := os.MkdirAll(dir, 0777); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // EnsureBitriseConfigDirExists ...
 func EnsureBitriseConfigDirExists() error {
 	confDirPth := GetBitriseConfigsDirPath()
-	return EnsureDir(confDirPth)
+	return pathutil.EnsureDirExist(confDirPth)
 }
 
 // CheckIsSetupWasDoneForVersion ...
