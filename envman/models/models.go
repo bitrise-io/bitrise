@@ -10,6 +10,7 @@ type EnvironmentItemOptionsModel struct {
 	IsExpand          *bool    `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 	IsTemplate        *bool    `json:"is_template,omitempty" yaml:"is_template,omitempty"`
+	SkipIfEmpty       *bool    `json:"skip_if_empty,omitempty" yaml:"skip_if_empty,omitempty"`
 }
 
 // EnvironmentItemModel ...
