@@ -13,8 +13,12 @@ import (
 type App struct {
 	// The name of the program. Defaults to os.Args[0]
 	Name string
+	// Full name of command for help, defaults to Name
+	HelpName string
 	// Description of the program.
 	Usage string
+	// Description of the program argument format.
+	ArgsUsage string
 	// Version of the program
 	Version string
 	// List of commands to execute
@@ -67,6 +71,7 @@ func compileTime() time.Time {
 func NewApp() *App {
 	return &App{
 		Name:         os.Args[0],
+		HelpName:     os.Args[0],
 		Usage:        "A new cli application",
 		Version:      "0.0.0",
 		BashComplete: DefaultAppComplete,
@@ -81,6 +86,15 @@ func (a *App) Run(arguments []string) (err error) {
 	if a.Author != "" || a.Email != "" {
 		a.Authors = append(a.Authors, Author{Name: a.Author, Email: a.Email})
 	}
+
+	newCmds := []Command{}
+	for _, c := range a.Commands {
+		if c.HelpName == "" {
+			c.HelpName = fmt.Sprintf("%s %s", a.HelpName, c.Name)
+		}
+		newCmds = append(newCmds, c)
+	}
+	a.Commands = newCmds
 
 	// append help to commands
 	if a.Command(helpCommand.Name) == nil && !a.HideHelp {
@@ -112,6 +126,10 @@ func (a *App) Run(arguments []string) (err error) {
 	}
 	context := NewContext(a, set, nil)
 
+	if checkCompletions(context) {
+		return nil
+	}
+
 	if err != nil {
 		fmt.Fprintln(a.Writer, "Incorrect Usage.")
 		fmt.Fprintln(a.Writer)
@@ -119,15 +137,13 @@ func (a *App) Run(arguments []string) (err error) {
 		return err
 	}
 
-	if checkCompletions(context) {
+	if !a.HideHelp && checkHelp(context) {
+		ShowAppHelp(context)
 		return nil
 	}
 
-	if checkHelp(context) {
-		return nil
-	}
-
-	if checkVersion(context) {
+	if !a.HideVersion && checkVersion(context) {
+		ShowVersion(context)
 		return nil
 	}
 
@@ -185,6 +201,15 @@ func (a *App) RunAsSubcommand(ctx *Context) (err error) {
 		}
 	}
 
+	newCmds := []Command{}
+	for _, c := range a.Commands {
+		if c.HelpName == "" {
+			c.HelpName = fmt.Sprintf("%s %s", a.HelpName, c.Name)
+		}
+		newCmds = append(newCmds, c)
+	}
+	a.Commands = newCmds
+
 	// append flags
 	if a.EnableBashCompletion {
 		a.appendFlag(BashCompletionFlag)
@@ -208,15 +233,15 @@ func (a *App) RunAsSubcommand(ctx *Context) (err error) {
 		return nerr
 	}
 
+	if checkCompletions(context) {
+		return nil
+	}
+
 	if err != nil {
 		fmt.Fprintln(a.Writer, "Incorrect Usage.")
 		fmt.Fprintln(a.Writer)
 		ShowSubcommandHelp(context)
 		return err
-	}
-
-	if checkCompletions(context) {
-		return nil
 	}
 
 	if len(a.Commands) > 0 {
