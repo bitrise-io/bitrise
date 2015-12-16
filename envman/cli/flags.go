@@ -35,6 +35,9 @@ const (
 	AppendKey      = "append"
 	appendKeyShort = "a"
 
+	// SkipIfEmptyKey ...
+	SkipIfEmptyKey = "skip-if-empty"
+
 	// ToolEnvKey ...
 	ToolEnvKey = "ENVMAN_TOOLMODE"
 	// ToolKey ...

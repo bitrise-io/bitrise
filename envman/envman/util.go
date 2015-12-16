@@ -91,6 +91,7 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if err != nil {
 		return err
 	}
+
 	if opts.Title != nil && *opts.Title == "" {
 		opts.Title = nil
 	}
@@ -103,12 +104,19 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if opts.IsRequired != nil && *opts.IsRequired == models.DefaultIsRequired {
 		opts.IsRequired = nil
 	}
-	if opts.IsExpand != nil && *opts.IsExpand == models.DefaultIsExpand {
-		opts.IsExpand = nil
-	}
 	if opts.IsDontChangeValue != nil && *opts.IsDontChangeValue == models.DefaultIsDontChangeValue {
 		opts.IsDontChangeValue = nil
 	}
+	if opts.IsTemplate != nil && *opts.IsTemplate == models.DefaultIsTemplate {
+		opts.IsTemplate = nil
+	}
+	if opts.IsExpand != nil && *opts.IsExpand == models.DefaultIsExpand {
+		opts.IsExpand = nil
+	}
+	if opts.SkipIfEmpty != nil && *opts.SkipIfEmpty == models.DefaultSkipIfEmpty {
+		opts.SkipIfEmpty = nil
+	}
+
 	(*env)[models.OptionsKey] = opts
 	return nil
 }
@@ -142,10 +150,16 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 		if opts.IsRequired != nil {
 			hasOptions = true
 		}
+		if opts.IsDontChangeValue != nil {
+			hasOptions = true
+		}
+		if opts.IsTemplate != nil {
+			hasOptions = true
+		}
 		if opts.IsExpand != nil {
 			hasOptions = true
 		}
-		if opts.IsDontChangeValue != nil {
+		if opts.SkipIfEmpty != nil {
 			hasOptions = true
 		}
 

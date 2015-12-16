@@ -85,20 +85,20 @@ func TestUpdateOrAddToEnvlist(t *testing.T) {
 }
 
 func TestRemoveDefaults(t *testing.T) {
-	defaultIsRequired := models.DefaultIsRequired
-	defaultIsExpand := models.DefaultIsExpand
-	defaultIsDontChangeValue := models.DefaultIsDontChangeValue
-
 	// Filled env
 	env := models.EnvironmentItemModel{
 		"test_key": "test_value",
 		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr("test_title"),
+			Title:      pointers.NewStringPtr("test_title"),
+			IsTemplate: pointers.NewBoolPtr(!models.DefaultIsTemplate),
+
 			Description:       pointers.NewStringPtr(""),
+			Summary:           pointers.NewStringPtr(""),
 			ValueOptions:      []string{},
-			IsRequired:        pointers.NewBoolPtr(defaultIsRequired),
-			IsExpand:          pointers.NewBoolPtr(defaultIsExpand),
-			IsDontChangeValue: pointers.NewBoolPtr(defaultIsDontChangeValue),
+			IsRequired:        pointers.NewBoolPtr(models.DefaultIsRequired),
+			IsDontChangeValue: pointers.NewBoolPtr(models.DefaultIsDontChangeValue),
+			IsExpand:          pointers.NewBoolPtr(models.DefaultIsExpand),
+			SkipIfEmpty:       pointers.NewBoolPtr(models.DefaultSkipIfEmpty),
 		},
 	}
 
@@ -109,12 +109,15 @@ func TestRemoveDefaults(t *testing.T) {
 
 	require.NotEqual(t, (*string)(nil), opts.Title)
 	require.Equal(t, "test_title", *opts.Title)
+	require.NotEqual(t, (*bool)(nil), opts.IsTemplate)
+	require.Equal(t, !models.DefaultIsTemplate, *opts.IsTemplate)
+
 	require.Equal(t, (*string)(nil), opts.Description)
 	require.Equal(t, (*string)(nil), opts.Summary)
 	require.Equal(t, 0, len(opts.ValueOptions))
 	require.Equal(t, (*bool)(nil), opts.IsRequired)
 	require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
 	require.Equal(t, (*bool)(nil), opts.IsExpand)
-	require.Equal(t, (*bool)(nil), opts.IsTemplate)
+	require.Equal(t, (*bool)(nil), opts.SkipIfEmpty)
 
 }
