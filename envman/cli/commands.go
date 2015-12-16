@@ -24,6 +24,10 @@ var (
 				flValueFile,
 				flNoExpand,
 				flAppend,
+				cli.BoolFlag{
+					Name:  SkipIfEmptyKey,
+					Usage: "If enabled the added environment variable will be skipped during envman run, if the value is empty. If not set then the empty value will be used.",
+				},
 			},
 		},
 		{

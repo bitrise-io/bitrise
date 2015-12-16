@@ -33,6 +33,10 @@ func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
 			return []string{}, err
 		}
 
+		if *opts.SkipIfEmpty && value == "" {
+			continue
+		}
+
 		var valueStr string
 		if *opts.IsExpand {
 			valueStr = expandEnvsInString(value)

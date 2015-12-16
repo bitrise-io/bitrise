@@ -8,22 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestCheckIfConfigsSaved(t *testing.T) {
-// 	configsPth := getEnvmanConfigsFilePath()
-// 	exist, err := pathutil.IsPathExists(configsPth)
-// 	require.Equal(t, nil, err)
-// 	if exist {
-// 		require.Equal(t, nil, os.RemoveAll(configsPth))
-// 	}
-//
-// 	exist = CheckIfConfigsSaved()
-// 	require.Equal(t, false, exist)
-//
-// 	require.Equal(t, nil, SaveDefaultConfigs())
-// 	exist = CheckIfConfigsSaved()
-// 	require.Equal(t, true, exist)
-// }
-
 func TestGetConfigs(t *testing.T) {
 	// fake home, to save the configs into
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
@@ -65,7 +49,3 @@ func TestGetConfigs(t *testing.T) {
 	// delete the tmp config file
 	require.NoError(t, os.Remove(configPth))
 }
-
-// func TestSaveDefaultConfigs(t *testing.T) {
-// 	require.Equal(t, nil, SaveDefaultConfigs())
-// }

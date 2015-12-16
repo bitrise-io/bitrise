@@ -35,6 +35,9 @@ const (
 	AppendKey      = "append"
 	appendKeyShort = "a"
 
+	// SkipIfEmptyKey ...
+	SkipIfEmptyKey = "skip-if-empty"
+
 	// ToolEnvKey ...
 	ToolEnvKey = "ENVMAN_TOOLMODE"
 	// ToolKey ...
@@ -80,7 +83,7 @@ var (
 	flTool = cli.BoolFlag{
 		Name:   ToolKey + ", " + toolKeyShort,
 		EnvVar: ToolEnvKey,
-		Usage:  "If true, envman will NOT ask for user inputs.",
+		Usage:  "If enabled, envman will NOT ask for user inputs.",
 	}
 	flags = []cli.Flag{
 		flLogLevel,
@@ -103,15 +106,15 @@ var (
 	}
 	flNoExpand = cli.BoolFlag{
 		Name:  NoExpandKey + ", " + noExpandKeyShort,
-		Usage: "If flag is set, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.",
+		Usage: "If enabled, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.",
 	}
 	flAppend = cli.BoolFlag{
 		Name:  AppendKey + ", " + appendKeyShort,
-		Usage: "If flag is set, new env will append to envstore, otherwise if env exist with specified key, will replaced.",
+		Usage: "If enabled, new env will append to envstore, otherwise if env exist with specified key, will replaced.",
 	}
 	flClear = cli.BoolFlag{
 		Name:  ClearKey + ", " + clearKeyShort,
-		Usage: "If flag is set, 'envman init' removes envstore if exist.",
+		Usage: "If enabled, 'envman init' removes envstore if exist.",
 	}
 	flFormat = cli.StringFlag{
 		Name:  FormatKey,
@@ -119,7 +122,7 @@ var (
 	}
 	flExpand = cli.BoolFlag{
 		Name:  ExpandKey,
-		Usage: "If flag is set, expanded envs will use.",
+		Usage: "If enabled, expanded envs will use.",
 	}
 )
 

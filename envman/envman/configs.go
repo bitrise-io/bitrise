@@ -40,21 +40,6 @@ func ensureEnvmanConfigDirExists() error {
 	return nil
 }
 
-// // CheckIfConfigsSaved ...
-// func CheckIfConfigsSaved() bool {
-// 	configPth := getEnvmanConfigsFilePath()
-// 	bytes, err := fileutil.ReadBytesFromFile(configPth)
-// 	if err != nil {
-// 		return false
-// 	}
-//
-// 	var configs ConfigsModel
-// 	if err := json.Unmarshal(bytes, &configs); err != nil {
-// 		return false
-// 	}
-// 	return true
-// }
-
 func createDefaultConfigsModel() ConfigsModel {
 	return ConfigsModel{
 		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
@@ -97,28 +82,6 @@ func GetConfigs() (ConfigsModel, error) {
 
 	return defaultConfigs, nil
 }
-
-// // SaveDefaultConfigs ...
-// func SaveDefaultConfigs() error {
-// 	return SaveConfigs(ConfigsModel{
-// 		EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
-// 		EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
-// 	})
-// }
-
-// // InitConfigsIfRequired ...
-// func InitConfigsIfRequired() error {
-// 	if configsSaved := CheckIfConfigsSaved(); !configsSaved {
-// 		defaultConf := ConfigsModel{
-// 			EnvBytesLimitInKB:     defaultEnvBytesLimitInKB,
-// 			EnvListBytesLimitInKB: defaultEnvListBytesLimitInKB,
-// 		}
-// 		if err := envman.SaveConfigs(defaultConf); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
 
 // saveConfigs ...
 //  only used for unit testing at the moment
