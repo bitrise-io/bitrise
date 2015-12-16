@@ -110,7 +110,7 @@ workflows:
             # --------------------------------------------------
             # Main
 
-            changelog_file="/Users/godrei/Develop/go/src/github.com/bitrise-io/bitrise/_changelogs/next_version_tmp.md"
+            changelog_file="./_changelogs/next_version_tmp.md"
             if [ ! -z "$changelog_path" ] ; then
               changelog_file=$changelog_path
             else
