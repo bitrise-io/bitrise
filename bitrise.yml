@@ -26,6 +26,118 @@ trigger_map:
   workflow: ci
 
 workflows:
+  create_changelog:
+    envs:
+    - FILTER_MERGE: false
+    steps:
+    - script:
+        title: Read first and last commit
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+
+            # Latest tag on origin/master
+
+            latest_tag=$(git describe origin/master --abbrev=0 --tags)
+            echo "latest_tag: $latest_tag"
+
+
+            # Commit hash of latest tag
+
+            latest_tag_commit_out=$(git show-ref $latest_tag)
+            latest_tag_commit_regex="(.*) refs/tags/.*"
+            if [[ $latest_tag_commit_out =~ $latest_tag_commit_regex ]] ; then
+              latest_tag_commit="${BASH_REMATCH[1]}"
+            else
+              echo "error"
+              exit 1
+            fi
+            echo "latest_tag_commit: $latest_tag_commit"
+
+
+            # First commit since last release
+
+            first_commit="$latest_tag_commit"
+            echo "first_commit: $first_commit"
+
+
+            # Last commit on current branch
+
+            last_commit=$(git log -n 1 --pretty=format:"%H")
+            echo "last_commit: $last_commit"
+
+            envman add --key first_commit --value $first_commit
+            envman add --key last_commit --value $last_commit
+
+    - script:
+        title: Collect git commits
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+
+            commits=$(git log --pretty=format:'(%h) - %s' $first_commit...$last_commit)
+            echo "commits: $commits"
+
+            envman add --key commits --value "$commits"
+    - script:
+        title: Write commits to file
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+
+            # --------------------------------------------------
+            # FUNCTION: write formatted line in changelog file
+
+            change_log_line_regex="\(([a-z0-9]*)\) - (.*)"
+            function write_line {
+              file="$1"
+              line="$2"
+
+              if [[ "$line" =~ $change_log_line_regex ]] ; then
+                commit="${BASH_REMATCH[1]}"
+                content="${BASH_REMATCH[2]}"
+
+                # echo "commit: $commit"
+                # echo "* $content" >> $file
+                echo "* $line" >> $file
+              fi
+            }
+
+
+            # --------------------------------------------------
+            # Main
+
+            changelog_file="/Users/godrei/Develop/go/src/github.com/bitrise-io/bitrise/_changelogs/next_version_tmp.md"
+            if [ ! -z "$changelog_path" ] ; then
+              changelog_file=$changelog_path
+            else
+              if [ -f $changelog_file ] ; then
+                  rm -rf $changelog_file
+              fi
+            fi
+            echo "changelog_file: $changelog_file"
+
+            short_first_commit=$(git rev-parse --short $first_commit)
+            short_last_commit=$(git rev-parse --short $last_commit)
+
+            echo "" >> $changelog_file
+            echo "## Change history ($short_first_commit - $short_last_commit)" >> $changelog_file
+            echo "" >> $changelog_file
+
+            merge_pr_regex=".* Merge .*"
+            while read -r line; do
+              if [[ $FILTER_MERGE == "true" ]] ; then
+                if [[ ! $line =~ $merge_pr_regex ]] ; then
+                  write_line "$changelog_file" "$line"
+                fi
+              else
+                write_line "$changelog_file" "$line"
+              fi
+            done <<< "$commits"
+
   _prepare_and_setup:
     steps:
     - git-clone:
@@ -206,6 +318,8 @@ workflows:
       CI, deploy, changelog
     before_run:
     - ci
+    after_run:
+    - create_changelog
     steps:
     - script:
         title: Creating deploy
@@ -238,6 +352,8 @@ workflows:
             File.open(changelog_path, "w") do |f|
               f.write(changelog_content)
             end
+
+            system("envman add --key changelog_path --value #{changelog_path}")
         - runner_bin: ruby
 
   announce-release:
