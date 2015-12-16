@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -16,6 +17,10 @@ import (
 )
 
 func TestSkipIfEmpty(t *testing.T) {
+	if configs.IsCIMode {
+		return
+	}
+
 	// skip_if_empty=true && value=empty => should not add
 	configStr := `
 format_version: 1.0.0
