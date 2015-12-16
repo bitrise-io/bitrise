@@ -203,11 +203,14 @@ func EnvmanInitAtPath(envstorePth string) error {
 }
 
 // EnvmanAdd ...
-func EnvmanAdd(envstorePth, key, value string, expand bool) error {
+func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--append"}
 	if !expand {
-		args = []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--no-expand", "--append"}
+		args = append(args, "--no-expand")
+	}
+	if skipIfEmpty {
+		args = append(args, "--skip-if-empty")
 	}
 
 	envman := exec.Command("envman", args...)

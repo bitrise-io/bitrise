@@ -15,6 +15,76 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSkipIfEmpty(t *testing.T) {
+	// skip_if_empty=true && value=empty => should not add
+	configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  skip_if_empty:
+    envs:
+    - TEST: test
+    - TEST:
+      opts:
+        skip_if_empty: true
+    steps:
+    - script:
+        is_skippable: true
+        title: "Envman add DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            if [ -z $TEST ] ; then
+              echo "TEST shuld exist"
+              exit 1
+            fi
+`
+	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+
+	// skip_if_empty=false && value=empty => should add
+	configStr = `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  skip_if_empty:
+    envs:
+    - TEST: test
+    - TEST:
+      opts:
+        skip_if_empty: false
+    steps:
+    - script:
+        is_skippable: true
+        title: "Envman add DELETE_TEST"
+        inputs:
+        - content: |
+            #!/bin/bash
+            if [ ! -z $TEST ] ; then
+              echo "TEST env shuld not exist"
+              exit 1
+            fi
+`
+	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+
+	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+	require.Equal(t, nil, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
 func TestDeleteEnvironment(t *testing.T) {
 	configStr := `
 format_version: 1.0.0
