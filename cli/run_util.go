@@ -117,7 +117,7 @@ func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, 
 
 		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 		if err != nil {
-			return models.BitriseDataModel{}, fmt.Errorf("Failed to validate config: %s", err)
+			return models.BitriseDataModel{}, fmt.Errorf("Config (path:%s) in not valid: %s", bitriseConfigPath, err)
 		}
 		bitriseConfig = config
 	}
