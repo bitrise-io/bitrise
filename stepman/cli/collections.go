@@ -22,7 +22,7 @@ func registerFatal(errorMsg, format string) {
 	} else {
 		bytes, err := json.Marshal(msg)
 		if err != nil {
-			log.Fatalf("Faild to parse error model, err: %s", err)
+			log.Fatalf("Failed to parse error model, err: %s", err)
 		}
 
 		fmt.Println(string(bytes))
