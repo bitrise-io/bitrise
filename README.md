@@ -1,7 +1,7 @@
 # Bitrise (offline) CLI
 
-Run your Bitrise automation workflows with this CLI tool on your own development device, and on
-your Continuous Integration tool / service.
+Run your Bitrise automations with this CLI tool on any Mac or Linux machine, and use the same configuration on
+[bitrise.io](https://www.bitrise.io) (automation service, with a mobile app focus).
 
 *Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
 with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
