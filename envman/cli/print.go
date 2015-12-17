@@ -69,12 +69,12 @@ func print(c *cli.Context) {
 	// Read envs
 	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
 	if err != nil {
-		log.Fatalf("Faild to read envs, error: %s", err)
+		log.Fatalf("Failed to read envs, error: %s", err)
 	}
 
 	envsJSONList, err := convertToEnsJSONModel(environments, expand)
 	if err != nil {
-		log.Fatalf("Faild to convert envs, error: %s", err)
+		log.Fatalf("Failed to convert envs, error: %s", err)
 	}
 
 	// Print envs
