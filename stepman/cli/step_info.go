@@ -69,7 +69,7 @@ func printRawStepInfo(stepInfo models.StepInfoModel, isShort, isLocal bool) {
 
 	if stepInfo.GlobalInfo.RemovalDate != "" {
 		fmt.Println("")
-		fmt.Printf(colorstring.Red("This step is deprecated!\n"))
+		fmt.Println(colorstring.Red("This step is deprecated!\n"))
 		fmt.Printf("%s %s\n", colorstring.Red("removal date:"), stepInfo.GlobalInfo.RemovalDate)
 
 		if stepInfo.GlobalInfo.DeprecateNotes != "" {
