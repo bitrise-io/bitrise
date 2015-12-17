@@ -26,6 +26,15 @@ func IsRelativePath(pth string) bool {
 	return true
 }
 
+// EnsureDirExist ...
+func EnsureDirExist(dir string) error {
+	exist, err := IsDirExists(dir)
+	if !exist || err != nil {
+		return os.MkdirAll(dir, 0777)
+	}
+	return nil
+}
+
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
 		return nil, false, errors.New("No path provided")

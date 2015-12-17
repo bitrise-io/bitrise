@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/bitrise-io/go-utils/pointers"
 )
 
 // ParseBool ...
@@ -25,7 +27,46 @@ func ParseBool(userInputStr string) (bool, error) {
 }
 
 // CastToString ...
-func CastToString(v interface{}) string {
-	value := fmt.Sprintf("%v", v)
-	return value
+func CastToString(value interface{}) string {
+	casted, ok := value.(string)
+
+	if !ok {
+		castedStr := fmt.Sprintf("%v", value)
+		casted = castedStr
+	}
+
+	return casted
+}
+
+// CastToStringPtr ...
+func CastToStringPtr(value interface{}) *string {
+	castedValue := CastToString(value)
+	return pointers.NewStringPtr(castedValue)
+}
+
+// CastToBool ...
+func CastToBool(value interface{}) (bool, bool) {
+	casted, ok := value.(bool)
+
+	if !ok {
+		castedStr := CastToString(value)
+
+		castedBool, err := ParseBool(castedStr)
+		if err != nil {
+			return false, false
+		}
+
+		casted = castedBool
+	}
+
+	return casted, true
+}
+
+// CastToBoolPtr ...
+func CastToBoolPtr(value interface{}) (*bool, bool) {
+	castedValue, ok := CastToBool(value)
+	if !ok {
+		return nil, false
+	}
+	return pointers.NewBoolPtr(castedValue), true
 }

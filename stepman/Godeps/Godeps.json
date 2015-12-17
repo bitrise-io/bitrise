@@ -12,40 +12,40 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "0.9.10-23-ga5fd047",
-			"Rev": "a5fd0472fadfd54efd51d001d51a771f0fab9a05"
+			"Comment": "1.0.0-14-g6f5c49c",
+			"Rev": "6f5c49caa422e7583c8cb23936087effa654e748"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/urlutil",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "eab620feeaec1d4c6173a154d55e16a9b0e5b0c9"
+			"Rev": "1e735b52c32f8e35df52f436e3ad63ae155f325e"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -53,8 +53,8 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-179-g0302d39",
-			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
+			"Comment": "1.2.0-183-gb5232bb",
+			"Rev": "b5232bb2934f606f9f27a1305f1eea224e8e8b88"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -73,6 +73,10 @@
 			"ImportPath": "github.com/stretchr/testify/require",
 			"Comment": "v1.0-88-ge3a8ff8",
 			"Rev": "e3a8ff8ce36581f87a15341206f205b1da467059"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
