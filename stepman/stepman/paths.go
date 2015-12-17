@@ -209,6 +209,11 @@ func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
 	return path.Join(GetCacheBaseDir(route), id, version)
 }
 
+// GetStepGlobalInfoPath ...
+func GetStepGlobalInfoPath(route SteplibRoute, id string) string {
+	return path.Join(GetCollectionBaseDirPath(route), "steps", id, "step-info.yml")
+}
+
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
 func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {

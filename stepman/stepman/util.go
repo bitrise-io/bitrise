@@ -24,6 +24,27 @@ import (
 // DebugMode ...
 var DebugMode bool
 
+// ParseGlobalStepInfoYML ...
+func ParseGlobalStepInfoYML(pth string) (models.GlobalStepInfoModel, bool, error) {
+	if exist, err := pathutil.IsPathExists(pth); err != nil {
+		return models.GlobalStepInfoModel{}, false, err
+	} else if !exist {
+		return models.GlobalStepInfoModel{}, false, nil
+	}
+
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.GlobalStepInfoModel{}, true, err
+	}
+
+	var globalStepInfo models.GlobalStepInfoModel
+	if err := yaml.Unmarshal(bytes, &globalStepInfo); err != nil {
+		return models.GlobalStepInfoModel{}, true, err
+	}
+
+	return globalStepInfo, true, nil
+}
+
 // ParseStepYml ...
 func ParseStepYml(pth string, validate bool) (models.StepModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
