@@ -24,6 +24,8 @@ const (
 	DefaultIsDontChangeValue = false
 	// DefaultIsTemplate ...
 	DefaultIsTemplate = false
+	// DefaultSkipIfEmpty ...
+	DefaultSkipIfEmpty = false
 )
 
 // CreateFromJSON ...
@@ -80,23 +82,11 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 		log.Debugf("  ** processing (key:%#v) (value:%#v) (envSerModel:%#v)", keyStr, value, envSerModel)
 		switch keyStr {
 		case "title":
-			castedValue, ok := value.(string)
-			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-			}
-			envSerModel.Title = pointers.NewStringPtr(castedValue)
+			envSerModel.Title = parseutil.CastToStringPtr(value)
 		case "description":
-			castedValue, ok := value.(string)
-			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-			}
-			envSerModel.Description = pointers.NewStringPtr(castedValue)
+			envSerModel.Description = parseutil.CastToStringPtr(value)
 		case "summary":
-			castedValue, ok := value.(string)
-			if !ok {
-				return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-			}
-			envSerModel.Summary = pointers.NewStringPtr(castedValue)
+			envSerModel.Summary = parseutil.CastToStringPtr(value)
 		case "value_options":
 			castedValue, ok := value.([]string)
 			if !ok {
@@ -120,65 +110,35 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			}
 			envSerModel.ValueOptions = castedValue
 		case "is_required":
-			castedValue, ok := value.(bool)
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				castedStr := parseutil.CastToString(value)
-				if castedStr != "" {
-					casted, err := parseutil.ParseBool(castedStr)
-					if err != nil {
-						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
-					}
-					castedValue = casted
-				} else {
-					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-				}
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
-			envSerModel.IsRequired = pointers.NewBoolPtr(castedValue)
+			envSerModel.IsRequired = castedBoolPtr
 		case "is_expand":
-			castedValue, ok := value.(bool)
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				castedStr := parseutil.CastToString(value)
-				if castedStr != "" {
-					casted, err := parseutil.ParseBool(castedStr)
-					if err != nil {
-						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
-					}
-					castedValue = casted
-				} else {
-					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-				}
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
-			envSerModel.IsExpand = pointers.NewBoolPtr(castedValue)
+			envSerModel.IsExpand = castedBoolPtr
 		case "is_dont_change_value":
-			castedValue, ok := value.(bool)
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				castedStr := parseutil.CastToString(value)
-				if castedStr != "" {
-					casted, err := parseutil.ParseBool(castedStr)
-					if err != nil {
-						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
-					}
-					castedValue = casted
-				} else {
-					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-				}
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
-			envSerModel.IsDontChangeValue = pointers.NewBoolPtr(castedValue)
+			envSerModel.IsDontChangeValue = castedBoolPtr
 		case "is_template":
-			castedValue, ok := value.(bool)
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				castedStr := parseutil.CastToString(value)
-				if castedStr != "" {
-					casted, err := parseutil.ParseBool(castedStr)
-					if err != nil {
-						return fmt.Errorf("Faild to parse bool (key:%s): %#v, err: %s", keyStr, value, err)
-					}
-					castedValue = casted
-				} else {
-					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
-				}
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
-			envSerModel.IsTemplate = pointers.NewBoolPtr(castedValue)
+			envSerModel.IsTemplate = castedBoolPtr
+		case "skip_if_empty":
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
+			if !ok {
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+			}
+			envSerModel.SkipIfEmpty = castedBoolPtr
 		default:
 			return fmt.Errorf("Not supported key found in options: %#v", keyStr)
 		}
@@ -271,6 +231,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	}
 	if options.IsTemplate == nil {
 		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplate)
+	}
+	if options.SkipIfEmpty == nil {
+		options.SkipIfEmpty = pointers.NewBoolPtr(DefaultSkipIfEmpty)
 	}
 	(*env)[OptionsKey] = options
 	return nil
