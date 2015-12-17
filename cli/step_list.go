@@ -22,11 +22,11 @@ func stepList(c *cli.Context) {
 	if collectionURI == "" {
 		bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 		if err != nil {
-			registerFatal(fmt.Sprintf("No collection defined and faild to read bitrise cofing, err: %s", err), format)
+			registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), format)
 		}
 
 		if bitriseConfig.DefaultStepLibSource == "" {
-			registerFatal("No collection defined and no default collection found in bitrise cofing", format)
+			registerFatal("No collection defined and no default collection found in bitrise config", format)
 		}
 
 		collectionURI = bitriseConfig.DefaultStepLibSource

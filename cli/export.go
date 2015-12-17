@@ -26,7 +26,7 @@ func export(c *cli.Context) {
 	// Config validation
 	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 	if err != nil {
-		log.Fatalf("Failed to create bitrise cofing, err: %s", err)
+		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}
 
 	// serialize

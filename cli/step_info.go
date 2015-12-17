@@ -65,7 +65,7 @@ func stepInfo(c *cli.Context) {
 		//
 		// Local step info
 		if err := printLocalStepInfo(YMLPath, format); err != nil {
-			registerFatal(fmt.Sprintf("Faild to print step info, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}
 	} else {
 		//
@@ -74,11 +74,11 @@ func stepInfo(c *cli.Context) {
 		if collectionURI == "" {
 			bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
 			if err != nil {
-				registerFatal(fmt.Sprintf("No collection defined and faild to read bitrise cofing, err: %s", err), format)
+				registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), format)
 			}
 
 			if bitriseConfig.DefaultStepLibSource == "" {
-				registerFatal("No collection defined and no default collection found in bitrise cofing", format)
+				registerFatal("No collection defined and no default collection found in bitrise config", format)
 			}
 
 			collectionURI = bitriseConfig.DefaultStepLibSource
@@ -94,7 +94,7 @@ func stepInfo(c *cli.Context) {
 		version := c.String(VersionKey)
 
 		if err := printStepLibStep(collectionURI, id, version, format); err != nil {
-			registerFatal(fmt.Sprintf("Faild to print step info, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
 		}
 	}
 }
