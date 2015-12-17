@@ -141,7 +141,7 @@ func create(c *cli.Context) {
 		}
 
 		if len(options.ValueOptions) > 0 && value == "" {
-			log.Warn("Step input with 'value_options', should contains default value!")
+			log.Warn("Step input with 'value_options', should contain default value!")
 			log.Fatalf("Missing default value for Step input (%s).", key)
 		}
 	}
