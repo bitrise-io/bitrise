@@ -65,7 +65,7 @@ func stepInfo(c *cli.Context) {
 		//
 		// Local step info
 		if err := printLocalStepInfo(YMLPath, format); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to print step info (yml path: %s), err: %s", YMLPath, err), format)
 		}
 	} else {
 		//
