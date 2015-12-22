@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/bitrise-io/stepman",
-	"GoVersion": "go1.5.2",
+	"GoVersion": "go1.5",
 	"Packages": [
 		"./..."
 	],
@@ -12,8 +12,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "1.0.0-14-g6f5c49c",
-			"Rev": "6f5c49caa422e7583c8cb23936087effa654e748"
+			"Comment": "1.0.0-19-g3b330d5",
+			"Rev": "3b330d5d2d1acf4502c85c5d58630fa5e4583476"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -53,8 +53,8 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-183-gb5232bb",
-			"Rev": "b5232bb2934f606f9f27a1305f1eea224e8e8b88"
+			"Comment": "1.2.0-187-gc31a797",
+			"Rev": "c31a7975863e7810c92e2e288a9ab074f9a88f29"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
