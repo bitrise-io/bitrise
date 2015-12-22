@@ -326,6 +326,7 @@ workflows:
             File.open(changelog_path, "w") do |f|
               f.write(changelog_content)
             end
+            system("envman add --key changelog_path --value #{changelog_path}")
         - runner_bin: ruby
   create-release-with-docker-compose:
     steps:
