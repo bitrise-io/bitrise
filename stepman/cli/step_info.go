@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"path"
 
 	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -158,7 +157,7 @@ func stepInfo(c *cli.Context) {
 		// Local step info
 		step, err := stepman.ParseStepYml(YMLPath, false)
 		if err != nil {
-			log.Fatalf("Failed to parse step.yml, err: %s", err)
+			log.Fatalf("Failed to parse step.yml (path:%s), err: %s", YMLPath, err)
 		}
 
 		inputs, err := getEnvInfos(step.Inputs)
@@ -177,17 +176,6 @@ func stepInfo(c *cli.Context) {
 			Source:      *step.SourceCodeURL,
 			Inputs:      inputs,
 			Outputs:     outputs,
-		}
-
-		dir := path.Dir(YMLPath)
-		globalStepInfoPth := path.Join(dir, "step-info.yml")
-		globalInfo, found, err := stepman.ParseGlobalStepInfoYML(globalStepInfoPth)
-		if err != nil {
-			log.Fatalf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
-		}
-
-		if found {
-			stepInfo.GlobalInfo = globalInfo
 		}
 
 		if err := printStepInfo(stepInfo, format, isShort, true); err != nil {
