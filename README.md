@@ -1,7 +1,7 @@
 # Bitrise (offline) CLI
 
-Run your Bitrise automation workflows with this CLI tool on your own development device, and on
-your Continuous Integration tool / service.
+Run your Bitrise automations with this CLI tool on any Mac or Linux machine, and use the same configuration on
+[bitrise.io](https://www.bitrise.io) (automation service, with a mobile app focus).
 
 *Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
 with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
@@ -26,9 +26,11 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 
 ## Development Guideline
 
-* Number one priority is UX for the end-user, to make it a pleasant experience to work with this tool!
-* Code should be kept simple: easy to understand, easy to collaborate/contribute (as much as possible of course).
-* Flexibility should also be kept in mind, but only if it does not affect the previous two points.
+* __Easy to use__: the UX for the end-user, always keep it in mind, make it a pleasant experience to work with this tool (and all of the Bitrise tools)!
+* __Code should be kept simple__: easy to understand, easy to collaborate/contribute (as much as possible of course).
+* __Compatibility__: never do an incompatible change, unless you can't avoid it. Release new features as additional options, to not to break existing configurations.
+* __Stability__: related to compatibility, but in general stability is really important, especially so in a CI/automation environment, where you expect fully reproducible outcomes.
+* __Flexibility__: should also be kept in mind, but only if it does not affect the previous points.
 
 
 ## Tooling support & JSON output format
