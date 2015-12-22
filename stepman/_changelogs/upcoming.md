@@ -1,6 +1,5 @@
 ## Changes
 
-* Step ID must conform to [a-z0-9-] regexp
 * New audit commands:
   - 'stepman audit --step-yml <YML_PATH>' for validating local Step, before share process.
     (Usefull to validate step, when you finished the Step development, before creating the release of the step.)
