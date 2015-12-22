@@ -112,31 +112,31 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 		case "is_required":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Faild to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsRequired = castedBoolPtr
 		case "is_expand":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Faild to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsExpand = castedBoolPtr
 		case "is_dont_change_value":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Faild to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsDontChangeValue = castedBoolPtr
 		case "is_template":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Faild to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsTemplate = castedBoolPtr
 		case "skip_if_empty":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Faild to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.SkipIfEmpty = castedBoolPtr
 		default:
