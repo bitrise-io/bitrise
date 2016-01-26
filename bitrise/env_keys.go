@@ -11,4 +11,6 @@ const (
 	DebugModeEnvKey string = "DEBUG"
 	// LogLevelEnvKey ...
 	LogLevelEnvKey string = "LOGLEVEL"
+	// OptOutAnalytics ...
+	OptOutAnalytics string = "OPT_OUT_ANALYTICS"
 )

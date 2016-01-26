@@ -78,6 +78,12 @@ const (
 	GitKey = "git"
 	// StepIDKey ...
 	StepIDKey = "stepid"
+
+	//
+	// Analytics
+
+	// OptOutKey ...
+	OptOutKey = "opt-out-analytics"
 )
 
 var (
@@ -184,6 +190,13 @@ var (
 	flStepID = cli.StringFlag{
 		Name:  StepIDKey,
 		Usage: "ID of the step.",
+	}
+
+	// Analytics
+	flOptOutAnalytics = cli.StringFlag{
+		Name:   OptOutKey,
+		Usage:  "Opt out anonymized analytics data.",
+		EnvVar: bitrise.OptOutAnalytics,
 	}
 )
 

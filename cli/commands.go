@@ -51,6 +51,7 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				flOptOutAnalytics,
 			},
 		},
 		{
@@ -75,6 +76,7 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				flOptOutAnalytics,
 			},
 		},
 		{
