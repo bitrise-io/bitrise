@@ -1,9 +1,12 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
@@ -816,4 +819,45 @@ func runWorkflowWithConfiguration(
 		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
 	}
 	return buildRunResults, nil
+}
+
+func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Make sure it doesn't break anything
+		}
+	}()
+
+	if configs.OptOutUsageData == true {
+		return
+	}
+
+	bitrise.PrintAnonymizedUsage(buildRunResults)
+
+	orderedResults := buildRunResults.OrderedResults()
+
+	anonymizedUsageGroup := models.AnonymizedUsageGroupModel{}
+	for _, stepRunResult := range orderedResults {
+		anonymizedUsageData := models.AnonymizedUsageModel{
+			ID:      stepRunResult.StepInfo.ID,
+			Version: stepRunResult.StepInfo.Version,
+			RunTime: stepRunResult.RunTime,
+			Error:   stepRunResult.Status != 0,
+		}
+
+		anonymizedUsageGroup.Steps = append(anonymizedUsageGroup.Steps, anonymizedUsageData)
+	}
+
+	data, _ := json.Marshal(anonymizedUsageGroup)
+
+	url := "http://localhost:3000/save"
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	req.Header.Set("Content-Type", "application/json")
+
+	timeout := time.Duration(2 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
 }

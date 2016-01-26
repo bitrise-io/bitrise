@@ -92,6 +92,11 @@ func before(c *cli.Context) error {
 		configs.IsPullRequestMode = true
 	}
 
+	optOutAnalytics := os.Getenv(bitrise.OptOutAnalyticsKey)
+	if optOutAnalytics != "" {
+		configs.OptOutUsageData = true
+	}
+
 	return nil
 }
 

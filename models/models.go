@@ -97,3 +97,16 @@ type StepRunResultsModel struct {
 	Error    error
 	ExitCode int
 }
+
+// AnonymizedUsageModel ...
+type AnonymizedUsageModel struct {
+	ID      string        `json:"step"`
+	Version string        `json:"version"`
+	RunTime time.Duration `json:"duration"`
+	Error   bool          `json:"error,omitempty"`
+}
+
+// AnonymizedUsageGroupModel ...
+type AnonymizedUsageGroupModel struct {
+	Steps []AnonymizedUsageModel `json:"steps"`
+}

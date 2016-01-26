@@ -77,7 +77,10 @@ func trigger(c *cli.Context) {
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
 	// Run selected configuration
-	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
+	buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments)
+	if err != nil {
 		log.Fatalln("Error: ", err)
 	}
+
+	sendAnonymizedAnalytics(buildRunResults)
 }

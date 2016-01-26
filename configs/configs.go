@@ -18,6 +18,8 @@ var (
 	IsPullRequestMode = false
 	// OutputFormat ...
 	OutputFormat = OutputFormatRaw
+	// OptOutUsageData ...
+	OptOutUsageData = false
 )
 
 // ---------------------------

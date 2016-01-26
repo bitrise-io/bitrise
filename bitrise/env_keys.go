@@ -12,5 +12,5 @@ const (
 	// LogLevelEnvKey ...
 	LogLevelEnvKey string = "LOGLEVEL"
 	// OptOutAnalytics ...
-	OptOutAnalytics string = "OPT_OUT_ANALYTICS"
+	OptOutAnalyticsKey string = "OPT_OUT_ANALYTICS"
 )

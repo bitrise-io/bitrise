@@ -196,7 +196,7 @@ var (
 	flOptOutAnalytics = cli.StringFlag{
 		Name:   OptOutKey,
 		Usage:  "Opt out anonymized analytics data.",
-		EnvVar: bitrise.OptOutAnalytics,
+		EnvVar: bitrise.OptOutAnalyticsKey,
 	}
 )
 

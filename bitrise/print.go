@@ -362,3 +362,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 
 	fmt.Println()
 }
+
+// PrintAnonymizedUsage ...
+func PrintAnonymizedUsage(buildRunResults models.BuildRunResultsModel) {
+	fmt.Println()
+	log.Info(colorstring.Bluef("Submitting anonymized usage information"))
+	log.Info("This usage helps us indentify any problems with the integrations")
+	log.Info("For more information visit: https://github.com/bitrise-io/bitrise")
+	fmt.Println()
+}
