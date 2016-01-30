@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -14,7 +15,8 @@ import (
 func updateCollection(steplibSource string) (models.StepCollectionModel, error) {
 	route, found := stepman.ReadRoute(steplibSource)
 	if !found {
-		return models.StepCollectionModel{}, errors.New("No route found for lib: " + steplibSource)
+		return models.StepCollectionModel{},
+			fmt.Errorf("No collection found for lib, call 'stepman delete -c %s' for cleanup", steplibSource)
 	}
 
 	pth := stepman.GetCollectionBaseDirPath(route)

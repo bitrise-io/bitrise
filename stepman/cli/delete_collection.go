@@ -17,7 +17,11 @@ func deleteCollection(c *cli.Context) {
 
 	route, found := stepman.ReadRoute(collectionURI)
 	if !found {
-		log.Warn("No route found for lib: " + collectionURI)
+		log.Warnf("No route found for collection: %s, cleaning up routing..", collectionURI)
+		if err := stepman.CleanupDanglingLib(collectionURI); err != nil {
+			log.Errorf("Error cleaning up lib: %s", collectionURI)
+		}
+		log.Infof("Call 'stepman setup -c %s' for a clean setup", collectionURI)
 		return
 	}
 
