@@ -1,5 +1,7 @@
 # Bitrise (offline) CLI
 
+[![Slack channel](http://chat.bitrise.io/badge.svg)](http://chat.bitrise.io)
+
 Run your Bitrise automations with this CLI tool on any Mac or Linux machine, and use the same configuration on
 [bitrise.io](https://www.bitrise.io) (automation service, with a mobile app focus).
 
