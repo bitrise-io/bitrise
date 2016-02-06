@@ -1,44 +1,46 @@
-format_version: 0.9.9
+---
+format_version: 1.1.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
-  - BITRISE_PROJECT_TITLE: mytestproject
+  - BITRISE_PROJECT_PATH: ios/ReactNativeSample.xcodeproj
     opts:
-      is_expand: true
-  - BITRISE_DEV_BRANCH: master
+      is_expand: false
+  - BITRISE_SCHEME: ReactNativeSample
     opts:
-      is_expand: true
+      is_expand: false
+trigger_map:
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: test
 workflows:
-  run-react-native:
+  test:
     steps:
     - script:
-        title: clone
+        title: Install React Native CLI
         inputs:
-        - content: |-
-            #!/bin/bash
-            if [ ! -d viccesteszt ] ; then
-              git clone ${REPO_URL}
-            else
-              cd viccesteszt
-              git pull
-            fi
+        - content: npm install -g react-native-cli
     - script:
-        title: Install React Native
+        title: npm install
         inputs:
-        - content: |-
-            #!/bin/bash
-            brew unlink node
-            brew uninstall node
-            brew install iojs
-            brew install --HEAD watchman
-            brew install flow
-            brew install node
-            projectName="viccesteszt/testProj"
-            cd $projectName
-            pwd
-            npm install react-native
-    - new-xcode-test:
+        - content: npm install
+    - script:
+        title: Bundle app
+        deps:
+          brew:
+          - name: watchman
+          - name: flow
         inputs:
-        - project_path: ./viccesteszt/testProj/testProj.xcodeproj
-        - scheme: testProj
-    - slack:
+        - content: react-native bundle --entry-file ./index.ios.js --platform ios
+            --bundle-output ios/main.jsbundle
+    - xcode-archive:
+        title: 'Xcode: Create Archive'
+        inputs:
+        - output_dir: "${BITRISE_DEPLOY_DIR}"
+        outputs:
+        - BITRISE_IPA_PATH:
+          opts:
+            title: The created .ipa file's path
+        - BITRISE_DSYM_PATH:
+          opts:
+            title: The created .dSYM.zip file's path
