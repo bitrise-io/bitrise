@@ -12,9 +12,9 @@ app:
 trigger_map:
 - pattern: "*"
   is_pull_request_allowed: true
-  workflow: test
+  workflow: build-react-app
 workflows:
-  test:
+  build-react-app:
     steps:
     - script:
         title: Install React Native CLI
