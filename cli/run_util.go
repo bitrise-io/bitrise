@@ -805,6 +805,10 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to get last workflow id: %s", err)
 	}
 
+	defer func() {
+		sendAnonymizedAnalytics(buildRunResults)
+	}()
+
 	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
 	if err != nil {
 		return buildRunResults, errors.New("[BITRISE_CLI] - Failed to activate and run workflow " + workflowToRunID)
@@ -850,7 +854,7 @@ func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) {
 
 	data, _ := json.Marshal(anonymizedUsageGroup)
 
-	url := "http://localhost:3000/save"
+	url := "http://bitrise-stats.herokuapp.com/save"
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json")
 
