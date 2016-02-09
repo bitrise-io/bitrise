@@ -36,6 +36,15 @@ type SteplibRoutes []SteplibRoute
 func (routes SteplibRoutes) GetRoute(URI string) (route SteplibRoute, found bool) {
 	for _, route := range routes {
 		if route.SteplibURI == URI {
+			pth := path.Join(GetCollectionsDirPath(), route.FolderAlias)
+			exist, err := pathutil.IsPathExists(pth)
+			if err != nil {
+				log.Warnf("Failed to read path %s", pth)
+				return SteplibRoute{}, false
+			} else if !exist {
+				log.Warnf("Failed to read path %s", pth)
+				return SteplibRoute{}, false
+			}
 			return route, true
 		}
 	}
@@ -74,6 +83,15 @@ func CleanupRoute(route SteplibRoute) error {
 		return err
 	}
 	return nil
+}
+
+// CleanupDanglingLib ...
+func CleanupDanglingLib(URI string) error {
+	route := SteplibRoute{
+		SteplibURI:  URI,
+		FolderAlias: "",
+	}
+	return RemoveRoute(route)
 }
 
 // RootExistForCollection ...
