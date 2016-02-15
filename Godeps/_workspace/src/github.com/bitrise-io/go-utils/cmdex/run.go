@@ -5,9 +5,24 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
+
+// PrintableCommandArgs ...
+func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
+	cmdArgsDecorated := []string{}
+	for idx, anArg := range fullCommandArgs {
+		quotedArg := strconv.Quote(anArg)
+		if idx == 0 && !isQuoteFirst {
+			quotedArg = anArg
+		}
+		cmdArgsDecorated = append(cmdArgsDecorated, quotedArg)
+	}
+
+	return strings.Join(cmdArgsDecorated, " ")
+}
 
 // RunCommandWithReaderAndWriters ...
 func RunCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.Writer, name string, args ...string) error {

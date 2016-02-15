@@ -16,7 +16,7 @@ func AskForStringFromReader(messageToPrint string, inputReader io.Reader) (strin
 	fmt.Printf("%s : ", messageToPrint)
 	if scanner.Scan() {
 		scannedText := scanner.Text()
-		return scannedText, nil
+		return strings.TrimRight(scannedText, " "), nil
 	}
 	return "", errors.New("Failed to get input - scanner failed.")
 }
@@ -59,7 +59,7 @@ func ParseBool(userInputStr string) (bool, error) {
 
 // AskForBoolFromReader ...
 func AskForBoolFromReader(messageToPrint string, inputReader io.Reader) (bool, error) {
-	userInputStr, err := AskForStringFromReader(messageToPrint, inputReader)
+	userInputStr, err := AskForStringFromReader(messageToPrint+" [yes/no]", inputReader)
 	if err != nil {
 		return false, err
 	}
@@ -70,4 +70,29 @@ func AskForBoolFromReader(messageToPrint string, inputReader io.Reader) (bool, e
 // AskForBool ...
 func AskForBool(messageToPrint string) (bool, error) {
 	return AskForBoolFromReader(messageToPrint, os.Stdin)
+}
+
+// SelectFromStringsFromReader ...
+func SelectFromStringsFromReader(messageToPrint string, options []string, inputReader io.Reader) (string, error) {
+	fmt.Printf("%s\n", messageToPrint)
+	fmt.Println("Please select from the list:")
+	for idx, anOption := range options {
+		fmt.Printf("[%d] : %s\n", idx+1, anOption)
+	}
+	selectedOptionNum, err := AskForIntFromReader("(type in the option's number, then hit Enter)", inputReader)
+	if err != nil {
+		return "", err
+	}
+	if selectedOptionNum < 1 {
+		return "", fmt.Errorf("Invalid option: You entered a number less than 1")
+	}
+	if selectedOptionNum > int64(len(options)) {
+		return "", fmt.Errorf("Invalid option: You entered a number greater than the last option's number")
+	}
+	return options[selectedOptionNum-1], nil
+}
+
+// SelectFromStrings ...
+func SelectFromStrings(messageToPrint string, options []string) (string, error) {
+	return SelectFromStringsFromReader(messageToPrint, options, os.Stdin)
 }
