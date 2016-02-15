@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
@@ -40,6 +41,10 @@ func trigger(c *cli.Context) {
 
 	// ------------------------
 	// Input validation
+	optOutAnalytics := c.Bool(OptOutKey)
+	if optOutAnalytics {
+		configs.OptOutUsageData = true
+	}
 
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(c)
