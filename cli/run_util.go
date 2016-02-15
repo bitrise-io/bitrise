@@ -806,7 +806,9 @@ func runWorkflowWithConfiguration(
 	}
 
 	defer func() {
-		sendAnonymizedAnalytics(buildRunResults)
+		if err := sendAnonymizedAnalytics(buildRunResults); err != nil {
+			log.Warnf("Failed to send analytics, error: %#v", err)
+		}
 	}()
 
 	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
@@ -825,7 +827,7 @@ func runWorkflowWithConfiguration(
 	return buildRunResults, nil
 }
 
-func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) {
+func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error {
 	defer func() {
 		if r := recover(); r != nil {
 			// Make sure it doesn't break anything
@@ -833,7 +835,7 @@ func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) {
 	}()
 
 	if configs.OptOutUsageData == true {
-		return
+		return nil
 	}
 
 	bitrise.PrintAnonymizedUsage(buildRunResults)
@@ -852,16 +854,33 @@ func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) {
 		anonymizedUsageGroup.Steps = append(anonymizedUsageGroup.Steps, anonymizedUsageData)
 	}
 
-	data, _ := json.Marshal(anonymizedUsageGroup)
+	data, err := json.Marshal(anonymizedUsageGroup)
+	if err != nil {
+		return err
+	}
 
 	url := "http://bitrise-stats.herokuapp.com/save"
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	timeout := time.Duration(2 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
-	resp, _ := client.Do(req)
-	defer resp.Body.Close()
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf("Failed to close response body, errror: %#v", err)
+		}
+	}()
+
+	return nil
 }
