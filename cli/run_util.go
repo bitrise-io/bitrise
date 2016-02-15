@@ -1,18 +1,16 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path"
 	"runtime"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -806,7 +804,7 @@ func runWorkflowWithConfiguration(
 	}
 
 	defer func() {
-		if err := sendAnonymizedAnalytics(buildRunResults); err != nil {
+		if err := analytics.SendAnonymizedAnalytics(buildRunResults); err != nil {
 			log.Warnf("Failed to send analytics, error: %#v", err)
 		}
 	}()
@@ -825,62 +823,4 @@ func runWorkflowWithConfiguration(
 		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
 	}
 	return buildRunResults, nil
-}
-
-func sendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error {
-	defer func() {
-		if r := recover(); r != nil {
-			// Make sure it doesn't break anything
-		}
-	}()
-
-	if configs.OptOutUsageData == true {
-		return nil
-	}
-
-	bitrise.PrintAnonymizedUsage(buildRunResults)
-
-	orderedResults := buildRunResults.OrderedResults()
-
-	anonymizedUsageGroup := models.AnonymizedUsageGroupModel{}
-	for _, stepRunResult := range orderedResults {
-		anonymizedUsageData := models.AnonymizedUsageModel{
-			ID:      stepRunResult.StepInfo.ID,
-			Version: stepRunResult.StepInfo.Version,
-			RunTime: stepRunResult.RunTime,
-			Error:   stepRunResult.Status != 0,
-		}
-
-		anonymizedUsageGroup.Steps = append(anonymizedUsageGroup.Steps, anonymizedUsageData)
-	}
-
-	data, err := json.Marshal(anonymizedUsageGroup)
-	if err != nil {
-		return err
-	}
-
-	url := "http://bitrise-stats.herokuapp.com/save"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	timeout := time.Duration(2 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Warnf("Failed to close response body, errror: %#v", err)
-		}
-	}()
-
-	return nil
 }

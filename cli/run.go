@@ -99,9 +99,8 @@ func run(c *cli.Context) {
 
 	// ------------------------
 	// Input validation
-	optOutAnalytics := c.Bool(OptOutKey)
-	if optOutAnalytics {
-		configs.OptOutUsageData = true
+	if c.IsSet(OptOutKey) {
+		configs.OptOutUsageData = c.Bool(OptOutKey)
 	}
 
 	// Inventory validation

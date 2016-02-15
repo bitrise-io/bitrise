@@ -8,6 +8,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewConfigFromBytes(t *testing.T) {
+	t.Log("Check config with string true")
+	{
+		configStr := `opt_out_analytics: "true"`
+
+		config, err := NewConfigFromBytes([]byte(configStr))
+		require.Equal(t, nil, err)
+
+		require.Equal(t, true, config.OptOutAnalytics)
+	}
+
+	t.Log("Check config with bolean true")
+	{
+		configStr := `opt_out_analytics: true`
+
+		config, err := NewConfigFromBytes([]byte(configStr))
+		require.Equal(t, nil, err)
+
+		require.Equal(t, true, config.OptOutAnalytics)
+	}
+
+	t.Log("Check config with bolean false")
+	{
+		configStr := `opt_out_analytics: false`
+
+		config, err := NewConfigFromBytes([]byte(configStr))
+		require.Equal(t, nil, err)
+
+		require.Equal(t, false, config.OptOutAnalytics)
+	}
+
+	t.Log("Check config with string false")
+	{
+		configStr := `opt_out_analytics: "false"`
+
+		config, err := NewConfigFromBytes([]byte(configStr))
+		require.Equal(t, nil, err)
+
+		require.Equal(t, false, config.OptOutAnalytics)
+	}
+
+	t.Log("Check config with integer")
+	{
+		configStr := `opt_out_analytics: 0`
+
+		_, err := NewConfigFromBytes([]byte(configStr))
+		require.NotEqual(t, nil, err)
+	}
+}
+
 func TestSetupForVersionChecks(t *testing.T) {
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
 	require.Equal(t, nil, err)

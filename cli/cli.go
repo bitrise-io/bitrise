@@ -25,6 +25,11 @@ func before(c *cli.Context) error {
 	initHelpAndVersionFlags()
 	initAppHelpTemplate()
 
+	config, err := bitrise.ReadConfig()
+	if err != nil {
+		return err
+	}
+
 	// Debug mode?
 	if c.Bool(DebugModeKey) {
 		// set for other tools, as an ENV
@@ -92,9 +97,11 @@ func before(c *cli.Context) error {
 		configs.IsPullRequestMode = true
 	}
 
-	optOutAnalytics := os.Getenv(bitrise.OptOutAnalyticsKey)
+	optOutAnalytics := os.Getenv(bitrise.OptOutAnalyticsEnvKey)
 	if optOutAnalytics != "" {
 		configs.OptOutUsageData = true
+	} else {
+		configs.OptOutUsageData = config.OptOutAnalytics
 	}
 
 	return nil
