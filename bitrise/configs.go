@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 )
 
 //=======================================
@@ -63,11 +64,11 @@ func NewConfigFromBytes(bytes []byte) (ConfigModel, error) {
 
 // Convert ConfigModel into ConfigFileModel
 // Ommits every default value
-func (c *ConfigModel) convert() ConfigFileModel {
+func (c ConfigModel) convert() ConfigFileModel {
 	config := ConfigFileModel{}
 
 	if c.OptOutAnalytics != defaultOptOutAnalytics {
-		*config.OptOutAnalytics = "false"
+		config.OptOutAnalytics = pointers.NewStringPtr("true")
 	}
 
 	return config
@@ -75,7 +76,7 @@ func (c *ConfigModel) convert() ConfigFileModel {
 
 // Convert ConfigFileModel into ConfigModel
 // Override every ConfigModel default value, with ConfigFileModel values
-func (c *ConfigFileModel) convert() ConfigModel {
+func (c ConfigFileModel) convert() ConfigModel {
 	config := NewDefaultConfig()
 
 	if c.OptOutAnalytics != nil {
