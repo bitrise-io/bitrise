@@ -1,11 +1,8 @@
 package bitrise
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"path"
-	"text/template"
 
 	"gopkg.in/yaml.v2"
 
@@ -22,7 +19,10 @@ const (
 	bitriseConfigFileName            = "config.yml"
 )
 
-const bitriseConfigTemplate = `opt_out_analytics: {{.OptOutAnalytics}}`
+const (
+	defaultOptOutAnalytics    = false
+	defaultOptOutAnalyticsStr = "false"
+)
 
 //=======================================
 // Models
@@ -33,31 +33,60 @@ type ConfigModel struct {
 	OptOutAnalytics bool
 }
 
-type configFileModel struct {
-	OptOutAnalytics string `yaml:"opt_out_analytics"`
+// ConfigFileModel ...
+type ConfigFileModel struct {
+	OptOutAnalytics *string `yaml:"opt_out_analytics"`
+}
+
+// NewDefaultConfig ...
+func NewDefaultConfig() ConfigModel {
+	return ConfigModel{
+		OptOutAnalytics: false,
+	}
 }
 
 // NewConfigFromBytes ...
 func NewConfigFromBytes(bytes []byte) (ConfigModel, error) {
-	var fileConfig configFileModel
+	var fileConfig ConfigFileModel
 	if err := yaml.Unmarshal(bytes, &fileConfig); err != nil {
 		return ConfigModel{}, err
 	}
 
-	if fileConfig.OptOutAnalytics != "" {
-		if fileConfig.OptOutAnalytics != "false" && fileConfig.OptOutAnalytics != "true" {
-			return ConfigModel{}, fmt.Errorf("Invalid config: opt_out_analytics value should be (\"false\" / \"true\"), actual: (%s)", fileConfig.OptOutAnalytics)
+	if fileConfig.OptOutAnalytics != nil && *fileConfig.OptOutAnalytics != "false" && *fileConfig.OptOutAnalytics != "true" {
+		return ConfigModel{}, fmt.Errorf("Invalid config: opt_out_analytics value should be (\"false\" / \"true\"), actual: (%s)", *fileConfig.OptOutAnalytics)
+	}
+
+	config := fileConfig.convert()
+
+	return config, nil
+}
+
+// Convert ConfigModel into ConfigFileModel
+// Ommits every default value
+func (c *ConfigModel) convert() ConfigFileModel {
+	config := ConfigFileModel{}
+
+	if c.OptOutAnalytics != defaultOptOutAnalytics {
+		*config.OptOutAnalytics = "false"
+	}
+
+	return config
+}
+
+// Convert ConfigFileModel into ConfigModel
+// Override every ConfigModel default value, with ConfigFileModel values
+func (c *ConfigFileModel) convert() ConfigModel {
+	config := NewDefaultConfig()
+
+	if c.OptOutAnalytics != nil {
+		if *c.OptOutAnalytics == "true" {
+			config.OptOutAnalytics = true
+		} else {
+			config.OptOutAnalytics = false
 		}
 	}
 
-	config := ConfigModel{
-		OptOutAnalytics: false,
-	}
-	if fileConfig.OptOutAnalytics == "true" {
-		config.OptOutAnalytics = true
-	}
-
-	return config, nil
+	return config
 }
 
 //=======================================
@@ -68,50 +97,14 @@ func getBitriseConfigVersionSetupFilePath() string {
 	return path.Join(GetBitriseConfigsDirPath(), bitriseVersionSetupStateFileName)
 }
 
-func getBitriseConfigFilePath() string {
-	return path.Join(GetBitriseConfigsDirPath(), bitriseConfigFileName)
-}
-
-func readConfig() (ConfigModel, error) {
-	configPth := getBitriseConfigFilePath()
-	bytes, err := fileutil.ReadBytesFromFile(configPth)
-	if err != nil {
-		return ConfigModel{}, err
-	}
-
-	return NewConfigFromBytes(bytes)
-}
-
-func ensureConfigExist() error {
-	configExist := true
-	configPth := getBitriseConfigFilePath()
-	if exist, err := pathutil.IsPathExists(configPth); err != nil {
-		return err
-	} else if !exist {
-		configExist = false
-	}
-
-	if configExist {
-		if _, err := readConfig(); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	config := ConfigModel{
-		OptOutAnalytics: false,
-	}
-
-	if err := SaveConfig(config); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 //=======================================
 // Main
 //=======================================
+
+// GetBitriseConfigFilePath ...
+func GetBitriseConfigFilePath() string {
+	return path.Join(GetBitriseConfigsDirPath(), bitriseConfigFileName)
+}
 
 // GetBitriseConfigsDirPath ...
 func GetBitriseConfigsDirPath() string {
@@ -145,44 +138,35 @@ func SaveSetupSuccessForVersion(ver string) error {
 
 // ReadConfig ...
 func ReadConfig() (ConfigModel, error) {
-	if err := ensureConfigExist(); err != nil {
+	config := NewDefaultConfig()
+
+	configPth := GetBitriseConfigFilePath()
+	if exist, err := pathutil.IsPathExists(configPth); err != nil {
 		return ConfigModel{}, err
+	} else if exist {
+		bytes, err := fileutil.ReadBytesFromFile(configPth)
+		if err != nil {
+			return ConfigModel{}, err
+		}
+
+		if config, err = NewConfigFromBytes(bytes); err != nil {
+			return ConfigModel{}, err
+		}
 	}
 
-	return readConfig()
+	return config, nil
 }
 
 // SaveConfig ...
 func SaveConfig(config ConfigModel) error {
 	// Converte config to file config
-	fileConfig := configFileModel{
-		OptOutAnalytics: "false",
-	}
+	fileConfig := config.convert()
 
-	if config.OptOutAnalytics {
-		fileConfig.OptOutAnalytics = "false"
-	}
-
-	// Write config to file
-	configTemplate, err := template.New("config").Parse(bitriseConfigTemplate)
+	bytes, err := yaml.Marshal(fileConfig)
 	if err != nil {
 		return err
 	}
 
-	file, err := os.Create(getBitriseConfigFilePath())
-	if err != nil {
-		return err
-	}
-	fileWriter := bufio.NewWriter(file)
-
-	err = configTemplate.Execute(fileWriter, config)
-	if err != nil {
-		return err
-	}
-
-	if err = fileWriter.Flush(); err != nil {
-		return err
-	}
-
-	return nil
+	configPth := GetBitriseConfigFilePath()
+	return fileutil.WriteBytesToFile(configPth, bytes)
 }

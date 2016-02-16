@@ -27,7 +27,8 @@ func before(c *cli.Context) error {
 
 	config, err := bitrise.ReadConfig()
 	if err != nil {
-		return err
+		log.Warnf("Failed to read config at: (%s)", bitrise.GetBitriseConfigFilePath())
+		log.Fatalf("Error: %#v", err)
 	}
 
 	// Debug mode?

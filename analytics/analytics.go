@@ -84,7 +84,7 @@ func SendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error 
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Warnf("Failed to close response body, errror: %#v", err)
+			log.Warnf("Failed to close response body, error: %#v", err)
 		}
 	}()
 
