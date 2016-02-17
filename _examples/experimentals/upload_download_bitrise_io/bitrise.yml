@@ -30,4 +30,4 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            curl --fail -X POST --data-urlencode "app_config_datastore_yaml=$(cat ./bitrise.yml)" https://www.bitrise.io/api/app/${BITRISE_APP_SLUG}/config/upload?api_token=${BITRISE_APP_API_TOKEN}
+            curl --fail -X POST --data-urlencode "app_config_datastore_yaml=$(cat ./bitrise.yml)" https://www.bitrise.io/api/app/${BITRISE_APP_SLUG}/config/upload.yml?api_token=${BITRISE_APP_API_TOKEN}
