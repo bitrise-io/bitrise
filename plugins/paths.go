@@ -4,17 +4,17 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 // GetPluginsDir ...
 func GetPluginsDir() (string, error) {
-	if err := bitrise.EnsureBitriseConfigDirExists(); err != nil {
+	if err := configs.EnsureBitriseConfigDirExists(); err != nil {
 		log.Errorf("Failed to ensure bitrise configs dir, err: %s", err)
 	}
 
-	bitriseDir := bitrise.GetBitriseConfigsDirPath()
+	bitriseDir := configs.GetBitriseConfigsDirPath()
 	pluginsDir := path.Join(bitriseDir, "plugins")
 
 	if err := pathutil.EnsureDirExist(pluginsDir); err != nil {

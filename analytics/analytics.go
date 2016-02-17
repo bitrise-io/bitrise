@@ -3,12 +3,12 @@ package analytics
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 )
 
@@ -41,11 +41,7 @@ type AnonymizedUsageGroupModel struct {
 
 // SendAnonymizedAnalytics ...
 func SendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error {
-	if configs.OptOutUsageData == true {
-		return nil
-	}
-
-	bitrise.PrintAnonymizedUsage(buildRunResults)
+	bitrise.PrintAnonymizedUsage()
 
 	orderedResults := buildRunResults.OrderedResults()
 
@@ -55,7 +51,7 @@ func SendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error 
 			ID:      stepRunResult.StepInfo.ID,
 			Version: stepRunResult.StepInfo.Version,
 			RunTime: stepRunResult.RunTime,
-			Error:   stepRunResult.Status != 0,
+			Error:   stepRunResult.Status != models.StepRunStatusCodeSuccess,
 		}
 
 		anonymizedUsageGroup.Steps = append(anonymizedUsageGroup.Steps, anonymizedUsageData)
@@ -87,6 +83,10 @@ func SendAnonymizedAnalytics(buildRunResults models.BuildRunResultsModel) error 
 			log.Warnf("Failed to close response body, error: %#v", err)
 		}
 	}()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 210 {
+		return fmt.Errorf("Sending analytics data, failed with status code: %d", resp.StatusCode)
+	}
 
 	return nil
 }

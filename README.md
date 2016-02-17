@@ -73,3 +73,20 @@ guide it prints.
 ## Documentation
 
 We added some documents to make it a bit easier to get started with Bitrise CLI. The documentation includes a quick and a little longer guides for CLI, a [React Native](http://facebook.github.io/react-native/) project workflow guide and an overview of the Step share process. You can find them in the [_docs](/_docs/) folder.
+
+## Analytics
+
+By default `bitrise` collects anonymized information about step run results.
+This usage helps us identify any problems with the integrations.
+Following informations are collected:
+
+* Step's id
+* Step's version
+* Step's runtime
+* Step's error
+
+NO logs or other data is included.
+
+To permanently DISABLE analytics call `bitrise disable-analytics`,
+to ENABLE: `bitrise enable-analytics`.
+If you want to DISABLE only for the next run use: `bitrise --analytics-disabled VALID_BITRISE_COMMAND`

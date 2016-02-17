@@ -1,4 +1,4 @@
-package bitrise
+package configs
 
 import (
 	"os"
@@ -16,7 +16,7 @@ func TestNewConfigFromBytes(t *testing.T) {
 		config, err := NewConfigFromBytes([]byte(configStr))
 		require.Equal(t, nil, err)
 
-		require.Equal(t, true, config.OptOutAnalytics)
+		require.Equal(t, true, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with bolean true")
@@ -26,7 +26,7 @@ func TestNewConfigFromBytes(t *testing.T) {
 		config, err := NewConfigFromBytes([]byte(configStr))
 		require.Equal(t, nil, err)
 
-		require.Equal(t, true, config.OptOutAnalytics)
+		require.Equal(t, true, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with bolean false")
@@ -36,7 +36,7 @@ func TestNewConfigFromBytes(t *testing.T) {
 		config, err := NewConfigFromBytes([]byte(configStr))
 		require.Equal(t, nil, err)
 
-		require.Equal(t, false, config.OptOutAnalytics)
+		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with string false")
@@ -46,7 +46,7 @@ func TestNewConfigFromBytes(t *testing.T) {
 		config, err := NewConfigFromBytes([]byte(configStr))
 		require.Equal(t, nil, err)
 
-		require.Equal(t, false, config.OptOutAnalytics)
+		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with integer")

@@ -25,16 +25,10 @@ func before(c *cli.Context) error {
 	initHelpAndVersionFlags()
 	initAppHelpTemplate()
 
-	config, err := bitrise.ReadConfig()
-	if err != nil {
-		log.Warnf("Failed to read config at: (%s)", bitrise.GetBitriseConfigFilePath())
-		log.Fatalf("Error: %#v", err)
-	}
-
 	// Debug mode?
 	if c.Bool(DebugModeKey) {
 		// set for other tools, as an ENV
-		if err := os.Setenv(bitrise.DebugModeEnvKey, "true"); err != nil {
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
 			return err
 		}
 		configs.IsDebugMode = true
@@ -59,7 +53,7 @@ func before(c *cli.Context) error {
 		return err
 	}
 
-	if err := os.Setenv(bitrise.LogLevelEnvKey, level.String()); err != nil {
+	if err := os.Setenv(configs.LogLevelEnvKey, level.String()); err != nil {
 		log.Fatal("Failed to set log level env:", err)
 	}
 	log.SetLevel(level)
@@ -68,41 +62,64 @@ func before(c *cli.Context) error {
 	if c.Bool(CIKey) {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
-		if err := os.Setenv(bitrise.CIModeEnvKey, "true"); err != nil {
+		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 			return err
 		}
 		configs.IsCIMode = true
 	}
 
-	if err := bitrise.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths: %s", err)
-	}
-
 	// Pull Request Mode check
 	if c.Bool(PRKey) {
+		configs.IsPullRequestMode = true
+	}
+	if os.Getenv(configs.PullRequestIDEnvKey) != "" {
+		configs.IsPullRequestMode = true
+	}
+	if os.Getenv(configs.PRModeEnvKey) == "true" {
+		configs.IsPullRequestMode = true
+	}
+
+	if configs.IsPullRequestMode {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
-		if err := os.Setenv(bitrise.PRModeEnvKey, "true"); err != nil {
+		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
 			return err
 		}
-		configs.IsPullRequestMode = true
 	}
 
-	pullReqID := os.Getenv(bitrise.PullRequestIDEnvKey)
-	if pullReqID != "" {
-		configs.IsPullRequestMode = true
+	// Analytics
+	fileConfig, err := configs.ReadConfig()
+	if err != nil {
+		log.Warnf("Failed to read config at: (%s)", configs.GetBitriseConfigFilePath())
+		log.Fatalf("Error: %#v", err)
+	}
+	configs.IsAnalyticsDisabled = fileConfig.IsAnalyticsDisabled
+
+	isAnalyticsDisabledEnvValue := os.Getenv(configs.IsAnalyticsDisabledEnvKey)
+	if isAnalyticsDisabledEnvValue != "" {
+		if isAnalyticsDisabledEnvValue == "true" {
+			configs.IsAnalyticsDisabled = true
+		} else if isAnalyticsDisabledEnvValue == "false" {
+			configs.IsAnalyticsDisabled = false
+		} else {
+			log.Warnf("Invalid IS_ANALYTICS_DISABLED env value: (%s), should be: (true/false)", isAnalyticsDisabledEnvValue)
+		}
 	}
 
-	IsPR := os.Getenv(bitrise.PRModeEnvKey)
-	if IsPR == "true" {
-		configs.IsPullRequestMode = true
+	if c.IsSet(AnalyticsDisabledKey) {
+		configs.IsAnalyticsDisabled = c.Bool(AnalyticsDisabledKey)
 	}
 
-	optOutAnalytics := os.Getenv(bitrise.OptOutAnalyticsEnvKey)
-	if optOutAnalytics != "" {
-		configs.OptOutUsageData = true
-	} else {
-		configs.OptOutUsageData = config.OptOutAnalytics
+	if configs.IsAnalyticsDisabled {
+		// if Analytics disabled make sure we set the related env
+		//  so all other tools we use will also get it
+		if err := os.Setenv(configs.IsAnalyticsDisabledEnvKey, "true"); err != nil {
+			return err
+		}
+	}
+
+	if err := bitrise.InitPaths(); err != nil {
+		log.Fatalf("Failed to initialize required paths: %s", err)
 	}
 
 	return nil

@@ -10,10 +10,9 @@ var (
 			Action: enableAnalytics,
 		},
 		{
-			Name:    "disable-analytics",
-			Aliases: []string{"s"},
-			Usage:   "Disable analytics.",
-			Action:  disableAnalytics,
+			Name:   "disable-analytics",
+			Usage:  "Disable analytics.",
+			Action: disableAnalytics,
 		},
 		{
 			Name:    "setup",
@@ -62,7 +61,6 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
-				flOptOutAnalytics,
 			},
 		},
 		{
@@ -87,7 +85,6 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
-				flOptOutAnalytics,
 			},
 		},
 		{
