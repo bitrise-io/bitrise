@@ -11,50 +11,46 @@ import (
 func TestNewConfigFromBytes(t *testing.T) {
 	t.Log("Check config with string true")
 	{
-		configStr := `opt_out_analytics: "true"`
-
+		configStr := `is_analytics_disabled: "true"`
 		config, err := NewConfigFromBytes([]byte(configStr))
-		require.Equal(t, nil, err)
 
-		require.Equal(t, true, config.IsAnalyticsDisabled)
+		require.Error(t, err)
+		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with bolean true")
 	{
-		configStr := `opt_out_analytics: true`
-
+		configStr := `is_analytics_disabled: true`
 		config, err := NewConfigFromBytes([]byte(configStr))
-		require.Equal(t, nil, err)
 
+		require.Equal(t, nil, err)
 		require.Equal(t, true, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with bolean false")
 	{
-		configStr := `opt_out_analytics: false`
-
+		configStr := `is_analytics_disabled: false`
 		config, err := NewConfigFromBytes([]byte(configStr))
-		require.Equal(t, nil, err)
 
+		require.Equal(t, nil, err)
 		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with string false")
 	{
-		configStr := `opt_out_analytics: "false"`
-
+		configStr := `is_analytics_disabled: "false"`
 		config, err := NewConfigFromBytes([]byte(configStr))
-		require.Equal(t, nil, err)
 
+		require.Error(t, err)
 		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 
 	t.Log("Check config with integer")
 	{
-		configStr := `opt_out_analytics: 0`
-
-		_, err := NewConfigFromBytes([]byte(configStr))
-		require.NotEqual(t, nil, err)
+		configStr := `is_analytics_disabled: 0`
+		config, err := NewConfigFromBytes([]byte(configStr))
+		require.Error(t, err)
+		require.Equal(t, false, config.IsAnalyticsDisabled)
 	}
 }
 
