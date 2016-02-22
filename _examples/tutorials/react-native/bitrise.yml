@@ -31,8 +31,7 @@ workflows:
           - name: watchman
           - name: flow
         inputs:
-        - content: react-native bundle --entry-file ./index.ios.js --platform ios
-            --bundle-output ios/main.jsbundle
+        - content: react-native bundle --entry-file ./index.ios.js --platform ios --bundle-output ios/main.jsbundle
     - xcode-archive:
         title: 'Xcode: Create Archive'
         inputs:
