@@ -183,15 +183,15 @@ var (
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "source",
-							Usage: "Plugin binary source url.",
+							Usage: "Plugin source url.",
 						},
 						cli.StringFlag{
-							Name:  "name",
-							Usage: "Plugin name.",
+							Name:  "bin-source",
+							Usage: "Plugin binary url.",
 						},
 						cli.StringFlag{
-							Name:  "type",
-							Usage: "Plugin type.",
+							Name:  "version",
+							Usage: "Plugin version tag.",
 						},
 					},
 				},

@@ -790,16 +790,16 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      startTime,
-		StepmanUpdates: map[string]int{},
-	}
-
 	environments = append(environments, workflowToRun.Environments...)
 
 	lastWorkflowID, err := lastWorkflowIDInConfig(workflowToRunID, bitriseConfig)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to get last workflow id: %s", err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime:      startTime,
+		StepmanUpdates: map[string]int{},
 	}
 
 	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
@@ -815,5 +815,6 @@ func runWorkflowWithConfiguration(
 	if buildRunResults.HasFailedSkippableSteps() {
 		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non-important steps failed")
 	}
+
 	return buildRunResults, nil
 }

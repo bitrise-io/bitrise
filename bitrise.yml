@@ -183,46 +183,43 @@ workflows:
   test:
     steps:
     - script:
-        title: GOPATH patch
+        title: Print infos for the test
         inputs:
         - content: |-
-            #!/bin/bash
+            set -x
+            go version
+            echo $GO15VENDOREXPERIMENT
+    - script:
+        title: GOLIST_WITHOUT_VENDOR
+        inputs:
+        - content: |-
             set -e
-            set -v
-
-            envman add --key ORIG_GOPATH --value "$GOPATH"
-            envman add --key GOPATH --value "$(godep path):$GOPATH"
+            set -x
+            no_vendor_paths="$(go list ./... | grep -v vendor)"
+            envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
+    - script:
+        title: Go Test
+        inputs:
+        - content: go test ./...
     - script:
         title: Err check
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            errcheck -asserts=true -blank=true $(godep go list ./...)
+        - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
     - script:
         title: Go Lint
         inputs:
         - content: |-
             #!/bin/bash
             set -e
-
-            golint_out="$(golint ./...)"
-            if [[ "${golint_out}" != "" ]] ; then
-              echo "=> Golint issues found:"
-              echo "${golint_out}"
-              exit 1
-            fi
-    - script:
-        title: Go Test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            godep go test ./...
+            while read -r line; do
+              echo "-> Linting: $line"
+              golint_out="$(golint $line)"
+              if [[ "${golint_out}" != "" ]] ; then
+                echo "=> Golint issues found:"
+                echo "${golint_out}"
+                exit 1
+              fi
+            done <<< "$GOLIST_WITHOUT_VENDOR"
     - script:
         title: Test-build
         inputs:
@@ -237,15 +234,6 @@ workflows:
 
             # setup for the original bitrise as well
             bitrise setup --minimal
-    - script:
-        title: revert GOPATH patch
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -v
-
-            envman add --key GOPATH --value "$ORIG_GOPATH"
     - script:
         title: Step-template test
         inputs:

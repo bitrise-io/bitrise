@@ -1,63 +1,39 @@
 package plugins
 
-import (
-	"fmt"
-	"strings"
-)
-
 const (
-
 	// TypeGeneric ...
 	TypeGeneric = "_"
-
 	// TypeInit ...
 	TypeInit = "init"
-
 	// TypeRun ....
 	TypeRun = "run"
 )
 
+// PluginRoute ...
+type PluginRoute struct {
+	Name       string `yaml:"name"`
+	Source     string `yaml:"source"`
+	Version    string `yaml:"version"`
+	CommitHash string `yaml:"commit_hash"`
+	Executable string `yaml:"executable"`
+}
+
+// PluginRouting ...
+type PluginRouting struct {
+	RouteMap map[string]PluginRoute `yaml:"route_map"`
+}
+
 // Plugin ...
 type Plugin struct {
-	Path string
-	Name string
-	Type string
+	Name         string        `yaml:"name"`
+	Description  string        `yaml:"description"`
+	Executable   string        `yaml:"executable"`
+	Requirements []Requirement `yaml:"requirements"`
 }
 
-// PrintableName ...
-func (plugin Plugin) PrintableName() string {
-	switch plugin.Type {
-	case TypeGeneric:
-		return fmt.Sprintf(":%s", plugin.Name)
-	default:
-		return fmt.Sprintf("%s:%s", plugin.Type, plugin.Name)
-	}
-}
-
-// ParsePrintableName ...
-func ParsePrintableName(printableName string) (string, string, error) {
-	if !strings.Contains(printableName, ":") {
-		return "", "", fmt.Errorf("Invalid plugin name: %s", printableName)
-	}
-
-	if strings.HasPrefix(printableName, ":") {
-		return strings.TrimPrefix(printableName, ":"), TypeGeneric, nil
-	}
-
-	splits := strings.Split(printableName, ":")
-	if len(splits) == 2 {
-		return splits[1], splits[0], nil
-	}
-
-	return "", "", fmt.Errorf("Invalid plugin name: %s", printableName)
-}
-
-// PrintableName ...
-func PrintableName(pluginName, pluginType string) string {
-	switch pluginType {
-	case TypeGeneric:
-		return fmt.Sprintf(":%s", pluginName)
-	default:
-		return fmt.Sprintf("%s:%s", pluginType, pluginName)
-	}
+// Requirement ...
+type Requirement struct {
+	Tool       string `yaml:"tool"`
+	MinVersion string `yaml:"min_version"`
+	MaxVersion string `yaml:"max_version"`
 }

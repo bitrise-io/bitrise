@@ -72,6 +72,10 @@ func before(c *cli.Context) error {
 		log.Fatalf("Failed to initialize required paths: %s", err)
 	}
 
+	if err := plugins.InitPaths(); err != nil {
+		log.Fatalf("Failed to initialize required plugin paths: %s", err)
+	}
+
 	// Pull Request Mode check
 	if c.Bool(PRKey) {
 		// if PR mode indicated make sure we set the related env
@@ -91,6 +95,8 @@ func before(c *cli.Context) error {
 	if IsPR == "true" {
 		configs.IsPullRequestMode = true
 	}
+
+	configs.BitriseVersionStr = c.App.Version
 
 	return nil
 }
@@ -118,25 +124,32 @@ func Run() {
 	app.Commands = commands
 
 	app.Action = func(c *cli.Context) {
-		pluginName, pluginType, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
+		log.Infof("Processing args: %v", c.Args())
+		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
-			log.SetLevel(log.DebugLevel)
-			log.Debugln()
-			log.Debugf("Try to run bitrise plugin: (%s) (type: %s) with args: (%v)", pluginName, pluginType, pluginArgs)
+			log.Debugf("Try to run bitrise plugin: (%s) with args: (%v)", pluginName, pluginArgs)
 
-			printableName := plugins.PrintableName(pluginName, pluginType)
-			log.Debugf("Plugin: %v", printableName)
-
-			plugin, err := plugins.GetPlugin(pluginName, pluginType)
+			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
-				log.Fatalf("Failed to get plugin (%s), err: %s", printableName, err)
+				log.Fatalf("Failed to get plugin (%s), err: %s", pluginName, err)
+			}
+			if !found {
+				log.Fatalf("Plugin (%s) not installed", pluginName)
 			}
 
-			messageFromPlugin, err := plugins.RunPlugin(app.Version, plugin, pluginArgs)
-			log.Debugf("message from plugin: %s", messageFromPlugin)
+			defer func() {
+				if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
+					log.Fatalf("Failed to check for plugin (%s) new version", pluginName)
+				} else if newVersion != "" {
+					log.Warningf("New version (%s) of plugin (%s) available", newVersion, pluginName)
+				} else {
+					log.Debugf("No new version of plugin (%s) available", pluginName)
+				}
+			}()
 
-			if err != nil {
-				log.Fatalf("Failed to run plugin (%s), err: %s", printableName, err)
+			log.Debugf("Start plugin: (%s)", pluginName)
+			if err := plugins.RunPlugin(plugin, pluginArgs); err != nil {
+				log.Fatalf("Failed to run plugin (%s), err: %s", pluginName, err)
 			}
 		} else {
 			cli.ShowAppHelp(c)
