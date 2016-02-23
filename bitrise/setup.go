@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 )
 
 const (
@@ -30,7 +31,7 @@ func RunSetup(appVersion string, isMinimalSetupMode bool) error {
 		return errors.New("Sorry, unsupported platform :(")
 	}
 
-	if err := SaveSetupSuccessForVersion(appVersion); err != nil {
+	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
 		return fmt.Errorf("Failed to save setup-success into config file: %s", err)
 	}
 

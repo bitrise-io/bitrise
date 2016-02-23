@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/codegangsta/cli"
 )
 
@@ -78,35 +78,51 @@ const (
 	GitKey = "git"
 	// StepIDKey ...
 	StepIDKey = "stepid"
+
+	//
+	// Analytics
+
+	// AnalyticsDisabledKey ...
+	AnalyticsDisabledKey = "analytics-disabled"
 )
 
 var (
+	//
 	// App flags
 	flLogLevel = cli.StringFlag{
 		Name:   LogLevelKey + ", " + logLevelKeyShort,
 		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
-		EnvVar: bitrise.LogLevelEnvKey,
+		EnvVar: configs.LogLevelEnvKey,
 	}
 	flDebugMode = cli.BoolFlag{
 		Name:   DebugModeKey,
 		Usage:  "If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug.",
-		EnvVar: bitrise.DebugModeEnvKey,
+		EnvVar: configs.DebugModeEnvKey,
 	}
 	flTool = cli.BoolFlag{
 		Name:   CIKey,
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
-		EnvVar: bitrise.CIModeEnvKey,
+		EnvVar: configs.CIModeEnvKey,
 	}
 	flPRMode = cli.BoolFlag{
-		Name:  PRKey,
-		Usage: "If true bitrise runs in pull request mode.",
+		Name:   PRKey,
+		Usage:  "If true bitrise runs in pull request mode.",
+		EnvVar: configs.PRModeEnvKey,
+	}
+	flAnalyticsDisabled = cli.BoolFlag{
+		Name:   AnalyticsDisabledKey,
+		Usage:  "Disable anonymized analytics data.",
+		EnvVar: configs.IsAnalyticsDisabledEnvKey,
 	}
 	flags = []cli.Flag{
 		flLogLevel,
 		flDebugMode,
 		flTool,
 		flPRMode,
+		flAnalyticsDisabled,
 	}
+
+	//
 	// Command flags
 	flOutputFormat = cli.StringFlag{
 		Name:  OuputFormatKey + ", " + ouputFormatKeyShort,
@@ -171,7 +187,6 @@ var (
 		Name:  StepYMLKey,
 		Usage: "Path of step.yml",
 	}
-
 	// Stepman share
 	flTag = cli.StringFlag{
 		Name:  TagKey,

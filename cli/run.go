@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
@@ -87,7 +88,7 @@ func run(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 	log.Debugln("[BITRISE_CLI] - Run")
 
-	if !bitrise.CheckIsSetupWasDoneForVersion(c.App.Version) {
+	if !configs.CheckIsSetupWasDoneForVersion(c.App.Version) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
 		if err := bitrise.RunSetup(c.App.Version, false); err != nil {
 			log.Fatalln("Setup failed:", err)
@@ -95,6 +96,9 @@ func run(c *cli.Context) {
 	}
 
 	startTime := time.Now()
+
+	// ------------------------
+	// Input validation
 
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(c)

@@ -5,6 +5,16 @@ import "github.com/codegangsta/cli"
 var (
 	commands = []cli.Command{
 		{
+			Name:   "enable-analytics",
+			Usage:  "Enable analytics.",
+			Action: enableAnalytics,
+		},
+		{
+			Name:   "disable-analytics",
+			Usage:  "Disable analytics.",
+			Action: disableAnalytics,
+		},
+		{
 			Name:    "setup",
 			Aliases: []string{"s"},
 			Usage:   "Setup the current host. Install every required tool to run Workflows.",

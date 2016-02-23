@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
@@ -98,7 +99,7 @@ func TestRegisteredFunctions(t *testing.T) {
 func TestCIFlagsAndEnvs(t *testing.T) {
 	defer func() {
 		// env cleanup
-		if err := os.Unsetenv(CIModeEnvKey); err != nil {
+		if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
 	}()
@@ -107,7 +108,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont := `{{.IsCI}}`
 	t.Log("IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err := EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -120,7 +121,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsCI}}`
 	t.Log("IsCI=fase; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -133,7 +134,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsCI}}`
 	t.Log("[unset] IsCI; propTempCont: ", propTempCont)
-	if err := os.Unsetenv(CIModeEnvKey); err != nil {
+	if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -146,7 +147,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `$.IsCI`
 	t.Log("IsCI=true; short with $; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -159,7 +160,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `.IsCI`
 	t.Log("IsCI=true; short, no $; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env!")
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -172,7 +173,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsCI`
 	t.Log("IsCI=true; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -185,7 +186,7 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsCI`
 	t.Log("IsCI=false; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "false"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "false"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -200,13 +201,13 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 func TestPullRequestFlagsAndEnvs(t *testing.T) {
 	defer func() {
 		// env cleanup
-		if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
+		if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
 	}()
 
 	// env cleanup
-	if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
+	if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
 		t.Error("Failed to unset environment: ", err)
 	}
 
@@ -224,7 +225,7 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `{{.IsPR}}`
 	t.Log("IsPR=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(PullRequestIDEnvKey, "123"); err != nil {
+	if err := os.Setenv(configs.PullRequestIDEnvKey, "123"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, false, true, buildRes, envmanModels.EnvsJSONListModel{})
@@ -239,10 +240,10 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 	defer func() {
 		// env cleanup
-		if err := os.Unsetenv(PullRequestIDEnvKey); err != nil {
+		if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
-		if err := os.Unsetenv(CIModeEnvKey); err != nil {
+		if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
 	}()
@@ -271,7 +272,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `not .IsPR | and .IsCI`
 	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -284,7 +285,7 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `.IsPR | and .IsCI`
 	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
@@ -297,10 +298,10 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	propTempCont = `.IsPR | and .IsCI`
 	t.Log("IsPR=true & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(PullRequestIDEnvKey, "123"); err != nil {
+	if err := os.Setenv(configs.PullRequestIDEnvKey, "123"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
-	if err := os.Setenv(CIModeEnvKey, "true"); err != nil {
+	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 		t.Fatal("Failed to set test env! : ", err)
 	}
 	isYes, err = EvaluateTemplateToBool(propTempCont, true, true, buildRes, envmanModels.EnvsJSONListModel{})

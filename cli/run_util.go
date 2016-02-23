@@ -10,6 +10,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -30,16 +31,16 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 		}
 
 		if !configs.IsCIMode {
-			if key == bitrise.CIModeEnvKey && value == "true" {
+			if key == configs.CIModeEnvKey && value == "true" {
 				configs.IsCIMode = true
 			}
 		}
 
 		if !configs.IsPullRequestMode {
-			if key == bitrise.PullRequestIDEnvKey && value != "" {
+			if key == configs.PullRequestIDEnvKey && value != "" {
 				configs.IsPullRequestMode = true
 			}
-			if key == bitrise.PRModeEnvKey && value == "true" {
+			if key == configs.PRModeEnvKey && value == "true" {
 				configs.IsPullRequestMode = true
 			}
 		}
@@ -51,6 +52,7 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 	if configs.IsPullRequestMode {
 		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
 	}
+	log.Info(colorstring.Yellowf("bitrise analytics disabled: %v", configs.IsAnalyticsDisabled))
 
 	return nil
 }
@@ -800,6 +802,14 @@ func runWorkflowWithConfiguration(
 	lastWorkflowID, err := lastWorkflowIDInConfig(workflowToRunID, bitriseConfig)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to get last workflow id: %s", err)
+	}
+
+	if configs.IsAnalyticsDisabled == false {
+		defer func() {
+			if err := analytics.SendAnonymizedAnalytics(buildRunResults); err != nil {
+				log.Warnf("Failed to send analytics, error: %#v", err)
+			}
+		}()
 	}
 
 	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
