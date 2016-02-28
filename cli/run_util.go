@@ -813,7 +813,7 @@ func runWorkflowWithConfiguration(
 		return buildRunResults, errors.New("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
 	}
 	if buildRunResults.HasFailedSkippableSteps() {
-		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
+		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non-important steps failed")
 	}
 	return buildRunResults, nil
 }
