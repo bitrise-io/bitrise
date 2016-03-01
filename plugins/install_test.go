@@ -11,16 +11,6 @@ import (
 )
 
 func TestValidateVersion(t *testing.T) {
-	t.Log("no requirements")
-	{
-		current, err := ver.NewVersion("1.0.1")
-		require.NoError(t, err)
-
-		err = validateVersion(nil, nil, current)
-		t.Log("test")
-		require.NoError(t, err)
-	}
-
 	t.Log("required min - pass")
 	{
 		requiredMin, err := ver.NewVersion("1.0.0")
@@ -29,7 +19,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.1")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, nil, current)
+		err = validateVersion(*current, *requiredMin, nil)
 		require.NoError(t, err)
 	}
 
@@ -41,31 +31,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.1")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, nil, current)
-		require.Error(t, err)
-	}
-
-	t.Log("required max - pass")
-	{
-		requiredMax, err := ver.NewVersion("1.0.2")
-		require.NoError(t, err)
-
-		current, err := ver.NewVersion("1.0.1")
-		require.NoError(t, err)
-
-		err = validateVersion(nil, requiredMax, current)
-		require.NoError(t, err)
-	}
-
-	t.Log("required max - fail")
-	{
-		requiredMax, err := ver.NewVersion("1.0.0")
-		require.NoError(t, err)
-
-		current, err := ver.NewVersion("1.0.1")
-		require.NoError(t, err)
-
-		err = validateVersion(nil, requiredMax, current)
+		err = validateVersion(*current, *requiredMin, nil)
 		require.Error(t, err)
 	}
 
@@ -80,7 +46,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.1")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, requiredMax, current)
+		err = validateVersion(*current, *requiredMin, requiredMax)
 		require.NoError(t, err)
 	}
 
@@ -95,7 +61,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.0")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, requiredMax, current)
+		err = validateVersion(*current, *requiredMin, requiredMax)
 		require.NoError(t, err)
 	}
 
@@ -110,7 +76,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.0")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, requiredMax, current)
+		err = validateVersion(*current, *requiredMin, requiredMax)
 		require.Error(t, err)
 	}
 
@@ -125,7 +91,7 @@ func TestValidateVersion(t *testing.T) {
 		current, err := ver.NewVersion("1.0.2")
 		require.NoError(t, err)
 
-		err = validateVersion(requiredMin, requiredMax, current)
+		err = validateVersion(*current, *requiredMin, requiredMax)
 		require.Error(t, err)
 	}
 }
