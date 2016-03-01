@@ -28,8 +28,8 @@ const (
 	DefaultSkipIfEmpty = false
 )
 
-// CreateFromJSON ...
-func (envList EnvsJSONListModel) CreateFromJSON(jsonStr string) (EnvsJSONListModel, error) {
+// NewEnvJSONList ...
+func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
 	list := EnvsJSONListModel{}
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
 		return EnvsJSONListModel{}, err
