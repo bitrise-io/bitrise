@@ -87,12 +87,12 @@ func command(dir, name string, args ...string) error {
 // RunPlugin ...
 func RunPlugin(plugin Plugin, args []string) error {
 	// Create plugin input
-	bitriseVersionPtr, err := configs.GetBitriseVersion()
+	bitriseVersion, err := configs.BitriseVersion()
 	if err != nil {
 		return err
 	}
 
-	pluginInputBytes, err := json.Marshal(map[string]string{"version": bitriseVersionPtr.String()})
+	pluginInputBytes, err := json.Marshal(map[string]string{"version": bitriseVersion.String()})
 	if err != nil {
 		return err
 	}
