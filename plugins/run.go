@@ -152,7 +152,7 @@ func RunPlugin(plugin Plugin, args []string) error {
 		return err
 	}
 
-	envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+	envList, err := envmanModels.NewEnvJSONList(outStr)
 	if err != nil {
 		return err
 	}

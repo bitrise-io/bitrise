@@ -317,7 +317,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
 
-			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
@@ -640,7 +640,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep, false)
 				continue
