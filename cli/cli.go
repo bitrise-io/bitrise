@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/codegangsta/cli"
 )
 
@@ -96,8 +97,6 @@ func before(c *cli.Context) error {
 		configs.IsPullRequestMode = true
 	}
 
-	configs.BitriseVersionStr = c.App.Version
-
 	return nil
 }
 
@@ -113,7 +112,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = "1.3.0"
+	app.Version = version.VERSION
 
 	app.Author = ""
 	app.Email = ""

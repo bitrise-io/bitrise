@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/codegangsta/cli"
 	ver "github.com/hashicorp/go-version"
 )
@@ -22,9 +23,6 @@ var (
 
 // OutputFormat ...
 var OutputFormat = OutputFormatRaw
-
-// BitriseVersionStr ...
-var BitriseVersionStr = ""
 
 // ---------------------------
 // --- Consts
@@ -57,14 +55,14 @@ func ConfigureOutputFormat(c *cli.Context) error {
 	return nil
 }
 
-// GetBitriseVersion ...
-func GetBitriseVersion() (ver.Version, error) {
-	bitriseVersionPtr, err := ver.NewVersion(BitriseVersionStr)
+// BitriseVersion ...
+func BitriseVersion() (ver.Version, error) {
+	bitriseVersionPtr, err := ver.NewVersion(version.VERSION)
 	if err != nil {
 		return ver.Version{}, err
 	}
 	if bitriseVersionPtr == nil {
-		return ver.Version{}, fmt.Errorf("Failed to parse version (%s)", BitriseVersionStr)
+		return ver.Version{}, fmt.Errorf("Failed to parse version (%s)", version.VERSION)
 	}
 
 	return *bitriseVersionPtr, nil
@@ -82,16 +80,13 @@ func VersionMap() (map[string]ver.Version, error) {
 		return map[string]ver.Version{}, err
 	}
 
-	bitriseVersionPtr, err := ver.NewVersion(BitriseVersionStr)
+	bitriseVersion, err := BitriseVersion()
 	if err != nil {
 		return map[string]ver.Version{}, err
 	}
-	if bitriseVersionPtr == nil {
-		return map[string]ver.Version{}, fmt.Errorf("Failed to parse version (%s)", BitriseVersionStr)
-	}
 
 	return map[string]ver.Version{
-		"bitrise": *bitriseVersionPtr,
+		"bitrise": bitriseVersion,
 		"envman":  envmanVersion,
 		"stepman": stepmanVersion,
 	}, nil
