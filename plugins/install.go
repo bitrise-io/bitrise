@@ -29,13 +29,13 @@ func validatePath(pth string) error {
 	return nil
 }
 
-func validateVersion(requiredMin, requiredMax, current *ver.Version) error {
-	if requiredMin != nil && current.Compare(requiredMin) == -1 {
-		return fmt.Errorf("Current version (%s) is less then min version (%s)  ", (*current).String(), (*requiredMin).String())
+func validateVersion(current, requiredMin ver.Version, requiredMax *ver.Version) error {
+	if current.Compare(&requiredMin) == -1 {
+		return fmt.Errorf("Current version (%s) is less then min version (%s)  ", current.String(), requiredMin.String())
 	}
 
 	if requiredMax != nil && current.Compare(requiredMax) == 1 {
-		return fmt.Errorf("Current version (%s) is greater then max version (%s)  ", (*current).String(), (*requiredMax).String())
+		return fmt.Errorf("Current version (%s) is greater then max version (%s)  ", current.String(), (*requiredMax).String())
 	}
 
 	return nil
@@ -48,11 +48,13 @@ func validateRequirements(requirements []Requirement, currentVersionMap map[stri
 		currentVersion := currentVersionMap[requirement.Tool]
 
 		var minVersionPtr *ver.Version
-		if requirement.MinVersion != "" {
-			minVersionPtr, err = ver.NewVersion(requirement.MinVersion)
-			if err != nil {
-				return fmt.Errorf("failed to parse plugin required min version (%s) for tool (%s), error: %s", requirement.MinVersion, requirement.Tool, err)
-			}
+		if requirement.MinVersion == "" {
+			return fmt.Errorf("plugin requirement min version is required")
+		}
+
+		minVersionPtr, err = ver.NewVersion(requirement.MinVersion)
+		if err != nil {
+			return fmt.Errorf("failed to parse plugin required min version (%s) for tool (%s), error: %s", requirement.MinVersion, requirement.Tool, err)
 		}
 
 		var maxVersionPtr *ver.Version
@@ -63,7 +65,7 @@ func validateRequirements(requirements []Requirement, currentVersionMap map[stri
 			}
 		}
 
-		if err := validateVersion(minVersionPtr, maxVersionPtr, &currentVersion); err != nil {
+		if err := validateVersion(currentVersion, *minVersionPtr, maxVersionPtr); err != nil {
 			return fmt.Errorf("checking plugin tool (%s) requirements failed, error: %s", requirement.Tool, err)
 		}
 	}
@@ -77,25 +79,24 @@ func clonePluginSrc(sourceURL, versionTag, destinationDir string) (*ver.Version,
 		return nil, "", fmt.Errorf("failed to parse url (%s), error: %s", sourceURL, err)
 	}
 
-	var clonedVersion *ver.Version
-	commitHash := ""
-
+	// Download local source dir
 	if url.Scheme == "file" {
 		sourceDir := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
 
 		if err := cmdex.CopyDir(sourceDir, destinationDir, true); err != nil {
 			return nil, "", fmt.Errorf("failed to copy (%s) to (%s), error: %s", sourceDir, destinationDir, err)
 		}
-	} else {
-		version, hash, err := GitCloneAndCheckoutVersion(destinationDir, sourceURL, versionTag)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to git clone (%s), error: %s", sourceURL, err)
-		}
-		clonedVersion = version
-		commitHash = hash
+
+		return nil, "", nil
 	}
 
-	return clonedVersion, commitHash, nil
+	// Download remote source dir
+	version, hash, err := GitCloneAndCheckoutVersion(destinationDir, sourceURL, versionTag)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to git clone (%s), error: %s", sourceURL, err)
+	}
+
+	return version, hash, nil
 }
 
 func downloadPluginBin(sourceURL, destinationPth string) error {
@@ -104,6 +105,17 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 		return fmt.Errorf("failed to parse url (%s), error: %s", sourceURL, err)
 	}
 
+	// Download local binary
+	if url.Scheme == "file" {
+		src := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
+
+		if err := cmdex.CopyFile(src, destinationPth); err != nil {
+			return fmt.Errorf("failed to copy (%s) to (%s)", src, destinationPth)
+		}
+		return nil
+	}
+
+	// Download remote binary
 	out, err := os.Create(destinationPth)
 	defer func() {
 		if err := out.Close(); err != nil {
@@ -114,27 +126,19 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 		return fmt.Errorf("failed to create (%s), error: %s", destinationPth, err)
 	}
 
-	if url.Scheme == "file" {
-		src := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
+	resp, err := http.Get(sourceURL)
+	if err != nil {
+		return fmt.Errorf("failed to download from (%s), error: %s", sourceURL, err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf("failed to close (%s) body", sourceURL)
+		}
+	}()
 
-		if err := cmdex.CopyFile(src, destinationPth); err != nil {
-			return fmt.Errorf("failed to copy (%s) to (%s)", src, destinationPth)
-		}
-	} else {
-		resp, err := http.Get(sourceURL)
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				log.Warnf("failed to close (%s) body", sourceURL)
-			}
-		}()
-		if err != nil {
-			return fmt.Errorf("failed to download from (%s), error: %s", sourceURL, err)
-		}
-
-		_, err = io.Copy(out, resp.Body)
-		if err != nil {
-			return fmt.Errorf("failed to download from (%s), error: %s", sourceURL, err)
-		}
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to download from (%s), error: %s", sourceURL, err)
 	}
 
 	return nil
