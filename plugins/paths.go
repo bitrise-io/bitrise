@@ -31,8 +31,8 @@ var (
 // -----------------------
 
 // AddPluginRoute ...
-func AddPluginRoute(name, source, executable, version, commitHash string) error {
-	newRoute, err := NewPluginRoute(name, source, executable, version, commitHash)
+func AddPluginRoute(name, source, executable, version, commitHash, triggerEvent string) error {
+	newRoute, err := NewPluginRoute(name, source, executable, version, commitHash, triggerEvent)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func DeletePluginRoute(name string) error {
 
 // GetPluginVersion ...
 func GetPluginVersion(name string) (*ver.Version, error) {
-	route, found, err := readPluginRoute(name)
+	route, found, err := ReadPluginRoute(name)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,8 @@ func GetPluginVersion(name string) (*ver.Version, error) {
 	return pluginVersion, nil
 }
 
-func readPluginRoute(name string) (PluginRoute, bool, error) {
+// ReadPluginRoute ...
+func ReadPluginRoute(name string) (PluginRoute, bool, error) {
 	routing, err := readPluginRouting()
 	if err != nil {
 		return PluginRoute{}, false, err
@@ -134,7 +135,7 @@ func GetPluginYMLPath(name string) string {
 
 // GetPluginExecutablePath ...
 func GetPluginExecutablePath(name string) (string, bool, error) {
-	route, found, err := readPluginRoute(name)
+	route, found, err := ReadPluginRoute(name)
 	if err != nil {
 		return "", false, err
 	}

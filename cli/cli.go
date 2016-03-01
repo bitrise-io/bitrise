@@ -147,7 +147,7 @@ func Run() {
 			}()
 
 			log.Debugf("Start plugin: (%s)", pluginName)
-			if err := plugins.RunPlugin(plugin, pluginArgs); err != nil {
+			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
 				log.Fatalf("Failed to run plugin (%s), err: %s", pluginName, err)
 			}
 		} else {

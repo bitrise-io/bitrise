@@ -84,8 +84,8 @@ func command(dir, name string, args ...string) error {
 // Main
 //=======================================
 
-// RunPlugin ...
-func RunPlugin(plugin Plugin, args []string) error {
+// RunPluginByCommand ...
+func RunPluginByCommand(plugin Plugin, args []string) error {
 	// Create plugin input
 	bitriseVersion, err := configs.BitriseVersion()
 	if err != nil {
@@ -98,6 +98,13 @@ func RunPlugin(plugin Plugin, args []string) error {
 	}
 	pluginInputStr := string(pluginInputBytes)
 
+	// Run plugin
+	return RunPlugin(plugin, args, pluginInputStr)
+}
+
+// RunPlugin ...
+func RunPlugin(plugin Plugin, args []string, pluginInput string) error {
+	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
 	if err != nil {
 		return err
@@ -118,11 +125,12 @@ func RunPlugin(plugin Plugin, args []string) error {
 		return err
 	}
 
-	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrisePluginInputEnvKey, pluginInputStr, false); err != nil {
+	log.Debugf("plugin evstore path (%s)", pluginEnvstorePath)
+
+	// Add plugin input
+	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrisePluginInputEnvKey, pluginInput, false); err != nil {
 		return err
 	}
-
-	log.Debugf("plugin evstore path (%s)", pluginEnvstorePath)
 
 	// Run plugin executable
 	pluginExecutable, isBin, err := GetPluginExecutablePath(plugin.Name)
