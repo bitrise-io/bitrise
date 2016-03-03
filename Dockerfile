@@ -1,4 +1,4 @@
-FROM golang:1.5-wheezy
+FROM golang:1.6
 
 ENV PROJ_NAME bitrise
 
