@@ -1,5 +1,7 @@
 # Bitrise (offline) CLI
 
+[![Slack channel](http://chat.bitrise.io/badge.svg)](http://chat.bitrise.io)
+
 Run your Bitrise automations with this CLI tool on any Mac or Linux machine, and use the same configuration on
 [bitrise.io](https://www.bitrise.io) (automation service, with a mobile app focus).
 
@@ -13,6 +15,13 @@ For a nice & quick intro you should check: [https://www.bitrise.io/cli](https://
 
 The installation is quick and easy, check the latest release for instructions at: [https://github.com/bitrise-io/bitrise/releases](https://github.com/bitrise-io/bitrise/releases)
 
+Installing with Homebrew:
+
+`brew update && install bitrise`
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for `bitrise` to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call `bitrise run`.
 
 ## Tutorials and Examples
 

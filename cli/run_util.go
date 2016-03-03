@@ -317,7 +317,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
 
-			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
@@ -640,7 +640,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			envList, err := envmanModels.EnvsJSONListModel{}.CreateFromJSON(outStr)
+			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep, false)
 				continue
@@ -790,16 +790,16 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
 	}
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      startTime,
-		StepmanUpdates: map[string]int{},
-	}
-
 	environments = append(environments, workflowToRun.Environments...)
 
 	lastWorkflowID, err := lastWorkflowIDInConfig(workflowToRunID, bitriseConfig)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to get last workflow id: %s", err)
+	}
+
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime:      startTime,
+		StepmanUpdates: map[string]int{},
 	}
 
 	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
@@ -813,7 +813,8 @@ func runWorkflowWithConfiguration(
 		return buildRunResults, errors.New("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
 	}
 	if buildRunResults.HasFailedSkippableSteps() {
-		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non imporatant steps failed")
+		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non-important steps failed")
 	}
+
 	return buildRunResults, nil
 }

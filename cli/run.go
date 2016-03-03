@@ -24,14 +24,14 @@ const (
 	depManagerTryCheck = "_"
 )
 
-func aboutUtilityWorkflos() {
+func aboutUtilityWorkflows() {
 	log.Infoln("Note about utility workflows:")
 	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
 	log.Infoln(" these can't be triggered directly but can be used by other workflows")
 	log.Infoln(" in the before_run and after_run blocks.")
 }
 
-func printAboutUtilityWorkflos() {
+func printAboutUtilityWorkflows() {
 	log.Error("Utility workflows can't be triggered directly")
 	fmt.Println()
 	log.Infoln("Note about utility workflows:")
@@ -76,7 +76,7 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 		}
 
 		fmt.Println()
-		aboutUtilityWorkflos()
+		aboutUtilityWorkflows()
 		fmt.Println()
 	}
 
@@ -127,7 +127,7 @@ func run(c *cli.Context) {
 	if strings.HasPrefix(workflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
-		printAboutUtilityWorkflos()
+		printAboutUtilityWorkflows()
 	}
 
 	// Run selected configuration

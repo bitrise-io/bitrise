@@ -18,6 +18,10 @@ Then:
 chmod +x /usr/local/bin/bitrise
 ```
 
+Or you can install it with Homebrew on your Mac:
+
+`brew update && brew install bitrise`
+
 That's all, you're ready to go!
 
 Optionally, you can call `bitrise setup` to verify that everything what's required for `bitrise` to run
