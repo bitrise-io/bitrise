@@ -316,6 +316,12 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		newVersionStr = (*newVersionPtr).String()
 	}
 
+	pluginDataDir := path.Join(pluginDir, "data")
+	if err := os.MkdirAll(pluginDataDir, 0777); err != nil {
+		installSucced = false
+		return Plugin{}, "", fmt.Errorf("failed to create plugin data dir (%s), error: %s", pluginDataDir, err)
+	}
+
 	if err := AddPluginRoute(newPlugin.Name, srcURL, executableURL, newVersionStr, newVersinHash, newPlugin.TriggerEvent); err != nil {
 		installSucced = false
 		return Plugin{}, "", fmt.Errorf("failed to add plugin route, error: %s", err)
