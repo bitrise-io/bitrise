@@ -128,6 +128,11 @@ func GetPluginBinDir(name string) string {
 	return path.Join(GetPluginDir(name), "bin")
 }
 
+// GetPluginDataDir ...
+func GetPluginDataDir(name string) string {
+	return path.Join(GetPluginDir(name), "data")
+}
+
 // GetPluginYMLPath ...
 func GetPluginYMLPath(name string) string {
 	return path.Join(GetPluginSrcDir(name), pluginYMLName)

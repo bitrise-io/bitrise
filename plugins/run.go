@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"encoding/json"
 	"os"
 	"os/exec"
 	"path"
@@ -84,26 +83,37 @@ func command(dir, name string, args ...string) error {
 // Main
 //=======================================
 
+// RunPluginByEvent ...
+func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
+	return runPlugin(plugin, []string{}, pluginInput)
+}
+
 // RunPluginByCommand ...
 func RunPluginByCommand(plugin Plugin, args []string) error {
-	// Create plugin input
+	return runPlugin(plugin, args, PluginInput{})
+}
+
+func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
+	defer func() {
+		if newVersion, err := CheckForNewVersion(plugin); err != nil {
+			log.Warnf("")
+			log.Warnf("Failed to check for plugin (%s) new version", plugin.Name)
+		} else if newVersion != "" {
+			log.Warnf("")
+			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
+		} else {
+			log.Debugf("No new version of plugin (%s) available", plugin.Name)
+		}
+	}()
+
+	// Append common data to plugin iputs
 	bitriseVersion, err := configs.BitriseVersion()
 	if err != nil {
 		return err
 	}
+	pluginInput[pluginInputBitriseVersionKey] = bitriseVersion.String()
+	pluginInput[pluginInputDataDirKey] = GetPluginDataDir(plugin.Name)
 
-	pluginInputBytes, err := json.Marshal(map[string]string{"version": bitriseVersion.String()})
-	if err != nil {
-		return err
-	}
-	pluginInputStr := string(pluginInputBytes)
-
-	// Run plugin
-	return RunPlugin(plugin, args, pluginInputStr)
-}
-
-// RunPlugin ...
-func RunPlugin(plugin Plugin, args []string, pluginInput string) error {
 	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
 	if err != nil {
@@ -127,9 +137,11 @@ func RunPlugin(plugin Plugin, args []string, pluginInput string) error {
 
 	log.Debugf("plugin evstore path (%s)", pluginEnvstorePath)
 
-	// Add plugin input
-	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrisePluginInputEnvKey, pluginInput, false); err != nil {
-		return err
+	// Add plugin inputs
+	for key, value := range pluginInput {
+		if err := bitrise.EnvmanAdd(pluginEnvstorePath, key, value, false); err != nil {
+			return err
+		}
 	}
 
 	// Run plugin executable
