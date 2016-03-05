@@ -1572,7 +1572,6 @@ workflows:
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, "[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch", err.Error())
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))

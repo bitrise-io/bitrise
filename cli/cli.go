@@ -123,7 +123,6 @@ func Run() {
 	app.Commands = commands
 
 	app.Action = func(c *cli.Context) {
-		log.Infof("Processing args: %v", c.Args())
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
 			log.Debugf("Try to run bitrise plugin: (%s) with args: (%v)", pluginName, pluginArgs)
@@ -135,16 +134,6 @@ func Run() {
 			if !found {
 				log.Fatalf("Plugin (%s) not installed", pluginName)
 			}
-
-			defer func() {
-				if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
-					log.Fatalf("Failed to check for plugin (%s) new version", pluginName)
-				} else if newVersion != "" {
-					log.Warningf("New version (%s) of plugin (%s) available", newVersion, pluginName)
-				} else {
-					log.Debugf("No new version of plugin (%s) available", pluginName)
-				}
-			}()
 
 			log.Debugf("Start plugin: (%s)", pluginName)
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
