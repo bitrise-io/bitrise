@@ -3,8 +3,6 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/bitrise-io/bitrise/configs"
 )
 
 // TriggerEventName ...
@@ -18,21 +16,16 @@ const (
 // TriggerEvent ...
 func TriggerEvent(name TriggerEventName, payload interface{}) error {
 	// Create plugin input
-	bitriseVersion, err := configs.BitriseVersion()
+	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	pluginInputModel := map[string]interface{}{
-		"version": bitriseVersion.String(),
-		"payload": payload,
+	pluginInput := PluginInput{
+		pluginInputPayloadKey:      string(payloadBytes),
+		pluginInputTriggerEventKey: string(name),
+		pluginInputPluginModeKey:   string(triggerMode),
 	}
-
-	pluginInputBytes, err := json.Marshal(pluginInputModel)
-	if err != nil {
-		return err
-	}
-	pluginInputStr := string(pluginInputBytes)
 
 	// Load plugins
 	plugins, err := LoadPlugins(string(name))
@@ -42,7 +35,7 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 
 	// Run plugins
 	for _, plugin := range plugins {
-		if err := RunPlugin(plugin, []string{}, pluginInputStr); err != nil {
+		if err := RunPluginByEvent(plugin, pluginInput); err != nil {
 			return err
 		}
 	}

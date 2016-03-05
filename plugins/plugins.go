@@ -10,11 +10,27 @@ import (
 )
 
 const (
-	bitrisePluginInputEnvKey  = "BITRISE_PLUGIN_INPUT"
+	pluginInputPayloadKey        = "BITRISE_PLUGIN_INPUT_PAYLOAD"
+	pluginInputBitriseVersionKey = "BITRISE_PLUGIN_INPUT_BITRISE_VERSION"
+	pluginInputTriggerEventKey   = "BITRISE_PLUGIN_INPUT_TRIGGER"
+	pluginInputPluginModeKey     = "BITRISE_PLUGIN_INPUT_PLUGIN_MODE"
+	pluginInputDataDirKey        = "BITRISE_PLUGIN_INPUT_DATA_DIR"
+
 	bitrisePluginOutputEnvKey = "BITRISE_PLUGIN_OUTPUT"
 )
 
 const bitrisePluginPrefix = ":"
+
+const (
+	triggerMode PluginMode = "trigger"
+	commandMode PluginMode = "command"
+)
+
+// PluginMode ...
+type PluginMode string
+
+// PluginInput ...
+type PluginInput map[string]string
 
 // ParseArgs ...
 func ParseArgs(args []string) (string, []string, bool) {
@@ -48,31 +64,45 @@ func ParseArgs(args []string) (string, []string, bool) {
 
 // CheckForNewVersion ...
 func CheckForNewVersion(plugin Plugin) (string, error) {
-	pluginDir := GetPluginDir(plugin.Name)
+	pluginSrcDir := GetPluginSrcDir(plugin.Name)
 
-	gitDirPath := path.Join(pluginDir, ".git")
+	gitDirPath := path.Join(pluginSrcDir, ".git")
 	if exist, err := pathutil.IsPathExists(gitDirPath); err != nil {
+		return "", fmt.Errorf("failed to check if .git folder exist at (%s), error: %s", gitDirPath, err)
+	} else if !exist {
+		return "", fmt.Errorf(".git folder not exist at (%s), error: %s", gitDirPath, err)
+	}
+
+	versions, err := GitVersionTags(pluginSrcDir)
+	if err != nil {
 		return "", err
-	} else if exist {
-		versions, err := GitVersionTags(pluginDir)
-		if err != nil {
-			return "", err
-		}
+	}
 
-		if len(versions) == 0 {
-			return "", nil
-		}
+	log.Debug("")
+	log.Debugf("versions: %v", versions)
 
-		latestVersion := versions[len(versions)-1]
+	if len(versions) == 0 {
+		return "", nil
+	}
 
-		currentVersion, err := GetPluginVersion(plugin.Name)
-		if err != nil {
-			return "", fmt.Errorf("failed to check installed plugin (%s) version, error: %s", plugin.Name, err)
-		}
+	latestVersion := versions[len(versions)-1]
 
-		if latestVersion.GreaterThan(currentVersion) {
-			return latestVersion.String(), nil
-		}
+	currentVersion, err := GetPluginVersion(plugin.Name)
+	if err != nil {
+		return "", fmt.Errorf("failed to check installed plugin (%s) version, error: %s", plugin.Name, err)
+	}
+
+	log.Debug("")
+	log.Debugf("latestVersion: %v", latestVersion)
+	log.Debugf("currentVersion: %v", currentVersion)
+
+	if currentVersion == nil {
+		log.Debugf("Installed plugin (%s) is from local source, nothing to check...", plugin.Name)
+		return "", nil
+	}
+
+	if latestVersion.GreaterThan(currentVersion) {
+		return latestVersion.String(), nil
 	}
 
 	return "", nil

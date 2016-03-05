@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/bitrise-io/depman/pathutil"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	ver "github.com/hashicorp/go-version"
@@ -55,6 +56,31 @@ func (plugin Plugin) String() string {
 	pluginStr := colorstring.Green(plugin.Name)
 	pluginStr += fmt.Sprintf("\n  Description: %s", plugin.Description)
 	return pluginStr
+}
+
+func systemOsName() (string, error) {
+	osOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("uname", "-s")
+	if err != nil {
+		return "", err
+	}
+	return strip(osOut), nil
+}
+
+// ExecutableURL ...
+func (plugin Plugin) ExecutableURL() string {
+	systemOS, err := systemOsName()
+	if err != nil {
+		return ""
+	}
+
+	switch systemOS {
+	case "Darwin":
+		return plugin.Executable.Osx
+	case "Linux":
+		return plugin.Executable.Linux
+	default:
+		return ""
+	}
 }
 
 //=======================================

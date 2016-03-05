@@ -26,9 +26,12 @@ type PluginRouting struct {
 
 // Plugin ...
 type Plugin struct {
-	Name         string        `yaml:"name"`
-	Description  string        `yaml:"description"`
-	Executable   string        `yaml:"executable"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	Executable  struct {
+		Osx   string `yaml:"osx"`
+		Linux string `yaml:"linux"`
+	}
 	TriggerEvent string        `yaml:"trigger"`
 	Requirements []Requirement `yaml:"requirements"`
 }
