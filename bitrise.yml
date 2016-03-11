@@ -356,7 +356,7 @@ workflows:
         inputs:
         - content: exit 2
     - script:
-        title: Skippable fail wit exit code 2
+        title: Skippable fail with exit code 2
         is_always_run: true
         is_skippable: true
         inputs:
