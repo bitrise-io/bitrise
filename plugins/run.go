@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -94,7 +95,10 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 }
 
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
-	defer func() {
+	if !configs.IsCIMode {
+		// Check for new version
+		log.Info("Checking for new version...")
+
 		if newVersion, err := CheckForNewVersion(plugin); err != nil {
 			log.Warnf("")
 			log.Warnf("Failed to check for plugin (%s) new version", plugin.Name)
@@ -104,7 +108,10 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		} else {
 			log.Debugf("No new version of plugin (%s) available", plugin.Name)
 		}
-	}()
+
+		log.Info("You are using the latest version")
+		fmt.Println()
+	}
 
 	// Append common data to plugin iputs
 	bitriseVersion, err := configs.BitriseVersion()
