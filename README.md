@@ -17,7 +17,7 @@ The installation is quick and easy, check the latest release for instructions at
 
 Installing with Homebrew:
 
-`brew update && install bitrise`
+`brew update && brew install bitrise`
 
 Optionally, you can call `bitrise setup` to verify that everything what's required for `bitrise` to run
 is installed and available, but if you forget to do this it'll be performed the first
