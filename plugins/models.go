@@ -29,7 +29,7 @@ type Plugin struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 	Executable  struct {
-		Osx   string `yaml:"osx"`
+		OSX   string `yaml:"osx"`
 		Linux string `yaml:"linux"`
 	}
 	TriggerEvent string        `yaml:"trigger"`

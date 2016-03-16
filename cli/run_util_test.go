@@ -12,13 +12,6 @@ import (
 )
 
 func TestExpandEnvs(t *testing.T) {
-	inventoryStr := `
-envs:
-- ENV0: "Hello"
-`
-	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
-
 	configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -26,6 +19,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 workflows:
   test:
     envs:
+    - ENV0: "Hello"
     - ENV1: "$ENV0 world"
     steps:
     - script:
@@ -47,7 +41,7 @@ workflows:
 	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, nil, err)
 
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))

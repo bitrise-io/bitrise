@@ -101,7 +101,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 
 		if newVersion, err := CheckForNewVersion(plugin); err != nil {
 			log.Warnf("")
-			log.Warnf("Failed to check for plugin (%s) new version", plugin.Name)
+			log.Warnf("Failed to check for plugin (%s) new version, error: %s", plugin.Name, err)
 		} else if newVersion != "" {
 			log.Warnf("")
 			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)

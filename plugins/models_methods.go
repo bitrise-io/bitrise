@@ -75,7 +75,7 @@ func (plugin Plugin) ExecutableURL() string {
 
 	switch systemOS {
 	case "Darwin":
-		return plugin.Executable.Osx
+		return plugin.Executable.OSX
 	case "Linux":
 		return plugin.Executable.Linux
 	default:
