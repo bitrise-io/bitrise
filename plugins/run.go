@@ -113,9 +113,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
 		} else {
 			log.Debugf("No new version of plugin (%s) available", plugin.Name)
+			log.Info("You are using the latest version")
 		}
 
-		log.Info("You are using the latest version")
 		fmt.Println()
 	}
 
