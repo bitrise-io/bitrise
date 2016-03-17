@@ -86,12 +86,18 @@ func command(dir, name string, args ...string) error {
 
 // RunPluginByEvent ...
 func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
+	pluginInput[pluginInputPluginModeKey] = string(triggerMode)
+
 	return runPlugin(plugin, []string{}, pluginInput)
 }
 
 // RunPluginByCommand ...
 func RunPluginByCommand(plugin Plugin, args []string) error {
-	return runPlugin(plugin, args, PluginInput{})
+	pluginInput := PluginInput{
+		pluginInputPluginModeKey: string(commandMode),
+	}
+
+	return runPlugin(plugin, args, pluginInput)
 }
 
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {

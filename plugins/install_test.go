@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"os"
-	"path"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -207,32 +206,6 @@ func TestClonePluginSrc(t *testing.T) {
 		require.NotEmpty(t, hash)
 
 		exist, err = pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		require.Equal(t, true, exist)
-	}
-}
-
-func TestDownloadPluginBin(t *testing.T) {
-	t.Log("example plugin bin - ")
-	{
-		pluginBinURL := "https://github.com/godrei/plugins-example/releases/download/0.9.1/example-Darwin-x86_64"
-		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestDownloadPluginBin")
-		require.NoError(t, err)
-
-		exist, err := pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		if exist {
-			err := os.RemoveAll(destinationDir)
-			require.NoError(t, err)
-		}
-
-		require.NoError(t, os.MkdirAll(destinationDir, 0777))
-
-		destinationPth := path.Join(destinationDir, "example")
-
-		require.NoError(t, downloadPluginBin(pluginBinURL, destinationPth))
-
-		exist, err = pathutil.IsPathExists(destinationPth)
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 	}
