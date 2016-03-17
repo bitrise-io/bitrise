@@ -13,6 +13,7 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/plugins"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -809,11 +810,10 @@ func runWorkflowWithConfiguration(
 
 	// Build finished
 	bitrise.PrintSummary(buildRunResults)
-	if buildRunResults.IsBuildFailed() {
-		return buildRunResults, errors.New("[BITRISE_CLI] - Workflow FINISHED but a couple of steps failed - Ouch")
-	}
-	if buildRunResults.HasFailedSkippableSteps() {
-		log.Warn("[BITRISE_CLI] - Workflow FINISHED but a couple of non-important steps failed")
+
+	// Trigger WorkflowRunDidFinish
+	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
+		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
 	}
 
 	return buildRunResults, nil

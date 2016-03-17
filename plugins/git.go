@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/bitrise-io/depman/pathutil"
@@ -34,22 +35,36 @@ func commitHashOfTag(cloneIntoDir, tag string) (string, error) {
 	return commandOutput(cloneIntoDir, "git", "show-ref", "--hash", tag)
 }
 
-func gitTagList(cloneIntoDir string) ([]string, error) {
-	out, err := commandOutput(cloneIntoDir, "git", "tag", "--list")
+func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
+	out, err := commandOutput(cloneIntoDir, "git", "ls-remote", "--tags")
 	if err != nil {
 		return []string{}, err
 	}
+	if out == "" {
+		return []string{}, nil
+	}
+
+	var exp = regexp.MustCompile(`(^[a-z0-9]+)+.*refs/tags/([0-9.]+)`)
+	versionMap := map[string]bool{}
+	outSplit := strings.Split(out, "\n")
+
+	for _, line := range outSplit {
+		result := exp.FindAllStringSubmatch(line, -1)
+		if len(result) > 0 {
+			matches := result[0]
+
+			if len(matches) == 3 {
+				version := matches[2]
+				versionMap[version] = true
+			}
+		}
+	}
 
 	versions := []string{}
-	if out == "" {
-		return versions, nil
+	for key := range versionMap {
+		versions = append(versions, key)
 	}
 
-	outSplit := strings.Split(out, "\n")
-	for _, line := range outSplit {
-		strippedLine := strip(line)
-		versions = append(versions, strippedLine)
-	}
 	return versions, nil
 }
 
@@ -106,7 +121,7 @@ func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
 
 // GitVersionTags ...
 func GitVersionTags(gitRepoDir string) ([]ver.Version, error) {
-	tagList, err := gitTagList(gitRepoDir)
+	tagList, err := gitRemoteTagList(gitRepoDir)
 	if err != nil {
 		return []ver.Version{}, fmt.Errorf("Could not get version tag list, error: %s", err)
 	}
