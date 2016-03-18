@@ -144,7 +144,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		return err
 	}
 
-	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrise.EnvstorePathEnvKey, pluginEnvstorePath, false); err != nil {
+	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrise.EnvstorePathEnvKey, pluginEnvstorePath, false, false); err != nil {
 		return err
 	}
 
@@ -152,7 +152,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 
 	// Add plugin inputs
 	for key, value := range pluginInput {
-		if err := bitrise.EnvmanAdd(pluginEnvstorePath, key, value, false); err != nil {
+		if err := bitrise.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
 			return err
 		}
 	}
