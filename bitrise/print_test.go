@@ -18,28 +18,46 @@ this is a very long string,
 this is a very long string.
 `
 
-func TestPrintRunningWorkflow(t *testing.T) {
-	PrintRunningWorkflow(longStr)
-}
+func TestIsUpdateAvailable(t *testing.T) {
+	t.Log("simple compare versions - ture")
+	{
+		stepInfo1 := stepmanModels.StepInfoModel{
+			Version: "1.0.0",
+			Latest:  "1.1.0",
+		}
 
-func TestPrintRunningStepHeader(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Title:   "",
-		Version: "",
+		require.Equal(t, true, isUpdateAvailable(stepInfo1))
 	}
-	PrintRunningStepHeader(stepInfo, 0)
 
-	stepInfo.Title = longStr
-	stepInfo.Version = ""
-	PrintRunningStepHeader(stepInfo, 0)
+	t.Log("simple compare versions - false")
+	{
+		stepInfo1 := stepmanModels.StepInfoModel{
+			Version: "1.0.0",
+			Latest:  "1.0.0",
+		}
 
-	stepInfo.Title = ""
-	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, 0)
+		require.Equal(t, false, isUpdateAvailable(stepInfo1))
+	}
 
-	stepInfo.Title = longStr
-	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, 0)
+	t.Log("issue - no latest - false")
+	{
+		stepInfo1 := stepmanModels.StepInfoModel{
+			Version: "1.0.0",
+			Latest:  "",
+		}
+
+		require.Equal(t, false, isUpdateAvailable(stepInfo1))
+	}
+
+	t.Log("issue - no current - false")
+	{
+		stepInfo1 := stepmanModels.StepInfoModel{
+			Version: "",
+			Latest:  "1.0.0",
+		}
+
+		require.Equal(t, false, isUpdateAvailable(stepInfo1))
+	}
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
@@ -74,6 +92,28 @@ func TestGetTrimmedStepName(t *testing.T) {
 	require.Equal(t, "", stepName)
 }
 
+func TestGetRunningStepHeaderMainSection(t *testing.T) {
+	stepInfo := stepmanModels.StepInfoModel{
+		Title:   longStr,
+		Version: longStr,
+	}
+
+	actual := getRunningStepHeaderMainSection(stepInfo, 0)
+	expected := "| (0) This is a very long string,\nthis is a very long string,\nthis is a ver... |"
+	require.Equal(t, expected, actual)
+}
+
+func TestGetRunningStepHeaderSubSection(t *testing.T) {
+	stepInfo := stepmanModels.StepInfoModel{
+		ID:      longStr,
+		Title:   longStr,
+		Version: longStr,
+	}
+
+	actual := getRunningStepHeaderSubSection(stepInfo)
+	require.NotEqual(t, "", actual)
+}
+
 func TestGetRunningStepFooterMainSection(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
 		Title:   longStr,
@@ -104,6 +144,58 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 
 	cell = getRunningStepFooterMainSection(result)
 	require.Equal(t, "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |", cell)
+}
+
+func TestGetDeprecateNotesRows(t *testing.T) {
+	notes := "Removal notes: " + longStr
+	formattedNotes := getDeprecateNotesRows(notes)
+	expected := "| \x1b[31;1mRemoval notes:\x1b[0m This is a very long string, this is a very long string, this  |\n| is a very long string, this is a very long string, this is a very long       |\n| string, this is a very long string.                                          |"
+	require.Equal(t, expected, formattedNotes)
+}
+
+func TestGetRunningStepFooterSubSection(t *testing.T) {
+	stepInfo := stepmanModels.StepInfoModel{
+		Title:   longStr,
+		Version: "1.0.0",
+		Latest:  "1.1.0",
+	}
+
+	result := models.StepRunResultsModel{
+		StepInfo: stepInfo,
+		Status:   models.StepRunStatusCodeSuccess,
+		Idx:      0,
+		RunTime:  10000000,
+		Error:    errors.New(longStr),
+		ExitCode: 1,
+	}
+
+	actual := getRunningStepFooterSubSection(result)
+	expected := "| Update available: 1.0.0 -> 1.1.0                                             |"
+	require.Equal(t, expected, actual)
+}
+
+func TestPrintRunningWorkflow(t *testing.T) {
+	PrintRunningWorkflow(longStr)
+}
+
+func TestPrintRunningStepHeader(t *testing.T) {
+	stepInfo := stepmanModels.StepInfoModel{
+		Title:   "",
+		Version: "",
+	}
+	PrintRunningStepHeader(stepInfo, 0)
+
+	stepInfo.Title = longStr
+	stepInfo.Version = ""
+	PrintRunningStepHeader(stepInfo, 0)
+
+	stepInfo.Title = ""
+	stepInfo.Version = longStr
+	PrintRunningStepHeader(stepInfo, 0)
+
+	stepInfo.Title = longStr
+	stepInfo.Version = longStr
+	PrintRunningStepHeader(stepInfo, 0)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {

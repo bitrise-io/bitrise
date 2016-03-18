@@ -398,6 +398,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			Latest:        stepInfoPtr.Latest,
 			SupportURL:    stepInfoPtr.SupportURL,
 			SourceCodeURL: stepInfoPtr.SourceCodeURL,
+			GlobalInfo:    stepInfoPtr.GlobalInfo,
 		}
 
 		stepResults := models.StepRunResultsModel{
@@ -595,6 +596,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 			stepInfoPtr.Version = stepInfo.Version
 			stepInfoPtr.Latest = stepInfo.Latest
+			stepInfoPtr.GlobalInfo = stepInfo.GlobalInfo
 
 			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
