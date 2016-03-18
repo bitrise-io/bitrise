@@ -176,8 +176,8 @@ workflows:
     steps:
     - script:
         title: Create CHANGELOG and git release
-        input:
-        - content: |
+        inputs:
+        - content: |-
             #!/bin/bash
             set -e
 
@@ -202,13 +202,15 @@ workflows:
     steps:
     - script:
         title: Create CHANGELOG and git release
-        input:
-        - content: |
+        inputs:
+        - content: |-
             #!/bin/bash
             set -e
 
             export CI=true
-            releaseman create --version $RELEASE_VERSION
+            releaseman create-changelog
+              --version $RELEASE_VERSION \
+              --set-version-script "bash _scripts/set_version.sh version/version.go"
 
   announce_release:
     title: Announce Release
@@ -250,7 +252,7 @@ workflows:
     steps:
     - script:
         title: Export RELEASE_VERSION
-        input:
+        inputs:
         - content: |
             #!/bin/bash
             set -e
@@ -267,7 +269,7 @@ workflows:
     steps:
     - script:
         title: Create binaries
-        input:
+        inputs:
         - content: |
             #!/bin/bash
             set -e
@@ -283,7 +285,7 @@ workflows:
             export GOOS=darwin
 
             BIN_NAME=$BITRISE_BIN_NAME-$OS-$ARCH
-            DEPLOY_PATH="_test_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
+            DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
 
             go build -o "$DEPLOY_PATH"
@@ -293,7 +295,7 @@ workflows:
             export GOOS=linux
 
             BIN_NAME=$BITRISE_BIN_NAME-$OS-$ARCH
-            DEPLOY_PATH="_test_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
+            DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
 
             go build -o "$DEPLOY_PATH"
