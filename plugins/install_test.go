@@ -10,6 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const examplePluginGitURL = "https://github.com/bitrise-core/bitrise-plugins-example.git"
+const analyticsPluginBinURL = "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
+
 func TestValidateVersion(t *testing.T) {
 	t.Log("required min - pass")
 	{
@@ -164,7 +167,7 @@ func TestValidateRequirements(t *testing.T) {
 func TestClonePluginSrc(t *testing.T) {
 	t.Log("example plugin - latest version")
 	{
-		pluginSource := "https://github.com/godrei/plugins-example.git"
+		pluginSource := examplePluginGitURL
 		versionTag := ""
 		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
 		require.NoError(t, err)
@@ -186,10 +189,10 @@ func TestClonePluginSrc(t *testing.T) {
 		require.Equal(t, true, exist)
 	}
 
-	t.Log("example plugin - 0.9.1 version")
+	t.Log("example plugin - 0.9.0 version")
 	{
-		pluginSource := "https://github.com/godrei/plugins-example.git"
-		versionTag := "0.9.1"
+		pluginSource := examplePluginGitURL
+		versionTag := "0.9.0"
 		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
 		require.NoError(t, err)
 
@@ -203,7 +206,7 @@ func TestClonePluginSrc(t *testing.T) {
 		version, hash, err := clonePluginSrc(pluginSource, versionTag, destinationDir)
 		require.NoError(t, err)
 		require.NotNil(t, version)
-		require.Equal(t, "0.9.1", version.String())
+		require.Equal(t, "0.9.0", version.String())
 		require.NotEmpty(t, hash)
 
 		exist, err = pathutil.IsPathExists(destinationDir)
@@ -215,7 +218,7 @@ func TestClonePluginSrc(t *testing.T) {
 func TestDownloadPluginBin(t *testing.T) {
 	t.Log("example plugin bin - ")
 	{
-		pluginBinURL := "https://github.com/godrei/plugins-example/releases/download/0.9.1/example-Darwin-x86_64"
+		pluginBinURL := analyticsPluginBinURL
 		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestDownloadPluginBin")
 		require.NoError(t, err)
 
