@@ -159,6 +159,26 @@ workflows:
 
             # Go lint
             go get -u github.com/golang/lint/golint
+    - script:
+        title: Install bitrise tools
+        run_if: ".IsCI"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            # Install envman
+            envman -v
+            curl -fL https://github.com/bitrise-io/envman/releases/download/1.1.0/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+            chmod +x /usr/local/bin/envman
+            envman -v
+
+            # Install stepman
+            stepman -v
+            curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.18/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+            chmod +x /usr/local/bin/stepman
+            stepman -v
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing
