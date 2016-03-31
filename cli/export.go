@@ -24,7 +24,10 @@ func export(c *cli.Context) {
 	}
 
 	// Config validation
-	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(c)
+	for _, warning := range warnings {
+		log.Warnf("warning: %s", warning)
+	}
 	if err != nil {
 		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}

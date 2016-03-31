@@ -27,7 +27,8 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
       - timestamp:
           title: Generate timestamps
     `
-	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
+
+	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
@@ -179,14 +180,14 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 
 	workflow, found := config.Workflows["trivial_fail"]
 	if !found {
 		t.Fatal("No workflow found with title (trivial_fail)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	if len(workflow.Steps) != 6 {
@@ -265,7 +266,7 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
   }
 }
   `
-	config, err := ConfigModelFromJSONBytes([]byte(configStr))
+	config, _, err := ConfigModelFromJSONBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +274,7 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
 	if !found {
 		t.Fatal("No workflow found with title (trivial_fail)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	if len(workflow.Steps) != 6 {
@@ -306,7 +307,7 @@ workflows:
           opts:
             is_expand: no
 `
-	config, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +364,7 @@ func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
   }
 }
 `
-	config, err := ConfigModelFromJSONBytes([]byte(configStr))
+	config, _, err := ConfigModelFromJSONBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}

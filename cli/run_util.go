@@ -57,18 +57,18 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 }
 
 // GetBitriseConfigFromBase64Data ...
-func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, error) {
+func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
 	if err != nil {
-		return models.BitriseDataModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
 	}
 
-	config, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
 	if err != nil {
-		return models.BitriseDataModel{}, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
 	}
 
-	return config, nil
+	return config, warnings, nil
 }
 
 // GetBitriseConfigFilePath ...
@@ -97,28 +97,31 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 }
 
 // CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, error) {
+func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
+	warnings := []string{}
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	if bitriseConfigBase64Data != "" {
-		config, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		warnings = warns
 		if err != nil {
-			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+			return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
 		}
 		bitriseConfig = config
 	} else {
 		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
 		if err != nil {
-			return models.BitriseDataModel{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
+			return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
 		}
 		if bitriseConfigPath == "" {
-			return models.BitriseDataModel{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+			return models.BitriseDataModel{}, []string{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
 		}
 
-		config, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		warnings = warns
 		if err != nil {
-			return models.BitriseDataModel{}, fmt.Errorf("Config (path:%s) in not valid: %s", bitriseConfigPath, err)
+			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) in not valid: %s", bitriseConfigPath, err)
 		}
 		bitriseConfig = config
 	}
@@ -127,14 +130,14 @@ func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, 
 	if err != nil {
 		log.Warn("bitrise CLI model version: ", models.Version)
 		log.Warn("bitrise.yml Format Version: ", bitriseConfig.FormatVersion)
-		return models.BitriseDataModel{}, fmt.Errorf("Failed to compare bitrise CLI models's version with the bitrise.yml FormatVersion: %s", err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to compare bitrise CLI models's version with the bitrise.yml FormatVersion: %s", err)
 	}
 	if !isConfigVersionOK {
 		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s).", bitriseConfig.FormatVersion, models.Version)
-		return models.BitriseDataModel{}, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+		return models.BitriseDataModel{}, warnings, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
 	}
 
-	return bitriseConfig, nil
+	return bitriseConfig, warnings, nil
 }
 
 // GetInventoryFromBase64Data ...

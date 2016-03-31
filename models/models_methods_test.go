@@ -16,8 +16,62 @@ import (
 // ----------------------------
 // --- Validate
 
+// Config
+func TestValidateConfig(t *testing.T) {
+	t.Log("Valid bitriseData")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"A-Za-z0-9-_.": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - empty")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"": WorkflowModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - contains: /")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"/": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - contains: :")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"/": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+	}
+}
+
 // Workflow
-func TestValidate(t *testing.T) {
+func TestValidateWorkflow(t *testing.T) {
 	workflow := WorkflowModel{
 		BeforeRun: []string{"befor1", "befor2", "befor3"},
 		AfterRun:  []string{"after1", "after2", "after3"},
@@ -46,8 +100,9 @@ workflows:
 	config := BitriseDataModel{}
 	require.Equal(t, nil, yaml.Unmarshal([]byte(configStr), &config))
 	require.Equal(t, nil, config.Normalize())
-	require.NotEqual(t, nil, config.Validate())
-	require.Equal(t, true, strings.Contains(config.Validate().Error(), "Invalid env: more than 2 fields:"))
+	_, err := config.Validate()
+	require.NotEqual(t, nil, err)
+	require.Equal(t, true, strings.Contains(err.Error(), "Invalid env: more than 2 fields:"))
 }
 
 // ----------------------------

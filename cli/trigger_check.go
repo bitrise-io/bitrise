@@ -13,15 +13,20 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-func registerFatal(errorMsg, format string) {
-	msg := map[string]string{
-		"error": errorMsg,
+func registerFatal(errorMsg string, warnings []string, format string) {
+	message := ValidationItemModel{
+		IsValid:  (len(errorMsg) > 0),
+		Error:    errorMsg,
+		Warnings: warnings,
 	}
 
 	if format == configs.OutputFormatRaw {
-		log.Fatal(msg["error"])
+		for _, warning := range message.Warnings {
+			log.Warnf("warning: %s", warning)
+		}
+		log.Fatal(message.Error)
 	} else {
-		bytes, err := json.Marshal(msg)
+		bytes, err := json.Marshal(message)
 		if err != nil {
 			log.Fatalf("Failed to parse error model, err: %s", err)
 		}
@@ -42,6 +47,7 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 			}
 			return item.WorkflowID, nil
 		}
+
 	}
 	if matchFoundButPullRequestModeNotAllowed {
 		return "", fmt.Errorf("Run triggered by pattern: (%s) in pull request mode, but matching workflow disabled in pull request mode", pattern)
@@ -50,34 +56,36 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 }
 
 func triggerCheck(c *cli.Context) {
+	warnings := []string{}
 	format := c.String(OuputFormatKey)
 	if format == "" {
 		format = configs.OutputFormatRaw
 	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
 	}
 
 	// Config validation
-	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
+	warnings = warns
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), format)
+		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, format)
 	}
 
 	// Trigger filter validation
 	triggerPattern := ""
 	if len(c.Args()) < 1 {
-		registerFatal("No trigger pattern specified", format)
+		registerFatal("No trigger pattern specified", warnings, format)
 	} else {
 		triggerPattern = c.Args()[0]
 	}
 
 	if triggerPattern == "" {
-		registerFatal("No trigger pattern specified", format)
+		registerFatal("No trigger pattern specified", warnings, format)
 	}
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
 	if err != nil {
-		registerFatal(err.Error(), format)
+		registerFatal(err.Error(), warnings, format)
 	}
 
 	switch format {
@@ -91,13 +99,13 @@ func triggerCheck(c *cli.Context) {
 		}
 		bytes, err := json.Marshal(triggerModel)
 		if err != nil {
-			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), warnings, format)
 		}
 
 		fmt.Println(string(bytes))
 		break
 	default:
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, configs.OutputFormatJSON)
 	}
 
 }

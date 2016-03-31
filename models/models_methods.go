@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -155,21 +156,32 @@ func (app *AppModel) Validate() error {
 }
 
 // Validate ...
-func (config *BitriseDataModel) Validate() error {
+func (config *BitriseDataModel) Validate() ([]string, error) {
+	warnings := []string{}
+
 	if err := config.App.Validate(); err != nil {
-		return err
+		return warnings, err
 	}
 
 	for ID, workflow := range config.Workflows {
+		if ID == "" {
+			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): empty", ID))
+		}
+
+		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
+		if find := r.FindString(ID); find != ID {
+			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conforms to: [A-Za-z0-9-_.]", ID))
+		}
+
 		if err := workflow.Validate(); err != nil {
-			return err
+			return warnings, err
 		}
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
-			return err
+			return warnings, err
 		}
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ----------------------------

@@ -13,8 +13,9 @@ import (
 
 // ValidationItemModel ...
 type ValidationItemModel struct {
-	IsValid bool   `json:"is_valid" yaml:"is_valid"`
-	Error   string `json:"error,omitempty" yaml:"error,omitempty"`
+	IsValid  bool     `json:"is_valid" yaml:"is_valid"`
+	Error    string   `json:"error,omitempty" yaml:"error,omitempty"`
+	Warnings []string `json:"warnings,omitempty" yaml:"warnings,omitempty"`
 }
 
 // ValidationModel ...
@@ -66,40 +67,43 @@ func printRawValidation(validation ValidationModel) error {
 func printJSONValidation(validation ValidationModel) {
 	bytes, err := json.Marshal(validation)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), []string{}, configs.OutputFormatJSON)
 	}
 
 	fmt.Println(string(bytes))
 }
 
 func validate(c *cli.Context) {
+	warnings := []string{}
 	format := c.String(OuputFormatKey)
 	if format == "" {
 		format = configs.OutputFormatRaw
 	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
 	}
 
 	validation := ValidationModel{}
 
 	pth, err := GetBitriseConfigFilePath(c)
 	if err != nil && err.Error() != "No workflow yml found" {
-		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), format)
+		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), []string{}, format)
 	}
 	if pth != "" || (pth == "" && c.String(ConfigBase64Key) != "") {
 		// Config validation
 		isValid := true
 		errMsg := ""
 
-		_, err := CreateBitriseConfigFromCLIParams(c)
+		_, warns, err := CreateBitriseConfigFromCLIParams(c)
+		warnings = warns
 		if err != nil {
 			isValid = false
 			errMsg = err.Error()
 		}
 
 		validation.Config = &ValidationItemModel{
-			IsValid: isValid,
-			Error:   errMsg,
+			IsValid:  isValid,
+			Error:    errMsg,
+			Warnings: warnings,
 		}
 	} else {
 		log.Debug("No config found for validation")
@@ -107,7 +111,7 @@ func validate(c *cli.Context) {
 
 	pth, err = GetInventoryFilePath(c)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to get secrets path, err: %s", err), format)
+		registerFatal(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings, format)
 	}
 	if pth != "" || c.String(InventoryBase64Key) != "" {
 		// Inventory validation
@@ -127,19 +131,19 @@ func validate(c *cli.Context) {
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
-		registerFatal("No config or secrets found for validation", format)
+		registerFatal("No config or secrets found for validation", warnings, format)
 	}
 
 	switch format {
 	case configs.OutputFormatRaw:
 		if err := printRawValidation(validation); err != nil {
-			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), warnings, format)
 		}
 		break
 	case configs.OutputFormatJSON:
 		printJSONValidation(validation)
 		break
 	default:
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, configs.OutputFormatJSON)
 	}
 }

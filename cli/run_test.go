@@ -40,7 +40,7 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
@@ -74,7 +74,7 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
@@ -127,7 +127,7 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
@@ -188,7 +188,7 @@ workflows:
           {{enveq "TEMPLATE_TEST_NO_VALUE" "true"}}
 
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -227,7 +227,7 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
@@ -298,7 +298,7 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -334,7 +334,7 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -372,7 +372,7 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -416,7 +416,7 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -453,7 +453,7 @@ workflows:
 
 `
 
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -492,7 +492,7 @@ workflows:
 
 `
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -533,7 +533,7 @@ workflows:
 
 `
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -577,7 +577,7 @@ workflows:
 
 `
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
@@ -616,7 +616,7 @@ func Test0Steps1Workflows(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -689,7 +689,7 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -768,7 +768,7 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err == nil {
+	if _, err := config.Validate(); err == nil {
 		t.Fatal("Circular dependency, should fail")
 	}
 
@@ -817,7 +817,7 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -825,7 +825,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (trivial_fail)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -920,7 +920,7 @@ workflows:
     - script:
         title: Should be skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -928,7 +928,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -978,7 +978,7 @@ workflows:
     - before1
     - before2
   `
-	_, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	_, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err == nil {
 		t.Fatal("Should find workflow reference cycle")
 	}
@@ -1070,7 +1070,7 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1078,7 +1078,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1143,7 +1143,7 @@ workflows:
         title: Should success
         is_always_run: true
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1151,7 +1151,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1194,7 +1194,7 @@ workflows:
     - script:
         title: Should success
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1202,7 +1202,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1267,7 +1267,7 @@ workflows:
     - script:
         title: Should skipped
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1275,7 +1275,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1345,7 +1345,7 @@ workflows:
               exit 1
             fi
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1353,7 +1353,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1422,7 +1422,7 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1430,7 +1430,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1487,7 +1487,7 @@ workflows:
     before_run:
     - before
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1495,7 +1495,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1556,7 +1556,7 @@ workflows:
               exit 3
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1564,7 +1564,7 @@ workflows:
 	if !found {
 		t.Fatal("No workflow found with ID (target)")
 	}
-	if err := config.Validate(); err != nil {
+	if _, err := config.Validate(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1633,12 +1633,12 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 	_, found := config.Workflows["out-test"]
 	require.Equal(t, true, found)
 
-	err = config.Validate()
+	_, err = config.Validate()
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
@@ -1677,7 +1677,7 @@ workflows:
 
   after2:
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}

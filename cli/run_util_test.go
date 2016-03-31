@@ -38,7 +38,7 @@ workflows:
             fi
 `
 
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
@@ -88,7 +88,7 @@ workflows:
             is_template: true
 `
 
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
@@ -122,7 +122,7 @@ workflows:
 
 	//
 	// Default pattern defined
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
@@ -189,7 +189,7 @@ workflows:
 
 	//
 	// No default pattern defined
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 
 	// Non pull request mode
@@ -253,7 +253,7 @@ workflows:
 	configBase64Str := base64.StdEncoding.EncodeToString(configBytes)
 	t.Log("Config:", configBase64Str)
 
-	config, err := GetBitriseConfigFromBase64Data(configBase64Str)
+	config, _, err := GetBitriseConfigFromBase64Data(configBase64Str)
 	if err != nil {
 		t.Fatal("Failed to get config from base 64 data, err:", err)
 	}
@@ -329,7 +329,7 @@ workflows:
     - invalid-step:
 `
 
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	if err != nil {
 		t.Fatal(err)
 	}
