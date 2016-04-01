@@ -53,11 +53,13 @@ func printLocalStepInfo(pth, format string) error {
 }
 
 func stepInfo(c *cli.Context) {
+	warnings := []string{}
+
 	format := c.String(OuputFormatKey)
 	if format == "" {
 		format = configs.OutputFormatRaw
 	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
 	}
 
 	YMLPath := c.String(StepYMLKey)
@@ -65,20 +67,22 @@ func stepInfo(c *cli.Context) {
 		//
 		// Local step info
 		if err := printLocalStepInfo(YMLPath, format); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print step info (yml path: %s), err: %s", YMLPath, err), format)
+			registerFatal(fmt.Sprintf("Failed to print step info (yml path: %s), err: %s", YMLPath, err), []string{}, format)
 		}
 	} else {
+
 		//
 		// Steplib step info
 		collectionURI := c.String(CollectionKey)
 		if collectionURI == "" {
-			bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
+			bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
+			warnings = warns
 			if err != nil {
-				registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), format)
+				registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), warnings, format)
 			}
 
 			if bitriseConfig.DefaultStepLibSource == "" {
-				registerFatal("No collection defined and no default collection found in bitrise config", format)
+				registerFatal("No collection defined and no default collection found in bitrise config", warnings, format)
 			}
 
 			collectionURI = bitriseConfig.DefaultStepLibSource
@@ -86,7 +90,7 @@ func stepInfo(c *cli.Context) {
 
 		id := ""
 		if len(c.Args()) < 1 {
-			registerFatal("No step specified!", format)
+			registerFatal("No step specified!", warnings, format)
 		} else {
 			id = c.Args()[0]
 		}
@@ -94,7 +98,7 @@ func stepInfo(c *cli.Context) {
 		version := c.String(VersionKey)
 
 		if err := printStepLibStep(collectionURI, id, version, format); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), format)
+			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
 	}
 }

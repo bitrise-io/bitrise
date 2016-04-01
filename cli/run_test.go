@@ -16,8 +16,9 @@ import (
 )
 
 func TestSkipIfEmpty(t *testing.T) {
-	// skip_if_empty=true && value=empty => should not add
-	configStr := `
+	t.Log("skip_if_empty=true && value=empty => should not add")
+	{
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -40,18 +41,21 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+		require.Equal(t, 0, len(buildRunResults.FailedSteps))
+		require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+		require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	}
 
-	// skip_if_empty=false && value=empty => should add
-	configStr = `
+	t.Log("skip_if_empty=false && value=empty => should add")
+	{
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -74,15 +78,17 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+		require.Equal(t, 0, len(buildRunResults.FailedSteps))
+		require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+		require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	}
 }
 
 func TestDeleteEnvironment(t *testing.T) {
@@ -127,11 +133,12 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.Equal(t, 4, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
@@ -144,7 +151,7 @@ envs:
 - TEMPLATE_TEST0: "true"
 `
 	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	configStr := `
 format_version: 1.0.0
@@ -188,11 +195,12 @@ workflows:
           {{enveq "TEMPLATE_TEST_NO_VALUE" "true"}}
 
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
@@ -227,11 +235,12 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
@@ -240,48 +249,34 @@ workflows:
 
 func TestBitriseSourceDir(t *testing.T) {
 	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
-	if err != nil {
-		t.Fatal("Failed to get curr abs path: ", err)
-	}
+	require.NoError(t, err)
 
 	testPths := []string{}
 	for i := 0; i < 4; i++ {
 		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
-		if err := os.RemoveAll(testPth); err != nil {
-			t.Fatalf("Failed to remove %s, err: %s: ", testPth, err)
-		}
+		require.NoError(t, os.RemoveAll(testPth))
+		require.NoError(t, os.Mkdir(testPth, 0777))
 
-		err := os.Mkdir(testPth, 0777)
-		if err != nil {
-			t.Fatalf("Failed to create %s, err: %s: ", testPth, err)
-		}
 		// eval symlinks: the Go generated temp folder on OS X is a symlink
 		//  from /var/ to /private/var/
 		testPth, err = filepath.EvalSymlinks(testPth)
-		if err != nil {
-			t.Fatalf("Failed to EvalSymlinks for (path:%s), err: %s", testPth, err)
-		}
+		require.NoError(t, err)
 
-		defer func() {
-			err := os.RemoveAll(testPth)
-			if err != nil {
-				t.Fatalf("Failed to remove %s, err: %s: ", testPth, err)
-			}
-		}()
+		defer func() { require.NoError(t, os.RemoveAll(testPth)) }()
 
 		testPths = append(testPths, testPth)
 	}
 
-	//
-	// BITRISE_SOURCE_DIR defined in Secret
-	inventoryStr := `
+	t.Log("BITRISE_SOURCE_DIR defined in Secret")
+	{
+		inventoryStr := `
 envs:
 - BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
-	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr := `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -298,22 +293,24 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// BITRISE_SOURCE_DIR defined in Secret, and in App
-	inventoryStr = `
+	t.Log("BITRISE_SOURCE_DIR defined in Secret, and in App")
+	{
+		inventoryStr := `
 envs:
 - BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -334,22 +331,24 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// BITRISE_SOURCE_DIR defined in Secret, App and Workflow
-	inventoryStr = `
+	t.Log("BITRISE_SOURCE_DIR defined in Secret, App and Workflow")
+	{
+		inventoryStr := `
 envs:
 - BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -372,22 +371,24 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// BITRISE_SOURCE_DIR defined in secret, App, Workflow and Step
-	inventoryStr = `
+	t.Log("BITRISE_SOURCE_DIR defined in secret, App, Workflow and Step")
+	{
+		inventoryStr := `
 envs:
 - BITRISE_SOURCE_DIR: "` + testPths[0] + `"
 `
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -416,25 +417,27 @@ workflows:
               exit 1
             fi
 `
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 }
 
 func TestEnvOrders(t *testing.T) {
-	//
-	// Only secret env - secret env should be use
-	inventoryStr := `
+	t.Log("Only secret env - secret env should be use")
+	{
+		inventoryStr := `
 envs:
 - ENV_ORDER_TEST: "should be the 1."
 `
 
-	inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr := `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -453,23 +456,25 @@ workflows:
 
 `
 
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// Secret env & app env also defined - app env should be use
-	inventoryStr = `
+	t.Log("Secret env & app env also defined - app env should be use")
+	{
+		inventoryStr := `
 envs:
 - ENV_ORDER_TEST: "should be the 1."
 `
 
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -492,23 +497,25 @@ workflows:
 
 `
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// Secret env & app env && workflow env also defined - workflow env should be use
-	inventoryStr = `
+	t.Log("Secret env & app env && workflow env also defined - workflow env should be use")
+	{
+		inventoryStr := `
 envs:
 - ENV_ORDER_TEST: "should be the 1."
 `
 
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -533,23 +540,25 @@ workflows:
 
 `
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 
-	//
-	// Secret env & app env && workflow env && step output env also defined - step output env should be use
-	inventoryStr = `
+	t.Log("Secret env & app env && workflow env && step output env also defined - step output env should be use")
+	{
+		inventoryStr := `
 envs:
 - ENV_ORDER_TEST: "should be the 1."
 `
 
-	inventory, err = bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-	require.Equal(t, nil, err)
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
 
-	configStr = `
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -576,12 +585,13 @@ workflows:
             fi
 
 `
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	config, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
-
-	_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
-	require.Equal(t, nil, err)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		require.NoError(t, err)
+	}
 }
 
 // Test - Bitrise activateAndRunWorkflow
@@ -589,24 +599,11 @@ workflows:
 func Test0Steps1Workflows(t *testing.T) {
 	workflow := models.WorkflowModel{}
 
-	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
-	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
+	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
+
+	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
@@ -616,60 +613,33 @@ func Test0Steps1Workflows(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	_, err := config.Validate()
+	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	if len(buildRunResults.SuccessSteps) != 0 {
-		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise activateAndRunWorkflow
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
-	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
-	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
+	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
+
+	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
 
 	beforeWorkflow := models.WorkflowModel{}
 	afterWorkflow := models.WorkflowModel{}
@@ -689,63 +659,33 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	_, err := config.Validate()
+	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
-	var err error
-	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
-	if err != nil {
-		t.Fatal("Failed to activate and run worfklow:", err)
-	}
-	if len(buildRunResults.SuccessSteps) != 0 {
-		t.Fatalf("Success step count (%d), should be (0)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	require.NoError(t, err)
+	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise Validate workflow
 // Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
-	if err := os.Setenv("BITRISE_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("BITRISE_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
-	if err := os.Setenv("STEPLIB_BUILD_STATUS", "0"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv("STEPLIB_BUILD_STATUS"); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
+	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
+
+	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
 
 	beforeWorkflow := models.WorkflowModel{
 		BeforeRun: []string{"target"},
@@ -768,18 +708,11 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 		},
 	}
 
-	if err := config.Validate(); err == nil {
-		t.Fatal("Circular dependency, should fail")
-	}
+	_, err := config.Validate()
+	require.Error(t, err)
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise activateAndRunWorkflow
@@ -817,47 +750,27 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	workflow, found := config.Workflows["trivial_fail"]
-	if !found {
-		t.Fatal("No workflow found with ID (trivial_fail)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
-	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
-	if err != nil {
-		t.Fatal("Failed to activate and run worfklow:", err)
-	}
-	if len(buildRunResults.SuccessSteps) != 3 {
-		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 1 {
-		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 1 {
-		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 1 {
-		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
-	}
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	require.NoError(t, err)
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
+
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise activateAndRunWorkflow
@@ -920,41 +833,22 @@ workflows:
     - script:
         title: Should be skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	if len(buildRunResults.SuccessSteps) != 3 {
-		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 2 {
-		t.Fatalf("Failed step count (%d), should be (2)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 1 {
-		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 1 {
-		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 2, len(buildRunResults.FailedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise ConfigModelFromYAMLBytes
@@ -978,10 +872,9 @@ workflows:
     - before1
     - before2
   `
-	_, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err == nil {
-		t.Fatal("Should find workflow reference cycle")
-	}
+	_, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Error(t, err)
+	require.Equal(t, 0, len(warnings))
 }
 
 // Test - Bitrise BuildStatusEnv
@@ -1070,42 +963,22 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run results: %#v\n", buildRunResults)
-	if len(buildRunResults.SuccessSteps) != 3 {
-		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 1 {
-		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 1 {
-		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 1 {
-		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise activateAndRunWorkflow
@@ -1143,42 +1016,22 @@ workflows:
         title: Should success
         is_always_run: true
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Log("Build run results:", buildRunResults)
-	if len(buildRunResults.SuccessSteps) != 3 {
-		t.Fatalf("Success step count (%d), should be (3)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 1 {
-		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 1 {
-		t.Fatalf("FailedSkippable step count (%d), should be (1)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 1 {
-		t.Fatalf("Skipped step count (%d), should be (1)", len(buildRunResults.SkippedSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise activateAndRunWorkflow
@@ -1194,41 +1047,22 @@ workflows:
     - script:
         title: Should success
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	if len(buildRunResults.SuccessSteps) != 1 {
-		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise BuildStatusEnv
@@ -1267,42 +1101,22 @@ workflows:
     - script:
         title: Should skipped
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 2 {
-		t.Fatalf("Skipped step count (%d), should be (2)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 1 {
-		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 1 {
-		t.Fatalf("Failed step count (%d), should be (1)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 2, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "1" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "1" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise Environments
@@ -1345,42 +1159,22 @@ workflows:
               exit 1
             fi
     `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 2 {
-		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise Environments
@@ -1422,42 +1216,22 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 2 {
-		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise Environments
@@ -1487,42 +1261,22 @@ workflows:
     before_run:
     - before
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 1 {
-		t.Fatalf("Success step count (%d), should be (1)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test - Bitrise Environments
@@ -1556,46 +1310,26 @@ workflows:
               exit 3
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("No workflow found with ID (target)")
-	}
-	if err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Equal(t, true, found)
 
 	if os.Getenv("working_dir") != "" {
 		require.Equal(t, nil, os.Unsetenv("working_dir"))
 	}
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
-	t.Log("Err: ", err)
-	t.Logf("Build run result: %#v", buildRunResults)
-	if len(buildRunResults.SkippedSteps) != 0 {
-		t.Fatalf("Skipped step count (%d), should be (0)", len(buildRunResults.SkippedSteps))
-	}
-	if len(buildRunResults.SuccessSteps) != 2 {
-		t.Fatalf("Success step count (%d), should be (2)", len(buildRunResults.SuccessSteps))
-	}
-	if len(buildRunResults.FailedSteps) != 0 {
-		t.Fatalf("Failed step count (%d), should be (0)", len(buildRunResults.FailedSteps))
-	}
-	if len(buildRunResults.FailedSkippableSteps) != 0 {
-		t.Fatalf("FailedSkippable step count (%d), should be (0)", len(buildRunResults.FailedSkippableSteps))
-	}
+	require.NoError(t, err)
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 
-	if status := os.Getenv("BITRISE_BUILD_STATUS"); status != "0" {
-		t.Log("BITRISE_BUILD_STATUS:", status)
-		t.Fatal("BUILD_STATUS envs are incorrect")
-	}
-	if status := os.Getenv("STEPLIB_BUILD_STATUS"); status != "0" {
-		t.Log("STEPLIB_BUILD_STATUS:", status)
-		t.Fatal("STEPLIB_BUILD_STATUS envs are incorrect")
-	}
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Outputs exported with `envman add` should be accessible for subsequent Steps.
@@ -1633,13 +1367,15 @@ workflows:
               exit 1
             fi
 `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	_, found := config.Workflows["out-test"]
 	require.Equal(t, true, found)
 
-	err = config.Validate()
-	require.Equal(t, nil, err)
+	_, err = config.Validate()
+	require.NoError(t, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
@@ -1677,17 +1413,11 @@ workflows:
 
   after2:
   `
-	config, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	last, err := lastWorkflowIDInConfig("target", config)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if last != "after2" {
-		t.Fatalf("Last workflow id is incorrect: (%s) should be (after2)", last)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "after2", last)
 }

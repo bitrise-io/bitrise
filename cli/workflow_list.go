@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
@@ -76,20 +75,23 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 }
 
 func workflowList(c *cli.Context) {
+	warnings := []string{}
+
 	// Input validation
 	format := c.String(OuputFormatKey)
 	if format == "" {
 		format = configs.OutputFormatRaw
 	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
 	}
 
 	minimal := c.Bool(MinimalModeKey)
 
 	// Config validation
-	bitriseConfig, err := CreateBitriseConfigFromCLIParams(c)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
+	warnings = warns
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
+		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, configs.OutputFormatJSON)
 	}
 
 	workflowList := map[string]map[string]string{}
@@ -106,6 +108,6 @@ func workflowList(c *cli.Context) {
 	}
 
 	if err := printWorkflList(workflowList, format, minimal); err != nil {
-		log.Fatalf("Failed to print workflows, err: %s", err)
+		registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, configs.OutputFormatJSON)
 	}
 }

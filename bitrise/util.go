@@ -179,26 +179,28 @@ func generateYAML(v interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) error {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
-		return err
+		return []string{}, err
 	}
-	if err := bitriseData.Validate(); err != nil {
-		return err
+	warnings, err := bitriseData.Validate()
+	if err != nil {
+		return warnings, err
 	}
 	if err := bitriseData.FillMissingDefaults(); err != nil {
-		return err
+		return warnings, err
 	}
-	return nil
+	return warnings, nil
 }
 
 // ConfigModelFromYAMLBytes ...
-func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
+func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
 
-	if err = normalizeValidateFillMissingDefaults(&bitriseData); err != nil {
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
+	if err != nil {
 		return
 	}
 
@@ -206,12 +208,12 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 }
 
 // ConfigModelFromJSONBytes ...
-func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, err error) {
+func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
-
-	if err = normalizeValidateFillMissingDefaults(&bitriseData); err != nil {
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
+	if err != nil {
 		return
 	}
 
@@ -219,17 +221,17 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 }
 
 // ReadBitriseConfig ...
-func ReadBitriseConfig(pth string) (models.BitriseDataModel, error) {
+func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 	log.Debugln("-> ReadBitriseConfig")
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.BitriseDataModel{}, err
+		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
-		return models.BitriseDataModel{}, errors.New(fmt.Sprint("No file found at path", pth))
+		return models.BitriseDataModel{}, []string{}, fmt.Errorf("No file found at path: %s", pth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
-		return models.BitriseDataModel{}, err
+		return models.BitriseDataModel{}, []string{}, err
 	}
 
 	if strings.HasSuffix(pth, ".json") {
@@ -246,7 +248,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return stepmanModels.StepModel{}, err
 	} else if !isExists {
-		return stepmanModels.StepModel{}, errors.New(fmt.Sprint("No file found at path", pth))
+		return stepmanModels.StepModel{}, fmt.Errorf("No file found at path: %s", pth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)

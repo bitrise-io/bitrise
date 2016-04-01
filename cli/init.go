@@ -115,20 +115,16 @@ workflows:
 `
 )
 
-func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string) (string, error) {
+func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string) (string, []string, error) {
 	bitriseConfContent := fmt.Sprintf(defaultBitriseYMLContentFormat,
 		models.Version, userInputProjectTitle, userInputDevBranch)
 
-	bitriseConfModel, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
+	_, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
 	if err != nil {
-		return "", err
+		return "", warnings, err
 	}
 
-	if err := bitriseConfModel.Validate(); err != nil {
-		return "", err
-	}
-
-	return bitriseConfContent, nil
+	return bitriseConfContent, warnings, nil
 }
 
 func initConfig(c *cli.Context) {
@@ -162,7 +158,10 @@ func initConfig(c *cli.Context) {
 		userInputDevBranch = val
 	}
 
-	bitriseConfContent, err := generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch)
+	bitriseConfContent, warnings, err := generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch)
+	for _, warning := range warnings {
+		log.Warnf("warning: %s", warning)
+	}
 	if err != nil {
 		log.Fatalf("Invalid Bitrise YML: %s", err)
 	}
