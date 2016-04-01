@@ -28,8 +28,9 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
           title: Generate timestamps
     `
 
-	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
+	require.Equal(t, 0, len(warnings))
 
 	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
 
@@ -180,19 +181,13 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	workflow, found := config.Workflows["trivial_fail"]
-	if !found {
-		t.Fatal("No workflow found with title (trivial_fail)")
-	}
-	if _, err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
-	if len(workflow.Steps) != 6 {
-		t.Fatal("Not the expected Steps count")
-	}
+	require.Equal(t, true, found)
+	require.Equal(t, 6, len(workflow.Steps))
 }
 
 func TestConfigModelFromJSONBytes(t *testing.T) {
@@ -266,20 +261,13 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
   }
 }
   `
-	config, _, err := ConfigModelFromJSONBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
 	workflow, found := config.Workflows["trivial_fail"]
-	if !found {
-		t.Fatal("No workflow found with title (trivial_fail)")
-	}
-	if _, err := config.Validate(); err != nil {
-		t.Fatal(err)
-	}
-	if len(workflow.Steps) != 6 {
-		t.Fatal("Not the expected Steps count")
-	}
+	require.Equal(t, true, found)
+	require.Equal(t, 6, len(workflow.Steps))
 }
 
 func TestConfigModelFromYAMLBytesNormalize(t *testing.T) {
@@ -307,18 +295,13 @@ workflows:
           opts:
             is_expand: no
 `
-	config, _, err := ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
-	t.Log("The ConfigModelFromYAMLBytes method should call the required Normalize methods, so that no map[interface{}]interface{} is left - which would prevent the JSON serialization.")
-	t.Logf("Config: %#v", config)
 	// should be able to serialize into JSON
 	_, err = json.MarshalIndent(config, "", "\t")
-	if err != nil {
-		t.Fatalf("Failed to generate JSON: %s", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
@@ -364,16 +347,13 @@ func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
   }
 }
 `
-	config, _, err := ConfigModelFromJSONBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	t.Log("The ConfigModelFromJSONBytes method should call the required Normalize methods, so that no map[interface{}]interface{} is left - which would prevent the JSON serialization.")
 	t.Logf("Config: %#v", config)
 	// should be able to serialize into JSON
 	_, err = json.MarshalIndent(config, "", "\t")
-	if err != nil {
-		t.Fatalf("Failed to generate JSON: %s", err)
-	}
+	require.NoError(t, err)
 }

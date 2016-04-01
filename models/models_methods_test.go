@@ -18,7 +18,7 @@ import (
 
 // Config
 func TestValidateConfig(t *testing.T) {
-	t.Log("Valid bitriseData")
+	t.Log("Valid bitriseData ID")
 	{
 		bitriseData := BitriseDataModel{
 			Workflows: map[string]WorkflowModel{
@@ -31,7 +31,7 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData - empty")
+	t.Log("Invalid bitriseData ID - empty")
 	{
 		bitriseData := BitriseDataModel{
 			Workflows: map[string]WorkflowModel{
@@ -43,11 +43,11 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 1, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData - contains: /")
+	t.Log("Invalid bitriseData ID - contains: `/`")
 	{
 		bitriseData := BitriseDataModel{
 			Workflows: map[string]WorkflowModel{
-				"/": WorkflowModel{},
+				"wf/id": WorkflowModel{},
 			},
 		}
 
@@ -56,11 +56,24 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 1, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData - contains: :")
+	t.Log("Invalid bitriseData ID - contains: `:`")
 	{
 		bitriseData := BitriseDataModel{
 			Workflows: map[string]WorkflowModel{
-				"/": WorkflowModel{},
+				"wf:id": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData ID - contains: ` `")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"wf id": WorkflowModel{},
 			},
 		}
 

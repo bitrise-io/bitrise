@@ -119,12 +119,7 @@ func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string)
 	bitriseConfContent := fmt.Sprintf(defaultBitriseYMLContentFormat,
 		models.Version, userInputProjectTitle, userInputDevBranch)
 
-	bitriseConfModel, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
-	if err != nil {
-		return "", warnings, err
-	}
-
-	warnings, err = bitriseConfModel.Validate()
+	_, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(bitriseConfContent))
 	if err != nil {
 		return "", warnings, err
 	}

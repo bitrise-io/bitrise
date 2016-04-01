@@ -37,17 +37,16 @@ workflows:
               exit 1
             fi
 `
-
-	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
-	require.Equal(t, nil, err)
-
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 }
 
 func TestEvaluateInputs(t *testing.T) {
@@ -87,13 +86,12 @@ workflows:
           opts:
             is_template: true
 `
-
-	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, nil, err)
-
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -119,57 +117,59 @@ workflows:
   feature:
   primary:
 `
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
-	//
-	// Default pattern defined
-	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	t.Log("Default pattern defined & Non pull request mode")
+	{
+		configs.IsPullRequestMode = false
 
-	// Non pull request mode
-	configs.IsPullRequestMode = false
+		workflowID, err := GetWorkflowIDByPattern(config, "master")
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
 
-	workflowID, err := GetWorkflowIDByPattern(config, "master")
-	require.Equal(t, nil, err)
-	require.Equal(t, "master", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature")
+		require.Equal(t, nil, err)
+		require.Equal(t, "primary", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.Equal(t, nil, err)
-	require.Equal(t, "primary", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "test")
+		require.Equal(t, nil, err)
+		require.Equal(t, "primary", workflowID)
+	}
 
-	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.Equal(t, nil, err)
-	require.Equal(t, "primary", workflowID)
+	t.Log("Default pattern defined &  Pull request mode")
+	{
+		configs.IsPullRequestMode = true
 
-	// Pull request mode
-	configs.IsPullRequestMode = true
+		workflowID, err := GetWorkflowIDByPattern(config, "master")
+		require.Equal(t, nil, err)
+		require.Equal(t, "primary", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "master")
-	require.Equal(t, nil, err)
-	require.Equal(t, "primary", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature")
+		require.Equal(t, nil, err)
+		require.Equal(t, "primary", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.Equal(t, nil, err)
-	require.Equal(t, "primary", workflowID)
-
-	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.Equal(t, nil, err)
-	require.Equal(t, "primary", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "test")
+		require.Equal(t, nil, err)
+		require.Equal(t, "primary", workflowID)
+	}
 
 	configStr = `
   trigger_map:
@@ -186,57 +186,59 @@ workflows:
     feature:
     primary:
   `
+	config, warnings, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
-	//
-	// No default pattern defined
-	config, _, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	t.Log("No default pattern defined & Non pull request mode")
+	{
+		configs.IsPullRequestMode = false
 
-	// Non pull request mode
-	configs.IsPullRequestMode = false
+		workflowID, err := GetWorkflowIDByPattern(config, "master")
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "master")
-	require.Equal(t, nil, err)
-	require.Equal(t, "master", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature")
+		require.NotEqual(t, nil, err)
+		require.Equal(t, "", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "test")
+		require.NotEqual(t, nil, err)
+		require.Equal(t, "", workflowID)
+	}
 
-	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+	t.Log("No default pattern defined & Pull request mode")
+	{
+		configs.IsPullRequestMode = true
 
-	// Pull request mode
-	configs.IsPullRequestMode = true
+		workflowID, err := GetWorkflowIDByPattern(config, "master")
+		require.NotEqual(t, nil, err)
+		require.Equal(t, "", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "master")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/a")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature/")
+		require.Equal(t, nil, err)
+		require.Equal(t, "feature", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature/")
-	require.Equal(t, nil, err)
-	require.Equal(t, "feature", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "feature")
+		require.NotEqual(t, nil, err)
+		require.Equal(t, "", workflowID)
 
-	workflowID, err = GetWorkflowIDByPattern(config, "feature")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
-
-	workflowID, err = GetWorkflowIDByPattern(config, "test")
-	require.NotEqual(t, nil, err)
-	require.Equal(t, "", workflowID)
+		workflowID, err = GetWorkflowIDByPattern(config, "test")
+		require.NotEqual(t, nil, err)
+		require.Equal(t, "", workflowID)
+	}
 }
 
 func TestGetBitriseConfigFromBase64Data(t *testing.T) {
@@ -248,30 +250,19 @@ workflows:
   target:
     title: target
 `
-
 	configBytes := []byte(configStr)
 	configBase64Str := base64.StdEncoding.EncodeToString(configBytes)
-	t.Log("Config:", configBase64Str)
 
-	config, _, err := GetBitriseConfigFromBase64Data(configBase64Str)
-	if err != nil {
-		t.Fatal("Failed to get config from base 64 data, err:", err)
-	}
+	config, warnings, err := GetBitriseConfigFromBase64Data(configBase64Str)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
-	if config.FormatVersion != "0.9.10" {
-		t.Fatal("Invalid FormatVersion")
-	}
-	if config.DefaultStepLibSource != "https://github.com/bitrise-io/bitrise-steplib.git" {
-		t.Fatal("Invalid FormatVersion")
-	}
+	require.Equal(t, "0.9.10", config.FormatVersion)
+	require.Equal(t, "https://github.com/bitrise-io/bitrise-steplib.git", config.DefaultStepLibSource)
 
 	workflow, found := config.Workflows["target"]
-	if !found {
-		t.Fatal("Failed to found workflow")
-	}
-	if workflow.Title != "target" {
-		t.Fatal("Invalid workflow.Title")
-	}
+	require.Equal(t, true, found)
+	require.Equal(t, "target", workflow.Title)
 }
 
 func TestGetInventoryFromBase64Data(t *testing.T) {
@@ -281,38 +272,22 @@ envs:
     opts:
       is_expand: true
 `
-
 	inventoryBytes := []byte(inventoryStr)
 	inventoryBase64Str := base64.StdEncoding.EncodeToString(inventoryBytes)
-	t.Log("Inventory:", inventoryBase64Str)
 
 	inventory, err := GetInventoryFromBase64Data(inventoryBase64Str)
-	if err != nil {
-		t.Fatal("Failed to get inventory from base 64 data, err:", err)
-	}
+	require.NoError(t, err)
 
 	env := inventory[0]
 
 	key, value, err := env.GetKeyValuePair()
-	if err != nil {
-		t.Fatal("Failed to get env key-value pair, err:", err)
-	}
-
-	if key != "MY_HOME" {
-		t.Fatal("Invalid key")
-	}
-	if value != "$HOME" {
-		t.Fatal("Invalid value")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "MY_HOME", key)
+	require.Equal(t, "$HOME", value)
 
 	opts, err := env.GetOptions()
-	if err != nil {
-		t.Fatal("Failed to get env options, err:", err)
-	}
-
-	if *opts.IsExpand != true {
-		t.Fatal("Invalid IsExpand")
-	}
+	require.NoError(t, err)
+	require.Equal(t, true, *opts.IsExpand)
 }
 
 func TestInvalidStepID(t *testing.T) {
@@ -328,11 +303,9 @@ workflows:
     - invalid-step:
     - invalid-step:
 `
-
-	config, _, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
 
 	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
