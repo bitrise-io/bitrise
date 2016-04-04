@@ -55,9 +55,9 @@ workflows:
   test:
     title: Bitrise test
     description: |
-      1, Go Test
-      2, Err check
-      3, Go Lint
+      1, Err check
+      2, Go Lint
+      3, Go Test
       4, Test-build
       5, Step-template test
     steps:
@@ -77,10 +77,6 @@ workflows:
             no_vendor_paths="$(go list ./... | grep -v vendor)"
             envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
     - script:
-        title: Go Test
-        inputs:
-        - content: go test ./...
-    - script:
         title: Err check
         inputs:
         - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
@@ -99,6 +95,10 @@ workflows:
                 exit 1
               fi
             done <<< "$GOLIST_WITHOUT_VENDOR"
+    - script:
+        title: Go Test
+        inputs:
+        - content: go test ./...
     - script:
         title: Test-build
         inputs:
@@ -129,17 +129,6 @@ workflows:
     description: |
         Prepares the environment for testing
     steps:
-    - git-clone:
-        title: Git Clone bitrise
-        inputs:
-        - clone_into_dir: $BITRISE_PATH
-          opts:
-            is_expand: true
-    - change-workdir:
-        run_if: ".IsCI"
-        title: cd to bitrise go path
-        inputs:
-        - path: $BITRISE_PATH
     - script:
         title: Install required testing tools
         run_if: ".IsCI"
