@@ -8,11 +8,60 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
+	ver "github.com/hashicorp/go-version"
 )
+
+// CheckIsPluginInstalled ...
+func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
+	_, found, err := plugins.LoadPlugin(name)
+	if err != nil {
+		return err
+	}
+
+	installOrUpdate := false
+
+	if !found {
+		fmt.Println()
+		log.Warnf("Default plugin (%s) NOT found.", name)
+		fmt.Println()
+
+		log.Infoln("Installing...")
+		installOrUpdate = true
+	} else {
+		installedVersion, err := plugins.GetPluginVersion(name)
+		if err != nil {
+			return err
+		}
+
+		minVersion, err := ver.NewVersion(dependency.MinVersion)
+		if err != nil {
+			return err
+		}
+
+		if installedVersion.LessThan(minVersion) {
+			fmt.Println()
+			log.Warnf("Default plugin (%s) version (%s) is lower than required (%s).", name, installedVersion.String(), minVersion.String())
+			fmt.Println()
+
+			log.Infoln("Updating...")
+			installOrUpdate = true
+		}
+	}
+
+	if installOrUpdate {
+		_, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // CheckProgramInstalledPath ...
 func CheckProgramInstalledPath(clcommand string) (string, error) {
