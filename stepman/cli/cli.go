@@ -6,8 +6,8 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/stepman/stepman"
+	"github.com/bitrise-io/stepman/version"
 	"github.com/codegangsta/cli"
 )
 
