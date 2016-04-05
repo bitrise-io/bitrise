@@ -23,6 +23,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		return err
 	}
 
+	currentVersion := ""
 	installOrUpdate := false
 
 	if !found {
@@ -32,11 +33,13 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 
 		log.Infoln("Installing...")
 		installOrUpdate = true
+		currentVersion = dependency.MinVersion
 	} else {
 		installedVersion, err := plugins.GetPluginVersion(name)
 		if err != nil {
 			return err
 		}
+		currentVersion = installedVersion.String()
 
 		minVersion, err := ver.NewVersion(dependency.MinVersion)
 		if err != nil {
@@ -50,6 +53,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 
 			log.Infoln("Updating...")
 			installOrUpdate = true
+			currentVersion = dependency.MinVersion
 		}
 	}
 
@@ -59,6 +63,11 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 			return err
 		}
 	}
+
+	pluginDir := plugins.GetPluginDir(name)
+
+	log.Infof(" * %s Plugin (%s) : %s", colorstring.Green("[OK]"), name, pluginDir)
+	log.Infof("        version : %s", currentVersion)
 
 	return nil
 }
