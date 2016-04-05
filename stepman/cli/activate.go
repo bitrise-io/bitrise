@@ -86,9 +86,9 @@ func activate(c *cli.Context) {
 		log.Fatalf("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s)", id, version)
 	}
 
-	route, found := stepman.ReadRoute(collection.SteplibSource)
+	route, found := stepman.ReadRoute(collectionURI)
 	if !found {
-		log.Fatalf("No route found for lib: %s", collection.SteplibSource)
+		log.Fatalf("No route found for lib: %s", collectionURI)
 	}
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
@@ -96,7 +96,7 @@ func activate(c *cli.Context) {
 		log.Fatal("[STEPMAN] - Failed to check path:", err)
 	} else if !exist {
 		log.Debug("[STEPMAN] - Step does not exist, download it")
-		if err := stepman.DownloadStep(collection, id, version, step.Source.Commit); err != nil {
+		if err := stepman.DownloadStep(collectionURI, collection, id, version, step.Source.Commit); err != nil {
 			log.Fatal("[STEPMAN] - Failed to download step:", err)
 		}
 	}
