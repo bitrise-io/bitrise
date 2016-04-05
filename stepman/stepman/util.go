@@ -89,16 +89,16 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(collection models.StepCollectionModel, id, version, commithash string) error {
+func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string) error {
 	log.Debugf("Download Step: %#v (%#v)\n", id, version)
 	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
 		return err
 	}
 
-	route, found := ReadRoute(collection.SteplibSource)
+	route, found := ReadRoute(collectionURI)
 	if !found {
-		return errors.New("No routing found for lib: " + err.Error())
+		return fmt.Errorf("No routing found for lib: %s", collectionURI)
 	}
 
 	stepPth := GetStepCacheDirPath(route, id, version)
