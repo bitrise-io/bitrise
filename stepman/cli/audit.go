@@ -18,7 +18,7 @@ func auditStepBeforeShare(pth string) error {
 	if err != nil {
 		return err
 	}
-	if err := stepModel.ValidateForShare(); err != nil {
+	if err := stepModel.AuditBeforeShare(); err != nil {
 		return err
 	}
 	return nil
@@ -63,7 +63,7 @@ func auditStepBeforeSharePullRequest(pth string) error {
 }
 
 func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {
-	if err := step.Validate(true); err != nil {
+	if err := step.Audit(); err != nil {
 		return err
 	}
 

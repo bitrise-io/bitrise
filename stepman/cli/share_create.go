@@ -126,7 +126,7 @@ func create(c *cli.Context) {
 	stepModel.PublishedAt = pointers.NewTimePtr(time.Now())
 
 	// Validate step-yml
-	if err := stepModel.Validate(true); err != nil {
+	if err := stepModel.Audit(); err != nil {
 		log.Fatalf("Failed to validate Step, err: %s", err)
 	}
 	for _, input := range stepModel.Inputs {
