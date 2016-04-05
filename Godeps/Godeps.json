@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/bitrise-io/bitrise",
 	"GoVersion": "go1.6",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -13,8 +16,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "1.1.0-1-ge6de87c",
-			"Rev": "e6de87c5ed82f2e8a20a28721d2600bc55d1ddde"
+			"Comment": "1.1.0-3-g188a69a",
+			"Rev": "188a69a11b866f436f5869fe01fa7c2a6eb427a9"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -54,8 +57,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.18-2-g8d62410",
-			"Rev": "8d62410ba67b5040e57011ca27988824f339f0fa"
+			"Comment": "0.9.18-12-gba10ca9",
+			"Rev": "ba10ca980b0fb5e5bc4784b131a839cc56686886"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
@@ -96,16 +99,6 @@
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
 			"Rev": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4"
-		},
-		{
-			"ImportPath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
-			"Comment": "v2.0.0",
-			"Rev": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd"
-		},
-		{
-			"ImportPath": "gopkg.in/airbrake/gobrake.v2",
-			"Comment": "v2.0.3",
-			"Rev": "c9d51adc624b5cc4c1bf8de730a09af4878ffe2d"
 		}
 	]
 }
