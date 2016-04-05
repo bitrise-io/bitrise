@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
@@ -194,7 +194,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 	}
 
 	// Check tool requirements
-	currentVersionMap, err := configs.VersionMap()
+	currentVersionMap, err := version.ToolVersionMap()
 	if err != nil {
 		return Plugin{}, "", fmt.Errorf("failed to get current version map, error: %s", err)
 	}

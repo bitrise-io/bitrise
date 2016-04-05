@@ -1,4 +1,4 @@
-package bitrise
+package configs
 
 import (
 	"os"

@@ -14,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -31,16 +32,16 @@ func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error
 		}
 
 		if !configs.IsCIMode {
-			if key == bitrise.CIModeEnvKey && value == "true" {
+			if key == configs.CIModeEnvKey && value == "true" {
 				configs.IsCIMode = true
 			}
 		}
 
 		if !configs.IsPullRequestMode {
-			if key == bitrise.PullRequestIDEnvKey && value != "" {
+			if key == configs.PullRequestIDEnvKey && value != "" {
 				configs.IsPullRequestMode = true
 			}
-			if key == bitrise.PRModeEnvKey && value == "true" {
+			if key == configs.PRModeEnvKey && value == "true" {
 				configs.IsPullRequestMode = true
 			}
 		}
@@ -84,7 +85,7 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
-		bitriseConfigPath = path.Join(bitrise.CurrentDir, DefaultBitriseConfigFileName)
+		bitriseConfigPath = path.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
 
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			return "", err
@@ -161,7 +162,7 @@ func GetInventoryFilePath(c *cli.Context) (string, error) {
 
 	if inventoryPath == "" {
 		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = path.Join(bitrise.CurrentDir, DefaultSecretsFileName)
+		inventoryPath = path.Join(configs.CurrentDir, DefaultSecretsFileName)
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			return "", err
@@ -204,7 +205,7 @@ func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentIte
 }
 
 func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
-	bitriseSourceDir := os.Getenv(bitrise.BitriseSourceDirEnvKey)
+	bitriseSourceDir := os.Getenv(configs.BitriseSourceDirEnvKey)
 	for i := len(envlist) - 1; i >= 0; i-- {
 		env := envlist[i]
 
@@ -213,7 +214,7 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 			return bitriseSourceDir, err
 		}
 
-		if key == bitrise.BitriseSourceDirEnvKey && value != "" {
+		if key == configs.BitriseSourceDirEnvKey && value != "" {
 			return value, nil
 		}
 	}
@@ -295,7 +296,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Collect step inputs
-	if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
+	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
@@ -316,7 +317,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			outStr, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
+			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
@@ -338,7 +339,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 	environments = append(environments, evaluatedInputs...)
 
-	if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
+	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
@@ -354,11 +355,11 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 	if bitriseSourceDir == "" {
-		bitriseSourceDir = bitrise.CurrentDir
+		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := bitrise.EnvmanRun(bitrise.InputEnvstorePath, bitriseSourceDir, cmd); err != nil {
-		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
+	if exit, err := tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd); err != nil {
+		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
 		}
@@ -366,7 +367,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return exit, stepOutputs, err
 	}
 
-	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(bitrise.OutputEnvstorePath)
+	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 	if err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
@@ -465,7 +466,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		//
 		// Preparing the step
-		if err := bitrise.EnvmanInitAtPath(bitrise.InputEnvstorePath); err != nil {
+		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
 			registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 			continue
 		}
@@ -502,8 +503,8 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 		//
 		// Activating the step
-		stepDir := bitrise.BitriseWorkStepsDirPath
-		stepYMLPth := path.Join(bitrise.BitriseWorkDirPath, "current_step.yml")
+		stepDir := configs.BitriseWorkStepsDirPath
+		stepYMLPth := path.Join(configs.BitriseWorkDirPath, "current_step.yml")
 
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
@@ -551,7 +552,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		} else if stepIDData.SteplibSource != "" {
 			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-			if err := bitrise.StepmanSetup(stepIDData.SteplibSource); err != nil {
+			if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
@@ -559,14 +560,14 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			isLatestVersionOfStep := (stepIDData.Version == "")
 			if isLatestVersionOfStep && !buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
 				log.Infof("Step uses latest version -- Updating StepLib ...")
-				if err := bitrise.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+				if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
 					log.Warnf("Step uses latest version, but failed to update StepLib, err: %s", err)
 				} else {
 					buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 				}
 			}
 
-			outStr, err := bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+			outStr, err := tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 			if err != nil {
 				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep, true)
@@ -574,13 +575,13 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				}
 				// May StepLib should be updated
 				log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
-				if err := bitrise.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+				if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 					continue
 				}
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 
-				outStr, err = bitrise.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+				outStr, err = tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 				if err != nil {
 					registerStepRunResults("", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep, true)
 					continue
@@ -601,7 +602,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			stepInfoPtr.Latest = stepInfo.Latest
 			stepInfoPtr.GlobalInfo = stepInfo.GlobalInfo
 
-			if err := bitrise.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
+			if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			} else {
@@ -640,7 +641,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		// Run step
 		bitrise.PrintRunningStepHeader(stepInfoPtr, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			outStr, err := bitrise.EnvmanJSONPrint(bitrise.InputEnvstorePath)
+			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
 			if err != nil {
 				registerStepRunResults(*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err), isLastStep, false)
 				continue
@@ -760,7 +761,7 @@ func runWorkflowWithConfiguration(
 	bitriseConfig models.BitriseDataModel,
 	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
 
-	if err := bitrise.InitPaths(); err != nil {
+	if err := configs.InitPaths(); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to initialize required paths: %s", err)
 	}
 
@@ -774,15 +775,15 @@ func runWorkflowWithConfiguration(
 	}
 
 	// Envman setup
-	if err := os.Setenv(bitrise.EnvstorePathEnvKey, bitrise.OutputEnvstorePath); err != nil {
+	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
 	}
 
-	if err := os.Setenv(bitrise.FormattedOutputPathEnvKey, bitrise.FormattedOutputPath); err != nil {
+	if err := os.Setenv(configs.FormattedOutputPathEnvKey, configs.FormattedOutputPath); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
 	}
 
-	if err := bitrise.EnvmanInit(); err != nil {
+	if err := tools.EnvmanInit(); err != nil {
 		return models.BuildRunResultsModel{}, errors.New("Failed to run envman init")
 	}
 

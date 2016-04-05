@@ -1,4 +1,4 @@
-package bitrise
+package tools
 
 import (
 	"bytes"
@@ -10,32 +10,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
-	version "github.com/hashicorp/go-version"
 )
 
 // ------------------
 // --- Stepman
-
-// StepmanVersion ...
-func StepmanVersion() (version.Version, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "--version"}
-
-	versionOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-	if err != nil {
-		return version.Version{}, err
-	}
-
-	versionPtr, err := version.NewVersion(versionOut)
-	if err != nil {
-		return version.Version{}, err
-	}
-	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", versionOut)
-	}
-
-	return *versionPtr, nil
-}
 
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
@@ -167,26 +145,6 @@ func StepmanShareStart(collection string) error {
 
 // ------------------
 // --- Envman
-
-// EnvmanVersion ...
-func EnvmanVersion() (version.Version, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--version"}
-	versionOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
-	if err != nil {
-		return version.Version{}, err
-	}
-
-	versionPtr, err := version.NewVersion(versionOut)
-	if err != nil {
-		return version.Version{}, err
-	}
-	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", versionOut)
-	}
-
-	return *versionPtr, nil
-}
 
 // EnvmanInit ...
 func EnvmanInit() error {

@@ -1,4 +1,4 @@
-package bitrise
+package tools
 
 import (
 	"path"

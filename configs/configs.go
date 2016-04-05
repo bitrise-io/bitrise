@@ -2,11 +2,11 @@ package configs
 
 import (
 	"fmt"
+	"path"
 
-	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/codegangsta/cli"
-	ver "github.com/hashicorp/go-version"
 )
 
 // ---------------------------
@@ -38,6 +38,19 @@ const (
 	OutputFormatYML = "yml"
 )
 
+const (
+	// CIModeEnvKey ...
+	CIModeEnvKey = "CI"
+	// PRModeEnvKey ...
+	PRModeEnvKey = "PR"
+	// PullRequestIDEnvKey ...
+	PullRequestIDEnvKey = "PULL_REQUEST_ID"
+	// DebugModeEnvKey ...
+	DebugModeEnvKey = "DEBUG"
+	// LogLevelEnvKey ...
+	LogLevelEnvKey = "LOGLEVEL"
+)
+
 // ConfigureOutputFormat ...
 func ConfigureOutputFormat(c *cli.Context) error {
 	outFmt := c.String(OuputFormatKey)
@@ -55,39 +68,40 @@ func ConfigureOutputFormat(c *cli.Context) error {
 	return nil
 }
 
-// BitriseVersion ...
-func BitriseVersion() (ver.Version, error) {
-	bitriseVersionPtr, err := ver.NewVersion(version.VERSION)
-	if err != nil {
-		return ver.Version{}, err
-	}
-	if bitriseVersionPtr == nil {
-		return ver.Version{}, fmt.Errorf("Failed to parse version (%s)", version.VERSION)
-	}
+const (
+	bitriseVersionSetupStateFileName = "setup.version"
+)
 
-	return *bitriseVersionPtr, nil
+// GetBitriseConfigsDirPath ...
+func GetBitriseConfigsDirPath() string {
+	return path.Join(pathutil.UserHomeDir(), ".bitrise")
 }
 
-// VersionMap ...
-func VersionMap() (map[string]ver.Version, error) {
-	envmanVersion, err := bitrise.EnvmanVersion()
-	if err != nil {
-		return map[string]ver.Version{}, err
-	}
+func getBitriseConfigVersionSetupFilePath() string {
+	return path.Join(GetBitriseConfigsDirPath(), bitriseVersionSetupStateFileName)
+}
 
-	stepmanVersion, err := bitrise.StepmanVersion()
-	if err != nil {
-		return map[string]ver.Version{}, err
-	}
+// EnsureBitriseConfigDirExists ...
+func EnsureBitriseConfigDirExists() error {
+	confDirPth := GetBitriseConfigsDirPath()
+	return pathutil.EnsureDirExist(confDirPth)
+}
 
-	bitriseVersion, err := BitriseVersion()
+// CheckIsSetupWasDoneForVersion ...
+func CheckIsSetupWasDoneForVersion(ver string) bool {
+	configPth := getBitriseConfigVersionSetupFilePath()
+	cont, err := fileutil.ReadStringFromFile(configPth)
 	if err != nil {
-		return map[string]ver.Version{}, err
+		return false
 	}
+	return (cont == ver)
+}
 
-	return map[string]ver.Version{
-		"bitrise": bitriseVersion,
-		"envman":  envmanVersion,
-		"stepman": stepmanVersion,
-	}, nil
+// SaveSetupSuccessForVersion ...
+func SaveSetupSuccessForVersion(ver string) error {
+	if err := EnsureBitriseConfigDirExists(); err != nil {
+		return err
+	}
+	configPth := getBitriseConfigVersionSetupFilePath()
+	return fileutil.WriteStringToFile(configPth, ver)
 }
