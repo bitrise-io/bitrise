@@ -136,7 +136,7 @@ func (workflow *WorkflowModel) Validate() error {
 		if err != nil {
 			return err
 		}
-		if err := step.Validate(false); err != nil {
+		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
 			return err
 		}
 		stepListItem[stepID] = step
