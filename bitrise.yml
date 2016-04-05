@@ -3,10 +3,9 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - BITRISE_BIN_NAME: bitrise
-  - BITRISE_IO_GO_PATH: "$GOPATH/src/github.com/bitrise-io"
-  - BITRISE_PATH: $BITRISE_IO_GO_PATH/bitrise
-  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
+  - BIN_NAME: bitrise
+  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
+
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
@@ -41,8 +40,8 @@ workflows:
         inputs:
         - webhook_url: "$INTERNAL_DEV_SLACK_WEBHOOK_URL"
         - channel: "$INTERNAL_DEV_LIFELINE_SLACK_CHANNEL"
-        - from_username: "${BITRISE_BIN_NAME} - CI - OK"
-        - from_username_on_error: "${BITRISE_BIN_NAME} - CI - ERROR"
+        - from_username: "${BIN_NAME} - CI - OK"
+        - from_username_on_error: "${BIN_NAME} - CI - ERROR"
         - message: |-
             CI was successful on branch: *${BITRISE_GIT_BRANCH}*
 
@@ -236,7 +235,7 @@ workflows:
         inputs:
         - webhook_url: "$INTERNAL_DEV_SLACK_WEBHOOK_URL"
         - channel: "$INTERNAL_DEV_SLACK_CHANNEL"
-        - from_username: ${BITRISE_BIN_NAME}
+        - from_username: ${BIN_NAME}
         - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
 
@@ -247,7 +246,7 @@ workflows:
         inputs:
         - webhook_url: "$PUBLIC_SLACK_WEBHOOK_URL"
         - channel: "$PUBLIC_SLACK_CHANNEL"
-        - from_username: ${BITRISE_BIN_NAME}
+        - from_username: ${BIN_NAME}
         - message: |
             Release v${RELEASE_VERSION} was just published! :tada:
 
@@ -293,7 +292,7 @@ workflows:
             export OS=Darwin
             export GOOS=darwin
 
-            BIN_NAME=$BITRISE_BIN_NAME-$OS-$ARCH
+            BIN_NAME=$BIN_NAME-$OS-$ARCH
             DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
 
@@ -303,7 +302,7 @@ workflows:
             export OS=Linux
             export GOOS=linux
 
-            BIN_NAME=$BITRISE_BIN_NAME-$OS-$ARCH
+            BIN_NAME=$BIN_NAME-$OS-$ARCH
             DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
 
