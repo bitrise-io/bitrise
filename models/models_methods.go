@@ -124,25 +124,42 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate() error {
+func (workflow *WorkflowModel) Validate() ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
-			return err
+			return []string{}, err
 		}
 	}
 
+	warnings := []string{}
 	for _, stepListItem := range workflow.Steps {
 		stepID, step, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
-			return err
+			return warnings, err
 		}
+
 		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
-			return err
+			return warnings, err
 		}
+
+		stepInputMap := map[string]bool{}
+		for _, input := range step.Inputs {
+			key, _, err := input.GetKeyValuePair()
+			if err != nil {
+				return warnings, err
+			}
+
+			_, found := stepInputMap[key]
+			if found {
+				warnings = append(warnings, fmt.Sprintf("invalid step: duplicated input found: (%s)", key))
+			}
+			stepInputMap[key] = true
+		}
+
 		stepListItem[stepID] = step
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // Validate ...
@@ -173,9 +190,12 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conforms to: [A-Za-z0-9-_.]", ID))
 		}
 
-		if err := workflow.Validate(); err != nil {
+		warns, err := workflow.Validate()
+		warnings = append(warnings, warns...)
+		if err != nil {
 			return warnings, err
 		}
+
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
 			return warnings, err
 		}

@@ -85,13 +85,21 @@ func TestValidateConfig(t *testing.T) {
 
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
-	workflow := WorkflowModel{
-		BeforeRun: []string{"befor1", "befor2", "befor3"},
-		AfterRun:  []string{"after1", "after2", "after3"},
-	}
-	require.Equal(t, nil, workflow.Validate())
+	t.Log("before-afetr test")
+	{
+		workflow := WorkflowModel{
+			BeforeRun: []string{"befor1", "befor2", "befor3"},
+			AfterRun:  []string{"after1", "after2", "after3"},
+		}
 
-	configStr := `
+		warnings, err := workflow.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("invalid workflow - Invalid env: more than 2 fields")
+	{
+		configStr := `
 format_version: 1.0.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -110,19 +118,46 @@ workflows:
           BAD_KEY: value
 `
 
-	config := BitriseDataModel{}
-	require.Equal(t, nil, yaml.Unmarshal([]byte(configStr), &config))
-	require.Equal(t, nil, config.Normalize())
-	_, err := config.Validate()
-	require.NotEqual(t, nil, err)
-	require.Equal(t, true, strings.Contains(err.Error(), "Invalid env: more than 2 fields:"))
+		config := BitriseDataModel{}
+		require.NoError(t, yaml.Unmarshal([]byte(configStr), &config))
+		require.NoError(t, config.Normalize())
+
+		warnings, err := config.Validate()
+		require.Error(t, err)
+		require.Equal(t, true, strings.Contains(err.Error(), "Invalid env: more than 2 fields:"))
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("vali workflow - Warning: duplicated inputs")
+	{
+		configStr := `
+format_version: 1.0.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: echo "Hello"
+        - content: echo "Hello"
+`
+
+		config := BitriseDataModel{}
+		require.NoError(t, yaml.Unmarshal([]byte(configStr), &config))
+		require.NoError(t, config.Normalize())
+
+		warnings, err := config.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+	}
 }
 
 // ----------------------------
 // --- Merge
 
 func TestMergeEnvironmentWith(t *testing.T) {
-	// Different keys
 	diffEnv := envmanModels.EnvironmentItemModel{
 		"test_key": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
@@ -136,32 +171,38 @@ func TestMergeEnvironmentWith(t *testing.T) {
 			IsTemplate:        pointers.NewBoolPtr(true),
 		},
 	}
-	env := envmanModels.EnvironmentItemModel{
-		"test_key1": "test_value",
+
+	t.Log("Different keys")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"test_key1": "test_value",
+		}
+		require.Error(t, MergeEnvironmentWith(&env, diffEnv))
 	}
-	require.NotEqual(t, nil, MergeEnvironmentWith(&env, diffEnv))
 
-	// Normal merge
-	env = envmanModels.EnvironmentItemModel{
-		"test_key":              "test_value",
-		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{},
+	t.Log("Normal merge")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"test_key":              "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{},
+		}
+		require.NoError(t, MergeEnvironmentWith(&env, diffEnv))
+
+		options, err := env.GetOptions()
+		require.NoError(t, err)
+
+		diffOptions, err := diffEnv.GetOptions()
+		require.NoError(t, err)
+
+		require.Equal(t, *diffOptions.Title, *options.Title)
+		require.Equal(t, *diffOptions.Description, *options.Description)
+		require.Equal(t, *diffOptions.Summary, *options.Summary)
+		require.Equal(t, len(diffOptions.ValueOptions), len(options.ValueOptions))
+		require.Equal(t, *diffOptions.IsRequired, *options.IsRequired)
+		require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
+		require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
+		require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
 	}
-	require.Equal(t, nil, MergeEnvironmentWith(&env, diffEnv))
-
-	options, err := env.GetOptions()
-	require.Equal(t, nil, err)
-
-	diffOptions, err := diffEnv.GetOptions()
-	require.Equal(t, nil, err)
-
-	require.Equal(t, *diffOptions.Title, *options.Title)
-	require.Equal(t, *diffOptions.Description, *options.Description)
-	require.Equal(t, *diffOptions.Summary, *options.Summary)
-	require.Equal(t, len(diffOptions.ValueOptions), len(options.ValueOptions))
-	require.Equal(t, *diffOptions.IsRequired, *options.IsRequired)
-	require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
-	require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
-	require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
 }
 
 func TestMergeStepWith(t *testing.T) {
@@ -217,9 +258,7 @@ func TestMergeStepWith(t *testing.T) {
 	}
 
 	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
-	require.Equal(t, nil, err)
-
-	t.Logf("-> MERGED Step Data: %#v\n", mergedStepData)
+	require.NoError(t, err)
 
 	require.Equal(t, "name 2", *mergedStepData.Title)
 	require.Equal(t, "desc 1", *mergedStepData.Description)
@@ -239,14 +278,14 @@ func TestMergeStepWith(t *testing.T) {
 	input0 := mergedStepData.Inputs[0]
 	key0, value0, err := input0.GetKeyValuePair()
 
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.Equal(t, "KEY_1", key0)
 	require.Equal(t, "Value 1", value0)
 
 	input1 := mergedStepData.Inputs[1]
 	key1, value1, err := input1.GetKeyValuePair()
 
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.Equal(t, "KEY_2", key1)
 	require.Equal(t, "Value 2 CHANGED", value1)
 }
@@ -276,240 +315,189 @@ func TestGetInputByKey(t *testing.T) {
 func TestGetStepIDStepDataPair(t *testing.T) {
 	stepData := stepmanModels.StepModel{}
 
-	stepListItem := StepListItemModel{
-		"step1": stepData,
+	t.Log("valid steplist item")
+	{
+		stepListItem := StepListItemModel{
+			"step1": stepData,
+		}
+
+		id, _, err := GetStepIDStepDataPair(stepListItem)
+		require.NoError(t, err)
+		require.Equal(t, "step1", id)
 	}
 
-	id, _, err := GetStepIDStepDataPair(stepListItem)
-	require.Equal(t, nil, err)
-	require.Equal(t, "step1", id)
+	t.Log("invalid steplist item - more than 1 step")
+	{
+		stepListItem := StepListItemModel{
+			"step1": stepData,
+			"step2": stepData,
+		}
 
-	stepListItem = StepListItemModel{
-		"step1": stepData,
-		"step2": stepData,
+		id, _, err := GetStepIDStepDataPair(stepListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
 	}
-
-	id, _, err = GetStepIDStepDataPair(stepListItem)
-	require.NotEqual(t, nil, err)
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
-	// default / long / verbose ID mode
-	stepCompositeIDString := "steplib-src::step-id@0.0.1"
-	t.Log("stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "steplib-src" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "step-id" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "0.0.1" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("default / long / verbose ID mode")
+	{
+		stepCompositeIDString := "steplib-src::step-id@0.0.1"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "steplib-src", stepIDData.SteplibSource)
+		require.Equal(t, "step-id", stepIDData.IDorURI)
+		require.Equal(t, "0.0.1", stepIDData.Version)
 	}
 
-	// no steplib-source
-	stepCompositeIDString = "step-id@0.0.1"
-	t.Log("(no steplib-source, but default provided) stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "default-steplib-src" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "step-id" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "0.0.1" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("no steplib-source")
+	{
+		stepCompositeIDString := "step-id@0.0.1"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
+
+		require.NoError(t, err)
+		require.Equal(t, "default-steplib-src", stepIDData.SteplibSource)
+		require.Equal(t, "step-id", stepIDData.IDorURI)
+		require.Equal(t, "0.0.1", stepIDData.Version)
 	}
 
-	// invalid/empty step lib source, but default provided
-	stepCompositeIDString = "::step-id@0.0.1"
-	t.Log("(invalid/empty steplib source, but default provided) stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "default-steplib-src" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "step-id" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "0.0.1" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("invalid/empty step lib source, but default provided")
+	{
+		stepCompositeIDString := "::step-id@0.0.1"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
+
+		require.NoError(t, err)
+		require.Equal(t, "default-steplib-src", stepIDData.SteplibSource)
+		require.Equal(t, "step-id", stepIDData.IDorURI)
+		require.Equal(t, "0.0.1", stepIDData.Version)
 	}
 
-	// invalid/empty step lib source + no default
-	stepCompositeIDString = "::step-id@0.0.1"
-	t.Log("(invalid/empty steplib source) stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err == nil {
-		t.Fatal("Should fail to parse the ID if it contains an empty steplib-src and no default src is provided")
+	t.Log("invalid/empty step lib source + no default")
+	{
+		stepCompositeIDString := "::step-id@0.0.1"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.Error(t, err)
+		require.Equal(t, "", stepIDData.SteplibSource)
+		require.Equal(t, "", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	// no steplib-source & no default -> fail
-	stepCompositeIDString = "step-id@0.0.1"
-	t.Log("(no steplib-source & no default, should fail) stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err == nil {
-		t.Fatal("Should fail to parse the ID if it does not contain a steplib-src and no default src is provided")
-	} else {
-		t.Log("Expected error (ok): ", err)
+	t.Log("no steplib-source & no default -> fail")
+	{
+		stepCompositeIDString := "step-id@0.0.1"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.Error(t, err)
+		require.Equal(t, "", stepIDData.SteplibSource)
+		require.Equal(t, "", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	// no steplib & no version, only step-id
-	stepCompositeIDString = "step-id"
-	t.Log("no steplib & no version, only step-id and default lib source: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-lib-src")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "def-lib-src" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "step-id" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("no steplib & no version, only step-id")
+	{
+		stepCompositeIDString := "step-id"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-lib-src")
+
+		require.NoError(t, err)
+		require.Equal(t, "def-lib-src", stepIDData.SteplibSource)
+		require.Equal(t, "step-id", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	// empty test
-	stepCompositeIDString = ""
-	t.Log("Empty stepCompositeIDString test")
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
-	if err == nil {
-		t.Fatal("Should fail to parse the ID from an empty string! (at least the step-id is required)")
-	} else {
-		t.Log("Expected error (ok): ", err)
+	t.Log("empty test")
+	{
+		stepCompositeIDString := ""
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
+
+		require.Error(t, err)
+		require.Equal(t, "", stepIDData.SteplibSource)
+		require.Equal(t, "", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	// special empty test
-	stepCompositeIDString = "@1.0.0"
-	t.Log("Empty stepCompositeIDString test with only version")
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
-	if err == nil {
-		t.Fatal("Should fail to parse the ID from an empty string! (at least the step-id is required)")
-	} else {
-		t.Log("Expected error (ok): ", err)
+	t.Log("special empty test")
+	{
+		stepCompositeIDString := "@1.0.0"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
+
+		require.Error(t, err)
+		require.Equal(t, "", stepIDData.SteplibSource)
+		require.Equal(t, "", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
 	//
 	// ----- Local Path
-	stepCompositeIDString = "path::/some/path"
-	t.Log("LOCAL - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "path" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "/some/path" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("local Path")
+	{
+		stepCompositeIDString := "path::/some/path"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "path", stepIDData.SteplibSource)
+		require.Equal(t, "/some/path", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	stepCompositeIDString = "path::~/some/path/in/home"
-	t.Log("LOCAL - path should be preserved as-it-is, #1 - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "path" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "~/some/path/in/home" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("local Path")
+	{
+		stepCompositeIDString := "path::~/some/path/in/home"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "path", stepIDData.SteplibSource)
+		require.Equal(t, "~/some/path/in/home", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
-	stepCompositeIDString = "path::$HOME/some/path/in/home"
-	t.Log("LOCAL - path should be preserved as-it-is, #1 - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "path" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "$HOME/some/path/in/home" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("local Path")
+	{
+		stepCompositeIDString := "path::$HOME/some/path/in/home"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "path", stepIDData.SteplibSource)
+		require.Equal(t, "$HOME/some/path/in/home", stepIDData.IDorURI)
+		require.Equal(t, "", stepIDData.Version)
 	}
 
 	//
 	// ----- Direct git uri
-	stepCompositeIDString = "git::https://github.com/bitrise-io/steps-timestamp.git@develop"
-	t.Log("DIRECT-GIT - http(s) - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "git" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "https://github.com/bitrise-io/steps-timestamp.git" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "develop" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("direct git uri")
+	{
+		stepCompositeIDString := "git::https://github.com/bitrise-io/steps-timestamp.git@develop"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
+
+		require.NoError(t, err)
+		require.Equal(t, "git", stepIDData.SteplibSource)
+		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
+		require.Equal(t, "develop", stepIDData.Version)
 	}
 
-	stepCompositeIDString = "git::git@github.com:bitrise-io/steps-timestamp.git@develop"
-	t.Log("DIRECT-GIT - ssh - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "git" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "git@github.com:bitrise-io/steps-timestamp.git" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "develop" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("direct git uri")
+	{
+		stepCompositeIDString := "git::git@github.com:bitrise-io/steps-timestamp.git@develop"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "git", stepIDData.SteplibSource)
+		require.Equal(t, "git@github.com:bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
+		require.Equal(t, "develop", stepIDData.Version)
 	}
 
 	//
 	// ----- Old step
-	stepCompositeIDString = "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0"
-	t.Log("OLD-STEP - stepCompositeIDString: ", stepCompositeIDString)
-	stepIDData, err = CreateStepIDDataFromString(stepCompositeIDString, "")
-	if err != nil {
-		t.Fatal("Failed to create StepIDData from composite-id: ", stepCompositeIDString, "| err:", err)
-	}
-	t.Logf("stepIDData:%#v", stepIDData)
-	if stepIDData.SteplibSource != "_" {
-		t.Fatal("stepIDData.SteplibSource incorrectly converted:", stepIDData.SteplibSource)
-	}
-	if stepIDData.IDorURI != "https://github.com/bitrise-io/steps-timestamp.git" {
-		t.Fatal("stepIDData.IDorURI incorrectly converted:", stepIDData.IDorURI)
-	}
-	if stepIDData.Version != "1.0.0" {
-		t.Fatal("stepIDData.Version incorrectly converted:", stepIDData.Version)
+	t.Log("old step")
+	{
+		stepCompositeIDString := "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+
+		require.NoError(t, err)
+		require.Equal(t, "_", stepIDData.SteplibSource)
+		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
+		require.Equal(t, "1.0.0", stepIDData.Version)
 	}
 }
 
@@ -517,70 +505,76 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 // --- RemoveRedundantFields
 
 func TestRemoveEnvironmentRedundantFields(t *testing.T) {
-	// Trivial remove - all fields should be default value
-	env := envmanModels.EnvironmentItemModel{
-		"TEST_KEY": "test_value",
-		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr(""),
-			Description:       pointers.NewStringPtr(""),
-			Summary:           pointers.NewStringPtr(""),
-			ValueOptions:      []string{},
-			IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
-			IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
-			IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
-			IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplate),
-		},
+	t.Log("Trivial remove - all fields should be default value")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"TEST_KEY": "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				Title:             pointers.NewStringPtr(""),
+				Description:       pointers.NewStringPtr(""),
+				Summary:           pointers.NewStringPtr(""),
+				ValueOptions:      []string{},
+				IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
+				IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
+				IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
+				IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplate),
+			},
+		}
+		require.NoError(t, removeEnvironmentRedundantFields(&env))
+
+		options, err := env.GetOptions()
+		require.NoError(t, err)
+
+		require.Equal(t, (*string)(nil), options.Title)
+		require.Equal(t, (*string)(nil), options.Description)
+		require.Equal(t, (*string)(nil), options.Summary)
+		require.Equal(t, 0, len(options.ValueOptions))
+		require.Equal(t, (*bool)(nil), options.IsRequired)
+		require.Equal(t, (*bool)(nil), options.IsExpand)
+		require.Equal(t, (*bool)(nil), options.IsDontChangeValue)
+		require.Equal(t, (*bool)(nil), options.IsTemplate)
 	}
-	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
-	options, err := env.GetOptions()
-	require.Equal(t, nil, err)
+	t.Log("Trivial don't remove - no fields should be default value")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"TEST_KEY": "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				Title:             pointers.NewStringPtr("t"),
+				Description:       pointers.NewStringPtr("d"),
+				Summary:           pointers.NewStringPtr("s"),
+				ValueOptions:      []string{"i"},
+				IsRequired:        pointers.NewBoolPtr(true),
+				IsExpand:          pointers.NewBoolPtr(false),
+				IsDontChangeValue: pointers.NewBoolPtr(true),
+				IsTemplate:        pointers.NewBoolPtr(true),
+			},
+		}
+		require.NoError(t, removeEnvironmentRedundantFields(&env))
 
-	require.Equal(t, (*string)(nil), options.Title)
-	require.Equal(t, (*string)(nil), options.Description)
-	require.Equal(t, (*string)(nil), options.Summary)
-	require.Equal(t, 0, len(options.ValueOptions))
-	require.Equal(t, (*bool)(nil), options.IsRequired)
-	require.Equal(t, (*bool)(nil), options.IsExpand)
-	require.Equal(t, (*bool)(nil), options.IsDontChangeValue)
-	require.Equal(t, (*bool)(nil), options.IsTemplate)
+		options, err := env.GetOptions()
+		require.NoError(t, err)
 
-	// Trivial don't remove - no fields should be default value
-	env = envmanModels.EnvironmentItemModel{
-		"TEST_KEY": "test_value",
-		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
-			Title:             pointers.NewStringPtr("t"),
-			Description:       pointers.NewStringPtr("d"),
-			Summary:           pointers.NewStringPtr("s"),
-			ValueOptions:      []string{"i"},
-			IsRequired:        pointers.NewBoolPtr(true),
-			IsExpand:          pointers.NewBoolPtr(false),
-			IsDontChangeValue: pointers.NewBoolPtr(true),
-			IsTemplate:        pointers.NewBoolPtr(true),
-		},
+		require.Equal(t, "t", *options.Title)
+		require.Equal(t, "d", *options.Description)
+		require.Equal(t, "s", *options.Summary)
+		require.Equal(t, "i", options.ValueOptions[0])
+		require.Equal(t, true, *options.IsRequired)
+		require.Equal(t, false, *options.IsExpand)
+		require.Equal(t, true, *options.IsDontChangeValue)
+		require.Equal(t, true, *options.IsTemplate)
 	}
-	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
 
-	options, err = env.GetOptions()
-	require.Equal(t, nil, err)
+	t.Log("No options - opts field shouldn't exist")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"TEST_KEY": "test_value",
+		}
+		require.NoError(t, removeEnvironmentRedundantFields(&env))
 
-	require.Equal(t, "t", *options.Title)
-	require.Equal(t, "d", *options.Description)
-	require.Equal(t, "s", *options.Summary)
-	require.Equal(t, "i", options.ValueOptions[0])
-	require.Equal(t, true, *options.IsRequired)
-	require.Equal(t, false, *options.IsExpand)
-	require.Equal(t, true, *options.IsDontChangeValue)
-	require.Equal(t, true, *options.IsTemplate)
-
-	// No options - opts field shouldn't exist
-	env = envmanModels.EnvironmentItemModel{
-		"TEST_KEY": "test_value",
+		_, ok := env[envmanModels.OptionsKey]
+		require.Equal(t, false, ok)
 	}
-	require.Equal(t, nil, removeEnvironmentRedundantFields(&env))
-
-	_, ok := env[envmanModels.OptionsKey]
-	require.Equal(t, false, ok)
 }
 
 func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {
@@ -615,148 +609,68 @@ workflows:
 `
 
 	config, err := configModelFromYAMLBytes([]byte(configStr))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := config.RemoveRedundantFields(); err != nil {
-		t.Fatal("Failed to remove redundant fields:", err)
-	}
+	require.NoError(t, err)
 
-	if config.App.Title != "" {
-		t.Fatal("config.App.Title should be empty")
-	}
-	if config.App.Description != "" {
-		t.Fatal("config.App.Description should be empty")
-	}
-	if config.App.Summary != "sum" {
-		t.Fatal("config.App.Summary should be: sum")
-	}
+	err = config.RemoveRedundantFields()
+	require.NoError(t, err)
+
+	require.Equal(t, "", config.App.Title)
+	require.Equal(t, "", config.App.Description)
+	require.Equal(t, "sum", config.App.Summary)
+
 	for _, env := range config.App.Environments {
 		options, err := env.GetOptions()
-		if err != nil {
-			t.Fatal("Failed to get env options:", err)
-		}
+		require.NoError(t, err)
 
-		if options.Title != nil {
-			t.Fatal("options.Title should be nil")
-		}
-		if options.Description != nil {
-			t.Fatal("options.Description should be nil")
-		}
-		if options.Summary != nil {
-			t.Fatal("options.Summary should be nil")
-		}
-		if len(options.ValueOptions) != 0 {
-			t.Fatal("options.ValueOptions should be empty")
-		}
-		if *options.IsRequired != true {
-			t.Fatal("options.IsRequired should be: true")
-		}
-		if options.IsExpand != nil {
-			t.Fatal("options.IsExpand should be nil")
-		}
-		if options.IsDontChangeValue != nil {
-			t.Fatal("options.IsDontChangeValue should be nil")
-		}
+		require.Nil(t, options.Title)
+		require.Nil(t, options.Description)
+		require.Nil(t, options.Summary)
+		require.Equal(t, 0, len(options.ValueOptions))
+		require.Equal(t, true, *options.IsRequired)
+		require.Nil(t, options.IsExpand)
+		require.Nil(t, options.IsDontChangeValue)
 	}
 
 	for _, workflow := range config.Workflows {
-		if workflow.Title != "Output Test" {
-			t.Fatal("workflow.Title should be: Output Test")
-		}
-		if workflow.Description != "" {
-			t.Fatal("workflow.Description should be empty")
-		}
-		if workflow.Summary != "" {
-			t.Fatal("workflow.Summary should be empty")
-		}
+		require.Equal(t, "Output Test", workflow.Title)
+		require.Equal(t, "", workflow.Description)
+		require.Equal(t, "", workflow.Summary)
 
 		for _, env := range workflow.Environments {
 			options, err := env.GetOptions()
-			if err != nil {
-				t.Fatal("Failed to get env options:", err)
-			}
+			require.NoError(t, err)
 
-			if *options.Title != "test_env" {
-				t.Fatal("options.Title should be: test_env")
-			}
-			if options.Description != nil {
-				t.Fatal("options.Description should be nil")
-			}
-			if options.Summary != nil {
-				t.Fatal("options.Summary should be nil")
-			}
-			if len(options.ValueOptions) != 0 {
-				t.Fatal("options.ValueOptions should be empty")
-			}
-			if options.IsRequired != nil {
-				t.Fatal("options.IsRequired should be: false")
-			}
-			if options.IsExpand != nil {
-				t.Fatal("options.IsExpand should be nil")
-			}
-			if options.IsDontChangeValue != nil {
-				t.Fatal("options.IsDontChangeValue should be nil")
-			}
+			require.Equal(t, "test_env", *options.Title)
+			require.Nil(t, options.Description)
+			require.Nil(t, options.Summary)
+			require.Equal(t, 0, len(options.ValueOptions))
+			require.Nil(t, options.IsRequired)
+			require.Nil(t, options.IsExpand)
+			require.Nil(t, options.IsDontChangeValue)
 		}
 
 		for _, stepListItem := range workflow.Steps {
 			_, step, err := GetStepIDStepDataPair(stepListItem)
-			if err != nil {
-				t.Fatal("Failed to get step id data:", err)
-			}
-			if step.Title != nil {
-				t.Fatal("step.Title should be nil")
-			}
-			if *step.Description != "test" {
-				t.Fatal("step.Description should be: test")
-			}
-			if step.Summary != nil {
-				t.Fatal("step.Summary should be nil")
-			}
-			if step.Website != nil {
-				t.Fatal("step.Website should be nil")
-			}
-			if step.SourceCodeURL != nil {
-				t.Fatal("step.SourceCodeURL should be nil")
-			}
-			if step.SupportURL != nil {
-				t.Fatal("step.SupportURL should be nil")
-			}
-			if step.PublishedAt != nil {
-				t.Fatal("step.PublishedAt should be nil")
-			}
-			if step.Source.Git != "" || step.Source.Commit != "" {
-				t.Fatal("step.Source.Git && step.Source.Commit should be empty")
-			}
-			if len(step.HostOsTags) != 0 {
-				t.Fatal("len(step.HostOsTags) should be 0")
-			}
-			if len(step.ProjectTypeTags) != 0 {
-				t.Fatal("len(step.ProjectTypeTags) should be 0")
-			}
-			if len(step.TypeTags) != 0 {
-				t.Fatal("len(step.TypeTags) should be 0")
-			}
-			if step.IsRequiresAdminUser != nil {
-				t.Fatal("step.IsRequiresAdminUser should be nil")
-			}
-			if step.IsAlwaysRun != nil {
-				t.Fatal("step.IsAlwaysRun should be nil")
-			}
-			if step.IsSkippable != nil {
-				t.Fatal("step.IsSkippable should be nil")
-			}
-			if step.RunIf != nil {
-				t.Fatal("step.RunIf should be nil")
-			}
+			require.NoError(t, err)
 
-			if len(step.Inputs) != 0 {
-				t.Fatal("len(step.Inputs) should be 0")
-			}
-			if len(step.Outputs) != 0 {
-				t.Fatal("len(step.Outputs) should be 0")
-			}
+			require.Nil(t, step.Title)
+			require.Equal(t, "test", *step.Description)
+			require.Nil(t, step.Summary)
+			require.Nil(t, step.Website)
+			require.Nil(t, step.SourceCodeURL)
+			require.Nil(t, step.SupportURL)
+			require.Nil(t, step.PublishedAt)
+			require.Equal(t, "", step.Source.Git)
+			require.Equal(t, "", step.Source.Commit)
+			require.Equal(t, 0, len(step.HostOsTags))
+			require.Equal(t, 0, len(step.ProjectTypeTags))
+			require.Equal(t, 0, len(step.TypeTags))
+			require.Nil(t, step.IsRequiresAdminUser)
+			require.Nil(t, step.IsAlwaysRun)
+			require.Nil(t, step.IsSkippable)
+			require.Nil(t, step.RunIf)
+			require.Equal(t, 0, len(step.Inputs))
+			require.Equal(t, 0, len(step.Outputs))
 		}
 	}
 }
