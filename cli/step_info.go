@@ -3,22 +3,22 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/tools"
 	"github.com/codegangsta/cli"
 )
 
 func printStepLibStep(collectionURI, id, version, format string) error {
 	switch format {
 	case configs.OutputFormatRaw:
-		out, err := bitrise.StepmanRawStepLibStepInfo(collectionURI, id, version)
+		out, err := tools.StepmanRawStepLibStepInfo(collectionURI, id, version)
 		if out != "" {
 			fmt.Println("Step info:")
 			fmt.Printf("%s", out)
 		}
 		return err
 	case configs.OutputFormatJSON:
-		outStr, err := bitrise.StepmanJSONStepLibStepInfo(collectionURI, id, version)
+		outStr, err := tools.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
@@ -33,14 +33,14 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 func printLocalStepInfo(pth, format string) error {
 	switch format {
 	case configs.OutputFormatRaw:
-		out, err := bitrise.StepmanRawLocalStepInfo(pth)
+		out, err := tools.StepmanRawLocalStepInfo(pth)
 		if out != "" {
 			fmt.Println("Step info:")
 			fmt.Printf("%s", out)
 		}
 		return err
 	case configs.OutputFormatJSON:
-		outStr, err := bitrise.StepmanJSONLocalStepInfo(pth)
+		outStr, err := tools.StepmanJSONLocalStepInfo(pth)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
 		}

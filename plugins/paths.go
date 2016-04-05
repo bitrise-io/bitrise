@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
@@ -161,11 +161,11 @@ func GetPluginExecutablePath(name string) (string, bool, error) {
 // InitPaths ...
 func InitPaths() error {
 	// Plugins dir
-	if err := bitrise.EnsureBitriseConfigDirExists(); err != nil {
+	if err := configs.EnsureBitriseConfigDirExists(); err != nil {
 		log.Errorf("Failed to ensure bitrise configs dir, err: %s", err)
 	}
 
-	bitriseDir := bitrise.GetBitriseConfigsDirPath()
+	bitriseDir := configs.GetBitriseConfigsDirPath()
 	tmpPluginsDir := path.Join(bitriseDir, pluginsDirName)
 
 	if err := pathutil.EnsureDirExist(tmpPluginsDir); err != nil {

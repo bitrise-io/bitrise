@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/tools"
 	"github.com/codegangsta/cli"
 )
 
@@ -37,7 +37,7 @@ func stepList(c *cli.Context) {
 
 	switch format {
 	case configs.OutputFormatRaw:
-		out, err := bitrise.StepmanRawStepList(collectionURI)
+		out, err := tools.StepmanRawStepList(collectionURI)
 		if out != "" {
 			fmt.Println("Step list:")
 			fmt.Printf("%s", out)
@@ -47,7 +47,7 @@ func stepList(c *cli.Context) {
 		}
 		break
 	case configs.OutputFormatJSON:
-		outStr, err := bitrise.StepmanJSONStepList(collectionURI)
+		outStr, err := tools.StepmanJSONStepList(collectionURI)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}

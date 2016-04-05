@@ -2,7 +2,7 @@ package cli
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/tools"
 	"github.com/codegangsta/cli"
 )
 
@@ -13,7 +13,7 @@ func start(c *cli.Context) {
 		log.Fatalln("No step collection specified")
 	}
 
-	if err := bitrise.StepmanShareStart(collectionURI); err != nil {
+	if err := tools.StepmanShareStart(collectionURI); err != nil {
 		log.Fatalf("Bitrise share start failed, err: %s", err)
 	}
 }

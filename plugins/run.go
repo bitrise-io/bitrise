@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -120,7 +121,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	}
 
 	// Append common data to plugin iputs
-	bitriseVersion, err := configs.BitriseVersion()
+	bitriseVersion, err := version.BitriseCliVersion()
 	if err != nil {
 		return err
 	}
@@ -140,11 +141,11 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 
 	pluginEnvstorePath := path.Join(pluginWorkDir, "envstore.yml")
 
-	if err := bitrise.EnvmanInitAtPath(pluginEnvstorePath); err != nil {
+	if err := tools.EnvmanInitAtPath(pluginEnvstorePath); err != nil {
 		return err
 	}
 
-	if err := bitrise.EnvmanAdd(pluginEnvstorePath, bitrise.EnvstorePathEnvKey, pluginEnvstorePath, false, false); err != nil {
+	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false); err != nil {
 		return err
 	}
 
@@ -152,7 +153,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 
 	// Add plugin inputs
 	for key, value := range pluginInput {
-		if err := bitrise.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
+		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
 			return err
 		}
 	}
@@ -173,14 +174,14 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	exitCode, err := bitrise.EnvmanRun(pluginEnvstorePath, "", cmd)
+	exitCode, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd)
 	log.Debugf("Plugin run finished with exit code (%d)", exitCode)
 	if err != nil {
 		return err
 	}
 
 	// Read plugin output
-	outStr, err := bitrise.EnvmanJSONPrint(pluginEnvstorePath)
+	outStr, err := tools.EnvmanJSONPrint(pluginEnvstorePath)
 	if err != nil {
 		return err
 	}

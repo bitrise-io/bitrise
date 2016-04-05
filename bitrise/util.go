@@ -12,7 +12,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -93,7 +95,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 			skipIfEmpty = *opts.SkipIfEmpty
 		}
 
-		if err := EnvmanAdd(InputEnvstorePath, key, value, isExpand, skipIfEmpty); err != nil {
+		if err := tools.EnvmanAdd(configs.InputEnvstorePath, key, value, isExpand, skipIfEmpty); err != nil {
 			log.Errorln("[BITRISE_CLI] - Failed to run envman add")
 			return err
 		}
@@ -103,12 +105,12 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
-	stepYMLPth := path.Join(BitriseWorkDirPath, "current_step.yml")
+	stepYMLPth := path.Join(configs.BitriseWorkDirPath, "current_step.yml")
 	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
 
-	stepDir := BitriseWorkStepsDirPath
+	stepDir := configs.BitriseWorkStepsDirPath
 	if err := cmdex.RemoveDir(stepDir); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
 	}
@@ -382,10 +384,10 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		// Steplib independent steps are completly defined in workflow
 		tempStepYMLFilePath = ""
 	} else if stepIDData.SteplibSource != "" {
-		if err := StepmanSetup(stepIDData.SteplibSource); err != nil {
+		if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
 			return err
 		}
-		if err := StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
+		if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
 			return err
 		}
 	} else {
