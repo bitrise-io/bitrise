@@ -28,7 +28,7 @@ func printVersionCmd(c *cli.Context) {
 	}
 
 	if fullVersion {
-		versionOutput.BuildNumber = version.BUILDNUMBER
+		versionOutput.BuildNumber = version.BuildNumber
 	}
 
 	if configs.OutputFormat == configs.OutputFormatRaw {

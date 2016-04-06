@@ -1,4 +1,4 @@
 package version
 
-// BUILDNUMBER ...
-var BUILDNUMBER = ""
+// BuildNumber ...
+var BuildNumber = ""
