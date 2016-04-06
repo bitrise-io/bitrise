@@ -25,8 +25,8 @@ type PluginDependency struct {
 var OSXPluginDependencyMap = map[string]PluginDependency{
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.2/analytics-Darwin-x86_64",
-		MinVersion: "0.9.2",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.3/analytics-Darwin-x86_64",
+		MinVersion: "0.9.3",
 	},
 }
 
@@ -34,8 +34,8 @@ var OSXPluginDependencyMap = map[string]PluginDependency{
 var LinuxPluginDependencyMap = map[string]PluginDependency{
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.2/analytics-Linux-x86_64",
-		MinVersion: "0.9.2",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.3/analytics-Linux-x86_64",
+		MinVersion: "0.9.3",
 	},
 }
 

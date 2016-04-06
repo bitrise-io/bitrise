@@ -104,7 +104,7 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	if !configs.IsCIMode {
 		// Check for new version
-		log.Info("Checking for new version...")
+		log.Info("Checking for plugin (%s) new version...", plugin.Name)
 
 		if newVersion, err := CheckForNewVersion(plugin); err != nil {
 			log.Warnf("")
@@ -114,7 +114,6 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
 		} else {
 			log.Debugf("No new version of plugin (%s) available", plugin.Name)
-			log.Info("You are using the latest version")
 		}
 
 		fmt.Println()
