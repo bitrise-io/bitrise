@@ -3,7 +3,7 @@ format_version: 1.1.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
-  - BITRISE_PROJECT_PATH: 
+  - BITRISE_PROJECT_PATH: ios/ReactNativeSample.xcodeproj
     opts:
       is_expand: false
   - BITRISE_SCHEME: ReactNativeSample
