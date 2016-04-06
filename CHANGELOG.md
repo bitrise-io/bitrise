@@ -6,8 +6,36 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __BREAKING__ : Now you can delete/reset environment variables by setting the value to empty string ("").
+  Previously an empty value (e.g. `- an_input: ""`) was just ignored,
+  now it actually sets the value to an empty value.
+* __NEW__ : Plugins ("beta"), to extend the `bitrise` functionality without modifying the "core"
+  * Install plugin: `bitrise plugin install [PLUGIN_NAME]`
+  * Delete plugin: `bitrise plugin delete [PLUGIN_NAME]`
+  * List installed plugins: `bitrise plugin list`
+  * Run plugin: `bitrise :[PLUGIN_NAME]`
+  * bitrise cli now installs default plugins at `bitrise setup`.
+* __NEW__ docs & tutorials:
+  * Step Development Guideline: `_docs/step-development-guideline.md`
+  * React Native Tutorial: `_examples/tutorials/react-native`
+* Step Template revision:
+  * Generic format update
+  * Using `change-workdir` instead of a custom script
+  * Added a `share-this-step` workflow for quick & easy step sharing
+* New `--format=json` & `--format=yml` output modes (beta, only a few command supports this flag right now)
+  * Added a new `version` command which now supports the `--format=json`
+* README.md updates
+  * Tooling and `--format=json`
+  * Share your own Step section
+* `bitrise workflows`, `bitrise step-info [STEP_ID]`, `bitrise step-list` cmd output improvements
+* `bitrise validate` cmd updates:
+  * workflow id validation
+  * check for duplicated inputs
+* bitrise output log improvements
+  * Now build log contains deprecation infos about deprecated steps
+* typo fixes
+* Requires new `envman` (`1.1.0`) and `stepman` (`0.9.18`) versions - it'll
+  auto-install these at first run if the required new versions are not found.
 
 ### Install or upgrade
 
