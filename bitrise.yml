@@ -180,7 +180,7 @@ workflows:
         3, Create binaries
     after_run:
     - _export_release_version
-    - _create_binaries
+    - create_binaries
     steps:
     - script:
         title: Create CHANGELOG and git release
@@ -206,7 +206,7 @@ workflows:
     - RELEASE_VERSION: 1.3.0
     after_run:
     - _export_release_version
-    - _create_binaries
+    - create_binaries
     steps:
     - script:
         title: Create CHANGELOG and git release
@@ -270,7 +270,7 @@ workflows:
 
             envman add --key RELEASE_VERSION --value $RELEASE_VERSION
 
-  _create_binaries:
+  create_binaries:
     title: Create binaries
     description: |
         Creates Linux and Darwin binaries
@@ -281,9 +281,11 @@ workflows:
         - content: |
             #!/bin/bash
             set -e
+            set -x
 
             echo
             echo "Create final binaries"
+            echo "  Build number: $BITRISE_BUILD_NUMBER"
 
             export ARCH=x86_64
             export GOARCH=amd64
@@ -292,19 +294,28 @@ workflows:
             export OS=Darwin
             export GOOS=darwin
 
-            DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
+            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
 
-            go build -o "$DEPLOY_PATH"
+            go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
+
+            envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
+            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
+            echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
+
 
             # Create Linux binary
             export OS=Linux
             export GOOS=linux
 
-            DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
+            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
 
-            go build -o "$DEPLOY_PATH"
+            go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
+
+            envman add --key LINUX_DEPLOY_PATH --value $DEPLOY_PATH
+            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
+            echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
   # ----------------------------------------------------------------
   # --- workflows for Utility

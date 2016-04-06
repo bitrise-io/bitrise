@@ -25,6 +25,10 @@ var (
 			Action: printVersionCmd,
 			Flags: []cli.Flag{
 				flOutputFormat,
+				cli.BoolFlag{
+					Name:  "full",
+					Usage: "Prints the build number as well.",
+				},
 			},
 		},
 		{
