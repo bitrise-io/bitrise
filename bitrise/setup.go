@@ -14,6 +14,31 @@ const (
 	minStepmanVersion = "0.9.18"
 )
 
+// PluginDependency ..
+type PluginDependency struct {
+	Source     string
+	Binary     string
+	MinVersion string
+}
+
+// OSXPluginDependencyMap ...
+var OSXPluginDependencyMap = map[string]PluginDependency{
+	"analytics": PluginDependency{
+		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.3/analytics-Darwin-x86_64",
+		MinVersion: "0.9.3",
+	},
+}
+
+// LinuxPluginDependencyMap ...
+var LinuxPluginDependencyMap = map[string]PluginDependency{
+	"analytics": PluginDependency{
+		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.3/analytics-Linux-x86_64",
+		MinVersion: "0.9.3",
+	},
+}
+
 // RunSetup ...
 func RunSetup(appVersion string, isMinimalSetupMode bool) error {
 	log.Infoln("[BITRISE_CLI] - Setup")
@@ -100,11 +125,17 @@ func doSetupOnOSX(isMinimalSetupMode bool) error {
 	// }
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return errors.New(fmt.Sprint("Envman failed to install:", err))
+		return fmt.Errorf("Envman failed to install: %s", err)
 	}
 	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return errors.New(fmt.Sprint("Stepman failed to install:", err))
+		return fmt.Errorf("Stepman failed to install: %s", err)
 	}
+	for pluginName, pluginDependency := range OSXPluginDependencyMap {
+		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
+			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
+		}
+	}
+
 	log.Infoln("All the required tools are installed!")
 
 	return nil
@@ -115,11 +146,17 @@ func doSetupOnLinux() error {
 	log.Infoln("Checking required tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return errors.New(fmt.Sprint("Envman failed to install:", err))
+		return fmt.Errorf("Envman failed to install: %s", err)
 	}
 	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return errors.New(fmt.Sprint("Stepman failed to install:", err))
+		return fmt.Errorf("Stepman failed to install: %s", err)
 	}
+	for pluginName, pluginDependency := range LinuxPluginDependencyMap {
+		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
+			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
+		}
+	}
+
 	log.Infoln("All the required tools are installed!")
 
 	return nil
