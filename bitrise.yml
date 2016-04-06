@@ -300,6 +300,8 @@ workflows:
             go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
 
             envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
+            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
+            echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
 
             # Create Linux binary
@@ -312,6 +314,8 @@ workflows:
             go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
 
             envman add --key LINUX_DEPLOY_PATH --value $DEPLOY_PATH
+            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
+            echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
   # ----------------------------------------------------------------
   # --- workflows for Utility
