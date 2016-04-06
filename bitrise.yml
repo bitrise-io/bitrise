@@ -216,7 +216,7 @@ workflows:
             set -e
 
             export CI=true
-            releaseman create
+            releaseman create \
               --version $RELEASE_VERSION \
               --set-version-script "bash _scripts/set_version.sh version/version.go"
 
@@ -292,7 +292,6 @@ workflows:
             export OS=Darwin
             export GOOS=darwin
 
-            BIN_NAME=$BIN_NAME-$OS-$ARCH
             DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
 
@@ -302,7 +301,6 @@ workflows:
             export OS=Linux
             export GOOS=linux
 
-            BIN_NAME=$BIN_NAME-$OS-$ARCH
             DEPLOY_PATH="_bin/$RELEASE_VERSION/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
 
