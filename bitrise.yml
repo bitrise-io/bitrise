@@ -303,8 +303,6 @@ workflows:
               -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
               -o "$DEPLOY_PATH"
 
-            # GIT_CLONE_COMMIT_HASH
-
             envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
             echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
