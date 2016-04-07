@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
+	"github.com/bitrise-io/envman/version"
 	"github.com/codegangsta/cli"
 )
 
@@ -97,7 +98,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Environment variable manager"
-	app.Version = "1.1.0"
+	app.Version = version.VERSION
 
 	app.Author = ""
 	app.Email = ""
