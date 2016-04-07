@@ -12,7 +12,8 @@ import (
 // VersionOutputModel ...
 type VersionOutputModel struct {
 	Version     string `json:"version"`
-	BuildNumber string `json:"build_number,omitempty"`
+	BuildNumber string `json:"build_number"`
+	Commit      string `json:"commit"`
 }
 
 func printVersionCmd(c *cli.Context) {
@@ -28,11 +29,12 @@ func printVersionCmd(c *cli.Context) {
 
 	if fullVersion {
 		versionOutput.BuildNumber = version.BuildNumber
+		versionOutput.Commit = version.Commit
 	}
 
 	if output.Format == output.FormatRaw {
 		if fullVersion {
-			fmt.Fprintf(c.App.Writer, "%v (%v)\n", versionOutput.Version, versionOutput.BuildNumber)
+			fmt.Fprintf(c.App.Writer, "version: %v\nbuild_number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.BuildNumber, versionOutput.Commit)
 		} else {
 			fmt.Fprintf(c.App.Writer, "%v\n", versionOutput.Version)
 		}

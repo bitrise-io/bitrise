@@ -297,7 +297,13 @@ workflows:
             DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
 
-            go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
+            version_package="github.com/bitrise-io/bitrise/version"
+
+            go build \
+              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
+              -o "$DEPLOY_PATH"
+
+            # GIT_CLONE_COMMIT_HASH
 
             envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
@@ -311,7 +317,9 @@ workflows:
             DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
 
-            go build -ldflags "-X github.com/bitrise-io/bitrise/version.BuildNumber=$BITRISE_BUILD_NUMBER" -o "$DEPLOY_PATH"
+            go build \
+              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
+              -o "$DEPLOY_PATH"
 
             envman add --key LINUX_DEPLOY_PATH --value $DEPLOY_PATH
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
