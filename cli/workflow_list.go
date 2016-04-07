@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
@@ -22,7 +22,7 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 	}
 
 	switch format {
-	case configs.OutputFormatRaw:
+	case output.FormatRaw:
 		workflowNames := []string{}
 		utilityWorkflowNames := []string{}
 
@@ -62,7 +62,7 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 			fmt.Printf("Config doesn't contain any workflow")
 		}
 
-	case configs.OutputFormatJSON:
+	case output.FormatJSON:
 		bytes, err := json.Marshal(workflowList)
 		if err != nil {
 			return err
@@ -80,9 +80,9 @@ func workflowList(c *cli.Context) {
 	// Input validation
 	format := c.String(OuputFormatKey)
 	if format == "" {
-		format = configs.OutputFormatRaw
-	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
+		format = output.FormatRaw
+	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
 	}
 
 	minimal := c.Bool(MinimalModeKey)
@@ -91,7 +91,7 @@ func workflowList(c *cli.Context) {
 	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
 	warnings = warns
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, output.FormatJSON)
 	}
 
 	workflowList := map[string]map[string]string{}
@@ -108,6 +108,6 @@ func workflowList(c *cli.Context) {
 	}
 
 	if err := printWorkflList(workflowList, format, minimal); err != nil {
-		registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, output.FormatJSON)
 	}
 }

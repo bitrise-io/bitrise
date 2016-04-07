@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
@@ -67,7 +67,7 @@ func printRawValidation(validation ValidationModel) error {
 func printJSONValidation(validation ValidationModel) {
 	bytes, err := json.Marshal(validation)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), []string{}, configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), []string{}, output.FormatJSON)
 	}
 
 	fmt.Println(string(bytes))
@@ -77,9 +77,9 @@ func validate(c *cli.Context) {
 	warnings := []string{}
 	format := c.String(OuputFormatKey)
 	if format == "" {
-		format = configs.OutputFormatRaw
-	} else if !(format == configs.OutputFormatRaw || format == configs.OutputFormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, configs.OutputFormatJSON)
+		format = output.FormatRaw
+	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
 	}
 
 	validation := ValidationModel{}
@@ -135,15 +135,15 @@ func validate(c *cli.Context) {
 	}
 
 	switch format {
-	case configs.OutputFormatRaw:
+	case output.FormatRaw:
 		if err := printRawValidation(validation); err != nil {
 			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), warnings, format)
 		}
 		break
-	case configs.OutputFormatJSON:
+	case output.FormatJSON:
 		printJSONValidation(validation)
 		break
 	default:
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, configs.OutputFormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 }

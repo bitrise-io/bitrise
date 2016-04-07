@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/codegangsta/cli"
@@ -19,7 +18,7 @@ type VersionOutputModel struct {
 func printVersionCmd(c *cli.Context) {
 	fullVersion := c.Bool("full")
 
-	if err := configs.ConfigureOutputFormat(c); err != nil {
+	if err := output.ConfigureOutputFormat(c); err != nil {
 		log.Fatalf("Error: %s", err)
 	}
 
@@ -31,13 +30,13 @@ func printVersionCmd(c *cli.Context) {
 		versionOutput.BuildNumber = version.BuildNumber
 	}
 
-	if configs.OutputFormat == configs.OutputFormatRaw {
+	if output.Format == output.FormatRaw {
 		if fullVersion {
 			fmt.Fprintf(c.App.Writer, "%v (%v)\n", versionOutput.Version, versionOutput.BuildNumber)
 		} else {
 			fmt.Fprintf(c.App.Writer, "%v\n", versionOutput.Version)
 		}
 	} else {
-		output.Print(versionOutput, configs.OutputFormat)
+		output.Print(versionOutput, output.Format)
 	}
 }

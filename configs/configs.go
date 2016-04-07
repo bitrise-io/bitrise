@@ -1,12 +1,10 @@
 package configs
 
 import (
-	"fmt"
 	"path"
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/codegangsta/cli"
 )
 
 // ---------------------------
@@ -21,22 +19,8 @@ var (
 	IsPullRequestMode = false
 )
 
-// OutputFormat ...
-var OutputFormat = OutputFormatRaw
-
 // ---------------------------
 // --- Consts
-
-const (
-	// OuputFormatKey ...
-	OuputFormatKey = "format"
-	// OutputFormatRaw ...
-	OutputFormatRaw = "raw"
-	// OutputFormatJSON ...
-	OutputFormatJSON = "json"
-	// OutputFormatYML ...
-	OutputFormatYML = "yml"
-)
 
 const (
 	// CIModeEnvKey ...
@@ -50,23 +34,6 @@ const (
 	// LogLevelEnvKey ...
 	LogLevelEnvKey = "LOGLEVEL"
 )
-
-// ConfigureOutputFormat ...
-func ConfigureOutputFormat(c *cli.Context) error {
-	outFmt := c.String(OuputFormatKey)
-	switch outFmt {
-	case OutputFormatRaw, OutputFormatJSON, OutputFormatYML:
-		// valid
-		OutputFormat = outFmt
-	case "":
-		// default
-		OutputFormat = OutputFormatRaw
-	default:
-		// invalid
-		return fmt.Errorf("Invalid Output Format: %s", outFmt)
-	}
-	return nil
-}
 
 const (
 	bitriseVersionSetupStateFileName = "setup.version"
