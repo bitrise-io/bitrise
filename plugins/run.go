@@ -102,9 +102,9 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 }
 
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
-	if !configs.IsCIMode {
+	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired() {
 		// Check for new version
-		log.Info("Checking for plugin (%s) new version...", plugin.Name)
+		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
 
 		if newVersion, err := CheckForNewVersion(plugin); err != nil {
 			log.Warnf("")
@@ -112,11 +112,42 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		} else if newVersion != "" {
 			log.Warnf("")
 			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
+
+			route, found, err := ReadPluginRoute(plugin.Name)
+			if err != nil {
+				return err
+			}
+			if !found {
+				return fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
+			}
+
+			route.LatestAvailableVersion = newVersion
+
+			if err := AddPluginRoute(route); err != nil {
+				return fmt.Errorf("failed to register available plugin (%s) update (%s), error: %s", plugin.Name, newVersion, err)
+			}
 		} else {
 			log.Debugf("No new version of plugin (%s) available", plugin.Name)
 		}
 
+		if err := configs.SavePluginUpdateCheck(); err != nil {
+			return err
+		}
+
 		fmt.Println()
+	} else {
+		route, found, err := ReadPluginRoute(plugin.Name)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
+		}
+
+		if route.LatestAvailableVersion != "" {
+			log.Warnf("")
+			log.Warnf("New version (%s) of plugin (%s) available", route.LatestAvailableVersion, plugin.Name)
+		}
 	}
 
 	// Append common data to plugin iputs

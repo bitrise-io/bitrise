@@ -58,9 +58,15 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 	}
 
 	if installOrUpdate {
-		_, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
+		plugin, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
 		if err != nil {
 			return err
+		}
+
+		if len(plugin.Description) > 0 {
+			fmt.Println()
+			fmt.Println(plugin.Description)
+			fmt.Println()
 		}
 	}
 
