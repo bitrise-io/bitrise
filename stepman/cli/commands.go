@@ -5,6 +5,21 @@ import "github.com/codegangsta/cli"
 var (
 	commands = []cli.Command{
 		{
+			Name:   "version",
+			Usage:  "Prints the version",
+			Action: printVersionCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "format",
+					Usage: "Output format. Accepted: json, yml",
+				},
+				cli.BoolFlag{
+					Name:  "full",
+					Usage: "Prints the build number and commit as well.",
+				},
+			},
+		},
+		{
 			Name:    "setup",
 			Aliases: []string{"s"},
 			Usage:   "Initialize the specified collection, it's required before using a collection.",
