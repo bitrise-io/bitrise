@@ -9,29 +9,20 @@ app:
   - BITRISE_SCHEME: ReactNativeSample
     opts:
       is_expand: false
+
 trigger_map:
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: build-react-app
+
 workflows:
   build-react-app:
     steps:
-    - script:
-        title: Install React Native CLI
+    - install-react-native: {}
+    - npm:
         inputs:
-        - content: npm install -g react-native-cli
-    - script:
-        title: npm install
-        inputs:
-        - content: npm install
-    - script:
-        title: Bundle app
-        deps:
-          brew:
-          - name: watchman
-          - name: flow
-        inputs:
-        - content: react-native bundle --entry-file ./index.ios.js --platform ios --bundle-output ios/main.jsbundle
+        - command: install
+    - react-native-bundle: {}
     - xcode-archive:
         title: 'Xcode: Create Archive'
         inputs:
