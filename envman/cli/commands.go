@@ -5,6 +5,21 @@ import "github.com/codegangsta/cli"
 var (
 	commands = []cli.Command{
 		{
+			Name:   "version",
+			Usage:  "Prints the version",
+			Action: printVersionCmd,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "format",
+					Usage: "Output format. Accepted: json, yml",
+				},
+				cli.BoolFlag{
+					Name:  "full",
+					Usage: "Prints the build number and commit as well.",
+				},
+			},
+		},
+		{
 			Name:    "init",
 			Aliases: []string{"i"},
 			Usage:   "Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.",
