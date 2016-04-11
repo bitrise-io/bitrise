@@ -33,6 +33,12 @@ func pluginInstall(c *cli.Context) {
 
 	fmt.Println()
 	log.Infoln(colorstring.Greenf("Plugin (%s) with version (%s) installed ", plugin.Name, version))
+
+	if len(plugin.Description) > 0 {
+		fmt.Println()
+		fmt.Println(plugin.Description)
+		fmt.Println()
+	}
 }
 
 func pluginDelete(c *cli.Context) {

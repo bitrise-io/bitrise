@@ -30,19 +30,24 @@ var (
 // --- Routing
 // -----------------------
 
-// AddPluginRoute ...
-func AddPluginRoute(name, source, executable, version, commitHash, triggerEvent string) error {
+// CreateAndAddPluginRoute ...
+func CreateAndAddPluginRoute(name, source, executable, version, commitHash, triggerEvent string) error {
 	newRoute, err := NewPluginRoute(name, source, executable, version, commitHash, triggerEvent)
 	if err != nil {
 		return err
 	}
 
+	return AddPluginRoute(newRoute)
+}
+
+// AddPluginRoute ...
+func AddPluginRoute(route PluginRoute) error {
 	routing, err := readPluginRouting()
 	if err != nil {
 		return err
 	}
 
-	routing.AddRoute(newRoute)
+	routing.AddRoute(route)
 
 	return writeRoutingToFile(routing)
 }

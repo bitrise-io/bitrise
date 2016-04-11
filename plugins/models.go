@@ -11,12 +11,13 @@ const (
 
 // PluginRoute ...
 type PluginRoute struct {
-	Name         string `yaml:"name"`
-	Source       string `yaml:"source"`
-	Version      string `yaml:"version"`
-	CommitHash   string `yaml:"commit_hash"`
-	Executable   string `yaml:"executable"`
-	TriggerEvent string `yaml:"trigger"`
+	Name                   string `yaml:"name"`
+	Source                 string `yaml:"source"`
+	Version                string `yaml:"version"`
+	CommitHash             string `yaml:"commit_hash"`
+	Executable             string `yaml:"executable"`
+	TriggerEvent           string `yaml:"trigger"`
+	LatestAvailableVersion string `yaml:"latest_available_version"`
 }
 
 // PluginRouting ...

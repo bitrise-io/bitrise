@@ -321,7 +321,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		return Plugin{}, "", fmt.Errorf("failed to create plugin data dir (%s), error: %s", pluginDataDir, err)
 	}
 
-	if err := AddPluginRoute(newPlugin.Name, srcURL, executableURL, newVersionStr, newVersinHash, newPlugin.TriggerEvent); err != nil {
+	if err := CreateAndAddPluginRoute(newPlugin.Name, srcURL, executableURL, newVersionStr, newVersinHash, newPlugin.TriggerEvent); err != nil {
 		installSucced = false
 		return Plugin{}, "", fmt.Errorf("failed to add plugin route, error: %s", err)
 	}
