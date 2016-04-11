@@ -33,6 +33,8 @@ const (
 	BitriseSourceDirEnvKey = "BITRISE_SOURCE_DIR"
 	// BitriseDeployDirEnvKey ...
 	BitriseDeployDirEnvKey = "BITRISE_DEPLOY_DIR"
+	// BitriseCacheDirEnvKey ...
+	BitriseCacheDirEnvKey = "BITRISE_CACHE_DIR"
 )
 
 func initBitriseWorkPaths() error {
@@ -68,37 +70,37 @@ func initBitriseWorkPaths() error {
 // InitPaths ...
 func InitPaths() error {
 	if err := initBitriseWorkPaths(); err != nil {
-		return fmt.Errorf("Failed to init bitrise paths: %s", err)
+		return fmt.Errorf("Failed to init bitrise paths, error: %s", err)
 	}
 
 	inputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "input_envstore.yml"))
 	if err != nil {
-		return fmt.Errorf("Failed to set envstore path: %s", err)
+		return fmt.Errorf("Failed to set input envstore path, error: %s", err)
 	}
 	InputEnvstorePath = inputEnvstorePath
 
 	outputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "output_envstore.yml"))
 	if err != nil {
-		return fmt.Errorf("Failed to set envstore path: %s", err)
+		return fmt.Errorf("Failed to set output envstore path, error: %s", err)
 	}
 	OutputEnvstorePath = outputEnvstorePath
 
 	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formatted_output.md"))
 	if err != nil {
-		return fmt.Errorf("Failed to set formatted output path: %s", err)
+		return fmt.Errorf("Failed to set formatted output path, error: %s", err)
 	}
 	FormattedOutputPath = formoutPath
 
 	currentDir, err := filepath.Abs("./")
 	if err != nil {
-		return fmt.Errorf("Failed to set current dir: %s", err)
+		return fmt.Errorf("Failed to set current dir, error: %s", err)
 	}
 	CurrentDir = currentDir
 
 	// BITRISE_SOURCE_DIR
 	if os.Getenv(BitriseSourceDirEnvKey) == "" {
 		if err := os.Setenv(BitriseSourceDirEnvKey, currentDir); err != nil {
-			return fmt.Errorf("Failed to set BITRISE_SOURCE_DIR: %s", err)
+			return fmt.Errorf("Failed to set BITRISE_SOURCE_DIR, error: %s", err)
 		}
 	}
 
@@ -106,11 +108,23 @@ func InitPaths() error {
 	if os.Getenv(BitriseDeployDirEnvKey) == "" {
 		deployDir, err := pathutil.NormalizedOSTempDirPath("deploy")
 		if err != nil {
-			return fmt.Errorf("Failed to set deploy dir: %s", err)
+			return fmt.Errorf("Failed to set deploy dir, error: %s", err)
 		}
 
 		if err := os.Setenv(BitriseDeployDirEnvKey, deployDir); err != nil {
-			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR: %s", err)
+			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR, error: %s", err)
+		}
+	}
+
+	// BITRISE_CACHE_DIR
+	if os.Getenv(BitriseCacheDirEnvKey) == "" {
+		cacheDir, err := pathutil.NormalizedOSTempDirPath("cache")
+		if err != nil {
+			return fmt.Errorf("Failed to set cache dir, error: %s", err)
+		}
+
+		if err := os.Setenv(BitriseCacheDirEnvKey, cacheDir); err != nil {
+			return fmt.Errorf("Failed to set BITRISE_CACHE_DIR, error: %s", err)
 		}
 	}
 
