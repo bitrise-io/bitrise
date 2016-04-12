@@ -2,7 +2,7 @@
 
 -----------------
 
-## 1.3.0 (2016 Apr 06)
+## 1.3.0 (2016 Apr 12)
 
 ### Release Notes
 
@@ -59,6 +59,25 @@ time you call bitrise run.
 
 ### Release Commits - 1.2.4 -> 1.3.0
 
+* [5181b50] Krisztián Gödrei - Merge pull request #339 from godrei/cache_dir_env (2016 Apr 11)
+* [ce86551] godrei - cache dir env (2016 Apr 11)
+* [da1edb6] Krisztián Gödrei - Merge pull request #337 from godrei/plugin_update (2016 Apr 11)
+* [3f28676] godrei - plugin update fix & analytics 0.9.4 (2016 Apr 11)
+* [590015d] Krisztián Gödrei - Merge pull request #336 from godrei/version_cmd (2016 Apr 07)
+* [3c2bfe8] godrei - cleanup (2016 Apr 07)
+* [d784f98] godrei - include commit in full version (2016 Apr 07)
+* [f33738b] godrei - outputFormat moved to output package (2016 Apr 07)
+* [e868e78] Krisztián Gödrei - Merge pull request #334 from bitrise-io/update-react-example (2016 Apr 07)
+* [534119c] Krisztián Gödrei - Merge pull request #335 from godrei/build_number (2016 Apr 06)
+* [bc2bbe6] godrei - move binaries to deploy dir (2016 Apr 06)
+* [da00fb2] godrei - PR fix (2016 Apr 06)
+* [b999737] Agnes Vasarhelyi - Update bitrise.yml (2016 Apr 06)
+* [6feb388] godrei - build number (2016 Apr 06)
+* [0bc68e7] vasarhelyia - Remove local path (2016 Apr 06)
+* [19cde67] vasarhelyia - Use dedicated steps (2016 Apr 06)
+* [a02d148] Krisztián Gödrei - Merge pull request #333 from godrei/master (2016 Apr 06)
+* [e0e98ec] godrei - release notes (2016 Apr 06)
+* [8d4e86a] godrei - v1.3.0 (2016 Apr 06)
 * [471b2ab] godrei - bitrise.yml typo fix (2016 Apr 06)
 * [19e845a] Krisztián Gödrei - Merge pull request #332 from godrei/prepare_for_relelase (2016 Apr 06)
 * [e5187ac] godrei - removed old changelogs (2016 Apr 06)
@@ -85,8 +104,8 @@ time you call bitrise run.
 * [85ac8ce] Krisztián Gödrei - Merge pull request #324 from godrei/skip_if_empty (2016 Mar 18)
 * [866d86e] Krisztián Gödrei - instal bitrise tool in _prepare_and_setup workflow (2016 Mar 18)
 * [797a42a] Krisztián Gödrei - bitrise.yml updates (2016 Mar 18)
-* [f74bee9] Krisztián Gödrei - removed local reference in create_changelog workflow & skip_if_empty unit test new environment variable (skip_if_empty) handling (2016 Mar 18)
 * [463e9ae] Krisztián Gödrei - plugin update for new envman version, release configs, bitrise.yml updates (2016 Mar 18)
+* [f74bee9] Krisztián Gödrei - removed local reference in create_changelog workflow & skip_if_empty unit test new environment variable (skip_if_empty) handling (2016 Mar 18)
 * [a92c659] Krisztián Gödrei - Merge pull request #323 from godrei/test_fix (2016 Mar 18)
 * [384ee68] Krisztián Gödrei - plugin version check fix (2016 Mar 17)
 * [ed5b5ca] Krisztián Gödrei - use bitrise-core test repos (2016 Mar 17)
@@ -1669,4 +1688,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Apr 06
+Updated: 2016 Apr 12
