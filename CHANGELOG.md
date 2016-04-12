@@ -6,8 +6,36 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __BREAKING__ : Now you can delete/reset environment variables by setting the value to empty string ("").
+  Previously an empty value (e.g. `- an_input: ""`) was just ignored,
+  now it actually sets the value to an empty value.
+* __NEW__ : Plugins ("beta"), to extend the `bitrise` functionality without modifying the "core"
+  * Install plugin: `bitrise plugin install [PLUGIN_NAME]`
+  * Delete plugin: `bitrise plugin delete [PLUGIN_NAME]`
+  * List installed plugins: `bitrise plugin list`
+  * Run plugin: `bitrise :[PLUGIN_NAME]`
+  * bitrise cli now installs default plugins at `bitrise setup`.
+* __NEW__ docs & tutorials:
+  * Step Development Guideline: `_docs/step-development-guideline.md`
+  * React Native Tutorial: `_examples/tutorials/react-native`
+* Step Template revision:
+  * Generic format update
+  * Using `change-workdir` instead of a custom script
+  * Added a `share-this-step` workflow for quick & easy step sharing
+* New `--format=json` & `--format=yml` output modes (beta, only a few command supports this flag right now)
+  * Added a new `version` command which now supports the `--format=json`
+* README.md updates
+  * Tooling and `--format=json`
+  * Share your own Step section
+* `bitrise workflows`, `bitrise step-info [STEP_ID]`, `bitrise step-list` cmd output improvements
+* `bitrise validate` cmd updates:
+  * workflow id validation
+  * check for duplicated inputs
+* bitrise output log improvements
+  * Now build log contains deprecation infos about deprecated steps
+* typo fixes
+* Requires new `envman` (`1.1.0`) and `stepman` (`0.9.18`) versions - it'll
+  auto-install these at first run if the required new versions are not found.
 
 ### Install or upgrade
 
@@ -78,200 +106,6 @@ time you call bitrise run.
 * [797a42a] Krisztián Gödrei - bitrise.yml updates (2016 Mar 18)
 * [463e9ae] Krisztián Gödrei - plugin update for new envman version, release configs, bitrise.yml updates (2016 Mar 18)
 * [f74bee9] Krisztián Gödrei - removed local reference in create_changelog workflow & skip_if_empty unit test new environment variable (skip_if_empty) handling (2016 Mar 18)
-* [a92c659] Krisztián Gödrei - Merge pull request #323 from godrei/test_fix (2016 Mar 18)
-* [384ee68] Krisztián Gödrei - plugin version check fix (2016 Mar 17)
-* [ed5b5ca] Krisztián Gödrei - use bitrise-core test repos (2016 Mar 17)
-* [8542528] Krisztián Gödrei - removed download test (2016 Mar 17)
-* [18a1ac9] Viktor Benei - Merge pull request #321 from godrei/events (2016 Mar 17)
-* [c8f88ba] Krisztián Gödrei - envman test fix, typo, error log fix (2016 Mar 16)
-* [b86b4c2] Viktor Benei - Merge pull request #322 from anas10/patch-1 (2016 Mar 16)
-* [64e9f20] Anas AIT ALI - Update README.md (2016 Mar 16)
-* [9c4fe9b] Krisztián Gödrei - fixed TestExpandEnvs (2016 Mar 11)
-* [e024a42] Krisztián Gödrei - check for updatest, before using the plugin, but only if not CI mode (2016 Mar 11)
-* [922e0e8] Krisztián Gödrei - install binary by platforms (2016 Mar 05)
-* [2e397fc] Krisztián Gödrei - create plugin data dir at install, check for plugin new version fix (2016 Mar 05)
-* [1e61ab7] Krisztián Gödrei - log fixes, run_test update (2016 Mar 05)
-* [8f6a350] Krisztián Gödrei - create plugin data dir (2016 Mar 03)
-* [242b493] Krisztián Gödrei - trigger event DidFinishRun dont print any logs after workflow summary (2016 Mar 03)
-* [814a2b9] Viktor Benei - Merge pull request #320 from viktorbenei/master (2016 Mar 03)
-* [49f4234] Viktor Benei - experimental/upload-download-bitrise-yml : updated for Bitrise CLI 1.3 & made it better for quick fixing (download, fix, upload) (2016 Mar 03)
-* [a901456] Viktor Benei - Merge branch 'master' of https://github.com/bitrise-io/bitrise (2016 Mar 03)
-* [bba88bd] Viktor Benei - Dockerfile: use go 1.6 (2016 Mar 03)
-* [90d32ed] Viktor Benei - yml format update for new Bitrise CLI compatibility (2016 Mar 03)
-* [7dad162] Krisztián Gödrei - Merge pull request #319 from godrei/plugin (2016 Mar 01)
-* [844ea97] Krisztián Gödrei - NewEnvJSONList instead of CreateFromJSON (2016 Mar 01)
-* [53cef9e] Krisztián Gödrei - test updates (2016 Mar 01)
-* [8329195] Krisztián Gödrei - version fix (2016 Mar 01)
-* [55e6df5] Krisztián Gödrei - plugin requirement's required min version is required, minor fixes (2016 Mar 01)
-* [9cc7d95] Krisztián Gödrei - version package instead of hard coded version (2016 Mar 01)
-* [3cc0bf9] Krisztián Gödrei - base plugin handling (2016 Mar 01)
-* [3acccd3] Viktor Benei - Merge pull request #318 from tomgilder/patch-1 (2016 Feb 28)
-* [dc423d8] Tom Gilder - Fix spelling mistake (2016 Feb 28)
-* [6eed6a7] Viktor Benei - script content fix (multiline) (2016 Feb 22)
-* [59696c6] Viktor Benei - Merge pull request #317 from dag-io/master (2016 Feb 17)
-* [52322cf] Damien Gavard - Fix typo (2016 Feb 17)
-* [de931be] Viktor Benei - Merge pull request #314 from bitrise-io/update-install-guide (2016 Feb 09)
-* [6220657] vasarhelyia - Update install info (2016 Feb 09)
-* [c452548] Viktor Benei - Merge pull request #313 from bitrise-io/update-react-native-example (2016 Feb 07)
-* [0ccbac7] vasarhelyia - Update workflow name (2016 Feb 06)
-* [ae202b1] vasarhelyia - Add sample app yml (2016 Feb 06)
-* [3ecbd13] Viktor Benei - Merge pull request #312 from bitrise-io/slack-channel-badge (2016 Feb 04)
-* [7c16467] vasarhelyia - Add Slack channel badge (2016 Feb 04)
-* [3b64e94] Viktor Benei - Merge pull request #311 from birmacher/typo (2016 Jan 26)
-* [2e589c7] birmacher - typo fix (2016 Jan 26)
-* [32a52d5] Viktor Benei - Merge pull request #310 from viktorbenei/master (2015 Dec 22)
-* [96037ac] Viktor Benei - godeps-update fix (2015 Dec 22)
-* [1703e25] Viktor Benei - Merge branch 'master' of https://github.com/bitrise-io/bitrise (2015 Dec 22)
-* [d5d2a66] Viktor Benei - godeps-update (2015 Dec 22)
-* [956bee4] Viktor Benei - bumped required envman (to 1.1.0) & stepman (to 0.9.18) versions (2015 Dec 22)
-* [60bd807] Viktor Benei - README: intro one-liner text revision (2015 Dec 17)
-* [d94054e] Viktor Benei - Merge pull request #309 from viktorbenei/master (2015 Dec 17)
-* [b808e12] Viktor Benei - LOG : if config (bitrise.yml) is not valid include the path of the file (2015 Dec 17)
-* [35614c0] Viktor Benei - LOG : if local step info print fails it'll print the path of the YML in the logs (2015 Dec 17)
-* [b4ba81c] Viktor Benei - FIX : typo: "cofing" -> "config" & "faild" -> "failed" (2015 Dec 17)
-* [f98a3da] Viktor Benei - Merge pull request #306 from godrei/changelog (2015 Dec 16)
-* [866127d] Krisztián Gödrei - create_changelog workflow for automatic changelog generation based on commits from last tag on master (2015 Dec 16)
-* [631a097] Viktor Benei - point highlights in Development Guideline (2015 Dec 16)
-* [a47606f] Viktor Benei - Development Guideline section revision in README (2015 Dec 16)
-* [469cc5f] Viktor Benei - Merge pull request #305 from godrei/format_version (2015 Dec 15)
-* [625dc38] Krisztián Gödrei - format version (2015 Dec 15)
-* [98d74a5] Viktor Benei - Merge pull request #304 from godrei/godeps-update (2015 Dec 15)
-* [92be446] Krisztián Gödrei - godeps update (2015 Dec 15)
-* [a715ba7] Viktor Benei - Merge pull request #303 from godrei/plugin_compatibility (2015 Dec 15)
-* [0a246c2] Krisztián Gödrei - godeps update (2015 Dec 14)
-* [c630110] Krisztián Gödrei - plugin fixes (2015 Dec 14)
-* [5f14af7] Viktor Benei - Merge pull request #302 from viktorbenei/master (2015 Dec 12)
-* [3a31596] Viktor Benei - Merge branch 'master' of https://github.com/bitrise-io/bitrise (2015 Dec 12)
-* [a5243bc] Viktor Benei - Merge pull request #301 from godrei/plugin (2015 Dec 12)
-* [86573cb] Krisztián Gödrei - PR fix (2015 Dec 12)
-* [79dc0d4] Krisztián Gödrei - PR fix (2015 Dec 12)
-* [645b2bf] Krisztián Gödrei - PR fixes (2015 Dec 12)
-* [d062952] Krisztián Gödrei - plugin install, delete, list (2015 Dec 12)
-* [a4a3511] Viktor Benei - godeps-update (2015 Dec 12)
-* [90653cb] Viktor Benei - 1.3.0-pre (2015 Dec 12)
-* [e7a6dfa] Krisztián Gödrei - base plugin handling (2015 Dec 12)
-* [50c8c83] Viktor Benei - Merge pull request #300 from godrei/workflows (2015 Dec 08)
-* [324b08e] Krisztián Gödrei - improvements (2015 Dec 08)
-* [03668e9] Viktor Benei - Merge pull request #299 from viktorbenei/master (2015 Dec 07)
-* [9db86b4] Viktor Benei - typo in bitrise.yml workflow description (2015 Dec 07)
-* [a2c051a] Viktor Benei - Merge pull request #297 from godrei/step_info_fix (2015 Dec 07)
-* [17ca336] Viktor Benei - Merge pull request #298 from godrei/workflows_fix (2015 Dec 07)
-* [7da0a6b] Krisztián Gödrei - yellow no summary/description (2015 Dec 07)
-* [0a5f69f] Krisztián Gödrei - step-info, step-list fixes (2015 Dec 07)
-* [b8b385f] Viktor Benei - Merge pull request #296 from godrei/delete_envs (2015 Dec 07)
-* [74cdd7a] Krisztián Gödrei - change log fix (2015 Dec 07)
-* [1e2978a] Krisztián Gödrei - delete env + test (2015 Dec 07)
-* [7ddbd10] Viktor Benei - Merge pull request #295 from viktorbenei/master (2015 Dec 07)
-* [a87bf87] Viktor Benei - godeps-update (2015 Dec 07)
-* [a34bec8] Viktor Benei - Merge pull request #294 from godrei/workflow_list (2015 Dec 07)
-* [780de41] Krisztián Gödrei - workflow list (2015 Dec 07)
-* [19547ac] Viktor Benei - Update step-development-guideline.md (2015 Dec 05)
-* [e7e18f9] Viktor Benei - Do not use submodules, or require any other resource, downloaded on-demand (2015 Dec 05)
-* [1d61661] Viktor Benei - clarification (2015 Dec 05)
-* [3b3adb0] Viktor Benei - Update README.md (2015 Dec 05)
-* [8873c57] Viktor Benei - Create step-development-guideline.md (2015 Dec 05)
-* [01e3f36] Viktor Benei - Share your own Step section (2015 Nov 19)
-* [cfb5e5b] Viktor Benei - Merge pull request #293 from viktorbenei/master (2015 Nov 09)
-* [a451eb3] Viktor Benei - readme : tooling and `--format=json` (2015 Nov 09)
-* [acd8356] Viktor Benei - godeps update (2015 Nov 09)
-* [9865ba1] Viktor Benei - Merge pull request #292 from viktorbenei/master (2015 Nov 09)
-* [cfb4319] Viktor Benei - Merge branch 'master' of https://github.com/bitrise-io/bitrise (2015 Nov 09)
-* [0c024c9] Viktor Benei - `yml` option added/enabled for Output Format (2015 Nov 09)
-* [4b64cb7] Viktor Benei - Merge pull request #291 from viktorbenei/master (2015 Nov 07)
-* [9ea7723] Viktor Benei - test fix (2015 Nov 07)
-* [69b5b9a] Viktor Benei - new packages : configs and output - to help with the new `--format=json` output mode ; added a new `version` command which now supports the `--format=json` flag (2015 Nov 07)
-* [0404f7c] Viktor Benei - Merge pull request #290 from viktorbenei/master (2015 Nov 06)
-* [2b2999b] Viktor Benei - step template revision : generic format update, using `change-workdir` instead of a custom script, and added a `share-this-step` workflow for quick & easy step sharing (2015 Nov 06)
-* [a7ac606] Viktor Benei - Create .gitignore (2015 Nov 04)
-* [00a0ab3] Viktor Benei - bitrise.io/cli (2015 Nov 04)
-* [921d903] Viktor Benei - Update README.md (2015 Nov 04)
-
-
-## 1.3.0 (2016 Apr 06)
-
-### Release Notes
-
-* __BREAKING__ : Now you can delete/reset environment variables by setting the value to empty string ("").
-  Previously an empty value (e.g. `- an_input: ""`) was just ignored,
-  now it actually sets the value to an empty value.
-* __NEW__ : Plugins ("beta"), to extend the `bitrise` functionality without modifying the "core"
-  * Install plugin: `bitrise plugin install [PLUGIN_NAME]`
-  * Delete plugin: `bitrise plugin delete [PLUGIN_NAME]`
-  * List installed plugins: `bitrise plugin list`
-  * Run plugin: `bitrise :[PLUGIN_NAME]`
-  * bitrise cli now installs default plugins at `bitrise setup`.
-* __NEW__ docs & tutorials:
-  * Step Development Guideline: `_docs/step-development-guideline.md`
-  * React Native Tutorial: `_examples/tutorials/react-native`
-* Step Template revision:
-  * Generic format update
-  * Using `change-workdir` instead of a custom script
-  * Added a `share-this-step` workflow for quick & easy step sharing
-* New `--format=json` & `--format=yml` output modes (beta, only a few command supports this flag right now)
-  * Added a new `version` command which now supports the `--format=json`
-* README.md updates
-  * Tooling and `--format=json`
-  * Share your own Step section
-* `bitrise workflows`, `bitrise step-info [STEP_ID]`, `bitrise step-list` cmd output improvements
-* `bitrise validate` cmd updates:
-  * workflow id validation
-  * check for duplicated inputs
-* bitrise output log improvements
-  * Now build log contains deprecation infos about deprecated steps
-* typo fixes
-* Requires new `envman` (`1.1.0`) and `stepman` (`0.9.18`) versions - it'll
-  auto-install these at first run if the required new versions are not found.
-
-### Install or upgrade
-
-To install this version, run the following commands (in a bash shell):
-
-```
-curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
-```
-
-Then:
-
-```
-chmod +x /usr/local/bin/bitrise
-```
-
-That's all, you're ready to go!
-
-Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
-is installed and available, but if you forget to do this it'll be performed the first
-time you call bitrise run.
-
-### Release Commits - 1.2.4 -> 1.3.0
-
-* [471b2ab] godrei - bitrise.yml typo fix (2016 Apr 06)
-* [19e845a] Krisztián Gödrei - Merge pull request #332 from godrei/prepare_for_relelase (2016 Apr 06)
-* [e5187ac] godrei - removed old changelogs (2016 Apr 06)
-* [77ee955] godrei - prepare for release (2016 Apr 06)
-* [f34df79] Krisztián Gödrei - Merge pull request #331 from godrei/feature/default_plugins (2016 Apr 06)
-* [68c93fa] godrei - default analytics plugin min version update (2016 Apr 06)
-* [e29d733] godrei - log installed plugin (2016 Apr 05)
-* [d453d8b] godrei - default plugins (2016 Apr 05)
-* [2b398f1] Krisztián Gödrei - Merge pull request #330 from godrei/duplicated_inputs (2016 Apr 05)
-* [5d8bc29] godrei - test fixes (2016 Apr 05)
-* [5d142cb] godrei - check for duplicated inputs (2016 Apr 05)
-* [e0402d0] Krisztián Gödrei - Merge pull request #329 from godrei/godep-update (2016 Apr 05)
-* [fb51075] godrei - godep update (2016 Apr 05)
-* [4d78370] Krisztián Gödrei - Merge pull request #328 from godrei/separate_packages (2016 Apr 05)
-* [8ff9a6e] Krisztián Gödrei - Merge pull request #327 from godrei/ci_updates (2016 Apr 05)
-* [1e57cb7] godrei - cleanup (2016 Apr 05)
-* [ace4e2b] godrei - separate bitrise packages (2016 Apr 05)
-* [2ec5090] godrei - bitrise.yml updates (2016 Apr 04)
-* [4c2ca4a] Viktor Benei - Merge pull request #326 from godrei/deprecate_wildcard_workflow_id (2016 Apr 01)
-* [5477a8e] godrei - PR fix (2016 Apr 01)
-* [722cc71] godrei - [b4475fe] [204cd7c] typo fix [b672304] workflow id validation (2016 Apr 01)
-* [dbc2e95] Krisztián Gödrei - Merge pull request #325 from godrei/global_step_info (2016 Mar 18)
-* [95448a1] Krisztián Gödrei - deprecate infos (2016 Mar 18)
-* [85ac8ce] Krisztián Gödrei - Merge pull request #324 from godrei/skip_if_empty (2016 Mar 18)
-* [866d86e] Krisztián Gödrei - instal bitrise tool in _prepare_and_setup workflow (2016 Mar 18)
-* [797a42a] Krisztián Gödrei - bitrise.yml updates (2016 Mar 18)
-* [f74bee9] Krisztián Gödrei - removed local reference in create_changelog workflow & skip_if_empty unit test new environment variable (skip_if_empty) handling (2016 Mar 18)
-* [463e9ae] Krisztián Gödrei - plugin update for new envman version, release configs, bitrise.yml updates (2016 Mar 18)
 * [a92c659] Krisztián Gödrei - Merge pull request #323 from godrei/test_fix (2016 Mar 18)
 * [384ee68] Krisztián Gödrei - plugin version check fix (2016 Mar 17)
 * [ed5b5ca] Krisztián Gödrei - use bitrise-core test repos (2016 Mar 17)
