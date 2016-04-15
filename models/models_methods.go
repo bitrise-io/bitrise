@@ -187,7 +187,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
-			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conforms to: [A-Za-z0-9-_.]", ID))
+			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
 		warns, err := workflow.Validate()

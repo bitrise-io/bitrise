@@ -41,6 +41,7 @@ func TestValidateConfig(t *testing.T) {
 		warnings, err := bitriseData.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid workflow ID (): empty", warnings[0])
 	}
 
 	t.Log("Invalid bitriseData ID - contains: `/`")
@@ -54,6 +55,7 @@ func TestValidateConfig(t *testing.T) {
 		warnings, err := bitriseData.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
 
 	t.Log("Invalid bitriseData ID - contains: `:`")
@@ -67,6 +69,7 @@ func TestValidateConfig(t *testing.T) {
 		warnings, err := bitriseData.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid workflow ID (wf:id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
 
 	t.Log("Invalid bitriseData ID - contains: ` `")
@@ -74,6 +77,34 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			Workflows: map[string]WorkflowModel{
 				"wf id": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid workflow ID (wf id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
+	}
+
+	t.Log("Invalid bitriseData ID - contains: ` `")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				" wfid": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid workflow ID ( wfid): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
+	}
+
+	t.Log("Invalid bitriseData ID - contains: ` `")
+	{
+		bitriseData := BitriseDataModel{
+			Workflows: map[string]WorkflowModel{
+				"wfid ": WorkflowModel{},
 			},
 		}
 
