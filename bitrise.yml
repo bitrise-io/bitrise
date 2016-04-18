@@ -105,7 +105,7 @@ workflows:
             #!/bin/bash
             set -e
             set -x
-            current_dir=$(cd . && pwd)
+            current_dir=$(pwd)
             mkdir -p $current_dir/_tmp
             current_bitrise=$current_dir/_tmp/ci-bin
 
