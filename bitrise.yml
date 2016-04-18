@@ -104,11 +104,15 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
-            mkdir -p ./_tmp
-            go build -o ./_tmp/ci-bin
-            ./_tmp/ci-bin setup --minimal
-            rm ./_tmp/ci-bin
+            set -x
+            current_dir=$(cd . && pwd)
+            mkdir -p $current_dir/_tmp
+            current_bitrise=$current_dir/_tmp/ci-bin
+
+            go build -o $current_bitrise
+            $current_bitrise setup --minimal
+
+            envman add --key CURRENT_BITRISE --value $current_bitrise
 
             # setup for the original bitrise as well
             bitrise setup --minimal
@@ -118,10 +122,46 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
+            set -x
 
             cd ./_step_template
-            bitrise run test
+            $CURRENT_BITRISE run test
+    - script:
+        title: Exit code test
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -x
+
+            $CURRENT_BITRISE run exit_code_test_fail
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 1 ] ; then
+              exit 1
+            fi
+
+            $CURRENT_BITRISE run exit_code_test_ok
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+  exit_code_test_fail:
+    title: Exit code of bitrise CLI should be 1
+    steps:
+    - script:
+        title: Fail
+        inputs:
+        - content: exit 1
+
+  exit_code_test_ok:
+    title: Exit code test
+    steps:
+    - script:
+        title: Exit code of bitrise CLI should be 0
+        inputs:
+        - content: exit 0
 
   _prepare_and_setup:
     title: Prepare bitrise and install testing tools
@@ -135,7 +175,7 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
+            set -x
 
             brew update
 
@@ -154,7 +194,7 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
+            set -x
 
             # Install envman
             envman -v
@@ -336,7 +376,7 @@ workflows:
         - content: |-
             #!/bin/bash
             set -e
-            set -v
+            set -x
 
             go get -u ./...
             rm -rf ./Godeps
