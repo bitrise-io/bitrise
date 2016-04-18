@@ -135,7 +135,10 @@ func run(c *cli.Context) {
 	}
 
 	// Run selected configuration
-	if _, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
+	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
 		log.Fatalln("Error: ", err)
+	} else if buildRunResults.IsBuildFailed() {
+		os.Exit(1)
 	}
+	os.Exit(0)
 }
