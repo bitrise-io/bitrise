@@ -1,6 +1,46 @@
-## Changelog (Current version: 1.3.0)
+## Changelog (Current version: 1.3.1)
 
 -----------------
+
+## 1.3.1 (2016 Apr 19)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.1/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.0 -> 1.3.1
+
+* [1255aa7] Krisztián Gödrei - Merge pull request #343 from godrei/master (2016 Apr 19)
+* [16a587f] Krisztián Gödrei - code cleaning (2016 Apr 18)
+* [ea1349f] Krisztián Gödrei - Merge pull request #342 from godrei/run_exit_code (2016 Apr 18)
+* [9be9913] Krisztián Gödrei - cleanup (2016 Apr 18)
+* [fd09faf] Krisztián Gödrei - exit code fix (2016 Apr 18)
+* [48d609c] Krisztián Gödrei - exit code test (2016 Apr 18)
+* [33065b5] Viktor Benei - Merge pull request #341 from godrei/test_updates (2016 Apr 15)
+* [d56ec9e] Krisztián Gödrei - typo fix (2016 Apr 15)
+* [eadf1bd] Krisztián Gödrei - test updates (2016 Apr 15)
+
 
 ## 1.3.0 (2016 Apr 12)
 
@@ -1688,4 +1728,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Apr 12
+Updated: 2016 Apr 19
