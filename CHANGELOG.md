@@ -6,8 +6,7 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __FIX__: We discovered a critical issue in the CLI v1.3.0. Version 1.3.0 of the CLI does not return the expected exit code after `bitrise run [WORKFLOW-ID]` if the `run` fails. It always returns exit code 0 if the configuration was correct and the workflow was executed, even if a step failed during `run`. This version fixes the exit code issue.
 
 ### Install or upgrade
 
