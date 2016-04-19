@@ -146,6 +146,20 @@ workflows:
               exit 1
             fi
 
+            $CURRENT_BITRISE run exit_code_test_sippable_fail
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            $CURRENT_BITRISE run exit_code_test_sippable_ok
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
     steps:
@@ -159,6 +173,24 @@ workflows:
     steps:
     - script:
         title: Exit code of bitrise CLI should be 0
+        inputs:
+        - content: exit 0
+
+  exit_code_test_sippable_fail:
+    title: Exit code test
+    steps:
+    - script:
+        title: Exit code of bitrise CLI should be 0
+        is_skippable: true
+        inputs:
+        - content: exit 1
+
+  exit_code_test_sippable_ok:
+    title: Exit code test
+    steps:
+    - script:
+        title: Exit code of bitrise CLI should be 0
+        is_skippable: true
         inputs:
         - content: exit 0
 
