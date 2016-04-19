@@ -106,7 +106,6 @@ workflows:
             set -e
             set -x
             current_dir=$(pwd)
-            mkdir -p $current_dir/_tmp
             current_bitrise=$current_dir/_tmp/ci-bin
 
             go build -o $current_bitrise
