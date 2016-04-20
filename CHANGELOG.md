@@ -6,7 +6,7 @@
 
 ### Release Notes
 
-* __FIX__: although the previous version (1.3.1) fixed the exit code issue for `bitrise run`, the exit code was still not the right one in case of `bitrise trigger`. This version fixes the issue for bitrise trigger too, as well as we unified the handling codes of `run` and `trigger` as much as possible.
+* __FIX__: although the previous version (1.3.1) fixed the exit code issue for `bitrise run`, the exit code was still not the right one in case of `bitrise trigger`. This version fixes the issue for bitrise trigger too, as well as we unified the handling codes of `run` and `trigger` as much as possible. Additionally, we now have integration tests (testing the exit codes) for both `bitrise run` and `bitrise trigger`.
 
 ### Install or upgrade
 
