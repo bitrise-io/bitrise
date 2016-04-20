@@ -1,6 +1,47 @@
-## Changelog (Current version: 1.3.1)
+## Changelog (Current version: 1.3.2)
 
 -----------------
+
+## 1.3.2 (2016 Apr 20)
+
+### Release Notes
+
+* __FIX__: although the previous version (1.3.1) fixed the exit code issue for `bitrise run`, the exit code was still not the right one in case of `bitrise trigger`. This version fixes the issue for bitrise trigger too, as well as we unified the handling codes of `run` and `trigger` as much as possible. Additionally, we now have integration tests (testing the exit codes) for both `bitrise run` and `bitrise trigger`.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.2/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.1 -> 1.3.2
+
+* [5207fc1] Krisztián Gödrei - Merge pull request #346 from godrei/trigger_fix (2016 Apr 20)
+* [f248c47] Krisztián Gödrei - PR fix (2016 Apr 20)
+* [be73f82] Krisztián Gödrei - PR fix (2016 Apr 20)
+* [19b2861] Krisztián Gödrei - common run (2016 Apr 20)
+* [9a83792] Krisztián Gödrei - integration tests moved to bitrise-integration.yml (2016 Apr 20)
+* [aa9364e] Krisztián Gödrei - allow pull request at trigger tests (2016 Apr 20)
+* [dda344d] Krisztián Gödrei - unit tests (2016 Apr 20)
+* [5982017] Viktor Benei - Merge pull request #345 from godrei/tests (2016 Apr 20)
+* [b88c9e4] Krisztián Gödrei - test updates (2016 Apr 19)
+* [56787eb] Krisztián Gödrei - Merge pull request #344 from godrei/master (2016 Apr 19)
+* [82e0746] Krisztián Gödrei - Changelog (2016 Apr 19)
+
 
 ## 1.3.1 (2016 Apr 19)
 
@@ -1727,4 +1768,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Apr 19
+Updated: 2016 Apr 20
