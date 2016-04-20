@@ -84,9 +84,8 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	os.Exit(1)
 }
 
-func run(c *cli.Context) {
+func runWorkflowInContext(c *cli.Context, workflowToRunID string) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
-	log.Debugln("[BITRISE_CLI] - Run")
 
 	if !configs.CheckIsSetupWasDoneForVersion(c.App.Version) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
@@ -115,6 +114,21 @@ func run(c *cli.Context) {
 		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}
 
+	// Run selected configuration
+	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
+		log.Fatalln("Error: ", err)
+	} else if buildRunResults.IsBuildFailed() {
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
+func run(c *cli.Context) {
+	bitriseConfig, _, err := CreateBitriseConfigFromCLIParams(c)
+	if err != nil {
+		log.Fatalf("Failed to create bitrise config, err: %s", err)
+	}
+
 	// Workflow validation
 	workflowToRunID := ""
 	if len(c.Args()) < 1 {
@@ -134,11 +148,5 @@ func run(c *cli.Context) {
 		printAboutUtilityWorkflows()
 	}
 
-	// Run selected configuration
-	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
-		log.Fatalln("Error: ", err)
-	} else if buildRunResults.IsBuildFailed() {
-		os.Exit(1)
-	}
-	os.Exit(0)
+	runWorkflowInContext(c, workflowToRunID)
 }
