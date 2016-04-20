@@ -19,16 +19,16 @@ trigger_map:
   workflow: announce_release
 
 - pattern: "exit_code_test_fail"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: exit_code_test_fail
 - pattern: "exit_code_test_ok"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: exit_code_test_ok
 - pattern: "exit_code_test_sippable_fail"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: exit_code_test_sippable_fail
 - pattern: "exit_code_test_sippable_ok"
-  is_pull_request_allowed: false
+  is_pull_request_allowed: true
   workflow: exit_code_test_sippable_ok
 
 - pattern: "*"
