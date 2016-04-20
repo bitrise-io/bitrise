@@ -49,5 +49,5 @@ func trigger(c *cli.Context) {
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
-	runWorkflowInContext(c, workflowToRunID)
+	runAndExit(c, workflowToRunID)
 }

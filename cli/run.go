@@ -32,7 +32,7 @@ func aboutUtilityWorkflows() {
 	log.Infoln(" in the before_run and after_run blocks.")
 }
 
-func printAboutUtilityWorkflows() {
+func printAboutUtilityWorkflowsAndExit() {
 	log.Error("Utility workflows can't be triggered directly")
 	fmt.Println()
 	log.Infoln("Note about utility workflows:")
@@ -42,7 +42,7 @@ func printAboutUtilityWorkflows() {
 	os.Exit(1)
 }
 
-func printAvailableWorkflows(config models.BitriseDataModel) {
+func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
 	workflowNames := []string{}
 	utilityWorkflowNames := []string{}
 
@@ -84,7 +84,7 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	os.Exit(1)
 }
 
-func runWorkflowInContext(c *cli.Context, workflowToRunID string) {
+func runAndExit(c *cli.Context, workflowToRunID string) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	if !configs.CheckIsSetupWasDoneForVersion(c.App.Version) {
@@ -114,6 +114,18 @@ func runWorkflowInContext(c *cli.Context, workflowToRunID string) {
 		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}
 
+	// workflowToRunID
+	if workflowToRunID == "" {
+		// no workflow specified
+		//  list all the available ones and then exit
+		printAvailableWorkflowsAndExit(bitriseConfig)
+	}
+	if strings.HasPrefix(workflowToRunID, "_") {
+		// util workflow specified
+		//  print about util workflows and then exit
+		printAboutUtilityWorkflowsAndExit()
+	}
+
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
 		log.Fatalln("Error: ", err)
@@ -124,12 +136,6 @@ func runWorkflowInContext(c *cli.Context, workflowToRunID string) {
 }
 
 func run(c *cli.Context) {
-	bitriseConfig, _, err := CreateBitriseConfigFromCLIParams(c)
-	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
-	}
-
-	// Workflow validation
 	workflowToRunID := ""
 	if len(c.Args()) < 1 {
 		log.Errorln("No workfow specified!")
@@ -137,16 +143,5 @@ func run(c *cli.Context) {
 		workflowToRunID = c.Args()[0]
 	}
 
-	if workflowToRunID == "" {
-		// no workflow specified
-		//  list all the available ones and then exit
-		printAvailableWorkflows(bitriseConfig)
-	}
-	if strings.HasPrefix(workflowToRunID, "_") {
-		// util workflow specified
-		//  print about util workflows and then exit
-		printAboutUtilityWorkflows()
-	}
-
-	runWorkflowInContext(c, workflowToRunID)
+	runAndExit(c, workflowToRunID)
 }
