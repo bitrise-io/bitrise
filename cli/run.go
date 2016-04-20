@@ -32,7 +32,7 @@ func aboutUtilityWorkflows() {
 	log.Infoln(" in the before_run and after_run blocks.")
 }
 
-func printAboutUtilityWorkflows() {
+func printAboutUtilityWorkflowsAndExit() {
 	log.Error("Utility workflows can't be triggered directly")
 	fmt.Println()
 	log.Infoln("Note about utility workflows:")
@@ -42,7 +42,7 @@ func printAboutUtilityWorkflows() {
 	os.Exit(1)
 }
 
-func printAvailableWorkflows(config models.BitriseDataModel) {
+func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
 	workflowNames := []string{}
 	utilityWorkflowNames := []string{}
 
@@ -84,9 +84,8 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	os.Exit(1)
 }
 
-func run(c *cli.Context) {
+func runAndExit(c *cli.Context, workflowToRunID string) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
-	log.Debugln("[BITRISE_CLI] - Run")
 
 	if !configs.CheckIsSetupWasDoneForVersion(c.App.Version) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
@@ -115,23 +114,16 @@ func run(c *cli.Context) {
 		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}
 
-	// Workflow validation
-	workflowToRunID := ""
-	if len(c.Args()) < 1 {
-		log.Errorln("No workfow specified!")
-	} else {
-		workflowToRunID = c.Args()[0]
-	}
-
+	// workflowToRunID
 	if workflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
-		printAvailableWorkflows(bitriseConfig)
+		printAvailableWorkflowsAndExit(bitriseConfig)
 	}
 	if strings.HasPrefix(workflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
-		printAboutUtilityWorkflows()
+		printAboutUtilityWorkflowsAndExit()
 	}
 
 	// Run selected configuration
@@ -141,4 +133,15 @@ func run(c *cli.Context) {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func run(c *cli.Context) {
+	workflowToRunID := ""
+	if len(c.Args()) < 1 {
+		log.Errorln("No workfow specified!")
+	} else {
+		workflowToRunID = c.Args()[0]
+	}
+
+	runAndExit(c, workflowToRunID)
 }
