@@ -9,7 +9,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
+func printAvailableTriggerFiltersAndExit(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
 	for _, triggerItem := range triggerMap {
 		log.Infoln(" * " + triggerItem.Pattern)
@@ -32,7 +32,7 @@ func trigger(c *cli.Context) {
 	// Trigger filter validation
 	triggerPattern := ""
 	if len(c.Args()) < 1 {
-		log.Errorln("No workfow specified!")
+		log.Errorln("No pattern specified!")
 	} else {
 		triggerPattern = c.Args()[0]
 	}
@@ -40,7 +40,7 @@ func trigger(c *cli.Context) {
 	if triggerPattern == "" {
 		// no trigger filter specified
 		//  list all the available ones and then exit
-		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
+		printAvailableTriggerFiltersAndExit(bitriseConfig.TriggerMap)
 	}
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
