@@ -17,6 +17,20 @@ trigger_map:
 - pattern: "/release/announce"
   is_pull_request_allowed: false
   workflow: announce_release
+
+- pattern: "exit_code_test_fail"
+  is_pull_request_allowed: false
+  workflow: exit_code_test_fail
+- pattern: "exit_code_test_ok"
+  is_pull_request_allowed: false
+  workflow: exit_code_test_ok
+- pattern: "exit_code_test_sippable_fail"
+  is_pull_request_allowed: false
+  workflow: exit_code_test_sippable_fail
+- pattern: "exit_code_test_sippable_ok"
+  is_pull_request_allowed: false
+  workflow: exit_code_test_sippable_ok
+
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: ci
@@ -126,7 +140,7 @@ workflows:
             cd ./_step_template
             $CURRENT_BITRISE run test
     - script:
-        title: Exit code test
+        title: Run - Exit code test
         inputs:
         - content: |-
             #!/bin/bash
@@ -154,6 +168,41 @@ workflows:
             fi
 
             $CURRENT_BITRISE run exit_code_test_sippable_ok
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+    - script:
+        title: Trigger - Exit code test
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -x
+
+            $CURRENT_BITRISE trigger exit_code_test_fail
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 1 ] ; then
+              exit 1
+            fi
+
+            $CURRENT_BITRISE trigger exit_code_test_ok
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            $CURRENT_BITRISE trigger exit_code_test_sippable_fail
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            $CURRENT_BITRISE trigger exit_code_test_sippable_ok
             status=$?
             echo "status: $status"
             if [ $status -ne 0 ] ; then
