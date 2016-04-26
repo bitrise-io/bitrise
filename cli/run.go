@@ -87,7 +87,9 @@ func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
 }
 
 func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string) {
-	PrintBitriseHeaderASCIIArt(version.VERSION)
+	if workflowToRunID == "" {
+		log.Fatal("No workflow id specified")
+	}
 
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
@@ -97,18 +99,6 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	}
 
 	startTime := time.Now()
-
-	// workflowToRunID
-	if workflowToRunID == "" {
-		// no workflow specified
-		//  list all the available ones and then exit
-		printAvailableWorkflowsAndExit(bitriseConfig)
-	}
-	if strings.HasPrefix(workflowToRunID, "_") {
-		// util workflow specified
-		//  print about util workflows and then exit
-		printAboutUtilityWorkflowsAndExit()
-	}
 
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
@@ -120,7 +110,13 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 }
 
 func run(c *cli.Context) {
+	PrintBitriseHeaderASCIIArt(version.VERSION)
+
+	//
 	// Expand cli.Context
+	prGlobalFlag := c.GlobalBool(PRKey)
+	ciGlobalFlag := c.GlobalBool(CIKey)
+
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
 
@@ -146,9 +142,6 @@ func run(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("Failed to create inventory, err: %s", err)
 	}
-	if err := checkCIAndPRModeFromSecrets(inventoryEnvironments); err != nil {
-		log.Fatalf("Failed to check  PR and CI mode, err: %s", err)
-	}
 
 	// Config validation
 	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
@@ -159,5 +152,39 @@ func run(c *cli.Context) {
 		log.Fatalf("Failed to create bitrise config, err: %s", err)
 	}
 
+	// Workflow id validation
+	if workflowToRunID == "" {
+		// no workflow specified
+		//  list all the available ones and then exit
+		printAvailableWorkflowsAndExit(bitriseConfig)
+	}
+	if strings.HasPrefix(workflowToRunID, "_") {
+		// util workflow specified
+		//  print about util workflows and then exit
+		printAboutUtilityWorkflowsAndExit()
+	}
+	//
+
+	//
+	// Main
+	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check  PR mode, err: %s", err)
+	}
+
+	if err := registerPrMode(isPRMode); err != nil {
+		log.Fatalf("Failed to register  PR mode, err: %s", err)
+	}
+
+	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check  CI mode, err: %s", err)
+	}
+
+	if err := registerCIMode(isCIMode); err != nil {
+		log.Fatalf("Failed to register  CI mode, err: %s", err)
+	}
+
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	//
 }

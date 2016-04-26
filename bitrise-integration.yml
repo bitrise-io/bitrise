@@ -15,6 +15,16 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: exit_code_test_sippable_ok
 
+- pattern: "pr_allowed"
+  is_pull_request_allowed: true
+  workflow: pr_allowed
+- pattern: "only_code_push"
+  is_pull_request_allowed: false
+  workflow: only_code_push
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: fall_back
+
 workflows:
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
@@ -49,3 +59,7 @@ workflows:
         is_skippable: true
         inputs:
         - content: exit 0
+
+  pr_allowed:
+  only_code_push:
+  fall_back:

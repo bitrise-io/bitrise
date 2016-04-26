@@ -5,8 +5,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/codegangsta/cli"
 )
 
@@ -25,7 +25,12 @@ func printAvailableTriggerFiltersAndExit(triggerMap []models.TriggerMapItemModel
 }
 
 func trigger(c *cli.Context) {
+	PrintBitriseHeaderASCIIArt(version.VERSION)
+
 	// Expand cli.Context
+	prGlobalFlag := c.GlobalBool(PRKey)
+	ciGlobalFlag := c.GlobalBool(CIKey)
+
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
 
@@ -51,9 +56,6 @@ func trigger(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("Failed to create inventory, err: %s", err)
 	}
-	if err := checkCIAndPRModeFromSecrets(inventoryEnvironments); err != nil {
-		log.Fatalf("Failed to check  PR and CI mode, err: %s", err)
-	}
 
 	// Config validation
 	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
@@ -70,12 +72,33 @@ func trigger(c *cli.Context) {
 		//  list all the available ones and then exit
 		printAvailableTriggerFiltersAndExit(bitriseConfig.TriggerMap)
 	}
+	//
 
-	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, configs.IsPullRequestMode)
+	// Main
+	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to check  PR mode, err: %s", err)
+	}
+
+	if err := registerPrMode(isPRMode); err != nil {
+		log.Fatalf("Failed to register  PR mode, err: %s", err)
+	}
+
+	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check  CI mode, err: %s", err)
+	}
+
+	if err := registerCIMode(isCIMode); err != nil {
+		log.Fatalf("Failed to register  CI mode, err: %s", err)
+	}
+
+	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	//
 }
