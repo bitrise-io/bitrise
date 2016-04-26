@@ -135,7 +135,7 @@ func run(c *cli.Context) {
 
 	workflowToRunID := ""
 	if len(c.Args()) < 1 {
-		log.Errorln("No workfow specified!")
+		log.Fatal("No workfow specified!")
 	} else {
 		workflowToRunID = c.Args()[0]
 	}
