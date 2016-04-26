@@ -11,6 +11,8 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/version"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/codegangsta/cli"
 )
@@ -84,35 +86,17 @@ func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
 	os.Exit(1)
 }
 
-func runAndExit(c *cli.Context, workflowToRunID string) {
-	PrintBitriseHeaderASCIIArt(c.App.Version)
+func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string) {
+	PrintBitriseHeaderASCIIArt(version.VERSION)
 
-	if !configs.CheckIsSetupWasDoneForVersion(c.App.Version) {
+	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
-		if err := bitrise.RunSetup(c.App.Version, false); err != nil {
+		if err := bitrise.RunSetup(version.VERSION, false); err != nil {
 			log.Fatalln("Setup failed:", err)
 		}
 	}
 
 	startTime := time.Now()
-
-	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(c)
-	if err != nil {
-		log.Fatalf("Failed to create inventory, err: %s", err)
-	}
-	if err := checkCIAndPRModeFromSecrets(inventoryEnvironments); err != nil {
-		log.Fatalf("Failed to check  PR and CI mode, err: %s", err)
-	}
-
-	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(c)
-	for _, warning := range warnings {
-		log.Warnf("warning: %s", warning)
-	}
-	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
-	}
 
 	// workflowToRunID
 	if workflowToRunID == "" {
@@ -136,12 +120,44 @@ func runAndExit(c *cli.Context, workflowToRunID string) {
 }
 
 func run(c *cli.Context) {
+	// Expand cli.Context
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	inventoryPath := c.String(InventoryKey)
+
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		log.Warn("'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	workflowToRunID := ""
 	if len(c.Args()) < 1 {
-		log.Errorln("No workfow specified!")
+		log.Fatal("No workfow specified!")
 	} else {
 		workflowToRunID = c.Args()[0]
 	}
+	//
 
-	runAndExit(c, workflowToRunID)
+	// Inventory validation
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+	if err != nil {
+		log.Fatalf("Failed to create inventory, err: %s", err)
+	}
+	if err := checkCIAndPRModeFromSecrets(inventoryEnvironments); err != nil {
+		log.Fatalf("Failed to check  PR and CI mode, err: %s", err)
+	}
+
+	// Config validation
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	for _, warning := range warnings {
+		log.Warnf("warning: %s", warning)
+	}
+	if err != nil {
+		log.Fatalf("Failed to create bitrise config, err: %s", err)
+	}
+
+	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 }
