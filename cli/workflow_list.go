@@ -77,19 +77,31 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 func workflowList(c *cli.Context) {
 	warnings := []string{}
 
-	// Input validation
+	// Expand cli.Context
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	format := c.String(OuputFormatKey)
+
+	minimal := c.Bool(MinimalModeKey)
+	//
+
+	// Input validation
 	if format == "" {
 		format = output.FormatRaw
 	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 
-	minimal := c.Bool(MinimalModeKey)
-
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
-	warnings = warns
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	warnings = append(warnings, warns...)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, output.FormatJSON)
 	}

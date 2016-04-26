@@ -21,7 +21,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/codegangsta/cli"
 )
 
 func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error {
@@ -73,18 +72,10 @@ func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataM
 }
 
 // GetBitriseConfigFilePath ...
-func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
-	bitriseConfigPath := c.String(ConfigKey)
-
-	if bitriseConfigPath == "" {
-		bitriseConfigPath = c.String(PathKey)
-		if bitriseConfigPath != "" {
-			log.Warn("'path' key is deprecated, use 'config' instead!")
-		}
-	}
-
+func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
+
 		bitriseConfigPath = path.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
 
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
@@ -98,11 +89,10 @@ func GetBitriseConfigFilePath(c *cli.Context) (string, error) {
 }
 
 // CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
 	warnings := []string{}
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	if bitriseConfigBase64Data != "" {
 		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
 		warnings = warns
@@ -111,7 +101,7 @@ func CreateBitriseConfigFromCLIParams(c *cli.Context) (models.BitriseDataModel, 
 		}
 		bitriseConfig = config
 	} else {
-		bitriseConfigPath, err := GetBitriseConfigFilePath(c)
+		bitriseConfigPath, err := GetBitriseConfigFilePath(bitriseConfigPath)
 		if err != nil {
 			return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
 		}
@@ -157,9 +147,7 @@ func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.Envir
 }
 
 // GetInventoryFilePath ...
-func GetInventoryFilePath(c *cli.Context) (string, error) {
-	inventoryPath := c.String(InventoryKey)
-
+func GetInventoryFilePath(inventoryPath string) (string, error) {
 	if inventoryPath == "" {
 		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
 		inventoryPath = path.Join(configs.CurrentDir, DefaultSecretsFileName)
@@ -175,10 +163,9 @@ func GetInventoryFilePath(c *cli.Context) (string, error) {
 }
 
 // CreateInventoryFromCLIParams ...
-func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentItemModel, error) {
+func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]envmanModels.EnvironmentItemModel, error) {
 	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
 	if inventoryBase64Data != "" {
 		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
 		if err != nil {
@@ -186,7 +173,7 @@ func CreateInventoryFromCLIParams(c *cli.Context) ([]envmanModels.EnvironmentIte
 		}
 		inventoryEnvironments = inventory
 	} else {
-		inventoryPath, err := GetInventoryFilePath(c)
+		inventoryPath, err := GetInventoryFilePath(inventoryPath)
 		if err != nil {
 			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory path: %s", err)
 		}

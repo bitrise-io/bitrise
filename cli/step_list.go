@@ -12,18 +12,31 @@ import (
 func stepList(c *cli.Context) {
 	warnings := []string{}
 
-	// Input validation
+	// Expand cli.Context
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	format := c.String(OuputFormatKey)
+
+	collectionURI := c.String(CollectionKey)
+	//
+
+	// Input validation
 	if format == "" {
 		format = output.FormatRaw
 	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 
-	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
-		warnings = warns
+		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		warnings = append(warnings, warns...)
 		if err != nil {
 			registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), warnings, format)
 		}

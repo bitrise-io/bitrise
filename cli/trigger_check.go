@@ -38,11 +38,11 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 }
 
 // GetWorkflowIDByPattern ...
-func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (string, error) {
+func GetWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern string, isPullRequestMode bool) (string, error) {
 	matchFoundButPullRequestModeNotAllowed := false
-	for _, item := range config.TriggerMap {
+	for _, item := range triggerMap {
 		if glob.Glob(item.Pattern, pattern) {
-			if configs.IsPullRequestMode && !item.IsPullRequestAllowed {
+			if isPullRequestMode && !item.IsPullRequestAllowed {
 				matchFoundButPullRequestModeNotAllowed = true
 				continue
 			}
@@ -58,33 +58,46 @@ func GetWorkflowIDByPattern(config models.BitriseDataModel, pattern string) (str
 
 func triggerCheck(c *cli.Context) {
 	warnings := []string{}
+
+	// Expand cli.Context
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	format := c.String(OuputFormatKey)
-	if format == "" {
-		format = output.FormatRaw
-	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
-	}
 
-	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(c)
-	warnings = warns
-	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, format)
-	}
-
-	// Trigger filter validation
 	triggerPattern := ""
 	if len(c.Args()) < 1 {
 		registerFatal("No trigger pattern specified", warnings, format)
 	} else {
 		triggerPattern = c.Args()[0]
 	}
+	//
 
+	if format == "" {
+		format = output.FormatRaw
+	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	}
+
+	// Config validation
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	warnings = append(warnings, warns...)
+	if err != nil {
+		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, format)
+	}
+
+	// Trigger filter validation
 	if triggerPattern == "" {
 		registerFatal("No trigger pattern specified", warnings, format)
 	}
 
-	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig, triggerPattern)
+	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, configs.IsPullRequestMode)
 	if err != nil {
 		registerFatal(err.Error(), warnings, format)
 	}

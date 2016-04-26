@@ -12,19 +12,32 @@ import (
 )
 
 func export(c *cli.Context) {
-	PrintBitriseHeaderASCIIArt(c.App.Version)
+	// Expand cli.Context
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		log.Warn("'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
 
 	outfilePth := c.String(OuputPathKey)
+	outFormat := c.String(OuputFormatKey)
+	prettyFormat := c.Bool(PrettyFormatKey)
+	//
+
+	PrintBitriseHeaderASCIIArt(c.App.Version)
+
 	if outfilePth == "" {
 		log.Fatalln("No output file path specified!")
 	}
-	outFormat := c.String(OuputFormatKey)
 	if outFormat == "" {
 		log.Fatalln("No output file format specified!")
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(c)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
@@ -35,7 +48,7 @@ func export(c *cli.Context) {
 	// serialize
 	configBytes := []byte{}
 	if outFormat == output.FormatJSON {
-		if c.Bool(PrettyFormatKey) {
+		if prettyFormat {
 			configBytes, err = json.MarshalIndent(bitriseConfig, "", "\t")
 		} else {
 			configBytes, err = json.Marshal(bitriseConfig)

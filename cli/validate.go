@@ -75,26 +75,42 @@ func printJSONValidation(validation ValidationModel) {
 
 func validate(c *cli.Context) {
 	warnings := []string{}
+
+	// Expand cli.Context
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	inventoryPath := c.String(InventoryKey)
+
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	format := c.String(OuputFormatKey)
+	//
+
 	if format == "" {
 		format = output.FormatRaw
 	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), []string{}, output.FormatJSON)
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 
 	validation := ValidationModel{}
 
-	pth, err := GetBitriseConfigFilePath(c)
+	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && err.Error() != "No workflow yml found" {
-		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), []string{}, format)
+		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), warnings, format)
 	}
-	if pth != "" || (pth == "" && c.String(ConfigBase64Key) != "") {
+	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
 		isValid := true
 		errMsg := ""
 
-		_, warns, err := CreateBitriseConfigFromCLIParams(c)
-		warnings = warns
+		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		warnings = append(warnings, warns...)
 		if err != nil {
 			isValid = false
 			errMsg = err.Error()
@@ -109,16 +125,16 @@ func validate(c *cli.Context) {
 		log.Debug("No config found for validation")
 	}
 
-	pth, err = GetInventoryFilePath(c)
+	pth, err = GetInventoryFilePath(inventoryPath)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings, format)
 	}
-	if pth != "" || c.String(InventoryBase64Key) != "" {
+	if pth != "" || inventoryBase64Data != "" {
 		// Inventory validation
 		isValid := true
 		errMsg := ""
 
-		_, err := CreateInventoryFromCLIParams(c)
+		_, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 		if err != nil {
 			isValid = false
 			errMsg = err.Error()
