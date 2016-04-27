@@ -128,13 +128,6 @@ func run(c *cli.Context) {
 		log.Warn("'path' key is deprecated, use 'config' instead!")
 		bitriseConfigPath = deprecatedBitriseConfigPath
 	}
-
-	workflowToRunID := ""
-	if len(c.Args()) < 1 {
-		log.Fatal("No workfow specified!")
-	} else {
-		workflowToRunID = c.Args()[0]
-	}
 	//
 
 	// Inventory validation
@@ -153,6 +146,12 @@ func run(c *cli.Context) {
 	}
 
 	// Workflow id validation
+	workflowToRunID := ""
+	if len(c.Args()) < 1 {
+		log.Error("No workfow specified!")
+	} else {
+		workflowToRunID = c.Args()[0]
+	}
 	if workflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit

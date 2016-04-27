@@ -42,13 +42,6 @@ func trigger(c *cli.Context) {
 		log.Warn("'path' key is deprecated, use 'config' instead!")
 		bitriseConfigPath = deprecatedBitriseConfigPath
 	}
-
-	triggerPattern := ""
-	if len(c.Args()) < 1 {
-		log.Fatal("No pattern specified!")
-	} else {
-		triggerPattern = c.Args()[0]
-	}
 	//
 
 	// Inventory validation
@@ -67,6 +60,12 @@ func trigger(c *cli.Context) {
 	}
 
 	// Trigger filter validation
+	triggerPattern := ""
+	if len(c.Args()) < 1 {
+		log.Error("No pattern specified!")
+	} else {
+		triggerPattern = c.Args()[0]
+	}
 	if triggerPattern == "" {
 		// no trigger filter specified
 		//  list all the available ones and then exit

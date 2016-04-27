@@ -6,8 +6,9 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __FIX__ regression since `1.2.x`: `bitrise trigger [PATTERN]` did not handled PR mode correctly, if PR mode was set in bitrise secrets. `is_pull_request_allowed: false` was not correctly handled in the `trigger_map` if the PR mode indication was declared in the bitrise secrets. This version fixes the PR mode handling when running `bitrise trigger [PATTERN]` and also includes unit and integration tests for it.
+* Now `bitrise trigger-check [PATTERN]` also checks for PR envs in secrets. It uses the same functionality to determine which workflow id to select as `bitrise trigger [PATTERN]` does.
+* __FIX__ regression: `bitrise trigger [PATTERN]` once again allows to trigger *utility workflows* as well.
 
 ### Install or upgrade
 
