@@ -27,8 +27,6 @@ func export(c *cli.Context) {
 	prettyFormat := c.Bool(PrettyFormatKey)
 	//
 
-	PrintBitriseHeaderASCIIArt(c.App.Version)
-
 	if outfilePth == "" {
 		log.Fatalln("No output file path specified!")
 	}

@@ -23,37 +23,70 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-func checkCIAndPRModeFromSecrets(envs []envmanModels.EnvironmentItemModel) error {
-	for _, env := range envs {
+func isPRMode(prGlobalFlag bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
+	prModeEnv := os.Getenv(configs.PRModeEnvKey)
+
+	if prGlobalFlag || prIDEnv != "" || prModeEnv == "true" {
+		return true, nil
+	}
+
+	for _, env := range inventoryEnvironments {
 		key, value, err := env.GetKeyValuePair()
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		if !configs.IsCIMode {
-			if key == configs.CIModeEnvKey && value == "true" {
-				configs.IsCIMode = true
-			}
+		if key == configs.PullRequestIDEnvKey && value != "" {
+			return true, nil
 		}
-
-		if !configs.IsPullRequestMode {
-			if key == configs.PullRequestIDEnvKey && value != "" {
-				configs.IsPullRequestMode = true
-			}
-			if key == configs.PRModeEnvKey && value == "true" {
-				configs.IsPullRequestMode = true
-			}
+		if key == configs.PRModeEnvKey && value == "true" {
+			return true, nil
 		}
 	}
 
-	if configs.IsCIMode {
-		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
-	}
-	if configs.IsPullRequestMode {
+	return false, nil
+}
+
+func registerPrMode(isPRMode bool) error {
+	configs.IsPullRequestMode = isPRMode
+
+	if isPRMode {
 		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
+		return os.Setenv(configs.PRModeEnvKey, "true")
+	}
+	return os.Setenv(configs.PRModeEnvKey, "false")
+}
+
+func isCIMode(ciGlobalFlag bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
+
+	if ciGlobalFlag || ciModeEnv == "true" {
+		return true, nil
 	}
 
-	return nil
+	for _, env := range inventoryEnvironments {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return false, err
+		}
+
+		if key == configs.CIModeEnvKey && value == "true" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func registerCIMode(isCIMode bool) error {
+	configs.IsCIMode = isCIMode
+
+	if isCIMode {
+		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
+		return os.Setenv(configs.CIModeEnvKey, "true")
+	}
+	return os.Setenv(configs.CIModeEnvKey, "false")
 }
 
 // GetBitriseConfigFromBase64Data ...

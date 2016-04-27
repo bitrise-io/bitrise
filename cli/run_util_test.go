@@ -2,13 +2,244 @@ package cli
 
 import (
 	"encoding/base64"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsPRMode(t *testing.T) {
+	prModeEnv := os.Getenv(configs.PRModeEnvKey)
+	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
+
+	// cleanup Envs after these tests
+	defer func() {
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, prModeEnv))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, prIDEnv))
+	}()
+
+	t.Log("Should be false for: prGlobalFlag: false, prModeEnv: '', prIDEnv: ''")
+	{
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(false, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, false, pr)
+	}
+
+	t.Log("Should be false for: prGlobalFlag: false, prModeEnv: '', prIDEnv: '', secrets: false")
+	{
+		inventoryStr := `
+envs:
+- PR: "false"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, false, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: true, prModeEnv: '', prIDEnv: ''")
+	{
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(true, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: true, prModeEnv: '', prIDEnv: '', secrets: false")
+	{
+		inventoryStr := `
+envs:
+- PR: "false"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(true, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'true', prIDEnv: '', secrets: false")
+	{
+		inventoryStr := `
+envs:
+- PR: "false"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "true"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'false', prIDEnv: 'some', secrets: false")
+	{
+		inventoryStr := `
+envs:
+- PR: "false"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, "some"))
+
+		pr, err := isPRMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: '', prIDEnv: '', secrets: true")
+	{
+		inventoryStr := `
+envs:
+- PR: "true"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'false', prIDEnv: '', secrets: true")
+	{
+		inventoryStr := `
+envs:
+- PR: ""
+- PULL_REQUEST_ID: "some"
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(true, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+}
+
+func TestIsCIMode(t *testing.T) {
+	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
+
+	defer func() {
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ciModeEnv))
+	}()
+
+	t.Log("Should be false for: ciGlobalFlag: false, ciModeEnv: 'false'")
+	{
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
+
+		ci, err := isCIMode(false, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, false, ci)
+	}
+
+	t.Log("Should be false for: ciGlobalFlag: false, ciModeEnv: 'false' secrets: false")
+	{
+		inventoryStr := `
+envs:
+- CI: "false"
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
+
+		ci, err := isCIMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, false, ci)
+	}
+
+	t.Log("Should be true for: ciGlobalFlag: true, ciModeEnv: 'false'")
+	{
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
+
+		ci, err := isCIMode(true, []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.Equal(t, true, ci)
+	}
+
+	t.Log("Should be true for: ciGlobalFlag: true, ciModeEnv: '' secrets: false")
+	{
+		inventoryStr := `
+envs:
+- CI: "false"
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
+
+		ci, err := isCIMode(true, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, ci)
+	}
+
+	t.Log("Should be true for: ciGlobalFlag: false, ciModeEnv: 'true' secrets: false")
+	{
+		inventoryStr := `
+envs:
+- CI: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "true"))
+
+		ci, err := isCIMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, ci)
+	}
+
+	t.Log("Should be true for: ciGlobalFlag: false, ciModeEnv: '' secrets: true")
+	{
+		inventoryStr := `
+envs:
+- CI: "true"
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
+
+		ci, err := isCIMode(false, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, ci)
+	}
+}
 
 func TestGetWorkflowIDByPattern(t *testing.T) {
 	configStr := `

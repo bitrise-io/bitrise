@@ -6,7 +6,6 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -59,7 +58,13 @@ func GetWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern str
 func triggerCheck(c *cli.Context) {
 	warnings := []string{}
 
+	//
 	// Expand cli.Context
+	prGlobalFlag := c.GlobalBool(PRKey)
+
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	inventoryPath := c.String(InventoryKey)
+
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
 	bitriseConfigPath := c.String(ConfigKey)
@@ -79,10 +84,12 @@ func triggerCheck(c *cli.Context) {
 	}
 	//
 
-	if format == "" {
-		format = output.FormatRaw
-	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	//
+	// Input validation
+	// Inventory validation
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+	if err != nil {
+		registerFatal(fmt.Sprintf("Failed to create inventory, err: %s", err), warnings, format)
 	}
 
 	// Config validation
@@ -92,12 +99,27 @@ func triggerCheck(c *cli.Context) {
 		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, format)
 	}
 
+	// Format validation
+	if format == "" {
+		format = output.FormatRaw
+	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
+		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	}
+
 	// Trigger filter validation
 	if triggerPattern == "" {
 		registerFatal("No trigger pattern specified", warnings, format)
 	}
+	//
 
-	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, configs.IsPullRequestMode)
+	//
+	// Main
+	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check  PR mode, err: %s", err)
+	}
+
+	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)
 	if err != nil {
 		registerFatal(err.Error(), warnings, format)
 	}
@@ -121,5 +143,5 @@ func triggerCheck(c *cli.Context) {
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
-
+	//
 }

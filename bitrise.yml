@@ -194,6 +194,80 @@ workflows:
             if [ $status -ne 0 ] ; then
               exit 1
             fi
+    - script:
+        title: Trigger check
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+
+            export PR=""
+            export PULL_REQUEST_ID=""
+
+            # PR mode : from secrets - is_pull_request_allowed : true
+            out=$($CURRENT_BITRISE trigger-check pr_allowed -c ./bitrise-integration.yml -i ./bitrise-integration-secrets-pr.yml --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            if [[ $out != '{"pattern":"pr_allowed","workflow":"pr_allowed"}' ]] ; then
+              echo $out
+              exit 1
+            fi
+
+            # Not PR mode - is_pull_request_allowed : true
+            out=$($CURRENT_BITRISE trigger-check pr_allowed -c ./bitrise-integration.yml --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            if [[ $out != '{"pattern":"pr_allowed","workflow":"pr_allowed"}' ]] ; then
+              echo $out
+              exit 1
+            fi
+
+            # Not PR mode - is_pull_request_allowed : false
+            out=$($CURRENT_BITRISE trigger-check only_code_push -c ./bitrise-integration.yml --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            if [[ $out != '{"pattern":"only_code_push","workflow":"only_code_push"}' ]] ; then
+            echo $out
+              exit 1
+            fi
+
+            # PR mode : from secrets - is_pull_request_allowed : false
+            out=$($CURRENT_BITRISE trigger-check only_code_push -c ./bitrise-integration.yml  -i ./bitrise-integration-secrets-pr.yml --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            if [[ $out != '{"pattern":"only_code_push","workflow":"fall_back"}' ]] ; then
+            echo $out
+              exit 1
+            fi
+
+            # Not PR mode - is_pull_request_allowed : false
+            out=$($CURRENT_BITRISE trigger-check fall_back -c ./bitrise-integration.yml --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            if [[ $out != '{"pattern":"fall_back","workflow":"fall_back"}' ]] ; then
+            echo $out
+              exit 1
+            fi
 
   _prepare_and_setup:
     title: Prepare bitrise and install testing tools
