@@ -1,6 +1,47 @@
-## Changelog (Current version: 1.3.2)
+## Changelog (Current version: 1.3.3)
 
 -----------------
+
+## 1.3.3 (2016 Apr 27)
+
+### Release Notes
+
+* __FIX__ regression since `1.2.x`: `bitrise trigger [PATTERN]` did not handled PR mode correctly, if PR mode was set in bitrise secrets. `is_pull_request_allowed: false` was not correctly handled in the `trigger_map` if the PR mode indication was declared in the bitrise secrets. This version fixes the PR mode handling when running `bitrise trigger [PATTERN]` and also includes unit and integration tests for it.
+* Now `bitrise trigger-check [PATTERN]` also checks for PR envs in secrets. It uses the same functionality to determine which workflow id to select as `bitrise trigger [PATTERN]` does.
+* __FIX__ regression: `bitrise trigger [PATTERN]` once again allows to trigger *utility workflows* as well.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.3/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.2 -> 1.3.3
+
+* [2c97445] Krisztián Gödrei - Merge pull request #349 from godrei/trigger_fix (2016 Apr 27)
+* [ee247e1] Krisztián Gödrei - fixed bitrise trigger (2016 Apr 27)
+* [256526a] Krisztián Gödrei - Merge pull request #348 from godrei/trigger_fix (2016 Apr 26)
+* [aeb9db5] Krisztián Gödrei - fatal instead of error (2016 Apr 26)
+* [a347f6e] Krisztián Gödrei - expand cli context (2016 Apr 26)
+* [8522bd3] Krisztián Gödrei - Merge pull request #347 from godrei/master (2016 Apr 20)
+* [4967f16] Krisztián Gödrei - PR fix (2016 Apr 20)
+* [ca9d760] Krisztián Gödrei - changelog update (2016 Apr 20)
+* [9856b9c] Krisztián Gödrei - changelog (2016 Apr 20)
+
 
 ## 1.3.2 (2016 Apr 20)
 
@@ -1768,4 +1809,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Apr 20
+Updated: 2016 Apr 27
