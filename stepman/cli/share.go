@@ -158,7 +158,7 @@ func share(c *cli.Context) {
 
 	guide := `
 Do you want to ` + colorstring.Green("share ") + colorstring.Yellow("your ") + colorstring.Magenta("own ") + colorstring.Blue("Step") + ` with the world? Awesome!!
-To get started you can find a template Step repository at: ` + colorstring.Green("https://github.com/bitrise-io/stepman/tree/master/_step_template") + `
+To get started you can find a template Step repository at: ` + colorstring.Green("https://github.com/bitrise-steplib/step-template") + `
 
 Once you have your Step in a ` + colorstring.Yellow("public git repository") + ` you can share it with others.
 
