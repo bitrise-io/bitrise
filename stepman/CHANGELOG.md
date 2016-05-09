@@ -2,6 +2,48 @@
 
 -----------------
 
+## 0.9.19 (2016 May 09)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.19/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.18 -> 0.9.19
+
+* [6f06c1b] Viktor Benei - step-template link fix (2016 May 06)
+* [6d4c12e] Krisztián Gödrei - Merge pull request #180 from godrei/version_cmd (2016 Apr 07)
+* [f8d89af] godrei - version cmd (2016 Apr 07)
+* [ba10ca9] Krisztián Gödrei - Merge pull request #179 from godrei/validation_fix (2016 Apr 05)
+* [31b9f40] godrei - validate updates (2016 Apr 05)
+* [0478153] Krisztián Gödrei - Merge pull request #178 from godrei/download_step_fix (2016 Apr 05)
+* [736a3d9] godrei - downoad setp fix (2016 Apr 05)
+* [e15f5e2] Krisztián Gödrei - Merge pull request #177 from godrei/feature/release (2016 Apr 05)
+* [24159a5] godrei - PR fix (2016 Apr 05)
+* [76cf1c1] godrei - release config, changelog update (2016 Apr 05)
+* [319745a] godrei - in progress (2016 Apr 05)
+* [240a642] Viktor Benei - Merge pull request #176 from godrei/feature/godep_update (2016 Apr 05)
+* [8288a74] godrei - godeps update (2016 Apr 05)
+* [8d62410] Viktor Benei - Merge pull request #173 from bitrise-io/fix/validate-collection-aliases (2016 Feb 09)
+* [bf22a75] vasarhelyia - Validate step collection routes (2016 Feb 01)
+
+
 ## 0.9.18 (2015 Dec 22)
 
 ### Release Notes
@@ -842,4 +884,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Apr 05
+Generated at: 2016 May 09
