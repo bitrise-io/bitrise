@@ -281,7 +281,6 @@ workflows:
             # PR mode : from secrets - is_pull_request_allowed : true
             out=$($CURRENT_BITRISE trigger-check "" -c ./bitrise-integration.yml -i ./bitrise-integration-empty-test.yml --format json)
             status=$?
-
             echo "status: $status"
             if [ $status -ne 1 ] ; then
               exit 1
@@ -292,12 +291,7 @@ workflows:
             out=$($CURRENT_BITRISE trigger-check trigger_empty_workflow_id -c ./bitrise-integration-empty-test.yml -i ./bitrise-integration-secrets-pr.yml --format json)
             status=$?
             echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"trigger_empty_workflow_id","workflow":""}' ]] ; then
-              echo $out
+            if [ $status -ne 1 ] ; then
               exit 1
             fi
 

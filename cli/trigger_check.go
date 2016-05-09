@@ -36,8 +36,26 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 	}
 }
 
+func validateTriggerMap(triggerMap []models.TriggerMapItemModel) error {
+	for _, item := range triggerMap {
+		if item.Pattern == "" {
+			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty pattern", item.Pattern, item.WorkflowID)
+		}
+
+		if item.WorkflowID == "" {
+			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", item.Pattern, item.WorkflowID)
+		}
+	}
+
+	return nil
+}
+
 // GetWorkflowIDByPattern ...
 func GetWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern string, isPullRequestMode bool) (string, error) {
+	if err := validateTriggerMap(triggerMap); err != nil {
+		return "", err
+	}
+
 	matchFoundButPullRequestModeNotAllowed := false
 	for _, item := range triggerMap {
 		if glob.Glob(item.Pattern, pattern) {
