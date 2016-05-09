@@ -9,6 +9,6 @@ import (
 
 func share(c *cli.Context) {
 	if err := tools.StepmanShare(); err != nil {
-		log.Fatalf("Bitrise share failed, err: %s", err)
+		log.Fatalf("Bitrise share failed, error: %s", err)
 	}
 }

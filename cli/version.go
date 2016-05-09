@@ -20,7 +20,7 @@ func printVersionCmd(c *cli.Context) {
 	fullVersion := c.Bool("full")
 
 	if err := output.ConfigureOutputFormat(c); err != nil {
-		log.Fatalf("Error: %s", err)
+		log.Fatalf("Failed to configure output format, error: %s", err)
 	}
 
 	versionOutput := VersionOutputModel{

@@ -13,7 +13,7 @@ func pluginInstall(c *cli.Context) {
 	// Input validation
 	pluginSource := c.String("source")
 	if pluginSource == "" {
-		log.Fatalln("Missing required input: source")
+		log.Fatal("Missing required input: source")
 	}
 
 	pluginBinary := c.String("bin-source")
@@ -44,12 +44,12 @@ func pluginInstall(c *cli.Context) {
 func pluginDelete(c *cli.Context) {
 	// Input validation
 	if len(c.Args()) == 0 {
-		log.Fatalf("Missing plugin name")
+		log.Fatal("Missing plugin name")
 	}
 
 	name := c.Args()[0]
 	if name == "" {
-		log.Fatalf("Missing plugin name")
+		log.Fatal("Missing plugin name")
 	}
 	if _, found, err := plugins.LoadPlugin(name); err != nil {
 		log.Fatalf("Failed to check if plugin (%s) installed, error: %s", name, err)

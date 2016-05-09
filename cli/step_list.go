@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/tools"
@@ -67,7 +66,6 @@ func stepList(c *cli.Context) {
 		fmt.Println(outStr)
 		break
 	default:
-		log.Fatalf("Invalid format: %s", format)
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 }

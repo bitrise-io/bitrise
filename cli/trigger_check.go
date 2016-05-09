@@ -28,7 +28,7 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 	} else {
 		bytes, err := json.Marshal(message)
 		if err != nil {
-			log.Fatalf("Failed to parse error model, err: %s", err)
+			log.Fatalf("Failed to parse error model, error: %s", err)
 		}
 
 		fmt.Println(string(bytes))
@@ -116,7 +116,7 @@ func triggerCheck(c *cli.Context) {
 	// Main
 	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, err: %s", err)
+		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, format)
 	}
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)

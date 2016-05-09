@@ -9,6 +9,6 @@ import (
 
 func shareAudit(c *cli.Context) {
 	if err := tools.StepmanShareAudit(); err != nil {
-		log.Fatalf("Bitrise share audit failed, err: %s", err)
+		log.Fatalf("Bitrise share audit failed, error: %s", err)
 	}
 }
