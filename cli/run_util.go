@@ -18,6 +18,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -434,20 +435,34 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			ExitCode: exitCode,
 		}
 
+		isExitStatusError := true
+		if err != nil {
+			isExitStatusError = errorutil.IsExitStatusError(err)
+		}
+
 		switch resultCode {
 		case models.StepRunStatusCodeSuccess:
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailed:
-			log.Errorf("Step (%s) failed, error: (%v)", stepInfoCopy.Title, err)
+			if !isExitStatusError {
+				log.Errorf("Step (%s) failed, error: %s", stepInfoCopy.Title, err)
+			}
+
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailedSkippable:
-			log.Warnf("Step (%s) failed, but was marked as skippable, error: (%v)", stepInfoCopy.Title, err)
+			if !isExitStatusError {
+				log.Warnf("Step (%s) failed, but was marked as skippable, error: %s", stepInfoCopy.Title, err)
+			} else {
+				log.Warnf("Step (%s) failed, but was marked as skippable", stepInfoCopy.Title)
+			}
+
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.Title)
+
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
@@ -455,6 +470,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			if runIf != "" {
 				log.Info("The Run-If expression was: ", colorstring.Blue(runIf))
 			}
+
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		default:
