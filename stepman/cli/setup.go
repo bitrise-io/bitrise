@@ -1,33 +1,46 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/stepman/output"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/codegangsta/cli"
 )
 
-func setup(c *cli.Context) {
-	log.Debugln("[STEPMAN] - Setup")
-
-	// Input validation
-	collectionURI := c.String(CollectionKey)
-	if collectionURI == "" {
-		log.Fatalln("[STEPMAN] - No step collection specified")
+func gitClone(uri, pth string) (string, error) {
+	if uri == "" {
+		return "", errors.New("Git Clone 'uri' missing")
+	}
+	if pth == "" {
+		return "", errors.New("Git Clone 'pth' missing")
 	}
 
-	if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
-		log.Fatal("[STEPMAN] - Failed to check routing:", err)
+	command := exec.Command("git", "clone", "--recursive", uri, pth)
+	bytes, err := command.CombinedOutput()
+	return string(bytes), err
+}
+
+func setupSteplib(steplibURI string, silent bool) error {
+	logger := output.NewLogger(silent)
+
+	if exist, err := stepman.RootExistForCollection(steplibURI); err != nil {
+		return fmt.Errorf("Failed to check if routing exist for steplib (%s), error: %s", steplibURI, err)
 	} else if exist {
-		log.Debugln("[STEPMAN] - Nothing to setup, everything's ready.")
-		return
+
+		logger.Debugf("Steplib (%s) already initialized, ready to use", steplibURI)
+		return nil
 	}
 
 	alias := stepman.GenerateFolderAlias()
 	route := stepman.SteplibRoute{
-		SteplibURI:  collectionURI,
+		SteplibURI:  steplibURI,
 		FolderAlias: alias,
 	}
 
@@ -36,45 +49,87 @@ func setup(c *cli.Context) {
 	defer func() {
 		if !isSuccess {
 			if err := stepman.CleanupRoute(route); err != nil {
-				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+				logger.Errorf("Failed to cleanup routing for steplib (%s), error: %s", steplibURI, err)
 			}
 		}
 	}()
 
+	// Setup
+	isLocalSteplib := strings.HasPrefix(steplibURI, "file://")
+
 	pth := stepman.GetCollectionBaseDirPath(route)
-	if !c.Bool(LocalCollectionKey) {
-		if err := cmdex.GitClone(collectionURI, pth); err != nil {
-			log.Fatal("[STEPMAN] - Failed to setup step spec:", err)
+	if !isLocalSteplib {
+		if out, err := gitClone(steplibURI, pth); err != nil {
+			return fmt.Errorf("Failed to setup steplib (%s), output: %s, error: %s", steplibURI, out, err)
 		}
 	} else {
-		log.Warn("Using local step lib")
 		// Local spec path
-		log.Info("Creating collection dir: ", pth)
+		logger.Warn("Using local steplib")
+		logger.Infof("Creating steplib dir: %s", pth)
+
 		if err := os.MkdirAll(pth, 0777); err != nil {
-			log.Fatal("[STEPMAN] - Failed to create collection dir: ", pth, "| error: ", err)
+			return fmt.Errorf("Failed to create steplib dir (%s), error: %s", pth, err)
 		}
-		log.Info("Collection dir created - OK.")
-		if err := cmdex.CopyDir(collectionURI, pth, true); err != nil {
-			log.Fatal("[STEPMAN] - Failed to setup local step spec:", err)
+
+		logger.Info("Collection dir created - OK")
+		if err := cmdex.CopyDir(steplibURI, pth, true); err != nil {
+			return fmt.Errorf("Failed to setup local step spec:", err)
 		}
 	}
 
 	if err := stepman.ReGenerateStepSpec(route); err != nil {
-		log.Fatal(err)
-	}
-
-	if copySpecJSONPath := c.String(CopySpecJSONKey); copySpecJSONPath != "" {
-		log.Info("Copying spec YML to path: ", copySpecJSONPath)
-
-		sourceSpecJSONPth := stepman.GetStepSpecPath(route)
-		if err := cmdex.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
-			log.Fatalf("Failed to copy spec.json from (%s) to (%s)", sourceSpecJSONPth, copySpecJSONPath)
-		}
+		return fmt.Errorf("Failed to re-generate steplib (%s), error: %s", steplibURI, err)
 	}
 
 	if err := stepman.AddRoute(route); err != nil {
-		log.Fatal("[STEPMAN] - Failed to setup routing:", err)
+		return fmt.Errorf("Failed to setup routing: %s", err)
 	}
 
 	isSuccess = true
+
+	return nil
+}
+
+func setup(c *cli.Context) {
+	log.Debug("Setup")
+
+	// Input validation
+	steplibURI := c.String(CollectionKey)
+	if steplibURI == "" {
+		log.Fatal("No step collection specified")
+	}
+
+	copySpecJSONPath := c.String(CopySpecJSONKey)
+
+	if c.IsSet(LocalCollectionKey) {
+		log.Warn("'local' flag is deprecated")
+		log.Warn("use 'file://' suffix in steplib path instead")
+		fmt.Println()
+	}
+
+	if c.Bool(LocalCollectionKey) {
+		if !strings.HasPrefix(steplibURI, "file://") {
+			steplibURI = "file://" + steplibURI
+		}
+	}
+
+	// Setup
+	if err := setupSteplib(steplibURI, false); err != nil {
+		log.Fatalf("Steup failed, error: %s", err)
+	}
+
+	// Copy spec.json
+	if copySpecJSONPath != "" {
+		log.Infof("Copying spec YML to path: %s", copySpecJSONPath)
+
+		route, found := stepman.ReadRoute(steplibURI)
+		if !found {
+			log.Fatalf("No route found for steplib (%s)", steplibURI)
+		}
+
+		sourceSpecJSONPth := stepman.GetStepSpecPath(route)
+		if err := cmdex.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
+			log.Fatalf("Failed to copy spec.json from (%s) to (%s), error: %s", sourceSpecJSONPth, copySpecJSONPath, err)
+		}
+	}
 }

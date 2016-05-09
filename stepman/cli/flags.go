@@ -105,7 +105,7 @@ var (
 	}
 	flLocalCollection = cli.BoolFlag{
 		Name:  LocalCollectionKey,
-		Usage: "Allow the --collection to be a local path.",
+		Usage: "[Deprecated!!!][Use 'file://' in steplib uri instead] Allow the --collection to be a local path.",
 	}
 	flCopySpecJSON = cli.StringFlag{
 		Name:  CopySpecJSONKey,

@@ -143,15 +143,18 @@ func printStepInfo(stepInfo models.StepInfoModel, format string, isShort, isLoca
 func stepInfo(c *cli.Context) {
 	// Input validation
 	format := c.String(FormatKey)
+	collectionURI := c.String(CollectionKey)
+	YMLPath := c.String(StepYMLKey)
+	isShort := c.Bool(ShortKey)
+	id := c.String(IDKey)
+	version := c.String(VersionKey)
+
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
 		log.Fatalf("Invalid format: %s", format)
 	}
 
-	isShort := c.Bool(ShortKey)
-
-	YMLPath := c.String(StepYMLKey)
 	if YMLPath != "" {
 		//
 		// Local step info
@@ -187,21 +190,26 @@ func stepInfo(c *cli.Context) {
 
 		// Input validation
 		collectionURIs := []string{}
-		collectionURI := c.String(CollectionKey)
 		if collectionURI == "" {
 			collectionURIs = stepman.GetAllStepCollectionPath()
 		} else {
 			collectionURIs = []string{collectionURI}
 		}
 
-		id := c.String(IDKey)
 		if id == "" {
 			log.Fatal("Missing step id")
 		}
 
-		version := c.String(VersionKey)
-
 		for _, collectionURI := range collectionURIs {
+			// Check if setup was done for collection
+			if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
+				log.Fatalf("Failed to check if setup was done for steplib (%s), error: %s", collectionURI, err)
+			} else if !exist {
+				if err := setupSteplib(collectionURI, format != OutputFormatRaw); err != nil {
+					log.Fatal("Failed to setup steplib")
+				}
+			}
+
 			// Check if step exist in collection
 			collection, err := stepman.ReadStepSpec(collectionURI)
 			if err != nil {
