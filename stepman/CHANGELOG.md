@@ -6,8 +6,8 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* step-template link fix
+* minor bug fixes and improvements
 
 ### Install or upgrade
 
