@@ -105,16 +105,19 @@ workflows:
             #!/bin/bash
             set -e
             set -x
+
+            # setup for the original bitrise
+            bitrise setup --minimal
+
+            # build the new bitrise
             current_dir=$(pwd)
             current_bitrise=$current_dir/_tmp/ci-bin
-
             go build -o $current_bitrise
+
+            # setup for the new bitrise as well
             $current_bitrise setup --minimal
 
             envman add --key CURRENT_BITRISE --value $current_bitrise
-
-            # setup for the original bitrise as well
-            bitrise setup --minimal
     - script:
         title: Step-template test
         inputs:
