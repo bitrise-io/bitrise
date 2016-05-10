@@ -61,8 +61,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.19-3-g1c4e6f2",
-			"Rev": "1c4e6f2f857bb8120f4a1808de9ef794af54d28f"
+			"Comment": "0.9.19-4-g66099c2",
+			"Rev": "66099c2eade4c08205aa2b8726b147373a507aef"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",

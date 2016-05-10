@@ -1,6 +1,51 @@
-## Changelog (Current version: 1.3.3)
+## Changelog (Current version: 1.3.4)
 
 -----------------
+
+## 1.3.4 (2016 May 10)
+
+### Release Notes
+
+* Removed exist status error from failed step's log:  
+
+```
+ERRO[13:14:02] Step (tmp) failed, error: (exit status 1)
+```
+
+* Now bitrise `trigger map` will be validated before use. The validation makes sure there is no trigger map item with empty pattern or workflow id.
+* Minor fixes and improvements
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.4/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.3 -> 1.3.4
+
+* [62c0033] Krisztián Gödrei - godep update (2016 May 10)
+* [d352a3c] Krisztián Gödrei - prepare for release (2016 May 10)
+* [6b6b63f] Krisztián Gödrei - Merge pull request #355 from godrei/failed_step_log_fix (2016 May 10)
+* [5354284] Krisztián Gödrei - removed exist status error from failed step's log (2016 May 10)
+* [45c2106] Krisztián Gödrei - Merge pull request #354 from godrei/exit_review (2016 May 10)
+* [1946f40] Krisztián Gödrei - trigger map empty test fix (2016 May 09)
+* [7e9ec69] Krisztián Gödrei - empty pattern/wf id integration tests (2016 May 09)
+* [cbcee15] Krisztián Gödrei - exit review (2016 May 09)
+
 
 ## 1.3.3 (2016 Apr 27)
 
@@ -1809,4 +1854,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Apr 27
+Updated: 2016 May 10
