@@ -106,9 +106,6 @@ workflows:
             set -e
             set -x
 
-            # setup for the original bitrise
-            bitrise setup --minimal
-
             # build the new bitrise
             current_dir=$(pwd)
             current_bitrise=$current_dir/_tmp/ci-bin
@@ -297,6 +294,14 @@ workflows:
             if [ $status -ne 1 ] ; then
               exit 1
             fi
+    - script:
+        title: Setup system bitrise
+        run_if: ".IsCI"
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            bitrise setup --minimal
 
   _prepare_and_setup:
     title: Prepare bitrise and install testing tools
