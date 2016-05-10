@@ -9,6 +9,6 @@ import (
 
 func finish(c *cli.Context) {
 	if err := tools.StepmanShareFinish(); err != nil {
-		log.Fatalf("Bitrise share finish failed, err: %s", err)
+		log.Fatalf("Bitrise share finish failed, error: %s", err)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func printAvailableTriggerFiltersAndExit(triggerMap []models.TriggerMapItemModel) {
+func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
 	for _, triggerItem := range triggerMap {
 		log.Infoln(" * " + triggerItem.Pattern)
@@ -20,8 +20,6 @@ func printAvailableTriggerFiltersAndExit(triggerMap []models.TriggerMapItemModel
 	log.Infoln("You can trigger a workflow with:")
 	log.Infoln("-> bitrise trigger the-trigger-filter")
 	fmt.Println()
-
-	os.Exit(1)
 }
 
 func trigger(c *cli.Context) {
@@ -47,7 +45,7 @@ func trigger(c *cli.Context) {
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 	if err != nil {
-		log.Fatalf("Failed to create inventory, err: %s", err)
+		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
@@ -56,7 +54,7 @@ func trigger(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
+		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Trigger filter validation
@@ -69,32 +67,33 @@ func trigger(c *cli.Context) {
 	if triggerPattern == "" {
 		// no trigger filter specified
 		//  list all the available ones and then exit
-		printAvailableTriggerFiltersAndExit(bitriseConfig.TriggerMap)
+		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
+		os.Exit(1)
 	}
 	//
 
 	// Main
 	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, err: %s", err)
+		log.Fatalf("Failed to check  PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register  PR mode, err: %s", err)
+		log.Fatalf("Failed to register  PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  CI mode, err: %s", err)
+		log.Fatalf("Failed to check  CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register  CI mode, err: %s", err)
+		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
 

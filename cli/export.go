@@ -28,10 +28,10 @@ func export(c *cli.Context) {
 	//
 
 	if outfilePth == "" {
-		log.Fatalln("No output file path specified!")
+		log.Fatal("No output file path specified!")
 	}
 	if outFormat == "" {
-		log.Fatalln("No output file format specified!")
+		log.Fatal("No output file format specified!")
 	}
 
 	// Config validation
@@ -40,7 +40,7 @@ func export(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
+		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// serialize
@@ -52,21 +52,21 @@ func export(c *cli.Context) {
 			configBytes, err = json.Marshal(bitriseConfig)
 		}
 		if err != nil {
-			log.Fatalln("Failed to generate JSON: ", err)
+			log.Fatalf("Failed to generate config JSON, error: %s", err)
 		}
 	} else if outFormat == output.FormatYML {
 		configBytes, err = yaml.Marshal(bitriseConfig)
 		if err != nil {
-			log.Fatalln("Failed to generate YAML: ", err)
+			log.Fatalf("Failed to generate config YML, error: %s", err)
 		}
 	} else {
-		log.Fatalln("Invalid output format: ", outFormat)
+		log.Fatalf("Invalid output format: %s", outFormat)
 	}
 
 	// write to file
 	if err := fileutil.WriteBytesToFile(outfilePth, configBytes); err != nil {
-		log.Fatalf("Failed to write to file (%s), error: ", err)
+		log.Fatalf("Failed to write file (%s), error: %s", outfilePth, err)
 	}
 
-	log.Infoln("Done, saved to path: ", outfilePth)
+	log.Infof("Done, saved to path: %s", outfilePth)
 }

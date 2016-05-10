@@ -28,7 +28,7 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 	} else {
 		bytes, err := json.Marshal(message)
 		if err != nil {
-			log.Fatalf("Failed to parse error model, err: %s", err)
+			log.Fatalf("Failed to parse error model, error: %s", err)
 		}
 
 		fmt.Println(string(bytes))
@@ -36,8 +36,26 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 	}
 }
 
+func validateTriggerMap(triggerMap []models.TriggerMapItemModel) error {
+	for _, item := range triggerMap {
+		if item.Pattern == "" {
+			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty pattern", item.Pattern, item.WorkflowID)
+		}
+
+		if item.WorkflowID == "" {
+			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", item.Pattern, item.WorkflowID)
+		}
+	}
+
+	return nil
+}
+
 // GetWorkflowIDByPattern ...
 func GetWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern string, isPullRequestMode bool) (string, error) {
+	if err := validateTriggerMap(triggerMap); err != nil {
+		return "", err
+	}
+
 	matchFoundButPullRequestModeNotAllowed := false
 	for _, item := range triggerMap {
 		if glob.Glob(item.Pattern, pattern) {
@@ -116,7 +134,7 @@ func triggerCheck(c *cli.Context) {
 	// Main
 	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, err: %s", err)
+		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, format)
 	}
 
 	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)

@@ -21,6 +21,11 @@ func initLogFormatter() {
 }
 
 func before(c *cli.Context) error {
+	/*
+		return err will print app's help also,
+		use log.Fatal to avoid print help.
+	*/
+
 	initLogFormatter()
 	initHelpAndVersionFlags()
 	initAppHelpTemplate()
@@ -29,7 +34,7 @@ func before(c *cli.Context) error {
 	if c.Bool(DebugModeKey) {
 		// set for other tools, as an ENV
 		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			return err
+			log.Fatalf("Failed to set DEBUG env, error: %s", err)
 		}
 		configs.IsDebugMode = true
 		log.Warn("=> Started in DEBUG mode")
@@ -50,11 +55,11 @@ func before(c *cli.Context) error {
 
 	level, err := log.ParseLevel(logLevelStr)
 	if err != nil {
-		return err
+		log.Fatalf("Failed parse log level, error: %s", err)
 	}
 
 	if err := os.Setenv(configs.LogLevelEnvKey, level.String()); err != nil {
-		log.Fatal("Failed to set log level env:", err)
+		log.Fatalf("Failed to set LOGLEVEL env, error: %s", err)
 	}
 	log.SetLevel(level)
 
@@ -63,17 +68,17 @@ func before(c *cli.Context) error {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			return err
+			log.Fatalf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths: %s", err)
+		log.Fatalf("Failed to initialize required paths, error: %s", err)
 	}
 
 	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required plugin paths: %s", err)
+		log.Fatalf("Failed to initialize required plugin paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
@@ -81,7 +86,7 @@ func before(c *cli.Context) error {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			return err
+			log.Fatalf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
@@ -128,7 +133,7 @@ func Run() {
 
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
-				log.Fatalf("Failed to get plugin (%s), err: %s", pluginName, err)
+				log.Fatalf("Failed to get plugin (%s), error: %s", pluginName, err)
 			}
 			if !found {
 				log.Fatalf("Plugin (%s) not installed", pluginName)
@@ -136,7 +141,7 @@ func Run() {
 
 			log.Debugf("Start plugin: (%s)", pluginName)
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-				log.Fatalf("Failed to run plugin (%s), err: %s", pluginName, err)
+				log.Fatalf("Failed to run plugin (%s), error: %s", pluginName, err)
 			}
 		} else {
 			cli.ShowAppHelp(c)
@@ -144,6 +149,6 @@ func Run() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal("Finished with Error:", err)
+		log.Fatalf("Finished with error: %s", err)
 	}
 }

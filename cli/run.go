@@ -34,17 +34,16 @@ func aboutUtilityWorkflows() {
 	log.Infoln(" in the before_run and after_run blocks.")
 }
 
-func printAboutUtilityWorkflowsAndExit() {
+func printAboutUtilityWorkflows() {
 	log.Error("Utility workflows can't be triggered directly")
 	fmt.Println()
 	log.Infoln("Note about utility workflows:")
 	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
 	log.Infoln(" these can't be triggered directly but can be used by other workflows")
 	log.Infoln(" in the before_run and after_run blocks.")
-	os.Exit(1)
 }
 
-func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
+func printAvailableWorkflows(config models.BitriseDataModel) {
 	workflowNames := []string{}
 	utilityWorkflowNames := []string{}
 
@@ -82,8 +81,6 @@ func printAvailableWorkflowsAndExit(config models.BitriseDataModel) {
 		aboutUtilityWorkflows()
 		fmt.Println()
 	}
-
-	os.Exit(1)
 }
 
 func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string) {
@@ -94,7 +91,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
 		if err := bitrise.RunSetup(version.VERSION, false); err != nil {
-			log.Fatalln("Setup failed:", err)
+			log.Fatalf("Setup failed, error: %s", err)
 		}
 	}
 
@@ -102,7 +99,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
-		log.Fatalln("Error: ", err)
+		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		os.Exit(1)
 	}
@@ -133,7 +130,7 @@ func run(c *cli.Context) {
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 	if err != nil {
-		log.Fatalf("Failed to create inventory, err: %s", err)
+		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
@@ -142,7 +139,7 @@ func run(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
+		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Workflow id validation
@@ -155,12 +152,14 @@ func run(c *cli.Context) {
 	if workflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
-		printAvailableWorkflowsAndExit(bitriseConfig)
+		printAvailableWorkflows(bitriseConfig)
+		os.Exit(1)
 	}
 	if strings.HasPrefix(workflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
-		printAboutUtilityWorkflowsAndExit()
+		printAboutUtilityWorkflows()
+		os.Exit(1)
 	}
 	//
 
@@ -168,20 +167,20 @@ func run(c *cli.Context) {
 	// Main
 	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, err: %s", err)
+		log.Fatalf("Failed to check  PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register  PR mode, err: %s", err)
+		log.Fatalf("Failed to register  PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  CI mode, err: %s", err)
+		log.Fatalf("Failed to check  CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register  CI mode, err: %s", err)
+		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)

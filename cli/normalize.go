@@ -21,7 +21,7 @@ func normalize(c *cli.Context) {
 	// Input validation
 	bitriseConfigPath, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil {
-		log.Fatalf("Failed to get bitrise config path, err: %s", err)
+		log.Fatalf("Failed to get bitrise config path, error: %s", err)
 	}
 	if bitriseConfigPath == "" {
 		log.Fatal("No bitrise config path defined!")
@@ -33,15 +33,15 @@ func normalize(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, err: %s", err)
+		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Normalize
 	if err := bitrise.RemoveConfigRedundantFieldsAndFillStepOutputs(&bitriseConfig); err != nil {
-		log.Fatal("Failed to remove redundant fields:", err)
+		log.Fatalf("Failed to remove redundant fields, error: %s", err)
 	}
 	if err := bitrise.SaveConfigToFile(bitriseConfigPath, bitriseConfig); err != nil {
-		log.Fatal("Failed to save config to file:", err)
+		log.Fatalf("Failed to save config to file, error: %s", err)
 	}
 
 	log.Info("Redundant fields removed")

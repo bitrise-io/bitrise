@@ -10,10 +10,10 @@ func start(c *cli.Context) {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		log.Fatalln("No step collection specified")
+		log.Fatal("No step collection specified")
 	}
 
 	if err := tools.StepmanShareStart(collectionURI); err != nil {
-		log.Fatalf("Bitrise share start failed, err: %s", err)
+		log.Fatalf("Bitrise share start failed, error: %s", err)
 	}
 }
