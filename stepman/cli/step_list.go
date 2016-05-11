@@ -31,10 +31,13 @@ func printJSONStepList(stepList models.StepListModel, isShort bool) error {
 }
 
 func listSteps(stepLibURI, format string) error {
+	// Check if setup was done for collection
 	if exist, err := stepman.RootExistForCollection(stepLibURI); err != nil {
 		return err
 	} else if !exist {
-		return fmt.Errorf("Missing routing for stepLib, call 'stepman setup -c %s' before audit", stepLibURI)
+		if err := setupSteplib(stepLibURI, format != OutputFormatRaw); err != nil {
+			log.Fatal("Failed to setup steplib")
+		}
 	}
 
 	stepLib, err := stepman.ReadStepSpec(stepLibURI)
