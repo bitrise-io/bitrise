@@ -11,6 +11,7 @@ var (
 			Action:  setup,
 			Flags: []cli.Flag{
 				flMinimalSetup,
+				flFullModeSteup,
 			},
 		},
 		{

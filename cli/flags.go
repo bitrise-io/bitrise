@@ -51,6 +51,8 @@ const (
 
 	// MinimalModeKey ...
 	MinimalModeKey = "minimal"
+	// FullModeKey ...
+	FullModeKey = "full"
 
 	// OuputFormatKey ...
 	OuputFormatKey      = "format"
@@ -140,12 +142,16 @@ var (
 	// Setup
 	flMinimalSetup = cli.BoolFlag{
 		Name:  MinimalModeKey,
-		Usage: "Minimal setup mode: skips more thorough checking, like brew doctor.",
+		Usage: "[Deprecated!!!] Minimal setup mode: skips more thorough checking, like brew doctor.",
+	}
+	flFullModeSteup = cli.BoolFlag{
+		Name:  FullModeKey,
+		Usage: "Full setup mode: also calls 'brew doctor'.",
 	}
 	// Export
 	flFormat = cli.StringFlag{
 		Name:  OuputFormatKey,
-		Usage: "Output format. Accepted: json, yml",
+		Usage: "Output format. Accepted: json, yml.",
 	}
 	flOutputPath = cli.StringFlag{
 		Name:  OuputPathKey,

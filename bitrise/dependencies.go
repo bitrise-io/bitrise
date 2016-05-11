@@ -113,7 +113,7 @@ func CheckIsRubyGemsInstalled() error {
 }
 
 // CheckIsHomebrewInstalled ...
-func CheckIsHomebrewInstalled(isMinimalSetupMode bool) error {
+func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 	officialSiteURL := "http://brew.sh/"
 
@@ -134,7 +134,7 @@ func CheckIsHomebrewInstalled(isMinimalSetupMode bool) error {
 		return errors.New("Failed to get version")
 	}
 
-	if !isMinimalSetupMode {
+	if isFullSetupMode {
 		// brew doctor
 		doctorOutput, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		if err != nil {

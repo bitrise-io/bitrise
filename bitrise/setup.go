@@ -40,12 +40,12 @@ var LinuxPluginDependencyMap = map[string]PluginDependency{
 }
 
 // RunSetup ...
-func RunSetup(appVersion string, isMinimalSetupMode bool) error {
+func RunSetup(appVersion string, isFullSetupMode bool) error {
 	log.Infoln("[BITRISE_CLI] - Setup")
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
 	case "darwin":
-		if err := doSetupOnOSX(isMinimalSetupMode); err != nil {
+		if err := doSetupOnOSX(isFullSetupMode); err != nil {
 			return err
 		}
 	case "linux":
