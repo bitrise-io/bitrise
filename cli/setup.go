@@ -27,7 +27,14 @@ func PrintBitriseHeaderASCIIArt(appVersion string) {
 func setup(c *cli.Context) {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
-	if err := bitrise.RunSetup(c.App.Version, c.Bool(MinimalModeKey)); err != nil {
+	if c.IsSet(MinimalModeKey) {
+		log.Warn("'minimal' flag is deprecated")
+		log.Warn("currently setup without any flag does the same as minimal setup in previous versions")
+		log.Warn("use 'full' flag to achive the full setup process (which includes the 'brew doctor' call)")
+		fmt.Println()
+	}
+
+	if err := bitrise.RunSetup(c.App.Version, c.Bool(FullModeKey)); err != nil {
 		log.Fatalf("Setup failed, error: %s", err)
 	}
 
