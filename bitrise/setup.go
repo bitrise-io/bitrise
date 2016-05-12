@@ -53,11 +53,11 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 			return err
 		}
 	default:
-		return errors.New("Sorry, unsupported platform :(")
+		return errors.New("unsupported platform :(")
 	}
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
-		return fmt.Errorf("Failed to save setup-success into config file: %s", err)
+		return fmt.Errorf("failed to save setup-success into config file, error: %s", err)
 	}
 
 	// guide

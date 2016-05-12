@@ -2,6 +2,8 @@ package configs
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"path"
 	"time"
 
@@ -73,9 +75,13 @@ func loadBitriseConfig() (ConfigModel, error) {
 		return ConfigModel{}, err
 	}
 
+	if len(bytes) == 0 {
+		return ConfigModel{}, errors.New("empty config file")
+	}
+
 	config := ConfigModel{}
 	if err := json.Unmarshal(bytes, &config); err != nil {
-		return ConfigModel{}, err
+		return ConfigModel{}, fmt.Errorf("failed to marshal config (%s), error: %s", string(bytes), err)
 	}
 
 	return config, nil
