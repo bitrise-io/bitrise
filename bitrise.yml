@@ -61,14 +61,14 @@ workflows:
       5, Step-template test
     steps:
     - script:
-        title: Print infos for the test
+        title: Print go environment
         inputs:
         - content: |-
             set -x
             go version
             echo $GO15VENDOREXPERIMENT
     - script:
-        title: Go list without vendor
+        title: Export go files to test
         inputs:
         - content: |-
             set -e
@@ -80,7 +80,7 @@ workflows:
         inputs:
         - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
     - script:
-        title: Go Lint
+        title: Go lint
         inputs:
         - content: |-
             #!/bin/bash
@@ -95,11 +95,11 @@ workflows:
               fi
             done <<< "$GOLIST_WITHOUT_VENDOR"
     - script:
-        title: Go Test
+        title: Go test
         inputs:
         - content: go test ./...
     - script:
-        title: Test-build
+        title: Go build
         inputs:
         - content: |-
             #!/bin/bash
@@ -195,7 +195,7 @@ workflows:
               exit 1
             fi
     - script:
-        title: Trigger check
+        title: Trigger check - Output test
         inputs:
         - content: |-
             #!/bin/bash
@@ -269,7 +269,7 @@ workflows:
               exit 1
             fi
     - script:
-        title: Empty trigger pattern & triggered workflow id test
+        title: Trigger map validation test
         inputs:
         - content: |-
             #!/bin/bash
@@ -309,7 +309,7 @@ workflows:
         Prepares the environment for testing
     steps:
     - script:
-        title: Install required testing tools
+        title: Install testing tools
         run_if: ".IsCI"
         inputs:
         - content: |-
