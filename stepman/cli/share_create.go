@@ -82,7 +82,7 @@ func create(c *cli.Context) {
 		log.Fatalf("Failed to check step.yml path in steplib, err: %s", err)
 	} else if exist {
 		log.Warnf("Step already exist in path: %s.", stepDirInSteplib)
-		if val, err := goinp.AskForBool("Would you like to overwrite local version of Step? [yes/no]"); err != nil {
+		if val, err := goinp.AskForBool("Would you like to overwrite local version of Step?"); err != nil {
 			log.Fatalf("Failed to get bool, err: %s", err)
 		} else {
 			if !val {

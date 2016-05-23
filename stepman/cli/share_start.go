@@ -31,7 +31,7 @@ func start(c *cli.Context) {
 		collLocalPth := stepman.GetCollectionBaseDirPath(route)
 		log.Warnf("StepLib found locally at: %s", collLocalPth)
 		log.Info("For sharing it's required to work with a clean StepLib repository.")
-		if val, err := goinp.AskForBool("Would you like to remove the local version (your forked StepLib repository) and re-clone it? [yes/no]"); err != nil {
+		if val, err := goinp.AskForBool("Would you like to remove the local version (your forked StepLib repository) and re-clone it?"); err != nil {
 			log.Fatalln(err)
 		} else {
 			if !val {
