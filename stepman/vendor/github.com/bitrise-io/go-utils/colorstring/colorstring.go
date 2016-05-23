@@ -4,87 +4,91 @@ import (
 	"fmt"
 )
 
+// Color ...
+// ANSI color escape sequences
+type Color string
+
 const (
-	clrBlack   = "\x1b[30;1m"
-	clrRed     = "\x1b[31;1m"
-	clrGreen   = "\x1b[32;1m"
-	clrYellow  = "\x1b[33;1m"
-	clrBlue    = "\x1b[34;1m"
-	clrMagenta = "\x1b[35;1m"
-	clrCyan    = "\x1b[36;1m"
-	clrReset   = "\x1b[0m"
+	blackColor   Color = "\x1b[30;1m"
+	redColor     Color = "\x1b[31;1m"
+	greenColor   Color = "\x1b[32;1m"
+	yellowColor  Color = "\x1b[33;1m"
+	blueColor    Color = "\x1b[34;1m"
+	magentaColor Color = "\x1b[35;1m"
+	cyanColor    Color = "\x1b[36;1m"
+	resetColor   Color = "\x1b[0m"
 )
 
+func addColor(color Color, msg string) string {
+	return string(color) + msg + string(resetColor)
+}
+
 // Black ...
-func Black(s string) string {
-	return Blackf(s)
+func Black(a ...interface{}) string {
+	return addColor(blackColor, fmt.Sprint(a...))
+}
+
+// Red ...
+func Red(a ...interface{}) string {
+	return addColor(redColor, fmt.Sprint(a...))
+}
+
+// Green ...
+func Green(a ...interface{}) string {
+	return addColor(greenColor, fmt.Sprint(a...))
+}
+
+// Yellow ...
+func Yellow(a ...interface{}) string {
+	return addColor(yellowColor, fmt.Sprint(a...))
+}
+
+// Blue ...
+func Blue(a ...interface{}) string {
+	return addColor(blueColor, fmt.Sprint(a...))
+}
+
+// Magenta ...
+func Magenta(a ...interface{}) string {
+	return addColor(magentaColor, fmt.Sprint(a...))
+}
+
+// Cyan ...
+func Cyan(a ...interface{}) string {
+	return addColor(cyanColor, fmt.Sprint(a...))
 }
 
 // Blackf ...
 func Blackf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrBlack)
-}
-
-// Red ...
-func Red(s string) string {
-	return Redf(s)
+	return Black(fmt.Sprintf(format, a...))
 }
 
 // Redf ...
 func Redf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrRed)
-}
-
-// Green ...
-func Green(s string) string {
-	return Greenf(s)
+	return Red(fmt.Sprintf(format, a...))
 }
 
 // Greenf ...
 func Greenf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrGreen)
-}
-
-// Yellow ...
-func Yellow(s string) string {
-	return Yellowf(s)
+	return Green(fmt.Sprintf(format, a...))
 }
 
 // Yellowf ...
 func Yellowf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrYellow)
-}
-
-// Blue ...
-func Blue(s string) string {
-	return Bluef(s)
+	return Yellow(fmt.Sprintf(format, a...))
 }
 
 // Bluef ...
 func Bluef(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrBlue)
-}
-
-// Magenta ...
-func Magenta(s string) string {
-	return Magentaf(s)
+	return Blue(fmt.Sprintf(format, a...))
 }
 
 // Magentaf ...
 func Magentaf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrMagenta)
-}
-
-// Cyan ...
-func Cyan(s string) string {
-	return Cyanf(s)
+	return Magenta(fmt.Sprintf(format, a...))
 }
 
 // Cyanf ...
 func Cyanf(format string, a ...interface{}) string {
-	return addColor(fmt.Sprintf(format, a...), clrCyan)
-}
-
-func addColor(s, color string) string {
-	return color + s + clrReset
+	return Cyan(fmt.Sprintf(format, a...))
 }
