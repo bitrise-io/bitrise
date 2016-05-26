@@ -27,6 +27,37 @@ workflows:
         - content: |-
             #!/bin/bash
             echo "RunIf expression was true"
+
+    #
+    # Env not empty
+    - script:
+        title: Run-If expression
+        run_if: '{{getenv "TEST_KEY" | ne ""}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+
+    #
+    # Another env not empty
+    - script:
+        title: Run-If expression
+        run_if: '{{getenv "TEST_KEY" | eq "" | not}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+
+    #
+    # Env equal to env
+    - script:
+        title: Run-If expression
+        run_if: '{{getenv "TEST_KEY_1" | eq (getenv "TEST_KEY_2")}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+
     #
     # Use the available expression data properties
     #  like IsCI or IsBuildFailed directly
