@@ -39,21 +39,30 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		if err != nil {
 			return err
 		}
-		currentVersion = installedVersion.String()
 
-		minVersion, err := ver.NewVersion(dependency.MinVersion)
-		if err != nil {
-			return err
-		}
-
-		if installedVersion.LessThan(minVersion) {
+		if installedVersion == nil {
 			fmt.Println()
-			log.Warnf("Default plugin (%s) version (%s) is lower than required (%s).", name, installedVersion.String(), minVersion.String())
+			log.Warnf("Default plugin (%s) is not installed from git, no version info available.", name)
 			fmt.Println()
 
-			log.Infoln("Updating...")
-			installOrUpdate = true
-			currentVersion = dependency.MinVersion
+			currentVersion = "local"
+		} else {
+			currentVersion = installedVersion.String()
+
+			minVersion, err := ver.NewVersion(dependency.MinVersion)
+			if err != nil {
+				return err
+			}
+
+			if installedVersion.LessThan(minVersion) {
+				fmt.Println()
+				log.Warnf("Default plugin (%s) version (%s) is lower than required (%s).", name, installedVersion.String(), minVersion.String())
+				fmt.Println()
+
+				log.Infoln("Updating...")
+				installOrUpdate = true
+				currentVersion = dependency.MinVersion
+			}
 		}
 	}
 
