@@ -41,7 +41,8 @@ var LinuxPluginDependencyMap = map[string]PluginDependency{
 
 // RunSetup ...
 func RunSetup(appVersion string, isFullSetupMode bool) error {
-	log.Infoln("[BITRISE_CLI] - Setup")
+	log.Infoln("Setup")
+	log.Infof("Full setup: %v", isFullSetupMode)
 	log.Infoln("Detected OS:", runtime.GOOS)
 	switch runtime.GOOS {
 	case "darwin":
