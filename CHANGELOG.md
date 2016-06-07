@@ -1,6 +1,47 @@
-## Changelog (Current version: 1.3.4)
+## Changelog (Current version: 1.3.5)
 
 -----------------
+
+## 1.3.5 (2016 Jun 07)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.5/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.4 -> 1.3.5
+
+* [6e15ca5] Krisztián Gödrei - Merge pull request #361 from godrei/setup_review (2016 Jun 03)
+* [433cd40] Krisztián Gödrei - log full setup (2016 Jun 03)
+* [b7ed487] Krisztián Gödrei - setup fix for local plugins (2016 Jun 03)
+* [a3e3fdc] Krisztián Gödrei - bitrise ci workflow name refactors (2016 Jun 03)
+* [f9a91b8] Viktor Benei - Merge pull request #360 from godrei/template_examples (2016 May 26)
+* [8501df7] Krisztián Gödrei - run_if template examples (2016 May 26)
+* [9119289] Krisztián Gödrei - Merge pull request #359 from godrei/config_fix (2016 May 25)
+* [f0f378c] Krisztián Gödrei - log config error (2016 May 25)
+* [fd067e8] Krisztián Gödrei - Merge pull request #358 from godrei/setup (2016 May 11)
+* [ba22d81] Krisztián Gödrei - minimal setup by defult (2016 May 11)
+
 
 ## 1.3.4 (2016 May 10)
 
@@ -1854,4 +1895,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 May 10
+Updated: 2016 Jun 07
