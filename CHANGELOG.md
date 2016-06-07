@@ -6,8 +6,10 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* From now on `bitrise setup` (without any flag) is the equivalent of the previous `bitrise setup --minimal` call (e.g.: it omits `brew doctor` call, which fails if brew or Xcode is outdated). You can achieve the old *full* setup behaviour (e.g.: which includes `brew doctor`) by calling `bitrise setup --full`.
+* Logging improvements.
+* New `run_if` template [examples](https://github.com/bitrise-io/bitrise/blob/master/_examples/experimentals/templates/bitrise.yml)
+* A fix for installing bitrise plugins from local paths (e.g. during plugin development)
 
 ### Install or upgrade
 
@@ -40,7 +42,7 @@ time you call bitrise run.
 * [9119289] Krisztián Gödrei - Merge pull request #359 from godrei/config_fix (2016 May 25)
 * [f0f378c] Krisztián Gödrei - log config error (2016 May 25)
 * [fd067e8] Krisztián Gödrei - Merge pull request #358 from godrei/setup (2016 May 11)
-* [ba22d81] Krisztián Gödrei - minimal setup by defult (2016 May 11)
+* [ba22d81] Krisztián Gödrei - minimal setup by default (2016 May 11)
 
 
 ## 1.3.4 (2016 May 10)
