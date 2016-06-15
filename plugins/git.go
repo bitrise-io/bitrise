@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/depman/pathutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
 
