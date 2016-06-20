@@ -146,7 +146,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 		warnings = warns
 		if err != nil {
-			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) in not valid: %s", bitriseConfigPath, err)
+			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) is not valid: %s", bitriseConfigPath, err)
 		}
 		bitriseConfig = config
 	}
