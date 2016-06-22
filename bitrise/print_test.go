@@ -2,6 +2,7 @@ package bitrise
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -154,24 +155,56 @@ func TestGetDeprecateNotesRows(t *testing.T) {
 }
 
 func TestGetRunningStepFooterSubSection(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
-		Version: "1.0.0",
-		Latest:  "1.1.0",
+	t.Log("Update available, no support_url, no source_code_url")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   longStr,
+			Version: "1.0.0",
+			Latest:  "1.1.0",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			Error:    errors.New(longStr),
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1.0.0 -> 1.1.0                                             |\n| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		require.Equal(t, expected, actual)
 	}
 
-	result := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  10000000,
-		Error:    errors.New(longStr),
-		ExitCode: 1,
-	}
+	t.Log("support url row length's chardiff = 0")
+	{
+		paddingCharCnt := 4
+		placeholderCharCnt := len("Issue tracker: ")
+		supportURLCharCnt := stepRunSummaryBoxWidthInChars - paddingCharCnt - placeholderCharCnt
+		supportURL := strings.Repeat("a", supportURLCharCnt)
 
-	actual := getRunningStepFooterSubSection(result)
-	expected := "| Update available: 1.0.0 -> 1.1.0                                             |\n| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
-	require.Equal(t, expected, actual)
+		// supportURL :=
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:      longStr,
+			Version:    "1.0.0",
+			Latest:     "1.0.0",
+			SupportURL: supportURL,
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			Error:    errors.New(longStr),
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Issue tracker: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		require.Equal(t, expected, actual)
+	}
 }
 
 func TestPrintRunningWorkflow(t *testing.T) {
