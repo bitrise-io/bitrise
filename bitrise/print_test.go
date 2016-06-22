@@ -11,13 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const longStr = `This is a very long string,
-this is a very long string,
-this is a very long string,
-this is a very long string,
-this is a very long string,
-this is a very long string.
-`
+const longStr = "This is a very long string, this is a very long string, " +
+	"this is a very long string, this is a very long string," +
+	"this is a very long string, this is a very long string."
 
 func TestIsUpdateAvailable(t *testing.T) {
 	t.Log("simple compare versions - ture")
@@ -62,35 +58,47 @@ func TestIsUpdateAvailable(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
-		Version: longStr,
+	t.Log("succed step")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   longStr,
+			Version: longStr,
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			Error:    errors.New(longStr),
+			ExitCode: 1,
+		}
+
+		actual := getTrimmedStepName(result)
+		expected := "This is a very long string, this is a very long string, th..."
+		require.Equal(t, expected, actual)
 	}
 
-	result := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  10000000,
-		Error:    errors.New(longStr),
-		ExitCode: 1,
+	t.Log("failed step")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   "",
+			Version: longStr,
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  0,
+			Error:    nil,
+			ExitCode: 0,
+		}
+
+		actual := getTrimmedStepName(result)
+		expected := ""
+		require.Equal(t, expected, actual)
 	}
-
-	stepName := getTrimmedStepName(result)
-	require.Equal(t, "This is a very long string,\nthis is a very long string,\nth...", stepName)
-
-	stepInfo.Title = ""
-	result = models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  0,
-		Error:    nil,
-		ExitCode: 0,
-	}
-
-	stepName = getTrimmedStepName(result)
-	require.Equal(t, "", stepName)
 }
 
 func TestGetRunningStepHeaderMainSection(t *testing.T) {
@@ -100,7 +108,7 @@ func TestGetRunningStepHeaderMainSection(t *testing.T) {
 	}
 
 	actual := getRunningStepHeaderMainSection(stepInfo, 0)
-	expected := "| (0) This is a very long string,\nthis is a very long string,\nthis is a ver... |"
+	expected := "| (0) This is a very long string, this is a very long string, this is a ver... |"
 	require.Equal(t, expected, actual)
 }
 
@@ -116,42 +124,55 @@ func TestGetRunningStepHeaderSubSection(t *testing.T) {
 }
 
 func TestGetRunningStepFooterMainSection(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
-		Version: longStr,
+	t.Log("failed step")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   longStr,
+			Version: longStr,
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeFailed,
+			Idx:      0,
+			RunTime:  10000000,
+			Error:    errors.New(longStr),
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterMainSection(result)
+		expected := "| 🚫  | \x1b[31;1mThis is a very long string, this is a very ... (exit code: 1)\x1b[0m| 0.01 sec |"
+		require.Equal(t, expected, actual)
 	}
 
-	result := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeFailed,
-		Idx:      0,
-		RunTime:  10000000,
-		Error:    errors.New(longStr),
-		ExitCode: 1,
+	t.Log("succed step")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   "",
+			Version: longStr,
+		}
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  0,
+			Error:    nil,
+			ExitCode: 0,
+		}
+
+		actual := getRunningStepFooterMainSection(result)
+		expected := "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |"
+		require.Equal(t, expected, actual)
 	}
-
-	cell := getRunningStepFooterMainSection(result)
-	require.Equal(t, "| 🚫  | \x1b[31;1mThis is a very long string,\nthis is a very ... (exit code: 1)\x1b[0m| 0.01 sec |", cell)
-
-	stepInfo.Title = ""
-	result = models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  0,
-		Error:    nil,
-		ExitCode: 0,
-	}
-
-	cell = getRunningStepFooterMainSection(result)
-	require.Equal(t, "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |", cell)
 }
 
 func TestGetDeprecateNotesRows(t *testing.T) {
 	notes := "Removal notes: " + longStr
-	formattedNotes := getDeprecateNotesRows(notes)
-	expected := "| \x1b[31;1mRemoval notes:\x1b[0m This is a very long string, this is a very long string, this  |\n| is a very long string, this is a very long string, this is a very long       |\n| string, this is a very long string.                                          |"
-	require.Equal(t, expected, formattedNotes)
+	actual := getDeprecateNotesRows(notes)
+	expected := "| \x1b[31;1mRemoval notes:\x1b[0m This is a very long string, this is a very long string, this  |" + "\n" +
+		"| is a very long string, this is a very long string,this is a very long        |" + "\n" +
+		"| string, this is a very long string.                                          |"
+	require.Equal(t, expected, actual)
 }
 
 func TestGetRunningStepFooterSubSection(t *testing.T) {
@@ -173,7 +194,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterSubSection(result)
-		expected := "| Update available: 1.0.0 -> 1.1.0                                             |\n| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		expected := "| Update available: 1.0.0 -> 1.1.0                                             |" + "\n" +
+			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
+			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
 	}
 
@@ -202,7 +225,8 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterSubSection(result)
-		expected := "| Issue tracker: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		expected := "| Issue tracker: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |" + "\n" +
+			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
 	}
 }
