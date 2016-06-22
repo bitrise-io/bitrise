@@ -170,7 +170,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 	}
 
 	actual := getRunningStepFooterSubSection(result)
-	expected := "| Update available: 1.0.0 -> 1.1.0                                             |"
+	expected := "| Update available: 1.0.0 -> 1.1.0                                             |\n| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |\n| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 	require.Equal(t, expected, actual)
 }
 
