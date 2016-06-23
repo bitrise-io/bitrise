@@ -354,59 +354,90 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	issueRow := ""
 	sourceRow := ""
 	if stepRunResult.Error != nil {
-		issueRow = fmt.Sprintf("| Issue tracker: %s |", stepInfo.SupportURL)
-		if stepInfo.SupportURL != "" {
-			charDiff := len(issueRow) - stepRunSummaryBoxWidthInChars
-			if charDiff < 0 {
-				// shorter than desired - fill with space
-				issueRow = fmt.Sprintf("| Issue tracker: %s%s |", stepInfo.SupportURL, strings.Repeat(" ", -charDiff))
-			} else if charDiff > 0 {
-				// longer than desired - trim title
-				trimmedWidth := len(stepInfo.SupportURL) - charDiff
-				if trimmedWidth < 4 {
-					log.Errorf("Support url too long, can't present support url at all! : %s", stepInfo.SupportURL)
-				} else {
-					issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SupportURL, trimmedWidth))
-				}
+		// Support URL
+		var coloringFunc func(string) string
+		supportURL := stepInfo.SupportURL
+		if supportURL == "" {
+			coloringFunc = colorstring.Yellow
+			supportURL = "Not provided"
+		}
+
+		issueRow = fmt.Sprintf("| Issue tracker: %s |", supportURL)
+
+		charDiff := len(issueRow) - stepRunSummaryBoxWidthInChars
+		if charDiff <= 0 {
+			// shorter than desired - fill with space
+
+			if coloringFunc != nil {
+				// We need to do this after charDiff calculation,
+				// because of coloring characters increase the text length, but they do not printed
+				supportURL = coloringFunc("Not provided")
+			}
+
+			issueRow = fmt.Sprintf("| Issue tracker: %s%s |", supportURL, strings.Repeat(" ", -charDiff))
+		} else if charDiff > 0 {
+			// longer than desired - trim title
+			trimmedWidth := len(supportURL) - charDiff
+			if trimmedWidth < 4 {
+				log.Errorf("Support url too long, can't present support url at all! : %s", supportURL)
+			} else {
+				issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(supportURL, trimmedWidth))
 			}
 		}
 
-		sourceRow = fmt.Sprintf("| Source: %s |", stepInfo.SourceCodeURL)
-		if stepInfo.SourceCodeURL != "" {
-			charDiff := len(sourceRow) - stepRunSummaryBoxWidthInChars
-			if charDiff < 0 {
-				// shorter than desired - fill with space
-				sourceRow = fmt.Sprintf("| Source: %s%s |", stepInfo.SourceCodeURL, strings.Repeat(" ", -charDiff))
-			} else if charDiff > 0 {
-				// longer than desired - trim title
-				trimmedWidth := len(stepInfo.SourceCodeURL) - charDiff
-				if trimmedWidth < 4 {
-					log.Errorf("Source url too long, can't present source url at all! : %s", stepInfo.SourceCodeURL)
-				} else {
-					sourceRow = fmt.Sprintf("| Source: %s |", stringutil.MaxLastCharsWithDots(stepInfo.SourceCodeURL, trimmedWidth))
-				}
+		// Source Code URL
+		coloringFunc = nil
+		sourceCodeURL := stepInfo.SourceCodeURL
+		if sourceCodeURL == "" {
+			coloringFunc = colorstring.Yellow
+			sourceCodeURL = "Not provided"
+		}
+
+		sourceRow = fmt.Sprintf("| Source: %s |", sourceCodeURL)
+
+		charDiff = len(sourceRow) - stepRunSummaryBoxWidthInChars
+		if charDiff <= 0 {
+			// shorter than desired - fill with space
+
+			if coloringFunc != nil {
+				// We need to do this after charDiff calculation,
+				// because of coloring characters increase the text length, but they do not printed
+				sourceCodeURL = coloringFunc("Not provided")
+			}
+
+			sourceRow = fmt.Sprintf("| Source: %s%s |", sourceCodeURL, strings.Repeat(" ", -charDiff))
+		} else if charDiff > 0 {
+			// longer than desired - trim title
+			trimmedWidth := len(sourceCodeURL) - charDiff
+			if trimmedWidth < 4 {
+				log.Errorf("Source url too long, can't present source url at all! : %s", sourceCodeURL)
+			} else {
+				sourceRow = fmt.Sprintf("| Source: %s |", stringutil.MaxLastCharsWithDots(sourceCodeURL, trimmedWidth))
 			}
 		}
 	}
 
+	// Update available
 	content := ""
 	if isUpdateAvailable {
 		content = fmt.Sprintf("%s", updateRow)
 	}
-	if stepInfo.SupportURL != "" {
-		if content != "" {
-			content = fmt.Sprintf("%s\n%s", content, issueRow)
-		} else {
-			content = fmt.Sprintf("%s", issueRow)
-		}
+
+	// Support URL
+	if content != "" {
+		content = fmt.Sprintf("%s\n%s", content, issueRow)
+	} else {
+		content = fmt.Sprintf("%s", issueRow)
 	}
-	if stepInfo.SourceCodeURL != "" {
-		if content != "" {
-			content = fmt.Sprintf("%s\n%s", content, sourceRow)
-		} else {
-			content = fmt.Sprintf("%s", sourceRow)
-		}
+
+	// Source Code URL
+	if content != "" {
+		content = fmt.Sprintf("%s\n%s", content, sourceRow)
+	} else {
+		content = fmt.Sprintf("%s", sourceRow)
 	}
+
+	// Deprecation
 	if removalDate != "" {
 		if content != "" {
 			content = fmt.Sprintf("%s\n%s", content, removalDateRow)
