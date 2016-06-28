@@ -44,3 +44,29 @@ on Debian systems you can use `apt-get` and on OS X you can use `brew`.
 You can declare these dependencies in your `step.yml`, with the `deps` property,
 and `bitrise` will manage to call the dependency manager to install the dependency,
 and will fail before the Step execution in case it can't retrieve the dependency.
+
+
+## Input naming convention
+
+Use lower case [snake case](https://en.wikipedia.org/wiki/Snake_case) style input IDs, e.g. `input_path`.
+
+### Inputs which can accept a list of values
+
+You should postfix the input ID with `_list` (e.g. `input_path_list`), and expect the values to be provided as a pipe character separated list (e.g. `first value|second value`). This is not a hard requirement, but a strong suggestion. This means that you should prefer this solution unless you really need to use another character for separating values. Based on our experience the pipe character (`|`) works really well as a universal separator character, as it's quite rare in input values (compared to `,`, `;`, `=` or other more common separator characters).
+
+**As a best practice you should filter out empty items**, so that `first value||second value` or even
+
+```
+first value|       |second value
+```
+
+is treated the same way as `first value|second value`. Again, not a hard requirement, but based on our experience this is the most reliable long term solution.
+
+
+## Output naming convention
+
+Use all-upper-case [snake case](https://en.wikipedia.org/wiki/Snake_case) style output IDs, e.g. `OUTPUT_PATH`.
+
+### List of values in outputs
+
+You should postfix the output ID with `_LIST` (e.g. `OUTPUT_PATH_LIST`), and provide the values as a pipe separated list (e.g. `first value|second value`). This is not a hard requirement, but a strong suggestion. This means that you should prefer this solution unless you really need to use another character for separating values. Based on our experience the pipe character (`|`) works really well as a universal separator character, as it's quite rare in output values (compared to `,`, `;`, `=` or other more common separator characters).
