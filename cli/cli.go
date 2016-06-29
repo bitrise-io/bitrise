@@ -144,7 +144,9 @@ func Run() {
 				log.Fatalf("Failed to run plugin (%s), error: %s", pluginName, err)
 			}
 		} else {
-			cli.ShowAppHelp(c)
+			if err := cli.ShowAppHelp(c); err != nil {
+				log.Fatalf("Failed to show help, error: %s", err)
+			}
 		}
 	}
 
