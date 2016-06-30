@@ -355,7 +355,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	sourceRow := ""
 	if stepRunResult.Error != nil {
 		// Support URL
-		var coloringFunc func(string) string
+		var coloringFunc func(...interface{}) string
 		supportURL := stepInfo.SupportURL
 		if supportURL == "" {
 			coloringFunc = colorstring.Yellow

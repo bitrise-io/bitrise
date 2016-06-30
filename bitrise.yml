@@ -310,7 +310,6 @@ workflows:
     steps:
     - script:
         title: Install testing tools
-        run_if: ".IsCI"
         inputs:
         - content: |-
             #!/bin/bash
@@ -509,17 +508,20 @@ workflows:
     title: Godeps update
     description: |
       Used for updating bitrise dependencies with godep
+    before_run:
+    - _prepare_and_setup
     steps:
     - script:
         title: Dependency update
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -x
+            set -ex
 
-            go get -u ./...
             rm -rf ./Godeps
+            rm -rf ./vendor
+
+            go get -t -u ./...
             godep save ./...
 
   noop:
