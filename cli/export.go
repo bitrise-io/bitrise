@@ -2,6 +2,8 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 
@@ -11,7 +13,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func export(c *cli.Context) {
+func export(c *cli.Context) error {
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
@@ -28,10 +30,10 @@ func export(c *cli.Context) {
 	//
 
 	if outfilePth == "" {
-		log.Fatal("No output file path specified!")
+		return errors.New("No output file path specified!")
 	}
 	if outFormat == "" {
-		log.Fatal("No output file format specified!")
+		return errors.New("No output file format specified!")
 	}
 
 	// Config validation
@@ -40,7 +42,7 @@ func export(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, error: %s", err)
+		return fmt.Errorf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// serialize
@@ -52,21 +54,23 @@ func export(c *cli.Context) {
 			configBytes, err = json.Marshal(bitriseConfig)
 		}
 		if err != nil {
-			log.Fatalf("Failed to generate config JSON, error: %s", err)
+			return fmt.Errorf("Failed to generate config JSON, error: %s", err)
 		}
 	} else if outFormat == output.FormatYML {
 		configBytes, err = yaml.Marshal(bitriseConfig)
 		if err != nil {
-			log.Fatalf("Failed to generate config YML, error: %s", err)
+			return fmt.Errorf("Failed to generate config YML, error: %s", err)
 		}
 	} else {
-		log.Fatalf("Invalid output format: %s", outFormat)
+		return fmt.Errorf("Invalid output format: %s", outFormat)
 	}
 
 	// write to file
 	if err := fileutil.WriteBytesToFile(outfilePth, configBytes); err != nil {
-		log.Fatalf("Failed to write file (%s), error: %s", outfilePth, err)
+		return fmt.Errorf("Failed to write file (%s), error: %s", outfilePth, err)
 	}
 
 	log.Infof("Done, saved to path: %s", outfilePth)
+
+	return nil
 }

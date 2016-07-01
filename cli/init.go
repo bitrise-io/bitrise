@@ -127,18 +127,18 @@ func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string)
 	return bitriseConfContent, warnings, nil
 }
 
-func initConfig(c *cli.Context) {
+func initConfig(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
 	bitriseSecretsFileRelPath := "./" + DefaultSecretsFileName
 
 	if exists, err := pathutil.IsPathExists(bitriseConfigFileRelPath); err != nil {
-		log.Fatalf("Failed to init path (%s), error: %s", bitriseConfigFileRelPath, err)
+		return fmt.Errorf("Failed to init path (%s), error: %s", bitriseConfigFileRelPath, err)
 	} else if exists {
 		ask := fmt.Sprintf("A config file already exists at %s - do you want to overwrite it?", bitriseConfigFileRelPath)
 		if val, err := goinp.AskForBool(ask); err != nil {
-			log.Fatalf("Failed to ask for input, error: %s", err)
+			return fmt.Errorf("Failed to ask for input, error: %s", err)
 		} else if !val {
 			log.Info("Init canceled, existing file won't be overwritten.")
 			os.Exit(0)
@@ -147,40 +147,40 @@ func initConfig(c *cli.Context) {
 
 	userInputProjectTitle := ""
 	userInputDevBranch := ""
-	if val, err := goinp.AskForString("What's the BITRISE_APP_TITLE?"); err != nil {
-		log.Fatalf("Failed to ask for input, error: %s", err)
-	} else {
-		userInputProjectTitle = val
+	val, err := goinp.AskForString("What's the BITRISE_APP_TITLE?")
+	if err != nil {
+		return fmt.Errorf("Failed to ask for input, error: %s", err)
 	}
-	if val, err := goinp.AskForString("What's your development branch's name?"); err != nil {
-		log.Fatalf("Failed to ask for input, error: %s", err)
-	} else {
-		userInputDevBranch = val
+	userInputProjectTitle = val
+
+	val, err = goinp.AskForString("What's your development branch's name?")
+	if err != nil {
+		return fmt.Errorf("Failed to ask for input, error: %s", err)
 	}
+	userInputDevBranch = val
 
 	bitriseConfContent, warnings, err := generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Invalid Bitrise YML, error: %s", err)
+		return fmt.Errorf("Invalid Bitrise YML, error: %s", err)
 	}
 
 	if err := fileutil.WriteStringToFile(bitriseConfigFileRelPath, bitriseConfContent); err != nil {
-		log.Fatalf("Failed to init the bitrise config file, error: %s", err)
-	} else {
-		fmt.Println()
-		fmt.Println("# NOTES about the " + DefaultBitriseConfigFileName + " config file:")
-		fmt.Println()
-		fmt.Println("We initialized a " + DefaultBitriseConfigFileName + " config file for you.")
-		fmt.Println("If you're in this folder you can use this config file")
-		fmt.Println(" with bitrise automatically, you don't have to")
-		fmt.Println(" specify it's path.")
-		fmt.Println()
+		return fmt.Errorf("Failed to init the bitrise config file, error: %s", err)
 	}
+	fmt.Println()
+	fmt.Println("# NOTES about the " + DefaultBitriseConfigFileName + " config file:")
+	fmt.Println()
+	fmt.Println("We initialized a " + DefaultBitriseConfigFileName + " config file for you.")
+	fmt.Println("If you're in this folder you can use this config file")
+	fmt.Println(" with bitrise automatically, you don't have to")
+	fmt.Println(" specify it's path.")
+	fmt.Println()
 
 	if initialized, err := saveSecretsToFile(bitriseSecretsFileRelPath, defaultSecretsContent); err != nil {
-		log.Fatalf("Failed to init the secrets file, error: %s", err)
+		return fmt.Errorf("Failed to init the secrets file, error: %s", err)
 	} else if initialized {
 		fmt.Println()
 		fmt.Println("# NOTES about the " + DefaultSecretsFileName + " secrets file:")
@@ -200,7 +200,7 @@ func initConfig(c *cli.Context) {
 	//  which will include both secret files like .bitrise.secrets.yml
 	//  and the .bitrise work temp dir
 	if err := addToGitignore(".bitrise*"); err != nil {
-		log.Fatalf("Failed to add .gitignore pattern, error: %s", err)
+		return fmt.Errorf("Failed to add .gitignore pattern, error: %s", err)
 	}
 	fmt.Println(colorstring.Green("For your convenience we added the pattern '.bitrise*' to your .gitignore file"))
 	fmt.Println(" to make it sure that no secrets or temporary work directories will be")
@@ -219,6 +219,8 @@ func initConfig(c *cli.Context) {
 	fmt.Println("-> bitrise run YOUR-WORKFLOW-NAME")
 	fmt.Println(" or trigger a build with a pattern:")
 	fmt.Println("-> bitrise trigger YOUR/PATTERN")
+
+	return nil
 }
 
 func saveSecretsToFile(pth, secretsStr string) (bool, error) {

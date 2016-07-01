@@ -24,7 +24,7 @@ func PrintBitriseHeaderASCIIArt(appVersion string) {
 	fmt.Println()
 }
 
-func setup(c *cli.Context) {
+func setup(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	if c.IsSet(MinimalModeKey) {
@@ -35,7 +35,7 @@ func setup(c *cli.Context) {
 	}
 
 	if err := bitrise.RunSetup(c.App.Version, c.Bool(FullModeKey)); err != nil {
-		log.Fatalf("Setup failed, error: %s", err)
+		return fmt.Errorf("Setup failed, error: %s", err)
 	}
 
 	log.Infoln("To start using bitrise:")
@@ -44,4 +44,6 @@ func setup(c *cli.Context) {
 	log.Infoln("* follow the guide")
 	fmt.Println()
 	log.Infoln("That's all :)")
+
+	return nil
 }

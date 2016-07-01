@@ -8,7 +8,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func stepList(c *cli.Context) {
+func stepList(c *cli.Context) error {
 	warnings := []string{}
 
 	// Expand cli.Context
@@ -68,4 +68,6 @@ func stepList(c *cli.Context) {
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
+
+	return nil
 }

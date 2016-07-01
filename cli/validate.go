@@ -73,7 +73,7 @@ func printJSONValidation(validation ValidationModel) {
 	fmt.Println(string(bytes))
 }
 
-func validate(c *cli.Context) {
+func validate(c *cli.Context) error {
 	warnings := []string{}
 
 	// Expand cli.Context
@@ -162,4 +162,6 @@ func validate(c *cli.Context) {
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
+
+	return nil
 }

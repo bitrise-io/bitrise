@@ -73,7 +73,7 @@ func GetWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern str
 	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
 }
 
-func triggerCheck(c *cli.Context) {
+func triggerCheck(c *cli.Context) error {
 	warnings := []string{}
 
 	//
@@ -162,4 +162,6 @@ func triggerCheck(c *cli.Context) {
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 	//
+
+	return nil
 }

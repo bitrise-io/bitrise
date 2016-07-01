@@ -34,7 +34,7 @@ func before(c *cli.Context) error {
 	if c.Bool(DebugModeKey) {
 		// set for other tools, as an ENV
 		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set DEBUG env, error: %s", err)
+			return fmt.Errorf("Failed to set DEBUG env, error: %s", err)
 		}
 		configs.IsDebugMode = true
 		log.Warn("=> Started in DEBUG mode")
@@ -55,11 +55,11 @@ func before(c *cli.Context) error {
 
 	level, err := log.ParseLevel(logLevelStr)
 	if err != nil {
-		log.Fatalf("Failed parse log level, error: %s", err)
+		return fmt.Errorf("Failed parse log level, error: %s", err)
 	}
 
 	if err := os.Setenv(configs.LogLevelEnvKey, level.String()); err != nil {
-		log.Fatalf("Failed to set LOGLEVEL env, error: %s", err)
+		return fmt.Errorf("Failed to set LOGLEVEL env, error: %s", err)
 	}
 	log.SetLevel(level)
 
@@ -68,17 +68,17 @@ func before(c *cli.Context) error {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set CI env, error: %s", err)
+			return fmt.Errorf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths, error: %s", err)
+		return fmt.Errorf("Failed to initialize required paths, error: %s", err)
 	}
 
 	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required plugin paths, error: %s", err)
+		return fmt.Errorf("Failed to initialize required plugin paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
@@ -86,7 +86,7 @@ func before(c *cli.Context) error {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set PR env, error: %s", err)
+			return fmt.Errorf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
@@ -126,7 +126,7 @@ func Run() {
 	app.Flags = flags
 	app.Commands = commands
 
-	app.Action = func(c *cli.Context) {
+	app.Action = func(c *cli.Context) error {
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
 			log.Debugf("Try to run bitrise plugin: (%s) with args: (%v)", pluginName, pluginArgs)
@@ -148,9 +148,11 @@ func Run() {
 				log.Fatalf("Failed to show help, error: %s", err)
 			}
 		}
+
+		return nil
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatalf("Finished with error: %s", err)
+		log.Fatal(err)
 	}
 }

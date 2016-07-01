@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/codegangsta/cli"
 )
 
-func normalize(c *cli.Context) {
+func normalize(c *cli.Context) error {
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
@@ -21,10 +24,10 @@ func normalize(c *cli.Context) {
 	// Input validation
 	bitriseConfigPath, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil {
-		log.Fatalf("Failed to get bitrise config path, error: %s", err)
+		return fmt.Errorf("Failed to get bitrise config path, error: %s", err)
 	}
 	if bitriseConfigPath == "" {
-		log.Fatal("No bitrise config path defined!")
+		return errors.New("No bitrise config path defined!")
 	}
 
 	// Config validation
@@ -33,16 +36,18 @@ func normalize(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, error: %s", err)
+		return fmt.Errorf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Normalize
 	if err := bitrise.RemoveConfigRedundantFieldsAndFillStepOutputs(&bitriseConfig); err != nil {
-		log.Fatalf("Failed to remove redundant fields, error: %s", err)
+		return fmt.Errorf("Failed to remove redundant fields, error: %s", err)
 	}
 	if err := bitrise.SaveConfigToFile(bitriseConfigPath, bitriseConfig); err != nil {
-		log.Fatalf("Failed to save config to file, error: %s", err)
+		return fmt.Errorf("Failed to save config to file, error: %s", err)
 	}
 
 	log.Info("Redundant fields removed")
+
+	return nil
 }

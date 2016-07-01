@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/version"
@@ -16,11 +15,11 @@ type VersionOutputModel struct {
 	Commit      string `json:"commit"`
 }
 
-func printVersionCmd(c *cli.Context) {
+func printVersionCmd(c *cli.Context) error {
 	fullVersion := c.Bool("full")
 
 	if err := output.ConfigureOutputFormat(c); err != nil {
-		log.Fatalf("Failed to configure output format, error: %s", err)
+		return fmt.Errorf("Failed to configure output format, error: %s", err)
 	}
 
 	versionOutput := VersionOutputModel{
@@ -41,4 +40,6 @@ func printVersionCmd(c *cli.Context) {
 	} else {
 		output.Print(versionOutput, output.Format)
 	}
+
+	return nil
 }

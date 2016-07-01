@@ -106,7 +106,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
-func run(c *cli.Context) {
+func run(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	//
@@ -130,7 +130,7 @@ func run(c *cli.Context) {
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 	if err != nil {
-		log.Fatalf("Failed to create inventory, error: %s", err)
+		return fmt.Errorf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
@@ -139,7 +139,7 @@ func run(c *cli.Context) {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, error: %s", err)
+		return fmt.Errorf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Workflow id validation
@@ -167,22 +167,24 @@ func run(c *cli.Context) {
 	// Main
 	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, error: %s", err)
+		return fmt.Errorf("Failed to check  PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register  PR mode, error: %s", err)
+		return fmt.Errorf("Failed to register  PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  CI mode, error: %s", err)
+		return fmt.Errorf("Failed to check  CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register  CI mode, error: %s", err)
+		return fmt.Errorf("Failed to register  CI mode, error: %s", err)
 	}
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//
+
+	return nil
 }
