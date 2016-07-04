@@ -17,13 +17,14 @@ And what are the needed setup steps to accomplish these objectives, what should 
 So let's create our first utility Workflow called _setup to make sure that the project is present on the current machine and is up-to-date.
 We'll use a simple bash script to achieve this (just for the fun of it ;) ) The _setup Workflow should look something like this:
 
+```
 _setup:
   description: Clone repo
   steps:
   - script:
       title: clone
       run_if: |-
-        {{enveq "$XCODE_PROJECT_PATH" ""}}
+        {{enveq "XCODE_PROJECT_PATH" ""}}
       inputs:
       - content: |-
           #!/bin/bash
@@ -34,9 +35,11 @@ _setup:
             cd $PROJECT_FOLDER
             git pull
           fi
+```
 
 Great! Now let's jump to the main Workflow. It will only contain an Xcode: Test step so let's keep it simple and call it `test`. You can add Workflows to the after_run and before_run of Workflow. This will run the given Workflow just before or after the given Workflow. So here is the main Workflow with the before_run and after_run sections:
 
+```
 test:
   before_run:
     - _setup
@@ -51,9 +54,11 @@ test:
       - simulator_device: iPhone 6
       - simulator_os_version: latest
       - is_clean_build: "no"
+```
 
 Awesome! Now we are almost done! only one more Workflow to create! _cleanup should contain simply be another bash script that just delete's the directory.
 
+```
 _cleanup:
   description: |-
     This is a utility workflow. It runs a script to delete the folders created in the setup.
@@ -66,6 +71,7 @@ _cleanup:
       - content: |-
           #!/bin/bash
           rm -rf $PROJECT_TITLE
+```
 
 Wow! We're done! Weeell not quite. If you try to run the Workflow you can see, that it fails. Currently the environment variables aren't added that are needed. Add these environment variables to your .bitrise.secrets.yml:
 
