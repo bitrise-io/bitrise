@@ -3,10 +3,10 @@ package cli
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
-func deleteCollection(c *cli.Context) {
+func deleteCollection(c *cli.Context) error {
 	log.Debugln("[STEPMAN] - Delete collection")
 
 	// Input validation
@@ -22,10 +22,12 @@ func deleteCollection(c *cli.Context) {
 			log.Errorf("Error cleaning up lib: %s", collectionURI)
 		}
 		log.Infof("Call 'stepman setup -c %s' for a clean setup", collectionURI)
-		return
+		return nil
 	}
 
 	if err := stepman.CleanupRoute(route); err != nil {
 		log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
 	}
+
+	return nil
 }

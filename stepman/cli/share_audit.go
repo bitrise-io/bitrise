@@ -6,7 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printFinishAudit(share ShareModel, toolMode bool) {
@@ -16,7 +16,7 @@ func printFinishAudit(share ShareModel, toolMode bool) {
 	fmt.Println("   " + GuideTextForShareFinish(toolMode))
 }
 
-func shareAudit(c *cli.Context) {
+func shareAudit(c *cli.Context) error {
 	toolMode := c.Bool(ToolMode)
 
 	share, err := ReadShareSteplibFromFile()
@@ -35,4 +35,6 @@ func shareAudit(c *cli.Context) {
 	}
 
 	printFinishAudit(share, toolMode)
+
+	return nil
 }

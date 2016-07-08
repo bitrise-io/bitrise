@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printFinishShare() {
@@ -26,7 +26,7 @@ func printFinishShare() {
 	fmt.Println(msg)
 }
 
-func finish(c *cli.Context) {
+func finish(c *cli.Context) error {
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Error(err)
@@ -42,7 +42,7 @@ func finish(c *cli.Context) {
 	if err := cmdex.GitCheckIsNoChanges(collectionDir); err == nil {
 		log.Warn("No git changes!")
 		printFinishShare()
-		return
+		return nil
 	}
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
@@ -63,4 +63,6 @@ func finish(c *cli.Context) {
 		log.Fatal(err)
 	}
 	printFinishShare()
+
+	return nil
 }

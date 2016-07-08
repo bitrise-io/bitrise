@@ -7,10 +7,10 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
-func activate(c *cli.Context) {
+func activate(c *cli.Context) error {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
@@ -131,4 +131,6 @@ func activate(c *cli.Context) {
 			log.Fatalln("[STEPMAN] - Failed to copy step.yml:", err)
 		}
 	}
+
+	return nil
 }

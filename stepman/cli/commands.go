@@ -1,6 +1,6 @@
 package cli
 
-import "github.com/codegangsta/cli"
+import "github.com/urfave/cli"
 
 var (
 	commands = []cli.Command{
@@ -50,7 +50,7 @@ var (
 		{
 			Name:   "step-list",
 			Usage:  "List of available steps.",
-			Action: list,
+			Action: stepList,
 			Flags: []cli.Flag{
 				flCollection,
 				flFormat,

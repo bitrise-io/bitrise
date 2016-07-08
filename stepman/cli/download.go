@@ -3,10 +3,10 @@ package cli
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
-func download(c *cli.Context) {
+func download(c *cli.Context) error {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
@@ -61,4 +61,6 @@ func download(c *cli.Context) {
 	if err := stepman.DownloadStep(collectionURI, collection, id, version, step.Source.Commit); err != nil {
 		log.Fatal("[STEPMAN] - Failed to download step")
 	}
+
+	return nil
 }

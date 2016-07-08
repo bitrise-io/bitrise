@@ -12,7 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 // ShareModel ...
@@ -153,7 +153,7 @@ func GuideTextForFinish() string {
 	return guide
 }
 
-func share(c *cli.Context) {
+func share(c *cli.Context) error {
 	toolMode := c.Bool(ToolMode)
 
 	guide := `
@@ -171,6 +171,8 @@ To share your Step just follow these steps (pun intended ;) :
 5. ` + GuideTextForShareFinish(toolMode) + `
 6. ` + GuideTextForFinish()
 	fmt.Println(guide)
+
+	return nil
 }
 
 func getShareFilePath() string {

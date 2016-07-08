@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func auditStepBeforeShare(pth string) error {
@@ -111,7 +111,7 @@ func auditStepLibBeforeSharePullRequest(gitURI string) error {
 	return nil
 }
 
-func audit(c *cli.Context) {
+func audit(c *cli.Context) error {
 	// Input validation
 	beforePR := c.Bool("before-pr")
 
@@ -148,4 +148,6 @@ func audit(c *cli.Context) {
 			log.Fatalln("'stepman audit' command needs --collection or --step-yml flag")
 		}
 	}
+
+	return nil
 }

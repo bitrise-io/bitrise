@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printFinishStart(specPth string, toolMode bool) {
@@ -18,7 +18,7 @@ func printFinishStart(specPth string, toolMode bool) {
 	fmt.Println("   " + GuideTextForShareCreate(toolMode))
 }
 
-func start(c *cli.Context) {
+func start(c *cli.Context) error {
 	// Input validation
 	toolMode := c.Bool(ToolMode)
 
@@ -97,4 +97,6 @@ func start(c *cli.Context) {
 
 	isSuccess = true
 	printFinishStart(pth, toolMode)
+
+	return nil
 }

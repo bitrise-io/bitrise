@@ -20,7 +20,7 @@ import (
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const maxSummaryLength = 100
@@ -40,7 +40,7 @@ func getStepIDFromGit(git string) string {
 	return splits[0]
 }
 
-func create(c *cli.Context) {
+func create(c *cli.Context) error {
 	toolMode := c.Bool(ToolMode)
 
 	share, err := ReadShareSteplibFromFile()
@@ -88,7 +88,6 @@ func create(c *cli.Context) {
 			if !val {
 				log.Errorln("Unfortunately we can't continue with sharing without an overwrite exist step.yml.")
 				log.Fatalln("Please finish your changes, run this command again and allow it to overwrite the exist step.yml!")
-				return
 			}
 		}
 	}
@@ -190,4 +189,6 @@ func create(c *cli.Context) {
 	}
 
 	printFinishCreate(share, stepDirInSteplib, toolMode)
+
+	return nil
 }
