@@ -43,15 +43,20 @@ func update(c *cli.Context) error {
 	// StepSpec collection path
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		log.Info("[STEPMAN] - No step collection specified, update all")
+		log.Info("No StepLib specified, update all...")
 		collectionURIs = stepman.GetAllStepCollectionPath()
 	} else {
 		collectionURIs = []string{collectionURI}
 	}
 
+	if len(collectionURIs) == 0 {
+		log.Info("No local StepLib found, nothing to update...")
+	}
+
 	for _, URI := range collectionURIs {
+		log.Infof("Update StepLib (%s)...", URI)
 		if _, err := updateCollection(URI); err != nil {
-			log.Fatalf("Failed to update collection (%s), err: %s", collectionURI, err)
+			log.Fatalf(err.Error())
 		}
 	}
 
