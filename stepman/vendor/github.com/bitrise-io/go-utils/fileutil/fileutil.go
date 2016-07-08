@@ -122,7 +122,7 @@ func ReadStringFromFile(pth string) (string, error) {
 //  this is the "permissions" info, which can be passed directly to
 //  functions like WriteBytesToFileWithPermission or os.OpenFile
 func GetFileModeOfFile(pth string) (os.FileMode, error) {
-	finfo, err := os.Stat(pth)
+	finfo, err := os.Lstat(pth)
 	if err != nil {
 		return 0, err
 	}

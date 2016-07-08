@@ -39,7 +39,7 @@ func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
 		return nil, false, errors.New("No path provided")
 	}
-	fileInf, err := os.Stat(pth)
+	fileInf, err := os.Lstat(pth)
 	if err == nil {
 		return fileInf, true, nil
 	}
