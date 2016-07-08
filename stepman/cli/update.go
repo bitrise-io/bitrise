@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func updateCollection(steplibSource string) (models.StepCollectionModel, error) {
@@ -37,9 +37,7 @@ func updateCollection(steplibSource string) (models.StepCollectionModel, error) 
 	return stepman.ReadStepSpec(steplibSource)
 }
 
-func update(c *cli.Context) {
-	log.Info("[STEPMAN] - Update")
-
+func update(c *cli.Context) error {
 	collectionURIs := []string{}
 
 	// StepSpec collection path
@@ -57,5 +55,5 @@ func update(c *cli.Context) {
 		}
 	}
 
-	log.Info("[STEPMAN] - Updated")
+	return nil
 }

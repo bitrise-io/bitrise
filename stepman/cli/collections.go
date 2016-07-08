@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func registerFatal(errorMsg, format string) {
@@ -30,7 +30,7 @@ func registerFatal(errorMsg, format string) {
 	}
 }
 
-func collections(c *cli.Context) {
+func collections(c *cli.Context) error {
 	format := c.String(FormatKey)
 	if format == "" {
 		format = OutputFormatRaw
@@ -60,4 +60,6 @@ func collections(c *cli.Context) {
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), OutputFormatJSON)
 	}
+
+	return nil
 }

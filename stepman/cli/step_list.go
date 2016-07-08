@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printRawStepList(stepList models.StepListModel, isShort bool) {
@@ -68,7 +68,7 @@ func listSteps(stepLibURI, format string) error {
 	return nil
 }
 
-func list(c *cli.Context) {
+func stepList(c *cli.Context) error {
 	// Input validation
 	stepLibURIs := []string{}
 	stepLibURI := c.String(CollectionKey)
@@ -90,4 +90,6 @@ func list(c *cli.Context) {
 			log.Errorf("Failed to list steps in StepLib (%s), err: %s", URI, err)
 		}
 	}
+
+	return nil
 }

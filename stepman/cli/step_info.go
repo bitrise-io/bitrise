@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func getEnvInfos(envs []envmanModels.EnvironmentItemModel) ([]models.EnvInfoModel, error) {
@@ -140,7 +140,7 @@ func printStepInfo(stepInfo models.StepInfoModel, format string, isShort, isLoca
 	return nil
 }
 
-func stepInfo(c *cli.Context) {
+func stepInfo(c *cli.Context) error {
 	// Input validation
 	format := c.String(FormatKey)
 	collectionURI := c.String(CollectionKey)
@@ -276,4 +276,6 @@ func stepInfo(c *cli.Context) {
 			}
 		}
 	}
+
+	return nil
 }

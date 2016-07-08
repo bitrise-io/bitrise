@@ -6,7 +6,7 @@ import (
 
 	"github.com/bitrise-io/stepman/output"
 	"github.com/bitrise-io/stepman/version"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 // VersionOutputModel ...
@@ -16,7 +16,7 @@ type VersionOutputModel struct {
 	Commit      string `json:"commit"`
 }
 
-func printVersionCmd(c *cli.Context) {
+func printVersionCmd(c *cli.Context) error {
 	fullVersion := c.Bool("full")
 
 	if err := output.ConfigureOutputFormat(c); err != nil {
@@ -41,4 +41,6 @@ func printVersionCmd(c *cli.Context) {
 	} else {
 		output.Print(versionOutput, output.Format)
 	}
+
+	return nil
 }

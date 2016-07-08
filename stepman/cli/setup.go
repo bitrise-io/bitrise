@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/stepman/output"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func gitClone(uri, pth string) (string, error) {
@@ -90,7 +90,7 @@ func setupSteplib(steplibURI string, silent bool) error {
 	return nil
 }
 
-func setup(c *cli.Context) {
+func setup(c *cli.Context) error {
 	log.Debug("Setup")
 
 	// Input validation
@@ -132,4 +132,6 @@ func setup(c *cli.Context) {
 			log.Fatalf("Failed to copy spec.json from (%s) to (%s), error: %s", sourceSpecJSONPth, copySpecJSONPath, err)
 		}
 	}
+
+	return nil
 }

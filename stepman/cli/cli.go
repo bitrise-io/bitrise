@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/bitrise-io/stepman/version"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func initLogFormatter() {
@@ -25,20 +25,21 @@ func before(c *cli.Context) error {
 	initAppHelpTemplate()
 
 	// Log level
-	if logLevel, err := log.ParseLevel(c.String(LogLevelKey)); err != nil {
-		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
-	} else {
-		log.SetLevel(logLevel)
+	logLevel, err := log.ParseLevel(c.String(LogLevelKey))
+	if err != nil {
+		return fmt.Errorf("Failed to parse log level, error: %s", err)
 	}
+	log.SetLevel(logLevel)
 
 	// Setup
-	err := stepman.CreateStepManDirIfNeeded()
+	err = stepman.CreateStepManDirIfNeeded()
 	if err != nil {
 		return err
 	}
 
 	// Debug mode
 	stepman.DebugMode = c.Bool(DebugKey)
+
 	return nil
 }
 
@@ -64,6 +65,6 @@ func Run() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error("[STEPMAN] - Stepman finished:", err)
+		log.Error(err)
 	}
 }
