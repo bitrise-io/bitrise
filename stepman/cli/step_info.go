@@ -2,9 +2,9 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/models"
@@ -152,7 +152,11 @@ func stepInfo(c *cli.Context) error {
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("Invalid format: %s", format)
+		return fmt.Errorf("Invalid output format: %s", format)
+	}
+
+	if YMLPath == "" && collectionURI == "" {
+		return fmt.Errorf("Missing required input: no StepLib, nor step.yml path defined as step info source")
 	}
 
 	if YMLPath != "" {
@@ -160,17 +164,17 @@ func stepInfo(c *cli.Context) error {
 		// Local step info
 		step, err := stepman.ParseStepYml(YMLPath, false)
 		if err != nil {
-			log.Fatalf("Failed to parse step.yml (path:%s), err: %s", YMLPath, err)
+			return fmt.Errorf("Failed to parse step.yml (path:%s), err: %s", YMLPath, err)
 		}
 
 		inputs, err := getEnvInfos(step.Inputs)
 		if err != nil {
-			log.Fatalf("Failed to get step (path:%s) input infos, err: %s", YMLPath, err)
+			return fmt.Errorf("Failed to get step (path:%s) input infos, err: %s", YMLPath, err)
 		}
 
 		outputs, err := getEnvInfos(step.Outputs)
 		if err != nil {
-			log.Fatalf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
+			return fmt.Errorf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
 		}
 
 		stepInfo := models.StepInfoModel{
@@ -182,98 +186,88 @@ func stepInfo(c *cli.Context) error {
 		}
 
 		if err := printStepInfo(stepInfo, format, isShort, true); err != nil {
-			log.Fatalf("Failed to print step info, err: %s", err)
+			return fmt.Errorf("Failed to print step info, err: %s", err)
 		}
 	} else {
 		//
 		// StepLib step info
 
 		// Input validation
-		collectionURIs := []string{}
-		if collectionURI == "" {
-			collectionURIs = stepman.GetAllStepCollectionPath()
-		} else {
-			collectionURIs = []string{collectionURI}
-		}
-
 		if id == "" {
-			log.Fatal("Missing step id")
+			return errors.New("Missing required input: step id")
 		}
 
-		for _, collectionURI := range collectionURIs {
-			// Check if setup was done for collection
-			if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
-				log.Fatalf("Failed to check if setup was done for steplib (%s), error: %s", collectionURI, err)
-			} else if !exist {
-				if err := setupSteplib(collectionURI, format != OutputFormatRaw); err != nil {
-					log.Fatal("Failed to setup steplib")
-				}
+		// Check if setup was done for collection
+		if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
+			return fmt.Errorf("Failed to check if setup was done for steplib (%s), error: %s", collectionURI, err)
+		} else if !exist {
+			if err := setupSteplib(collectionURI, format != OutputFormatRaw); err != nil {
+				return errors.New("Failed to setup steplib")
 			}
+		}
 
-			// Check if step exist in collection
-			collection, err := stepman.ReadStepSpec(collectionURI)
-			if err != nil {
-				log.Fatalf("Failed to read steps spec (spec.json), err: %s", err)
-			}
+		// Check if step exist in collection
+		collection, err := stepman.ReadStepSpec(collectionURI)
+		if err != nil {
+			return fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
+		}
 
-			step, stepFound := collection.GetStep(id, version)
-			if !stepFound {
-				if version == "" {
-					log.Fatalf("Collection doesn't contain any version of step (id:%s)", id)
-				} else {
-					log.Fatalf("Collection doesn't contain step (id:%s) (version:%s)", id, version)
-				}
-			}
-
-			latest, err := collection.GetLatestStepVersion(id)
-			if err != nil {
-				log.Fatalf("Failed to get latest version of step (id:%s)", id)
-			}
-
+		step, stepFound := collection.GetStep(id, version)
+		if !stepFound {
 			if version == "" {
-				version = latest
+				return fmt.Errorf("Collection doesn't contain any version of step (id:%s)", id)
 			}
+			return fmt.Errorf("Collection doesn't contain step (id:%s) (version:%s)", id, version)
+		}
 
-			inputs, err := getEnvInfos(step.Inputs)
+		latest, err := collection.GetLatestStepVersion(id)
+		if err != nil {
+			return fmt.Errorf("Failed to get latest version of step (id:%s)", id)
+		}
+
+		if version == "" {
+			version = latest
+		}
+
+		inputs, err := getEnvInfos(step.Inputs)
+		if err != nil {
+			return fmt.Errorf("Failed to get step (id:%s) input infos, err: %s", id, err)
+		}
+
+		outputs, err := getEnvInfos(step.Outputs)
+		if err != nil {
+			return fmt.Errorf("Failed to get step (id:%s) output infos, err: %s", id, err)
+		}
+
+		stepInfo := models.StepInfoModel{
+			ID:          id,
+			Version:     version,
+			Latest:      latest,
+			Description: *step.Description,
+			StepLib:     collectionURI,
+			Source:      *step.SourceCodeURL,
+			Inputs:      inputs,
+			Outputs:     outputs,
+		}
+
+		route, found := stepman.ReadRoute(collectionURI)
+		if !found {
+			return fmt.Errorf("No route found for collection: %s", collectionURI)
+		}
+		globalStepInfoPth := stepman.GetStepGlobalInfoPath(route, id)
+		if globalStepInfoPth != "" {
+			globalInfo, found, err := stepman.ParseGlobalStepInfoYML(globalStepInfoPth)
 			if err != nil {
-				log.Fatalf("Failed to get step (id:%s) input infos, err: %s", id, err)
+				return fmt.Errorf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
 			}
 
-			outputs, err := getEnvInfos(step.Outputs)
-			if err != nil {
-				log.Fatalf("Failed to get step (id:%s) output infos, err: %s", id, err)
+			if found {
+				stepInfo.GlobalInfo = globalInfo
 			}
+		}
 
-			stepInfo := models.StepInfoModel{
-				ID:          id,
-				Version:     version,
-				Latest:      latest,
-				Description: *step.Description,
-				StepLib:     collectionURI,
-				Source:      *step.SourceCodeURL,
-				Inputs:      inputs,
-				Outputs:     outputs,
-			}
-
-			route, found := stepman.ReadRoute(collectionURI)
-			if !found {
-				log.Fatalf("No route found for collection: %s", collectionURI)
-			}
-			globalStepInfoPth := stepman.GetStepGlobalInfoPath(route, id)
-			if globalStepInfoPth != "" {
-				globalInfo, found, err := stepman.ParseGlobalStepInfoYML(globalStepInfoPth)
-				if err != nil {
-					log.Fatalf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
-				}
-
-				if found {
-					stepInfo.GlobalInfo = globalInfo
-				}
-			}
-
-			if err := printStepInfo(stepInfo, format, isShort, false); err != nil {
-				log.Fatalf("Failed to print step info, err: %s", err)
-			}
+		if err := printStepInfo(stepInfo, format, isShort, false); err != nil {
+			return fmt.Errorf("Failed to print step info, err: %s", err)
 		}
 	}
 
