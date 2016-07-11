@@ -20,10 +20,9 @@ var (
 			},
 		},
 		{
-			Name:    "setup",
-			Aliases: []string{"s"},
-			Usage:   "Initialize the specified collection, it's required before using a collection.",
-			Action:  setup,
+			Name:   "setup",
+			Usage:  "Initialize the specified collection, it's required before using a collection.",
+			Action: setup,
 			Flags: []cli.Flag{
 				flCollection,
 				flLocalCollection,
@@ -31,10 +30,9 @@ var (
 			},
 		},
 		{
-			Name:    "update",
-			Aliases: []string{"u"},
-			Usage:   "Update the collection, if no --collection flag provided, all collections will updated.",
-			Action:  update,
+			Name:   "update",
+			Usage:  "Update the collection, if no --collection flag provided, all collections will updated.",
+			Action: update,
 			Flags: []cli.Flag{
 				flCollection,
 			},
@@ -57,10 +55,9 @@ var (
 			},
 		},
 		{
-			Name:    "step-info",
-			Aliases: []string{"i"},
-			Usage:   "Provides information (step ID, last version, given version) about specified step.",
-			Action:  stepInfo,
+			Name:   "step-info",
+			Usage:  "Provides information (step ID, last version, given version) about specified step.",
+			Action: stepInfo,
 			Flags: []cli.Flag{
 				flCollection,
 				flID,
@@ -71,10 +68,9 @@ var (
 			},
 		},
 		{
-			Name:    "download",
-			Aliases: []string{"d"},
-			Usage:   "Download the step with provided --id and --version, from specified --collection, into local step downloads cache. If no --version defined, the latest version of the step (latest found in the collection) will be downloaded into the cache.",
-			Action:  download,
+			Name:   "download",
+			Usage:  "Download the step with provided --id and --version, from specified --collection, into local step downloads cache. If no --version defined, the latest version of the step (latest found in the collection) will be downloaded into the cache.",
+			Action: download,
 			Flags: []cli.Flag{
 				flCollection,
 				flID,
@@ -83,10 +79,9 @@ var (
 			},
 		},
 		{
-			Name:    "activate",
-			Aliases: []string{"a"},
-			Usage:   "Copy the step with specified --id, and --version, into provided path. If --version flag is not set, the latest version of the step will be used. If --copyyml flag is set, step.yml will be copied to the given path.",
-			Action:  activate,
+			Name:   "activate",
+			Usage:  "Copy the step with specified --id, and --version, into provided path. If --version flag is not set, the latest version of the step will be used. If --copyyml flag is set, step.yml will be copied to the given path.",
+			Action: activate,
 			Flags: []cli.Flag{
 				flCollection,
 				flID,
@@ -117,29 +112,26 @@ var (
 			},
 		},
 		{
-			Name:    "share",
-			Aliases: []string{"s"},
-			Usage:   "Publish your step.",
-			Action:  share,
+			Name:   "share",
+			Usage:  "Publish your step.",
+			Action: share,
 			Flags: []cli.Flag{
 				flToolMode,
 			},
 			Subcommands: []cli.Command{
 				{
-					Name:    "start",
-					Aliases: []string{"s"},
-					Usage:   "Preparations for publishing.",
-					Action:  start,
+					Name:   "start",
+					Usage:  "Preparations for publishing.",
+					Action: start,
 					Flags: []cli.Flag{
 						flCollection,
 						flToolMode,
 					},
 				},
 				{
-					Name:    "create",
-					Aliases: []string{"c"},
-					Usage:   "Create your change - add it to your own copy of the collection.",
-					Action:  create,
+					Name:   "create",
+					Usage:  "Create your change - add it to your own copy of the collection.",
+					Action: create,
 					Flags: []cli.Flag{
 						flTag,
 						flGit,
@@ -148,19 +140,17 @@ var (
 					},
 				},
 				{
-					Name:    "audit",
-					Aliases: []string{"a"},
-					Usage:   "Validates the step collection.",
-					Action:  shareAudit,
+					Name:   "audit",
+					Usage:  "Validates the step collection.",
+					Action: shareAudit,
 					Flags: []cli.Flag{
 						flToolMode,
 					},
 				},
 				{
-					Name:    "finish",
-					Aliases: []string{"f"},
-					Usage:   "Finish up.",
-					Action:  finish,
+					Name:   "finish",
+					Usage:  "Finish up.",
+					Action: finish,
 					Flags: []cli.Flag{
 						flToolMode,
 					},
@@ -168,10 +158,9 @@ var (
 			},
 		},
 		{
-			Name:    "delete",
-			Aliases: []string{"d"},
-			Usage:   "Delete the specified collection from local caches.",
-			Action:  deleteCollection,
+			Name:   "delete",
+			Usage:  "Delete the specified collection from local caches.",
+			Action: deleteStepLib,
 			Flags: []cli.Flag{
 				flCollection,
 			},

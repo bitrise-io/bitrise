@@ -1,19 +1,21 @@
 package cli
 
 import (
+	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
 
-func deleteCollection(c *cli.Context) error {
-	log.Debugln("[STEPMAN] - Delete collection")
-
+func deleteStepLib(c *cli.Context) error {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		log.Fatalln("[STEPMAN] - No step collection specified")
+		return fmt.Errorf("Missing required input: collection")
 	}
+
+	log.Infof("Delete StepLib: %s", collectionURI)
 
 	route, found := stepman.ReadRoute(collectionURI)
 	if !found {
@@ -26,7 +28,7 @@ func deleteCollection(c *cli.Context) error {
 	}
 
 	if err := stepman.CleanupRoute(route); err != nil {
-		log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+		return fmt.Errorf("Failed to cleanup route for StepLib: %s", collectionURI)
 	}
 
 	return nil
