@@ -74,6 +74,21 @@ func ParseStepYml(pth string, validate bool) (models.StepModel, error) {
 	return stepModel, nil
 }
 
+// ParseStepGroupInfo ...
+func ParseStepGroupInfo(pth string) (models.StepGroupInfoModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepGroupInfoModel{}, err
+	}
+
+	var stepGroupInfo models.StepGroupInfoModel
+	if err := yaml.Unmarshal(bytes, &stepGroupInfo); err != nil {
+		return models.StepGroupInfoModel{}, err
+	}
+
+	return stepGroupInfo, nil
+}
+
 // ParseStepCollection ...
 func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
@@ -90,7 +105,6 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 
 // DownloadStep ...
 func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string) error {
-	log.Debugf("Download Step: %#v (%#v)\n", id, version)
 	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
 		return err
@@ -105,7 +119,6 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
-		log.Debug("[STEPMAN] - Step already downloaded")
 		return nil
 	}
 
@@ -113,23 +126,21 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			log.Debug("[STEPMAN] - Downloading step from: ", downloadLocation.Src)
 			if err := cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth); err != nil {
-				log.Warn("[STEPMAN] - Failed to download step.zip: ", err)
+				log.Warn("Failed to download step.zip: ", err)
 			} else {
 				success = true
 				return nil
 			}
 		case "git":
-			log.Debug("[STEPMAN] - Git clone step from: ", downloadLocation.Src)
 			if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash); err != nil {
-				log.Warnf("[STEPMAN] - Failed to clone step (%s): %v", downloadLocation.Src, err)
+				log.Warnf("Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
 				return nil
 			}
 		default:
-			return fmt.Errorf("[STEPMAN] - Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
+			return fmt.Errorf("Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
 		}
 	}
 
@@ -151,7 +162,6 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	} else {
 		stepGroup.LatestVersionNumber = version
 	}
-	log.Debugf("SetGroup: %#v, versionParam: %#v, stepParam: %#v", stepGroup, version, step)
 	stepGroup.Versions[version] = step
 	return stepGroup, nil
 }
@@ -167,10 +177,9 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 
 	stepHash := models.StepHash{}
 
-	stepsSpecDir := GetCollectionBaseDirPath(route)
-	log.Debugln("  stepsSpecDir: ", stepsSpecDir)
-	err := filepath.Walk(stepsSpecDir, func(pth string, f os.FileInfo, err error) error {
-		truncatedPath := strings.Replace(pth, stepsSpecDir+"/", "", -1)
+	stepsSpecDirPth := GetCollectionBaseDirPath(route)
+	err := filepath.Walk(stepsSpecDirPth, func(pth string, f os.FileInfo, err error) error {
+		truncatedPath := strings.Replace(pth, stepsSpecDirPth+"/", "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
 		if matchErr != nil {
 			return matchErr
@@ -179,19 +188,34 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 		if match {
 			components := strings.Split(truncatedPath, "/")
 			if len(components) == 4 {
-				id := components[1]
-				version := components[2]
+				stepsDirName := components[0]
+				stepID := components[1]
+				stepVersion := components[2]
 
-				log.Debugf("Start parsing (StepId:%s) (Version:%s)", id, version)
 				step, parseErr := ParseStepYml(pth, true)
 				if parseErr != nil {
-					log.Debugf("  Failed to parse StepId: %v Version: %v", id, version)
 					return parseErr
 				}
 
-				// Check for assets
+				stepGroupInfo := models.StepGroupInfoModel{}
+
+				// Check for step-info.yml - STEP_SPEC_DIR/steps/step-id/step-info.yml
+				stepGroupInfoPth := filepath.Join(stepsSpecDirPth, stepsDirName, stepID, "step-info.yml")
+				if exist, err := pathutil.IsPathExists(stepGroupInfoPth); err != nil {
+					return err
+				} else if exist {
+					deprecationInfo, err := ParseStepGroupInfo(stepGroupInfoPth)
+					if err != nil {
+						return err
+					}
+
+					stepGroupInfo.RemovalDate = deprecationInfo.RemovalDate
+					stepGroupInfo.DeprecateNotes = deprecationInfo.DeprecateNotes
+				}
+
+				// Check for assets - STEP_SPEC_DIR/steps/step-id/assets
 				if collection.AssetsDownloadBaseURI != "" {
-					assetsFolderPth := path.Join(stepsSpecDir, components[0], components[1], "assets")
+					assetsFolderPth := path.Join(stepsSpecDirPth, stepsDirName, stepID, "assets")
 					exist, err := pathutil.IsPathExists(assetsFolderPth)
 					if err != nil {
 						return err
@@ -201,7 +225,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 						err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
 							_, file := filepath.Split(pth)
 							if pth != assetsFolderPth && file != "" {
-								assetURI, err := urlutil.Join(collection.AssetsDownloadBaseURI, id, "assets", file)
+								assetURI, err := urlutil.Join(collection.AssetsDownloadBaseURI, stepID, "assets", file)
 								if err != nil {
 									return err
 								}
@@ -211,38 +235,37 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 						})
 
 						if err != nil {
-							log.Debugf("  Failed to add assets, at (%s) | Error: %v", assetsFolderPth, err)
 							return err
 						}
 
 						step.AssetURLs = assetsMap
+						stepGroupInfo.AssetURLs = assetsMap
 					}
 				}
 
 				// Add to stepgroup
-				stepGroup, found := stepHash[id]
+				stepGroup, found := stepHash[stepID]
 				if !found {
 					stepGroup = models.StepGroupModel{
 						Versions: map[string]models.StepModel{},
 					}
 				}
-				stepGroup, err = addStepVersionToStepGroup(step, version, stepGroup)
+				stepGroup, err = addStepVersionToStepGroup(step, stepVersion, stepGroup)
 				if err != nil {
-					log.Debugf("  Failed to add step to step-group. (StepId:%v) (Version: %v) | Error: %v", id, version, err)
 					return err
 				}
 
-				stepHash[id] = stepGroup
+				stepGroup.Info = stepGroupInfo
+
+				stepHash[stepID] = stepGroup
 			} else {
-				log.Debug("  * Path:", truncatedPath)
-				log.Debug("  * Legth:", len(components))
 			}
 		}
 
 		return err
 	})
 	if err != nil {
-		log.Error("[STEPMAN] - Failed to walk through path:", err)
+		log.Error("Failed to walk through path:", err)
 		return models.StepCollectionModel{}, err
 	}
 	collection.Steps = stepHash
@@ -254,7 +277,7 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 	pth := GetStepSpecPath(route)
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		log.Error("[STEPMAN] - Failed to check path:", err)
+		log.Error("Failed to check path:", err)
 		return err
 	} else if !exist {
 		dir, _ := path.Split(pth)
@@ -283,7 +306,6 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 
 // ReadStepSpec ...
 func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
-	log.Debugln("-> ReadStepSpec: ", uri)
 
 	route, found := ReadRoute(uri)
 	if !found {
@@ -307,7 +329,7 @@ func ReGenerateStepSpec(route SteplibRoute) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
-		return errors.New("[STEPMAN] - Not initialized")
+		return errors.New("Not initialized")
 	}
 
 	specPth := pth + "/steplib.yml"

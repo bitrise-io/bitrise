@@ -165,5 +165,25 @@ var (
 				flCollection,
 			},
 		},
+		{
+			Name:   "export-spec",
+			Usage:  "Export the generated StepLib spec.",
+			Action: export,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "steplib",
+					Usage: "StepLib URI",
+				},
+				cli.StringFlag{
+					Name:  "output",
+					Usage: "Output path",
+				},
+				cli.StringFlag{
+					Name:  "export-type",
+					Value: "full",
+					Usage: "Export type, options: [full, latest, minimal]",
+				},
+			},
+		},
 	}
 )
