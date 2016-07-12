@@ -114,6 +114,56 @@ workflows:
                 exit 1
               fi
             done <<< "$GOLIST_WITHOUT_VENDOR"
+    - script:
+        title: Go build
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -x
+
+            # build the new stepman
+            current_dir=$(pwd)
+            current_stepman=$current_dir/_tmp/ci-bin
+            go build -o $current_stepman
+
+            envman add --key CURRENT_STEPMAN --value $current_stepman
+    - script:
+        title: Exit code test
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -x
+
+            # default setup - desired exit code: 0
+            $CURRENT_STEPMAN setup --collection https://github.com/bitrise-io/bitrise-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # latest version - desired exit code: 0
+            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # latest version, json format - desired exit code: 0
+            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --format json
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # invalid version -1 - desired exit code: NOT 0
+            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --version -1
+            if [ $? -eq 0 ] ; then
+              exit 1
+            fi
+
+            # invalid version -1, json format - desired exit code: NOT 0
+            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --version -1 --format json
+            if [ $? -eq 0 ] ; then
+              exit 1
+            fi
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing
