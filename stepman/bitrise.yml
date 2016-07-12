@@ -200,7 +200,7 @@ workflows:
         2, Export RELEASE_VERSION
         3, Create binaries
     envs:
-    - RELEASE_VERSION: 0.9.20
+    - RELEASE_VERSION: 0.9.21
     after_run:
     - _export_release_version
     - create_binaries
