@@ -6,8 +6,7 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* Previous version (0.9.20) returned with exit code 0, even if command failed. This version fixes this issue and includes integration tests to catch this in automated tests in the future.
 
 ### Install or upgrade
 
