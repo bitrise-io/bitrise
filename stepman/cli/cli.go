@@ -65,6 +65,6 @@ func Run() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 }
