@@ -5,7 +5,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printStepLibStep(collectionURI, id, version, format string) error {

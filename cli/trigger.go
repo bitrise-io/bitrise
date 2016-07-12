@@ -7,7 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {

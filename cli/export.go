@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func export(c *cli.Context) {

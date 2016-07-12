@@ -6,7 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func pluginInstall(c *cli.Context) {

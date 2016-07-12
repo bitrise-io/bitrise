@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/bitrise-io/bitrise/configs"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const (

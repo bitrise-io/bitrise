@@ -9,8 +9,8 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/codegangsta/cli"
 	"github.com/ryanuber/go-glob"
+	"github.com/urfave/cli"
 )
 
 func registerFatal(errorMsg string, warnings []string, format string) {

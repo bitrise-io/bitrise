@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 // ValidationItemModel ...

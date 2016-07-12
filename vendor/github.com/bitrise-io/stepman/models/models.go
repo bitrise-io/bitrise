@@ -80,10 +80,18 @@ type StepModel struct {
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
+// StepGroupInfoModel ...
+type StepGroupInfoModel struct {
+	RemovalDate    string            `json:"removal_date,omitempty" yaml:"removal_date,omitempty"`
+	DeprecateNotes string            `json:"deprecate_notes,omitempty" yaml:"deprecate_notes,omitempty"`
+	AssetURLs      map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
+}
+
 // StepGroupModel ...
 type StepGroupModel struct {
-	LatestVersionNumber string               `json:"latest_version_number"`
-	Versions            map[string]StepModel `json:"versions"`
+	Info                StepGroupInfoModel   `json:"info,omitempty" yaml:"info,omitempty"`
+	LatestVersionNumber string               `json:"latest_version_number,omitempty" yaml:"latest_version_number,omitempty"`
+	Versions            map[string]StepModel `json:"versions,omitempty" yaml:"versions,omitempty"`
 }
 
 // StepHash ...

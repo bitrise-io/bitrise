@@ -3,7 +3,7 @@ package cli
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func create(c *cli.Context) {

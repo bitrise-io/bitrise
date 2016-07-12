@@ -18,39 +18,39 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/errorutil",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "3350ab0d82f7cf0c88a16b0365ff365d77507ea6"
+			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -58,13 +58,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.19-7-g7323eeb",
-			"Rev": "7323eebd32167cd57d5d1a26489a29d1cfc3d453"
-		},
-		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "v1.18.0",
-			"Rev": "1efa31f08b9333f1bd4882d61f9d668a70cd902e"
+			"Comment": "0.9.20",
+			"Rev": "a6b4a3f4064516e3cae98055dc5f35c59a8d7880"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -94,8 +89,13 @@
 			"Rev": "d77da356e56a7428ad25149ca77381849a6a5232"
 		},
 		{
+			"ImportPath": "github.com/urfave/cli",
+			"Comment": "v1.18.0-2-g166bb4f",
+			"Rev": "166bb4fa6231099fd582b9d0b33b647d8112a9f5"
+		},
+		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "62bee037599929a6e9146f29d10dd5208c43507d"
+			"Rev": "a408501be4d17ee978c04a618e7a1b22af058c0e"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",

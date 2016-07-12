@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func initLogFormatter() {

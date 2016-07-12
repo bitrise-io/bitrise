@@ -14,7 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const (
