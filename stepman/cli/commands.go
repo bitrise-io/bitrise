@@ -176,7 +176,7 @@ var (
 				},
 				cli.StringFlag{
 					Name:  "output",
-					Usage: "Output directory",
+					Usage: "Output path",
 				},
 				cli.StringFlag{
 					Name:  "export-type",

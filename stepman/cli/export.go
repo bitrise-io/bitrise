@@ -14,14 +14,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	fullSpecBasename    = "spec"
-	latestSpecBasename  = "latest-" + fullSpecBasename
-	minimalSpecBasename = "minimal-" + fullSpecBasename
-
-	jsonExt = ".json"
-)
-
 // ExportType ...
 type ExportType int8
 
@@ -82,19 +74,15 @@ func convertToLatestSpec(stepLib models.StepCollectionModel) models.StepCollecti
 func export(c *cli.Context) error {
 	// Input validation
 	steplibURI := c.String("steplib")
-	outputDirPth := c.String("output")
+	outputPth := c.String("output")
 	exportTypeStr := c.String("export-type")
 
 	if steplibURI == "" {
 		return fmt.Errorf("Missing required input: steplib")
 	}
 
-	if outputDirPth == "" {
-		currentDirPth, err := pathutil.CurrentWorkingDirectoryAbsolutePath()
-		if err != nil {
-			return fmt.Errorf("Failed to get current dir, error: %s", err)
-		}
-		outputDirPth = currentDirPth
+	if outputPth == "" {
+		return fmt.Errorf("Missing required input: output")
 	}
 
 	exportType := exportTypeFull
@@ -106,7 +94,7 @@ func export(c *cli.Context) error {
 		}
 	}
 
-	log.Infof("Exporting StepLib (%s) spec, export-type: %s, output dir: %s", steplibURI, exportTypeStr, outputDirPth)
+	log.Infof("Exporting StepLib (%s) spec, export-type: %s, output: %s", steplibURI, exportTypeStr, outputPth)
 
 	// Setup StepLib
 	if exist, err := stepman.RootExistForCollection(steplibURI); err != nil {
@@ -124,13 +112,10 @@ func export(c *cli.Context) error {
 		log.Fatalln("Failed to read StepLib spec, error: %s", err)
 	}
 
-	outputBasename := fullSpecBasename
 	switch exportType {
 	case exportTypeMinimal:
-		outputBasename = minimalSpecBasename
 		stepLibSpec = convertToMinimalSpec(stepLibSpec)
 	case exportTypeLatest:
-		outputBasename = latestSpecBasename
 		stepLibSpec = convertToLatestSpec(stepLibSpec)
 	}
 
@@ -140,17 +125,18 @@ func export(c *cli.Context) error {
 	}
 
 	// Export spec
-	exist, err := pathutil.IsDirExists(outputDirPth)
+	outputDir := filepath.Dir(outputPth)
+
+	exist, err := pathutil.IsDirExists(outputDir)
 	if err != nil {
-		return fmt.Errorf("Failed to check if dir (%s) exist, error: %s", outputDirPth, err)
+		return fmt.Errorf("Failed to check if dir (%s) exist, error: %s", outputDir, err)
 	}
 	if !exist {
-		if err := os.MkdirAll(outputDirPth, 0777); err != nil {
-			return fmt.Errorf("Failed to create dir (%s), error: %s", outputDirPth, err)
+		if err := os.MkdirAll(outputDir, 0777); err != nil {
+			return fmt.Errorf("Failed to create dir (%s), error: %s", outputDir, err)
 		}
 	}
 
-	outputPth := filepath.Join(outputDirPth, outputBasename+jsonExt)
 	if err := fileutil.WriteBytesToFile(outputPth, stepLibSpecBytes); err != nil {
 		return fmt.Errorf("Failed to write StepLib spec to: %s, error: %s", outputPth, err)
 	}
