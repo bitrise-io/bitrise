@@ -2,6 +2,58 @@
 
 -----------------
 
+## 0.9.20 (2016 Jul 12)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.20/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.19 -> 0.9.20
+
+* [7f0878f] Krisztián Gödrei - prepare for 0.9.20 (2016 Jul 12)
+* [ede2058] Krisztián Gödrei - Merge pull request #197 from godrei/spec (2016 Jul 12)
+* [10f144b] Krisztián Gödrei - specify output path (2016 Jul 12)
+* [813af05] Krisztián Gödrei - export StepLib spec (2016 Jul 12)
+* [8269283] Krisztián Gödrei - Merge pull request #196 from godrei/step_info (2016 Jul 11)
+* [99e557d] Krisztián Gödrei - Merge pull request #195 from godrei/short_commands (2016 Jul 11)
+* [54d8d5b] Krisztián Gödrei - step-info requires StepLib (2016 Jul 11)
+* [98acc03] Krisztián Gödrei - remove short commands,  delete log fix (2016 Jul 11)
+* [c96f79d] Krisztián Gödrei - Merge pull request #194 from godrei/update_fix (2016 Jul 08)
+* [972e1e2] Krisztián Gödrei - return with error (2016 Jul 08)
+* [dc13f84] Krisztián Gödrei - steplib update logging fix (2016 Jul 08)
+* [d432605] Krisztián Gödrei - Merge pull request #193 from godrei/deprecation_fix (2016 Jul 08)
+* [83fdfd1] Krisztián Gödrei - deprecation fix (2016 Jul 08)
+* [8306a8e] Krisztián Gödrei - Merge pull request #192 from godrei/master (2016 Jul 08)
+* [145a034] Krisztián Gödrei - gows godep save (2016 Jul 08)
+* [8c13bf2] Krisztián Gödrei - Merged branch master into master (2016 Jul 08)
+* [7323eeb] Viktor Benei - LICENSE (MIT) (2016 Jun 03)
+* [400b51a] Viktor Benei - gows.yml (2016 Jun 03)
+* [f392873] Viktor Benei - Merge pull request #185 from godrei/goinp_fix (2016 May 23)
+* [3be5c7b] Krisztián Gödrei - godep update (2016 May 23)
+* [1084a3d] Krisztián Gödrei - goinp fix (2016 May 23)
+* [294c5eb] Krisztián Gödrei - Merge pull request #184 from godrei/setup_fix (2016 May 11)
+* [008dbc8] Krisztián Gödrei - setup review (2016 May 11)
+* [d822310] Krisztián Gödrei - Merge pull request #183 from godrei/master (2016 May 09)
+* [623e925] Krisztián Gödrei - changelog (2016 May 09)
+
+
 ## 0.9.19 (2016 May 09)
 
 ### Release Notes
@@ -884,4 +936,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 May 09
+Generated at: 2016 Jul 12
