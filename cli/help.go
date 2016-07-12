@@ -1,6 +1,6 @@
 package cli
 
-import "github.com/codegangsta/cli"
+import "github.com/urfave/cli"
 
 func initAppHelpTemplate() {
 	cli.AppHelpTemplate = `

@@ -8,7 +8,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {

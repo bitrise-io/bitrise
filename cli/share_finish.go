@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func finish(c *cli.Context) {

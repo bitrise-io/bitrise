@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const (
