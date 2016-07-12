@@ -6,8 +6,15 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __BREAKING__ : every command's short version has been removed.
+* __BREAKING__ : `step-info` command's `collection` flag is required.
+* __NEW COMMAND__ : `export-spec` - Export the generated StepLib spec, use `export-type` flag to specify the export type.  
+  Export type options:
+
+  - `full` : exports the full StepLib spec
+  - `latest` : exported spec only contains steps with latest versions
+  - `minimal` : exported spec's steps field only contains the step-ids
+* Improved logging in `stepman update` command
 
 ### Install or upgrade
 
