@@ -127,7 +127,7 @@ func generateBitriseYMLContent(userInputProjectTitle, userInputDevBranch string)
 	return bitriseConfContent, warnings, nil
 }
 
-func initConfig(c *cli.Context) {
+func initConfig(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	bitriseConfigFileRelPath := "./" + DefaultBitriseConfigFileName
@@ -219,6 +219,8 @@ func initConfig(c *cli.Context) {
 	fmt.Println("-> bitrise run YOUR-WORKFLOW-NAME")
 	fmt.Println(" or trigger a build with a pattern:")
 	fmt.Println("-> bitrise trigger YOUR/PATTERN")
+
+	return nil
 }
 
 func saveSecretsToFile(pth, secretsStr string) (bool, error) {

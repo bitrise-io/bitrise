@@ -74,7 +74,7 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 	return nil
 }
 
-func workflowList(c *cli.Context) {
+func workflowList(c *cli.Context) error {
 	warnings := []string{}
 
 	// Expand cli.Context
@@ -122,4 +122,6 @@ func workflowList(c *cli.Context) {
 	if err := printWorkflList(workflowList, format, minimal); err != nil {
 		registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, output.FormatJSON)
 	}
+
+	return nil
 }

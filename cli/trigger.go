@@ -22,7 +22,7 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	fmt.Println()
 }
 
-func trigger(c *cli.Context) {
+func trigger(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	// Expand cli.Context
@@ -99,4 +99,6 @@ func trigger(c *cli.Context) {
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//
+
+	return nil
 }

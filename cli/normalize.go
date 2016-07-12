@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func normalize(c *cli.Context) {
+func normalize(c *cli.Context) error {
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
@@ -45,4 +45,6 @@ func normalize(c *cli.Context) {
 	}
 
 	log.Info("Redundant fields removed")
+
+	return nil
 }

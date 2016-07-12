@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func export(c *cli.Context) {
+func export(c *cli.Context) error {
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
@@ -69,4 +69,6 @@ func export(c *cli.Context) {
 	}
 
 	log.Infof("Done, saved to path: %s", outfilePth)
+
+	return nil
 }
