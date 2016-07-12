@@ -1,6 +1,56 @@
-## Changelog (Current version: 1.3.5)
+## Changelog (Current version: 1.3.6)
 
 -----------------
+
+## 1.3.6 (2016 Jul 12)
+
+### Release Notes
+
+* stepman dependency update to 0.9.21
+* build run result log now prints "Not provided" if missing source_code_url / support_url
+* step-development-guideline.md update
+* typo fix
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.6/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.5 -> 1.3.6
+
+* [65406ce] Krisztián Gödrei - prepare for 1.3.6 (2016 Jul 12)
+* [3509ca9] Krisztián Gödrei - stepman dependency update to 0.9.21 (#371) (2016 Jul 12)
+* [8c245dd] Krisztián Gödrei - godeps update (#370) (2016 Jul 12)
+* [2a5d92d] Viktor Benei - Update README.md (2016 Jul 02)
+* [acb42e7] Krisztián Gödrei - Merge pull request #367 from godrei/godep_update (2016 Jun 30)
+* [3e8bb97] Krisztián Gödrei - errcheck fix (2016 Jun 29)
+* [baf812d] Krisztián Gödrei - colorfunc update, bitrise.yml updates (2016 Jun 29)
+* [836d298] Krisztián Gödrei - godep update (2016 Jun 29)
+* [e36c9c6] Viktor Benei - Update step-development-guideline.md (2016 Jun 28)
+* [f5f639a] Krisztián Gödrei - Merge pull request #365 from godrei/error_footer (2016 Jun 23)
+* [d6d847e] Viktor Benei - Merge pull request #363 from viktorbenei/master (2016 Jun 23)
+* [c4cd641] Viktor Benei - Merge pull request #364 from bitrise-io/viktorbenei-patch-1 (2016 Jun 23)
+* [bdce9bb] Krisztián Gödrei - test updates (2016 Jun 22)
+* [97bbbae] Krisztián Gödrei - chardiff = 0 test (2016 Jun 22)
+* [8ff6f12] Krisztián Gödrei - print "Not provided" if missing source_code_url / support_url (2016 Jun 22)
+* [691049c] Viktor Benei - typo fix (2016 Jun 20)
+* [b8d6738] Viktor Benei - gows init & go-utils/pathutil fix (2016 Jun 16)
+
 
 ## 1.3.5 (2016 Jun 07)
 
@@ -1897,4 +1947,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Jun 07
+Updated: 2016 Jul 12
