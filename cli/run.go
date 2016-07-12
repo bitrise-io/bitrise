@@ -106,7 +106,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
-func run(c *cli.Context) {
+func run(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	//
@@ -185,4 +185,6 @@ func run(c *cli.Context) {
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//
+
+	return nil
 }

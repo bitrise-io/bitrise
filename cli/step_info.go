@@ -52,7 +52,7 @@ func printLocalStepInfo(pth, format string) error {
 	return nil
 }
 
-func stepInfo(c *cli.Context) {
+func stepInfo(c *cli.Context) error {
 	warnings := []string{}
 
 	// Expand cli.Context
@@ -114,4 +114,6 @@ func stepInfo(c *cli.Context) {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
 	}
+
+	return nil
 }

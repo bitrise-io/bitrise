@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func pluginInstall(c *cli.Context) {
+func pluginInstall(c *cli.Context) error {
 	// Input validation
 	pluginSource := c.String("source")
 	if pluginSource == "" {
@@ -39,9 +39,11 @@ func pluginInstall(c *cli.Context) {
 		fmt.Println(plugin.Description)
 		fmt.Println()
 	}
+
+	return nil
 }
 
-func pluginDelete(c *cli.Context) {
+func pluginDelete(c *cli.Context) error {
 	// Input validation
 	if len(c.Args()) == 0 {
 		log.Fatal("Missing plugin name")
@@ -74,9 +76,11 @@ func pluginDelete(c *cli.Context) {
 
 	fmt.Println()
 	log.Infof(colorstring.Greenf("Plugin (%s) with version (%s) deleted", name, version))
+
+	return nil
 }
 
-func pluginList(c *cli.Context) {
+func pluginList(c *cli.Context) error {
 	pluginList, err := plugins.InstalledPluginList()
 	if err != nil {
 		log.Fatalf("Failed to list plugins, error: %s", err)
@@ -95,4 +99,6 @@ func pluginList(c *cli.Context) {
 		fmt.Println(plugin.String())
 		fmt.Println()
 	}
+
+	return nil
 }

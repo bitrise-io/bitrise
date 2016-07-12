@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func create(c *cli.Context) {
+func create(c *cli.Context) error {
 	// Input validation
 	tag := c.String(TagKey)
 	if tag == "" {
@@ -23,4 +23,6 @@ func create(c *cli.Context) {
 	if err := tools.StepmanShareCreate(tag, gitURI, stepID); err != nil {
 		log.Fatalf("Bitrise share create failed, error: %s", err)
 	}
+
+	return nil
 }

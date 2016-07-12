@@ -24,7 +24,7 @@ func PrintBitriseHeaderASCIIArt(appVersion string) {
 	fmt.Println()
 }
 
-func setup(c *cli.Context) {
+func setup(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(c.App.Version)
 
 	if c.IsSet(MinimalModeKey) {
@@ -44,4 +44,6 @@ func setup(c *cli.Context) {
 	log.Infoln("* follow the guide")
 	fmt.Println()
 	log.Infoln("That's all :)")
+
+	return nil
 }

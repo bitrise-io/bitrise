@@ -151,6 +151,6 @@ func Run() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatalf("Finished with error: %s", err)
+		log.Fatal(err)
 	}
 }

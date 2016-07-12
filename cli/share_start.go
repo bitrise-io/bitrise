@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func start(c *cli.Context) {
+func start(c *cli.Context) error {
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
@@ -16,4 +16,6 @@ func start(c *cli.Context) {
 	if err := tools.StepmanShareStart(collectionURI); err != nil {
 		log.Fatalf("Bitrise share start failed, error: %s", err)
 	}
+
+	return nil
 }
