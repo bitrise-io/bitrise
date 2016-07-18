@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -15,23 +16,35 @@ import (
 func updateCollection(steplibSource string) (models.StepCollectionModel, error) {
 	route, found := stepman.ReadRoute(steplibSource)
 	if !found {
-		return models.StepCollectionModel{},
-			fmt.Errorf("No collection found for lib, call 'stepman delete -c %s' for cleanup", steplibSource)
+		log.Warnf("No route found for collection: %s, cleaning up routing..", steplibSource)
+		return models.StepCollectionModel{}, fmt.Errorf("No route found for StepLib: %s", steplibSource)
 	}
 
-	pth := stepman.GetCollectionBaseDirPath(route)
-	if exists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.StepCollectionModel{}, err
-	} else if !exists {
-		return models.StepCollectionModel{}, errors.New("Not initialized")
-	}
+	isLocalSteplib := strings.HasPrefix(steplibSource, "file://")
 
-	if err := cmdex.GitPull(pth); err != nil {
-		return models.StepCollectionModel{}, err
-	}
+	if isLocalSteplib {
+		if err := stepman.CleanupRoute(route); err != nil {
+			return models.StepCollectionModel{}, fmt.Errorf("Failed to cleanup route for StepLib: %s", steplibSource)
+		}
 
-	if err := stepman.ReGenerateStepSpec(route); err != nil {
-		return models.StepCollectionModel{}, err
+		if err := setupSteplib(steplibSource, false); err != nil {
+			return models.StepCollectionModel{}, fmt.Errorf("Failed to setup StepLib: %s", steplibSource)
+		}
+	} else {
+		pth := stepman.GetCollectionBaseDirPath(route)
+		if exists, err := pathutil.IsPathExists(pth); err != nil {
+			return models.StepCollectionModel{}, err
+		} else if !exists {
+			return models.StepCollectionModel{}, errors.New("Not initialized")
+		}
+
+		if err := cmdex.GitPull(pth); err != nil {
+			return models.StepCollectionModel{}, err
+		}
+
+		if err := stepman.ReGenerateStepSpec(route); err != nil {
+			return models.StepCollectionModel{}, err
+		}
 	}
 
 	return stepman.ReadStepSpec(steplibSource)
