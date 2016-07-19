@@ -16,10 +16,11 @@ import (
 func updateCollection(steplibSource string) (models.StepCollectionModel, error) {
 	route, found := stepman.ReadRoute(steplibSource)
 	if !found {
-		log.Warnf("No route found for steplib: %s, cleaning up routing..", steplibSource)
-		if err := stepman.CleanupRoute(route); err != nil {
-			log.Errorf("Failed to cleanup routing for steplib (%s), error: %s", steplibSource, err)
+		log.Warnf("No route found for collection: %s, cleaning up routing..", steplibSource)
+		if err := stepman.CleanupDanglingLib(steplibSource); err != nil {
+			log.Errorf("Error cleaning up lib: %s", steplibSource)
 		}
+		log.Infof("Call 'stepman setup -c %s' for a clean setup", steplibSource)
 		return models.StepCollectionModel{}, fmt.Errorf("No route found for StepLib: %s", steplibSource)
 	}
 
