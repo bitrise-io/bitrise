@@ -72,8 +72,12 @@ func setupSteplib(steplibURI string, silent bool) error {
 		}
 
 		logger.Info("Collection dir created - OK")
-		if err := cmdex.CopyDir(steplibURI, pth, true); err != nil {
-			return fmt.Errorf("Failed to setup local step spec:", err)
+		stepLibPth := steplibURI
+		if strings.HasPrefix(steplibURI, "file://") {
+			stepLibPth = strings.TrimPrefix(steplibURI, "file://")
+		}
+		if err := cmdex.CopyDir(stepLibPth, pth, true); err != nil {
+			return fmt.Errorf("Failed to copy dir (%s) to (%s), error: %s", stepLibPth, pth, err)
 		}
 	}
 
@@ -103,19 +107,22 @@ func setup(c *cli.Context) error {
 
 	if c.IsSet(LocalCollectionKey) {
 		log.Warn("'local' flag is deprecated")
-		log.Warn("use 'file://' suffix in steplib path instead")
+		log.Warn("use 'file://' prefix in steplib path instead")
 		fmt.Println()
 	}
 
 	if c.Bool(LocalCollectionKey) {
 		if !strings.HasPrefix(steplibURI, "file://") {
+			log.Warnf("Appending file path prefix (file://) to StepLib (%s)", steplibURI)
 			steplibURI = "file://" + steplibURI
+			log.Warnf("From now you can refer to this StepLib with URI: %s", steplibURI)
+			log.Warnf("For example, to delete StepLib call: `stepman delete --collection %s`", steplibURI)
 		}
 	}
 
 	// Setup
 	if err := setupSteplib(steplibURI, false); err != nil {
-		log.Fatalf("Steup failed, error: %s", err)
+		log.Fatalf("Setup failed, error: %s", err)
 	}
 
 	// Copy spec.json

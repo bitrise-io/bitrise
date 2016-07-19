@@ -75,6 +75,7 @@ workflows:
       1, Err Check
       2, Go Lint
       3, Go Test
+      4, Integration tests
     steps:
     - script:
         title: Print infos for the test
@@ -162,6 +163,156 @@ workflows:
             # invalid version -1, json format - desired exit code: NOT 0
             $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --version -1 --format json
             if [ $? -eq 0 ] ; then
+              exit 1
+            fi
+    - script:
+        title: Cleanup test StepLib
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+
+            rm -rf "_tmp/steplib"
+    - git-clone:
+        title: Git clone test StepLib
+        run_if: true
+        inputs:
+        - repository_url: https://github.com/bitrise-io/bitrise-steplib.git
+        - commit: ""
+        - tag: ""
+        - branch: master
+        - pull_request_id: ""
+        - clone_into_dir: _tmp/steplib
+        - auth_ssh_private_key: ""
+        - clone_depth: ""
+    - script:
+        title: Setup test
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -x
+
+            # Cleanup remote StepLib
+            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Setup remote StepLib
+            $CURRENT_STEPMAN setup -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Cleanup remote StepLib
+            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            echo
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c _tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Setup local StepLib - deprecated --local flag
+            $CURRENT_STEPMAN setup --local -c _tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            echo
+
+            # Setup local StepLib - deprecated --local flag && file:// prefix
+            $CURRENT_STEPMAN setup --local -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            echo
+
+            # Setup local StepLib - with file:// prefix
+            $CURRENT_STEPMAN setup -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+    - script:
+        title: Update test
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -x
+
+            # Cleanup remote StepLib
+            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Setup remote StepLib
+            $CURRENT_STEPMAN setup -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Update remote StepLib
+            $CURRENT_STEPMAN update -c https://github.com/bitrise-samples/sample-steplib.git
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            echo
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Setup local StepLib - with file:// prefix
+            $CURRENT_STEPMAN setup -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Update local StepLib - fail - missing file:// prefix
+            $CURRENT_STEPMAN update -c _tmp/steplib
+            if [ $? -eq 0 ] ; then
+              exit 1
+            fi
+
+            echo
+
+            # Update local StepLib - success
+            $CURRENT_STEPMAN update -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
+              exit 1
+            fi
+
+            # Cleanup local StepLib
+            $CURRENT_STEPMAN delete -c file://_tmp/steplib
+            if [ $? -ne 0 ] ; then
               exit 1
             fi
 
