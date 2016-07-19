@@ -16,7 +16,10 @@ import (
 func updateCollection(steplibSource string) (models.StepCollectionModel, error) {
 	route, found := stepman.ReadRoute(steplibSource)
 	if !found {
-		log.Warnf("No route found for collection: %s, cleaning up routing..", steplibSource)
+		log.Warnf("No route found for steplib: %s, cleaning up routing..", steplibSource)
+		if err := stepman.CleanupRoute(route); err != nil {
+			log.Errorf("Failed to cleanup routing for steplib (%s), error: %s", steplibSource, err)
+		}
 		return models.StepCollectionModel{}, fmt.Errorf("No route found for StepLib: %s", steplibSource)
 	}
 

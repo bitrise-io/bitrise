@@ -116,7 +116,7 @@ func setup(c *cli.Context) error {
 			log.Warnf("Appending file path prefix (file://) to StepLib (%s)", steplibURI)
 			steplibURI = "file://" + steplibURI
 			log.Warnf("From now you can refer to this StepLib with URI: %s", steplibURI)
-			log.Warnf("for delete StepLib call: `stepman delete --collection %s`", steplibURI)
+			log.Warnf("For example, to delete StepLib call: `stepman delete --collection %s`", steplibURI)
 		}
 	}
 
