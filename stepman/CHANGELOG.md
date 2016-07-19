@@ -2,6 +2,40 @@
 
 -----------------
 
+## 0.9.22 (2016 Jul 19)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.22/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.21 -> 0.9.22
+
+* [2e6dec1] Krisztián Gödrei - prepare for 0.9.22 (2016 Jul 19)
+* [f49f77f] Krisztián Gödrei - Merge pull request #202 from godrei/local_steplib (2016 Jul 19)
+* [086baf8] Krisztián Gödrei - fixed cleanup dangling route (2016 Jul 19)
+* [31b4e43] Krisztián Gödrei - PR fix (2016 Jul 19)
+* [d4e345f] Krisztián Gödrei - steplib fix & tests (2016 Jul 19)
+* [b2a4a26] Krisztián Gödrei - Merge pull request #200 from godrei/master (2016 Jul 12)
+* [e4cf91b] Krisztián Gödrei - changelog (2016 Jul 12)
+
+
 ## 0.9.21 (2016 Jul 12)
 
 ### Release Notes
@@ -976,4 +1010,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Jul 12
+Generated at: 2016 Jul 19
