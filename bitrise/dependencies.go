@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/versions"
@@ -252,20 +253,14 @@ func PrintInstalledXcodeInfos() error {
 
 func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
 	doInstall := func() error {
-		installCmdLines := []string{
-			"curl -fL https://github.com/bitrise-io/" + toolname + "/releases/download/" + minVersion + "/" + toolname + "-$(uname -s)-$(uname -m) > /usr/local/bin/" + toolname,
-			"chmod +x /usr/local/bin/" + toolname,
-		}
 		officialGithub := "https://github.com/bitrise-io/" + toolname
 		fmt.Println()
 		log.Warnln("No supported " + toolname + " version found.")
 		log.Infoln("You can find more information about "+toolname+" on it's official GitHub page:", officialGithub)
-		fmt.Println()
 
 		// Install
 		log.Infoln("Installing...")
-		fmt.Println(strings.Join(installCmdLines, "\n"))
-		if err := cmdex.RunBashCommandLines(installCmdLines); err != nil {
+		if err := tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion); err != nil {
 			return err
 		}
 
