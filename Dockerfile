@@ -1,4 +1,4 @@
-FROM golang:1.6
+FROM golang:1.6.3
 
 ENV PROJ_NAME bitrise
 
@@ -24,8 +24,6 @@ RUN mkdir -p /go/src/github.com/bitrise-io/$PROJ_NAME
 COPY . /go/src/github.com/bitrise-io/$PROJ_NAME
 
 WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
-# godep
-RUN godep restore
 # install
 RUN go install
 
