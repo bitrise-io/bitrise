@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 
@@ -120,27 +120,27 @@ func readPluginRouting() (PluginRouting, error) {
 
 // GetPluginDir ...
 func GetPluginDir(name string) string {
-	return path.Join(pluginsDir, name)
+	return filepath.Join(pluginsDir, name)
 }
 
 // GetPluginSrcDir ...
 func GetPluginSrcDir(name string) string {
-	return path.Join(GetPluginDir(name), "src")
+	return filepath.Join(GetPluginDir(name), "src")
 }
 
 // GetPluginBinDir ...
 func GetPluginBinDir(name string) string {
-	return path.Join(GetPluginDir(name), "bin")
+	return filepath.Join(GetPluginDir(name), "bin")
 }
 
 // GetPluginDataDir ...
 func GetPluginDataDir(name string) string {
-	return path.Join(GetPluginDir(name), "data")
+	return filepath.Join(GetPluginDir(name), "data")
 }
 
 // GetPluginYMLPath ...
 func GetPluginYMLPath(name string) string {
-	return path.Join(GetPluginSrcDir(name), pluginYMLName)
+	return filepath.Join(GetPluginSrcDir(name), pluginYMLName)
 }
 
 // GetPluginExecutablePath ...
@@ -154,9 +154,9 @@ func GetPluginExecutablePath(name string) (string, bool, error) {
 	}
 
 	if route.Executable != "" {
-		return path.Join(GetPluginBinDir(name), name), true, nil
+		return filepath.Join(GetPluginBinDir(name), name), true, nil
 	}
-	return path.Join(GetPluginSrcDir(name), pluginShName), false, nil
+	return filepath.Join(GetPluginSrcDir(name), pluginShName), false, nil
 }
 
 // -----------------------
@@ -170,8 +170,8 @@ func InitPaths() error {
 		log.Errorf("Failed to ensure bitrise configs dir, err: %s", err)
 	}
 
-	bitriseDir := configs.GetBitriseConfigsDirPath()
-	tmpPluginsDir := path.Join(bitriseDir, pluginsDirName)
+	bitriseDir := configs.GetBitriseHomeDirPath()
+	tmpPluginsDir := filepath.Join(bitriseDir, pluginsDirName)
 
 	if err := pathutil.EnsureDirExist(tmpPluginsDir); err != nil {
 		return err
@@ -180,7 +180,7 @@ func InitPaths() error {
 	pluginsDir = tmpPluginsDir
 
 	// Plugins routing
-	pluginsRoutingPth = path.Join(pluginsDir, pluginSpecName)
+	pluginsRoutingPth = filepath.Join(pluginsDir, pluginSpecName)
 
 	return nil
 }

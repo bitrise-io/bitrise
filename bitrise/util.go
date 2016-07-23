@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -105,7 +105,7 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
-	stepYMLPth := path.Join(configs.BitriseWorkDirPath, "current_step.yml")
+	stepYMLPth := filepath.Join(configs.BitriseWorkDirPath, "current_step.yml")
 	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
@@ -363,21 +363,21 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 	if err != nil {
 		return err
 	}
-	tempStepYMLFilePath := path.Join(tempStepYMLDirPath, "step.yml")
+	tempStepYMLFilePath := filepath.Join(tempStepYMLDirPath, "step.yml")
 
 	if stepIDData.SteplibSource == "path" {
 		stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 		if err != nil {
 			return err
 		}
-		if err := cmdex.CopyFile(path.Join(stepAbsLocalPth, "step.yml"), tempStepYMLFilePath); err != nil {
+		if err := cmdex.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), tempStepYMLFilePath); err != nil {
 			return err
 		}
 	} else if stepIDData.SteplibSource == "git" {
 		if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
 			return err
 		}
-		if err := cmdex.CopyFile(path.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
+		if err := cmdex.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
 			return err
 		}
 	} else if stepIDData.SteplibSource == "_" {

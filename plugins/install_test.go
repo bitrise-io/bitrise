@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -231,7 +231,7 @@ func TestDownloadPluginBin(t *testing.T) {
 
 		require.NoError(t, os.MkdirAll(destinationDir, 0777))
 
-		destinationPth := path.Join(destinationDir, "example")
+		destinationPth := filepath.Join(destinationDir, "example")
 
 		require.NoError(t, downloadPluginBin(pluginBinURL, destinationPth))
 

@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -27,7 +27,7 @@ func TestEnvmanJSONPrint(t *testing.T) {
 	testDirPth, err := pathutil.NormalizedOSTempDirPath("test_env_store")
 	require.Equal(t, nil, err)
 
-	envstorePth := path.Join(testDirPth, "envstore.yml")
+	envstorePth := filepath.Join(testDirPth, "envstore.yml")
 
 	require.Equal(t, nil, EnvmanInitAtPath(envstorePth))
 
@@ -39,7 +39,7 @@ func TestEnvmanJSONPrint(t *testing.T) {
 	testDirPth, err = pathutil.NormalizedOSTempDirPath("test_env_store")
 	require.Equal(t, nil, err)
 
-	envstorePth = path.Join("test_env_store", "envstore.yml")
+	envstorePth = filepath.Join("test_env_store", "envstore.yml")
 
 	outStr, err = EnvmanJSONPrint(envstorePth)
 	require.NotEqual(t, nil, err)

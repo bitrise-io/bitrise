@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -174,7 +174,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 	// Parse and validate plugin.yml
 
 	// Validate bitrise-plugin.yml
-	tmpPluginYMLPath := path.Join(pluginSrcTmpDir, pluginYMLName)
+	tmpPluginYMLPath := filepath.Join(pluginSrcTmpDir, pluginYMLName)
 
 	if err := validatePath(tmpPluginYMLPath); err != nil {
 		return Plugin{}, "", fmt.Errorf("bitrise-plugin.yml validation failed, error: %s", err)
@@ -187,7 +187,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 
 	// Check if executable exist
 	if newPlugin.ExecutableURL() == "" && binURL == "" {
-		tmpPluginExecutablePath := path.Join(pluginSrcTmpDir, pluginShName)
+		tmpPluginExecutablePath := filepath.Join(pluginSrcTmpDir, pluginShName)
 		if err := validatePath(tmpPluginExecutablePath); err != nil {
 			return Plugin{}, "", fmt.Errorf("bitrise-plugin.sh validation failed, error: %s", err)
 		}
@@ -236,7 +236,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 
 	//
 	// Intsall plugin into bitrise
-	installSucced := true
+	installSuccess := true
 
 	pluginDir := GetPluginDir(newPlugin.Name)
 
@@ -244,7 +244,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		return Plugin{}, "", fmt.Errorf("failed to remove plugin dir (%s), error: %s", pluginDir, err)
 	}
 	defer func() {
-		if installSucced {
+		if installSuccess {
 			return
 		}
 
@@ -257,12 +257,12 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 	plginSrcDir := GetPluginSrcDir(newPlugin.Name)
 
 	if err := os.MkdirAll(plginSrcDir, 0777); err != nil {
-		installSucced = false
+		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to create plugin src dir (%s), error: %s", plginSrcDir, err)
 	}
 
 	if err := cmdex.CopyDir(pluginSrcTmpDir, plginSrcDir, true); err != nil {
-		installSucced = false
+		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginSrcTmpDir, plginSrcDir, err)
 	}
 
@@ -274,7 +274,7 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		// Install plugin bin
 		pluginBinTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-bin-tmp")
 		if err != nil {
-			installSucced = false
+			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to create plugin bin temp directory, error: %s", err)
 		}
 		defer func() {
@@ -283,29 +283,29 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 			}
 		}()
 
-		pluginBinTmpFilePath := path.Join(pluginBinTmpDir, newPlugin.Name)
+		pluginBinTmpFilePath := filepath.Join(pluginBinTmpDir, newPlugin.Name)
 
 		if err := downloadPluginBin(executableURL, pluginBinTmpFilePath); err != nil {
-			installSucced = false
+			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to download plugin executable from (%s), error: %s", executableURL, err)
 		}
 
 		plginBinDir := GetPluginBinDir(newPlugin.Name)
 
 		if err := os.MkdirAll(plginBinDir, 0777); err != nil {
-			installSucced = false
+			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to create plugin bin dir (%s), error: %s", plginBinDir, err)
 		}
 
-		pluginBinFilePath := path.Join(plginBinDir, newPlugin.Name)
+		pluginBinFilePath := filepath.Join(plginBinDir, newPlugin.Name)
 
 		if err := cmdex.CopyFile(pluginBinTmpFilePath, pluginBinFilePath); err != nil {
-			installSucced = false
+			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginBinTmpFilePath, pluginBinFilePath, err)
 		}
 
 		if err := os.Chmod(pluginBinFilePath, 0777); err != nil {
-			installSucced = false
+			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to make plugin bin executable, error: %s", err)
 		}
 	}
@@ -315,14 +315,14 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		newVersionStr = (*newVersionPtr).String()
 	}
 
-	pluginDataDir := path.Join(pluginDir, "data")
+	pluginDataDir := filepath.Join(pluginDir, "data")
 	if err := os.MkdirAll(pluginDataDir, 0777); err != nil {
-		installSucced = false
+		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to create plugin data dir (%s), error: %s", pluginDataDir, err)
 	}
 
 	if err := CreateAndAddPluginRoute(newPlugin.Name, srcURL, executableURL, newVersionStr, newVersinHash, newPlugin.TriggerEvent); err != nil {
-		installSucced = false
+		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to add plugin route, error: %s", err)
 	}
 

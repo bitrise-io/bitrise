@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -66,7 +66,7 @@ func ParseArgs(args []string) (string, []string, bool) {
 func CheckForNewVersion(plugin Plugin) (string, error) {
 	pluginSrcDir := GetPluginSrcDir(plugin.Name)
 
-	gitDirPath := path.Join(pluginSrcDir, ".git")
+	gitDirPath := filepath.Join(pluginSrcDir, ".git")
 	if exist, err := pathutil.IsPathExists(gitDirPath); err != nil {
 		return "", fmt.Errorf("failed to check if .git folder exist at (%s), error: %s", gitDirPath, err)
 	} else if !exist {
