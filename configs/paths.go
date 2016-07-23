@@ -96,8 +96,9 @@ func InitPaths() error {
 	if !strings.HasPrefix(pthWithBitriseTools, bitriseToolsDirPth) {
 		pthWithBitriseTools = bitriseToolsDirPth + ":" + pthWithBitriseTools
 	}
-	fmt.Println(" => pthWithBitriseTools: ", pthWithBitriseTools)
-	os.Setenv("PATH", pthWithBitriseTools)
+	if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
+		return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+	}
 
 	inputEnvstorePath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "input_envstore.yml"))
 	if err != nil {
