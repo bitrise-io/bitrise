@@ -81,6 +81,25 @@ func initBitriseWorkPaths() error {
 	return nil
 }
 
+func generatePATHEnvString(currentPATHEnv, pathToInclude string) string {
+	if currentPATHEnv == "" {
+		return pathToInclude
+	}
+	if pathToInclude == "" {
+		return currentPATHEnv
+	}
+	if pathToInclude == currentPATHEnv {
+		return currentPATHEnv
+	}
+
+	pthWithPathIncluded := currentPATHEnv
+	if !strings.HasSuffix(pthWithPathIncluded, pathToInclude) &&
+		!strings.Contains(pthWithPathIncluded, pathToInclude+":") {
+		pthWithPathIncluded = pathToInclude + ":" + pthWithPathIncluded
+	}
+	return pthWithPathIncluded
+}
+
 // InitPaths ...
 func InitPaths() error {
 	if err := initBitriseWorkPaths(); err != nil {
@@ -92,10 +111,7 @@ func InitPaths() error {
 	if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
 		return err
 	}
-	pthWithBitriseTools := os.Getenv("PATH")
-	if !strings.HasPrefix(pthWithBitriseTools, bitriseToolsDirPth) {
-		pthWithBitriseTools = bitriseToolsDirPth + ":" + pthWithBitriseTools
-	}
+	pthWithBitriseTools := generatePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
 	if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
 		return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
 	}
