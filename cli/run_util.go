@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -110,7 +110,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	if bitriseConfigPath == "" {
 		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
 
-		bitriseConfigPath = path.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
+		bitriseConfigPath = filepath.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
 
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			return "", err
@@ -184,7 +184,7 @@ func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.Envir
 func GetInventoryFilePath(inventoryPath string) (string, error) {
 	if inventoryPath == "" {
 		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = path.Join(configs.CurrentDir, DefaultSecretsFileName)
+		inventoryPath = filepath.Join(configs.CurrentDir, DefaultSecretsFileName)
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
 			return "", err
@@ -369,7 +369,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Run step
-	stepCmd := path.Join(stepDir, "step.sh")
+	stepCmd := filepath.Join(stepDir, "step.sh")
 	cmd := []string{"bash", stepCmd}
 	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
 	if err != nil {
@@ -540,7 +540,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		//
 		// Activating the step
 		stepDir := configs.BitriseWorkStepsDirPath
-		stepYMLPth := path.Join(configs.BitriseWorkDirPath, "current_step.yml")
+		stepYMLPth := filepath.Join(configs.BitriseWorkDirPath, "current_step.yml")
 
 		if stepIDData.SteplibSource == "path" {
 			log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
@@ -557,7 +557,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := cmdex.CopyFile(path.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
+			if err := cmdex.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
@@ -568,7 +568,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := cmdex.CopyFile(path.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
+			if err := cmdex.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}

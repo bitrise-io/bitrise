@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -169,7 +169,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		}
 	}()
 
-	pluginEnvstorePath := path.Join(pluginWorkDir, "envstore.yml")
+	pluginEnvstorePath := filepath.Join(pluginWorkDir, "envstore.yml")
 
 	if err := tools.EnvmanInitAtPath(pluginEnvstorePath); err != nil {
 		return err

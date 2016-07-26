@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 	"time"
 
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -49,15 +48,6 @@ const (
 	bitriseConfigFileName = "config.json"
 )
 
-// GetBitriseConfigsDirPath ...
-func GetBitriseConfigsDirPath() string {
-	return path.Join(pathutil.UserHomeDir(), ".bitrise")
-}
-
-func getBitriseConfigFilePath() string {
-	return path.Join(GetBitriseConfigsDirPath(), bitriseConfigFileName)
-}
-
 func loadBitriseConfig() (ConfigModel, error) {
 	if err := EnsureBitriseConfigDirExists(); err != nil {
 		return ConfigModel{}, err
@@ -99,7 +89,7 @@ func saveBitriseConfig(config ConfigModel) error {
 
 // EnsureBitriseConfigDirExists ...
 func EnsureBitriseConfigDirExists() error {
-	confDirPth := GetBitriseConfigsDirPath()
+	confDirPth := GetBitriseHomeDirPath()
 	return pathutil.EnsureDirExist(confDirPth)
 }
 

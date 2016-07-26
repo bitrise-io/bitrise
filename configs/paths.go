@@ -3,8 +3,8 @@ package configs
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -37,6 +37,20 @@ const (
 	BitriseCacheDirEnvKey = "BITRISE_CACHE_DIR"
 )
 
+// GetBitriseHomeDirPath ...
+func GetBitriseHomeDirPath() string {
+	return filepath.Join(pathutil.UserHomeDir(), ".bitrise")
+}
+
+func getBitriseConfigFilePath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), bitriseConfigFileName)
+}
+
+// GetBitriseToolsDirPath ...
+func GetBitriseToolsDirPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), "tools")
+}
+
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {
@@ -51,7 +65,7 @@ func initBitriseWorkPaths() error {
 	}
 	BitriseWorkDirPath = bitriseWorkDirPath
 
-	bitriseWorkStepsDirPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "step_src"))
+	bitriseWorkStepsDirPath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "step_src"))
 	if err != nil {
 		return err
 	}
@@ -67,25 +81,54 @@ func initBitriseWorkPaths() error {
 	return nil
 }
 
+func generatePATHEnvString(currentPATHEnv, pathToInclude string) string {
+	if currentPATHEnv == "" {
+		return pathToInclude
+	}
+	if pathToInclude == "" {
+		return currentPATHEnv
+	}
+	if pathToInclude == currentPATHEnv {
+		return currentPATHEnv
+	}
+
+	pthWithPathIncluded := currentPATHEnv
+	if !strings.HasSuffix(pthWithPathIncluded, pathToInclude) &&
+		!strings.Contains(pthWithPathIncluded, pathToInclude+":") {
+		pthWithPathIncluded = pathToInclude + ":" + pthWithPathIncluded
+	}
+	return pthWithPathIncluded
+}
+
 // InitPaths ...
 func InitPaths() error {
 	if err := initBitriseWorkPaths(); err != nil {
 		return fmt.Errorf("Failed to init bitrise paths, error: %s", err)
 	}
 
-	inputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "input_envstore.yml"))
+	// --- Bitrise TOOLS
+	bitriseToolsDirPth := GetBitriseToolsDirPath()
+	if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
+		return err
+	}
+	pthWithBitriseTools := generatePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
+	if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
+		return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+	}
+
+	inputEnvstorePath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "input_envstore.yml"))
 	if err != nil {
 		return fmt.Errorf("Failed to set input envstore path, error: %s", err)
 	}
 	InputEnvstorePath = inputEnvstorePath
 
-	outputEnvstorePath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "output_envstore.yml"))
+	outputEnvstorePath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "output_envstore.yml"))
 	if err != nil {
 		return fmt.Errorf("Failed to set output envstore path, error: %s", err)
 	}
 	OutputEnvstorePath = outputEnvstorePath
 
-	formoutPath, err := filepath.Abs(path.Join(BitriseWorkDirPath, "formatted_output.md"))
+	formoutPath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "formatted_output.md"))
 	if err != nil {
 		return fmt.Errorf("Failed to set formatted output path, error: %s", err)
 	}

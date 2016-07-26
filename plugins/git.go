@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -89,7 +89,7 @@ func gitLog(cloneIntoDir, formatParam string) (string, error) {
 }
 
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
-	gitCheckPath := path.Join(cloneIntoDir, ".git")
+	gitCheckPath := filepath.Join(cloneIntoDir, ".git")
 	if exist, err := pathutil.IsPathExists(gitCheckPath); err != nil {
 		return fmt.Errorf("Failed to file path (%s), err: %s", gitCheckPath, err)
 	} else if exist {

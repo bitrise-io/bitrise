@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -253,7 +252,7 @@ func TestBitriseSourceDir(t *testing.T) {
 
 	testPths := []string{}
 	for i := 0; i < 4; i++ {
-		testPth := path.Join(currPth, fmt.Sprintf("_test%d", i))
+		testPth := filepath.Join(currPth, fmt.Sprintf("_test%d", i))
 		require.NoError(t, os.RemoveAll(testPth))
 		require.NoError(t, os.Mkdir(testPth, 0777))
 

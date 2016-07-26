@@ -309,23 +309,21 @@ workflows:
         Prepares the environment for testing
     steps:
     - script:
+        is_skippable: true
+        inputs:
+        - content: brew update
+    - script:
         title: Install testing tools
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -x
-
-            brew update
-
-            # Install dependencies
-            go get -u github.com/tools/godep
+            set -ex
 
             # Check for unhandled errors
-            go get -u github.com/kisielk/errcheck
+            go get -u -v github.com/kisielk/errcheck
 
             # Go lint
-            go get -u github.com/golang/lint/golint
+            go get -u -v github.com/golang/lint/golint
     - script:
         title: Install bitrise tools
         run_if: ".IsCI"
@@ -517,6 +515,7 @@ workflows:
         - content: |-
             #!/bin/bash
             set -ex
+            go get -u -v github.com/tools/godep
 
             rm -rf ./Godeps
             rm -rf ./vendor

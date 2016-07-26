@@ -7,6 +7,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_generatePATHEnvString(t *testing.T) {
+	t.Log("Empty starting PATH")
+	require.Equal(t, "/MY/PATH",
+		generatePATHEnvString("", "/MY/PATH"))
+
+	t.Log("Empty PathToInclude")
+	require.Equal(t, "/usr/bin:/usr/local/bin:/bin",
+		generatePATHEnvString("/usr/bin:/usr/local/bin:/bin", ""))
+
+	t.Log("Both Empty")
+	require.Equal(t, "",
+		generatePATHEnvString("", ""))
+
+	t.Log("PATH = the path to include")
+	require.Equal(t, "/MY/PATH",
+		generatePATHEnvString("/MY/PATH", "/MY/PATH"))
+
+	t.Log("PathToInclude is not in the PATH yet")
+	require.Equal(t, "/MY/PATH:/usr/bin:/usr/local/bin:/bin",
+		generatePATHEnvString("/usr/bin:/usr/local/bin:/bin", "/MY/PATH"))
+
+	t.Log("PathToInclude is at the START of the PATH")
+	require.Equal(t, "/MY/PATH:/usr/bin:/usr/local/bin:/bin",
+		generatePATHEnvString("/MY/PATH:/usr/bin:/usr/local/bin:/bin", "/MY/PATH"))
+
+	t.Log("PathToInclude is at the END of the PATH")
+	require.Equal(t, "/usr/bin:/usr/local/bin:/bin:/MY/PATH",
+		generatePATHEnvString("/usr/bin:/usr/local/bin:/bin:/MY/PATH", "/MY/PATH"))
+
+	t.Log("PathToInclude is in the MIDDLE of the PATH")
+	require.Equal(t, "/usr/bin:/MY/PATH:/usr/local/bin:/bin",
+		generatePATHEnvString("/usr/bin:/MY/PATH:/usr/local/bin:/bin", "/MY/PATH"))
+}
+
 func TestInitPaths(t *testing.T) {
 	//
 	// BITRISE_SOURCE_DIR

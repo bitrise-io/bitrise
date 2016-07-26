@@ -4,13 +4,93 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/cmdex"
 )
+
+// UnameGOOS ...
+func UnameGOOS() (string, error) {
+	switch runtime.GOOS {
+	case "darwin":
+		return "Darwin", nil
+	case "linux":
+		return "Linux", nil
+	}
+	return "", fmt.Errorf("Unsupported platform (%s)", runtime.GOOS)
+}
+
+// UnameGOARCH ...
+func UnameGOARCH() (string, error) {
+	switch runtime.GOARCH {
+	case "amd64":
+		return "x86_64", nil
+	}
+	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
+}
+
+// InstallToolFromGitHub ...
+func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
+	unameGOOS, err := UnameGOOS()
+	if err != nil {
+		return fmt.Errorf("Failed to determine OS: %s", err)
+	}
+	unameGOARCH, err := UnameGOARCH()
+	if err != nil {
+		return fmt.Errorf("Failed to determine ARCH: %s", err)
+	}
+	downloadURL := "https://github.com/" + githubUser + "/" + toolname + "/releases/download/" + toolVersion + "/" + toolname + "-" + unameGOOS + "-" + unameGOARCH
+
+	return InstallFromURL(toolname, downloadURL)
+}
+
+// InstallFromURL ...
+func InstallFromURL(toolBinName, downloadURL string) error {
+	if len(toolBinName) < 1 {
+		return fmt.Errorf("No Tool (bin) Name provided! URL was: %s", downloadURL)
+	}
+
+	bitriseToolsDirPath := configs.GetBitriseToolsDirPath()
+	destinationPth := filepath.Join(bitriseToolsDirPath, toolBinName)
+
+	outFile, err := os.Create(destinationPth)
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			log.Warnf("Failed to close (%s)", destinationPth)
+		}
+	}()
+	if err != nil {
+		return fmt.Errorf("failed to create (%s), error: %s", destinationPth, err)
+	}
+
+	if err := outFile.Chmod(0755); err != nil {
+		return fmt.Errorf("Failed to make file (%s) executable, error: %s", destinationPth, err)
+	}
+
+	resp, err := http.Get(downloadURL)
+	if err != nil {
+		return fmt.Errorf("failed to download from (%s), error: %s", downloadURL, err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf("failed to close (%s) body", downloadURL)
+		}
+	}()
+
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to download from (%s), error: %s", downloadURL, err)
+	}
+
+	return nil
+}
 
 // ------------------
 // --- Stepman

@@ -5,7 +5,7 @@
 Captain's log, bitdate 110912.5.
 We begin our mission discovering a new universe, full of new opportunities and new ways to improve ourselves and our day-to-day routines. We’ve prepared for this day for a long time.
 
-- The first step was a simple command to make sure we have what it takes to start our adventures: `curl -L https://github.com/bitrise-io/bitrise/releases/download/1.0.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise`
+- The first step was a simple command to make sure we have what it takes to start our adventures: `curl -L https://github.com/bitrise-io/bitrise/releases/download/VERSION/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise`
 
 - Next we made sure that we are in the right mode `chmod +x /usr/local/bin/bitrise`
 
