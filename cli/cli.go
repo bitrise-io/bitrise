@@ -126,28 +126,30 @@ func Run() {
 	app.Flags = flags
 	app.Commands = commands
 
-	app.Action = func(c *cli.Context) {
+	app.Action = func(c *cli.Context) error {
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
 			log.Debugf("Try to run bitrise plugin: (%s) with args: (%v)", pluginName, pluginArgs)
 
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
-				log.Fatalf("Failed to get plugin (%s), error: %s", pluginName, err)
+				return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)
 			}
 			if !found {
-				log.Fatalf("Plugin (%s) not installed", pluginName)
+				return fmt.Errorf("Plugin (%s) not installed", pluginName)
 			}
 
 			log.Debugf("Start plugin: (%s)", pluginName)
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-				log.Fatalf("Failed to run plugin (%s), error: %s", pluginName, err)
+				return fmt.Errorf("Failed to run plugin (%s), error: %s", pluginName, err)
 			}
 		} else {
 			if err := cli.ShowAppHelp(c); err != nil {
-				log.Fatalf("Failed to show help, error: %s", err)
+				return fmt.Errorf("Failed to show help, error: %s", err)
 			}
 		}
+
+		return nil
 	}
 
 	if err := app.Run(os.Args); err != nil {
