@@ -2,6 +2,17 @@ package cli
 
 import "github.com/urfave/cli"
 
+const (
+	// JSONParamsKey ...
+	JSONParamsKey = "json-params"
+	// JSONParamsBase64Key ...
+	JSONParamsBase64Key = "json-params-base64"
+	// WorkflowKey ...
+	WorkflowKey = "workflow"
+	// PatternKey ...
+	PatternKey = "pattern"
+)
+
 var (
 	commands = []cli.Command{
 		{
@@ -26,10 +37,7 @@ var (
 			Action: printVersionCmd,
 			Flags: []cli.Flag{
 				flOutputFormat,
-				cli.BoolFlag{
-					Name:  "full",
-					Usage: "Prints the build number as well.",
-				},
+				cli.BoolFlag{Name: "full", Usage: "Prints the build number as well."},
 			},
 		},
 		{
@@ -56,6 +64,9 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run"},
+				cli.StringFlag{Name: JSONParamsKey, Usage: "specify command flags with json hash"},
+				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "specify command flags with base64 encoded json hash"},
 			},
 		},
 		{
@@ -82,6 +93,9 @@ var (
 				flConfigBase64,
 				flInventory,
 				flInventoryBase64,
+				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern"},
+				cli.StringFlag{Name: JSONParamsKey, Usage: "specify command flags with json hash"},
+				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "specify command flags with base64 encoded json hash"},
 			},
 		},
 		{

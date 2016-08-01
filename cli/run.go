@@ -114,16 +114,57 @@ func run(c *cli.Context) error {
 	prGlobalFlag := c.GlobalBool(PRKey)
 	ciGlobalFlag := c.GlobalBool(CIKey)
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	workflowToRunID := ""
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	inventoryBase64Data := ""
+	inventoryPath := ""
 
-	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		log.Warn("'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
+	bitriseConfigBase64Data := ""
+	bitriseConfigPath := ""
+
+	params := map[string]string{}
+	jsonParams := c.String(JSONParamsKey)
+	jsonParamsBase64 := c.String(JSONParamsBase64Key)
+
+	if jsonParams != "" {
+		var err error
+		params, err = parseJSONParams(jsonParams)
+		if err != nil {
+			return fmt.Errorf("Failed to parse json-params (%s), error: %s", jsonParams, err)
+		}
+	} else if jsonParamsBase64 != "" {
+		var err error
+		params, err = parseJSONParamsBase64(jsonParamsBase64)
+		if err != nil {
+			return fmt.Errorf("Failed to parse json-params (%s), error: %s", jsonParams, err)
+		}
+	}
+
+	if len(params) > 0 {
+		inventoryBase64Data = params[InventoryBase64Key]
+		inventoryPath = params[InventoryKey]
+
+		bitriseConfigBase64Data = params[ConfigBase64Key]
+		bitriseConfigPath = params[ConfigKey]
+
+		workflowToRunID = params[WorkflowKey]
+	} else {
+		inventoryBase64Data = c.String(InventoryBase64Key)
+		inventoryPath = c.String(InventoryKey)
+
+		bitriseConfigBase64Data = c.String(ConfigBase64Key)
+		bitriseConfigPath = c.String(ConfigKey)
+
+		workflowToRunID = c.String(WorkflowKey)
+		if workflowToRunID == "" && len(c.Args()) > 0 {
+			workflowToRunID = c.Args()[0]
+		}
+
+		deprecatedBitriseConfigPath := c.String(PathKey)
+		if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+			log.Warn("'path' key is deprecated, use 'config' instead!")
+			bitriseConfigPath = deprecatedBitriseConfigPath
+		}
 	}
 	//
 
@@ -143,15 +184,10 @@ func run(c *cli.Context) error {
 	}
 
 	// Workflow id validation
-	workflowToRunID := ""
-	if len(c.Args()) < 1 {
-		log.Error("No workfow specified!")
-	} else {
-		workflowToRunID = c.Args()[0]
-	}
 	if workflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
+		log.Error("No workfow specified!")
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
