@@ -26,6 +26,30 @@ trigger_map:
   workflow: fall_back
 
 workflows:
+  # json_params_test
+  json_params_test:
+    title: json params test
+    steps:
+    - script:
+        inputs:
+        - content: bitrise run --json-params "{\"config\":\"bitrise-integration.yml\", \"workflow\":\"json_params_test_target\"}"
+
+  # base64 json_params_test
+  base64_json_params_test:
+    title: json params test
+    steps:
+    - script:
+        inputs:
+        - content: bitrise run --json-params-base64 "eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJ3b3JrZmxvdyI6Impzb25fcGFyYW1zX3Rlc3RfdGFyZ2V0In0="
+
+  json_params_test_target:
+    title: json params test target
+    steps: 
+    - script:
+        inputs:
+        - content: "exit 0"
+
+  # exit_code_tests
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
     steps:
