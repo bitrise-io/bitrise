@@ -34,35 +34,6 @@ trigger_map:
 
 workflows:
   # json params test
-  json_params_run_test:
-    title: json params test
-    steps:
-    - script:
-        inputs:
-        - content: bitrise run --json-params "{\"config\":\"bitrise-integration.yml\", \"workflow\":\"json_params_test_target\"}"
-
-  json_params_trigger_test:
-    title: json params test
-    steps:
-    - script:
-        inputs:
-        - content: bitrise trigger --json-params "{\"config\":\"bitrise-integration.yml\", \"pattern\":\"json_params_test_target\"}"
-
-  # base64 json params test
-  base64_json_params_run_test:
-    title: json params test
-    steps:
-    - script:
-        inputs:
-        - content: bitrise run --json-params-base64 "eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJ3b3JrZmxvdyI6Impzb25fcGFyYW1zX3Rlc3RfdGFyZ2V0In0="
-
-  base64_json_params_trigger_test:
-    title: json params test
-    steps:
-    - script:
-        inputs:
-        - content: bitrise trigger --json-params-base64 "eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJwYXR0ZXJuIjoianNvbl9wYXJhbXNfdGVzdF90YXJnZXQifQ=="
-
   json_params_test_target:
     title: json params test target
     steps: 
