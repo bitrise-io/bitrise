@@ -2,6 +2,12 @@ format_version: 1.0.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
+# json params test
+- pattern: "json_params_test_target"
+  is_pull_request_allowed: true 
+  workflow: json_params_test_target
+
+# exit code tests
 - pattern: "exit_code_test_fail"
   is_pull_request_allowed: true
   workflow: exit_code_test_fail
@@ -15,6 +21,7 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: exit_code_test_sippable_ok
 
+# PR tests
 - pattern: "pr_allowed"
   is_pull_request_allowed: true
   workflow: pr_allowed
@@ -26,21 +33,35 @@ trigger_map:
   workflow: fall_back
 
 workflows:
-  # json_params_test
-  json_params_test:
+  # json params test
+  json_params_run_test:
     title: json params test
     steps:
     - script:
         inputs:
         - content: bitrise run --json-params "{\"config\":\"bitrise-integration.yml\", \"workflow\":\"json_params_test_target\"}"
 
-  # base64 json_params_test
-  base64_json_params_test:
+  json_params_trigger_test:
+    title: json params test
+    steps:
+    - script:
+        inputs:
+        - content: bitrise trigger --json-params "{\"config\":\"bitrise-integration.yml\", \"pattern\":\"json_params_test_target\"}"
+
+  # base64 json params test
+  base64_json_params_run_test:
     title: json params test
     steps:
     - script:
         inputs:
         - content: bitrise run --json-params-base64 "eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJ3b3JrZmxvdyI6Impzb25fcGFyYW1zX3Rlc3RfdGFyZ2V0In0="
+
+  base64_json_params_trigger_test:
+    title: json params test
+    steps:
+    - script:
+        inputs:
+        - content: bitrise trigger --json-params-base64 "eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJwYXR0ZXJuIjoianNvbl9wYXJhbXNfdGVzdF90YXJnZXQifQ=="
 
   json_params_test_target:
     title: json params test target
@@ -49,7 +70,7 @@ workflows:
         inputs:
         - content: "exit 0"
 
-  # exit_code_tests
+  # exit code tests
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
     steps:
@@ -84,6 +105,7 @@ workflows:
         inputs:
         - content: exit 0
 
+  # PR tests
   pr_allowed:
   only_code_push:
   fall_back:

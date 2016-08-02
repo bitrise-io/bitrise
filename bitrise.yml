@@ -59,6 +59,7 @@ workflows:
       3, Go Test
       4, Test-build
       5, Step-template test
+      6, integration tests
     steps:
     - script:
         title: Print go environment
@@ -292,6 +293,39 @@ workflows:
             status=$?
             echo "status: $status"
             if [ $status -ne 1 ] ; then
+              exit 1
+            fi
+    - script:
+        title: JSON params tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            out=$($CURRENT_BITRISE run "" -c ./bitrise-integration.yml json_params_run_test)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            out=$($CURRENT_BITRISE run "" -c ./bitrise-integration.yml json_params_trigger_test)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            out=$($CURRENT_BITRISE run "" -c ./bitrise-integration.yml base64_json_params_run_test)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            out=$($CURRENT_BITRISE run "" -c ./bitrise-integration.yml base64_json_params_trigger_test)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
               exit 1
             fi
     - script:
