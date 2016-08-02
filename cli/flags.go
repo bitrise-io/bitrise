@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"encoding/base64"
-	"encoding/json"
-
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/urfave/cli"
 )
@@ -206,22 +203,4 @@ func initHelpAndVersionFlags() {
 		Name:  VersionKey + ", " + versionKeyShort,
 		Usage: "Print the version.",
 	}
-}
-
-func parseJSONParamsBase64(JSONParamsBase64 string) (map[string]string, error) {
-	jsonParamsBytes, err := base64.StdEncoding.DecodeString(JSONParamsBase64)
-	if err != nil {
-		return map[string]string{}, err
-	}
-
-	return parseJSONParams(string(jsonParamsBytes))
-}
-
-func parseJSONParams(jsonParams string) (map[string]string, error) {
-	params := map[string]string{}
-	if err := json.Unmarshal([]byte(jsonParams), &params); err != nil {
-		return map[string]string{}, err
-	}
-
-	return params, nil
 }

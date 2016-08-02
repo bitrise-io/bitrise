@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,6 +11,53 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/urfave/cli"
 )
+
+// RunOrTriggerParamsModel ...
+type RunOrTriggerParamsModel struct {
+	WorkflowToRunID string `json:"workflow"`
+	TriggerPattern  string `json:"pattern"`
+
+	InventoryBase64Data string `json:"inventory-base64"`
+	InventoryPath       string `json:"inventory"`
+
+	BitriseConfigBase64Data string `json:"config-base64"`
+	BitriseConfigPath       string `json:"config"`
+}
+
+func parseRunOrTriggerJSONParams(jsonParams string) (RunOrTriggerParamsModel, error) {
+	params := RunOrTriggerParamsModel{}
+	if err := json.Unmarshal([]byte(jsonParams), &params); err != nil {
+		return RunOrTriggerParamsModel{}, err
+	}
+	return params, nil
+}
+
+func parseRunOrTriggerBase64JSONParams(base64JSONParams string) (RunOrTriggerParamsModel, error) {
+	jsonParamsBytes, err := base64.StdEncoding.DecodeString(base64JSONParams)
+	if err != nil {
+		return RunOrTriggerParamsModel{}, err
+	}
+	return parseRunOrTriggerJSONParams(string(jsonParamsBytes))
+}
+
+func parseRunOrTriggerParams(workflowToRunID, triggerPattern, inventoryBase64Data, inventoryPath, bitriseConfigBase64Data, bitriseConfigPath, jsonParams, base64JSONParams string) (RunOrTriggerParamsModel, error) {
+	if jsonParams != "" {
+		return parseRunOrTriggerJSONParams(jsonParams)
+	} else if base64JSONParams != "" {
+		return parseRunOrTriggerBase64JSONParams(base64JSONParams)
+	} else {
+		return RunOrTriggerParamsModel{
+			WorkflowToRunID: workflowToRunID,
+			TriggerPattern:  triggerPattern,
+
+			InventoryBase64Data: inventoryBase64Data,
+			InventoryPath:       inventoryPath,
+
+			BitriseConfigBase64Data: bitriseConfigBase64Data,
+			BitriseConfigPath:       bitriseConfigPath,
+		}, nil
+	}
+}
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
@@ -29,68 +78,43 @@ func trigger(c *cli.Context) error {
 	prGlobalFlag := c.GlobalBool(PRKey)
 	ciGlobalFlag := c.GlobalBool(CIKey)
 
-	triggerPattern := ""
+	triggerPattern := c.String(PatternKey)
+	if triggerPattern == "" && len(c.Args()) > 0 {
+		triggerPattern = c.Args()[0]
+	}
 
-	inventoryBase64Data := ""
-	inventoryPath := ""
+	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	bitriseConfigPath := c.String(ConfigKey)
+	deprecatedBitriseConfigPath := c.String(PathKey)
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		log.Warn("'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
 
-	bitriseConfigBase64Data := ""
-	bitriseConfigPath := ""
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	inventoryPath := c.String(InventoryKey)
 
-	params := map[string]string{}
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
-	if jsonParams != "" {
-		var err error
-		params, err = parseJSONParams(jsonParams)
-		if err != nil {
-			return fmt.Errorf("Failed to parse json-params (%s), error: %s", jsonParams, err)
-		}
-	} else if jsonParamsBase64 != "" {
-		var err error
-		params, err = parseJSONParamsBase64(jsonParamsBase64)
-		if err != nil {
-			return fmt.Errorf("Failed to parse json-params (%s), error: %s", jsonParams, err)
-		}
+	params, err := parseRunOrTriggerParams(
+		"", triggerPattern,
+		inventoryBase64Data, inventoryPath,
+		bitriseConfigBase64Data, bitriseConfigPath,
+		jsonParams, jsonParamsBase64,
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to parse command params, error: %s", err)
 	}
-
-	if len(params) > 0 {
-		inventoryBase64Data = params[InventoryBase64Key]
-		inventoryPath = params[InventoryKey]
-
-		bitriseConfigBase64Data = params[ConfigBase64Key]
-		bitriseConfigPath = params[ConfigKey]
-
-		triggerPattern = params[PatternKey]
-	} else {
-		inventoryBase64Data = c.String(InventoryBase64Key)
-		inventoryPath = c.String(InventoryKey)
-
-		bitriseConfigBase64Data = c.String(ConfigBase64Key)
-		bitriseConfigPath = c.String(ConfigKey)
-
-		triggerPattern = c.String(PatternKey)
-		if triggerPattern == "" && len(c.Args()) > 0 {
-			triggerPattern = c.Args()[0]
-		}
-
-		deprecatedBitriseConfigPath := c.String(PathKey)
-		if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-			log.Warn("'path' key is deprecated, use 'config' instead!")
-			bitriseConfigPath = deprecatedBitriseConfigPath
-		}
-	}
-	//
 
 	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(params.InventoryBase64Data, params.InventoryPath)
 	if err != nil {
 		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(params.BitriseConfigBase64Data, params.BitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
@@ -99,7 +123,7 @@ func trigger(c *cli.Context) error {
 	}
 
 	// Trigger filter validation
-	if triggerPattern == "" {
+	if params.TriggerPattern == "" {
 		// no trigger filter specified
 		//  list all the available ones and then exit
 		log.Error("No pattern specified!")
@@ -127,11 +151,11 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerPattern, isPRMode)
+	workflowToRunID, err := GetWorkflowIDByPattern(bitriseConfig.TriggerMap, params.TriggerPattern, isPRMode)
 	if err != nil {
 		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
 	}
-	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerPattern, workflowToRunID)
+	log.Infof("Pattern (%s) triggered workflow (%s) ", params.TriggerPattern, workflowToRunID)
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//

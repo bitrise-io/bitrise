@@ -62,15 +62,15 @@ var (
 				// deprecated
 				flPath,
 				// should deprecate
-				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 decoded config data."},
-				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 decoded inventory data."},
+				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 				// cli params
-				cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run"},
+				cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
 				// cli params used in CI mode
-				cli.StringFlag{Name: JSONParamsKey, Usage: "specify command flags with json string-string hash"},
-				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "specify command flags with base64 encoded json string-string hash"},
+				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
+				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 			},
 		},
 		{
@@ -95,15 +95,15 @@ var (
 				// deprecated
 				flPath,
 				// should deprecate
-				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 decoded config data."},
-				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 decoded inventory data."},
+				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 				// cli params
-				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern"},
+				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
 				// cli params used in CI mode
-				cli.StringFlag{Name: JSONParamsKey, Usage: "specify command flags with json string-string hash"},
-				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "specify command flags with base64 encoded json string-string hash"},
+				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
+				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 			},
 		},
 		{
