@@ -41,22 +41,46 @@ func parseRunOrTriggerBase64JSONParams(base64JSONParams string) (RunOrTriggerPar
 }
 
 func parseRunOrTriggerParams(workflowToRunID, triggerPattern, inventoryBase64Data, inventoryPath, bitriseConfigBase64Data, bitriseConfigPath, jsonParams, base64JSONParams string) (RunOrTriggerParamsModel, error) {
+	params := RunOrTriggerParamsModel{}
+	var err error
+
 	if jsonParams != "" {
-		return parseRunOrTriggerJSONParams(jsonParams)
+		params, err = parseRunOrTriggerJSONParams(jsonParams)
+		if err != nil {
+			return RunOrTriggerParamsModel{}, err
+		}
 	} else if base64JSONParams != "" {
-		return parseRunOrTriggerBase64JSONParams(base64JSONParams)
-	} else {
-		return RunOrTriggerParamsModel{
-			WorkflowToRunID: workflowToRunID,
-			TriggerPattern:  triggerPattern,
-
-			InventoryBase64Data: inventoryBase64Data,
-			InventoryPath:       inventoryPath,
-
-			BitriseConfigBase64Data: bitriseConfigBase64Data,
-			BitriseConfigPath:       bitriseConfigPath,
-		}, nil
+		params, err = parseRunOrTriggerBase64JSONParams(base64JSONParams)
+		if err != nil {
+			return RunOrTriggerParamsModel{}, err
+		}
 	}
+
+	if workflowToRunID != "" {
+		params.WorkflowToRunID = workflowToRunID
+	}
+
+	if triggerPattern != "" {
+		params.TriggerPattern = triggerPattern
+	}
+
+	if inventoryBase64Data != "" {
+		params.InventoryBase64Data = inventoryBase64Data
+	}
+
+	if inventoryPath != "" {
+		params.InventoryPath = inventoryPath
+	}
+
+	if bitriseConfigBase64Data != "" {
+		params.BitriseConfigBase64Data = bitriseConfigBase64Data
+	}
+
+	if bitriseConfigPath != "" {
+		params.BitriseConfigPath = bitriseConfigPath
+	}
+
+	return params, nil
 }
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {

@@ -222,48 +222,16 @@ func TestParseRunOrTriggerParams(t *testing.T) {
 		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
 	}
 
-	t.Log("it creates params with preference jsonParams > jsonParamsBase64 > cli params")
+	t.Log("it creates params with preference jsonParams > jsonParamsBase64")
 	{
-		workflowToRunID := "primary"
+		workflowToRunID := ""
 		triggerPattern := ""
 
 		bitriseConfigBase64Data := ""
-		bitriseConfigPath := "bitrise.yml"
+		bitriseConfigPath := ""
 
 		inventoryBase64Data := ""
-		inventoryPath := ".secrets.bitrise.yml"
-
-		jsonParams := ""
-		jsonParamsBase64 := toBase64(t, `{"config":"integration_bitrise.yml", "workflow":"fallback"}`)
-
-		params, err := parseRunOrTriggerParams(
-			workflowToRunID, triggerPattern,
-			inventoryBase64Data, inventoryPath,
-			bitriseConfigBase64Data, bitriseConfigPath,
-			jsonParams, jsonParamsBase64,
-		)
-		require.NoError(t, err)
-
-		require.Equal(t, "fallback", params.WorkflowToRunID)
-		require.Equal(t, "", params.TriggerPattern)
-
-		require.Equal(t, "", params.InventoryBase64Data)
-		require.Equal(t, "", params.InventoryPath)
-
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, "integration_bitrise.yml", params.BitriseConfigPath)
-	}
-
-	t.Log("it creates params with preference jsonParams > jsonParamsBase64 > cli params")
-	{
-		workflowToRunID := "primary"
-		triggerPattern := ""
-
-		bitriseConfigBase64Data := ""
-		bitriseConfigPath := "bitrise.yml"
-
-		inventoryBase64Data := ""
-		inventoryPath := ".secrets.bitrise.yml"
+		inventoryPath := ""
 
 		jsonParams := `{"config":"test_bitrise.yml", "pattern":"develop"}`
 		jsonParamsBase64 := toBase64(t, `{"config":"integration_bitrise.yml", "workflow":"fallback"}`)
@@ -284,5 +252,37 @@ func TestParseRunOrTriggerParams(t *testing.T) {
 
 		require.Equal(t, "", params.BitriseConfigBase64Data)
 		require.Equal(t, "test_bitrise.yml", params.BitriseConfigPath)
+	}
+
+	t.Log("cli params can owerride jsonParams and jsonParamsBase64")
+	{
+		workflowToRunID := "primary"
+		triggerPattern := "master"
+
+		inventoryBase64Data := "asd"
+		inventoryPath := ".secrets.bitrise.yml"
+
+		bitriseConfigBase64Data := "abc"
+		bitriseConfigPath := "bitrise.yml"
+
+		jsonParams := ""
+		jsonParamsBase64 := toBase64(t, `{"workflow":"fallback","pattern":"develop","config-base64":"qwe","config":"integration_bitrise.yml","inventory-base64": "rtz","inventory":".secrets.yml"}`)
+
+		params, err := parseRunOrTriggerParams(
+			workflowToRunID, triggerPattern,
+			inventoryBase64Data, inventoryPath,
+			bitriseConfigBase64Data, bitriseConfigPath,
+			jsonParams, jsonParamsBase64,
+		)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "master", params.TriggerPattern)
+
+		require.Equal(t, "asd", params.InventoryBase64Data)
+		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
+
+		require.Equal(t, "abc", params.BitriseConfigBase64Data)
+		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
 	}
 }
