@@ -402,6 +402,9 @@ workflows:
               exit 1
             fi
 `
+
+	require.NoError(t, configs.InitPaths())
+
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -451,6 +454,9 @@ workflows:
           opts:
             is_template: true
 `
+
+	require.NoError(t, configs.InitPaths())
+
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -525,6 +531,9 @@ workflows:
     - invalid-step:
     - invalid-step:
 `
+
+	require.NoError(t, configs.InitPaths())
+
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))

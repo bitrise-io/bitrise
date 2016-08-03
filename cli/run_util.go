@@ -797,10 +797,6 @@ func runWorkflowWithConfiguration(
 	bitriseConfig models.BitriseDataModel,
 	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
 
-	if err := configs.InitPaths(); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to initialize required paths: %s", err)
-	}
-
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Specified Workflow (%s) does not exist!", workflowToRunID)
