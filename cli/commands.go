@@ -7,10 +7,26 @@ const (
 	JSONParamsKey = "json-params"
 	// JSONParamsBase64Key ...
 	JSONParamsBase64Key = "json-params-base64"
+
 	// WorkflowKey ...
 	WorkflowKey = "workflow"
+
 	// PatternKey ...
 	PatternKey = "pattern"
+	// GitTriggerEventKey ...
+	GitTriggerEventKey = "event"
+	// SourceBranchKey ...
+	SourceBranchKey = "source-branch"
+	// TargetBranchKey ...
+	TargetBranchKey = "target-branch"
+
+	// ConfigKey ...
+	ConfigKey = "config"
+	// InventoryKey ...
+	InventoryKey = "inventory"
+
+	// OuputFormatKey ...
+	OuputFormatKey = "format"
 )
 
 var (
@@ -59,18 +75,21 @@ var (
 			Usage:   "Runs a specified Workflow.",
 			Action:  run,
 			Flags: []cli.Flag{
-				// deprecated
-				flPath,
-				// should deprecate
-				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 				// cli params
 				cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
+
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+
+				// deprecated
+				flPath,
+
+				// should deprecate
+				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 			},
 		},
 		{
@@ -78,12 +97,27 @@ var (
 			Usage:  "Prints out which workflow will triggered by specified pattern.",
 			Action: triggerCheck,
 			Flags: []cli.Flag{
+				// cli params
+				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
+				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
+				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
+
+				cli.StringFlag{Name: GitTriggerEventKey, Usage: "Git trigger event (options: code-push, pull-request)."},
+				cli.StringFlag{Name: SourceBranchKey, Usage: "Git trigger event source branch name."},
+				cli.StringFlag{Name: TargetBranchKey, Usage: "Git trigger event target branch name."},
+
+				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
+
+				// cli params used in CI mode
+				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
+				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+
+				// deprecated
 				flPath,
-				flConfig,
-				flConfigBase64,
-				flInventory,
-				flInventoryBase64,
-				flFormat,
+
+				// should deprecate
+				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 			},
 		},
 		{
@@ -92,18 +126,25 @@ var (
 			Usage:   "Triggers a specified Workflow.",
 			Action:  trigger,
 			Flags: []cli.Flag{
-				// deprecated
-				flPath,
-				// should deprecate
-				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 				// cli params
 				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
+
+				cli.StringFlag{Name: GitTriggerEventKey, Usage: "Git trigger event (options: code-push, pull-request)."},
+				cli.StringFlag{Name: SourceBranchKey, Usage: "Git trigger event source branch name."},
+				cli.StringFlag{Name: TargetBranchKey, Usage: "Git trigger event target branch name."},
+
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+
+				// deprecated
+				flPath,
+
+				// should deprecate
+				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 			},
 		},
 		{

@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -26,6 +28,78 @@ const (
 	depManagerBrew     = "brew"
 	depManagerTryCheck = "_"
 )
+
+// --------------------
+// Models
+// --------------------
+
+// RunParamsModel ...
+type RunParamsModel struct {
+	WorkflowToRunID string `json:"workflow"`
+
+	BitriseConfigParams BitriseConfigParamsModel
+}
+
+func parseRunJSONParams(jsonParams string) (RunParamsModel, error) {
+	params := RunParamsModel{}
+	if err := json.Unmarshal([]byte(jsonParams), &params); err != nil {
+		return RunParamsModel{}, err
+	}
+	return params, nil
+}
+
+func parseRunParams(workflowToRunID, jsonParams, base64JSONParams string) (RunParamsModel, error) {
+	params := RunParamsModel{}
+	var err error
+
+	// Parse json params if exist
+	if jsonParams == "" && base64JSONParams != "" {
+		jsonParamsBytes, err := base64.StdEncoding.DecodeString(base64JSONParams)
+		if err != nil {
+			return RunParamsModel{}, err
+		}
+		jsonParams = string(jsonParamsBytes)
+	}
+
+	if jsonParams != "" {
+		params, err = parseRunJSONParams(jsonParams)
+		if err != nil {
+			return RunParamsModel{}, err
+		}
+	}
+
+	// Owerride params
+	if workflowToRunID != "" {
+		params.WorkflowToRunID = workflowToRunID
+	}
+
+	return params, nil
+}
+
+func parseRunCommandParams(
+	workflowToRunID, // run params
+	bitriseConfigPath, bitriseConfigBase64Data,
+	inventoryPath, inventoryBase64Data, // bitrise config params
+	jsonParams, base64JSONParams string) (RunParamsModel, error) { // json params
+
+	bitriseConfigParams, err := parseBitriseConfigParams(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	if err != nil {
+		return RunParamsModel{}, err
+	}
+
+	runParams, err := parseRunParams(workflowToRunID, jsonParams, base64JSONParams)
+	if err != nil {
+		return RunParamsModel{}, err
+	}
+
+	runParams.BitriseConfigParams = bitriseConfigParams
+
+	return runParams, nil
+}
+
+// --------------------
+// Utility
+// --------------------
 
 func aboutUtilityWorkflows() {
 	log.Infoln("Note about utility workflows:")
@@ -106,6 +180,10 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
+// --------------------
+// CLI command
+// --------------------
+
 func run(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
@@ -133,25 +211,24 @@ func run(c *cli.Context) error {
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
-	params, err := parseRunOrTriggerParams(
-		workflowToRunID, "",
-		inventoryBase64Data, inventoryPath,
-		bitriseConfigBase64Data, bitriseConfigPath,
-		jsonParams, jsonParamsBase64,
-	)
+	runParams, err := parseRunCommandParams(
+		workflowToRunID,
+		bitriseConfigPath, bitriseConfigBase64Data,
+		inventoryPath, inventoryBase64Data,
+		jsonParams, jsonParamsBase64)
 	if err != nil {
 		return fmt.Errorf("Failed to parse command params, error: %s", err)
 	}
 	//
 
 	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(params.InventoryBase64Data, params.InventoryPath)
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.BitriseConfigParams.InventoryBase64Data, runParams.BitriseConfigParams.InventoryPath)
 	if err != nil {
 		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(params.BitriseConfigBase64Data, params.BitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigParams.BitriseConfigBase64Data, runParams.BitriseConfigParams.BitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
@@ -160,14 +237,14 @@ func run(c *cli.Context) error {
 	}
 
 	// Workflow id validation
-	if params.WorkflowToRunID == "" {
+	if runParams.WorkflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
 		log.Error("No workfow specified!")
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
-	if strings.HasPrefix(params.WorkflowToRunID, "_") {
+	if strings.HasPrefix(runParams.WorkflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
 		printAboutUtilityWorkflows()
@@ -195,7 +272,7 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, params.WorkflowToRunID)
+	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
 	//
 
 	return nil

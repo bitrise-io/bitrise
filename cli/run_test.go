@@ -15,6 +15,256 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParseRunJSONParams(t *testing.T) {
+	t.Log("it parses cli json params")
+	{
+		params, err := parseRunJSONParams(`{"workflow":"primary"}`)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+}
+
+func TestParseRunParams(t *testing.T) {
+	t.Log("it parses cli params")
+	{
+		workflowToRunID := "primary"
+		jsonParams := ""
+		base64JSONParams := ""
+
+		params, err := parseRunParams(
+			workflowToRunID,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("it parses json params")
+	{
+		workflowToRunID := ""
+		jsonParams := `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`
+		base64JSONParams := ""
+
+		params, err := parseRunParams(
+			workflowToRunID,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("it parses json params decoded in base64")
+	{
+		workflowToRunID := ""
+		jsonParams := ""
+		base64JSONParams := toBase64(t, `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`)
+
+		params, err := parseRunParams(
+			workflowToRunID,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("json params has priority over json params encoded in base 64")
+	{
+		workflowToRunID := ""
+		jsonParams := `{"workflow":"test","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`
+		base64JSONParams := toBase64(t, `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`)
+
+		params, err := parseRunParams(
+			workflowToRunID,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "test", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("cli params can override json params")
+	{
+		workflowToRunID := "test"
+		jsonParams := `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`
+		base64JSONParams := ""
+
+		params, err := parseRunParams(
+			workflowToRunID,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "test", params.WorkflowToRunID)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+}
+
+/*
+func parseRunCommandParams(
+	workflowToRunID, // run params
+	bitriseConfigPath, inventoryPath, bitriseConfigBase64Data, inventoryBase64Data, // bitrise config params
+	jsonParams, base64JSONParams string) (RunParamsModel, error) { // json params
+
+	bitriseConfigParams, err := parseBitriseConfigParams(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	if err != nil {
+		return RunParamsModel{}, err
+	}
+
+	runParams, err := parseRunParams(workflowToRunID, jsonParams, base64JSONParams)
+	if err != nil {
+		return RunParamsModel{}, err
+	}
+
+	runParams.BitriseConfigParams = bitriseConfigParams
+
+	return runParams, nil
+}
+*/
+
+func TestParseRunCommandParams(t *testing.T) {
+	t.Log("it parses cli params")
+	{
+		workflowToRunID := "primary"
+		bitriseConfigPath := "bitrise.yml"
+		bitriseConfigBase64Data := ""
+		inventoryPath := ".secrets.bitrise.yml"
+		inventoryBase64Data := ""
+		jsonParams := ""
+		base64JSONParams := ""
+
+		params, err := parseRunCommandParams(
+			workflowToRunID,
+			bitriseConfigPath, bitriseConfigBase64Data,
+			inventoryPath, inventoryBase64Data,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "bitrise.yml", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, ".secrets.bitrise.yml", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("it parses json params")
+	{
+		workflowToRunID := ""
+		bitriseConfigPath := ""
+		bitriseConfigBase64Data := ""
+		inventoryPath := ""
+		inventoryBase64Data := ""
+		jsonParams := `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`
+		base64JSONParams := ""
+
+		params, err := parseRunCommandParams(
+			workflowToRunID,
+			bitriseConfigPath, bitriseConfigBase64Data,
+			inventoryPath, inventoryBase64Data,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "bitrise.yml", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, ".secrets.bitrise.yml", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("it parses json params decoded in base64")
+	{
+		workflowToRunID := ""
+		bitriseConfigPath := ""
+		bitriseConfigBase64Data := ""
+		inventoryPath := ""
+		inventoryBase64Data := ""
+		jsonParams := ""
+		base64JSONParams := toBase64(t, `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`)
+
+		params, err := parseRunCommandParams(
+			workflowToRunID,
+			bitriseConfigPath, bitriseConfigBase64Data,
+			inventoryPath, inventoryBase64Data,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "bitrise.yml", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, ".secrets.bitrise.yml", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("json params has priority over json params encoded in base 64")
+	{
+		workflowToRunID := ""
+		bitriseConfigPath := ""
+		bitriseConfigBase64Data := ""
+		inventoryPath := ""
+		inventoryBase64Data := ""
+		jsonParams := `{"workflow":"test","config":"test-bitrise.yml","inventory":".test-secrets.bitrise.yml"}`
+		base64JSONParams := toBase64(t, `{"workflow":"primary","config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`)
+
+		params, err := parseRunCommandParams(
+			workflowToRunID,
+			bitriseConfigPath, bitriseConfigBase64Data,
+			inventoryPath, inventoryBase64Data,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "test", params.WorkflowToRunID)
+		require.Equal(t, "test-bitrise.yml", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, ".test-secrets.bitrise.yml", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+
+	t.Log("cli params can override json params")
+	{
+		workflowToRunID := "primary"
+		bitriseConfigPath := "bitrise.yml"
+		bitriseConfigBase64Data := ""
+		inventoryPath := ".secrets.bitrise.yml"
+		inventoryBase64Data := ""
+		jsonParams := `{"workflow":"test","config":"test-bitrise.yml","inventory":".test-secrets.bitrise.yml"}`
+		base64JSONParams := ""
+
+		params, err := parseRunCommandParams(
+			workflowToRunID,
+			bitriseConfigPath, bitriseConfigBase64Data,
+			inventoryPath, inventoryBase64Data,
+			jsonParams, base64JSONParams)
+		require.NoError(t, err)
+
+		require.Equal(t, "primary", params.WorkflowToRunID)
+		require.Equal(t, "bitrise.yml", params.BitriseConfigParams.BitriseConfigPath)
+		require.Equal(t, "", params.BitriseConfigParams.BitriseConfigBase64Data)
+		require.Equal(t, ".secrets.bitrise.yml", params.BitriseConfigParams.InventoryPath)
+		require.Equal(t, "", params.BitriseConfigParams.InventoryBase64Data)
+	}
+}
+
 func TestSkipIfEmpty(t *testing.T) {
 	t.Log("skip_if_empty=true && value=empty => should not add")
 	{

@@ -31,15 +31,11 @@ const (
 	CollectionKey      = "collection"
 	collectionKeyShort = "c"
 
-	// InventoryKey ...
-	InventoryKey      = "inventory"
 	inventoryShortKey = "i"
 
 	// InventoryBase64Key ...
 	InventoryBase64Key = "inventory-base64"
 
-	// ConfigKey ...
-	ConfigKey      = "config"
 	configShortKey = "c"
 
 	// ConfigBase64Key ...
@@ -54,8 +50,6 @@ const (
 	// FullModeKey ...
 	FullModeKey = "full"
 
-	// OuputFormatKey ...
-	OuputFormatKey      = "format"
 	ouputFormatKeyShort = "f"
 	// OuputPathKey ...
 	OuputPathKey = "outpath"
