@@ -301,6 +301,7 @@ workflows:
         - content: |-
             #!/bin/bash
 
+            # run test
             out=$($CURRENT_BITRISE run --json-params '{"config":"bitrise-integration.yml", "workflow":"json_params_test_target"}')
             status=$?
             echo "status: $status"
@@ -308,6 +309,15 @@ workflows:
               exit 1
             fi
 
+            # run test - param override
+            out=$($CURRENT_BITRISE run --json-params '{"config":"bitrise-integration.yml", "workflow":"exit_code_test_fail"}' --workflow json_params_test_target)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            # trigger test
             out=$($CURRENT_BITRISE trigger --json-params '{"config":"bitrise-integration.yml", "pattern":"json_params_test_target"}')
             status=$?
             echo "status: $status"
@@ -315,6 +325,15 @@ workflows:
               exit 1
             fi
 
+            # trigger test - param override
+            out=$($CURRENT_BITRISE trigger --json-params '{"config":"bitrise-integration.yml", "pattern":"exit_code_test_fail"}' --pattern json_params_test_target)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            # run test base64
             out=$($CURRENT_BITRISE run --json-params-base64 'eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJ3b3JrZmxvdyI6Impzb25fcGFyYW1zX3Rlc3RfdGFyZ2V0In0=')
             status=$?
             echo "status: $status"
@@ -322,10 +341,33 @@ workflows:
               exit 1
             fi
 
+            # trigger test base64
             out=$($CURRENT_BITRISE trigger --json-params-base64 'eyJjb25maWciOiJiaXRyaXNlLWludGVncmF0aW9uLnltbCIsICJwYXR0ZXJuIjoianNvbl9wYXJhbXNfdGVzdF90YXJnZXQifQ==')
             status=$?
             echo "status: $status"
             if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+
+            # trigger check test
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"bitrise-integration.yml","pattern":"json_params_test_target","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"json_params_test_target","workflow":"json_params_test_target"}' ] ; then
+              exit 1
+            fi
+
+            # trigger check test - param override
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"bitrise-integration.yml","pattern":"json_params_test_target","format":"raw"}' --format json)
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"json_params_test_target","workflow":"json_params_test_target"}' ] ; then
               exit 1
             fi
     - script:

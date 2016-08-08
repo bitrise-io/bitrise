@@ -27,6 +27,10 @@ const (
 	depManagerTryCheck = "_"
 )
 
+// --------------------
+// Utility
+// --------------------
+
 func aboutUtilityWorkflows() {
 	log.Infoln("Note about utility workflows:")
 	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
@@ -106,6 +110,10 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
+// --------------------
+// CLI command
+// --------------------
+
 func run(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
@@ -133,25 +141,24 @@ func run(c *cli.Context) error {
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
-	params, err := parseRunOrTriggerParams(
-		workflowToRunID, "",
-		inventoryBase64Data, inventoryPath,
-		bitriseConfigBase64Data, bitriseConfigPath,
-		jsonParams, jsonParamsBase64,
-	)
+	runParams, err := parseRunParams(
+		workflowToRunID,
+		bitriseConfigPath, bitriseConfigBase64Data,
+		inventoryPath, inventoryBase64Data,
+		jsonParams, jsonParamsBase64)
 	if err != nil {
 		return fmt.Errorf("Failed to parse command params, error: %s", err)
 	}
 	//
 
 	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(params.InventoryBase64Data, params.InventoryPath)
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.InventoryBase64Data, runParams.InventoryPath)
 	if err != nil {
 		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(params.BitriseConfigBase64Data, params.BitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
@@ -160,14 +167,14 @@ func run(c *cli.Context) error {
 	}
 
 	// Workflow id validation
-	if params.WorkflowToRunID == "" {
+	if runParams.WorkflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
 		log.Error("No workfow specified!")
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
-	if strings.HasPrefix(params.WorkflowToRunID, "_") {
+	if strings.HasPrefix(runParams.WorkflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
 		printAboutUtilityWorkflows()
@@ -195,7 +202,7 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, params.WorkflowToRunID)
+	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
 	//
 
 	return nil
