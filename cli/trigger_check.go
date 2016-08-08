@@ -227,9 +227,9 @@ func triggerCheck(c *cli.Context) error {
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
 		pushBranch, prSourceBranch, prTargetBranch,
+		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
-		format,
 		jsonParams, jsonParamsBase64)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to parse trigger check params, err: %s", err), warnings, triggerParams.Format)
