@@ -13,6 +13,273 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTriggerEventType(t *testing.T) {
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, CodePushTriggerEvent, event)
+	}
+
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, PullRequestTriggerEvent, event)
+	}
+
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := "master"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, PullRequestTriggerEvent, event)
+	}
+
+	t.Log("it failes without inputs")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, UnknownTriggerEvent, event)
+	}
+
+	t.Log("it failes if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, UnknownTriggerEvent, event)
+	}
+
+	t.Log("it failes if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := "master"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, UnknownTriggerEvent, event)
+	}
+}
+
+func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("it validates deprecated trigger item")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			WorkflowID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid deprecated trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			WorkflowID: "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid deprecated trigger item - missing pattern")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "",
+			WorkflowID: "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it validates code-push trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid code-push trigger item - missing push-branch")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "",
+			WorkflowID: "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid code-push trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item")
+	{
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/",
+			WorkflowID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item")
+	{
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid pull-request trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it failes for invalid pull-request trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "",
+			PullRequestTargetBranch: "",
+			WorkflowID:              "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+}
+
+/*
+// MatchWithParams ...
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string) (bool, error) {
+	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+	if err != nil {
+		return false, err
+	}
+
+	itemEventType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
+	if err != nil {
+		return false, err
+	}
+
+	if paramsEventType != itemEventType {
+		return false, nil
+	}
+
+	switch itemEventType {
+	case CodePushTriggerEvent:
+		return glob.Glob(triggerItem.PushBranch, pushBranch), nil
+	case PullRequestTriggerEvent:
+		return (glob.Glob(triggerItem.PullRequestSourceBranch, prSourceBranch) && glob.Glob(triggerItem.PullRequestTargetBranch, prTargetBranch)), nil
+	}
+
+	return false, nil
+}
+*/
+
+func TestMatchWithParams(t *testing.T) {
+	t.Log("code-push type item - against push-branch - match")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("code-push type item - against push-branch - NOT match")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "deploy",
+			WorkflowID: "deploy",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pull-request type item - against pr-source-branch - match")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			WorkflowID:              "test",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pull-request type item - against pr-source-branch - pr-source-branch NOT match")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "deploy",
+			WorkflowID:              "release",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pull-request type item - against pr-source-branch && pr-target-branch - match")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "*",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "ci",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+}
+
 // ----------------------------
 // --- Validate
 

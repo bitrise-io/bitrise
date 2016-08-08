@@ -76,6 +76,25 @@ func getWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern str
 	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
 }
 
+func getWorkflowIDByTriggerParams(triggerMap models.TriggerMapModel, pattern string, isPullRequestMode bool, params RunAndTriggerParamsModel) (string, error) {
+	if pattern != "" {
+		// Deprecated trigger item
+		return getWorkflowIDByPattern(triggerMap, pattern, isPullRequestMode)
+	}
+
+	for _, item := range triggerMap {
+		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+		if err != nil {
+			return "", err
+		}
+		if match {
+			return item.WorkflowID, nil
+		}
+	}
+
+	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+}
+
 // --------------------
 // CLI command
 // --------------------

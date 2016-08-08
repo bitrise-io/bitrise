@@ -9,7 +9,51 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/ryanuber/go-glob"
 )
+
+func triggerEventType(pushBranch, prSourceBranch, prTargetBranch string) (TriggerEventType, error) {
+	if pushBranch != "" {
+		if prSourceBranch != "" {
+			return UnknownTriggerEvent, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_source_branch (%s) also provided", pushBranch, prSourceBranch)
+		}
+		if prTargetBranch != "" {
+			return UnknownTriggerEvent, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_target_branch (%s) also provided", pushBranch, prTargetBranch)
+		}
+
+		return CodePushTriggerEvent, nil
+	} else if prSourceBranch != "" || prTargetBranch != "" {
+		return PullRequestTriggerEvent, nil
+	}
+
+	return UnknownTriggerEvent, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
+}
+
+// MatchWithParams ...
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string) (bool, error) {
+	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+	if err != nil {
+		return false, err
+	}
+
+	itemEventType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
+	if err != nil {
+		return false, err
+	}
+
+	if paramsEventType != itemEventType {
+		return false, nil
+	}
+
+	switch itemEventType {
+	case CodePushTriggerEvent:
+		return glob.Glob(triggerItem.PushBranch, pushBranch), nil
+	case PullRequestTriggerEvent:
+		return (glob.Glob(triggerItem.PullRequestSourceBranch, prSourceBranch) && glob.Glob(triggerItem.PullRequestTargetBranch, prTargetBranch)), nil
+	}
+
+	return false, nil
+}
 
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
@@ -173,8 +217,39 @@ func (app *AppModel) Validate() error {
 }
 
 // Validate ...
+func (triggerItem TriggerMapItemModel) Validate() error {
+	if triggerItem.WorkflowID == "" {
+		return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", triggerItem.Pattern, triggerItem.WorkflowID)
+	}
+
+	if triggerItem.Pattern == "" {
+		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate ...
+func (triggerMap TriggerMapModel) Validate() error {
+	for _, item := range triggerMap {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate ...
 func (config *BitriseDataModel) Validate() ([]string, error) {
 	warnings := []string{}
+
+	if err := config.TriggerMap.Validate(); err != nil {
+		return warnings, err
+	}
 
 	if err := config.App.Validate(); err != nil {
 		return warnings, err

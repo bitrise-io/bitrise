@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "1.2.0"
+	Version = "1.3.0"
 )
 
 // StepListItemModel ...
@@ -45,12 +45,34 @@ type AppModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
+// TriggerEventType ...
+type TriggerEventType string
+
+const (
+	// CodePushTriggerEvent ...
+	CodePushTriggerEvent TriggerEventType = "code-push"
+	// PullRequestTriggerEvent ...
+	PullRequestTriggerEvent TriggerEventType = "pull-request"
+	// TaggingTriggerEvent ...
+	TaggingTriggerEvent TriggerEventType = "tag"
+	// UnknownTriggerEvent ...
+	UnknownTriggerEvent TriggerEventType = "unkown"
+)
+
 // TriggerMapItemModel ...
 type TriggerMapItemModel struct {
+	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+
+	// deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
 	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
-	WorkflowID           string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 }
+
+// TriggerMapModel ...
+type TriggerMapModel []TriggerMapItemModel
 
 // BitriseDataModel ...
 type BitriseDataModel struct {
@@ -62,7 +84,7 @@ type BitriseDataModel struct {
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
-	TriggerMap []TriggerMapItemModel    `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
+	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
