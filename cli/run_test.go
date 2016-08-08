@@ -15,45 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseRunParams(t *testing.T) {
-	t.Log("it parses cli params")
-	{
-		workflow := "primary"
-
-		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
-
-		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
-
-		jsonParams := ""
-		base64JSONParams := ""
-
-		params, err := parseRunParams(
-			workflow,
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams,
-		)
-		require.NoError(t, err)
-
-		require.Equal(t, workflow, params.WorkflowToRunID)
-
-		require.Equal(t, "", params.TriggerPattern)
-		require.Equal(t, "", params.PushBranch)
-		require.Equal(t, "", params.PRSourceBranch)
-		require.Equal(t, "", params.PRTargetBranch)
-
-		require.Equal(t, "", params.Format)
-
-		require.Equal(t, bitriseConfigPath, params.BitriseConfigPath)
-		require.Equal(t, bitriseConfigBase64Data, params.BitriseConfigBase64Data)
-
-		require.Equal(t, inventoryPath, params.InventoryPath)
-		require.Equal(t, inventoryBase64Data, params.InventoryBase64Data)
-	}
-}
-
 func TestSkipIfEmpty(t *testing.T) {
 	t.Log("skip_if_empty=true && value=empty => should not add")
 	{

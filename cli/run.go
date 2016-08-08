@@ -28,18 +28,6 @@ const (
 )
 
 // --------------------
-// Models
-// --------------------
-
-func parseRunParams(
-	workflowToRunID,
-	bitriseConfigPath, bitriseConfigBase64Data,
-	inventoryPath, inventoryBase64Data,
-	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
-}
-
-// --------------------
 // Utility
 // --------------------
 

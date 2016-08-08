@@ -11,19 +11,6 @@ import (
 )
 
 // --------------------
-// Models
-// --------------------
-
-func parseTriggerParams(
-	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch,
-	bitriseConfigPath, bitriseConfigBase64Data,
-	inventoryPath, inventoryBase64Data,
-	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
-}
-
-// --------------------
 // Utility
 // --------------------
 
