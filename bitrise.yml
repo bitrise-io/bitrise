@@ -326,7 +326,7 @@ workflows:
             fi
 
             # trigger test - param override
-            out=$($CURRENT_BITRISE trigger --json-params '{"config":"bitrise-integration.yml", "pattern":"exit_code_test_fail"} --pattern json_params_test_target')
+            out=$($CURRENT_BITRISE trigger --json-params '{"config":"bitrise-integration.yml", "pattern":"exit_code_test_fail"}' --pattern json_params_test_target)
             status=$?
             echo "status: $status"
             if [ $status -ne 0 ] ; then
@@ -361,7 +361,7 @@ workflows:
             fi
 
             # trigger check test - param override
-            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"bitrise-integration.yml","pattern":"json_params_test_target","format":"raw"} --format json')
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"bitrise-integration.yml","pattern":"json_params_test_target","format":"raw"}' --format json)
             status=$?
             echo "status: $status"
             if [ $status -ne 0 ] ; then
