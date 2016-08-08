@@ -18,8 +18,22 @@ import (
 // Models
 // --------------------
 
-// BitriseConfigParamsModel ...
-type BitriseConfigParamsModel struct {
+// RunAndTriggerParamsModel ...
+type RunAndTriggerParamsModel struct {
+	// Run Params
+	WorkflowToRunID string `json:"workflow"`
+
+	// Trigger Params
+	TriggerPattern string `json:"pattern"`
+
+	PushBranch     string `json:"push-branch"`
+	PRSourceBranch string `json:"pr-source-branch"`
+	PRTargetBranch string `json:"pr-target-branch"`
+
+	// Trigger Check Params
+	Format string `json:"format"`
+
+	// Bitrise Config Params
 	BitriseConfigPath       string `json:"config"`
 	BitriseConfigBase64Data string `json:"config-base64"`
 
@@ -27,39 +41,64 @@ type BitriseConfigParamsModel struct {
 	InventoryBase64Data string `json:"inventory-base64"`
 }
 
-func parseBitriseConfigJSONParams(jsonParams string) (BitriseConfigParamsModel, error) {
-	params := BitriseConfigParamsModel{}
+func parseRunAndTriggerJSONParams(jsonParams string) (RunAndTriggerParamsModel, error) {
+	params := RunAndTriggerParamsModel{}
 	if err := json.Unmarshal([]byte(jsonParams), &params); err != nil {
-		return BitriseConfigParamsModel{}, err
+		return RunAndTriggerParamsModel{}, err
 	}
 	return params, nil
 }
 
-func parseBitriseConfigParams(
+func parseRunAndTriggerParams(
+	workflowToRunID,
+	triggerPattern,
+	pushBranch, prSourceBranch, prTargetBranch,
+	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
-	jsonParams, base64JSONParams string) (BitriseConfigParamsModel, error) {
-
-	params := BitriseConfigParamsModel{}
+	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
+	params := RunAndTriggerParamsModel{}
 	var err error
 
 	// Parse json params if exist
 	if jsonParams == "" && base64JSONParams != "" {
 		jsonParamsBytes, err := base64.StdEncoding.DecodeString(base64JSONParams)
 		if err != nil {
-			return BitriseConfigParamsModel{}, err
+			return RunAndTriggerParamsModel{}, err
 		}
 		jsonParams = string(jsonParamsBytes)
 	}
 
 	if jsonParams != "" {
-		params, err = parseBitriseConfigJSONParams(jsonParams)
+		params, err = parseRunAndTriggerJSONParams(jsonParams)
 		if err != nil {
-			return BitriseConfigParamsModel{}, err
+			return RunAndTriggerParamsModel{}, err
 		}
 	}
 
 	// Owerride params
+	if workflowToRunID != "" {
+		params.WorkflowToRunID = workflowToRunID
+	}
+
+	if triggerPattern != "" {
+		params.TriggerPattern = triggerPattern
+	}
+
+	if pushBranch != "" {
+		params.PushBranch = pushBranch
+	}
+	if prSourceBranch != "" {
+		params.PRSourceBranch = prSourceBranch
+	}
+	if prTargetBranch != "" {
+		params.PRTargetBranch = prTargetBranch
+	}
+
+	if format != "" {
+		params.Format = format
+	}
+
 	if bitriseConfigPath != "" {
 		params.BitriseConfigPath = bitriseConfigPath
 	}
@@ -74,6 +113,16 @@ func parseBitriseConfigParams(
 	}
 
 	return params, nil
+}
+
+func parseTriggerCheckParams(
+	triggerPattern,
+	pushBranch, prSourceBranch, prTargetBranch,
+	format,
+	bitriseConfigPath, bitriseConfigBase64Data,
+	inventoryPath, inventoryBase64Data,
+	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
+	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 // --------------------
@@ -155,9 +204,9 @@ func triggerCheck(c *cli.Context) error {
 		triggerPattern = c.Args()[0]
 	}
 
-	gitTriggerEvent := c.String(GitTriggerEventKey)
-	sourceBranch := c.String(SourceBranchKey)
-	targetBranch := c.String(TargetBranchKey)
+	pushBranch := c.String(PushBranchKey)
+	prSourceBranch := c.String(PRSourceBranchKey)
+	prTargetBranch := c.String(PRTargetBranchKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -175,8 +224,9 @@ func triggerCheck(c *cli.Context) error {
 
 	format := c.String(OuputFormatKey)
 
-	triggerParams, err := parseTriggerCommandParams(
-		triggerPattern, gitTriggerEvent, sourceBranch, targetBranch,
+	triggerParams, err := parseTriggerCheckParams(
+		triggerPattern,
+		pushBranch, prSourceBranch, prTargetBranch,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		format,
@@ -187,13 +237,13 @@ func triggerCheck(c *cli.Context) error {
 	//
 
 	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(triggerParams.BitriseConfigParams.InventoryBase64Data, triggerParams.BitriseConfigParams.InventoryPath)
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(triggerParams.InventoryBase64Data, triggerParams.InventoryPath)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to create inventory, err: %s", err), warnings, triggerParams.Format)
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigParams.BitriseConfigBase64Data, triggerParams.BitriseConfigParams.BitriseConfigPath)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, triggerParams.Format)

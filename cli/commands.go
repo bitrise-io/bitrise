@@ -13,12 +13,12 @@ const (
 
 	// PatternKey ...
 	PatternKey = "pattern"
-	// GitTriggerEventKey ...
-	GitTriggerEventKey = "event"
-	// SourceBranchKey ...
-	SourceBranchKey = "source-branch"
-	// TargetBranchKey ...
-	TargetBranchKey = "target-branch"
+	// PushBranchKey ...
+	PushBranchKey = "push-branch"
+	// PRSourceBranchKey ...
+	PRSourceBranchKey = "pr-source-branch"
+	// PRTargetBranchKey ...
+	PRTargetBranchKey = "pr-target-branch"
 
 	// ConfigKey ...
 	ConfigKey = "config"
@@ -102,9 +102,9 @@ var (
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
 
-				cli.StringFlag{Name: GitTriggerEventKey, Usage: "Git trigger event (options: code-push, pull-request)."},
-				cli.StringFlag{Name: SourceBranchKey, Usage: "Git trigger event source branch name."},
-				cli.StringFlag{Name: TargetBranchKey, Usage: "Git trigger event target branch name."},
+				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
+				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
+				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
 
@@ -131,9 +131,9 @@ var (
 				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
 
-				cli.StringFlag{Name: GitTriggerEventKey, Usage: "Git trigger event (options: code-push, pull-request)."},
-				cli.StringFlag{Name: SourceBranchKey, Usage: "Git trigger event source branch name."},
-				cli.StringFlag{Name: TargetBranchKey, Usage: "Git trigger event target branch name."},
+				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
+				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
+				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
 
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},

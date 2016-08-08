@@ -2,7 +2,7 @@ package cli
 
 import (
 	"encoding/base64"
-	"fmt"
+	"encoding/json"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/bitrise"
@@ -14,181 +14,54 @@ func toBase64(t *testing.T, str string) string {
 	return string(bytes)
 }
 
-func TestParseBitriseConfigJSONParams(t *testing.T) {
-	t.Log("it parses cli json params")
-	{
-		params, err := parseBitriseConfigJSONParams(`{"config":"bitrise.yml","inventory":".secrets.bitrise.yml"}`)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
-
-	t.Log("it parses cli json params decoded in base64")
-	{
-		configBase64 := toBase64(t, "my config content")
-		inventoryBase64 := toBase64(t, "my secrets content")
-		jsonParams := fmt.Sprintf(`{"config-base64":"%s","inventory-base64":"%s"}`, configBase64, inventoryBase64)
-
-		params, err := parseBitriseConfigJSONParams(jsonParams)
-		require.NoError(t, err)
-
-		require.Equal(t, "", params.BitriseConfigPath)
-		require.Equal(t, configBase64, params.BitriseConfigBase64Data)
-		require.Equal(t, "", params.InventoryPath)
-		require.Equal(t, inventoryBase64, params.InventoryBase64Data)
-	}
-
-	t.Log("it parses bitrise config related data from run command json params")
-	{
-		params, err := parseBitriseConfigJSONParams(`{"config":"bitrise.yml","inventory":".secrets.bitrise.yml","workflow":"primary"}`)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
-
-	t.Log("it parses bitrise config related data from trigger command json params")
-	{
-		params, err := parseBitriseConfigJSONParams(`{"config":"bitrise.yml","inventory":".secrets.bitrise.yml","pattern":"master","source-branch":"dev","target-barnch":"master","event":"code-push"}`)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
+func toJSON(t *testing.T, stringStringMap map[string]string) string {
+	bytes, err := json.Marshal(stringStringMap)
+	require.NoError(t, err)
+	return string(bytes)
 }
 
-func TestParseBitriseConfigParams(t *testing.T) {
+func TestParseTriggerCheckParams(t *testing.T) {
 	t.Log("it parses cli params")
 	{
+		pattern := "*"
+		pushBranch := "master"
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+		format := "json"
+
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := ""
+		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := ""
+		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+
 		jsonParams := ""
 		base64JSONParams := ""
 
-		params, err := parseBitriseConfigParams(
+		params, err := parseTriggerCheckParams(
+			pattern,
+			pushBranch, prSourceBranch, prTargetBranch,
+			format,
 			bitriseConfigPath, bitriseConfigBase64Data,
 			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
+			jsonParams, base64JSONParams,
+		)
 		require.NoError(t, err)
 
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
+		require.Equal(t, "", params.WorkflowToRunID)
 
-	t.Log("it parses cli params decoded in base64")
-	{
-		bitriseConfigPath := ""
-		bitriseConfigBase64Data := toBase64(t, "my config content")
-		inventoryPath := ""
-		inventoryBase64Data := toBase64(t, "my secrets content")
-		jsonParams := ""
-		base64JSONParams := ""
+		require.Equal(t, pattern, params.TriggerPattern)
+		require.Equal(t, pushBranch, params.PushBranch)
+		require.Equal(t, prSourceBranch, params.PRSourceBranch)
+		require.Equal(t, prTargetBranch, params.PRTargetBranch)
 
-		params, err := parseBitriseConfigParams(
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
-		require.NoError(t, err)
+		require.Equal(t, format, params.Format)
 
-		require.Equal(t, "", params.BitriseConfigPath)
+		require.Equal(t, bitriseConfigPath, params.BitriseConfigPath)
 		require.Equal(t, bitriseConfigBase64Data, params.BitriseConfigBase64Data)
-		require.Equal(t, "", params.InventoryPath)
+
+		require.Equal(t, inventoryPath, params.InventoryPath)
 		require.Equal(t, inventoryBase64Data, params.InventoryBase64Data)
-	}
-
-	t.Log("it parses json params")
-	{
-		bitriseConfigPath := ""
-		bitriseConfigBase64Data := ""
-		inventoryPath := ""
-		inventoryBase64Data := ""
-		jsonParams := `{"config":"bitrise.yml","inventory":".secrets.bitrise.yml","pattern":"master","source-branch":"dev","target-barnch":"master","event":"code-push"}`
-		base64JSONParams := ""
-
-		params, err := parseBitriseConfigParams(
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
-
-	t.Log("it parses json params decoded in base64")
-	{
-		bitriseConfigPath := ""
-		bitriseConfigBase64Data := ""
-		inventoryPath := ""
-		inventoryBase64Data := ""
-		jsonParams := ""
-		base64JSONParams := toBase64(t, `{"config":"bitrise.yml","inventory":".secrets.bitrise.yml","pattern":"master","source-branch":"dev","target-barnch":"master","event":"code-push"}`)
-
-		params, err := parseBitriseConfigParams(
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
-
-	t.Log("json params has priority over json params encoded in base 64")
-	{
-		bitriseConfigPath := ""
-		bitriseConfigBase64Data := ""
-		inventoryPath := ""
-		inventoryBase64Data := ""
-		jsonParams := `{"config":"test-bitrise.yml","inventory":".test-secrets.bitrise.yml","pattern":"dev","source-branch":"feature","target-barnch":"dev","event":"pull-requiest"}`
-		base64JSONParams := toBase64(t, `{"config":"bitrise.yml","inventory":".secrets.bitrise.yml","pattern":"master","source-branch":"dev","target-barnch":"master","event":"code-push"}`)
-
-		params, err := parseBitriseConfigParams(
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
-		require.NoError(t, err)
-
-		require.Equal(t, "test-bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".test-secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
-	}
-
-	t.Log("cli params can override json params")
-	{
-		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := ""
-		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := ""
-		jsonParams := `{"config":"test-bitrise.yml","inventory":".test-secrets.bitrise.yml","pattern":"dev","source-branch":"feature","target-barnch":"dev","event":"pull-requiest"}`
-		base64JSONParams := ""
-
-		params, err := parseBitriseConfigParams(
-			bitriseConfigPath, bitriseConfigBase64Data,
-			inventoryPath, inventoryBase64Data,
-			jsonParams, base64JSONParams)
-		require.NoError(t, err)
-
-		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, "", params.BitriseConfigBase64Data)
-		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, "", params.InventoryBase64Data)
 	}
 }
 

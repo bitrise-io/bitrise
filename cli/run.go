@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -33,68 +31,12 @@ const (
 // Models
 // --------------------
 
-// RunParamsModel ...
-type RunParamsModel struct {
-	WorkflowToRunID string `json:"workflow"`
-
-	BitriseConfigParams BitriseConfigParamsModel
-}
-
-func parseRunJSONParams(jsonParams string) (RunParamsModel, error) {
-	params := RunParamsModel{}
-	if err := json.Unmarshal([]byte(jsonParams), &params); err != nil {
-		return RunParamsModel{}, err
-	}
-	return params, nil
-}
-
-func parseRunParams(workflowToRunID, jsonParams, base64JSONParams string) (RunParamsModel, error) {
-	params := RunParamsModel{}
-	var err error
-
-	// Parse json params if exist
-	if jsonParams == "" && base64JSONParams != "" {
-		jsonParamsBytes, err := base64.StdEncoding.DecodeString(base64JSONParams)
-		if err != nil {
-			return RunParamsModel{}, err
-		}
-		jsonParams = string(jsonParamsBytes)
-	}
-
-	if jsonParams != "" {
-		params, err = parseRunJSONParams(jsonParams)
-		if err != nil {
-			return RunParamsModel{}, err
-		}
-	}
-
-	// Owerride params
-	if workflowToRunID != "" {
-		params.WorkflowToRunID = workflowToRunID
-	}
-
-	return params, nil
-}
-
-func parseRunCommandParams(
-	workflowToRunID, // run params
+func parseRunParams(
+	workflowToRunID,
 	bitriseConfigPath, bitriseConfigBase64Data,
-	inventoryPath, inventoryBase64Data, // bitrise config params
-	jsonParams, base64JSONParams string) (RunParamsModel, error) { // json params
-
-	bitriseConfigParams, err := parseBitriseConfigParams(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
-	if err != nil {
-		return RunParamsModel{}, err
-	}
-
-	runParams, err := parseRunParams(workflowToRunID, jsonParams, base64JSONParams)
-	if err != nil {
-		return RunParamsModel{}, err
-	}
-
-	runParams.BitriseConfigParams = bitriseConfigParams
-
-	return runParams, nil
+	inventoryPath, inventoryBase64Data,
+	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
+	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 // --------------------
@@ -211,7 +153,7 @@ func run(c *cli.Context) error {
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
-	runParams, err := parseRunCommandParams(
+	runParams, err := parseRunParams(
 		workflowToRunID,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
@@ -222,13 +164,13 @@ func run(c *cli.Context) error {
 	//
 
 	// Inventory validation
-	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.BitriseConfigParams.InventoryBase64Data, runParams.BitriseConfigParams.InventoryPath)
+	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.InventoryBase64Data, runParams.InventoryPath)
 	if err != nil {
 		log.Fatalf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigParams.BitriseConfigBase64Data, runParams.BitriseConfigParams.BitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}
