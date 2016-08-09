@@ -33,6 +33,8 @@
   
 * feature/internal tools handling revision: __the `envman` and `stepman` (used by `bitrise`) tools install path moved from `/usl/local/bin` to `$HOME/.bitrise/tools`__ to make sure bitrise cli uses the desired tool version.
 
+* stepman min version updated to 0.9.22
+
 * deprecated action signature fix
 
 ### Install or upgrade
