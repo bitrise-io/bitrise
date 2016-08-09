@@ -1,6 +1,43 @@
-## Changelog (Current version: 1.3.6)
+## Changelog (Current version: 1.3.7)
 
 -----------------
+
+## 1.3.7 (2016 Aug 09)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.3.7/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.6 -> 1.3.7
+
+* [890307c] Krisztián Gödrei - prepare for 1.3.7 (2016 Aug 09)
+* [5be9c1d] Krisztián Gödrei - Json params (#380) (2016 Aug 08)
+* [d91f6ac] Krisztián Gödrei - remove unnecessary init path from run (#379) (2016 Aug 03)
+* [c2187b3] Krisztián Gödrei - Json params (#378) (2016 Aug 03)
+* [187382f] Krisztián Gödrei - deprecated action signature fix (#377) (2016 Aug 01)
+* [45ed0d0] Viktor Benei - Feature/internal tools handling revision (#374) (2016 Jul 26)
+
 
 ## 1.3.6 (2016 Jul 12)
 
@@ -1947,4 +1984,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Jul 12
+Updated: 2016 Aug 09
