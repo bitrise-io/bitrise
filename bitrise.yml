@@ -456,7 +456,7 @@ workflows:
         2, Export RELEASE_VERSION
         3, Create binaries
     envs:
-    - RELEASE_VERSION: 1.3.6
+    - RELEASE_VERSION: 1.3.7
     after_run:
     - _export_release_version
     - create_binaries
