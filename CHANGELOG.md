@@ -6,8 +6,34 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* From now you can specify __workflow id to run__ with `--workflow` flag for `bitrise run` command.  
+  Example: `bitrise run --workflow WORKFLOW_ID`.  
+  _In previous versions you were able to specify workflow id to run as a command argument (`bitrise run WORKFLOW_ID`); this method is still supported._
+
+* Similar to run command's new `--workflow` flag, `trigger` and `trigger-check` commands also received new flags for specifying the __trigger pattern__: `--pattern`.  
+  Example: `bitrise trigger --pattern PATTERN`.  
+  _In previous versions you were able to specify the pattern as a command argument (`bitrise trigger PATTERN`); this method is still supported._
+
+* __json parameters__: every workflow run related commands (`run`, `trigger`, `trigger-check`) now have new inputs:
+
+  - `--json-params`
+  - `--json-params-base64`.
+
+  You can use `--json-params` to specify __every available command flag__ in a single json struct. This json struct should be a string-string map, where every key is the command flag's name, and the value should be the flag's value.  
+
+  For example:   
+  `bitrise run --config bitrise.yml --workflow primary`
+
+  Equivalent with json-params:  
+  `bitrise run --json-params '{"config":"bitrise.yml", "workflow":"primary"}'`  
+
+  To see the command's available flags, call `bitrise COMMAND -h`.
+
+  If you want to avoid character escaping side effects while running the `bitrise` cli, you can base64 encode --json-params value and pass to bitrise cli using the `--json-params-base64` flag.
+  
+* feature/internal tools handling revision: __the `envman` and `stepman` (used by `bitrise`) tools install path moved from `/usl/local/bin` to `$HOME/.bitrise/tools`__ to make sure bitrise cli uses the desired tool version.
+
+* deprecated action signature fix
 
 ### Install or upgrade
 
@@ -32,7 +58,7 @@ time you call bitrise run.
 ### Release Commits - 1.3.6 -> 1.3.7
 
 * [890307c] Krisztián Gödrei - prepare for 1.3.7 (2016 Aug 09)
-* [5be9c1d] Krisztián Gödrei - Json params (#380) (2016 Aug 08)
+* [5be9c1d] Krisztián Gödrei - Json params prepare for new trigger map (#380) (2016 Aug 08)
 * [d91f6ac] Krisztián Gödrei - remove unnecessary init path from run (#379) (2016 Aug 03)
 * [c2187b3] Krisztián Gödrei - Json params (#378) (2016 Aug 03)
 * [187382f] Krisztián Gödrei - deprecated action signature fix (#377) (2016 Aug 01)
