@@ -258,7 +258,7 @@ func stepInfo(c *cli.Context) error {
 		if globalStepInfoPth != "" {
 			globalInfo, found, err := stepman.ParseGlobalStepInfoYML(globalStepInfoPth)
 			if err != nil {
-				return fmt.Errorf("Failed to get step (path:%s) output infos, err: %s", YMLPath, err)
+				return fmt.Errorf("Failed to get step (path:%s) output infos, err: %s", globalStepInfoPth, err)
 			}
 
 			if found {
