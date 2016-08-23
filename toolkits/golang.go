@@ -21,8 +21,12 @@ func (toolkit *GoToolkit) Install() error {
 	versionStr := "1.7"
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
-	downloadURL := fmt.Sprintf("https://storage.googleapis.com/golang/go%s.%s-%s.tar.gz",
-		versionStr, osStr, archStr)
+	extentionStr := "tar.gz"
+	if osStr == "windows" {
+		extentionStr = "zip"
+	}
+	downloadURL := fmt.Sprintf("https://storage.googleapis.com/golang/go%s.%s-%s.%s",
+		versionStr, osStr, archStr, extentionStr)
 	log.Infoln("downloadURL: ", downloadURL)
 
 	// bitriseToolkitsDirPath := configs.GetBitriseToolkitsDirPath()
@@ -35,6 +39,7 @@ func (toolkit *GoToolkit) Install() error {
 	destinationPth := filepath.Join(toolkitsTmpDirPath, localFileName)
 
 	var downloadErr error
+	fmt.Print("=> Downloading ...")
 	progress.SimpleProgress(".", 2*time.Second, func() {
 		if err := tools.DownloadFile(downloadURL, destinationPth); err != nil {
 			downloadErr = err
