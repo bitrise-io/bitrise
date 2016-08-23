@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/bitrise-io/bitrise",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
@@ -8,8 +8,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.10.0-19-gf3cfb45",
-			"Rev": "f3cfb454f4c209e6668c95216c4744b8fddb2356"
+			"Comment": "v0.10.0-36-g08a8a7c",
+			"Rev": "08a8a7c27e3d058a8989316a850daad1c10bf4ab"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
@@ -18,39 +18,43 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/errorutil",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
+		},
+		{
+			"ImportPath": "github.com/bitrise-io/go-utils/progress",
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "bb4b7c4d5dbb58ede81badf80dd841e6e6e350fb"
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -58,19 +62,21 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.20",
-			"Rev": "a6b4a3f4064516e3cae98055dc5f35c59a8d7880"
+			"Comment": "0.9.22-3-g692934a",
+			"Rev": "692934a190e78702369e112931ccc5f63bc0b108"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
-			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+			"Comment": "v1.0.0",
+			"Rev": "6cf5744a041a0022271cefed95ba843f6d87fd51"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
-			"Rev": "0181db47023708a38c2d20d2fe25a5fa034d5743"
+			"Rev": "deeb027c13a95d56c7585df3fe29207208c6706e"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
@@ -90,16 +96,16 @@
 		},
 		{
 			"ImportPath": "github.com/urfave/cli",
-			"Comment": "v1.18.0-2-g166bb4f",
-			"Rev": "166bb4fa6231099fd582b9d0b33b647d8112a9f5"
+			"Comment": "v1.18.0-53-g05fe449",
+			"Rev": "05fe449c81eb7305a34e9253c321c960a1c5e057"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "a408501be4d17ee978c04a618e7a1b22af058c0e"
+			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "a83829b6f1293c91addabc89d0571c246397bbf4"
+			"Rev": "e4d366fc3c7938e2958e662b4258c7a89e1f0e3e"
 		}
 	]
 }

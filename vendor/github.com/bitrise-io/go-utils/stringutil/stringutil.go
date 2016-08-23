@@ -1,6 +1,21 @@
 package stringutil
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+// CaseInsensitiveEquals ...
+func CaseInsensitiveEquals(a, b string) bool {
+	a, b = strings.ToLower(a), strings.ToLower(b)
+	return a == b
+}
+
+// CaseInsensitiveContains ...
+func CaseInsensitiveContains(s, substr string) bool {
+	s, substr = strings.ToLower(s), strings.ToLower(substr)
+	return strings.Contains(s, substr)
+}
 
 // MaxLastChars returns the last maxCharCount characters,
 //  or in case maxCharCount is more than or equal to the string's length
