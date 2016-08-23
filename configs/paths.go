@@ -112,13 +112,15 @@ func InitPaths() error {
 	}
 
 	// --- Bitrise TOOLS
-	bitriseToolsDirPth := GetBitriseToolsDirPath()
-	if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
-		return err
-	}
-	pthWithBitriseTools := generatePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
-	if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
-		return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+	{
+		bitriseToolsDirPth := GetBitriseToolsDirPath()
+		if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
+			return err
+		}
+		pthWithBitriseTools := generatePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
+		if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
+			return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+		}
 	}
 
 	inputEnvstorePath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "input_envstore.yml"))

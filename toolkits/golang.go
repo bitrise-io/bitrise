@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/progress"
 )
 
 // GoToolkit ...
@@ -32,8 +34,14 @@ func (toolkit *GoToolkit) Install() error {
 	localFileName := "go.tar.gz"
 	destinationPth := filepath.Join(toolkitsTmpDirPath, localFileName)
 
-	if err := tools.DownloadFile(downloadURL, destinationPth); err != nil {
-		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, err)
+	var downloadErr error
+	progress.SimpleProgress(".", 2*time.Second, func() {
+		if err := tools.DownloadFile(downloadURL, destinationPth); err != nil {
+			downloadErr = err
+		}
+	})
+	if downloadErr != nil {
+		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, downloadErr)
 	}
 	log.Infoln("Toolkit downloaded to: ", destinationPth)
 
