@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -564,6 +565,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+				if strings.HasPrefix(stepIDData.IDorURI, "git@") {
+					fmt.Println(colorstring.Yellow(`Note: if the step's repository is an open source one,`))
+					fmt.Println(colorstring.Yellow(`you should probably use a "https://..." git clone URL,`))
+					fmt.Println(colorstring.Yellow(`instead of the "git@..." git clone URL which usually requires authentication`))
+					fmt.Println(colorstring.Yellow(`even if the repository is open source!`))
+				}
 				registerStepRunResults("", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
