@@ -33,15 +33,6 @@ this should guide you through the basics, while you'll already use `bitrise` (re
 You can find a complete iOS sample project at: https://github.com/bitrise-io/sample-apps-ios-with-bitrise-yml
 
 
-## Development Guideline
-
-* __Easy to use__: the UX for the end-user, always keep it in mind, make it a pleasant experience to work with this tool (and all of the Bitrise tools)!
-* __Code should be kept simple__: easy to understand, easy to collaborate/contribute (as much as possible of course).
-* __Compatibility__: never do an incompatible change, unless you can't avoid it. Release new features as additional options, to not to break existing configurations.
-* __Stability__: related to compatibility, but in general stability is really important, especially so in a CI/automation environment, where you expect fully reproducible outcomes.
-* __Flexibility__: should also be kept in mind, but only if it does not affect the previous points.
-
-
 ## Tooling support & JSON output format
 
 `bitrise` CLI commands support a `--format=[format]` parameter.
@@ -73,3 +64,34 @@ guide it prints.
 ## Documentation
 
 We added some documents to make it a bit easier to get started with Bitrise CLI. The documentation includes a quick and a little longer guides for CLI, a [React Native](http://facebook.github.io/react-native/) project workflow guide and an overview of the Step share process. You can find them in the [_docs](/_docs/) folder.
+
+## Development
+
+### Guidelines
+
+* __Easy to use__: the UX for the end-user, always keep it in mind, make it a pleasant experience to work with this tool (and all of the Bitrise tools)!
+* __Code should be kept simple__: easy to understand, easy to collaborate/contribute (as much as possible of course).
+* __Compatibility__: never do an incompatible change, unless you can't avoid it. Release new features as additional options, to not to break existing configurations.
+* __Stability__: related to compatibility, but in general stability is really important, especially so in a CI/automation environment, where you expect fully reproducible outcomes.
+* __Flexibility__: should also be kept in mind, but only if it does not affect the previous points.
+
+### Updating dependencies
+
+To do a full dependency update use [bitrise-tools/gows](https://github.com/bitrise-tools/gows),
+for a clean workspace:
+
+```
+gows clear && gows bitrise run godeps-update
+```
+
+to test that all dependency is included:
+
+```
+gows clear && gows go test ./... && gows go install && gows bitrise run test
+```
+
+and/or with `docker-compose`:
+
+```
+docker-compose build && docker-compose run --rm app go test ./...
+```
