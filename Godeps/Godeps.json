@@ -8,8 +8,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.10.0-36-g08a8a7c",
-			"Rev": "08a8a7c27e3d058a8989316a850daad1c10bf4ab"
+			"Comment": "v0.10.0-38-g3ec0642",
+			"Rev": "3ec0642a7fb6488f65b06f9040adc67e3990296a"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
@@ -49,6 +49,10 @@
 			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
 		{
+			"ImportPath": "github.com/bitrise-io/go-utils/retry",
+			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
+		},
+		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
 			"Rev": "a4a1fade34249470f18752108a00a6c532209233"
 		},
@@ -62,8 +66,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.22-3-g692934a",
-			"Rev": "692934a190e78702369e112931ccc5f63bc0b108"
+			"Comment": "0.9.22-2-g4927863",
+			"Rev": "4927863a74cf7211b1cef5d7af7ad34d8e44f42f"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -96,8 +100,8 @@
 		},
 		{
 			"ImportPath": "github.com/urfave/cli",
-			"Comment": "v1.18.0-53-g05fe449",
-			"Rev": "05fe449c81eb7305a34e9253c321c960a1c5e057"
+			"Comment": "v1.18.0-58-gc723b19",
+			"Rev": "c723b19a84af34d905773672ffa1b8ead802e505"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
