@@ -77,7 +77,8 @@ We added some documents to make it a bit easier to get started with Bitrise CLI.
 
 ### Updating dependencies
 
-To do a full dependency update use [bitrise-tools/gows](https://github.com/bitrise-tools/gows):
+To do a full dependency update use [bitrise-tools/gows](https://github.com/bitrise-tools/gows),
+for a clean workspace:
 
 ```
 gows clear && gows bitrise run godeps-update
@@ -86,5 +87,11 @@ gows clear && gows bitrise run godeps-update
 to test that all dependency is included:
 
 ```
-gows clear && gows go install && gows go test ./...
+gows clear && gows go test ./... && gows go install && gows bitrise run test
+```
+
+and/or with `docker-compose`:
+
+```
+docker-compose build && docker-compose run --rm app go test ./...
 ```
