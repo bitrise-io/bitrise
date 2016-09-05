@@ -2,18 +2,45 @@ package toolkits
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
+	"github.com/bitrise-io/go-utils/retry"
 )
 
 // GoToolkit ...
 type GoToolkit struct {
+}
+
+func goToolkitPath() string {
+	return filepath.Join(configs.GetBitriseToolkitsDirPath(), "go")
+}
+
+func installGoTar(goTarGzPath string) error {
+	installToPath := goToolkitPath()
+
+	if err := os.RemoveAll(installToPath); err != nil {
+		return fmt.Errorf("Failed to remove previous Go toolkit install (path: %s), error: %s", installToPath, err)
+	}
+	if err := pathutil.EnsureDirExist(installToPath); err != nil {
+		return fmt.Errorf("Failed create Go toolkit directory (path: %s), error: %s", installToPath, err)
+	}
+
+	cmd := cmdex.NewCommand("tar", "-C", installToPath, "-xzf", goTarGzPath)
+	if combinedOut, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+		log.Errorln(" [!] Failed to uncompress Go toolkit, output:")
+		log.Errorln(combinedOut)
+		return fmt.Errorf("Failed to uncompress Go toolkit, error: %s", err)
+	}
+	return nil
 }
 
 // Install ...
@@ -41,14 +68,25 @@ func (toolkit *GoToolkit) Install() error {
 	var downloadErr error
 	fmt.Print("=> Downloading ...")
 	progress.SimpleProgress(".", 2*time.Second, func() {
-		if err := tools.DownloadFile(downloadURL, destinationPth); err != nil {
-			downloadErr = err
-		}
+		downloadErr = retry.Times(2).Wait(5).Try(func(attempt uint) error {
+			if attempt > 0 {
+				fmt.Println()
+				fmt.Println("==> Download failed, retrying ...")
+				fmt.Println()
+			}
+			return tools.DownloadFile(downloadURL, destinationPth)
+		})
 	})
 	if downloadErr != nil {
 		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, downloadErr)
 	}
 	log.Infoln("Toolkit downloaded to: ", destinationPth)
+
+	fmt.Println("=> Installing ...")
+	if err := installGoTar(destinationPth); err != nil {
+		return fmt.Errorf("Failed to install Go toolkit, error: %s", err)
+	}
+	fmt.Println("=> Installing [DONE]")
 
 	return nil
 }
