@@ -6,12 +6,15 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/progress"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
 	ver "github.com/hashicorp/go-version"
@@ -68,9 +71,25 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 	}
 
 	if installOrUpdate {
-		plugin, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
-		if err != nil {
-			return err
+		var installErr error
+		var plugin plugins.Plugin
+		progress.SimpleProgress(".", 2*time.Second, func() {
+			err := retry.Times(2).Wait(5).Try(func(attempt uint) error {
+				if attempt > 0 {
+					fmt.Println()
+					fmt.Println("==> Download failed, retrying ...")
+					fmt.Println()
+				}
+				p, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
+				plugin = p
+				return err
+			})
+			installErr = err
+		})
+		fmt.Println()
+
+		if installErr != nil {
+			return fmt.Errorf("Failed to install plugin, error: %s", err)
 		}
 
 		if len(plugin.Description) > 0 {
@@ -259,9 +278,21 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		log.Infoln("You can find more information about "+toolname+" on its official GitHub page:", officialGithub)
 
 		// Install
-		log.Infoln("Installing...")
-		if err := tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion); err != nil {
-			return err
+		log.Info("Installing...")
+		var installErr error
+		progress.SimpleProgress(".", 2*time.Second, func() {
+			installErr = retry.Times(2).Wait(5).Try(func(attempt uint) error {
+				if attempt > 0 {
+					fmt.Println()
+					fmt.Println("==> Download failed, retrying ...")
+					fmt.Println()
+				}
+				return tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion)
+			})
+		})
+		fmt.Println()
+		if installErr != nil {
+			return installErr
 		}
 
 		// check again
