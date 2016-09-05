@@ -4,11 +4,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStepmanJSONStepLibStepInfo(t *testing.T) {
+	// setup
+	require.NoError(t, configs.InitPaths())
+
 	// Valid params -- Err should empty, output filled
 	require.Equal(t, nil, StepmanSetup("https://github.com/bitrise-io/bitrise-steplib"))
 

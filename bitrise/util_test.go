@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/configs"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
+	// setup
+	require.NoError(t, configs.InitPaths())
+
 	configStr := `
   format_version: 1.0.0
   default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
