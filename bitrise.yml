@@ -588,7 +588,7 @@ workflows:
     - script:
         title: Dependency update
         inputs:
-        - content: |-
+        - content: |
             #!/bin/bash
             set -ex
             go get -u -v github.com/tools/godep
@@ -596,7 +596,14 @@ workflows:
             rm -rf ./Godeps
             rm -rf ./vendor
 
+<<<<<<< HEAD
             go get -t -u ./...
+=======
+            go get -t -d ./...
+            go get golang.org/x/sys/unix
+            go get github.com/davecgh/go-spew/spew
+            go get github.com/pmezard/go-difflib/difflib
+>>>>>>> d28c81a... updated Development guide / section and godeps-update
             godep save ./...
 
   noop:
