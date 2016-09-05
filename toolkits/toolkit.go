@@ -8,7 +8,11 @@ import (
 
 // Toolkit ...
 type Toolkit interface {
+	// Install the toolkit
 	Install() error
+	// Bootstrap : initialize the toolkit for use,
+	// e.g. setting Env Vars
+	Bootstrap() error
 }
 
 //

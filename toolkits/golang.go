@@ -20,12 +20,34 @@ import (
 type GoToolkit struct {
 }
 
-func goToolkitPath() string {
+func goToolkitRootPath() string {
 	return filepath.Join(configs.GetBitriseToolkitsDirPath(), "go")
 }
 
+func goToolkitInstallRootPath() string {
+	return filepath.Join(goToolkitRootPath(), "go")
+}
+
+func goToolkitBinsPath() string {
+	return filepath.Join(goToolkitInstallRootPath(), "bin")
+}
+
+// Bootstrap ...
+func (toolkit *GoToolkit) Bootstrap() error {
+	pthWithGoBins := configs.GeneratePATHEnvString(os.Getenv("PATH"), goToolkitBinsPath())
+	if err := os.Setenv("PATH", pthWithGoBins); err != nil {
+		return fmt.Errorf("Failed to set PATH to include the Go toolkit bins, error: %s", err)
+	}
+
+	if err := os.Setenv("GOROOT", goToolkitInstallRootPath()); err != nil {
+		return fmt.Errorf("Failed to set GOROOT to Go toolkit root, error: %s", err)
+	}
+
+	return nil
+}
+
 func installGoTar(goTarGzPath string) error {
-	installToPath := goToolkitPath()
+	installToPath := goToolkitRootPath()
 
 	if err := os.RemoveAll(installToPath); err != nil {
 		return fmt.Errorf("Failed to remove previous Go toolkit install (path: %s), error: %s", installToPath, err)
