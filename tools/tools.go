@@ -51,27 +51,16 @@ func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
 	return InstallFromURL(toolname, downloadURL)
 }
 
-// InstallFromURL ...
-func InstallFromURL(toolBinName, downloadURL string) error {
-	if len(toolBinName) < 1 {
-		return fmt.Errorf("No Tool (bin) Name provided! URL was: %s", downloadURL)
-	}
-
-	bitriseToolsDirPath := configs.GetBitriseToolsDirPath()
-	destinationPth := filepath.Join(bitriseToolsDirPath, toolBinName)
-
-	outFile, err := os.Create(destinationPth)
+// DownloadFile ...
+func DownloadFile(downloadURL, targetDirPath string) error {
+	outFile, err := os.Create(targetDirPath)
 	defer func() {
 		if err := outFile.Close(); err != nil {
-			log.Warnf("Failed to close (%s)", destinationPth)
+			log.Warnf("Failed to close (%s)", targetDirPath)
 		}
 	}()
 	if err != nil {
-		return fmt.Errorf("failed to create (%s), error: %s", destinationPth, err)
-	}
-
-	if err := outFile.Chmod(0755); err != nil {
-		return fmt.Errorf("Failed to make file (%s) executable, error: %s", destinationPth, err)
+		return fmt.Errorf("failed to create (%s), error: %s", targetDirPath, err)
 	}
 
 	resp, err := http.Get(downloadURL)
@@ -87,6 +76,26 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to download from (%s), error: %s", downloadURL, err)
+	}
+
+	return nil
+}
+
+// InstallFromURL ...
+func InstallFromURL(toolBinName, downloadURL string) error {
+	if len(toolBinName) < 1 {
+		return fmt.Errorf("No Tool (bin) Name provided! URL was: %s", downloadURL)
+	}
+
+	bitriseToolsDirPath := configs.GetBitriseToolsDirPath()
+	destinationPth := filepath.Join(bitriseToolsDirPath, toolBinName)
+
+	if err := DownloadFile(downloadURL, destinationPth); err != nil {
+		return fmt.Errorf("Failed to download, error: %s", err)
+	}
+
+	if err := os.Chmod(destinationPth, 0755); err != nil {
+		return fmt.Errorf("Failed to make file (%s) executable, error: %s", destinationPth, err)
 	}
 
 	return nil
