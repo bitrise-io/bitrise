@@ -127,7 +127,7 @@ func CheckIsRubyGemsInstalled() error {
 		log.Infoln("RubyGems is required in order to be able to auto-install all the bitrise dependencies.")
 		// log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
 		// log.Infoln(brewRubyInstallCmdString)
-		log.Infoln("You can find more information about RubyGems on it's official site at:", officialSiteURL)
+		log.Infoln("You can find more information about RubyGems on its official site at:", officialSiteURL)
 		log.Warn("Once the installation of RubyGems is finished you should call the bitrise setup again.")
 		return err
 	}
@@ -153,7 +153,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 		log.Infoln("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
 		log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
 		log.Infoln(brewRubyInstallCmdString)
-		log.Infoln("You can find more information about Homebrew on it's official site at:", officialSiteURL)
+		log.Infoln("You can find more information about Homebrew on its official site at:", officialSiteURL)
 		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
@@ -275,7 +275,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		officialGithub := "https://github.com/bitrise-io/" + toolname
 		fmt.Println()
 		log.Warnln("No supported " + toolname + " version found.")
-		log.Infoln("You can find more information about "+toolname+" on it's official GitHub page:", officialGithub)
+		log.Infoln("You can find more information about "+toolname+" on its official GitHub page:", officialGithub)
 
 		// Install
 		log.Info("Installing...")

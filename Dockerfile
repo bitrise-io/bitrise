@@ -1,4 +1,4 @@
-FROM golang:1.6.3
+FROM golang:1.7
 
 ENV PROJ_NAME bitrise
 
@@ -28,6 +28,7 @@ WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
 RUN go install
 
 # setup (downloads envman & stepman)
-RUN bitrise setup --minimal
+RUN bitrise setup
+RUN $HOME/.bitrise/tools/stepman setup -c https://github.com/bitrise-io/bitrise-steplib.git
 
-CMD bitrise --version
+CMD bitrise version
