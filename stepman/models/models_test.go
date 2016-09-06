@@ -13,11 +13,11 @@ import (
 func Test_serialize_StepModel(t *testing.T) {
 	step := StepModel{
 		Title: pointers.NewStringPtr("Test Step"),
-		Toolkit: StepToolkitModel{
-			Go: GoStepToolkitModel{
+		Toolkit: &StepToolkitModel{
+			Go: &GoStepToolkitModel{
 				PackageName: "go/package",
 			},
-			Bash: BashStepToolkitModel{
+			Bash: &BashStepToolkitModel{
 				EntryFile: "step.sh",
 			},
 		},
