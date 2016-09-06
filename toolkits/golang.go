@@ -95,7 +95,7 @@ func (toolkit *GoToolkit) Install() error {
 	var downloadErr error
 	fmt.Print("=> Downloading ...")
 	progress.SimpleProgress(".", 2*time.Second, func() {
-		downloadErr = retry.Times(2).Wait(5).Try(func(attempt uint) error {
+		downloadErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 			if attempt > 0 {
 				fmt.Println()
 				fmt.Println("==> Download failed, retrying ...")
