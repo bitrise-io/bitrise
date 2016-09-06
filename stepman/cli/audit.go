@@ -66,12 +66,12 @@ func auditStepBeforeSharePullRequest(pth string) error {
 
 func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {
 	if err := step.Audit(); err != nil {
-		return err
+		return fmt.Errorf("Failed to audit step infos, error: %s", err)
 	}
 
 	pth, err := pathutil.NormalizedOSTempDirPath(stepID + version)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to create a temporary directory for the step's audit, error: %s", err)
 	}
 
 	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
@@ -84,7 +84,7 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 
 	latestCommit, err := cmdex.GitGetLatestCommitHashOnHead(pth)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to get git-latest-commit-hash, error: %s", err)
 	}
 	if latestCommit != step.Source.Commit {
 		return fmt.Errorf("Step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)
