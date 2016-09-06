@@ -5,3 +5,4 @@ _tmp/
 _bin
 .envstore.yml
 _FAKE_HOME/
+.gows.user.yml

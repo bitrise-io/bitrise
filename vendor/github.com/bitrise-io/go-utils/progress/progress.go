@@ -5,13 +5,19 @@ import (
 	"time"
 )
 
-// Action ...
-type Action func()
+// SimpleProgressE ...
+func SimpleProgressE(printChar string, tickInterval time.Duration, action func() error) error {
+	var actionError error
+	SimpleProgress(printChar, tickInterval, func() {
+		actionError = action()
+	})
+	return actionError
+}
 
 // SimpleProgress ...
 // action : have to be a synchronous action!
 // tickInterval : e.g. : 5000 * time.Millisecond
-func SimpleProgress(printChar string, tickInterval time.Duration, action Action) {
+func SimpleProgress(printChar string, tickInterval time.Duration, action func()) {
 	// run async
 	finishedChan := make(chan bool)
 
