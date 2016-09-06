@@ -11,37 +11,60 @@ import (
 )
 
 func Test_serialize_StepModel(t *testing.T) {
-	step := StepModel{
-		Title: pointers.NewStringPtr("Test Step"),
-		Toolkit: StepToolkitModel{
-			Go: GoStepToolkitModel{
-				PackageName: "go/package",
-			},
-			Bash: BashStepToolkitModel{
-				EntryFile: "step.sh",
-			},
-		},
+	t.Log("Empty")
+	{
+		step := StepModel{}
+
+		// JSON
+		{
+			bytes, err := json.Marshal(step)
+			require.NoError(t, err)
+			require.Equal(t, `{"source":{},"deps":{}}`, string(bytes))
+		}
+
+		// YAML
+		{
+			bytes, err := yaml.Marshal(step)
+			require.NoError(t, err)
+			require.Equal(t, `{}
+`,
+				string(bytes))
+		}
 	}
 
-	// JSON
+	t.Log("Toolkit")
 	{
-		bytes, err := json.Marshal(step)
-		require.NoError(t, err)
-		require.Equal(t, `{"title":"Test Step","source":{},"toolkit":{"bash":{"entry_file":"step.sh"},"go":{"package_name":"go/package"}},"deps":{}}`, string(bytes))
-	}
+		step := StepModel{
+			Title: pointers.NewStringPtr("Test Step"),
+			Toolkit: &StepToolkitModel{
+				Go: &GoStepToolkitModel{
+					PackageName: "go/package",
+				},
+				Bash: &BashStepToolkitModel{
+					EntryFile: "step.sh",
+				},
+			},
+		}
 
-	// YAML
-	{
-		bytes, err := yaml.Marshal(step)
-		require.NoError(t, err)
-		t.Log("t: ", string(bytes))
-		require.Equal(t, `title: Test Step
+		// JSON
+		{
+			bytes, err := json.Marshal(step)
+			require.NoError(t, err)
+			require.Equal(t, `{"title":"Test Step","source":{},"toolkit":{"bash":{"entry_file":"step.sh"},"go":{"package_name":"go/package"}},"deps":{}}`, string(bytes))
+		}
+
+		// YAML
+		{
+			bytes, err := yaml.Marshal(step)
+			require.NoError(t, err)
+			require.Equal(t, `title: Test Step
 toolkit:
   bash:
     entry_file: step.sh
   go:
     package_name: go/package
 `,
-			string(bytes))
+				string(bytes))
+		}
 	}
 }
