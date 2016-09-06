@@ -317,6 +317,13 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
+func executeStep(stepDir, bitriseSourceDir string) (int, error) {
+	stepCmd := filepath.Join(stepDir, "step.sh")
+	cmd := []string{"bash", stepCmd}
+
+	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd)
+}
+
 func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel, buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -378,8 +385,6 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	// Run step
-	stepCmd := filepath.Join(stepDir, "step.sh")
-	cmd := []string{"bash", stepCmd}
 	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
 	if err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
@@ -388,7 +393,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd); err != nil {
+	if exit, err := executeStep(stepDir, bitriseSourceDir); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -401,6 +406,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	if err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
+
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return 0, stepOutputs, nil
