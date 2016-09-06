@@ -16,6 +16,10 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 )
 
+const (
+	minToolkitGoVersion = "1.7"
+)
+
 // GoToolkit ...
 type GoToolkit struct {
 }
@@ -72,7 +76,7 @@ func installGoTar(goTarGzPath string) error {
 
 // Install ...
 func (toolkit *GoToolkit) Install() error {
-	versionStr := "1.7"
+	versionStr := minToolkitGoVersion
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
 	extentionStr := "tar.gz"
@@ -89,7 +93,7 @@ func (toolkit *GoToolkit) Install() error {
 		return fmt.Errorf("Failed to create Toolkits TMP directory, error: %s", err)
 	}
 
-	localFileName := "go.tar.gz"
+	localFileName := "go." + extentionStr
 	destinationPth := filepath.Join(toolkitsTmpDirPath, localFileName)
 
 	var downloadErr error
