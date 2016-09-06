@@ -3,3 +3,4 @@ _temp/
 .bitrise.secrets.yml
 _bin
 _tmp
+.gows.user.yml
