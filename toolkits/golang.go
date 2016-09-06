@@ -35,7 +35,7 @@ func goToolkitBinsPath() string {
 // Bootstrap ...
 func (toolkit *GoToolkit) Bootstrap() error {
 	if configs.IsDebugUseSystemTools() {
-		fmt.Println("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
+		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return nil
 	}
 

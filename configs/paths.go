@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -121,7 +122,7 @@ func InitPaths() error {
 		pthWithBitriseTools := GeneratePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
 
 		if IsDebugUseSystemTools() {
-			fmt.Println("[BitriseDebug] Using system tools, instead of the ones in BITRISE_HOME")
+			log.Warn("[BitriseDebug] Using system tools, instead of the ones in BITRISE_HOME")
 		} else {
 			if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
 				return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
