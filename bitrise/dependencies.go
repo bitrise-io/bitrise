@@ -74,7 +74,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		var installErr error
 		var plugin plugins.Plugin
 		progress.SimpleProgress(".", 2*time.Second, func() {
-			err := retry.Times(2).Wait(5).Try(func(attempt uint) error {
+			err := retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					fmt.Println()
 					fmt.Println("==> Download failed, retrying ...")
@@ -281,7 +281,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		log.Info("Installing...")
 		var installErr error
 		progress.SimpleProgress(".", 2*time.Second, func() {
-			installErr = retry.Times(2).Wait(5).Try(func(attempt uint) error {
+			installErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					fmt.Println()
 					fmt.Println("==> Download failed, retrying ...")
