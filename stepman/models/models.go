@@ -59,8 +59,8 @@ type GoStepToolkitModel struct {
 
 // StepToolkitModel ...
 type StepToolkitModel struct {
-	Bash BashStepToolkitModel `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go   GoStepToolkitModel   `json:"go,omitempty" yaml:"go,omitempty"`
+	Bash *BashStepToolkitModel `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go   *GoStepToolkitModel   `json:"go,omitempty" yaml:"go,omitempty"`
 }
 
 // StepModel ...
@@ -81,7 +81,7 @@ type StepModel struct {
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
 	TypeTags            []string          `json:"type_tags,omitempty" yaml:"type_tags,omitempty"`
 	Dependencies        []DependencyModel `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
-	Toolkit             StepToolkitModel  `json:"toolkit,omitempty" yaml:"toolkit,omitempty"`
+	Toolkit             *StepToolkitModel `json:"toolkit,omitempty" yaml:"toolkit,omitempty"`
 	Deps                DepsModel         `json:"deps,omitempty" yaml:"deps,omitempty"`
 	IsRequiresAdminUser *bool             `json:"is_requires_admin_user,omitempty" yaml:"is_requires_admin_user,omitempty"`
 	// IsAlwaysRun : if true then this step will always run,
