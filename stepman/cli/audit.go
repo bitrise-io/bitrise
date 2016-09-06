@@ -3,11 +3,13 @@ package cli
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -64,19 +66,25 @@ func auditStepBeforeSharePullRequest(pth string) error {
 
 func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {
 	if err := step.Audit(); err != nil {
-		return err
+		return fmt.Errorf("Failed to audit step infos, error: %s", err)
 	}
 
 	pth, err := pathutil.NormalizedOSTempDirPath(stepID + version)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to create a temporary directory for the step's audit, error: %s", err)
 	}
-	if err := cmdex.GitCloneTag(step.Source.Git, pth, version); err != nil {
-		return err
+
+	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+		return cmdex.GitCloneTag(step.Source.Git, pth, version)
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to git-clone the step (url: %s) version (%s), error: %s",
+			step.Source.Git, version, err)
 	}
+
 	latestCommit, err := cmdex.GitGetLatestCommitHashOnHead(pth)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to get git-latest-commit-hash, error: %s", err)
 	}
 	if latestCommit != step.Source.Commit {
 		return fmt.Errorf("Step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)
