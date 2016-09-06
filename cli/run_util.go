@@ -243,10 +243,7 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 	return bitriseSourceDir, nil
 }
 
-func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel, buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
-	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
-
-	// Check & Install Step Dependencies
+func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	if len(step.Dependencies) > 0 {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
@@ -256,7 +253,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		// New dependency handling
 		for _, checkOnlyDep := range step.Deps.CheckOnly {
 			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, err
+				return err
 			}
 			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", checkOnlyDep.Name)
 		}
@@ -266,7 +263,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			for _, brewDep := range step.Deps.Brew {
 				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
-					return 1, []envmanModels.EnvironmentItemModel{}, err
+					return err
 				}
 				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", brewDep.Name)
 			}
@@ -275,12 +272,12 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
 				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep.Name, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
-					return 1, []envmanModels.EnvironmentItemModel{}, err
+					return err
 				}
 				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.Name)
 			}
 		default:
-			return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Unsupported os")
+			return errors.New("Unsupported os")
 		}
 	} else if len(step.Dependencies) > 0 {
 		log.Info("Deprecated dependencies found")
@@ -293,7 +290,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 				if runtime.GOOS == "darwin" {
 					err := bitrise.InstallWithBrewIfNeeded(dep.Name, configs.IsCIMode)
 					if err != nil {
-						return 1, []envmanModels.EnvironmentItemModel{}, err
+						return err
 					}
 				} else {
 					isSkippedBecauseOfPlatform = true
@@ -302,11 +299,11 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			case depManagerTryCheck:
 				err := bitrise.DependencyTryCheckTool(dep.Name)
 				if err != nil {
-					return 1, []envmanModels.EnvironmentItemModel{}, err
+					return err
 				}
 				break
 			default:
-				return 1, []envmanModels.EnvironmentItemModel{}, errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
+				return errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 			}
 
 			if isSkippedBecauseOfPlatform {
@@ -317,13 +314,24 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		}
 	}
 
+	return nil
+}
+
+func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel, buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
+	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
+
+	// Check & Install Step Dependencies
+	if err := checkAndInstallStepDependencies(step); err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to install Step dependency, error: %s", err)
+	}
+
 	// Collect step inputs
 	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to init envman for the Step, error: %s", err)
 	}
 
 	if err := bitrise.ExportEnvironmentsList(environments); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
 	}
 
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
