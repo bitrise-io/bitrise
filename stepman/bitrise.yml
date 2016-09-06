@@ -57,15 +57,9 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -v
-
-            # Install dependencies
-            go get -u github.com/tools/godep
-
+            set -ex
             # Check for unhandled errors
             go get -u github.com/kisielk/errcheck
-
             # Go lint
             go get -u github.com/golang/lint/golint
 
@@ -88,8 +82,7 @@ workflows:
         title: Go list without vendor
         inputs:
         - content: |-
-            set -e
-            set -x
+            set -ex
             no_vendor_paths="$(go list ./... | grep -v vendor)"
             envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
     - script:
@@ -120,8 +113,7 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -x
+            set -ex
 
             # build the new stepman
             current_dir=$(pwd)
@@ -171,7 +163,6 @@ workflows:
         - content: |
             #!/bin/bash
             set -ex
-
             rm -rf "_tmp/steplib"
     - git-clone:
         title: Git clone test StepLib
@@ -335,8 +326,7 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-
+            set -ex
             export CI=true
             releaseman create \
               --bump-version patch \
@@ -361,8 +351,7 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-
+            set -ex
             export CI=true
             releaseman create \
               --version $RELEASE_VERSION \
@@ -397,7 +386,7 @@ workflows:
         inputs:
         - content: |
             #!/bin/bash
-            set -e
+            set -ex
 
             RELEASE_VERSION=$(go run _scripts/get_version.go -file ./version/version.go)
             echo "RELEASE_VERSION: $RELEASE_VERSION"
@@ -414,8 +403,7 @@ workflows:
         inputs:
         - content: |
             #!/bin/bash
-            set -e
-            set -x
+            set -ex
 
             echo
             echo "Create final binaries"
@@ -471,8 +459,7 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -v
-            set -e
+            set -ex
             stepman setup -c ${DEFAULT_STEPLIB_GIT}
 
   delete-stepman-dir:
@@ -482,8 +469,7 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -v
-            set -e
+            set -ex
             rm -rf ~/.stepman
 
   godeps-update:
@@ -495,11 +481,17 @@ workflows:
     - script:
         title: Dependency update
         inputs:
-        - content: |-
+        - content: |
             #!/bin/bash
-            set -e
-            set -v
-
-            go get -u ./...
+            #!/bin/bash
+            set -ex
+            go get -u -v github.com/tools/godep
+            #
             rm -rf ./Godeps
+            rm -rf ./vendor
+            #
+            go get -t -d ./...
+            go get golang.org/x/sys/unix
+            go get github.com/davecgh/go-spew/spew
+            go get github.com/pmezard/go-difflib/difflib
             godep save ./...

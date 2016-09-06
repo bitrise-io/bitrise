@@ -109,7 +109,8 @@ func UserHomeDir() string {
 }
 
 // NormalizedOSTempDirPath ...
-// Returns a temp dir path. If tmpDirNamePrefix is provided it'll be used
+// Creates a temp dir, and returns its path.
+// If tmpDirNamePrefix is provided it'll be used
 //  as the tmp dir's name prefix.
 // Normalized: it's guaranteed that the path won't end with '/'.
 func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
