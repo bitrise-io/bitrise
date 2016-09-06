@@ -10,8 +10,8 @@ type Action func(attempt uint) error
 
 // Model ...
 type Model struct {
-	retry   uint
-	waitSec uint
+	retry    uint
+	waitTime time.Duration
 }
 
 // Times ...
@@ -27,14 +27,14 @@ func (Model *Model) Times(retry uint) *Model {
 }
 
 // Wait ...
-func Wait(wait uint) *Model {
+func Wait(waitTime time.Duration) *Model {
 	Model := Model{}
-	return Model.Wait(wait)
+	return Model.Wait(waitTime)
 }
 
 // Wait ...
-func (Model *Model) Wait(waitSec uint) *Model {
-	Model.waitSec = waitSec
+func (Model *Model) Wait(waitTime time.Duration) *Model {
+	Model.waitTime = waitTime
 	return Model
 }
 
@@ -45,10 +45,9 @@ func (Model Model) Try(action Action) error {
 	}
 
 	var err error
-
 	for attempt := uint(0); (0 == attempt || nil != err) && attempt <= Model.retry; attempt++ {
-		if attempt > 0 && Model.waitSec > 0 {
-			time.Sleep(time.Duration(Model.waitSec) * time.Second)
+		if attempt > 0 && Model.waitTime > 0 {
+			time.Sleep(Model.waitTime)
 		}
 
 		err = action(attempt)
