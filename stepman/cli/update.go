@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -42,8 +44,11 @@ func updateCollection(steplibSource string) (models.StepCollectionModel, error) 
 			return models.StepCollectionModel{}, errors.New("Not initialized")
 		}
 
-		if err := cmdex.GitPull(pth); err != nil {
-			return models.StepCollectionModel{}, err
+		gitPullErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			return cmdex.GitPull(pth)
+		})
+		if gitPullErr != nil {
+			return models.StepCollectionModel{}, fmt.Errorf("Failed to update StepLib git repository, error: %s", gitPullErr)
 		}
 
 		if err := stepman.ReGenerateStepSpec(route); err != nil {
