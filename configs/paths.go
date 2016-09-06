@@ -119,8 +119,13 @@ func InitPaths() error {
 			return err
 		}
 		pthWithBitriseTools := GeneratePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
-		if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
-			return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+
+		if IsDebugUseSystemTools() {
+			fmt.Println("[BitriseDebug] Using system tools, instead of the ones in BITRISE_HOME")
+		} else {
+			if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
+				return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+			}
 		}
 	}
 

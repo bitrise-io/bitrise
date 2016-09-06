@@ -34,6 +34,11 @@ func goToolkitBinsPath() string {
 
 // Bootstrap ...
 func (toolkit *GoToolkit) Bootstrap() error {
+	if configs.IsDebugUseSystemTools() {
+		fmt.Println("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
+		return nil
+	}
+
 	pthWithGoBins := configs.GeneratePATHEnvString(os.Getenv("PATH"), goToolkitBinsPath())
 	if err := os.Setenv("PATH", pthWithGoBins); err != nil {
 		return fmt.Errorf("Failed to set PATH to include the Go toolkit bins, error: %s", err)

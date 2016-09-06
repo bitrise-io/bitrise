@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -42,11 +43,21 @@ const (
 	DebugModeEnvKey = "DEBUG"
 	// LogLevelEnvKey ...
 	LogLevelEnvKey = "LOGLEVEL"
+
+	// --- Debug Options
+
+	// DebugUseSystemTools ...
+	DebugUseSystemTools = "BITRISE_DEBUG_USE_SYSTEM_TOOLS"
 )
 
 const (
 	bitriseConfigFileName = "config.json"
 )
+
+// IsDebugUseSystemTools ...
+func IsDebugUseSystemTools() bool {
+	return os.Getenv(DebugUseSystemTools) == "true"
+}
 
 func loadBitriseConfig() (ConfigModel, error) {
 	if err := EnsureBitriseConfigDirExists(); err != nil {
