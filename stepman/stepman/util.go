@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/urlutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
@@ -126,14 +127,22 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			if err := cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth); err != nil {
-				log.Warn("Failed to download step.zip: ", err)
+			downloadErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				return cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth)
+			})
+
+			if downloadErr != nil {
+				log.Warn("Failed to download step.zip: ", downloadErr)
 			} else {
 				success = true
 				return nil
 			}
 		case "git":
-			if err := cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash); err != nil {
+			downloadErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				return cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
+			})
+
+			if downloadErr != nil {
 				log.Warnf("Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true
