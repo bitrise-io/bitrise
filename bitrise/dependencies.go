@@ -35,7 +35,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		log.Warnf("Default plugin (%s) NOT found.", name)
 		fmt.Println()
 
-		log.Infoln("Installing...")
+		fmt.Print("Installing...")
 		installOrUpdate = true
 		currentVersion = dependency.MinVersion
 	} else {
@@ -72,12 +72,11 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 
 	if installOrUpdate {
 		var plugin plugins.Plugin
-		installErr := progress.SimpleProgressE(".", 2*time.Second, func() error {
+		err := progress.SimpleProgressE(".", 2*time.Second, func() error {
 			return retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					fmt.Println()
-					fmt.Println("==> Download failed, retrying ...")
-					fmt.Println()
+					fmt.Print("==> Download failed, retrying ...")
 				}
 				p, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
 				plugin = p
@@ -86,7 +85,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		})
 		fmt.Println()
 
-		if installErr != nil {
+		if err != nil {
 			return fmt.Errorf("Failed to install plugin, error: %s", err)
 		}
 
@@ -276,20 +275,19 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		log.Infoln("You can find more information about "+toolname+" on its official GitHub page:", officialGithub)
 
 		// Install
-		log.Info("Installing...")
-		installErr := progress.SimpleProgressE(".", 2*time.Second, func() error {
+		fmt.Print("Installing...")
+		err := progress.SimpleProgressE(".", 2*time.Second, func() error {
 			return retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					fmt.Println()
-					fmt.Println("==> Download failed, retrying ...")
-					fmt.Println()
+					fmt.Print("==> Download failed, retrying ...")
 				}
 				return tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion)
 			})
 		})
 		fmt.Println()
-		if installErr != nil {
-			return installErr
+		if err != nil {
+			return err
 		}
 
 		// check again
