@@ -1,11 +1,6 @@
 package toolkits
 
-import (
-	"path/filepath"
-
-	"github.com/bitrise-io/bitrise/configs"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-)
+import stepmanModels "github.com/bitrise-io/stepman/models"
 
 // ToolkitCheckResult ...
 type ToolkitCheckResult struct {
@@ -52,9 +47,4 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 // AllSupportedToolkits ...
 func AllSupportedToolkits() []Toolkit {
 	return []Toolkit{GoToolkit{}, BashToolkit{}}
-}
-
-func getBitriseToolkitsTmpDirPath() string {
-	bitriseToolkitsDirPath := configs.GetBitriseToolkitsDirPath()
-	return filepath.Join(bitriseToolkitsDirPath, "tmp")
 }

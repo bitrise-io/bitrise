@@ -18,47 +18,47 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/errorutil",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/progress",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/retry",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "05643122c49cdbcba04d07f8f1d52b668d89b760"
+			"Rev": "208a257823163ee32ed576d5265e674d03de4b41"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -105,7 +105,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+			"Rev": "30de6d19a3bd89a5f38ae4028e23aaa5582648af"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
