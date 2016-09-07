@@ -24,6 +24,11 @@ const (
 type GoToolkit struct {
 }
 
+// ToolkitName ...
+func (toolkit GoToolkit) ToolkitName() string {
+	return "go"
+}
+
 func goToolkitRootPath() string {
 	return filepath.Join(configs.GetBitriseToolkitsDirPath(), "go")
 }
@@ -36,10 +41,17 @@ func goToolkitBinsPath() string {
 	return filepath.Join(goToolkitInstallRootPath(), "bin")
 }
 
-// Bootstrap ...
-func (toolkit *GoToolkit) Bootstrap() error {
+func isUseSystemGo() bool {
 	if configs.IsDebugUseSystemTools() {
 		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
+		return true
+	}
+	return true
+}
+
+// Bootstrap ...
+func (toolkit GoToolkit) Bootstrap() error {
+	if isUseSystemGo() {
 		return nil
 	}
 
@@ -75,7 +87,7 @@ func installGoTar(goTarGzPath string) error {
 }
 
 // Install ...
-func (toolkit *GoToolkit) Install() error {
+func (toolkit GoToolkit) Install() error {
 	versionStr := minToolkitGoVersion
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
@@ -120,4 +132,11 @@ func (toolkit *GoToolkit) Install() error {
 	fmt.Println("=> Installing [DONE]")
 
 	return nil
+}
+
+// StepRunCommandArguments ...
+func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath string) ([]string, error) {
+	stepFilePath := filepath.Join(stepDirPath, "main.go")
+	cmd := []string{"go", "run", stepFilePath}
+	return cmd, nil
 }

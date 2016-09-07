@@ -119,7 +119,7 @@ func TestGetRunningStepHeaderSubSection(t *testing.T) {
 		Version: longStr,
 	}
 
-	actual := getRunningStepHeaderSubSection(stepInfo)
+	actual := getRunningStepHeaderSubSection(stepmanModels.StepModel{}, stepInfo)
 	require.NotEqual(t, "", actual)
 }
 
@@ -240,19 +240,20 @@ func TestPrintRunningStepHeader(t *testing.T) {
 		Title:   "",
 		Version: "",
 	}
-	PrintRunningStepHeader(stepInfo, 0)
+	step := stepmanModels.StepModel{}
+	PrintRunningStepHeader(stepInfo, step, 0)
 
 	stepInfo.Title = longStr
 	stepInfo.Version = ""
-	PrintRunningStepHeader(stepInfo, 0)
+	PrintRunningStepHeader(stepInfo, step, 0)
 
 	stepInfo.Title = ""
 	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, 0)
+	PrintRunningStepHeader(stepInfo, step, 0)
 
 	stepInfo.Title = longStr
 	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, 0)
+	PrintRunningStepHeader(stepInfo, step, 0)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
