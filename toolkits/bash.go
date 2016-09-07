@@ -7,6 +7,7 @@ import (
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/stringutil"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 // BashToolkit ...
@@ -46,6 +47,11 @@ func (toolkit BashToolkit) Install() error {
 // ToolkitName ...
 func (toolkit BashToolkit) ToolkitName() string {
 	return "bash"
+}
+
+// PrepareForStepRun ...
+func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error {
+	return nil
 }
 
 // StepRunCommandArguments ...

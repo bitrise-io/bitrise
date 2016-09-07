@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 const (
@@ -264,6 +265,13 @@ func (toolkit GoToolkit) Install() error {
 	}
 	fmt.Println("=> Installing [DONE]")
 
+	return nil
+}
+
+// === Toolkit: Prepare for Step Run ===
+
+// PrepareForStepRun ...
+func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error {
 	return nil
 }
 

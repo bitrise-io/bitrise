@@ -10,6 +10,8 @@ type ToolkitCheckResult struct {
 
 // Toolkit ...
 type Toolkit interface {
+	// ToolkitName : a one liner name/id of the toolkit, for logging purposes
+	ToolkitName() string
 	// Check the toolkit - first returned value (bool) indicates
 	// whether the toolkit is "operational", or have to be installed.
 	// "Have to be installed" can be true if the toolkit is not installed,
@@ -17,11 +19,12 @@ type Toolkit interface {
 	Check() (bool, ToolkitCheckResult, error)
 	// Install the toolkit
 	Install() error
+	// PrepareForStepRun can be used to pre-compile or otherwise
+	// prepare for the step's execution
+	PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error
 	// Bootstrap : initialize the toolkit for use,
 	// e.g. setting Env Vars
 	Bootstrap() error
-	// ToolkitName : a one liner name/id of the toolkit, for logging purposes
-	ToolkitName() string
 	// StepRunCommandArguments ...
 	StepRunCommandArguments(stepDirPath string) ([]string, error)
 }

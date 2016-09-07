@@ -318,18 +318,24 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func executeStep(step stepmanModels.StepModel, stepDir, bitriseSourceDir string) (int, error) {
+func executeStep(step stepmanModels.StepModel, stepAbsDirPath, bitriseSourceDir string) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
+	toolkitName := toolkitForStep.ToolkitName()
 
 	if err := toolkitForStep.Bootstrap(); err != nil {
 		return 1, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
-			toolkitForStep.ToolkitName(), err)
+			toolkitName, err)
 	}
 
-	cmd, err := toolkitForStep.StepRunCommandArguments(stepDir)
+	if err := toolkitForStep.PrepareForStepRun(step, stepAbsDirPath); err != nil {
+		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
+			toolkitName, err)
+	}
+
+	cmd, err := toolkitForStep.StepRunCommandArguments(stepAbsDirPath)
 	if err != nil {
 		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
-			toolkitForStep.ToolkitName(), err)
+			toolkitName, err)
 	}
 
 	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd)
