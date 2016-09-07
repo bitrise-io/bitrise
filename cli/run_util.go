@@ -339,6 +339,10 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
+	// [!] Make sure this happens BEFORE the Toolkit Bootstrap,
+	// so that if a Toolkit requires/allows the use of additional dependencies
+	// required for the step (e.g. a brew installed OpenSSH) it can be done
+	// with a Toolkit+Deps
 	if err := checkAndInstallStepDependencies(step); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}

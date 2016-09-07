@@ -7,8 +7,19 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+// ToolkitCheckResult ...
+type ToolkitCheckResult struct {
+	Path    string
+	Version string
+}
+
 // Toolkit ...
 type Toolkit interface {
+	// Check the toolkit - first returned value (bool) indicates
+	// whether the toolkit is "operational", or have to be installed.
+	// "Have to be installed" can be true if the toolkit is not installed,
+	// or if an older version is installed, and an update/newer version is required.
+	Check() (bool, ToolkitCheckResult, error)
 	// Install the toolkit
 	Install() error
 	// Bootstrap : initialize the toolkit for use,

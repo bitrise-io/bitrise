@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/toolkits"
+	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const (
@@ -67,6 +68,8 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
 	}
 
+	log.Infoln("All the required tools are installed!")
+
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
 		return fmt.Errorf("failed to save setup-success into config file, error: %s", err)
 	}
@@ -79,19 +82,33 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 }
 
 func doSetupToolkits() error {
+	log.Infoln("Checking Bitrise Toolkits...")
+
 	coreToolkits := toolkits.AllSupportedToolkits()
 
 	for _, aCoreTK := range coreToolkits {
-		log.Infoln("Installing toolkit: ", aCoreTK.ToolkitName())
-		if err := aCoreTK.Install(); err != nil {
-			return fmt.Errorf("Failed to install toolkit (%s), error: %s", aCoreTK.ToolkitName(), err)
+		toolkitName := aCoreTK.ToolkitName()
+		isInstallRequired, checkResult, err := aCoreTK.Check()
+		if err != nil {
+			return fmt.Errorf("Failed to perform toolkit check (%s), error: %s", toolkitName, err)
 		}
+
+		if isInstallRequired {
+			if err := aCoreTK.Install(); err != nil {
+				return fmt.Errorf("Failed to install toolkit (%s), error: %s", toolkitName, err)
+			}
+		}
+
+		log.Infoln(" * "+colorstring.Green("[OK]")+" "+toolkitName+" :", checkResult.Path)
+		log.Infoln("        version :", checkResult.Version)
 	}
 
 	return nil
 }
 
 func doSetupBitriseCoreTools() error {
+	log.Infoln("Checking Bitrise Core tools...")
+
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
 		return fmt.Errorf("Envman failed to install: %s", err)
 	}
@@ -124,8 +141,6 @@ func doSetupOnOSX(isMinimalSetupMode bool) error {
 		}
 	}
 
-	log.Infoln("All the required tools are installed!")
-
 	return nil
 }
 
@@ -138,8 +153,6 @@ func doSetupOnLinux() error {
 			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
 		}
 	}
-
-	log.Infoln("All the required tools are installed!")
 
 	return nil
 }

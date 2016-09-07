@@ -3,7 +3,6 @@ package bitrise
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/progress"
@@ -104,20 +104,11 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 	return nil
 }
 
-// CheckProgramInstalledPath ...
-func CheckProgramInstalledPath(clcommand string) (string, error) {
-	cmd := exec.Command("which", clcommand)
-	cmd.Stderr = os.Stderr
-	outBytes, err := cmd.Output()
-	outStr := string(outBytes)
-	return strings.TrimSpace(outStr), err
-}
-
 // CheckIsRubyGemsInstalled ...
 func CheckIsRubyGemsInstalled() error {
 	officialSiteURL := "https://rubygems.org"
 
-	progInstallPth, err := CheckProgramInstalledPath("gem")
+	progInstallPth, err := utils.CheckProgramInstalledPath("gem")
 	if err != nil {
 		fmt.Println()
 		log.Warn("It seems that RubyGems is not installed on your system.")
@@ -143,7 +134,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 	officialSiteURL := "http://brew.sh/"
 
-	progInstallPth, err := CheckProgramInstalledPath("brew")
+	progInstallPth, err := utils.CheckProgramInstalledPath("brew")
 	if err != nil {
 		fmt.Println()
 		log.Warn("It seems that Homebrew is not installed on your system.")
@@ -183,7 +174,7 @@ func PrintInstalledXcodeInfos() error {
 		xcodeSelectPth = "xcode-select --print-path failed to detect the location of activate Xcode Command Line Tools path"
 	}
 
-	progInstallPth, err := CheckProgramInstalledPath("xcodebuild")
+	progInstallPth, err := utils.CheckProgramInstalledPath("xcodebuild")
 	if err != nil {
 		return errors.New("xcodebuild is not installed")
 	}
@@ -216,57 +207,6 @@ func PrintInstalledXcodeInfos() error {
 	return nil
 }
 
-// // CheckIsXcodeCLTInstalled ...
-// func CheckIsXcodeCLTInstalled() error {
-// 	xcodeSelectPth, err := cmdex.RunCommandAndReturnStdout("xcode-select", "--print-path")
-// 	if err != nil {
-// 		fmt.Println()
-// 		log.Warn("It seems that the Xcode Command Line Tools are not installed on your system.")
-// 		fmt.Println()
-// 		log.Infoln("If you use OS X Mavericks or a more recent OS X version")
-// 		log.Infoln(" you can install it by running the following command in your Terminal:")
-// 		log.Infoln("xcode-select --install")
-// 		fmt.Println()
-// 		log.Infoln("If you use OS X Mountain Lion or an earlier version of OS X then you'll")
-// 		log.Infoln(" have to download and install the Xcode Command Line Tools")
-// 		log.Infoln(" directly from the Apple Developer / Downloads Portal: https://developer.apple.com/downloads/")
-// 		fmt.Println()
-// 		log.Warn("Once the installation is finished you should call the bitrise setup again.")
-// 		return errors.New("Failed to get Xcode Command Line Tools path")
-// 	}
-// 	progInstallPth, err := CheckProgramInstalledPath("xcodebuild")
-// 	if err != nil {
-// 		return errors.New("xcodebuild is not installed")
-// 	}
-//
-// 	isFullXcodeAvailable := false
-// 	verStr, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
-// 	if err != nil {
-// 		// No full Xcode available, only the Command Line Tools
-// 		// verStr is something like "xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance"
-// 		isFullXcodeAvailable = false
-// 	} else {
-// 		// version OK - full Xcode available
-// 		//  we'll just format it a bit to fit into one line
-// 		isFullXcodeAvailable = true
-// 		verStr = strings.Join(strings.Split(verStr, "\n"), " | ")
-// 	}
-//
-// 	log.Infoln(" * "+colorstring.Green("[OK]")+" xcodebuild path :", progInstallPth)
-// 	if !isFullXcodeAvailable {
-// 		log.Infoln("        version (xcodebuild) :", colorstring.Yellowf("%s", verStr))
-// 	} else {
-// 		log.Infoln("        version (xcodebuild) :", verStr)
-// 	}
-// 	log.Infoln("        active Xcode (Command Line Tools) path (xcode-select --print-path) :", xcodeSelectPth)
-// 	if !isFullXcodeAvailable {
-// 		log.Warn(colorstring.Yellowf("%s", "No Xcode found, only the Xcode Command Line Tools are available!"))
-// 		log.Warn(colorstring.Yellowf("%s", "Full Xcode is required to build, test and archive iOS apps!"))
-// 	}
-//
-// 	return nil
-// }
-
 func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
 	doInstall := func() error {
 		officialGithub := "https://github.com/bitrise-io/" + toolname
@@ -295,7 +235,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	// check whether installed
-	progInstallPth, err := CheckProgramInstalledPath(toolname)
+	progInstallPth, err := utils.CheckProgramInstalledPath(toolname)
 	if err != nil {
 		if !isInstall {
 			return err
