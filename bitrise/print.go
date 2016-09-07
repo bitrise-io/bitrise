@@ -97,8 +97,8 @@ func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx i
 }
 
 func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepmanModels.StepInfoModel) string {
-	var idRow, versionRow, collectionRow, toolkitRow, timeRow string
 
+	idRow := ""
 	{
 		id := stepInfo.ID
 		idRow = fmt.Sprintf("| id: %s |", id)
@@ -117,6 +117,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 		}
 	}
 
+	versionRow := ""
 	{
 		version := stepInfo.Version
 		versionRow = fmt.Sprintf("| version: %s |", version)
@@ -135,6 +136,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 		}
 	}
 
+	collectionRow := ""
 	{
 		collection := stepInfo.StepLib
 		collectionRow = fmt.Sprintf("| collection: %s |", collection)
@@ -153,6 +155,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 		}
 	}
 
+	toolkitRow := ""
 	{
 		toolkitForStep := toolkits.ToolkitForStep(step)
 		toolkitName := toolkitForStep.ToolkitName()
@@ -172,6 +175,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 		}
 	}
 
+	timeRow := ""
 	{
 		logTime := time.Now().Format(time.RFC3339)
 		timeRow = fmt.Sprintf("| time: %s |", logTime)
