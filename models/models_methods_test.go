@@ -343,6 +343,17 @@ func TestGetInputByKey(t *testing.T) {
 // ----------------------------
 // --- StepIDData
 
+func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
+	// Not Unique
+	require.Equal(t, false, StepIDData{SteplibSource: "path"}.IsUniqueResourceID())
+	require.Equal(t, false, StepIDData{SteplibSource: "git"}.IsUniqueResourceID())
+	require.Equal(t, false, StepIDData{SteplibSource: "_"}.IsUniqueResourceID())
+	require.Equal(t, false, StepIDData{SteplibSource: ""}.IsUniqueResourceID())
+	// Unique
+	require.Equal(t, false, StepIDData{SteplibSource: "a"}.IsUniqueResourceID())
+	require.Equal(t, false, StepIDData{SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git"}.IsUniqueResourceID())
+}
+
 func TestGetStepIDStepDataPair(t *testing.T) {
 	stepData := stepmanModels.StepModel{}
 

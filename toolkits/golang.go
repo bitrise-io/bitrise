@@ -345,6 +345,18 @@ func stepBinaryCacheFullPath(sIDData models.StepIDData) string {
 func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 
+	// try to use cached binary, if possible
+	if sIDData.IsUniqueResourceID() {
+		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
+			log.Warn("Failed to check cached binary for step, error: %s", err)
+		} else if exists {
+			log.Debugln("No need to compile, binary already exists")
+			return nil
+		}
+	}
+
+	// it's not cached, so compile it
+
 	if step.Toolkit == nil {
 		return errors.New("No Toolkit information specified in step!")
 	}
