@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/stringutil"
@@ -50,12 +51,12 @@ func (toolkit BashToolkit) ToolkitName() string {
 }
 
 // PrepareForStepRun ...
-func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error {
+func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
 	return nil
 }
 
 // StepRunCommandArguments ...
-func (toolkit BashToolkit) StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error) {
+func (toolkit BashToolkit) StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error) {
 	stepFilePath := filepath.Join(stepDirPath, "step.sh")
 	cmd := []string{"bash", stepFilePath}
 	return cmd, nil

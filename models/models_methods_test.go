@@ -343,6 +343,47 @@ func TestGetInputByKey(t *testing.T) {
 // ----------------------------
 // --- StepIDData
 
+func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
+	stepIDDataWithIDAndVersionSpecified := StepIDData{IDorURI: "stepid", Version: "version"}
+	stepIDDataWithOnlyVersionSpecified := StepIDData{Version: "version"}
+	stepIDDataWithOnlyIDSpecified := StepIDData{IDorURI: "stepid"}
+	stepIDDataEmpty := StepIDData{}
+
+	// Not Unique
+	for _, aSourceID := range []string{"path", "git", "_", ""} {
+		stepIDDataWithIDAndVersionSpecified.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataWithIDAndVersionSpecified.IsUniqueResourceID())
+
+		stepIDDataWithOnlyVersionSpecified.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataWithOnlyVersionSpecified.IsUniqueResourceID())
+
+		stepIDDataWithOnlyIDSpecified.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataWithOnlyIDSpecified.IsUniqueResourceID())
+
+		stepIDDataEmpty.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataEmpty.IsUniqueResourceID())
+	}
+
+	for _, aSourceID := range []string{"a", "any-other-step-source", "https://github.com/bitrise-io/bitrise-steplib.git"} {
+		// Only if StepLib, AND both ID and Version are defined, only then
+		// this is a Unique Resource ID!
+		stepIDDataWithIDAndVersionSpecified.SteplibSource = aSourceID
+		require.Equal(t, true, stepIDDataWithIDAndVersionSpecified.IsUniqueResourceID())
+
+		// In any other case, it's not,
+		// even if it's from a StepLib
+		// but missing ID or version!
+		stepIDDataWithOnlyVersionSpecified.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataWithOnlyVersionSpecified.IsUniqueResourceID())
+
+		stepIDDataWithOnlyIDSpecified.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataWithOnlyIDSpecified.IsUniqueResourceID())
+
+		stepIDDataEmpty.SteplibSource = aSourceID
+		require.Equal(t, false, stepIDDataEmpty.IsUniqueResourceID())
+	}
+}
+
 func TestGetStepIDStepDataPair(t *testing.T) {
 	stepData := stepmanModels.StepModel{}
 

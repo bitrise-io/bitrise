@@ -620,6 +620,36 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	}, nil
 }
 
+// IsUniqueResourceID : true if this ID is a unique resource ID, which is true
+// if the ID refers to the exact same step code/data every time.
+// Practically, this is only true for steps from StepLibrary collections,
+// a local path or direct git step ID is never guaranteed to identify the
+// same resource every time, the step's behaviour can change at every execution!
+//
+// __If the ID is a Unique Resource ID then the step can be cached (locally)__,
+// as it won't change between subsequent step execution.
+func (sIDData StepIDData) IsUniqueResourceID() bool {
+	switch sIDData.SteplibSource {
+	case "path":
+		return false
+	case "git":
+		return false
+	case "_":
+		return false
+	case "":
+		return false
+	}
+
+	// in any other case, it's a StepLib URL
+	// but it's only unique if StepID and Step Version are all defined!
+	if len(sIDData.IDorURI) > 0 && len(sIDData.Version) > 0 {
+		return true
+	}
+
+	// in every other case, it's not unique, not even if it's from a StepLib
+	return false
+}
+
 // ----------------------------
 // --- BuildRunResults
 

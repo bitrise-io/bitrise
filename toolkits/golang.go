@@ -12,6 +12,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -319,27 +320,42 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 }
 
 // stepIDorURI : doesn't work for "path::./" yet!!
-func stepBinaryFilename(stepIDorURI, stepVersion string) string {
+func stepBinaryFilename(sIDData models.StepIDData) string {
 	//
-	reg, err := regexp.Compile("[^A-Za-z0-9.-]")
+	replaceRexp, err := regexp.Compile("[^A-Za-z0-9.-]")
 	if err != nil {
 		log.Warn("Invalid regex, error: %s", err)
 		return ""
 	}
 
-	safeStepID := reg.ReplaceAllString(stepIDorURI, "_")
+	compositeStepID := fmt.Sprintf("%s-%s-%s",
+		sIDData.SteplibSource, sIDData.IDorURI, sIDData.Version)
+
+	safeStepID := replaceRexp.ReplaceAllString(compositeStepID, "_")
 	fmt.Println(" (debug) safeStepID: ", safeStepID)
 	//
-	return safeStepID + "-" + stepVersion
+	return safeStepID
 }
 
-func stepBinaryCacheFullPath(stepIDorURI, stepVersion string) string {
-	return filepath.Join(goToolkitCacheRootPath(), stepBinaryFilename(stepIDorURI, stepVersion))
+func stepBinaryCacheFullPath(sIDData models.StepIDData) string {
+	return filepath.Join(goToolkitCacheRootPath(), stepBinaryFilename(sIDData))
 }
 
 // PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error {
-	fullStepBinPath := stepBinaryCacheFullPath(stepIDorURI, stepVersion)
+func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
+	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
+
+	// try to use cached binary, if possible
+	if sIDData.IsUniqueResourceID() {
+		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
+			log.Warn("Failed to check cached binary for step, error: %s", err)
+		} else if exists {
+			log.Debugln("No need to compile, binary already exists")
+			return nil
+		}
+	}
+
+	// it's not cached, so compile it
 
 	if step.Toolkit == nil {
 		return errors.New("No Toolkit information specified in step!")
@@ -355,11 +371,11 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepIDo
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
-func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error) {
+func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error) {
 	// stepFilePath := filepath.Join(stepDirPath, "main.go")
 	// cmd := []string{"go", "run", stepFilePath}
 
-	fullStepBinPath := stepBinaryCacheFullPath(stepIDorURI, stepVersion)
+	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }
 
