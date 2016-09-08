@@ -7,6 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/toolkits"
+	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const (
@@ -44,18 +46,29 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 	log.Infoln("Setup")
 	log.Infof("Full setup: %v", isFullSetupMode)
 	log.Infoln("Detected OS:", runtime.GOOS)
+
+	if err := doSetupBitriseCoreTools(); err != nil {
+		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
+	}
+
 	switch runtime.GOOS {
 	case "darwin":
 		if err := doSetupOnOSX(isFullSetupMode); err != nil {
-			return err
+			return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
 		}
 	case "linux":
 		if err := doSetupOnLinux(); err != nil {
-			return err
+			return fmt.Errorf("Failed to do Linux specific setup, error: %s", err)
 		}
 	default:
 		return errors.New("unsupported platform :(")
 	}
+
+	if err := doSetupToolkits(); err != nil {
+		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
+	}
+
+	log.Infoln("All the required tools are installed!")
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
 		return fmt.Errorf("failed to save setup-success into config file, error: %s", err)
@@ -68,45 +81,51 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 	return nil
 }
 
-//
-// install with brew example
-//
-// func checkIsAnsibleInstalled() error {
-// 	progInstallPth, err := checkProgramInstalledPath("ansible")
-// 	if err != nil {
-// 		officialSiteURL := "http://www.ansible.com/home"
-// 		officialGitHubURL := "https://github.com/ansible/ansible"
-// 		log.Infoln("")
-// 		log.Infoln("Ansible was not found.")
-// 		log.Infoln("Ansible is used for system provisioning.")
-// 		log.Infoln("You can find more information on Ansible's official website:", officialSiteURL)
-// 		log.Infoln(" or on it's GitHub page:", officialGitHubURL)
-// 		log.Infoln("You can install Ansible through brew:")
-// 		log.Infoln("$ brew update && brew install ansible")
-// 		isInstall, err := goinp.AskForBool("Would you like to install Ansible right now?")
-// 		if err != nil {
-// 			return err
-// 		}
-// 		if !isInstall {
-// 			return errors.New("Ansible not found and install was not initiated.")
-// 		}
-//
-// 		// Install
-// 		log.Infoln("$ brew update --verbose")
-// 		if err := RunCommand("brew", "update", "--verbose"); err != nil {
-// 			return err
-// 		}
-// 		log.Infoln("$ brew install ansible")
-// 		if err := RunCommand("brew", "install", "ansible"); err != nil {
-// 			return err
-// 		}
-//
-// 		// just check again
-// 		return checkIsAnsibleInstalled()
-// 	}
-// 	log.Infoln(" * [OK] Ansible :", progInstallPth)
-// 	return nil
-// }
+func doSetupToolkits() error {
+	log.Infoln("Checking Bitrise Toolkits...")
+
+	coreToolkits := toolkits.AllSupportedToolkits()
+
+	for _, aCoreTK := range coreToolkits {
+		toolkitName := aCoreTK.ToolkitName()
+		isInstallRequired, checkResult, err := aCoreTK.Check()
+		if err != nil {
+			return fmt.Errorf("Failed to perform toolkit check (%s), error: %s", toolkitName, err)
+		}
+
+		if isInstallRequired {
+			log.Infoln("No installed/suitable " + toolkitName + " found, installing toolkit ...")
+			if err := aCoreTK.Install(); err != nil {
+				return fmt.Errorf("Failed to install toolkit (%s), error: %s", toolkitName, err)
+			}
+
+			isInstallRequired, checkResult, err = aCoreTK.Check()
+			if err != nil {
+				return fmt.Errorf("Failed to perform toolkit check (%s), error: %s", toolkitName, err)
+			}
+		}
+		if isInstallRequired {
+			return fmt.Errorf("Toolkit (%s) still reports that it isn't (properly) installed", toolkitName)
+		}
+
+		log.Infoln(" * "+colorstring.Green("[OK]")+" "+toolkitName+" :", checkResult.Path)
+		log.Infoln("        version :", checkResult.Version)
+	}
+
+	return nil
+}
+
+func doSetupBitriseCoreTools() error {
+	log.Infoln("Checking Bitrise Core tools...")
+
+	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
+		return fmt.Errorf("Envman failed to install: %s", err)
+	}
+	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
+		return fmt.Errorf("Stepman failed to install: %s", err)
+	}
+	return nil
+}
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
 	log.Infoln("Doing OS X specific setup")
@@ -125,19 +144,11 @@ func doSetupOnOSX(isMinimalSetupMode bool) error {
 	// 	return errors.New("Ansible failed to install")
 	// }
 
-	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return fmt.Errorf("Envman failed to install: %s", err)
-	}
-	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return fmt.Errorf("Stepman failed to install: %s", err)
-	}
 	for pluginName, pluginDependency := range OSXPluginDependencyMap {
 		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
 			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
 		}
 	}
-
-	log.Infoln("All the required tools are installed!")
 
 	return nil
 }
@@ -146,19 +157,11 @@ func doSetupOnLinux() error {
 	log.Infoln("Doing Linux specific setup")
 	log.Infoln("Checking required tools...")
 
-	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return fmt.Errorf("Envman failed to install: %s", err)
-	}
-	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return fmt.Errorf("Stepman failed to install: %s", err)
-	}
 	for pluginName, pluginDependency := range LinuxPluginDependencyMap {
 		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
 			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
 		}
 	}
-
-	log.Infoln("All the required tools are installed!")
 
 	return nil
 }

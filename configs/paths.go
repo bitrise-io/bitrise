@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -51,6 +52,11 @@ func GetBitriseToolsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "tools")
 }
 
+// GetBitriseToolkitsDirPath ...
+func GetBitriseToolkitsDirPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), "toolkits")
+}
+
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {
@@ -81,7 +87,8 @@ func initBitriseWorkPaths() error {
 	return nil
 }
 
-func generatePATHEnvString(currentPATHEnv, pathToInclude string) string {
+// GeneratePATHEnvString ...
+func GeneratePATHEnvString(currentPATHEnv, pathToInclude string) string {
 	if currentPATHEnv == "" {
 		return pathToInclude
 	}
@@ -107,13 +114,20 @@ func InitPaths() error {
 	}
 
 	// --- Bitrise TOOLS
-	bitriseToolsDirPth := GetBitriseToolsDirPath()
-	if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
-		return err
-	}
-	pthWithBitriseTools := generatePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
-	if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
-		return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+	{
+		bitriseToolsDirPth := GetBitriseToolsDirPath()
+		if err := pathutil.EnsureDirExist(bitriseToolsDirPth); err != nil {
+			return err
+		}
+		pthWithBitriseTools := GeneratePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
+
+		if IsDebugUseSystemTools() {
+			log.Warn("[BitriseDebug] Using system tools, instead of the ones in BITRISE_HOME")
+		} else {
+			if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
+				return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
+			}
+		}
 	}
 
 	inputEnvstorePath, err := filepath.Abs(filepath.Join(BitriseWorkDirPath, "input_envstore.yml"))

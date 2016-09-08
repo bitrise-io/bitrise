@@ -1,9 +1,23 @@
 package stringutil
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
 )
+
+// ReadFirstLine ...
+func ReadFirstLine(s string, isIgnoreLeadingEmptyLines bool) string {
+	scanner := bufio.NewScanner(strings.NewReader(s))
+	firstLine := ""
+	for scanner.Scan() {
+		firstLine = scanner.Text()
+		if !isIgnoreLeadingEmptyLines || firstLine != "" {
+			break
+		}
+	}
+	return firstLine
+}
 
 // CaseInsensitiveEquals ...
 func CaseInsensitiveEquals(a, b string) bool {
