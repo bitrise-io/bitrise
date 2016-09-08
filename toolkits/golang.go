@@ -160,14 +160,10 @@ func isGoInPATHAvailable() bool {
 		return false
 	}
 
-	verOut, err := cmdex.RunCommandAndReturnStdout("go", "version")
-	if err != nil {
+	if _, err := cmdex.RunCommandAndReturnStdout("go", "version"); err != nil {
 		return false
 	}
 
-	if _, err := parseGoVersionFromGoVersionOutput(verOut); err != nil {
-		return false
-	}
 	return true
 }
 
@@ -373,9 +369,6 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 
 // StepRunCommandArguments ...
 func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error) {
-	// stepFilePath := filepath.Join(stepDirPath, "main.go")
-	// cmd := []string{"go", "run", stepFilePath}
-
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }
