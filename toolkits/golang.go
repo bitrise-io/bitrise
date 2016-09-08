@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	minGoVersionForToolkit = "1.7"
+	minGoVersionForToolkit = "1.7.1"
 )
 
 // === Base Toolkit struct ===
@@ -150,7 +150,7 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 	return verStr, nil
 }
 
-func isGoInPATHSufficient() bool {
+func isGoInPATHAvailable() bool {
 	if configs.IsDebugUseSystemTools() {
 		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return true
@@ -165,20 +165,9 @@ func isGoInPATHSufficient() bool {
 		return false
 	}
 
-	verStr, err := parseGoVersionFromGoVersionOutput(verOut)
-	if err != nil {
+	if _, err := parseGoVersionFromGoVersionOutput(verOut); err != nil {
 		return false
 	}
-
-	// version check
-	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minGoVersionForToolkit)
-	if err != nil {
-		return false
-	}
-	if !isVersionOk {
-		return false
-	}
-
 	return true
 }
 
@@ -186,7 +175,7 @@ func isGoInPATHSufficient() bool {
 
 // Bootstrap ...
 func (toolkit GoToolkit) Bootstrap() error {
-	if isGoInPATHSufficient() {
+	if isGoInPATHAvailable() {
 		return nil
 	}
 
@@ -225,11 +214,6 @@ func installGoTar(goTarGzPath string) error {
 
 // Install ...
 func (toolkit GoToolkit) Install() error {
-	if isGoInPATHSufficient() {
-		fmt.Print("System Installed Go is sufficient, no need to install it for the toolkit")
-		return nil
-	}
-
 	versionStr := minGoVersionForToolkit
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
