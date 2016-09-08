@@ -81,8 +81,7 @@ func checkGoConfiguration(goConfig GoConfigurationModel) (bool, ToolkitCheckResu
 	return false, checkRes, nil
 }
 
-// Check ...
-func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
+func selectGoConfiguration() (bool, ToolkitCheckResult, GoConfigurationModel, error) {
 	potentialGoConfigurations := []GoConfigurationModel{}
 	// from PATH
 	{
@@ -106,12 +105,15 @@ func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
 
 	isRequireInstall := true
 	checkResult := ToolkitCheckResult{}
+	goConfig := GoConfigurationModel{}
 	var checkError error
 	for _, aPotentialGoInfoToUse := range potentialGoConfigurations {
 		isInstReq, chkRes, err := checkGoConfiguration(aPotentialGoInfoToUse)
 		checkResult = chkRes
 		checkError = err
 		if !isInstReq {
+			// select this one
+			goConfig = aPotentialGoInfoToUse
 			isRequireInstall = false
 			break
 		}
@@ -121,7 +123,13 @@ func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
 		log.Warnf("Installed go found (path: %s), but not a supported version: %s", checkResult.Path, checkResult.Version)
 	}
 
-	return isRequireInstall, checkResult, checkError
+	return isRequireInstall, checkResult, goConfig, checkError
+}
+
+// Check ...
+func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
+	isInstallRequired, checkResult, _, err := selectGoConfiguration()
+	return isInstallRequired, checkResult, err
 }
 
 func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, error) {
@@ -300,8 +308,18 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 
 	log.Debugln("=> Building package " + packageName + " ...")
 	{
+		isInstallRequired, _, goConfig, err := selectGoConfiguration()
+		if err != nil {
+			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s", err)
+		}
+		if isInstallRequired {
+			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s",
+				"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
+		}
+
 		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
-			"go", "build", "-o", outputBinPath, packageName)
+			goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
+		cmd.Env = append(os.Environ(), "GOROOT="+goConfig.GOROOT)
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("Failed to install package, error: %s", err)
 		}
