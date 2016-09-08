@@ -1,6 +1,9 @@
 package toolkits
 
-import stepmanModels "github.com/bitrise-io/stepman/models"
+import (
+	"github.com/bitrise-io/bitrise/models"
+	stepmanModels "github.com/bitrise-io/stepman/models"
+)
 
 // ToolkitCheckResult ...
 type ToolkitCheckResult struct {
@@ -21,12 +24,12 @@ type Toolkit interface {
 	Install() error
 	// PrepareForStepRun can be used to pre-compile or otherwise
 	// prepare for the step's execution
-	PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error
+	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
 	// Bootstrap : initialize the toolkit for use,
 	// e.g. setting Env Vars
 	Bootstrap() error
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error)
+	StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error)
 }
 
 //
