@@ -639,7 +639,14 @@ func (sIDData StepIDData) IsUniqueResourceID() bool {
 	case "":
 		return false
 	}
+
 	// in any other case, it's a StepLib URL
+	// but it's only unique if StepID and Step Version are all defined!
+	if len(sIDData.IDorURI) > 0 && len(sIDData.Version) > 0 {
+		return true
+	}
+
+	// in every other case, it's not unique, not even if it's from a StepLib
 	return false
 }
 
