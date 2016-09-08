@@ -50,12 +50,12 @@ func (toolkit BashToolkit) ToolkitName() string {
 }
 
 // PrepareForStepRun ...
-func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error {
+func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error {
 	return nil
 }
 
 // StepRunCommandArguments ...
-func (toolkit BashToolkit) StepRunCommandArguments(stepDirPath string) ([]string, error) {
+func (toolkit BashToolkit) StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error) {
 	stepFilePath := filepath.Join(stepDirPath, "step.sh")
 	cmd := []string{"bash", stepFilePath}
 	return cmd, nil

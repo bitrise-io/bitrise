@@ -21,12 +21,12 @@ type Toolkit interface {
 	Install() error
 	// PrepareForStepRun can be used to pre-compile or otherwise
 	// prepare for the step's execution
-	PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error
+	PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error
 	// Bootstrap : initialize the toolkit for use,
 	// e.g. setting Env Vars
 	Bootstrap() error
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(stepDirPath string) ([]string, error)
+	StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error)
 }
 
 //

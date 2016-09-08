@@ -70,9 +70,13 @@
 			"Rev": "c8d21da6b51ff82aeb08b9b410c1d27da10f5f84"
 		},
 		{
+			"ImportPath": "github.com/bitrise-tools/gows/gows",
+			"Rev": "c90ee77baa6f7e2815d9f8598c28fd97a8fce60e"
+		},
+		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
-			"Comment": "v1.0.0",
-			"Rev": "6cf5744a041a0022271cefed95ba843f6d87fd51"
+			"Comment": "v1.0.0-2-g66f99a2",
+			"Rev": "66f99a29a08158b999b0dc2e7ccacf1131d4e0b4"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-version",

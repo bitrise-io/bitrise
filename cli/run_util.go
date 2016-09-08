@@ -318,7 +318,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func executeStep(step stepmanModels.StepModel, stepAbsDirPath, bitriseSourceDir string) (int, error) {
+func executeStep(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath, bitriseSourceDir string) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -327,12 +327,12 @@ func executeStep(step stepmanModels.StepModel, stepAbsDirPath, bitriseSourceDir 
 			toolkitName, err)
 	}
 
-	if err := toolkitForStep.PrepareForStepRun(step, stepAbsDirPath); err != nil {
+	if err := toolkitForStep.PrepareForStepRun(step, stepIDorURI, stepVersion, stepAbsDirPath); err != nil {
 		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
 			toolkitName, err)
 	}
 
-	cmd, err := toolkitForStep.StepRunCommandArguments(stepAbsDirPath)
+	cmd, err := toolkitForStep.StepRunCommandArguments(stepAbsDirPath, stepIDorURI, stepVersion)
 	if err != nil {
 		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
 			toolkitName, err)
@@ -414,7 +414,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(step, stepDir, bitriseSourceDir); err != nil {
+	if exit, err := executeStep(step, stepIDData.IDorURI, stepIDData.Version, stepDir, bitriseSourceDir); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr

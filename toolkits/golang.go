@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-tools/gows/gows"
 )
 
 const (
@@ -270,18 +271,96 @@ func (toolkit GoToolkit) Install() error {
 
 // === Toolkit: Prepare for Step Run ===
 
-// PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepAbsDirPath string) error {
+func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
+	log.Debugf("=> Installing package (%s) to path (%s) ...", packageName, srcPath)
+	workspaceRootPath, err := pathutil.NormalizedOSTempDirPath("bitrise-go-toolkit")
+	if err != nil {
+		return fmt.Errorf("Failed to create root directory of isolated workspace, error: %s", err)
+	}
+	log.Debugln("=> Using sandboxed workspace:", workspaceRootPath)
+
+	// origGOPATH := os.Getenv("GOPATH")
+	// if origGOPATH == "" {
+	// 	return fmt.Errorf("You don't have a GOPATH environment - please set it; GOPATH/bin will be symlinked")
+	// }
+
+	// log.Debugln("=> Symlink GOPATH/bin into sandbox ...")
+	// if err := gows.CreateGopathBinSymlink(origGOPATH, workspaceRootPath); err != nil {
+	// 	return fmt.Errorf("Failed to create GOPATH/bin symlink, error: %s", err)
+	// }
+	// log.Debugln("   [DONE]")
+
+	fullPackageWorkspacePath := filepath.Join(workspaceRootPath, "src", packageName)
+	log.Debugf("=> Creating Symlink: (%s) -> (%s)", srcPath, fullPackageWorkspacePath)
+	if err := gows.CreateOrUpdateSymlink(srcPath, fullPackageWorkspacePath); err != nil {
+		return fmt.Errorf("Failed to create Project->Workspace symlink, error: %s", err)
+	}
+	log.Debugf(" [DONE] Symlink is in place")
+
+	log.Debugln("=> Building package " + packageName + " ...")
+	{
+		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
+			"go", "build", "-o", outputBinPath, packageName)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("Failed to install package, error: %s", err)
+		}
+	}
+	log.Debugln("   [DONE] Package successfully installed")
+
+	log.Debugln("=> Delete isolated workspace ...")
+	{
+		if err := os.RemoveAll(workspaceRootPath); err != nil {
+			return fmt.Errorf("Failed to delete temporary isolated workspace, error: %s", err)
+		}
+	}
+	log.Debugln("   [DONE]")
+
 	return nil
+}
+
+// stepIDorURI : doesn't work for "path::./" yet!!
+func stepBinaryFilename(stepIDorURI, stepVersion string) string {
+	//
+	reg, err := regexp.Compile("[^A-Za-z0-9.-]")
+	if err != nil {
+		log.Warn("Invalid regex, error: %s", err)
+		return ""
+	}
+
+	safeStepID := reg.ReplaceAllString(stepIDorURI, "_")
+	fmt.Println(" (debug) safeStepID: ", safeStepID)
+	//
+	return safeStepID + "-" + stepVersion
+}
+
+func stepBinaryCacheFullPath(stepIDorURI, stepVersion string) string {
+	return filepath.Join(goToolkitCacheRootPath(), stepBinaryFilename(stepIDorURI, stepVersion))
+}
+
+// PrepareForStepRun ...
+func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, stepIDorURI, stepVersion, stepAbsDirPath string) error {
+	fullStepBinPath := stepBinaryCacheFullPath(stepIDorURI, stepVersion)
+
+	if step.Toolkit == nil {
+		return errors.New("No Toolkit information specified in step!")
+	}
+	if step.Toolkit.Go == nil {
+		return errors.New("No Toolkit.Go information specified in step!")
+	}
+	packageName := step.Toolkit.Go.PackageName
+
+	return goBuildInIsolation(packageName, stepAbsDirPath, fullStepBinPath)
 }
 
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
-func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath string) ([]string, error) {
-	stepFilePath := filepath.Join(stepDirPath, "main.go")
-	cmd := []string{"go", "run", stepFilePath}
-	return cmd, nil
+func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath, stepIDorURI, stepVersion string) ([]string, error) {
+	// stepFilePath := filepath.Join(stepDirPath, "main.go")
+	// cmd := []string{"go", "run", stepFilePath}
+
+	fullStepBinPath := stepBinaryCacheFullPath(stepIDorURI, stepVersion)
+	return []string{fullStepBinPath}, nil
 }
 
 // === Toolkit path utility function ===
@@ -296,6 +375,9 @@ func goToolkitTmpDirPath() string {
 
 func goToolkitInstallToPath() string {
 	return filepath.Join(goToolkitRootPath(), "inst")
+}
+func goToolkitCacheRootPath() string {
+	return filepath.Join(goToolkitRootPath(), "cache")
 }
 
 func goToolkitInstallRootPath() string {
