@@ -45,6 +45,9 @@ func updateCollection(steplibSource string) (models.StepCollectionModel, error) 
 		}
 
 		gitPullErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			if attempt > 0 {
+				log.Infoln("Retrying ...")
+			}
 			return cmdex.GitPull(pth)
 		})
 		if gitPullErr != nil {
