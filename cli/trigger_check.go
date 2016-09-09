@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/ryanuber/go-glob"
 	"github.com/urfave/cli"
 )
 
@@ -40,48 +39,23 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 	}
 }
 
-func validateTriggerMap(triggerMap []models.TriggerMapItemModel) error {
-	for _, item := range triggerMap {
-		if item.Pattern == "" {
-			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty pattern", item.Pattern, item.WorkflowID)
-		}
-
-		if item.WorkflowID == "" {
-			return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", item.Pattern, item.WorkflowID)
-		}
+func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode bool) RunAndTriggerParamsModel {
+	if isPullRequestMode {
+		params.PushBranch = ""
+		params.PRSourceBranch = params.TriggerPattern
+		params.PRTargetBranch = ""
+	} else {
+		params.PushBranch = params.TriggerPattern
+		params.PRSourceBranch = ""
+		params.PRTargetBranch = ""
 	}
 
-	return nil
+	params.TriggerPattern = ""
+
+	return params
 }
 
-func getWorkflowIDByPattern(triggerMap []models.TriggerMapItemModel, pattern string, isPullRequestMode bool) (string, error) {
-	if err := validateTriggerMap(triggerMap); err != nil {
-		return "", err
-	}
-
-	matchFoundButPullRequestModeNotAllowed := false
-	for _, item := range triggerMap {
-		if glob.Glob(item.Pattern, pattern) {
-			if isPullRequestMode && !item.IsPullRequestAllowed {
-				matchFoundButPullRequestModeNotAllowed = true
-				continue
-			}
-			return item.WorkflowID, nil
-		}
-
-	}
-	if matchFoundButPullRequestModeNotAllowed {
-		return "", fmt.Errorf("Run triggered by pattern: (%s) in pull request mode, but matching workflow disabled in pull request mode", pattern)
-	}
-	return "", fmt.Errorf("Run triggered by pattern: (%s), but no matching workflow found", pattern)
-}
-
-func getWorkflowIDByTriggerParams(triggerMap models.TriggerMapModel, pattern string, isPullRequestMode bool, params RunAndTriggerParamsModel) (string, error) {
-	if pattern != "" {
-		// Deprecated trigger item
-		return getWorkflowIDByPattern(triggerMap, pattern, isPullRequestMode)
-	}
-
+func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
 	for _, item := range triggerMap {
 		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
 		if err != nil {
@@ -93,6 +67,16 @@ func getWorkflowIDByTriggerParams(triggerMap models.TriggerMapModel, pattern str
 	}
 
 	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+}
+
+// migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
+// and returns the triggered workflow id
+func getWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, error) {
+	if params.TriggerPattern != "" {
+		params = migratePatternToParams(params, isPullRequestMode)
+	}
+
+	return getWorkflowIDByParams(triggerMap, params)
 }
 
 // --------------------
@@ -164,8 +148,9 @@ func triggerCheck(c *cli.Context) error {
 	}
 
 	// Trigger filter validation
-	if triggerParams.TriggerPattern == "" {
-		registerFatal("No trigger pattern specified", warnings, triggerParams.Format)
+	if triggerParams.TriggerPattern == "" &&
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" {
+		registerFatal("No trigger pattern nor trigger params specified", warnings, triggerParams.Format)
 	}
 	//
 
@@ -176,7 +161,7 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, triggerParams.Format)
 	}
 
-	workflowToRunID, err := getWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerParams.TriggerPattern, isPRMode)
+	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}

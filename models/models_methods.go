@@ -29,6 +29,22 @@ func triggerEventType(pushBranch, prSourceBranch, prTargetBranch string) (Trigge
 	return UnknownTriggerEvent, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
 }
 
+func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapItemModel {
+	migratedItems := []TriggerMapItemModel{
+		TriggerMapItemModel{
+			PushBranch: triggerItem.Pattern,
+			WorkflowID: triggerItem.WorkflowID,
+		},
+	}
+	if triggerItem.IsPullRequestAllowed {
+		migratedItems = append(migratedItems, TriggerMapItemModel{
+			PullRequestSourceBranch: triggerItem.Pattern,
+			WorkflowID:              triggerItem.WorkflowID,
+		})
+	}
+	return migratedItems
+}
+
 // MatchWithParams ...
 func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
@@ -36,28 +52,39 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 		return false, err
 	}
 
-	itemEventType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
-	if err != nil {
-		return false, err
+	migratedTriggerItems := []TriggerMapItemModel{triggerItem}
+	if triggerItem.Pattern != "" {
+		migratedTriggerItems = migrateDeprecatedTriggerItem(triggerItem)
 	}
 
-	if paramsEventType != itemEventType {
-		return false, nil
-	}
-
-	switch itemEventType {
-	case CodePushTriggerEvent:
-		return glob.Glob(triggerItem.PushBranch, pushBranch), nil
-	case PullRequestTriggerEvent:
-		if triggerItem.PullRequestSourceBranch == "" {
-			triggerItem.PullRequestSourceBranch = "*"
+	for _, migratedTriggerItem := range migratedTriggerItems {
+		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch)
+		if err != nil {
+			return false, err
 		}
 
-		if triggerItem.PullRequestTargetBranch == "" {
-			triggerItem.PullRequestTargetBranch = "*"
+		if paramsEventType != itemEventType {
+			continue
 		}
 
-		return (glob.Glob(triggerItem.PullRequestSourceBranch, prSourceBranch) && glob.Glob(triggerItem.PullRequestTargetBranch, prTargetBranch)), nil
+		switch itemEventType {
+		case CodePushTriggerEvent:
+			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
+			return match, nil
+		case PullRequestTriggerEvent:
+			if migratedTriggerItem.PullRequestSourceBranch == "" {
+				migratedTriggerItem.PullRequestSourceBranch = "*"
+			}
+
+			if migratedTriggerItem.PullRequestTargetBranch == "" {
+				migratedTriggerItem.PullRequestTargetBranch = "*"
+			}
+
+			sourceMatch := glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
+			targetMatch := glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
+
+			return (sourceMatch && targetMatch), nil
+		}
 	}
 
 	return false, nil
