@@ -262,6 +262,8 @@ func (triggerItem TriggerMapItemModel) Validate() error {
 		if err != nil {
 			return err
 		}
+	} else if triggerItem.PushBranch != "" || triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
+		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
 	}
 
 	return nil

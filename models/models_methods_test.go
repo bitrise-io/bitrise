@@ -157,8 +157,8 @@ func TestTriggerMapItemValidate(t *testing.T) {
 	t.Log("it failes for invalid pull-request trigger item - missing workflow")
 	{
 		item := TriggerMapItemModel{
-			PushBranch: "*",
-			WorkflowID: "",
+			PullRequestTargetBranch: "*",
+			WorkflowID:              "",
 		}
 		require.Error(t, item.Validate())
 	}
@@ -169,6 +169,27 @@ func TestTriggerMapItemValidate(t *testing.T) {
 			PullRequestSourceBranch: "",
 			PullRequestTargetBranch: "",
 			WorkflowID:              "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it failes for mixed trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch:              "master",
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "",
+			WorkflowID:              "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it failes for mixed trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			Pattern:    "*",
+			WorkflowID: "primary",
 		}
 		require.Error(t, item.Validate())
 	}

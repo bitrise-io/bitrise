@@ -20,9 +20,9 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "master", convertedParams.PushBranch)
 		require.Equal(t, "", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
+		require.Equal(t, "", convertedParams.TriggerPattern)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
-		require.Equal(t, "", convertedParams.TriggerPattern)
 		require.Equal(t, "", convertedParams.Format)
 		require.Equal(t, "", convertedParams.BitriseConfigPath)
 		require.Equal(t, "", convertedParams.BitriseConfigBase64Data)
@@ -42,39 +42,182 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "", convertedParams.PushBranch)
 		require.Equal(t, "master", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
+		require.Equal(t, "", convertedParams.TriggerPattern)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
-		require.Equal(t, "", convertedParams.TriggerPattern)
 		require.Equal(t, "", convertedParams.Format)
 		require.Equal(t, "", convertedParams.BitriseConfigPath)
 		require.Equal(t, "", convertedParams.BitriseConfigBase64Data)
 		require.Equal(t, "", convertedParams.InventoryPath)
 		require.Equal(t, "", convertedParams.InventoryBase64Data)
 	}
+
+	t.Log("only modifies PushBranch, PRSourceBranch, PRTargetBranch, TriggerPattern")
+	{
+		isPullRequestMode := true
+		params := RunAndTriggerParamsModel{
+			PushBranch:     "feature/login",
+			PRSourceBranch: "feature/landing",
+			PRTargetBranch: "develop",
+			TriggerPattern: "master",
+
+			WorkflowToRunID:         "primary",
+			Format:                  "json",
+			BitriseConfigPath:       "bitrise.yml",
+			BitriseConfigBase64Data: "base64-bitrise.yml",
+			InventoryPath:           "inventory.yml",
+			InventoryBase64Data:     "base64-inventory.yml",
+		}
+
+		convertedParams := migratePatternToParams(params, isPullRequestMode)
+
+		require.Equal(t, "", convertedParams.PushBranch)
+		require.Equal(t, "master", convertedParams.PRSourceBranch)
+		require.Equal(t, "", convertedParams.PRTargetBranch)
+		require.Equal(t, "", convertedParams.TriggerPattern)
+
+		require.Equal(t, "primary", convertedParams.WorkflowToRunID)
+		require.Equal(t, "json", convertedParams.Format)
+		require.Equal(t, "bitrise.yml", convertedParams.BitriseConfigPath)
+		require.Equal(t, "base64-bitrise.yml", convertedParams.BitriseConfigBase64Data)
+		require.Equal(t, "inventory.yml", convertedParams.InventoryPath)
+		require.Equal(t, "base64-inventory.yml", convertedParams.InventoryBase64Data)
+	}
 }
 
-/*
-func getWorkflowIDByTriggerParams(triggerMap models.TriggerMapModel, pattern string, isPullRequestMode bool, params RunAndTriggerParamsModel) (string, error) {
-	if pattern != "" {
-		// Deprecated trigger item
-		return getWorkflowIDByParamsInCompatibleMode(triggerMap, pattern, isPullRequestMode)
+func TestGetWorkflowIDByParamsInCompatibleMode_new_param_test(t *testing.T) {
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- push_branch: master
+  workflow: master
+
+workflows:
+  master:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
 	}
 
-	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
-		if err != nil {
-			return "", err
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- pull_request_source_branch: feature/*
+  workflow: test
+
+workflows:
+  test:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			PRSourceBranch: "feature/login",
+			PRTargetBranch: "develop",
 		}
-		if match {
-			return item.WorkflowID, nil
-		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "test", workflowID)
 	}
 
-	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- pull_request_target_branch: deploy_*
+  workflow: release
+
+workflows:
+  release:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			PRSourceBranch: "master",
+			PRTargetBranch: "deploy_1_0_0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "release", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- pull_request_source_branch: feature/*
+  pull_request_target_branch: develop
+  workflow: test
+
+workflows:
+  test:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			PRSourceBranch: "feature/login",
+			PRTargetBranch: "develop",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "test", workflowID)
+	}
 }
-*/
 
-func TestGetWorkflowIDByParamsInCompatibleMode(t *testing.T) {
+func TestGetWorkflowIDByParamsInCompatibleMode_migration_test(t *testing.T) {
+	configStr := `
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: false
+  workflow: master
+
+workflows:
+  master:
+`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	t.Log("it works with deprecated pattern")
+	{
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
+		require.Equal(t, nil, err)
+		require.Equal(t, "master", workflowID)
+	}
+}
+
+func TestGetWorkflowIDByParamsInCompatibleMode_old_tests(t *testing.T) {
 	configStr := `
 trigger_map:
 - pattern: master
