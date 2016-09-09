@@ -300,7 +300,7 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 
 		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
 			goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
-		cmd.Env = append(os.Environ(), "GOROOT="+goConfig.GOROOT)
+		cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("Failed to install package, error: %s", err)
 		}
