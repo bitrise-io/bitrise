@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	minGoVersionForToolkit = "1.7"
+	minGoVersionForToolkit = "1.7.1"
 )
 
 // === Base Toolkit struct ===
@@ -81,8 +81,7 @@ func checkGoConfiguration(goConfig GoConfigurationModel) (bool, ToolkitCheckResu
 	return false, checkRes, nil
 }
 
-// Check ...
-func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
+func selectGoConfiguration() (bool, ToolkitCheckResult, GoConfigurationModel, error) {
 	potentialGoConfigurations := []GoConfigurationModel{}
 	// from PATH
 	{
@@ -106,12 +105,15 @@ func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
 
 	isRequireInstall := true
 	checkResult := ToolkitCheckResult{}
+	goConfig := GoConfigurationModel{}
 	var checkError error
 	for _, aPotentialGoInfoToUse := range potentialGoConfigurations {
 		isInstReq, chkRes, err := checkGoConfiguration(aPotentialGoInfoToUse)
 		checkResult = chkRes
 		checkError = err
 		if !isInstReq {
+			// select this one
+			goConfig = aPotentialGoInfoToUse
 			isRequireInstall = false
 			break
 		}
@@ -121,7 +123,13 @@ func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
 		log.Warnf("Installed go found (path: %s), but not a supported version: %s", checkResult.Path, checkResult.Version)
 	}
 
-	return isRequireInstall, checkResult, checkError
+	return isRequireInstall, checkResult, goConfig, checkError
+}
+
+// Check ...
+func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
+	isInstallRequired, checkResult, _, err := selectGoConfiguration()
+	return isInstallRequired, checkResult, err
 }
 
 func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, error) {
@@ -142,7 +150,7 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 	return verStr, nil
 }
 
-func isGoInPATHSufficient() bool {
+func isGoInPATHAvailable() bool {
 	if configs.IsDebugUseSystemTools() {
 		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return true
@@ -152,22 +160,7 @@ func isGoInPATHSufficient() bool {
 		return false
 	}
 
-	verOut, err := cmdex.RunCommandAndReturnStdout("go", "version")
-	if err != nil {
-		return false
-	}
-
-	verStr, err := parseGoVersionFromGoVersionOutput(verOut)
-	if err != nil {
-		return false
-	}
-
-	// version check
-	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minGoVersionForToolkit)
-	if err != nil {
-		return false
-	}
-	if !isVersionOk {
+	if _, err := cmdex.RunCommandAndReturnStdout("go", "version"); err != nil {
 		return false
 	}
 
@@ -178,7 +171,7 @@ func isGoInPATHSufficient() bool {
 
 // Bootstrap ...
 func (toolkit GoToolkit) Bootstrap() error {
-	if isGoInPATHSufficient() {
+	if isGoInPATHAvailable() {
 		return nil
 	}
 
@@ -217,11 +210,6 @@ func installGoTar(goTarGzPath string) error {
 
 // Install ...
 func (toolkit GoToolkit) Install() error {
-	if isGoInPATHSufficient() {
-		fmt.Print("System Installed Go is sufficient, no need to install it for the toolkit")
-		return nil
-	}
-
 	versionStr := minGoVersionForToolkit
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
@@ -300,8 +288,18 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 
 	log.Debugln("=> Building package " + packageName + " ...")
 	{
+		isInstallRequired, _, goConfig, err := selectGoConfiguration()
+		if err != nil {
+			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s", err)
+		}
+		if isInstallRequired {
+			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s",
+				"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
+		}
+
 		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
-			"go", "build", "-o", outputBinPath, packageName)
+			goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
+		cmd.Env = append(os.Environ(), "GOROOT="+goConfig.GOROOT)
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("Failed to install package, error: %s", err)
 		}
@@ -332,7 +330,6 @@ func stepBinaryFilename(sIDData models.StepIDData) string {
 		sIDData.SteplibSource, sIDData.IDorURI, sIDData.Version)
 
 	safeStepID := replaceRexp.ReplaceAllString(compositeStepID, "_")
-	fmt.Println(" (debug) safeStepID: ", safeStepID)
 	//
 	return safeStepID
 }
@@ -372,9 +369,6 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 
 // StepRunCommandArguments ...
 func (toolkit GoToolkit) StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error) {
-	// stepFilePath := filepath.Join(stepDirPath, "main.go")
-	// cmd := []string{"go", "run", stepFilePath}
-
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }

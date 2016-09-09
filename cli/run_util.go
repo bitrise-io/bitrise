@@ -322,11 +322,6 @@ func executeStep(step stepmanModels.StepModel, sIDData models.StepIDData, stepAb
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
-	if err := toolkitForStep.Bootstrap(); err != nil {
-		return 1, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
-			toolkitName, err)
-	}
-
 	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
 		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
 			toolkitName, err)
@@ -904,6 +899,16 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to get last workflow id: %s", err)
 	}
 
+	// Bootstrap Toolkits
+	for _, aToolkit := range toolkits.AllSupportedToolkits() {
+		toolkitName := aToolkit.ToolkitName()
+		if err := aToolkit.Bootstrap(); err != nil {
+			return models.BuildRunResultsModel{}, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
+				toolkitName, err)
+		}
+	}
+
+	//
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},

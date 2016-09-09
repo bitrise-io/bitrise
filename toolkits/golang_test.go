@@ -3,8 +3,31 @@ package toolkits
 import (
 	"testing"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"
 )
+
+func Test_stepBinaryFilename(t *testing.T) {
+	{
+		sIDData := models.StepIDData{SteplibSource: "path", IDorURI: "./", Version: ""}
+		require.Equal(t, "path-._-", stepBinaryFilename(sIDData))
+	}
+
+	{
+		sIDData := models.StepIDData{SteplibSource: "git", IDorURI: "https://github.com/bitrise-steplib/steps-go-toolkit-hello-world.git", Version: "master"}
+		require.Equal(t, "git-https___github.com_bitrise-steplib_steps-go-toolkit-hello-world.git-master", stepBinaryFilename(sIDData))
+	}
+
+	{
+		sIDData := models.StepIDData{SteplibSource: "_", IDorURI: "https://github.com/bitrise-steplib/steps-go-toolkit-hello-world.git", Version: "master"}
+		require.Equal(t, "_-https___github.com_bitrise-steplib_steps-go-toolkit-hello-world.git-master", stepBinaryFilename(sIDData))
+	}
+
+	{
+		sIDData := models.StepIDData{SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git", IDorURI: "script", Version: "1.2.3"}
+		require.Equal(t, "https___github.com_bitrise-io_bitrise-steplib.git-script-1.2.3", stepBinaryFilename(sIDData))
+	}
+}
 
 func Test_parseGoVersionFromGoVersionOutput(t *testing.T) {
 	t.Log("Example OK")

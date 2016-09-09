@@ -15,19 +15,37 @@ type ToolkitCheckResult struct {
 type Toolkit interface {
 	// ToolkitName : a one liner name/id of the toolkit, for logging purposes
 	ToolkitName() string
+
 	// Check the toolkit - first returned value (bool) indicates
-	// whether the toolkit is "operational", or have to be installed.
+	// whether the toolkit have to be installed (true=install required | false=no install required).
 	// "Have to be installed" can be true if the toolkit is not installed,
 	// or if an older version is installed, and an update/newer version is required.
 	Check() (bool, ToolkitCheckResult, error)
+
 	// Install the toolkit
 	Install() error
-	// PrepareForStepRun can be used to pre-compile or otherwise
-	// prepare for the step's execution
-	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
-	// Bootstrap : initialize the toolkit for use,
-	// e.g. setting Env Vars
+
+	// Bootstrap : initialize the toolkit for use, ONLY IF THERE'S NO SYSTEM INSTALLED VERSION!
+	// If there's any version of the tool (e.g. Go) installed, Bootstrap should not overwrite it,
+	// so that the non toolkit steps will still use the system installed version!
+	//
+	// Will run only once, before the build would actually start,
+	// so that it can set e.g. a default Go or other language version, if there's no System Installed version!
+	//
+	// Bootstrap should only set a sensible default if there's no System Installed version of the tool,
+	// but should not enforce the toolkit's version of the tool!
+	// The `PrepareForStepRun` function will be called for every step,
+	// the toolkit should be "enforced" there, BUT ONLY FOR THAT FUNCTION (e.g. don't call os.Setenv there!)
 	Bootstrap() error
+
+	// PrepareForStepRun can be used to pre-compile or otherwise prepare for the step's execution.
+	//
+	// Important: do NOT enforce the toolkit for subsequent / unrelated steps or functions,
+	// the toolkit should/can be "enforced" here (e.g. during the compilation),
+	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
+	// which would affect other functions, just pass the required envs to the compilation command!
+	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
+
 	// StepRunCommandArguments ...
 	StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error)
 }
