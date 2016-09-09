@@ -11,7 +11,7 @@ workflows:
   integration_tests:
     steps:
     - script:
-        title: Run - Exit code test
+        title: Ensure CURRENT_BITRISE
         inputs:
         - content: |-
             #!/bin/bash

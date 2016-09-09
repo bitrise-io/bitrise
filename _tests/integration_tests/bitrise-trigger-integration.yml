@@ -25,7 +25,7 @@ workflows:
   pr_integration_tests:
     steps:
     - script:
-        title: Run - Exit code test
+        title: Ensure CURRENT_BITRISE
         inputs:
         - content: |-
             #!/bin/bash
@@ -35,7 +35,7 @@ workflows:
               envman add --key CURRENT_BITRISE --value "bitrise"
             fi
     - script:
-        title: 
+        title: Run trigger integration tests
         inputs:
         - content: |-
             #!/bin/bash
