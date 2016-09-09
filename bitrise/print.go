@@ -532,7 +532,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
 	fmt.Println()
-	log.Info(colorstring.Bluef("Running workflow (%s)", title))
+	log.Infoln(colorstring.Blue("Switching to workflow:"), title)
 	fmt.Println()
 }
 
