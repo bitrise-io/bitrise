@@ -174,36 +174,23 @@ func TestTriggerMapItemValidate(t *testing.T) {
 	}
 }
 
-/*
-// MatchWithParams ...
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string) (bool, error) {
-	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
-	if err != nil {
-		return false, err
+func TestMatchWithParamsCodePushItem(t *testing.T) {
+	t.Log("code-push against code-push type item - MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
 	}
 
-	itemEventType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
-	if err != nil {
-		return false, err
-	}
-
-	if paramsEventType != itemEventType {
-		return false, nil
-	}
-
-	switch itemEventType {
-	case CodePushTriggerEvent:
-		return glob.Glob(triggerItem.PushBranch, pushBranch), nil
-	case PullRequestTriggerEvent:
-		return (glob.Glob(triggerItem.PullRequestSourceBranch, prSourceBranch) && glob.Glob(triggerItem.PullRequestTargetBranch, prTargetBranch)), nil
-	}
-
-	return false, nil
-}
-*/
-
-func TestMatchWithParams(t *testing.T) {
-	t.Log("code-push type item - against push-branch - match")
+	t.Log("code-push against code-push type item - MATCH")
 	{
 		pushBranch := "master"
 		prSourceBranch := ""
@@ -218,7 +205,22 @@ func TestMatchWithParams(t *testing.T) {
 		require.Equal(t, true, match)
 	}
 
-	t.Log("code-push type item - against push-branch - NOT match")
+	t.Log("code-push against code-push type item - MATCH")
+	{
+		pushBranch := "feature/login"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "feature/*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("code-push against code-push type item - NOT MATCH")
 	{
 		pushBranch := "master"
 		prSourceBranch := ""
@@ -233,10 +235,10 @@ func TestMatchWithParams(t *testing.T) {
 		require.Equal(t, false, match)
 	}
 
-	t.Log("pull-request type item - against pr-source-branch - match")
+	t.Log("code-push against pr type item - NOT MATCH")
 	{
-		pushBranch := ""
-		prSourceBranch := "develop"
+		pushBranch := "master"
+		prSourceBranch := ""
 		prTargetBranch := ""
 
 		item := TriggerMapItemModel{
@@ -245,25 +247,75 @@ func TestMatchWithParams(t *testing.T) {
 		}
 		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
-		require.Equal(t, true, match)
+		require.Equal(t, false, match)
 	}
 
-	t.Log("pull-request type item - against pr-source-branch - pr-source-branch NOT match")
+	t.Log("code-push against pr type item - NOT MATCH")
 	{
-		pushBranch := ""
-		prSourceBranch := "develop"
+		pushBranch := "master"
+		prSourceBranch := ""
 		prTargetBranch := ""
 
 		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "deploy",
-			WorkflowID:              "release",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
 		}
 		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
 
-	t.Log("pull-request type item - against pr-source-branch && pr-target-branch - match")
+	t.Log("code-push against pr type item - NOT MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+}
+
+func TestMatchWithParamsPrTypeItem(t *testing.T) {
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "feature/login"
+		prTargetBranch := "develop"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "develop",
+			WorkflowID:              "test",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
 	{
 		pushBranch := ""
 		prSourceBranch := "develop"
@@ -272,11 +324,103 @@ func TestMatchWithParams(t *testing.T) {
 		item := TriggerMapItemModel{
 			PullRequestSourceBranch: "*",
 			PullRequestTargetBranch: "master",
-			WorkflowID:              "ci",
+			WorkflowID:              "primary",
 		}
 		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := "deploy_1_0_0"
+
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "deploy_*",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "deploy",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pr against pr type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pr against push type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
 	}
 }
 

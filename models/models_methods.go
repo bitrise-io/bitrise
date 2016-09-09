@@ -49,6 +49,14 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	case CodePushTriggerEvent:
 		return glob.Glob(triggerItem.PushBranch, pushBranch), nil
 	case PullRequestTriggerEvent:
+		if triggerItem.PullRequestSourceBranch == "" {
+			triggerItem.PullRequestSourceBranch = "*"
+		}
+
+		if triggerItem.PullRequestTargetBranch == "" {
+			triggerItem.PullRequestTargetBranch = "*"
+		}
+
 		return (glob.Glob(triggerItem.PullRequestSourceBranch, prSourceBranch) && glob.Glob(triggerItem.PullRequestTargetBranch, prTargetBranch)), nil
 	}
 
