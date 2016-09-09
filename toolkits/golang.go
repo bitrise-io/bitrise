@@ -150,7 +150,8 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 	return verStr, nil
 }
 
-func isGoInPATHAvailable() bool {
+// IsToolAvailableInPATH ...
+func (toolkit GoToolkit) IsToolAvailableInPATH() bool {
 	if configs.IsDebugUseSystemTools() {
 		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return true
@@ -171,7 +172,7 @@ func isGoInPATHAvailable() bool {
 
 // Bootstrap ...
 func (toolkit GoToolkit) Bootstrap() error {
-	if isGoInPATHAvailable() {
+	if toolkit.IsToolAvailableInPATH() {
 		return nil
 	}
 

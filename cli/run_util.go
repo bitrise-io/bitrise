@@ -902,9 +902,14 @@ func runWorkflowWithConfiguration(
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits() {
 		toolkitName := aToolkit.ToolkitName()
-		if err := aToolkit.Bootstrap(); err != nil {
-			return models.BuildRunResultsModel{}, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
-				toolkitName, err)
+		if !aToolkit.IsToolAvailableInPATH() {
+			// don't bootstrap if any preinstalled version is available,
+			// the toolkit's `PrepareForStepRun` can bootstrap for itself later if required
+			// or if the system installed version is not sufficient
+			if err := aToolkit.Bootstrap(); err != nil {
+				return models.BuildRunResultsModel{}, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
+					toolkitName, err)
+			}
 		}
 	}
 
