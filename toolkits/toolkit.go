@@ -25,6 +25,14 @@ type Toolkit interface {
 	// Install the toolkit
 	Install() error
 
+	// Check whether the toolkit's tool (e.g. Go, Ruby, Bash, ...) is available
+	// and "usable"" without any bootstrapping.
+	// Return true even if the version is older than the required version for this toolkit,
+	// you can pick / init the right version later. This function only checks
+	// whether the system has a pre-installed version of the toolkit's tool or not,
+	// no compability check is required!
+	IsToolAvailableInPATH() bool
+
 	// Bootstrap : initialize the toolkit for use, ONLY IF THERE'S NO SYSTEM INSTALLED VERSION!
 	// If there's any version of the tool (e.g. Go) installed, Bootstrap should not overwrite it,
 	// so that the non toolkit steps will still use the system installed version!

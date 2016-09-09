@@ -35,6 +35,15 @@ func (toolkit BashToolkit) Check() (bool, ToolkitCheckResult, error) {
 	}, nil
 }
 
+// IsToolAvailableInPATH ...
+func (toolkit BashToolkit) IsToolAvailableInPATH() bool {
+	binPath, err := utils.CheckProgramInstalledPath("bash")
+	if err != nil {
+		return false
+	}
+	return len(binPath) > 0
+}
+
 // Bootstrap ...
 func (toolkit BashToolkit) Bootstrap() error {
 	return nil

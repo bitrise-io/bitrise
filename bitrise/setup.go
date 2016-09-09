@@ -94,7 +94,7 @@ func doSetupToolkits() error {
 		}
 
 		if isInstallRequired {
-			log.Infoln("No installed/suitable " + toolkitName + " found, installing toolkit ...")
+			log.Infoln("No installed/suitable '" + toolkitName + "' found, installing toolkit ...")
 			if err := aCoreTK.Install(); err != nil {
 				return fmt.Errorf("Failed to install toolkit (%s), error: %s", toolkitName, err)
 			}

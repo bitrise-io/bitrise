@@ -150,7 +150,8 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 	return verStr, nil
 }
 
-func isGoInPATHAvailable() bool {
+// IsToolAvailableInPATH ...
+func (toolkit GoToolkit) IsToolAvailableInPATH() bool {
 	if configs.IsDebugUseSystemTools() {
 		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return true
@@ -171,7 +172,7 @@ func isGoInPATHAvailable() bool {
 
 // Bootstrap ...
 func (toolkit GoToolkit) Bootstrap() error {
-	if isGoInPATHAvailable() {
+	if toolkit.IsToolAvailableInPATH() {
 		return nil
 	}
 
@@ -299,7 +300,7 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 
 		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
 			goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
-		cmd.Env = append(os.Environ(), "GOROOT="+goConfig.GOROOT)
+		cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("Failed to install package, error: %s", err)
 		}
