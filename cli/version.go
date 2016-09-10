@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/urfave/cli"
@@ -11,9 +12,10 @@ import (
 
 // VersionOutputModel ...
 type VersionOutputModel struct {
-	Version     string `json:"version"`
-	BuildNumber string `json:"build_number"`
-	Commit      string `json:"commit"`
+	Version       string `json:"version"`
+	FormatVersion string `json:"format_version"`
+	BuildNumber   string `json:"build_number"`
+	Commit        string `json:"commit"`
 }
 
 func printVersionCmd(c *cli.Context) error {
@@ -28,13 +30,14 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	if fullVersion {
+		versionOutput.FormatVersion = models.Version
 		versionOutput.BuildNumber = version.BuildNumber
 		versionOutput.Commit = version.Commit
 	}
 
 	if output.Format == output.FormatRaw {
 		if fullVersion {
-			fmt.Fprintf(c.App.Writer, "version: %v\nbuild_number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.BuildNumber, versionOutput.Commit)
+			fmt.Fprintf(c.App.Writer, "version: %v\nformat version: %v\nbuild number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.FormatVersion, versionOutput.BuildNumber, versionOutput.Commit)
 		} else {
 			fmt.Fprintf(c.App.Writer, "%v\n", versionOutput.Version)
 		}
