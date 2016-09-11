@@ -26,12 +26,24 @@ type DependencyModel struct {
 
 // BrewDepModel ...
 type BrewDepModel struct {
+	// Name is the package name for Brew
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// BinName is the binary's name, if it doesn't match the package's name.
+	// Can be used for e.g. calling `which`.
+	// E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.
+	// If BinName is empty Name will be used as BinName too.
+	BinName string `json:"bin_name,omitempty" yaml:"bin_name,omitempty"`
 }
 
 // AptGetDepModel ...
 type AptGetDepModel struct {
+	// Name is the package name for Apt-get
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// BinName is the binary's name, if it doesn't match the package's name.
+	// Can be used for e.g. calling `which`.
+	// E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.
+	// If BinName is empty Name will be used as BinName too.
+	BinName string `json:"bin_name,omitempty" yaml:"bin_name,omitempty"`
 }
 
 // CheckOnlyDepModel ...
