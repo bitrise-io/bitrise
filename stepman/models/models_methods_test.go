@@ -368,3 +368,15 @@ func TestGetLatestStepVersion(t *testing.T) {
 	require.Equal(t, nil, err)
 	require.Equal(t, "2.0.0", latest)
 }
+
+func Test_BrewDepModel_GetBinaryName(t *testing.T) {
+	require.Equal(t, "", BrewDepModel{}.GetBinaryName())
+	require.Equal(t, "awscli", BrewDepModel{Name: "awscli"}.GetBinaryName())
+	require.Equal(t, "aws", BrewDepModel{Name: "awscli", BinName: "aws"}.GetBinaryName())
+}
+
+func Test_AptGetDepModel_GetBinaryName(t *testing.T) {
+	require.Equal(t, "", AptGetDepModel{}.GetBinaryName())
+	require.Equal(t, "awscli", AptGetDepModel{Name: "awscli"}.GetBinaryName())
+	require.Equal(t, "aws", AptGetDepModel{Name: "awscli", BinName: "aws"}.GetBinaryName())
+}
