@@ -290,16 +290,27 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 	return nil
 }
 
-func checkWithBrewProgramInstalled(tool string) error {
-	args := []string{"list", tool}
-	cmd := exec.Command("brew", args...)
+func checkIfBrewPackageInstalled(packageName string) bool {
+	cmd := exec.Command("brew", "list", packageName)
+
+	outBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Debugf("%s", outBytes)
+		return false
+	}
+
+	return len(outBytes) > 0
+}
+
+func checkIfAptPackageInstalled(packageName string) bool {
+	cmd := exec.Command("dpkg", "-l", packageName)
 
 	if outBytes, err := cmd.CombinedOutput(); err != nil {
 		log.Debugf("%s", outBytes)
-		return err
+		return false
 	}
 
-	return nil
+	return true
 }
 
 // DependencyTryCheckTool ...
@@ -337,36 +348,49 @@ func DependencyTryCheckTool(tool string) error {
 
 // InstallWithBrewIfNeeded ...
 func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) error {
+	isDepInstalled := false
+	// First do a "which", to see if the binary is available.
+	// Can be available from another source, not just from brew,
+	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
 	if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", brewDep.GetBinaryName()); err != nil {
 		if err.Error() == "exit status 1" && out == "" {
-			// Tool isn't installed -- install it...
-			if !isCIMode {
-				log.Infof("This step requires %s, which is not installed", brewDep.Name)
-				allow, err := goinp.AskForBool("Would you like to install (" + brewDep.Name + ") with brew?")
-				if err != nil {
-					return err
-				}
-				if !allow {
-					return errors.New("(" + brewDep.Name + ") is required for step")
-				}
-			}
+			isDepInstalled = false
+		} else {
+			// unexpected `which` error
+			return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+		}
+	} else if out != "" {
+		isDepInstalled = true
+	} else {
+		// no error but which's output was empty
+		return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", brewDep.Name)
+	}
 
-			log.Infof("(%s) isn't installed, installing...", brewDep.Name)
-			if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
-				log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+	if !isDepInstalled {
+		// which did not find the binary, also check in brew,
+		// whether the package is installed
+		isDepInstalled = checkIfBrewPackageInstalled(brewDep.Name)
+	}
+
+	if !isDepInstalled {
+		// Tool isn't installed -- install it...
+		if !isCIMode {
+			log.Infof("This step requires %s, which is not installed", brewDep.Name)
+			allow, err := goinp.AskForBool("Would you like to install (" + brewDep.Name + ") with brew?")
+			if err != nil {
 				return err
 			}
-			log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", brewDep.Name)
-			return nil
+			if !allow {
+				return errors.New("(" + brewDep.Name + ") is required for step")
+			}
 		}
 
-		// unexpected `which` error
-		log.Errorf("which (%s) failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
-		return err
-	} else if out != "" {
-		// already installed
-	} else {
-		log.Warnf("which (%s) -- out (%s)", brewDep.Name, out)
+		log.Infof("(%s) isn't installed, installing...", brewDep.Name)
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
+			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+			return err
+		}
+		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", brewDep.Name)
 	}
 
 	return nil
@@ -374,37 +398,50 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 
 // InstallWithAptGetIfNeeded ...
 func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode bool) error {
+	isDepInstalled := false
+	// First do a "which", to see if the binary is available.
+	// Can be available from another source, not just from brew,
+	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
 	if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", aptGetDep.GetBinaryName()); err != nil {
 		if err.Error() == "exit status 1" && out == "" {
-			// Tool isn't installed -- install it...
-			if !isCIMode {
-				log.Infof("This step requires %s, which is not installed", aptGetDep.Name)
-				allow, err := goinp.AskForBool("Would you like to install (" + aptGetDep.Name + ") with apt-get?")
-				if err != nil {
-					return err
-				}
-				if !allow {
-					return errors.New("(" + aptGetDep.Name + ") is required for step")
-				}
-			}
+			isDepInstalled = false
+		} else {
+			// unexpected `which` error
+			return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+		}
+	} else if out != "" {
+		isDepInstalled = true
+	} else {
+		// no error but which's output was empty
+		return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", aptGetDep.Name)
+	}
 
-			log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
-			if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
-				log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+	if !isDepInstalled {
+		// which did not find the binary, also check in brew,
+		// whether the package is installed
+		isDepInstalled = checkIfAptPackageInstalled(aptGetDep.Name)
+	}
+
+	if !isDepInstalled {
+		// Tool isn't installed -- install it...
+		if !isCIMode {
+			log.Infof("This step requires %s, which is not installed", aptGetDep.Name)
+			allow, err := goinp.AskForBool("Would you like to install (" + aptGetDep.Name + ") with apt-get?")
+			if err != nil {
 				return err
 			}
-
-			log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", aptGetDep.Name)
-			return nil
+			if !allow {
+				return errors.New("(" + aptGetDep.Name + ") is required for step")
+			}
 		}
 
-		// unexpected `which` error
-		log.Errorf("which (%s) failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
-		return err
-	} else if out != "" {
-		// already installed
-	} else {
-		log.Warnf("which (%s) -- out (%s)", aptGetDep.Name, out)
+		log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
+			log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+			return err
+		}
+
+		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", aptGetDep.Name)
 	}
 
 	return nil
