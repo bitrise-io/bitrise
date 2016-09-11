@@ -256,3 +256,19 @@ func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, e
 
 	return stepGroup.LatestVersionNumber, nil
 }
+
+// GetBinaryName ...
+func (brewDep BrewDepModel) GetBinaryName() string {
+	if brewDep.BinName != "" {
+		return brewDep.BinName
+	}
+	return brewDep.Name
+}
+
+// GetBinaryName ...
+func (aptGetDep AptGetDepModel) GetBinaryName() string {
+	if aptGetDep.BinName != "" {
+		return aptGetDep.BinName
+	}
+	return aptGetDep.Name
+}
