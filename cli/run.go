@@ -202,6 +202,8 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
+	log.Infoln(colorstring.Green("Running workflow:"), runParams.WorkflowToRunID)
+
 	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
 	//
 
