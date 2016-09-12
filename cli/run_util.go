@@ -262,7 +262,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
-				if err := bitrise.InstallWithBrewIfNeeded(brewDep.Name, configs.IsCIMode); err != nil {
+				if err := bitrise.InstallWithBrewIfNeeded(brewDep, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
 					return err
 				}
@@ -271,7 +271,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		case "linux":
 			for _, aptGetDep := range step.Deps.AptGet {
 				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
-				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep.Name, configs.IsCIMode); err != nil {
+				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep, configs.IsCIMode); err != nil {
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
 					return err
 				}
@@ -289,7 +289,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 			switch dep.Manager {
 			case depManagerBrew:
 				if runtime.GOOS == "darwin" {
-					err := bitrise.InstallWithBrewIfNeeded(dep.Name, configs.IsCIMode)
+					err := bitrise.InstallWithBrewIfNeeded(stepmanModels.BrewDepModel{Name: dep.Name}, configs.IsCIMode)
 					if err != nil {
 						return err
 					}
