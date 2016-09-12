@@ -10,6 +10,9 @@ workflows:
         - content: |-
             #!/bin/bash
 
+            export PR=""
+            export PULL_REQUEST_ID=""
+
             echo "deprecated trigger test"
             out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pattern":"deprecated_code_push","format":"json"}')
             status=$?
