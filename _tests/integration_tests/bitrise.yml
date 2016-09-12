@@ -1,275 +1,37 @@
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - BITRISE_INTEGRATION_CONFIG_PTH: ./_tests/integration_tests/bitrise-integration.yml
-  - BITRISE_INTEGRATION_EMPTY_CONFIG_PTH: ./_tests/integration_tests/bitrise-integration-empty-test.yml
-  - BITRISE_INTEGRATION_PR_SECRETS_PTH: ./_tests/integration_tests/bitrise-integration-secrets-pr.yml
+  - EXIT_CODE_TESTS_CONFIG_PTH: ./_tests/integration_tests/exit_code_tests/bitrise.yml
+  - JSON_PARAMS_TESTS_CONFIG_PTH: ./_tests/integration_tests/json_params_tests/bitrise.yml
+  - NEW_TRIGGER_TESTS_CONFIG_PTH: ./_tests/integration_tests/new_trigger_tests/bitrise.yml
+  - TRIGGER_CHECK_TESTS_CONFIG_PTH: ./_tests/integration_tests/trigger_check_tests/bitrise.yml
 
 workflows:
-  integration_tests:
+  test:
     steps:
     - script:
-        title: Ensure CURRENT_BITRISE
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
 
-            if [ -z "$CURRENT_BITRISE" ] ; then
-              envman add --key CURRENT_BITRISE --value "bitrise"
-            fi
+            $CURRENT_BITRISE run test --config $EXIT_CODE_TESTS_CONFIG_PTH
     - script:
-        title: Run - Exit code test
         inputs:
         - content: |-
             #!/bin/bash
-            set -x
 
-            $CURRENT_BITRISE run exit_code_test_fail -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 1 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE run exit_code_test_ok -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE run exit_code_test_sippable_fail -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE run exit_code_test_sippable_ok -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
+            $CURRENT_BITRISE run test --config $JSON_PARAMS_TESTS_CONFIG_PTH
     - script:
-        title: Trigger - Exit code test
         inputs:
         - content: |-
             #!/bin/bash
-            set -x
 
-            $CURRENT_BITRISE trigger exit_code_test_fail -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 1 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE trigger exit_code_test_ok -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE trigger exit_code_test_sippable_fail -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            $CURRENT_BITRISE trigger exit_code_test_sippable_ok -c $BITRISE_INTEGRATION_CONFIG_PTH
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
+            $CURRENT_BITRISE run test --config $NEW_TRIGGER_TESTS_CONFIG_PTH
     - script:
-        title: Trigger check - Output test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-
-            export PR=""
-            export PULL_REQUEST_ID=""
-
-            # PR mode : from secrets - is_pull_request_allowed : true
-            out=$($CURRENT_BITRISE trigger-check pr_allowed -c $BITRISE_INTEGRATION_CONFIG_PTH -i $BITRISE_INTEGRATION_PR_SECRETS_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"pr_allowed","workflow":"pr_allowed"}' ]] ; then
-              echo $out
-              exit 1
-            fi
-
-            # Not PR mode - is_pull_request_allowed : true
-            out=$($CURRENT_BITRISE trigger-check pr_allowed -c $BITRISE_INTEGRATION_CONFIG_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"pr_allowed","workflow":"pr_allowed"}' ]] ; then
-              echo $out
-              exit 1
-            fi
-
-            # Not PR mode - is_pull_request_allowed : false
-            out=$($CURRENT_BITRISE trigger-check only_code_push -c $BITRISE_INTEGRATION_CONFIG_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"only_code_push","workflow":"only_code_push"}' ]] ; then
-            echo $out
-              exit 1
-            fi
-
-            # PR mode : from secrets - is_pull_request_allowed : false
-            out=$($CURRENT_BITRISE trigger-check only_code_push -c $BITRISE_INTEGRATION_CONFIG_PTH  -i $BITRISE_INTEGRATION_PR_SECRETS_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"only_code_push","workflow":"fall_back"}' ]] ; then
-            echo $out
-              exit 1
-            fi
-
-            # Not PR mode - is_pull_request_allowed : false
-            out=$($CURRENT_BITRISE trigger-check fall_back -c $BITRISE_INTEGRATION_CONFIG_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-
-            if [[ $out != '{"pattern":"fall_back","workflow":"fall_back"}' ]] ; then
-            echo $out
-              exit 1
-            fi
-    - script:
-        title: Trigger map validation test
         inputs:
         - content: |-
             #!/bin/bash
 
-            export PR=""
-            export PULL_REQUEST_ID=""
-
-            # Empty trigger pattern
-            # PR mode : from secrets - is_pull_request_allowed : true
-            out=$($CURRENT_BITRISE trigger-check "" -c $BITRISE_INTEGRATION_CONFIG_PTH -i $BITRISE_INTEGRATION_EMPTY_CONFIG_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 1 ] ; then
-              exit 1
-            fi
-
-            # Empty triggered workflow id
-            # PR mode : from secrets - is_pull_request_allowed : true
-            out=$($CURRENT_BITRISE trigger-check trigger_empty_workflow_id -c $BITRISE_INTEGRATION_EMPTY_CONFIG_PTH -i $BITRISE_INTEGRATION_PR_SECRETS_PTH --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 1 ] ; then
-              exit 1
-            fi
-    - script:
-        title: JSON params tests
-        inputs:
-        - content: |-
-            #!/bin/bash
-
-            echo "run test"
-            out=$($CURRENT_BITRISE run --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml", "workflow":"json_params_test_target"}')
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "run test - param override"
-            out=$($CURRENT_BITRISE run --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml", "workflow":"exit_code_test_fail"}' --workflow json_params_test_target)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "trigger test"
-            out=$($CURRENT_BITRISE trigger --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml", "pattern":"json_params_test_target"}')
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "trigger test - param override"
-            out=$($CURRENT_BITRISE trigger --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml", "pattern":"exit_code_test_fail"}' --pattern json_params_test_target)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "run test base64"
-            base64_params=$(echo '{"config":"./_tests/integration_tests/bitrise-integration.yml", "workflow":"json_params_test_target"}'|openssl base64)
-            out=$($CURRENT_BITRISE run --json-params-base64 "$base64_params")
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "trigger test base64"
-            base64_params=$(echo '{"config":"./_tests/integration_tests/bitrise-integration.yml", "pattern":"json_params_test_target"}'|openssl base64)
-            out=$($CURRENT_BITRISE trigger --json-params-base64 "$base64_params")
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "trigger check test"
-            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml","pattern":"json_params_test_target","format":"json"}')
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            if [ "$out" != '{"pattern":"json_params_test_target","workflow":"json_params_test_target"}' ] ; then
-              exit 1
-            fi
-            echo "----------"
-
-            echo "trigger check test - param override"
-            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/bitrise-integration.yml","pattern":"json_params_test_target","format":"raw"}' --format json)
-            status=$?
-            echo "status: $status"
-            if [ $status -ne 0 ] ; then
-              exit 1
-            fi
-            if [ "$out" != '{"pattern":"json_params_test_target","workflow":"json_params_test_target"}' ] ; then
-              exit 1
-            fi
+            $CURRENT_BITRISE run test --config $TRIGGER_CHECK_TESTS_CONFIG_PTH

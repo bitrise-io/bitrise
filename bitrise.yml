@@ -1,4 +1,4 @@
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
@@ -132,7 +132,7 @@ workflows:
         - content: |-
             #!/bin/bash
 
-            bitrise run integration_tests --config ./_tests/integration_tests/bitrise.yml
+            $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
     - script:
         title: Setup system bitrise
         run_if: ".IsCI"

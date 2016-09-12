@@ -1,13 +1,7 @@
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
-# json params test
-- pattern: "json_params_test_target"
-  is_pull_request_allowed: true 
-  workflow: json_params_test_target
-
-# exit code tests
 - pattern: "exit_code_test_fail"
   is_pull_request_allowed: true
   workflow: exit_code_test_fail
@@ -21,27 +15,7 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: exit_code_test_sippable_ok
 
-# PR tests
-- pattern: "pr_allowed"
-  is_pull_request_allowed: true
-  workflow: pr_allowed
-- pattern: "only_code_push"
-  is_pull_request_allowed: false
-  workflow: only_code_push
-- pattern: "*"
-  is_pull_request_allowed: true
-  workflow: fall_back
-
 workflows:
-  # json params test
-  json_params_test_target:
-    title: json params test target
-    steps: 
-    - script:
-        inputs:
-        - content: "exit 0"
-
-  # exit code tests
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
     steps:
@@ -75,8 +49,3 @@ workflows:
         is_skippable: true
         inputs:
         - content: exit 0
-
-  # PR tests
-  pr_allowed:
-  only_code_push:
-  fall_back:

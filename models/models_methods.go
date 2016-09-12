@@ -15,18 +15,18 @@ import (
 func triggerEventType(pushBranch, prSourceBranch, prTargetBranch string) (TriggerEventType, error) {
 	if pushBranch != "" {
 		if prSourceBranch != "" {
-			return UnknownTriggerEvent, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_source_branch (%s) also provided", pushBranch, prSourceBranch)
+			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_source_branch (%s) also provided", pushBranch, prSourceBranch)
 		}
 		if prTargetBranch != "" {
-			return UnknownTriggerEvent, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_target_branch (%s) also provided", pushBranch, prTargetBranch)
+			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_target_branch (%s) also provided", pushBranch, prTargetBranch)
 		}
 
-		return CodePushTriggerEvent, nil
+		return TriggerEventTypeCodePush, nil
 	} else if prSourceBranch != "" || prTargetBranch != "" {
-		return PullRequestTriggerEvent, nil
+		return TriggerEventTypePullRequest, nil
 	}
 
-	return UnknownTriggerEvent, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
+	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
 }
 
 func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapItemModel {
@@ -68,20 +68,23 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 		}
 
 		switch itemEventType {
-		case CodePushTriggerEvent:
+		case TriggerEventTypeCodePush:
 			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
 			return match, nil
-		case PullRequestTriggerEvent:
+		case TriggerEventTypePullRequest:
+			sourceMatch := false
 			if migratedTriggerItem.PullRequestSourceBranch == "" {
-				migratedTriggerItem.PullRequestSourceBranch = "*"
+				sourceMatch = true
+			} else {
+				sourceMatch = glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
 			}
 
+			targetMatch := false
 			if migratedTriggerItem.PullRequestTargetBranch == "" {
-				migratedTriggerItem.PullRequestTargetBranch = "*"
+				targetMatch = true
+			} else {
+				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
-
-			sourceMatch := glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
-			targetMatch := glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 
 			return (sourceMatch && targetMatch), nil
 		}
@@ -260,7 +263,7 @@ func (triggerItem TriggerMapItemModel) Validate() error {
 	if triggerItem.Pattern == "" {
 		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
 		if err != nil {
-			return err
+			return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
 		}
 	} else if triggerItem.PushBranch != "" || triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
 		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)

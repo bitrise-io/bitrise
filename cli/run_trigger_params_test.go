@@ -57,7 +57,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, toBase64(t, ".secrets.bitrise.yml"), params.InventoryBase64Data)
 	}
 
-	t.Log("it failes for invalid json")
+	t.Log("it fails for invalid json")
 	{
 		params, err := parseRunAndTriggerJSONParams("master")
 		require.Error(t, err)

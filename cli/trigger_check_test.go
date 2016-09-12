@@ -178,10 +178,41 @@ workflows:
 		require.Equal(t, nil, err)
 		require.Equal(t, "test", workflowID)
 	}
+
+	t.Log("it works with complex trigger map")
+	{
+		configStr := `
+trigger_map:
+- pattern: feature/*
+  workflow: test
+- push_branch: feature/*
+  workflow: test
+- pull_request_source_branch: feature/*
+  pull_request_target_branch: develop
+  workflow: test
+
+workflows:
+  test:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			PRSourceBranch: "feature/login",
+			PRTargetBranch: "develop",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "test", workflowID)
+	}
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_migration_test(t *testing.T) {
-	configStr := `
+	t.Log("deprecated code push trigger item")
+	{
+		configStr := `
 trigger_map:
 - pattern: master
   is_pull_request_allowed: false
@@ -191,29 +222,68 @@ workflows:
   master:
 `
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(warnings))
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
 
-	t.Log("it works with deprecated pattern")
-	{
-		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
-		require.Equal(t, nil, err)
-		require.Equal(t, "master", workflowID)
+		t.Log("it works with deprecated pattern")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
+
+		t.Log("it works with new params")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
+
+		t.Log("it works with new params")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
 	}
 
-	t.Log("it works with new params")
+	t.Log("deprecated pr trigger item")
 	{
-		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
-		require.Equal(t, nil, err)
-		require.Equal(t, "master", workflowID)
-	}
+		configStr := `
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: true
+  workflow: master
 
-	t.Log("it works with new params")
-	{
-		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
-		require.Equal(t, nil, err)
-		require.Equal(t, "master", workflowID)
+workflows:
+  master:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		t.Log("it works with deprecated pattern")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
+
+		t.Log("it works with new params")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
+
+		t.Log("it works with new params")
+		{
+			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
+			require.Equal(t, nil, err)
+			require.Equal(t, "master", workflowID)
+		}
 	}
 }
 

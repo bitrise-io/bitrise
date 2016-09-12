@@ -22,7 +22,7 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
-		require.Equal(t, CodePushTriggerEvent, event)
+		require.Equal(t, TriggerEventTypeCodePush, event)
 	}
 
 	t.Log("it determins trigger event type")
@@ -33,7 +33,7 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
-		require.Equal(t, PullRequestTriggerEvent, event)
+		require.Equal(t, TriggerEventTypePullRequest, event)
 	}
 
 	t.Log("it determins trigger event type")
@@ -44,10 +44,10 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.NoError(t, err)
-		require.Equal(t, PullRequestTriggerEvent, event)
+		require.Equal(t, TriggerEventTypePullRequest, event)
 	}
 
-	t.Log("it failes without inputs")
+	t.Log("it fails without inputs")
 	{
 		pushBranch := ""
 		prSourceBranch := ""
@@ -55,10 +55,10 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.Error(t, err)
-		require.Equal(t, UnknownTriggerEvent, event)
+		require.Equal(t, TriggerEventTypeUnknown, event)
 	}
 
-	t.Log("it failes if event type not clear")
+	t.Log("it fails if event type not clear")
 	{
 		pushBranch := "master"
 		prSourceBranch := "develop"
@@ -66,10 +66,10 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.Error(t, err)
-		require.Equal(t, UnknownTriggerEvent, event)
+		require.Equal(t, TriggerEventTypeUnknown, event)
 	}
 
-	t.Log("it failes if event type not clear")
+	t.Log("it fails if event type not clear")
 	{
 		pushBranch := "master"
 		prSourceBranch := ""
@@ -77,7 +77,7 @@ func TestTriggerEventType(t *testing.T) {
 
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
 		require.Error(t, err)
-		require.Equal(t, UnknownTriggerEvent, event)
+		require.Equal(t, TriggerEventTypeUnknown, event)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid deprecated trigger item - missing workflow")
+	t.Log("it fails for invalid deprecated trigger item - missing workflow")
 	{
 		item := TriggerMapItemModel{
 			Pattern:    "*",
@@ -100,7 +100,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid deprecated trigger item - missing pattern")
+	t.Log("it fails for invalid deprecated trigger item - missing pattern")
 	{
 		item := TriggerMapItemModel{
 			Pattern:    "",
@@ -118,7 +118,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid code-push trigger item - missing push-branch")
+	t.Log("it fails for invalid code-push trigger item - missing push-branch")
 	{
 		item := TriggerMapItemModel{
 			PushBranch: "",
@@ -127,7 +127,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid code-push trigger item - missing workflow")
+	t.Log("it fails for invalid code-push trigger item - missing workflow")
 	{
 		item := TriggerMapItemModel{
 			PushBranch: "*",
@@ -154,7 +154,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid pull-request trigger item - missing workflow")
+	t.Log("it fails for invalid pull-request trigger item - missing workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestTargetBranch: "*",
@@ -163,7 +163,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it failes for invalid pull-request trigger item - missing workflow")
+	t.Log("it fails for invalid pull-request trigger item - missing workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestSourceBranch: "",
@@ -173,7 +173,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it failes for mixed trigger item")
+	t.Log("it fails for mixed trigger item")
 	{
 		item := TriggerMapItemModel{
 			PushBranch:              "master",
@@ -184,7 +184,7 @@ func TestTriggerMapItemValidate(t *testing.T) {
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it failes for mixed trigger item")
+	t.Log("it fails for mixed trigger item")
 	{
 		item := TriggerMapItemModel{
 			PushBranch: "master",
@@ -563,7 +563,7 @@ func TestValidateWorkflow(t *testing.T) {
 	t.Log("invalid workflow - Invalid env: more than 2 fields")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -594,7 +594,7 @@ workflows:
 	t.Log("vali workflow - Warning: duplicated inputs")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1090,7 +1090,7 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
