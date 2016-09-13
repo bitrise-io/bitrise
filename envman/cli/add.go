@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
@@ -138,7 +138,7 @@ func logEnvs() error {
 	return nil
 }
 
-func add(c *cli.Context) {
+func add(c *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
@@ -168,4 +168,6 @@ func add(c *cli.Context) {
 	if err := logEnvs(); err != nil {
 		log.Fatal("[ENVMAN] - Failed to print:", err)
 	}
+
+	return nil
 }

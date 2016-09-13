@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func printJSONEnvs(envList models.EnvsJSONListModel) error {
@@ -55,7 +55,7 @@ func convertToEnsJSONModel(envs []models.EnvironmentItemModel, expand bool) (mod
 	return JSONModels, nil
 }
 
-func print(c *cli.Context) {
+func print(c *cli.Context) error {
 	// Input validation
 	format := c.String(FormatKey)
 	if format == "" {
@@ -90,4 +90,6 @@ func print(c *cli.Context) {
 	default:
 		log.Fatalf("[STEPMAN] - Invalid format: %s", format)
 	}
+
+	return nil
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func clearEnvs() error {
@@ -25,7 +25,7 @@ func clearEnvs() error {
 	return nil
 }
 
-func clear(c *cli.Context) {
+func clear(c *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if err := clearEnvs(); err != nil {
@@ -33,4 +33,6 @@ func clear(c *cli.Context) {
 	}
 
 	log.Info("[ENVMAN] - EnvStore cleared")
+
+	return nil
 }

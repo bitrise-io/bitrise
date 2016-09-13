@@ -4,10 +4,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/go-utils/cmdex"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
-func initEnvStore(c *cli.Context) {
+func initEnvStore(c *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	clear := c.Bool(ClearKey)
@@ -22,4 +22,6 @@ func initEnvStore(c *cli.Context) {
 	}
 
 	log.Debugln("[ENVMAN] - Initialized")
+
+	return nil
 }

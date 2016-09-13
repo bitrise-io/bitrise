@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/cmdex"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 // CommandModel ...
@@ -60,7 +60,7 @@ func runCommandModel(cmdModel CommandModel) (int, error) {
 	return cmdex.RunCommandWithEnvsAndReturnExitCode(cmdEnvs, cmdModel.Command, cmdModel.Argumentums...)
 }
 
-func run(c *cli.Context) {
+func run(c *cli.Context) error {
 	log.Debug("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
 
 	if len(c.Args()) > 0 {
@@ -97,4 +97,6 @@ func run(c *cli.Context) {
 	} else {
 		log.Fatal("[ENVMAN] - No command specified")
 	}
+
+	return nil
 }

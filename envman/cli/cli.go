@@ -10,7 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/version"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 const (
