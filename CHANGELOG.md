@@ -14,14 +14,14 @@ _Keep in mind:
 __Every single trigger event should contain at minimum one condition.__  
 __Every single trigger event conditions are evaluated with AND condition.___
 
-* __code push:__  
+__code push:__  
 
 ```
 - push_branch: BRANCH_NAME
   workflow: WORKFLOW_ID_TO_RUN
 ```
 
-* __pull request:__
+__pull request:__
 
 ```
 - pull_request_source_branch: SOURCE_BRANCH_NAME
@@ -29,7 +29,7 @@ __Every single trigger event conditions are evaluated with AND condition.___
   workflow: WORKFLOW_ID_TO_RUN
 ```
 
-* exmple: 
+exmple: 
 
 ```
 trigger_map:
@@ -64,16 +64,19 @@ trigger_map:                               trigger_map:
 #### Toolkit support
 
 Currently available toolkits: `bash` and `go`.
-* __bash toolkit__ realize the way of current step handling,   
+
+__bash toolkit__ realize the way of current step handling,   
 e.g.: every step needs to have a `step.sh` in the step's directory as an entry point for the step.
 
-  When bitrise executes the step, it call calls `bash step.sh`.  
-* In case of __go toolkit__, you need to specify the package name, and the toolkit takes care about:
-  - moving the go step into a prepared GOPATH inside of the .bitrise directory
-  - building the step project
-  - chaching the binary of given version of step  
+When bitrise executes the step, it call calls `bash step.sh`.  
 
-  When bitrise executes the step, it calls the step's binary.
+In case of __go toolkit__, you need to specify the package name, and the toolkit takes care about:
+
+* moving the go step into a prepared GOPATH inside of the .bitrise directory
+* building the step project
+* chaching the binary of given version of step  
+
+When bitrise executes the step, it calls the step's binary.
 
 _Using the toolkit can provide performance benefits, as it does automatic binary caching -   
 which means that a given version of the step will only be compiled the first time,   
