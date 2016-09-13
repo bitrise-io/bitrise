@@ -13,8 +13,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "1.1.0-13-g92a6239",
-			"Rev": "92a623950d45e4c4f5c1cccb26f40f2df0f4e744"
+			"Comment": "1.1.1",
+			"Rev": "d1c4f5bdab06ba1927460f9cbbac6eab5d337912"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -66,8 +66,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.22-21-gec33a9d",
-			"Rev": "ec33a9d84423d3f966180ccfdca734355c273347"
+			"Comment": "0.9.23",
+			"Rev": "066ab92c7ef0dead83703a0c52d44add34865d5c"
 		},
 		{
 			"ImportPath": "github.com/bitrise-tools/gows/gows",
@@ -104,8 +104,8 @@
 		},
 		{
 			"ImportPath": "github.com/urfave/cli",
-			"Comment": "v1.18.0-58-gc723b19",
-			"Rev": "c723b19a84af34d905773672ffa1b8ead802e505"
+			"Comment": "v1.18.0-65-g61f519f",
+			"Rev": "61f519fe5e57c2518c03627b194899a105838eba"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
@@ -113,7 +113,7 @@
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "e4d366fc3c7938e2958e662b4258c7a89e1f0e3e"
+			"Rev": "31c299268d302dd0aa9a0dcf765a3d58971ac83f"
 		}
 	]
 }
