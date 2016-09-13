@@ -1,6 +1,159 @@
-## Changelog (Current version: 1.3.7)
+## Changelog (Current version: 1.4.0)
 
 -----------------
+
+## 1.4.0 (2016 Sep 13)
+
+### Release Notes
+
+#### New trigger map
+
+bitrise contains a new trigger map syntax, to allow specify more specific and felxible trigger events, full proposal is available on [github](https://github.com/bitrise-io/bitrise.io/issues/40).
+
+_Keep in mind:    
+__Every single trigger event should contain at minimum one condition.__  
+__Every single trigger event conditions are evaluated with AND condition.___
+
+__code push:__  
+
+```
+- push_branch: BRANCH_NAME
+  workflow: WORKFLOW_ID_TO_RUN
+```
+
+__pull request:__
+
+```
+- pull_request_source_branch: SOURCE_BRANCH_NAME
+  pull_request_target_branch: TARGET_BRANCH_NAME
+  workflow: WORKFLOW_ID_TO_RUN
+```
+
+exmple: 
+
+```
+trigger_map:
+- push_branch: release*
+  workflow: deploy
+- push_branch: master
+  workflow: primary 
+- pull_request_target_branch: develop
+  workflow: test
+```
+
+_New trigger map handling is fully compatible with the old syntax, following conversion is applied:_
+
+```
+Old syntax:                   New Syntax:
+
+trigger_map:                  trigger_map:
+- pattern: *           ->     - push_branch: *
+  workflow: primary             workflow: primary
+```
+
+```
+Old syntax:                                New Syntax:
+
+trigger_map:                               trigger_map:
+- push_branch: *                    ->     - push_branch: *
+  is_pull_request_allowed: true              workflow: primary
+  workflow: primary                        - pull_request_source_branch: *
+                                              workflow: primary
+```
+
+#### Toolkit support (_BETA_)
+
+_Toolkit support is still in beta and details of it migth change in upcoming cli releases._
+
+Currently available toolkits: `bash` and `go`.
+
+__bash toolkit__ realize the way of current step handling,   
+e.g.: every step needs to have a `step.sh` in the step's directory as an entry point for the step.
+
+When bitrise executes the step, it call calls `bash step.sh`.  
+
+In case of __go toolkit__, you need to specify the package name, and the toolkit takes care about:
+
+* moving the go step into a prepared GOPATH inside of the .bitrise directory
+* building the step project
+* chaching the binary of given version of step  
+
+When bitrise executes the step, it calls the step's binary.
+
+_Using the toolkit can provide performance benefits, as it does automatic binary caching -   
+which means that a given version of the step will only be compiled the first time,   
+subsequent execution of the same version will use the compiled binary of the step!_
+
+_Toolkit also takes care of its own dependencies.   
+For example go toolkit requires installed go, 
+so toolkit checks if desired version of go is installed on the system,  
+if not it installs it for itself (inside the .bitrise directory),   
+but does not touch the system installed version._
+
+Check out `slack` step for living example of go toolkit usage: [slack v2.2.0](https://github.com/bitrise-io/steps-slack-message/releases/tag/2.2.0)
+
+#### Step dependency handling revision
+
+* fixed check whether dependency is installed or not
+* dependecy models got new property: `bin_name`  
+
+_bin_name is the binary's name, if it doesn't match the package's name.  
+E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.  
+If bin_name is empty name will be used as bin_name too._
+
+#### Other changes:
+
+* Every __networking__ function of bitrise cli uses __retry logic__ and prints progress indicator.
+* bitrise run now prints _Running workflow: WORKFLOW_ID_, for the workflow started running   
+  and prints _Switching to workflow: WORKFLOW_ID_ when running before and after workflows.
+* bitrise configuration (bitrise.yml) __format version__ updated to __1.4.0__
+* __stepman__ version update to [0.9.23](https://github.com/bitrise-io/stepman/releases/tag/0.9.23)
+* __envman__ version update to [1.1.1](https://github.com/bitrise-io/envman/releases/tag/1.1.1)
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.4.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.7 -> 1.4.0
+
+* [e229c64] Krisztián Gödrei - min envman version: 1.1.1, min stepman version: 0.9.23 (#407) (2016 Sep 13)
+* [1e3cbb9] Krisztián Gödrei - godeps update (#406) (2016 Sep 13)
+* [d7bf595] Krisztián Gödrei - New trigger (#402) (2016 Sep 13)
+* [80719e3] Viktor Benei - Step deps handling revision (#405) (2016 Sep 12)
+* [51f55dc] Viktor Benei - bitrise run now prints the workflow it was started with (#403) (2016 Sep 12)
+* [f07a254] Viktor Benei - model version 1.3.0 (#404) (2016 Sep 10)
+* [c4320c6] Viktor Benei - Feature/toolkit bootstrap revision (#401) (2016 Sep 09)
+* [751dd74] Viktor Benei - Feature/toolkit enforcement revision (#400) (2016 Sep 09)
+* [2b2505a] Viktor Benei - Feature/go toolkit beta revs (#399) (2016 Sep 08)
+* [fc43c43] Viktor Benei - v1.4.0 - version number prep (#398) (2016 Sep 08)
+* [1dd93e4] Viktor Benei - [WIP] Feature/toolkit go (#385) (2016 Sep 08)
+* [35ea8d2] Viktor Benei - setup / dependency install : error passing fix (#397) (2016 Sep 07)
+* [d7ced31] Viktor Benei - Feature/deps update (#396) (2016 Sep 06)
+* [db7f786] Viktor Benei - tools install & download separation (#395) (2016 Sep 05)
+* [40277a4] Viktor Benei - fix in tests, to make `go test ./...` work after a clean checkout (e.g. in `docker`) (#394) (2016 Sep 05)
+* [5ecb521] Viktor Benei - dependencies (tools & plugins install) : with progress & retry (#393) (2016 Sep 05)
+* [eb57eb6] Viktor Benei - Feature/readme and docker revision (#392) (2016 Sep 05)
+* [e130bba] Viktor Benei - typo fixes (#391) (2016 Sep 05)
+* [452dced] Viktor Benei - deps update (#390) (2016 Sep 05)
+* [40f28c1] Viktor Benei - step URL note if git:: step clone fails (#389) (2016 Sep 01)
+* [d01ea23] Viktor Benei - deps update (#386) (2016 Aug 23)
+
 
 ## 1.3.7 (2016 Aug 09)
 
@@ -2012,4 +2165,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Aug 09
+Updated: 2016 Sep 13
