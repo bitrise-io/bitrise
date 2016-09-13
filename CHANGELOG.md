@@ -1,6 +1,58 @@
-## Changelog (Current version: 1.3.7)
+## Changelog (Current version: 1.4.0)
 
 -----------------
+
+## 1.4.0 (2016 Sep 13)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.4.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.3.7 -> 1.4.0
+
+* [e229c64] Krisztián Gödrei - min envman version: 1.1.1, min stepman version: 0.9.23 (#407) (2016 Sep 13)
+* [1e3cbb9] Krisztián Gödrei - godeps update (#406) (2016 Sep 13)
+* [d7bf595] Krisztián Gödrei - New trigger (#402) (2016 Sep 13)
+* [80719e3] Viktor Benei - Step deps handling revision (#405) (2016 Sep 12)
+* [51f55dc] Viktor Benei - bitrise run now prints the workflow it was started with (#403) (2016 Sep 12)
+* [f07a254] Viktor Benei - model version 1.3.0 (#404) (2016 Sep 10)
+* [c4320c6] Viktor Benei - Feature/toolkit bootstrap revision (#401) (2016 Sep 09)
+* [751dd74] Viktor Benei - Feature/toolkit enforcement revision (#400) (2016 Sep 09)
+* [2b2505a] Viktor Benei - Feature/go toolkit beta revs (#399) (2016 Sep 08)
+* [fc43c43] Viktor Benei - v1.4.0 - version number prep (#398) (2016 Sep 08)
+* [1dd93e4] Viktor Benei - [WIP] Feature/toolkit go (#385) (2016 Sep 08)
+* [35ea8d2] Viktor Benei - setup / dependency install : error passing fix (#397) (2016 Sep 07)
+* [d7ced31] Viktor Benei - Feature/deps update (#396) (2016 Sep 06)
+* [db7f786] Viktor Benei - tools install & download separation (#395) (2016 Sep 05)
+* [40277a4] Viktor Benei - fix in tests, to make `go test ./...` work after a clean checkout (e.g. in `docker`) (#394) (2016 Sep 05)
+* [5ecb521] Viktor Benei - dependencies (tools & plugins install) : with progress & retry (#393) (2016 Sep 05)
+* [eb57eb6] Viktor Benei - Feature/readme and docker revision (#392) (2016 Sep 05)
+* [e130bba] Viktor Benei - typo fixes (#391) (2016 Sep 05)
+* [452dced] Viktor Benei - deps update (#390) (2016 Sep 05)
+* [40f28c1] Viktor Benei - step URL note if git:: step clone fails (#389) (2016 Sep 01)
+* [d01ea23] Viktor Benei - deps update (#386) (2016 Aug 23)
+
 
 ## 1.3.7 (2016 Aug 09)
 
@@ -2012,4 +2064,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Aug 09
+Updated: 2016 Sep 13
