@@ -61,7 +61,9 @@ trigger_map:                               trigger_map:
                                               workflow: primary
 ```
 
-#### Toolkit support
+#### Toolkit support (_BETA_)
+
+_Toolkit support is still in beta and details of it migth change in upcoming cli releases._
 
 Currently available toolkits: `bash` and `go`.
 
@@ -81,6 +83,12 @@ When bitrise executes the step, it calls the step's binary.
 _Using the toolkit can provide performance benefits, as it does automatic binary caching -   
 which means that a given version of the step will only be compiled the first time,   
 subsequent execution of the same version will use the compiled binary of the step!_
+
+_Toolkit also takes care of its own dependencies.   
+For example go toolkit requires installed go, 
+so toolkit checks if desired version of go is installed on the system,  
+if not it installs it for itself (inside the .bitrise directory),   
+but does not touch the system installed version._
 
 Check out `slack` step for living example of go toolkit usage: [slack v2.2.0](https://github.com/bitrise-io/steps-slack-message/releases/tag/2.2.0)
 
