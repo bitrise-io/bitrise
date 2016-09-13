@@ -2,6 +2,67 @@
 
 -----------------
 
+## 0.9.23 (2016 Sep 13)
+
+### Release Notes
+
+* __Toolkit support:__  Currently available toolkits: `bash` and `go`.
+  * If a step utilizes a Toolkit it does not have to provide a bash entry file (`step.sh`) anymore (except using bash toolkit).
+  * Using the toolkit can also provide __performance benefits__, as it does automatic binary caching - which means that a given version of the step will only be compiled the first time, subsequent execution of the same version will use the compiled binary of the step.  
+  See more about Toolkit on bitrise cli's 1.4.0 [release page](https://github.com/bitrise-io/bitrise/releases/tag/1.4.0).
+* __Dependecy models got new property:__ `bin_name`  
+  bin_name is the binary's name, if it doesn't match the package's name.  
+  E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.  
+  If BinName is empty Name will be used as BinName too.
+* Every __networking__ command uses __retry logic.__ 
+* Better error messages.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.23/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.22 -> 0.9.23
+
+* [04e670e] Krisztián Gödrei - Merge branch 'master' of github.com:bitrise-io/stepman (2016 Sep 13)
+* [578ad1f] Krisztián Gödrei - Godep update (#214) (2016 Sep 13)
+* [61ef1e5] Krisztián Gödrei - prepare for 0.9.23 (2016 Sep 13)
+* [ec33a9d] Viktor Benei - Merge pull request #213 from bitrise-io/feature/deps-bin-name (2016 Sep 11)
+* [ff5807b] Viktor Benei - deps GetBinaryName (2016 Sep 11)
+* [aad8c23] Viktor Benei - Deps extended with BinName (2016 Sep 11)
+* [5ee555b] Viktor Benei - Merge pull request #212 from bitrise-io/feature/retrying-log (2016 Sep 09)
+* [ce5d89c] Viktor Benei - just a heads-up/debug log (2016 Sep 09)
+* [c8d21da] Viktor Benei - Merge pull request #211 from bitrise-io/feature/audit-step-retry (2016 Sep 06)
+* [ceee620] Viktor Benei - better error messages for step model audit (2016 Sep 06)
+* [6e4d306] Viktor Benei - steplib audit : retry step version git clones (2016 Sep 06)
+* [b959724] Viktor Benei - Merge pull request #210 from bitrise-io/feature/retries (2016 Sep 06)
+* [fd38bc5] Viktor Benei - retry step download and StepLib update (2016 Sep 06)
+* [cbe9f2d] Viktor Benei - Merge pull request #209 from bitrise-io/feature/deps-update (2016 Sep 06)
+* [665c864] Viktor Benei - godeps update (2016 Sep 06)
+* [f88d1ca] Viktor Benei - bitrise.yml minor update (2016 Sep 06)
+* [574714f] Viktor Benei - Merge pull request #208 from bitrise-io/feature/step-model-toolkits (2016 Sep 06)
+* [3eebcef] Viktor Benei - empty serialize example/test (2016 Sep 06)
+* [40fe06c] Viktor Benei - test fix (2016 Sep 06)
+* [7a881cf] Viktor Benei - toolkits - pointers (2016 Sep 06)
+* [3a82567] Viktor Benei - Merge pull request #207 from bitrise-io/feature/step-model-toolkits (2016 Sep 06)
+* [09eaac4] Viktor Benei - Step models and property for toolkits (2016 Sep 06)
+* [4927863] Krisztián Gödrei - Merge pull request #204 from bitrise-io/viktorbenei-patch-1 (2016 Aug 11)
+* [8a6da10] Viktor Benei - Log - path ref fix (2016 Aug 11)
+* [97db84b] Krisztián Gödrei - Merge pull request #203 from godrei/master (2016 Jul 19)
+* [d512bad] Krisztián Gödrei - changelog (2016 Jul 19)
+
+
 ## 0.9.22 (2016 Jul 19)
 
 ### Release Notes
@@ -1009,4 +1070,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Jul 19
+Generated at: 2016 Sep 13
