@@ -13,6 +13,438 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTriggerEventType(t *testing.T) {
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypeCodePush, event)
+	}
+
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypePullRequest, event)
+	}
+
+	t.Log("it determins trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := "master"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypePullRequest, event)
+	}
+
+	t.Log("it fails without inputs")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+
+	t.Log("it fails if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+
+	t.Log("it fails if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := "master"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+}
+
+func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("it validates deprecated trigger item")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			WorkflowID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid deprecated trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			WorkflowID: "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid deprecated trigger item - missing pattern")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "",
+			WorkflowID: "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it validates code-push trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid code-push trigger item - missing push-branch")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "",
+			WorkflowID: "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid code-push trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item")
+	{
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/",
+			WorkflowID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item")
+	{
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid pull-request trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "*",
+			WorkflowID:              "",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid pull-request trigger item - missing workflow")
+	{
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "",
+			PullRequestTargetBranch: "",
+			WorkflowID:              "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for mixed trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch:              "master",
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "",
+			WorkflowID:              "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for mixed trigger item")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			Pattern:    "*",
+			WorkflowID: "primary",
+		}
+		require.Error(t, item.Validate())
+	}
+}
+
+func TestMatchWithParamsCodePushItem(t *testing.T) {
+	t.Log("code-push against code-push type item - MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("code-push against code-push type item - MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("code-push against code-push type item - MATCH")
+	{
+		pushBranch := "feature/login"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "feature/*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("code-push against code-push type item - NOT MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "deploy",
+			WorkflowID: "deploy",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("code-push against pr type item - NOT MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			WorkflowID:              "test",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("code-push against pr type item - NOT MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("code-push against pr type item - NOT MATCH")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+}
+
+func TestMatchWithParamsPrTypeItem(t *testing.T) {
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "feature/login"
+		prTargetBranch := "develop"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "develop",
+			WorkflowID:              "test",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "*",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := "deploy_1_0_0"
+
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "deploy_*",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+
+	t.Log("pr against pr type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "deploy",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pr against pr type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/*",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+
+	t.Log("pr against push type item - NOT MATCH")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := "master"
+
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+}
+
 // ----------------------------
 // --- Validate
 
@@ -131,7 +563,7 @@ func TestValidateWorkflow(t *testing.T) {
 	t.Log("invalid workflow - Invalid env: more than 2 fields")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -162,7 +594,7 @@ workflows:
 	t.Log("vali workflow - Warning: duplicated inputs")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -658,7 +1090,7 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:

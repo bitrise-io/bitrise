@@ -14,7 +14,7 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 	require.NoError(t, configs.InitPaths())
 
 	configStr := `
-  format_version: 1.0.0
+  format_version: 1.3.0
   default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
   workflows:
@@ -154,7 +154,7 @@ func TestIsDependencySliceWithSameElements(t *testing.T) {
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -276,7 +276,7 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
 
 func TestConfigModelFromYAMLBytesNormalize(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:

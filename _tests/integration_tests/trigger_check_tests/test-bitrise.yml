@@ -1,0 +1,19 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: "pr_allowed"
+  is_pull_request_allowed: true
+  workflow: pr_allowed
+- pattern: "only_code_push"
+  is_pull_request_allowed: false
+  workflow: only_code_push
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: fall_back
+
+workflows:
+  # PR tests
+  pr_allowed:
+  only_code_push:
+  fall_back:

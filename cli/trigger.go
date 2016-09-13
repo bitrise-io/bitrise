@@ -114,7 +114,7 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	workflowToRunID, err := getWorkflowIDByPattern(bitriseConfig.TriggerMap, triggerParams.TriggerPattern, isPRMode)
+	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
 	}

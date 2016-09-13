@@ -1,0 +1,37 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  - EXIT_CODE_TESTS_CONFIG_PTH: ./_tests/integration_tests/exit_code_tests/bitrise.yml
+  - JSON_PARAMS_TESTS_CONFIG_PTH: ./_tests/integration_tests/json_params_tests/bitrise.yml
+  - NEW_TRIGGER_TESTS_CONFIG_PTH: ./_tests/integration_tests/new_trigger_tests/bitrise.yml
+  - TRIGGER_CHECK_TESTS_CONFIG_PTH: ./_tests/integration_tests/trigger_check_tests/bitrise.yml
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            $CURRENT_BITRISE run test --config $EXIT_CODE_TESTS_CONFIG_PTH
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            $CURRENT_BITRISE run test --config $JSON_PARAMS_TESTS_CONFIG_PTH
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            $CURRENT_BITRISE run test --config $NEW_TRIGGER_TESTS_CONFIG_PTH
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            $CURRENT_BITRISE run test --config $TRIGGER_CHECK_TESTS_CONFIG_PTH

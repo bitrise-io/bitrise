@@ -1,0 +1,133 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+  
+workflows:
+  test:
+    steps:
+    - script:
+        title: Run trigger integration tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            export PR=""
+            export PULL_REQUEST_ID=""
+
+            echo "deprecated trigger test"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pattern":"deprecated_code_push","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"deprecated_code_push","workflow":"deprecated_code_push"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "deprecated trigger test - PR mode"
+            out=$(PR="true" $CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pattern":"deprecated_pr","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"deprecated_pr","workflow":"deprecated_pr"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - code push"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","push-branch":"code_push","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"","workflow":"code_push"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - code push - no match"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","push-branch":"no_match","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 1 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - pull request - defined source and target pattern"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pr-source-branch":"pr_source","pr-target-branch":"pr_target","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"","workflow":"pr_source_and_target"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - pull request - defined source and target pattern  - no match"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pr-source-branch":"no_match","pr-target-branch":"no_match","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 1 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test base64 - pull request - defined source and target pattern"
+            base64_params=$(echo '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pr-source-branch":"pr_source","pr-target-branch":"pr_target","format":"json"}'|openssl base64)
+            out=$($CURRENT_BITRISE trigger-check --json-params-base64 "$base64_params")
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"","workflow":"pr_source_and_target"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - pull request - defined target pattern"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pr-source-branch":"pr_source","pr-target-branch":"pr_target_only","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"","workflow":"pr_target"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"
+
+            echo "new trigger test - pull request - defined source pattern"
+            out=$($CURRENT_BITRISE trigger-check --json-params '{"config":"./_tests/integration_tests/new_trigger_tests/test-bitrise.yml","pr-source-branch":"pr_source_only","pr-target-branch":"pr_target","format":"json"}')
+            status=$?
+            echo "status: $status"
+            if [ $status -ne 0 ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            if [ "$out" != '{"pattern":"","workflow":"pr_source"}' ] ; then
+              echo "out: $out"
+              exit 1
+            fi
+            echo "----------"

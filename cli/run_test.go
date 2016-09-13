@@ -19,7 +19,7 @@ func TestSkipIfEmpty(t *testing.T) {
 	t.Log("skip_if_empty=true && value=empty => should not add")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -58,7 +58,7 @@ workflows:
 	t.Log("skip_if_empty=false && value=empty => should add")
 	{
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -97,7 +97,7 @@ workflows:
 
 func TestDeleteEnvironment(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -160,7 +160,7 @@ envs:
 	require.NoError(t, err)
 
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -217,7 +217,7 @@ workflows:
 
 func TestFailedStepOutputs(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -287,7 +287,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -323,7 +323,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -364,7 +364,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -407,7 +407,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -459,7 +459,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -497,7 +497,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -540,7 +540,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -584,7 +584,7 @@ envs:
 		require.NoError(t, err)
 
 		configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:
@@ -748,7 +748,7 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 // Trivial test with 1 workflow
 func Test1Workflows(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -806,7 +806,7 @@ workflows:
 // Trivial test with before, after workflows
 func Test3Workflows(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -887,7 +887,7 @@ workflows:
 // Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func TestRefeneceCycle(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -913,7 +913,7 @@ workflows:
 // Checks if BuildStatusEnv is set correctly
 func TestBuildStatusEnv(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1020,7 +1020,7 @@ workflows:
 // Trivial fail test
 func TestFail(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1076,7 +1076,7 @@ workflows:
 // Trivial success test
 func TestSuccess(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1110,7 +1110,7 @@ workflows:
 // Checks if BuildStatusEnv is set correctly
 func TestBuildFailedMode(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1168,7 +1168,7 @@ workflows:
 // Before workflows env should be visible in target and after workflow
 func TestWorkflowEnvironments(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1228,7 +1228,7 @@ workflows:
 // Test for same env in before and target workflow, actual workflow should overwrite environemnt and use own value
 func TestWorkflowEnvironmentOverWrite(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1288,7 +1288,7 @@ workflows:
 // Target workflows env should be visible in before and after workflow
 func TestTargetDefinedWorkflowEnvironment(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1336,7 +1336,7 @@ workflows:
 // Step input should visible only for actual step and invisible for other steps
 func TestStepInputEnvironment(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1391,7 +1391,7 @@ workflows:
 // Outputs exported with `envman add` should be accessible for subsequent Steps.
 func TestStepOutputEnvironment(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1453,7 +1453,7 @@ workflows:
 
 func TestLastWorkflowIDInConfig(t *testing.T) {
 	configStr := `
-format_version: 1.0.0
+format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
