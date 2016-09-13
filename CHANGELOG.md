@@ -61,7 +61,7 @@ trigger_map:                               trigger_map:
                                               workflow: primary
 ```
 
-#### Toolkit support:
+#### Toolkit support
 
 Currently available toolkits: `bash` and `go`.
 * __bash toolkit__ realize the way of current step handling,   
@@ -81,7 +81,7 @@ subsequent execution of the same version will use the compiled binary of the ste
 
 Check out `slack` step for living example of go toolkit usage: [slack v2.2.0](https://github.com/bitrise-io/steps-slack-message/releases/tag/2.2.0)
 
-### Step dependency handling revision:
+#### Step dependency handling revision
 
 * fixed check whether dependency is installed or not
 * dependecy models got new property: `bin_name`  
@@ -90,7 +90,7 @@ _bin_name is the binary's name, if it doesn't match the package's name.
 E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.  
 If bin_name is empty name will be used as bin_name too._
 
-### Other changes:
+#### Other changes:
 
 * Every __networking__ function of bitrise cli uses __retry logic__ and prints progress indicator.
 * bitrise run now prints _Running workflow: WORKFLOW_ID_, for the workflow started running   
