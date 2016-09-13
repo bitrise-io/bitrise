@@ -6,83 +6,92 @@
 
 ### Release Notes
 
-* __New trigger map:__ bitrise contains a new trigger map syntax, to allow specify more specific and felxible trigger events,  
-  full proposal is available on [github](https://github.com/bitrise-io/bitrise.io/issues/40).
+#### New trigger map
 
-  _Keep in mind:    
-  __Every single trigger event should contain at minimum one condition.__  
-  __Every single trigger event conditions are evaluated with AND condition.___
+bitrise contains a new trigger map syntax, to allow specify more specific and felxible trigger events, full proposal is available on [github](https://github.com/bitrise-io/bitrise.io/issues/40).
 
-  * __code push:__  
-  
-  ```
-  - push_branch: BRANCH_NAME
-    workflow: WORKFLOW_ID_TO_RUN
-  ```
+_Keep in mind:    
+__Every single trigger event should contain at minimum one condition.__  
+__Every single trigger event conditions are evaluated with AND condition.___
 
-  * __pull request:__
+* __code push:__  
 
-  ```
-  - pull_request_source_branch: SOURCE_BRANCH_NAME
-    pull_request_target_branch: TARGET_BRANCH_NAME
-    workflow: WORKFLOW_ID_TO_RUN
-  ```
+```
+- push_branch: BRANCH_NAME
+  workflow: WORKFLOW_ID_TO_RUN
+```
 
-  * exmple: 
+* __pull request:__
 
-  ```
-  trigger_map:
-  - push_branch: release*
-    workflow: deploy
-  - push_branch: master
-    workflow: primary 
-  - pull_request_target_branch: develop
-    workflow: test
-  ```
+```
+- pull_request_source_branch: SOURCE_BRANCH_NAME
+  pull_request_target_branch: TARGET_BRANCH_NAME
+  workflow: WORKFLOW_ID_TO_RUN
+```
 
-  _New trigger map handling is fully compatible with the old syntax, following conversion is applied:_
+* exmple: 
 
-  ```
-  Old syntax:                   New Syntax:
+```
+trigger_map:
+- push_branch: release*
+  workflow: deploy
+- push_branch: master
+  workflow: primary 
+- pull_request_target_branch: develop
+  workflow: test
+```
 
-  trigger_map:                  trigger_map:
-  - pattern: *           ->     - push_branch: *
-    workflow: primary             workflow: primary
-  ```
+_New trigger map handling is fully compatible with the old syntax, following conversion is applied:_
 
-  ```
-  Old syntax:                                New Syntax:
+```
+Old syntax:                   New Syntax:
 
-  trigger_map:                               trigger_map:
-  - push_branch: *                    ->     - push_branch: *
-    is_pull_request_allowed: true              workflow: primary
-    workflow: primary                        - pull_request_source_branch: *
-                                               workflow: primary
-  ```
+trigger_map:                  trigger_map:
+- pattern: *           ->     - push_branch: *
+  workflow: primary             workflow: primary
+```
 
-* __Toolkit support:__  Currently available toolkits: `bash` and `go`.
-  * __bash toolkit__ realize the way of current step handling,   
-  e.g.: every step needs to have a `step.sh` in the step's directory as an entry point for the step.
+```
+Old syntax:                                New Syntax:
 
-    When bitrise executes the step, it call calls `bash step.sh`.  
-  * In case of __go toolkit__, you need to specify the package name, and the toolkit takes care about:
-    - moving the go step into a prepared GOPATH inside of the .bitrise directory
-    - building the step project
-    - chaching the binary of given version of step  
-  
-    When bitrise executes the step, it calls the step's binary.
+trigger_map:                               trigger_map:
+- push_branch: *                    ->     - push_branch: *
+  is_pull_request_allowed: true              workflow: primary
+  workflow: primary                        - pull_request_source_branch: *
+                                              workflow: primary
+```
 
-  _Using the toolkit can provide performance benefits, as it does automatic binary caching -   
-  which means that a given version of the step will only be compiled the first time,   
-  subsequent execution of the same version will use the compiled binary of the step!_
+#### Toolkit support:
 
-  Check out `slack` step for living example of go toolkit usage: [slack v2.2.0](https://github.com/bitrise-io/steps-slack-message/releases/tag/2.2.0)
-* __Step dependency handling revision:__
-  * fixed check whether dependency is installed or not
-  * dependecy models got new property: `bin_name`  
-  _bin_name is the binary's name, if it doesn't match the package's name.  
-  E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.  
-  If bin_name is empty name will be used as bin_name too._
+Currently available toolkits: `bash` and `go`.
+* __bash toolkit__ realize the way of current step handling,   
+e.g.: every step needs to have a `step.sh` in the step's directory as an entry point for the step.
+
+  When bitrise executes the step, it call calls `bash step.sh`.  
+* In case of __go toolkit__, you need to specify the package name, and the toolkit takes care about:
+  - moving the go step into a prepared GOPATH inside of the .bitrise directory
+  - building the step project
+  - chaching the binary of given version of step  
+
+  When bitrise executes the step, it calls the step's binary.
+
+_Using the toolkit can provide performance benefits, as it does automatic binary caching -   
+which means that a given version of the step will only be compiled the first time,   
+subsequent execution of the same version will use the compiled binary of the step!_
+
+Check out `slack` step for living example of go toolkit usage: [slack v2.2.0](https://github.com/bitrise-io/steps-slack-message/releases/tag/2.2.0)
+
+### Step dependency handling revision:
+
+* fixed check whether dependency is installed or not
+* dependecy models got new property: `bin_name`  
+
+_bin_name is the binary's name, if it doesn't match the package's name.  
+E.g. in case of "AWS CLI" the package is `awscli` and the binary is `aws`.  
+If bin_name is empty name will be used as bin_name too._
+
+### Other changes:
+
 * Every __networking__ function of bitrise cli uses __retry logic__ and prints progress indicator.
 * bitrise run now prints _Running workflow: WORKFLOW_ID_, for the workflow started running   
   and prints _Switching to workflow: WORKFLOW_ID_ when running before and after workflows.
