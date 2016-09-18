@@ -352,24 +352,29 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 	// First do a "which", to see if the binary is available.
 	// Can be available from another source, not just from brew,
 	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
-	if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", brewDep.GetBinaryName()); err != nil {
-		if err.Error() == "exit status 1" && out == "" {
-			isDepInstalled = false
+	{
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", brewDep.GetBinaryName()); err != nil {
+			if err.Error() == "exit status 1" && out == "" {
+				isDepInstalled = false
+			} else {
+				// unexpected `which` error
+				return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+			}
+		} else if out != "" {
+			isDepInstalled = true
 		} else {
-			// unexpected `which` error
-			return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+			// no error but which's output was empty
+			return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", brewDep.Name)
 		}
-	} else if out != "" {
-		isDepInstalled = true
-	} else {
-		// no error but which's output was empty
-		return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", brewDep.Name)
 	}
 
-	if !isDepInstalled {
-		// which did not find the binary, also check in brew,
-		// whether the package is installed
-		isDepInstalled = checkIfBrewPackageInstalled(brewDep.Name)
+	// then do a package manager specific lookup
+	{
+		if !isDepInstalled {
+			// which did not find the binary, also check in brew,
+			// whether the package is installed
+			isDepInstalled = checkIfBrewPackageInstalled(brewDep.Name)
+		}
 	}
 
 	if !isDepInstalled {
@@ -386,8 +391,8 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 		}
 
 		log.Infof("(%s) isn't installed, installing...", brewDep.Name)
-		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
-			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, out, err)
+		if cmdOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
+			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, cmdOut, err)
 			return err
 		}
 		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", brewDep.Name)
@@ -402,24 +407,29 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 	// First do a "which", to see if the binary is available.
 	// Can be available from another source, not just from brew,
 	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
-	if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", aptGetDep.GetBinaryName()); err != nil {
-		if err.Error() == "exit status 1" && out == "" {
-			isDepInstalled = false
+	{
+		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", aptGetDep.GetBinaryName()); err != nil {
+			if err.Error() == "exit status 1" && out == "" {
+				isDepInstalled = false
+			} else {
+				// unexpected `which` error
+				return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+			}
+		} else if out != "" {
+			isDepInstalled = true
 		} else {
-			// unexpected `which` error
-			return fmt.Errorf("which (%s) failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+			// no error but which's output was empty
+			return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", aptGetDep.Name)
 		}
-	} else if out != "" {
-		isDepInstalled = true
-	} else {
-		// no error but which's output was empty
-		return fmt.Errorf("which (%s) failed -- no error (exit code 0) but output was empty", aptGetDep.Name)
 	}
 
-	if !isDepInstalled {
-		// which did not find the binary, also check in brew,
-		// whether the package is installed
-		isDepInstalled = checkIfAptPackageInstalled(aptGetDep.Name)
+	// then do a package manager specific lookup
+	{
+		if !isDepInstalled {
+			// which did not find the binary, also check in brew,
+			// whether the package is installed
+			isDepInstalled = checkIfAptPackageInstalled(aptGetDep.Name)
+		}
 	}
 
 	if !isDepInstalled {
@@ -436,8 +446,8 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 		}
 
 		log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
-		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
-			log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, out, err)
+		if cmdOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
+			log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, cmdOut, err)
 			return err
 		}
 
