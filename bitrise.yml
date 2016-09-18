@@ -131,8 +131,11 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-
+            echo "Running integration tests ..."
+            set -ex
             $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
+            export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
+            go test ./_tests/integration/...
     - script:
         title: Setup system bitrise
         run_if: ".IsCI"
