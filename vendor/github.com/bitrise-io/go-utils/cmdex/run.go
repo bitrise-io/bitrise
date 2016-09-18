@@ -140,12 +140,6 @@ func RunCmdAndReturnExitCode(cmd *exec.Cmd) (int, error) {
 // RunCmdAndReturnTrimmedOutput ...
 func RunCmdAndReturnTrimmedOutput(cmd *exec.Cmd) (string, error) {
 	outBytes, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	if outBytes == nil {
-		return "", nil
-	}
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
@@ -153,12 +147,6 @@ func RunCmdAndReturnTrimmedOutput(cmd *exec.Cmd) (string, error) {
 // RunCmdAndReturnTrimmedCombinedOutput ...
 func RunCmdAndReturnTrimmedCombinedOutput(cmd *exec.Cmd) (string, error) {
 	outBytes, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-	if outBytes == nil {
-		return "", nil
-	}
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
