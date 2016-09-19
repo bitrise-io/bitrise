@@ -18,47 +18,47 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/errorutil",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/progress",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/retry",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "96a03f152763178cda7c32eda68bf1f6ce0c4748"
+			"Rev": "e91354ec74ff6f1d5153a151c89f94a62924a6ed"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",

@@ -186,10 +186,9 @@ func GitGetLatestCommitHashOnHead(pth string) (string, error) {
 	bytes, err := cmd.CombinedOutput()
 	cmdOutput := string(bytes)
 	if err != nil {
-		log.Printf(" [!] Output: %v", cmdOutput)
-		return "", err
+		log.Printf(" [!] Output: %s", cmdOutput)
 	}
-	return strings.TrimSpace(cmdOutput), nil
+	return strings.TrimSpace(cmdOutput), err
 }
 
 // GitGetCommitHashOfHEAD ...
@@ -200,7 +199,6 @@ func GitGetCommitHashOfHEAD(pth string) (string, error) {
 	cmdOutput := string(bytes)
 	if err != nil {
 		log.Printf(" [!] Output: %s", cmdOutput)
-		return "", err
 	}
-	return strings.TrimSpace(cmdOutput), nil
+	return strings.TrimSpace(cmdOutput), err
 }
