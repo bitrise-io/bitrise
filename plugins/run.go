@@ -64,11 +64,7 @@ func commandOutput(dir, name string, args ...string) (string, error) {
 	}
 
 	outBytes, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	return strip(string(outBytes)), nil
+	return strip(string(outBytes)), err
 }
 
 func command(dir, name string, args ...string) error {
