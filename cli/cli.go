@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -147,6 +148,7 @@ func Run() {
 			if err := cli.ShowAppHelp(c); err != nil {
 				return fmt.Errorf("Failed to show help, error: %s", err)
 			}
+			return errors.New("")
 		}
 
 		return nil
