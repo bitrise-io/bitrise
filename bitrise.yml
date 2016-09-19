@@ -51,6 +51,46 @@ workflows:
 
             Build URL: ${BITRISE_BUILD_URL}
 
+  integration-test:
+    after_run:
+    - _bitrise-run-setup
+    steps:
+    - script:
+        title: Go build
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            # build the new bitrise
+            current_dir=$(pwd)
+            current_bitrise=$current_dir/_tmp/ci-bin
+            go build -o $current_bitrise
+
+            # setup for the new bitrise as well
+            $current_bitrise setup --minimal
+
+            envman add --key CURRENT_BITRISE --value $current_bitrise
+    - script:
+        title: Step-template test
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            cd ./_step_template
+            $CURRENT_BITRISE run test
+    - script:
+        title: Run integration tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Running integration tests ..."
+            set -ex
+            $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
+            export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
+            go test ./_tests/integration/...
+
   test:
     title: Bitrise test
     description: |
@@ -60,6 +100,8 @@ workflows:
       4, Test-build
       5, Step-template test
       6, integration tests
+    after_run:
+    - integration-test
     steps:
     - script:
         title: Print go environment
@@ -99,43 +141,9 @@ workflows:
         title: Go test
         inputs:
         - content: go test ./...
-    - script:
-        title: Go build
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -x
 
-            # build the new bitrise
-            current_dir=$(pwd)
-            current_bitrise=$current_dir/_tmp/ci-bin
-            go build -o $current_bitrise
-
-            # setup for the new bitrise as well
-            $current_bitrise setup --minimal
-
-            envman add --key CURRENT_BITRISE --value $current_bitrise
-    - script:
-        title: Step-template test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            set -x
-
-            cd ./_step_template
-            $CURRENT_BITRISE run test
-    - script:
-        title: Run integration tests
-        inputs:
-        - content: |-
-            #!/bin/bash
-            echo "Running integration tests ..."
-            set -ex
-            $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
-            export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
-            go test ./_tests/integration/...
+  _bitrise-run-setup:
+    steps:
     - script:
         title: Setup system bitrise
         run_if: ".IsCI"
