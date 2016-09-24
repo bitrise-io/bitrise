@@ -381,7 +381,7 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 		// Tool isn't installed -- install it...
 		if !isCIMode {
 			log.Infof("This step requires %s, which is not installed", brewDep.Name)
-			allow, err := goinp.AskForBool("Would you like to install (" + brewDep.Name + ") with brew?")
+			allow, err := goinp.AskForBoolWithDefault("Would you like to install ("+brewDep.Name+") with brew?", true)
 			if err != nil {
 				return err
 			}
@@ -436,7 +436,7 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 		// Tool isn't installed -- install it...
 		if !isCIMode {
 			log.Infof("This step requires %s, which is not installed", aptGetDep.Name)
-			allow, err := goinp.AskForBool("Would you like to install (" + aptGetDep.Name + ") with apt-get?")
+			allow, err := goinp.AskForBoolWithDefault("Would you like to install ("+aptGetDep.Name+") with apt-get?", true)
 			if err != nil {
 				return err
 			}

@@ -137,7 +137,7 @@ func initConfig(c *cli.Context) error {
 		log.Fatalf("Failed to init path (%s), error: %s", bitriseConfigFileRelPath, err)
 	} else if exists {
 		ask := fmt.Sprintf("A config file already exists at %s - do you want to overwrite it?", bitriseConfigFileRelPath)
-		if val, err := goinp.AskForBool(ask); err != nil {
+		if val, err := goinp.AskForBoolWithDefault(ask, false); err != nil {
 			log.Fatalf("Failed to ask for input, error: %s", err)
 		} else if !val {
 			log.Info("Init canceled, existing file won't be overwritten.")
@@ -228,7 +228,7 @@ func saveSecretsToFile(pth, secretsStr string) (bool, error) {
 		return false, err
 	} else if exists {
 		ask := fmt.Sprintf("A secrets file already exists at %s - do you want to overwrite it?", pth)
-		if val, err := goinp.AskForBool(ask); err != nil {
+		if val, err := goinp.AskForBoolWithDefault(ask, false); err != nil {
 			return false, err
 		} else if !val {
 			log.Infoln("Init canceled, existing file (" + pth + ") won't be overwritten.")
