@@ -26,7 +26,6 @@ func SimpleProgress(printChar string, tickInterval time.Duration, action func())
 		finishedChan <- true
 	}()
 
-	fmt.Print(printChar)
 	isRunFinished := false
 	for !isRunFinished {
 		select {
