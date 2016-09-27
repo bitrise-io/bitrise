@@ -266,7 +266,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
 					return err
 				}
-				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", brewDep.Name)
+				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", brewDep.GetBinaryName())
 			}
 		case "linux":
 			for _, aptGetDep := range step.Deps.AptGet {
@@ -275,7 +275,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
 					return err
 				}
-				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.Name)
+				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.GetBinaryName())
 			}
 		default:
 			return errors.New("Unsupported os")
