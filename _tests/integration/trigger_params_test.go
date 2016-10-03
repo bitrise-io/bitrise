@@ -45,7 +45,7 @@ func Test_TriggerParams(t *testing.T) {
 
 	t.Log("deprecated trigger with tag")
 	{
-		cmd := cmdex.NewCommand(binPath(), "trigger", "--tag-name", "tag", "--config", "trigger_params_test.yml")
+		cmd := cmdex.NewCommand(binPath(), "trigger", "--tag", "tag", "--config", "trigger_params_test.yml")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}

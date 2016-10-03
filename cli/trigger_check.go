@@ -44,12 +44,12 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 		params.PushBranch = ""
 		params.PRSourceBranch = params.TriggerPattern
 		params.PRTargetBranch = ""
-		params.TagName = ""
+		params.Tag = ""
 	} else {
 		params.PushBranch = params.TriggerPattern
 		params.PRSourceBranch = ""
 		params.PRTargetBranch = ""
-		params.TagName = ""
+		params.Tag = ""
 	}
 
 	params.TriggerPattern = ""
@@ -59,7 +59,7 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 
 func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.TagName)
+		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 		if err != nil {
 			return "", err
 		}
@@ -68,7 +68,7 @@ func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTrigg
 		}
 	}
 
-	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag-name: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.TagName)
+	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
@@ -100,7 +100,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	tagName := c.String(TagNameKey)
+	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -120,7 +120,7 @@ func triggerCheck(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tagName,
+		pushBranch, prSourceBranch, prTargetBranch, tag,
 		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
@@ -152,7 +152,7 @@ func triggerCheck(c *cli.Context) error {
 
 	// Trigger filter validation
 	if triggerParams.TriggerPattern == "" &&
-		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.TagName == "" {
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.Tag == "" {
 		registerFatal("No trigger pattern nor trigger params specified", warnings, triggerParams.Format)
 	}
 	//

@@ -21,7 +21,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
-		require.Equal(t, "", convertedParams.TagName)
+		require.Equal(t, "", convertedParams.Tag)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
 		require.Equal(t, "", convertedParams.Format)
@@ -44,7 +44,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "master", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
-		require.Equal(t, "", convertedParams.TagName)
+		require.Equal(t, "", convertedParams.Tag)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
 		require.Equal(t, "", convertedParams.Format)
@@ -61,7 +61,7 @@ func TestMigratePatternToParams(t *testing.T) {
 			PushBranch:     "feature/login",
 			PRSourceBranch: "feature/landing",
 			PRTargetBranch: "develop",
-			TagName:        "0.9.0",
+			Tag:            "0.9.0",
 			TriggerPattern: "master",
 
 			WorkflowToRunID:         "primary",
@@ -78,7 +78,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "master", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
-		require.Equal(t, "", convertedParams.TagName)
+		require.Equal(t, "", convertedParams.Tag)
 
 		require.Equal(t, "primary", convertedParams.WorkflowToRunID)
 		require.Equal(t, "json", convertedParams.Format)
@@ -187,7 +187,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag_name: 1.*
+- tag: 1.*
   workflow: deploy
 
 workflows:
@@ -199,7 +199,7 @@ workflows:
 		require.Equal(t, 0, len(warnings))
 
 		params := RunAndTriggerParamsModel{
-			TagName: "1.0.0",
+			Tag: "1.0.0",
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.Equal(t, nil, err)
@@ -217,7 +217,7 @@ trigger_map:
 - pull_request_source_branch: feature/*
   pull_request_target_branch: develop
   workflow: test
-- tag_name: 1.*
+- tag: 1.*
   workflow: deploy
 
 workflows:
@@ -249,7 +249,7 @@ trigger_map:
 - pull_request_source_branch: feature/*
   pull_request_target_branch: develop
   workflow: test
-- tag_name: 1.*
+- tag: 1.*
   workflow: deploy
 
 workflows:
@@ -262,7 +262,7 @@ workflows:
 		require.Equal(t, 0, len(warnings))
 
 		params := RunAndTriggerParamsModel{
-			TagName: "1.0.0",
+			Tag: "1.0.0",
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.Equal(t, nil, err)

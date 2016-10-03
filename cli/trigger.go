@@ -30,8 +30,8 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 				log.Infof(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
 				log.Infof("   pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 				log.Infof("   workflow: %s", triggerItem.WorkflowID)
-			} else if triggerItem.TagName != "" {
-				log.Infof(" * tag_name: %s", triggerItem.TagName)
+			} else if triggerItem.Tag != "" {
+				log.Infof(" * tag: %s", triggerItem.Tag)
 				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			}
 		}
@@ -57,7 +57,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	tagName := c.String(TagNameKey)
+	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -75,7 +75,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tagName,
+		pushBranch, prSourceBranch, prTargetBranch, tag,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
@@ -100,7 +100,7 @@ func trigger(c *cli.Context) error {
 
 	// Trigger filter validation
 	if triggerParams.TriggerPattern == "" &&
-		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.TagName == "" {
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.Tag == "" {
 		log.Error("No trigger pattern nor trigger params specified")
 		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
 		os.Exit(1)
@@ -139,8 +139,8 @@ func trigger(c *cli.Context) error {
 			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
 		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
 			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
-		} else if triggerParams.TagName != "" {
-			log.Infof("tag-name (%s) triggered workflow (%s)", triggerParams.TagName, workflowToRunID)
+		} else if triggerParams.Tag != "" {
+			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
 		}
 	}
 
