@@ -53,6 +53,8 @@ const (
 	TriggerEventTypeCodePush TriggerEventType = "code-push"
 	// TriggerEventTypePullRequest ...
 	TriggerEventTypePullRequest TriggerEventType = "pull-request"
+	// TriggerEventTypeTag ...
+	TriggerEventTypeTag TriggerEventType = "tag"
 	// TriggerEventTypeUnknown ...
 	TriggerEventTypeUnknown TriggerEventType = "unkown"
 )
@@ -62,6 +64,7 @@ type TriggerMapItemModel struct {
 	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	TagName                 string `json:"tag_name,omitempty" yaml:"tag_name,omitempty"`
 	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// deprecated
