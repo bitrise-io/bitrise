@@ -57,7 +57,7 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 
 func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.TagName)
 		if err != nil {
 			return "", err
 		}
@@ -66,7 +66,7 @@ func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTrigg
 		}
 	}
 
-	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag-name: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.TagName)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
@@ -98,6 +98,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	tagName := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -117,7 +118,7 @@ func triggerCheck(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch,
+		pushBranch, prSourceBranch, prTargetBranch, tagName,
 		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
@@ -149,7 +150,7 @@ func triggerCheck(c *cli.Context) error {
 
 	// Trigger filter validation
 	if triggerParams.TriggerPattern == "" &&
-		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" {
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.TagName == "" {
 		registerFatal("No trigger pattern nor trigger params specified", warnings, triggerParams.Format)
 	}
 	//

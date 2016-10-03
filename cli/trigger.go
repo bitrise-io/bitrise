@@ -16,8 +16,25 @@ import (
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
+
 	for _, triggerItem := range triggerMap {
-		log.Infoln(" * " + triggerItem.Pattern)
+		if triggerItem.Pattern != "" {
+			log.Infoln(" * pattern: %s", triggerItem.Pattern)
+			log.Infoln("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
+			log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+		} else {
+			if triggerItem.PushBranch != "" {
+				log.Infoln(" * push_branch: %s", triggerItem.PushBranch)
+				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+			} else if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
+				log.Infoln(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
+				log.Infoln("   pull_request_target_branch: %v", triggerItem.PullRequestTargetBranch)
+				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+			} else if triggerItem.TagName != "" {
+				log.Infoln(" * tag_name: %s", triggerItem.TagName)
+				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+			}
+		}
 	}
 
 	fmt.Println()
@@ -45,6 +62,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	tagName := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -62,7 +80,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch,
+		pushBranch, prSourceBranch, prTargetBranch, tagName,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
@@ -86,10 +104,9 @@ func trigger(c *cli.Context) error {
 	}
 
 	// Trigger filter validation
-	if triggerParams.TriggerPattern == "" {
-		// no trigger filter specified
-		//  list all the available ones and then exit
-		log.Error("No pattern specified!")
+	if triggerParams.TriggerPattern == "" &&
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.TagName == "" {
+		log.Error("No trigger pattern nor trigger params specified")
 		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
 		os.Exit(1)
 	}
@@ -118,7 +135,19 @@ func trigger(c *cli.Context) error {
 	if err != nil {
 		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
 	}
-	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerParams.TriggerPattern, workflowToRunID)
+	log.Infof("Pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
+
+	if triggerParams.TriggerPattern != "" {
+		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
+	} else {
+		if triggerParams.PushBranch != "" {
+			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
+		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
+			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
+		} else if triggerParams.TagName != "" {
+			log.Infof("tag-name (%s) triggered workflow (%s)", triggerParams.TagName, workflowToRunID)
+		}
+	}
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//
