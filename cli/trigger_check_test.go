@@ -21,6 +21,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
+		require.Equal(t, "", convertedParams.TagName)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
 		require.Equal(t, "", convertedParams.Format)
@@ -43,6 +44,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "master", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
+		require.Equal(t, "", convertedParams.TagName)
 
 		require.Equal(t, "", convertedParams.WorkflowToRunID)
 		require.Equal(t, "", convertedParams.Format)
@@ -59,6 +61,7 @@ func TestMigratePatternToParams(t *testing.T) {
 			PushBranch:     "feature/login",
 			PRSourceBranch: "feature/landing",
 			PRTargetBranch: "develop",
+			TagName:        "0.9.0",
 			TriggerPattern: "master",
 
 			WorkflowToRunID:         "primary",
@@ -75,6 +78,7 @@ func TestMigratePatternToParams(t *testing.T) {
 		require.Equal(t, "master", convertedParams.PRSourceBranch)
 		require.Equal(t, "", convertedParams.PRTargetBranch)
 		require.Equal(t, "", convertedParams.TriggerPattern)
+		require.Equal(t, "", convertedParams.TagName)
 
 		require.Equal(t, "primary", convertedParams.WorkflowToRunID)
 		require.Equal(t, "json", convertedParams.Format)
@@ -179,6 +183,29 @@ workflows:
 		require.Equal(t, "test", workflowID)
 	}
 
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- tag_name: 1.*
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			TagName: "1.0.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "deploy", workflowID)
+	}
+
 	t.Log("it works with complex trigger map")
 	{
 		configStr := `
@@ -190,9 +217,12 @@ trigger_map:
 - pull_request_source_branch: feature/*
   pull_request_target_branch: develop
   workflow: test
+- tag_name: 1.*
+  workflow: deploy
 
 workflows:
   test:
+  deploy:
 `
 
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
@@ -206,6 +236,37 @@ workflows:
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.Equal(t, nil, err)
 		require.Equal(t, "test", workflowID)
+	}
+
+	t.Log("it works with complex trigger map")
+	{
+		configStr := `
+trigger_map:
+- pattern: feature/*
+  workflow: test
+- push_branch: feature/*
+  workflow: test
+- pull_request_source_branch: feature/*
+  pull_request_target_branch: develop
+  workflow: test
+- tag_name: 1.*
+  workflow: deploy
+
+workflows:
+  test:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			TagName: "1.0.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "deploy", workflowID)
 	}
 }
 

@@ -44,10 +44,12 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 		params.PushBranch = ""
 		params.PRSourceBranch = params.TriggerPattern
 		params.PRTargetBranch = ""
+		params.TagName = ""
 	} else {
 		params.PushBranch = params.TriggerPattern
 		params.PRSourceBranch = ""
 		params.PRTargetBranch = ""
+		params.TagName = ""
 	}
 
 	params.TriggerPattern = ""
