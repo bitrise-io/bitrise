@@ -68,7 +68,7 @@ func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTrigg
 		}
 	}
 
-	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
+	return "", fmt.Errorf("no matching workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
