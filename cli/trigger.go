@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
@@ -128,7 +129,11 @@ func trigger(c *cli.Context) error {
 
 	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
-		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
+		log.Errorf("Failed to get workflow id by pattern, error: %s", err)
+		if strings.Contains(err.Error(), "no matching workflow found with trigger params:") {
+			printAvailableTriggerFilters(bitriseConfig.TriggerMap)
+		}
+		os.Exit(1)
 	}
 	log.Infof("Pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
 
