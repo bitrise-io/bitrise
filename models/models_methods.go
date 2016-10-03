@@ -39,7 +39,7 @@ func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tagName string
 		return TriggerEventTypeTag, nil
 	}
 
-	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
+	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag-name: %s", pushBranch, prSourceBranch, prTargetBranch, tagName)
 }
 
 func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapItemModel {

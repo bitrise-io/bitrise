@@ -19,28 +19,23 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 
 	for _, triggerItem := range triggerMap {
 		if triggerItem.Pattern != "" {
-			log.Infoln(" * pattern: %s", triggerItem.Pattern)
-			log.Infoln("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
-			log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+			log.Infof(" * pattern: %s", triggerItem.Pattern)
+			log.Infof("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
+			log.Infof("   workflow: %s", triggerItem.WorkflowID)
 		} else {
 			if triggerItem.PushBranch != "" {
-				log.Infoln(" * push_branch: %s", triggerItem.PushBranch)
-				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(" * push_branch: %s", triggerItem.PushBranch)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			} else if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
-				log.Infoln(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
-				log.Infoln("   pull_request_target_branch: %v", triggerItem.PullRequestTargetBranch)
-				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
+				log.Infof("   pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			} else if triggerItem.TagName != "" {
-				log.Infoln(" * tag_name: %s", triggerItem.TagName)
-				log.Infoln("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(" * tag_name: %s", triggerItem.TagName)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			}
 		}
 	}
-
-	fmt.Println()
-	log.Infoln("You can trigger a workflow with:")
-	log.Infoln("-> bitrise trigger the-trigger-filter")
-	fmt.Println()
 }
 
 // --------------------
@@ -62,7 +57,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	tagName := c.String(TagKey)
+	tagName := c.String(TagNameKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)

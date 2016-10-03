@@ -1,0 +1,31 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: deprecated_pr_allowed
+  is_pull_request_allowed: true
+  workflow: deprecated_pr_allowed
+
+- pattern: deprecated_only_code_push
+  is_pull_request_allowed: false
+  workflow: deprecated_only_code_push
+
+- push_branch: code-push
+  workflow: code-push
+
+- pull_request_source_branch: pull_request_source_branch
+  workflow: pull_request
+
+- pull_request_target_branch: pull_request_taget_branch
+  workflow: pull_request
+
+- tag: tag
+  workflow: tag
+
+workflows:
+  # PR tests
+  deprecated_pr_allowed:
+  deprecated_only_code_push:
+  code-push:
+  pull_request:
+  tag:
