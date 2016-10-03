@@ -90,6 +90,7 @@ workflows:
             $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
             export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
             export CI=false
+            export PR=false
             go test ./_tests/integration/...
 
   test:
