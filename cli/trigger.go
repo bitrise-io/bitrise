@@ -135,7 +135,6 @@ func trigger(c *cli.Context) error {
 		}
 		os.Exit(1)
 	}
-	log.Infof("Pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
 
 	if triggerParams.TriggerPattern != "" {
 		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
