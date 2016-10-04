@@ -12,8 +12,9 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-func triggerEventType(pushBranch, prSourceBranch, prTargetBranch string) (TriggerEventType, error) {
+func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag string) (TriggerEventType, error) {
 	if pushBranch != "" {
+		// Ensure not mixed with code-push event
 		if prSourceBranch != "" {
 			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_source_branch (%s) also provided", pushBranch, prSourceBranch)
 		}
@@ -21,12 +22,24 @@ func triggerEventType(pushBranch, prSourceBranch, prTargetBranch string) (Trigge
 			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_target_branch (%s) also provided", pushBranch, prTargetBranch)
 		}
 
+		// Ensure not mixed with tag event
+		if tag != "" {
+			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but tag (%s) also provided", pushBranch, tag)
+		}
+
 		return TriggerEventTypeCodePush, nil
 	} else if prSourceBranch != "" || prTargetBranch != "" {
+		// Ensure not mixed with tag event
+		if tag != "" {
+			return TriggerEventTypeUnknown, fmt.Errorf("pull_request_source_branch (%s) and pull_request_target_branch (%s) selects pull-request trigger event, but tag (%s) also provided", prSourceBranch, prTargetBranch, tag)
+		}
+
 		return TriggerEventTypePullRequest, nil
+	} else if tag != "" {
+		return TriggerEventTypeTag, nil
 	}
 
-	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s", pushBranch, prSourceBranch, prTargetBranch)
+	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", pushBranch, prSourceBranch, prTargetBranch, tag)
 }
 
 func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapItemModel {
@@ -46,8 +59,8 @@ func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapI
 }
 
 // MatchWithParams ...
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string) (bool, error) {
-	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch)
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag string) (bool, error) {
+	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
 	}
@@ -58,7 +71,7 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	}
 
 	for _, migratedTriggerItem := range migratedTriggerItems {
-		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch)
+		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch, migratedTriggerItem.Tag)
 		if err != nil {
 			return false, err
 		}
@@ -87,6 +100,9 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 			}
 
 			return (sourceMatch && targetMatch), nil
+		case TriggerEventTypeTag:
+			match := glob.Glob(migratedTriggerItem.Tag, tag)
+			return match, nil
 		}
 	}
 
@@ -261,12 +277,13 @@ func (triggerItem TriggerMapItemModel) Validate() error {
 	}
 
 	if triggerItem.Pattern == "" {
-		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
+		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 		if err != nil {
 			return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
 		}
-	} else if triggerItem.PushBranch != "" || triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
-		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch)
+	} else if triggerItem.PushBranch != "" ||
+		triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" || triggerItem.Tag != "" {
+		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s, tag: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 	}
 
 	return nil

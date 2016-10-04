@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
@@ -16,14 +17,26 @@ import (
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	log.Infoln("The following trigger filters are available:")
-	for _, triggerItem := range triggerMap {
-		log.Infoln(" * " + triggerItem.Pattern)
-	}
 
-	fmt.Println()
-	log.Infoln("You can trigger a workflow with:")
-	log.Infoln("-> bitrise trigger the-trigger-filter")
-	fmt.Println()
+	for _, triggerItem := range triggerMap {
+		if triggerItem.Pattern != "" {
+			log.Infof(" * pattern: %s", triggerItem.Pattern)
+			log.Infof("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
+			log.Infof("   workflow: %s", triggerItem.WorkflowID)
+		} else {
+			if triggerItem.PushBranch != "" {
+				log.Infof(" * push_branch: %s", triggerItem.PushBranch)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+			} else if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
+				log.Infof(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
+				log.Infof("   pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+			} else if triggerItem.Tag != "" {
+				log.Infof(" * tag: %s", triggerItem.Tag)
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+			}
+		}
+	}
 }
 
 // --------------------
@@ -45,6 +58,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -62,7 +76,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch,
+		pushBranch, prSourceBranch, prTargetBranch, tag,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
@@ -86,10 +100,9 @@ func trigger(c *cli.Context) error {
 	}
 
 	// Trigger filter validation
-	if triggerParams.TriggerPattern == "" {
-		// no trigger filter specified
-		//  list all the available ones and then exit
-		log.Error("No pattern specified!")
+	if triggerParams.TriggerPattern == "" &&
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.Tag == "" {
+		log.Error("No trigger pattern nor trigger params specified")
 		printAvailableTriggerFilters(bitriseConfig.TriggerMap)
 		os.Exit(1)
 	}
@@ -116,9 +129,24 @@ func trigger(c *cli.Context) error {
 
 	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
-		log.Fatalf("Failed to get workflow id by pattern, error: %s", err)
+		log.Errorf("Failed to get workflow id by pattern, error: %s", err)
+		if strings.Contains(err.Error(), "no matching workflow found with trigger params:") {
+			printAvailableTriggerFilters(bitriseConfig.TriggerMap)
+		}
+		os.Exit(1)
 	}
-	log.Infof("Pattern (%s) triggered workflow (%s) ", triggerParams.TriggerPattern, workflowToRunID)
+
+	if triggerParams.TriggerPattern != "" {
+		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
+	} else {
+		if triggerParams.PushBranch != "" {
+			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
+		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
+			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
+		} else if triggerParams.Tag != "" {
+			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
+		}
+	}
 
 	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 	//

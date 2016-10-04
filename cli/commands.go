@@ -105,6 +105,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
 
@@ -134,6 +135,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},

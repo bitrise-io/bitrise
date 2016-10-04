@@ -44,10 +44,12 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 		params.PushBranch = ""
 		params.PRSourceBranch = params.TriggerPattern
 		params.PRTargetBranch = ""
+		params.Tag = ""
 	} else {
 		params.PushBranch = params.TriggerPattern
 		params.PRSourceBranch = ""
 		params.PRTargetBranch = ""
+		params.Tag = ""
 	}
 
 	params.TriggerPattern = ""
@@ -57,7 +59,7 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 
 func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 		if err != nil {
 			return "", err
 		}
@@ -66,7 +68,7 @@ func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTrigg
 		}
 	}
 
-	return "", fmt.Errorf("Run triggered with params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, but no matching workflow found", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch)
+	return "", fmt.Errorf("no matching workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
@@ -98,6 +100,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
@@ -117,7 +120,7 @@ func triggerCheck(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch,
+		pushBranch, prSourceBranch, prTargetBranch, tag,
 		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
@@ -149,7 +152,7 @@ func triggerCheck(c *cli.Context) error {
 
 	// Trigger filter validation
 	if triggerParams.TriggerPattern == "" &&
-		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" {
+		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.Tag == "" {
 		registerFatal("No trigger pattern nor trigger params specified", warnings, triggerParams.Format)
 	}
 	//
@@ -166,15 +169,38 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
+	triggerModel := map[string]string{"workflow": workflowToRunID}
+
+	if triggerParams.TriggerPattern != "" {
+		triggerModel["pattern"] = triggerParams.TriggerPattern
+	} else {
+		if triggerParams.PushBranch != "" {
+			triggerModel["push-branch"] = triggerParams.PushBranch
+		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
+			if triggerParams.PRSourceBranch != "" {
+				triggerModel["pr-source-branch"] = triggerParams.PRSourceBranch
+			}
+			if triggerParams.PRTargetBranch != "" {
+				triggerModel["pr-target-branch"] = triggerParams.PRTargetBranch
+			}
+		} else if triggerParams.Tag != "" {
+			triggerModel["tag"] = triggerParams.Tag
+		}
+	}
+
 	switch triggerParams.Format {
 	case output.FormatRaw:
-		fmt.Printf("%s -> %s\n", triggerParams.TriggerPattern, colorstring.Blue(workflowToRunID))
+		msg := ""
+		for key, value := range triggerModel {
+			if key == "workflow" {
+				msg = msg + fmt.Sprintf("-> %s", colorstring.Blue(value))
+			} else {
+				msg = fmt.Sprintf("%s: %s ", key, value) + msg
+			}
+		}
+		fmt.Println(msg)
 		break
 	case output.FormatJSON:
-		triggerModel := map[string]string{
-			"pattern":  triggerParams.TriggerPattern,
-			"workflow": workflowToRunID,
-		}
 		bytes, err := json.Marshal(triggerModel)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), warnings, triggerParams.Format)

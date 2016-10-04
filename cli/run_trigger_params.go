@@ -20,6 +20,7 @@ type RunAndTriggerParamsModel struct {
 	PushBranch     string `json:"push-branch"`
 	PRSourceBranch string `json:"pr-source-branch"`
 	PRTargetBranch string `json:"pr-target-branch"`
+	Tag            string `json:"tag"`
 
 	// Trigger Check Params
 	Format string `json:"format"`
@@ -43,7 +44,7 @@ func parseRunAndTriggerJSONParams(jsonParams string) (RunAndTriggerParamsModel, 
 func parseRunAndTriggerParams(
 	workflowToRunID,
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch,
+	pushBranch, prSourceBranch, prTargetBranch, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
@@ -85,6 +86,9 @@ func parseRunAndTriggerParams(
 	if prTargetBranch != "" {
 		params.PRTargetBranch = prTargetBranch
 	}
+	if tag != "" {
+		params.Tag = tag
+	}
 
 	if format != "" {
 		params.Format = format
@@ -111,24 +115,24 @@ func parseRunParams(
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 func parseTriggerParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch,
+	pushBranch, prSourceBranch, prTargetBranch, tag,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, tag, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 func parseTriggerCheckParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch,
+	pushBranch, prSourceBranch, prTargetBranch, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, tag, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
