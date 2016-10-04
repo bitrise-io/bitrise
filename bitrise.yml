@@ -72,26 +72,13 @@ workflows:
 
             envman add --key CURRENT_BITRISE --value $current_bitrise
     - script:
-        title: Step-template test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            cd ./_step_template
-            $CURRENT_BITRISE run test
-    - script:
         title: Run integration tests
         inputs:
         - content: |-
             #!/bin/bash
             echo "Running integration tests ..."
             set -ex
-            $CURRENT_BITRISE run test -c ./_tests/integration_tests/bitrise.yml
             export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
-            export CI=false
-            export PR=false
-            export PULL_REQUEST_ID=""
             go test ./_tests/integration/...
 
   test:
