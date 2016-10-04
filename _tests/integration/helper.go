@@ -9,11 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	unsetPREnvs   = []string{`PR=`, `PULL_REQUEST_ID=`}
-	setPRModeEnvs = []string{`PR="true"`}
-)
-
 func binPath() string {
 	return os.Getenv("INTEGRATION_TEST_BINARY_PATH")
 }
