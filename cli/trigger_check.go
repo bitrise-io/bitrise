@@ -169,15 +169,38 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
+	triggerModel := map[string]string{"workflow": workflowToRunID}
+
+	if triggerParams.TriggerPattern != "" {
+		triggerModel["pattern"] = triggerParams.TriggerPattern
+	} else {
+		if triggerParams.PushBranch != "" {
+			triggerModel["push-branch"] = triggerParams.PushBranch
+		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
+			if triggerParams.PRSourceBranch != "" {
+				triggerModel["pr-source-branch"] = triggerParams.PRSourceBranch
+			}
+			if triggerParams.PRTargetBranch != "" {
+				triggerModel["pr-target-branch"] = triggerParams.PRTargetBranch
+			}
+		} else if triggerParams.Tag != "" {
+			triggerModel["tag"] = triggerParams.Tag
+		}
+	}
+
 	switch triggerParams.Format {
 	case output.FormatRaw:
-		fmt.Printf("%s -> %s\n", triggerParams.TriggerPattern, colorstring.Blue(workflowToRunID))
+		msg := ""
+		for key, value := range triggerModel {
+			if key == "workflow" {
+				msg = msg + fmt.Sprintf("-> %s", colorstring.Blue(value))
+			} else {
+				msg = fmt.Sprintf("%s: %s ", key, value) + msg
+			}
+		}
+		fmt.Println(msg)
 		break
 	case output.FormatJSON:
-		triggerModel := map[string]string{
-			"pattern":  triggerParams.TriggerPattern,
-			"workflow": workflowToRunID,
-		}
 		bytes, err := json.Marshal(triggerModel)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), warnings, triggerParams.Format)
