@@ -48,13 +48,13 @@ func trigger(c *cli.Context) error {
 
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		*prGlobalFlagPtr = c.GlobalBool(PRKey)
+	if c.IsSet(PRKey) {
+		*prGlobalFlagPtr = c.Bool(PRKey)
 	}
 
 	var ciGlobalFlagPtr *bool
-	if c.GlobalIsSet(CIKey) {
-		*ciGlobalFlagPtr = c.GlobalBool(CIKey)
+	if c.IsSet(CIKey) {
+		*ciGlobalFlagPtr = c.Bool(CIKey)
 	}
 
 	triggerPattern := c.String(PatternKey)

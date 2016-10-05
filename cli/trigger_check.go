@@ -91,8 +91,8 @@ func triggerCheck(c *cli.Context) error {
 	//
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		*prGlobalFlagPtr = c.GlobalBool(PRKey)
+	if c.IsSet(PRKey) {
+		*prGlobalFlagPtr = c.Bool(PRKey)
 	}
 
 	triggerPattern := c.String(PatternKey)

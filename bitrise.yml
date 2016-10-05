@@ -68,7 +68,7 @@ workflows:
             go build -o $current_bitrise
 
             # setup for the new bitrise as well
-            $current_bitrise setup --minimal
+            $current_bitrise setup
 
             envman add --key CURRENT_BITRISE --value $current_bitrise
     - script:
@@ -144,7 +144,7 @@ workflows:
         - content: |-
             #!/bin/bash
 
-            bitrise setup --minimal
+            bitrise setup
 
   _prepare_and_setup:
     title: Prepare bitrise and install testing tools
