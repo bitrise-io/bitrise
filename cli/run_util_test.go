@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,17 +23,17 @@ func TestIsPRMode(t *testing.T) {
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, prIDEnv))
 	}()
 
-	t.Log("Should be false for: prGlobalFlag: false, prModeEnv: '', prIDEnv: ''")
+	t.Log("Should be false for: prGlobalFlag: nil, prModeEnv: '', prIDEnv: ''")
 	{
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(false, []envmanModels.EnvironmentItemModel{})
+		pr, err := isPRMode(nil, []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
 		require.Equal(t, false, pr)
 	}
 
-	t.Log("Should be false for: prGlobalFlag: false, prModeEnv: '', prIDEnv: '', secrets: false")
+	t.Log("Should be false for: prGlobalFlag: nil, prModeEnv: '', prIDEnv: '', secrets: false")
 	{
 		inventoryStr := `
 envs:
@@ -45,7 +46,43 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(false, inventory.Envs)
+		pr, err := isPRMode(nil, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, false, pr)
+	}
+
+	t.Log("Should be false for: prGlobalFlag: nil, prModeEnv: 'false', prIDEnv: '', secrets: ''")
+	{
+		inventoryStr := `
+envs:
+- PR: ""
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(nil, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, false, pr)
+	}
+
+	t.Log("Should be false for: prGlobalFlag: false, prModeEnv: 'true', prIDEnv: 'ID', secrets: 'true'")
+	{
+		inventoryStr := `
+envs:
+- PR: "true"
+- PULL_REQUEST_ID: "ID"
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "true"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, "ID"))
+
+		pr, err := isPRMode(pointers.NewBoolPtr(false), inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, false, pr)
 	}
@@ -55,7 +92,7 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(true, []envmanModels.EnvironmentItemModel{})
+		pr, err := isPRMode(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
@@ -73,12 +110,12 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(true, inventory.Envs)
+		pr, err := isPRMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
 
-	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'true', prIDEnv: '', secrets: false")
+	t.Log("Should be true for: prGlobalFlag: nil, prModeEnv: 'true', prIDEnv: '', secrets: false")
 	{
 		inventoryStr := `
 envs:
@@ -91,12 +128,12 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "true"))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(false, inventory.Envs)
+		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
 
-	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'false', prIDEnv: 'some', secrets: false")
+	t.Log("Should be true for: prGlobalFlag: nil, prModeEnv: 'false', prIDEnv: 'some', secrets: false")
 	{
 		inventoryStr := `
 envs:
@@ -109,12 +146,12 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, "some"))
 
-		pr, err := isPRMode(false, inventory.Envs)
+		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
 
-	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: '', prIDEnv: '', secrets: true")
+	t.Log("Should be true for: prGlobalFlag: nil, prModeEnv: '', prIDEnv: '', secrets: true")
 	{
 		inventoryStr := `
 envs:
@@ -127,12 +164,12 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, ""))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(false, inventory.Envs)
+		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
 
-	t.Log("Should be true for: prGlobalFlag: false, prModeEnv: 'false', prIDEnv: '', secrets: true")
+	t.Log("Should be true for: prGlobalFlag: nil, prModeEnv: 'false', prIDEnv: '', secrets: true")
 	{
 		inventoryStr := `
 envs:
@@ -145,7 +182,25 @@ envs:
 		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
-		pr, err := isPRMode(true, inventory.Envs)
+		pr, err := isPRMode(nil, inventory.Envs)
+		require.NoError(t, err)
+		require.Equal(t, true, pr)
+	}
+
+	t.Log("Should be true for: prGlobalFlag: true, prModeEnv: 'false', prIDEnv: '', secrets: false")
+	{
+		inventoryStr := `
+envs:
+- PR: "false"
+- PULL_REQUEST_ID: ""
+`
+		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
+		require.NoError(t, err)
+
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
+
+		pr, err := isPRMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, pr)
 	}
@@ -158,11 +213,11 @@ func TestIsCIMode(t *testing.T) {
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ciModeEnv))
 	}()
 
-	t.Log("Should be false for: ciGlobalFlag: false, ciModeEnv: 'false'")
+	t.Log("Should be false for: ciGlobalFlag: nil, ciModeEnv: 'false'")
 	{
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
 
-		ci, err := isCIMode(false, []envmanModels.EnvironmentItemModel{})
+		ci, err := isCIMode(nil, []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
 		require.Equal(t, false, ci)
 	}
@@ -178,7 +233,7 @@ envs:
 
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
 
-		ci, err := isCIMode(false, inventory.Envs)
+		ci, err := isCIMode(pointers.NewBoolPtr(false), inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, false, ci)
 	}
@@ -187,7 +242,7 @@ envs:
 	{
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
 
-		ci, err := isCIMode(true, []envmanModels.EnvironmentItemModel{})
+		ci, err := isCIMode(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
 		require.Equal(t, true, ci)
 	}
@@ -203,12 +258,12 @@ envs:
 
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
 
-		ci, err := isCIMode(true, inventory.Envs)
+		ci, err := isCIMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, ci)
 	}
 
-	t.Log("Should be true for: ciGlobalFlag: false, ciModeEnv: 'true' secrets: false")
+	t.Log("Should be true for: ciGlobalFlag: nil, ciModeEnv: 'true' secrets: false")
 	{
 		inventoryStr := `
 envs:
@@ -219,12 +274,12 @@ envs:
 
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "true"))
 
-		ci, err := isCIMode(false, inventory.Envs)
+		ci, err := isCIMode(nil, inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, ci)
 	}
 
-	t.Log("Should be true for: ciGlobalFlag: false, ciModeEnv: '' secrets: true")
+	t.Log("Should be true for: ciGlobalFlag: nil, ciModeEnv: '' secrets: true")
 	{
 		inventoryStr := `
 envs:
@@ -235,7 +290,7 @@ envs:
 
 		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ""))
 
-		ci, err := isCIMode(false, inventory.Envs)
+		ci, err := isCIMode(nil, inventory.Envs)
 		require.NoError(t, err)
 		require.Equal(t, true, ci)
 	}

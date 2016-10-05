@@ -90,7 +90,10 @@ func triggerCheck(c *cli.Context) error {
 
 	//
 	// Expand cli.Context
-	prGlobalFlag := c.GlobalBool(PRKey)
+	var prGlobalFlagPtr *bool
+	if c.GlobalIsSet(PRKey) {
+		*prGlobalFlagPtr = c.GlobalBool(PRKey)
+	}
 
 	triggerPattern := c.String(PatternKey)
 	if triggerPattern == "" && len(c.Args()) > 0 {
@@ -159,7 +162,7 @@ func triggerCheck(c *cli.Context) error {
 
 	//
 	// Main
-	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
+	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, triggerParams.Format)
 	}

@@ -119,8 +119,15 @@ func run(c *cli.Context) error {
 
 	//
 	// Expand cli.Context
-	prGlobalFlag := c.GlobalBool(PRKey)
-	ciGlobalFlag := c.GlobalBool(CIKey)
+	var prGlobalFlagPtr *bool
+	if c.GlobalIsSet(PRKey) {
+		*prGlobalFlagPtr = c.GlobalBool(PRKey)
+	}
+
+	var ciGlobalFlagPtr *bool
+	if c.GlobalIsSet(CIKey) {
+		*ciGlobalFlagPtr = c.GlobalBool(CIKey)
+	}
 
 	workflowToRunID := c.String(WorkflowKey)
 	if workflowToRunID == "" && len(c.Args()) > 0 {
@@ -184,7 +191,7 @@ func run(c *cli.Context) error {
 
 	//
 	// Main
-	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
+	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		log.Fatalf("Failed to check  PR mode, error: %s", err)
 	}
@@ -193,7 +200,7 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register  PR mode, error: %s", err)
 	}
 
-	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
+	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		log.Fatalf("Failed to check  CI mode, error: %s", err)
 	}
