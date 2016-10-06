@@ -74,6 +74,17 @@ func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
 		require.NoError(t, os.Setenv("PR", "true"))
 		require.NoError(t, os.Setenv("PULL_REQUEST_ID", "ID"))
 
+		cmd := cmdex.NewCommand(binPath(), "--pr=true", "trigger-check", "master", "--config", configPth, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+		require.Equal(t, `{"pattern":"master","workflow":"deprecated_pr"}`, out)
+	}
+
+	t.Log("global flag sets NOT pr mode")
+	{
+		require.NoError(t, os.Setenv("PR", "true"))
+		require.NoError(t, os.Setenv("PULL_REQUEST_ID", "ID"))
+
 		cmd := cmdex.NewCommand(binPath(), "--pr=false", "trigger-check", "master", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
