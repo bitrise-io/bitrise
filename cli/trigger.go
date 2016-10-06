@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
 
@@ -47,8 +48,15 @@ func trigger(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	// Expand cli.Context
-	prGlobalFlag := c.GlobalBool(PRKey)
-	ciGlobalFlag := c.GlobalBool(CIKey)
+	var prGlobalFlagPtr *bool
+	if c.GlobalIsSet(PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	}
+
+	var ciGlobalFlagPtr *bool
+	if c.GlobalIsSet(CIKey) {
+		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
+	}
 
 	triggerPattern := c.String(PatternKey)
 	if triggerPattern == "" && len(c.Args()) > 0 {
@@ -109,7 +117,7 @@ func trigger(c *cli.Context) error {
 	//
 
 	// Main
-	isPRMode, err := isPRMode(prGlobalFlag, inventoryEnvironments)
+	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		log.Fatalf("Failed to check  PR mode, error: %s", err)
 	}
@@ -118,7 +126,7 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to register  PR mode, error: %s", err)
 	}
 
-	isCIMode, err := isCIMode(ciGlobalFlag, inventoryEnvironments)
+	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		log.Fatalf("Failed to check  CI mode, error: %s", err)
 	}

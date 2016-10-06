@@ -18,47 +18,47 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/colorstring",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/errorutil",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/fileutil",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/parseutil",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pathutil",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/pointers",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/progress",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/retry",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/stringutil",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/versions",
-			"Rev": "915cadec690f55a7c65911069fccc7b68c9803a9"
+			"Rev": "5c210e4691a5a75e5685d2e842a104ca55ec7697"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/goinp/goinp",
@@ -94,13 +94,13 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.1.3-19-gd77da35",
-			"Rev": "d77da356e56a7428ad25149ca77381849a6a5232"
+			"Comment": "v1.1.4-4-g976c720",
+			"Rev": "976c720a22c8eb4eb6a0b4348ad85ad12491a506"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.1.3-19-gd77da35",
-			"Rev": "d77da356e56a7428ad25149ca77381849a6a5232"
+			"Comment": "v1.1.4-4-g976c720",
+			"Rev": "976c720a22c8eb4eb6a0b4348ad85ad12491a506"
 		},
 		{
 			"ImportPath": "github.com/urfave/cli",

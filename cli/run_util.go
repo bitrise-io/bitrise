@@ -26,11 +26,15 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-func isPRMode(prGlobalFlag bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if prGlobalFlagPtr != nil {
+		return *prGlobalFlagPtr, nil
+	}
+
 	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
 	prModeEnv := os.Getenv(configs.PRModeEnvKey)
 
-	if prGlobalFlag || prIDEnv != "" || prModeEnv == "true" {
+	if prIDEnv != "" || prModeEnv == "true" {
 		return true, nil
 	}
 
@@ -61,10 +65,14 @@ func registerPrMode(isPRMode bool) error {
 	return os.Setenv(configs.PRModeEnvKey, "false")
 }
 
-func isCIMode(ciGlobalFlag bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+func isCIMode(ciGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if ciGlobalFlagPtr != nil {
+		return *ciGlobalFlagPtr, nil
+	}
+
 	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
 
-	if ciGlobalFlag || ciModeEnv == "true" {
+	if ciModeEnv == "true" {
 		return true, nil
 	}
 

@@ -1,0 +1,34 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: false
+  workflow: deprecated_code_push
+- pattern: master
+  is_pull_request_allowed: true
+  workflow: deprecated_pr
+
+- pattern: deprecated_code_push
+  is_pull_request_allowed: false
+  workflow: deprecated_code_push
+
+workflows:
+  deprecated_code_push:
+  deprecated_pr:
+
+  primary:
+
+  fail_in_ci_mode:
+    steps:
+    - script:
+        run_if: .IsCI
+        inputs:
+        - content: exit 1
+
+  fail_in_not_ci_mode:
+    steps:
+    - script:
+        run_if: not .IsCI
+        inputs:
+        - content: exit 1
