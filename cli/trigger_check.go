@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
 
@@ -91,8 +92,8 @@ func triggerCheck(c *cli.Context) error {
 	//
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
-	if c.IsSet(PRKey) {
-		*prGlobalFlagPtr = c.Bool(PRKey)
+	if c.GlobalIsSet(PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
 	}
 
 	triggerPattern := c.String(PatternKey)

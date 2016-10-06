@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_GlobalFlagRun(t *testing.T) {
+func Test_GlobalFlagPRRun(t *testing.T) {
 	configPth := "global_flag_test_bitrise.yml"
-	secretsPth := "global_flag_test_bitrise.yml"
+	secretsPth := "global_flag_test_secrets.yml"
 
 	t.Log("Should run in pr mode")
 	{
@@ -35,9 +35,9 @@ func Test_GlobalFlagRun(t *testing.T) {
 	}
 }
 
-func Test_GlobalFlagTriggerCheck(t *testing.T) {
+func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
 	configPth := "global_flag_test_bitrise.yml"
-	secretsPth := "global_flag_test_bitrise.yml"
+	secretsPth := "global_flag_test_secrets.yml"
 
 	prModeEnv := os.Getenv(configs.PRModeEnvKey)
 	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
@@ -50,8 +50,8 @@ func Test_GlobalFlagTriggerCheck(t *testing.T) {
 
 	t.Log("global flag sets pr mode")
 	{
-		require.NoError(t, os.Setenv("PR", "false"))
-		require.NoError(t, os.Setenv("PULL_REQUEST_ID", ""))
+		require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
 		cmd := cmdex.NewCommand(binPath(), "--pr", "trigger-check", "deprecated_pr", "--config", configPth, "--inventory", secretsPth)
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
@@ -81,9 +81,9 @@ func Test_GlobalFlagTriggerCheck(t *testing.T) {
 	}
 }
 
-func Test_GlobalFlagTrigger(t *testing.T) {
+func Test_GlobalFlagPRTrigger(t *testing.T) {
 	configPth := "global_flag_test_bitrise.yml"
-	secretsPth := "global_flag_test_bitrise.yml"
+	secretsPth := "global_flag_test_secrets.yml"
 
 	prModeEnv := os.Getenv(configs.PRModeEnvKey)
 	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
@@ -94,8 +94,8 @@ func Test_GlobalFlagTrigger(t *testing.T) {
 		require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, prIDEnv))
 	}()
 
-	require.NoError(t, os.Setenv("PR", "false"))
-	require.NoError(t, os.Setenv("PULL_REQUEST_ID", ""))
+	require.NoError(t, os.Setenv(configs.PRModeEnvKey, "false"))
+	require.NoError(t, os.Setenv(configs.PullRequestIDEnvKey, ""))
 
 	t.Log("global flag sets pr mode")
 	{
@@ -109,5 +109,44 @@ func Test_GlobalFlagTrigger(t *testing.T) {
 		cmd := cmdex.NewCommand(binPath(), "--pr=true", "trigger", "deprecated_pr", "--config", configPth, "--inventory", secretsPth)
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
+	}
+}
+
+func Test_GlobalFlagCI(t *testing.T) {
+	configPth := "global_flag_test_bitrise.yml"
+	secretsPth := "global_flag_test_secrets.yml"
+
+	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
+
+	// cleanup Envs after these tests
+	defer func() {
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, ciModeEnv))
+	}()
+
+	t.Log("Should run in ci mode")
+	{
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
+
+		cmd := cmdex.NewCommand(binPath(), "--ci", "run", "fail_in_not_ci_mode", "--config", configPth, "--inventory", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+	}
+
+	t.Log("Should run in ci mode")
+	{
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "false"))
+
+		cmd := cmdex.NewCommand(binPath(), "--ci=true", "run", "fail_in_not_ci_mode", "--config", configPth, "--inventory", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+	}
+
+	t.Log("Should run in ci mode")
+	{
+		require.NoError(t, os.Setenv(configs.CIModeEnvKey, "true"))
+
+		cmd := cmdex.NewCommand(binPath(), "--ci=false", "run", "fail_in_ci_mode", "--config", configPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
 	}
 }

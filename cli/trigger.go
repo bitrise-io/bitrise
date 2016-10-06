@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
 
@@ -48,13 +49,13 @@ func trigger(c *cli.Context) error {
 
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
-	if c.IsSet(PRKey) {
-		*prGlobalFlagPtr = c.Bool(PRKey)
+	if c.GlobalIsSet(PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
 	}
 
 	var ciGlobalFlagPtr *bool
-	if c.IsSet(CIKey) {
-		*ciGlobalFlagPtr = c.Bool(CIKey)
+	if c.GlobalIsSet(CIKey) {
+		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
 	}
 
 	triggerPattern := c.String(PatternKey)

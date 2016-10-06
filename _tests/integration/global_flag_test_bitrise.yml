@@ -7,7 +7,7 @@ trigger_map:
   workflow: deprecated_code_push
 - pattern: master
   is_pull_request_allowed: true
-  workflow: deprecated_code_push
+  workflow: deprecated_pr
 
 - pattern: deprecated_code_push
   is_pull_request_allowed: false
@@ -18,3 +18,17 @@ workflows:
   deprecated_pr:
 
   primary:
+
+  fail_in_ci_mode:
+    steps:
+    - script:
+        run_if: .IsCI
+        inputs:
+        - content: exit 1
+
+  fail_in_not_ci_mode:
+    steps:
+    - script:
+        run_if: not .IsCI
+        inputs:
+        - content: exit 1
