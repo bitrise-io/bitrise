@@ -59,7 +59,8 @@ func finish(c *cli.Context) error {
 	}
 
 	log.Info("Pushing to your fork: ", share.Collection)
-	if err := cmdex.GitPushToOrigin(collectionDir, share.StepID); err != nil {
+	branch := share.StepID + "-" + share.StepTag
+	if err := cmdex.GitPushToOrigin(collectionDir, branch); err != nil {
 		log.Fatal(err)
 	}
 	printFinishShare()
