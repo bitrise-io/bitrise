@@ -127,22 +127,22 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			downloadErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
 				return cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth)
 			})
 
-			if downloadErr != nil {
-				log.Warn("Failed to download step.zip: ", downloadErr)
+			if err != nil {
+				log.Warn("Failed to download step.zip: ", err)
 			} else {
 				success = true
 				return nil
 			}
 		case "git":
-			downloadErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
 				return cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
 			})
 
-			if downloadErr != nil {
+			if err != nil {
 				log.Warnf("Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
 				success = true

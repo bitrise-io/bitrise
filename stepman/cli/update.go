@@ -44,14 +44,14 @@ func updateCollection(steplibSource string) (models.StepCollectionModel, error) 
 			return models.StepCollectionModel{}, errors.New("Not initialized")
 		}
 
-		gitPullErr := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+		err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
 			if attempt > 0 {
 				log.Infoln("Retrying ...")
 			}
 			return cmdex.GitPull(pth)
 		})
-		if gitPullErr != nil {
-			return models.StepCollectionModel{}, fmt.Errorf("Failed to update StepLib git repository, error: %s", gitPullErr)
+		if err != nil {
+			return models.StepCollectionModel{}, fmt.Errorf("Failed to update StepLib git repository, error: %s", err)
 		}
 
 		if err := stepman.ReGenerateStepSpec(route); err != nil {
