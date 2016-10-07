@@ -10,10 +10,18 @@ import (
 func Test_StepTemplate(t *testing.T) {
 	configPth := "bitrise.yml"
 
-	t.Log("deprecated trigger test")
+	t.Log("step template test")
 	{
 		cmd := cmdex.NewCommand(binPath(), "run", "test", "--config", configPth)
 		cmd.SetDir("step_template")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+	}
+
+	t.Log("bash toolkit step template test")
+	{
+		cmd := cmdex.NewCommand(binPath(), "run", "test", "--config", configPth)
+		cmd.SetDir("bash_toolkit_step_template")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
