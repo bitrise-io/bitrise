@@ -14,6 +14,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/errorutil"
 )
 
 // UnameGOOS ...
@@ -265,6 +266,21 @@ func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
 	envman.Stdout = os.Stdout
 	envman.Stderr = os.Stderr
 	return envman.Run()
+}
+
+// EnvmanClear ...
+func EnvmanClear(envstorePth string) error {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "clear"}
+	out, err := cmdex.NewCommand("envman", args...).RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		errorMsg := err.Error()
+		if errorutil.IsExitStatusError(err) && out != "" {
+			errorMsg = out
+		}
+		return fmt.Errorf("failed to clear envstore (%s), error: %s", envstorePth, errorMsg)
+	}
+	return nil
 }
 
 // EnvmanRun ...
