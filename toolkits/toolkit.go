@@ -55,7 +55,7 @@ type Toolkit interface {
 	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
 
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(stepDirPath string, sIDData models.StepIDData) ([]string, error)
+	StepRunCommandArguments(stepDirPath string, step stepmanModels.StepModel, sIDData models.StepIDData) ([]string, error)
 }
 
 //
