@@ -779,6 +779,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep, false)
 		} else {
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, *environments, buildRunResults)
+
+			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
+				log.Errorf("Failed to clear output envstore, error: %s", err)
+			}
+
 			*environments = append(*environments, outEnvironments...)
 			if err != nil {
 				if *mergedStep.IsSkippable {
