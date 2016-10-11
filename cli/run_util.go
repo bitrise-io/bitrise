@@ -335,7 +335,7 @@ func executeStep(step stepmanModels.StepModel, sIDData models.StepIDData, stepAb
 			toolkitName, err)
 	}
 
-	cmd, err := toolkitForStep.StepRunCommandArguments(stepAbsDirPath, step, sIDData)
+	cmd, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
 	if err != nil {
 		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
 			toolkitName, err)

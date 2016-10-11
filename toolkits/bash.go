@@ -65,13 +65,13 @@ func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDDa
 }
 
 // StepRunCommandArguments ...
-func (toolkit BashToolkit) StepRunCommandArguments(stepDirPath string, step stepmanModels.StepModel, sIDData models.StepIDData) ([]string, error) {
+func (toolkit BashToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
 	entryFile := "step.sh"
 	if step.Toolkit != nil && step.Toolkit.Bash != nil && step.Toolkit.Bash.EntryFile != "" {
 		entryFile = step.Toolkit.Bash.EntryFile
 	}
 
-	stepFilePath := filepath.Join(stepDirPath, entryFile)
+	stepFilePath := filepath.Join(stepAbsDirPath, entryFile)
 	cmd := []string{"bash", stepFilePath}
 	return cmd, nil
 }
