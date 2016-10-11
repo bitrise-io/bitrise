@@ -13,7 +13,7 @@ import (
 
 const (
 	minEnvmanVersion  = "1.1.1"
-	minStepmanVersion = "0.9.23"
+	minStepmanVersion = "0.9.24"
 )
 
 // PluginDependency ..
@@ -27,8 +27,8 @@ type PluginDependency struct {
 var OSXPluginDependencyMap = map[string]PluginDependency{
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.4/analytics-Darwin-x86_64",
-		MinVersion: "0.9.4",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.5/analytics-Darwin-x86_64",
+		MinVersion: "0.9.5",
 	},
 }
 
@@ -36,8 +36,8 @@ var OSXPluginDependencyMap = map[string]PluginDependency{
 var LinuxPluginDependencyMap = map[string]PluginDependency{
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.4/analytics-Linux-x86_64",
-		MinVersion: "0.9.4",
+		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.5/analytics-Linux-x86_64",
+		MinVersion: "0.9.5",
 	},
 }
 
