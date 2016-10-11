@@ -90,7 +90,7 @@ func TestMigratePatternToParams(t *testing.T) {
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_new_param_test(t *testing.T) {
-	t.Log("it works with new params - push_branch")
+	t.Log("params - push_branch")
 	{
 		configStr := `
 trigger_map:
@@ -110,7 +110,7 @@ workflows:
 		require.Equal(t, "master", workflowID)
 	}
 
-	t.Log("it works with new params  - pull_request_source_branch")
+	t.Log("params  - pull_request_source_branch")
 	{
 		configStr := `
 trigger_map:
@@ -134,7 +134,7 @@ workflows:
 		require.Equal(t, "test", workflowID)
 	}
 
-	t.Log("it works with new params - pull_request_target_branch")
+	t.Log("params - pull_request_target_branch")
 	{
 		configStr := `
 trigger_map:
@@ -158,7 +158,7 @@ workflows:
 		require.Equal(t, "release", workflowID)
 	}
 
-	t.Log("it works with new params - pull_request_source_branch, pull_request_target_branch")
+	t.Log("params - pull_request_source_branch, pull_request_target_branch")
 	{
 		configStr := `
 trigger_map:
@@ -183,7 +183,7 @@ workflows:
 		require.Equal(t, "test", workflowID)
 	}
 
-	t.Log("it works with new params - tag")
+	t.Log("params - tag")
 	{
 		configStr := `
 trigger_map:
@@ -206,7 +206,7 @@ workflows:
 		require.Equal(t, "deploy", workflowID)
 	}
 
-	t.Log("it works with new params - tag")
+	t.Log("params - tag")
 	{
 		configStr := `
 trigger_map:
@@ -229,7 +229,53 @@ workflows:
 		require.Equal(t, "deploy", workflowID)
 	}
 
-	t.Log("it works with new params - tag")
+	t.Log("params - tag")
+	{
+		configStr := `
+trigger_map:
+- tag: "v*.*"
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			Tag: "v1.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.NoError(t, err)
+		require.Equal(t, "deploy", workflowID)
+	}
+
+	t.Log("params - tag - no match")
+	{
+		configStr := `
+trigger_map:
+- tag: "v*.*"
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			Tag: "1.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.EqualError(t, err, "no matching workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
+		require.Equal(t, "", workflowID)
+	}
+
+	t.Log("params - tag")
 	{
 		configStr := `
 trigger_map:
@@ -252,7 +298,7 @@ workflows:
 		require.Equal(t, "deploy", workflowID)
 	}
 
-	t.Log("it works with new params - tag")
+	t.Log("params - tag - no match")
 	{
 		configStr := `
 trigger_map:
@@ -275,7 +321,7 @@ workflows:
 		require.Equal(t, "", workflowID)
 	}
 
-	t.Log("it works with new params - tag")
+	t.Log("params - tag - no match")
 	{
 		configStr := `
 trigger_map:
@@ -298,7 +344,7 @@ workflows:
 		require.Equal(t, "", workflowID)
 	}
 
-	t.Log("it works with complex trigger map")
+	t.Log("complex trigger map")
 	{
 		configStr := `
 trigger_map:
@@ -330,7 +376,7 @@ workflows:
 		require.Equal(t, "test", workflowID)
 	}
 
-	t.Log("it works with complex trigger map")
+	t.Log("complex trigger map")
 	{
 		configStr := `
 trigger_map:
