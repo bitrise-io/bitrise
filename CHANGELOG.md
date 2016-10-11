@@ -27,11 +27,11 @@ example:
 Fixed _Pull Request Mode_ and _CI Mode_ global flag (`--pr` and `--ci`) handling.  
 _Pull Request Mode_ and _CI Mode_ global flags are available in `run`, `trigger` and `trigger-check` commands.
 
-From now `bitrise -pr COMMAND` will run in _Pull Request Mode_, whatever is set in environemnts or in secrets,  
-`bitrise -pr=false COMMAND` will __NOT__ run in _Pull Request Mode_, whatever is set in environemnts or in secrets.
+From now `bitrise --pr COMMAND` will run in _Pull Request Mode_, whatever is set in environemnts or in secrets,  
+`bitrise --pr=false COMMAND` will __NOT__ run in _Pull Request Mode_, whatever is set in environemnts or in secrets.
 
-similar `bitrise -ci COMMAND` will perform the command in _CI Mode_, whatever is set in environemnts or in secrets and  
-`bitrise -ci COMMAND` will __NOT__ run in _CI Mode_, whatever is set in environemnts or in secrets.
+similar `bitrise --ci COMMAND` will perform the command in _CI Mode_, whatever is set in environemnts or in secrets and  
+`bitrise --ci=false COMMAND` will __NOT__ run in _CI Mode_, whatever is set in environemnts or in secrets.
 
 #### output envstore cleanup
 
