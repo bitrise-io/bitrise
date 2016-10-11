@@ -210,7 +210,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag: *.*.*
+- tag: "*.*.*"
   workflow: deploy
 
 workflows:
@@ -233,7 +233,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag: v*.*.*
+- tag: "v*.*.*"
   workflow: deploy
 
 workflows:
@@ -256,7 +256,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag: *.*.*
+- tag: "*.*.*"
   workflow: deploy
 
 workflows:
@@ -279,7 +279,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag: v*.*.*
+- tag: "v*.*.*"
   workflow: deploy
 
 workflows:
