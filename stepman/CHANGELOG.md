@@ -2,6 +2,37 @@
 
 -----------------
 
+## 0.9.24 (2016 Oct 11)
+
+### Release Notes
+
+* step version added to step share branch. New share branch layout: `STEP_ID-STEP_VERSION`.
+* some error message fixes 
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.24/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.23 -> 0.9.24
+
+* [c7090f1] Krisztian Godrei - prepare for 0.9.24 (2016 Oct 11)
+* [f3461f0] Krisztián Gödrei - error log fix (#217) (2016 Oct 06)
+* [43bd2bb] Krisztián Gödrei - add step version to share branch name (#216) (2016 Oct 06)
+* [ab2eb60] Viktor Benei - minor duplication fix (2016 Sep 16)
+
+
 ## 0.9.23 (2016 Sep 13)
 
 ### Release Notes
@@ -1070,4 +1101,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Sep 13
+Generated at: 2016 Oct 11
