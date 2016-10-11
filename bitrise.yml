@@ -3,6 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
+  - RELEASE_VERSION: 1.4.0
   - BIN_NAME: bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
 
@@ -191,41 +192,15 @@ workflows:
   # ----------------------------------------------------------------
   # --- workflows for Releasing
   create_release:
-    title: Create Release with auto version bump
-    description: |
-        Creates new version with auto patch version bump based on last git version tag
-
-        1, Create CHANGELOG and git release
-        2, Export RELEASE_VERSION
-        3, Create binaries
-    after_run:
-    - _export_release_version
-    - create_binaries
-    steps:
-    - script:
-        title: Create CHANGELOG and git release
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-
-            export CI=true
-            releaseman create \
-              --bump-version patch \
-              --set-version-script "bash _scripts/set_version.sh version/version.go"
-
-  create_release_version:
     title: Create Release version
     description: |
         Creates new version with specified RELEASE_VERSION environment
 
         1, Create CHANGELOG and git release
-        2, Export RELEASE_VERSION
-        3, Create binaries
+        2, Create binaries
     envs:
-    - RELEASE_VERSION: 1.4.0
+    
     after_run:
-    - _export_release_version
     - create_binaries
     steps:
     - script:
@@ -245,10 +220,7 @@ workflows:
     description: |-
       Notifying about new version of bitrise
 
-      1, Export RELEASE_VERSION
-      2, Send Slack notifications
-    before_run:
-    - _export_release_version
+      Send Slack notifications
     steps:
     - slack@2.1.0:
         title: Announce on Internal Slack channel
@@ -272,23 +244,6 @@ workflows:
 
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ":rocket:"
-
-  _export_release_version:
-    title: Export release version
-    description: |
-        Exports RELEASE_VERSION from ./version/version.go
-    steps:
-    - script:
-        title: Export RELEASE_VERSION
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -e
-
-            RELEASE_VERSION=$(go run _scripts/get_version.go -file ./version/version.go)
-            echo "RELEASE_VERSION: $RELEASE_VERSION"
-
-            envman add --key RELEASE_VERSION --value $RELEASE_VERSION
 
   create_binaries:
     title: Create binaries
