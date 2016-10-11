@@ -210,7 +210,7 @@ workflows:
 	{
 		configStr := `
 trigger_map:
-- tag: "*.*.*"
+- tag: *.*.*
   workflow: deploy
 
 workflows:
@@ -227,6 +227,75 @@ workflows:
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.Equal(t, nil, err)
 		require.Equal(t, "deploy", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- tag: v*.*.*
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			Tag: "v1.0.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Equal(t, nil, err)
+		require.Equal(t, "deploy", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- tag: *.*.*
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			Tag: "1.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Error(t, err)
+		require.Equal(t, "", workflowID)
+	}
+
+	t.Log("it works with new params")
+	{
+		configStr := `
+trigger_map:
+- tag: v*.*.*
+  workflow: deploy
+
+workflows:
+  deploy:
+`
+
+		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+		require.Equal(t, 0, len(warnings))
+
+		params := RunAndTriggerParamsModel{
+			Tag: "v1.0",
+		}
+		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
+		require.Error(t, err)
+		require.Equal(t, "", workflowID)
 	}
 
 	t.Log("it works with complex trigger map")
