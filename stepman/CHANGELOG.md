@@ -2,6 +2,35 @@
 
 -----------------
 
+## 0.9.25 (2016 Oct 14)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.25/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.24 -> 0.9.25
+
+* [a800ae9] Krisztian Godrei - prepare for 0.9.25 (2016 Oct 14)
+* [594670c] Krisztián Gödrei - Share fix (#218) (2016 Oct 14)
+
+
 ## 0.9.24 (2016 Oct 11)
 
 ### Release Notes
@@ -1101,4 +1130,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Oct 11
+Generated at: 2016 Oct 14
