@@ -6,8 +6,10 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* stepman min version update to: [0.9.25](https://github.com/bitrise-io/stepman/releases/tag/0.9.25):
+
+`stepman share` command fix: in version 0.9.24 stepman created a branch - for sharing a new step - with name: `STEP_ID` and later tried to push the steplib changes on branch: `STEP_ID-STEP_VERSION`, which branch does not exist.  
+This release contains a quick fix for stepman sharing, the final share branch layout is: `STEP_ID-STEP_VERSION` 
 
 ### Install or upgrade
 
