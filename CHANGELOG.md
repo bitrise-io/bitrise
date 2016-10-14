@@ -11,7 +11,7 @@
 `stepman share` command fix: in version 0.9.24 stepman created a branch - for sharing a new step - with name: `STEP_ID` and later tried to push the steplib changes on branch: `STEP_ID-STEP_VERSION`, which branch does not exist.  
 This release contains a quick fix for stepman sharing, the final share branch layout is: `STEP_ID-STEP_VERSION` 
 
-* `format_version` updated to: `1.3.1` (fix: forget to bump in 1.4.1)
+* `format_version` updated to: `1.3.1` (fix: forgot to bump in 1.4.1)
 
 ### Install or upgrade
 
