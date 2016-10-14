@@ -15,6 +15,11 @@ import (
 	"github.com/urfave/cli"
 )
 
+const (
+	// ShareFilename ...
+	ShareFilename string = "share.json"
+)
+
 // ShareModel ...
 type ShareModel struct {
 	Collection string
@@ -22,10 +27,10 @@ type ShareModel struct {
 	StepTag    string
 }
 
-const (
-	// ShareFilename ...
-	ShareFilename string = "share.json"
-)
+// ShareBranchName ...
+func (share ShareModel) ShareBranchName() string {
+	return share.StepID + "-" + share.StepTag
+}
 
 // DeleteShareSteplibFile ...
 func DeleteShareSteplibFile() error {
