@@ -58,7 +58,7 @@ func TestIsUpdateAvailable(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
-	t.Log("succed step")
+	t.Log("successful step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Title:   longStr,
@@ -75,7 +75,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := "This is a very long string, this is a very long string, th..."
+		expected := "This is a very long string, this is a very long string, thi..."
 		require.Equal(t, expected, actual)
 	}
 
@@ -141,11 +141,11 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| 🚫  | \x1b[31;1mThis is a very long string, this is a very ... (exit code: 1)\x1b[0m| 0.01 sec |"
+		expected := "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very l... (exit code: 1)\x1b[0m| 0.01 sec |"
 		require.Equal(t, expected, actual)
 	}
 
-	t.Log("succed step")
+	t.Log("successful step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Title:   "",
@@ -161,7 +161,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |"
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 0.00 sec |"
 		require.Equal(t, expected, actual)
 	}
 }
