@@ -38,7 +38,7 @@ func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 }
 
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
-	iconBoxWidth := len("    ")
+	iconBoxWidth := len("   ")
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
 
@@ -198,7 +198,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 }
 
 func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) string {
-	iconBoxWidth := len("    ")
+	iconBoxWidth := len("   ")
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
 
@@ -209,19 +209,19 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess:
-		icon = "✅"
+		icon = "✓"
 		coloringFunc = colorstring.Green
 		break
 	case models.StepRunStatusCodeFailed:
-		icon = "🚫"
+		icon = "x"
 		coloringFunc = colorstring.Red
 		break
 	case models.StepRunStatusCodeFailedSkippable:
-		icon = "⚠️"
+		icon = "!"
 		coloringFunc = colorstring.Yellow
 		break
 	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		icon = "➡"
+		icon = "-"
 		coloringFunc = colorstring.Blue
 		break
 	default:
@@ -229,7 +229,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 		return ""
 	}
 
-	iconBox := fmt.Sprintf(" %s  ", icon)
+	iconBox := fmt.Sprintf(" %s ", coloringFunc(icon))
 
 	titleWhiteSpaceWidth := titleBoxWidth - len(title)
 	coloredTitle := title
@@ -504,7 +504,7 @@ func PrintRunningStepHeader(stepInfo stepmanModels.StepInfoModel, step stepmanMo
 
 // PrintRunningStepFooter ..
 func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStepInWorkflow bool) {
-	iconBoxWidth := len("    ")
+	iconBoxWidth := len("   ")
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
 	sep := fmt.Sprintf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
@@ -538,7 +538,7 @@ func PrintRunningWorkflow(title string) {
 
 // PrintSummary ...
 func PrintSummary(buildRunResults models.BuildRunResultsModel) {
-	iconBoxWidth := len("    ")
+	iconBoxWidth := len("   ")
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
 
@@ -549,8 +549,8 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	fmt.Printf("|%sbitrise summary %s|\n", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
 	fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
-	whitespaceWidth = stepRunSummaryBoxWidthInChars - len("|    | title") - len("| time (s) |")
-	fmt.Printf("|    | title%s| time (s) |\n", strings.Repeat(" ", whitespaceWidth))
+	whitespaceWidth = stepRunSummaryBoxWidthInChars - len("|   | title") - len("| time (s) |")
+	fmt.Printf("|   | title%s| time (s) |\n", strings.Repeat(" ", whitespaceWidth))
 	fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
 	orderedResults := buildRunResults.OrderedResults()
