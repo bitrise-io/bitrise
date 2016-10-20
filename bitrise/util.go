@@ -150,15 +150,33 @@ func SetBuildFailedEnv(failed bool) error {
 	return nil
 }
 
-// TimeToFormattedSeconds ...
-func TimeToFormattedSeconds(t time.Duration, postfix string) string {
+// FormattedSecondsToMax8Chars ...
+func FormattedSecondsToMax8Chars(t time.Duration) (string, error) {
 	sec := t.Seconds()
-	if sec > 10.0 {
-		return fmt.Sprintf("%.f%s", sec, postfix)
-	} else if sec < 1.0 {
-		return fmt.Sprintf("%.2f%s", sec, postfix)
+	min := t.Minutes()
+	hour := t.Hours()
+
+	if sec < 1.0 {
+		// 0.999999 sec -> 0.99 sec
+		return fmt.Sprintf("%.2f sec", sec), nil // 8
+	} else if sec < 10.0 {
+		// 9.99999 sec -> 9.99 sec
+		return fmt.Sprintf("%.2f sec", sec), nil // 8
+	} else if sec < 600 {
+		// 599,999 sec -> 599 sec
+		return fmt.Sprintf("%.f sec", sec), nil // 7
+	} else if min < 60 {
+		// 59,999 min -> 59.9 min
+		return fmt.Sprintf("%.1f min", min), nil // 8
+	} else if hour < 10 {
+		// 9.999 hour -> 9.9 hour
+		return fmt.Sprintf("%.1f hour", hour), nil // 8
+	} else if hour < 1000 {
+		// 999,999 hour -> 999 hour
+		return fmt.Sprintf("%.f hour", hour), nil // 8
 	}
-	return fmt.Sprintf("%.1f%s", sec, postfix)
+
+	return "", fmt.Errorf("time (%f hour) greater then max allowed (999 hour)", hour)
 }
 
 // SaveConfigToFile ...

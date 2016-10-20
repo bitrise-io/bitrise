@@ -204,7 +204,6 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	icon := ""
 	title := getTrimmedStepName(stepRunResult)
-	runTimeStr := TimeToFormattedSeconds(stepRunResult.RunTime, " sec")
 	coloringFunc := colorstring.Green
 
 	switch stepRunResult.Status {
@@ -242,7 +241,17 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	titleBox := fmt.Sprintf(" %s%s", coloredTitle, strings.Repeat(" ", titleWhiteSpaceWidth))
 
+	runTimeStr, err := FormattedSecondsToMax8Chars(stepRunResult.RunTime)
+	if err != nil {
+		log.Errorf("Failed to format time, error: %s", err)
+		runTimeStr = "999+ hour"
+	}
+
 	timeWhiteSpaceWidth := timeBoxWidth - len(runTimeStr) - 1
+	if timeWhiteSpaceWidth < 0 {
+		log.Errorf("Invalid time box size for RunTime: %#v", stepRunResult.RunTime)
+		timeWhiteSpaceWidth = 0
+	}
 	timeBox := fmt.Sprintf(" %s%s", runTimeStr, strings.Repeat(" ", timeWhiteSpaceWidth))
 
 	return fmt.Sprintf("|%s|%s|%s|", iconBox, titleBox, timeBox)
@@ -569,9 +578,19 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	}
 	runtime := tmpTime.Sub(time.Time{})
 
-	runtimeStr := TimeToFormattedSeconds(runtime, " sec")
-	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runtimeStr))
-	fmt.Printf("| Total runtime: %s%s|\n", runtimeStr, strings.Repeat(" ", whitespaceWidth))
+	runTimeStr, err := FormattedSecondsToMax8Chars(runtime)
+	if err != nil {
+		log.Errorf("Failed to format time, error: %s", err)
+		runTimeStr = "999+ hour"
+	}
+
+	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runTimeStr))
+	if whitespaceWidth < 0 {
+		log.Errorf("Invalid time box size for RunTime: %#v", runtime)
+		whitespaceWidth = 0
+	}
+
+	fmt.Printf("| Total runtime: %s%s|\n", runTimeStr, strings.Repeat(" ", whitespaceWidth))
 	fmt.Printf("+%s+\n", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
 	fmt.Println()
