@@ -181,7 +181,27 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| ✅  | \x1b[32;1m\x1b[0m                                                             | 0.00 sec |"
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 28 hour  |"
+		require.Equal(t, expected, actual)
+	}
+
+	t.Log("long Runtime")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Title:   "",
+			Version: longStr,
+		}
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  hourToDuration(1000),
+			Error:    nil,
+			ExitCode: 0,
+		}
+
+		actual := getRunningStepFooterMainSection(result)
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|"
 		require.Equal(t, expected, actual)
 	}
 }
