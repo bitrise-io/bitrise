@@ -75,7 +75,7 @@ func TestTimeToFormattedSeconds(t *testing.T) {
 	t.Log("hour >= 1000")
 	{
 		timeStr, err := FormattedSecondsToMax8Chars(hourToDuration(1000))
-		require.EqualError(t, err, "Failed to format time, time (1000) greaten then max allowed (999 hour)")
+		require.EqualError(t, err, "time (1000.000000 hour) greater then max allowed (999 hour)")
 		require.Equal(t, "", timeStr)
 	}
 }
