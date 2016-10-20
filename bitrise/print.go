@@ -249,7 +249,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	timeWhiteSpaceWidth := timeBoxWidth - len(runTimeStr) - 1
 	if timeWhiteSpaceWidth < 0 {
-		log.Errorf("Invalid time box size for RunTime: %s", runTimeStr)
+		log.Errorf("Invalid time box size for RunTime: %#v", stepRunResult.RunTime)
 		timeWhiteSpaceWidth = 0
 	}
 	timeBox := fmt.Sprintf(" %s%s", runTimeStr, strings.Repeat(" ", timeWhiteSpaceWidth))
@@ -586,7 +586,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 
 	whitespaceWidth = stepRunSummaryBoxWidthInChars - len(fmt.Sprintf("| Total runtime: %s|", runTimeStr))
 	if whitespaceWidth < 0 {
-		log.Errorf("Invalid time box size for RunTime: %s", runTimeStr)
+		log.Errorf("Invalid time box size for RunTime: %#v", runtime)
 		whitespaceWidth = 0
 	}
 
