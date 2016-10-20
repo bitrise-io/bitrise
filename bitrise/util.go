@@ -176,7 +176,7 @@ func FormattedSecondsToMax8Chars(t time.Duration) (string, error) {
 		return fmt.Sprintf("%.f hour", hour), nil // 8
 	}
 
-	return "", fmt.Errorf("Failed to format time, time (%.f) greaten then max allowed (999 hour)", hour)
+	return "", fmt.Errorf("time (%f hour) greater then max allowed (999 hour)", hour)
 }
 
 // SaveConfigToFile ...
