@@ -12,14 +12,14 @@ func Test_VersionOutput(t *testing.T) {
 	{
 		out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err)
-		require.Equal(t, "1.4.2", out)
+		require.Equal(t, "1.4.3-pre", out)
 	}
 
 	t.Log("Version --full")
 	{
 		out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version", "--full")
 		require.NoError(t, err)
-		require.Equal(t, `version: 1.4.2
+		require.Equal(t, `version: 1.4.3-pre
 format version: 1.3.1
 build number:`+` `+`
 commit:`, out)
