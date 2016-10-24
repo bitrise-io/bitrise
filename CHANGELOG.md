@@ -1,6 +1,43 @@
-## Changelog (Current version: 1.4.2)
+## Changelog (Current version: 1.4.3)
 
 -----------------
+
+## 1.4.3 (2016 Oct 24)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.4.3/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.4.2 -> 1.4.3
+
+* [46c2607] Krisztián Gödrei - prepare for 1.4.3 (#432) (2016 Oct 24)
+* [200e397] Viktor Benei - version 1.4.3-pre (#430) (2016 Oct 21)
+* [e8510f3] Krisztián Gödrei - long step run time (#429) (2016 Oct 20)
+* [c7f900e] Viktor Benei - bumped Go version for toolkit to 1.7.3 (#428) (2016 Oct 20)
+* [9978d5c] Viktor Benei - Feature/remove log emojis (#427) (2016 Oct 20)
+* [807f3c8] Krisztián Gödrei - Update CHANGELOG.md (2016 Oct 14)
+
 
 ## 1.4.2 (2016 Oct 14)
 
@@ -2300,4 +2337,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Oct 14
+Updated: 2016 Oct 24
