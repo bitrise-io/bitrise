@@ -6,8 +6,13 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* __Removed emojis__ from step and build run result logs.  
+  __Success__ step run's icon changed from: ✅ to: `✓`  
+  __Failed__ step run's icon changed from: 🚫 to: `x`  
+  __Skipped by fail__ step run's icon changed from: ⚠️ to: `!`  
+  __Skipped by run_if expression__ step run's icon changed from: ➡ to: `-`
+* Go version bumped for toolkit to 1.7.3
+* Fixed `panic: runtime error: makeslice: len out of range` issue, when printing long running step's runtime in step and build run result logs.
 
 ### Install or upgrade
 
