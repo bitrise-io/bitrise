@@ -303,7 +303,7 @@ func checkIfBrewPackageInstalled(packageName string) bool {
 }
 
 func checkIfAptPackageInstalled(packageName string) bool {
-	cmd := exec.Command("dpkg", "-l", packageName)
+	cmd := exec.Command("dpkg", "-s", packageName)
 
 	if outBytes, err := cmd.CombinedOutput(); err != nil {
 		log.Debugf("%s", outBytes)
