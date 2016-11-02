@@ -21,7 +21,9 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, `version: 1.4.3
 format version: 1.3.1
-build number:`+` `+`
+os: darwin (amd64)
+go: go1.7.3
+build number: 
 commit:`, out)
 	}
 }
