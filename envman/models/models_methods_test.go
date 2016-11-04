@@ -15,6 +15,7 @@ func TestGetKeyValuePair(t *testing.T) {
 			Title:             pointers.NewStringPtr("test_title"),
 			Description:       pointers.NewStringPtr("test_description"),
 			Summary:           pointers.NewStringPtr("test_summary"),
+			Category:          pointers.NewStringPtr("category"),
 			ValueOptions:      []string{"test_key2", "test_value2"},
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(false),
@@ -25,7 +26,7 @@ func TestGetKeyValuePair(t *testing.T) {
 	}
 
 	key, value, err := env.GetKeyValuePair()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	require.Equal(t, "test_key", key)
 	require.Equal(t, "test_value", value)
@@ -38,7 +39,7 @@ func TestGetKeyValuePair(t *testing.T) {
 	}
 
 	key, value, err = env.GetKeyValuePair()
-	require.NotEqual(t, nil, err)
+	require.EqualError(t, err, `more than 2 keys specified: [opts test_key test_key1]`)
 
 	// 2 key-value fields
 	env = EnvironmentItemModel{
@@ -47,13 +48,14 @@ func TestGetKeyValuePair(t *testing.T) {
 	}
 
 	key, value, err = env.GetKeyValuePair()
-	require.NotEqual(t, nil, err)
+	require.EqualError(t, err, `more than 1 environment key specified: [test_key test_key1]`)
 
 	// Not string value
 	env = EnvironmentItemModel{"test_key": true}
 
 	key, value, err = env.GetKeyValuePair()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
+
 	require.Equal(t, "test_key", key)
 	require.Equal(t, "true", value)
 
@@ -61,13 +63,13 @@ func TestGetKeyValuePair(t *testing.T) {
 	env = EnvironmentItemModel{"": "test_value"}
 
 	key, value, err = env.GetKeyValuePair()
-	require.NotEqual(t, nil, err)
+	require.EqualError(t, err, "no environment key found, keys: []")
 
 	// Missing key-value
 	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
 
 	key, value, err = env.GetKeyValuePair()
-	require.NotEqual(t, nil, err)
+	require.EqualError(t, err, "no environment key found, keys: [opts]")
 }
 
 func TestParseFromInterfaceMap(t *testing.T) {
@@ -78,17 +80,17 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	model["title"] = "test_title"
 	model["value_options"] = []string{"test_key2", "test_value2"}
 	model["is_expand"] = true
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	// title is not a string
 	model = map[string]interface{}{}
 	model["title"] = true
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	// value_options is not a string slice
 	model = map[string]interface{}{}
 	model["value_options"] = []interface{}{true, false}
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	// is_required is not a bool
 	model = map[string]interface{}{}
@@ -97,24 +99,24 @@ func TestParseFromInterfaceMap(t *testing.T) {
 
 	model = map[string]interface{}{}
 	model["is_required"] = "YeS"
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	model = map[string]interface{}{}
 	model["is_required"] = "NO"
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	model = map[string]interface{}{}
 	model["is_required"] = "y"
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	model = map[string]interface{}{}
 	model["skip_if_empty"] = "true"
-	require.Equal(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 
 	// other_key is not supported key
 	model = map[string]interface{}{}
 	model["other_key"] = true
-	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.EqualError(t, envOptions.ParseFromInterfaceMap(model), "not supported key found in options: other_key")
 }
 
 func TestGetOptions(t *testing.T) {
@@ -127,12 +129,12 @@ func TestGetOptions(t *testing.T) {
 		},
 	}
 	opts, err := env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	require.NotEqual(t, nil, opts.Title)
+	require.NotNil(t, opts.Title)
 	require.Equal(t, "test_title", *opts.Title)
 
-	require.NotEqual(t, nil, opts.IsExpand)
+	require.NotNil(t, opts.IsExpand)
 	require.Equal(t, false, *opts.IsExpand)
 
 	// Missing opts
@@ -140,7 +142,7 @@ func TestGetOptions(t *testing.T) {
 		"test_key": "test_value",
 	}
 	_, err = env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	// Wrong opts
 	env = EnvironmentItemModel{
@@ -151,7 +153,7 @@ func TestGetOptions(t *testing.T) {
 		},
 	}
 	_, err = env.GetOptions()
-	require.NotEqual(t, nil, err)
+	require.EqualError(t, err, "not supported key found in options: test")
 }
 
 func TestNormalize(t *testing.T) {
@@ -168,25 +170,26 @@ func TestNormalize(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, nil, env.Normalize())
+	require.NoError(t, env.Normalize())
 
 	opts, err := env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	require.NotEqual(t, nil, opts.Title)
+	require.NotNil(t, opts.Title)
 	require.Equal(t, "test_title", *opts.Title)
 
-	require.NotEqual(t, nil, opts.Description)
+	require.NotNil(t, opts.Description)
 	require.Equal(t, "test_description", *opts.Description)
 
-	require.NotEqual(t, nil, opts.Summary)
+	require.NotNil(t, opts.Summary)
 	require.Equal(t, "test_summary", *opts.Summary)
 
 	require.Equal(t, 2, len(opts.ValueOptions))
 
-	require.NotEqual(t, nil, opts.IsRequired)
+	require.NotNil(t, opts.IsRequired)
 	require.Equal(t, true, *opts.IsRequired)
 
+	require.NotNil(t, opts.SkipIfEmpty)
 	require.Equal(t, false, *opts.SkipIfEmpty)
 
 	// Filled with EnvironmentItemOptionsModel options
@@ -201,23 +204,23 @@ func TestNormalize(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, nil, env.Normalize())
+	require.NoError(t, env.Normalize())
 
 	opts, err = env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	require.NotEqual(t, nil, opts.Title)
+	require.NotNil(t, opts.Title)
 	require.Equal(t, "test_title", *opts.Title)
 
-	require.NotEqual(t, nil, opts.Description)
+	require.NotNil(t, opts.Description)
 	require.Equal(t, "test_description", *opts.Description)
 
-	require.NotEqual(t, nil, opts.Summary)
+	require.NotNil(t, opts.Summary)
 	require.Equal(t, "test_summary", *opts.Summary)
 
 	require.Equal(t, 2, len(opts.ValueOptions))
 
-	require.NotEqual(t, nil, opts.IsRequired)
+	require.NotNil(t, opts.IsRequired)
 	require.Equal(t, true, *opts.IsRequired)
 
 	// Empty options
@@ -225,10 +228,10 @@ func TestNormalize(t *testing.T) {
 		"test_key": "test_value",
 	}
 
-	require.Equal(t, nil, env.Normalize())
+	require.NoError(t, env.Normalize())
 
 	opts, err = env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	require.Equal(t, (*string)(nil), opts.Title)
 	require.Equal(t, (*string)(nil), opts.Description)
@@ -247,30 +250,33 @@ func TestFillMissingDefaults(t *testing.T) {
 		"test_key": "test_value",
 	}
 
-	require.Equal(t, nil, env.FillMissingDefaults())
+	require.NoError(t, env.FillMissingDefaults())
 
 	opts, err := env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	require.NotEqual(t, nil, opts.Description)
+	require.NotNil(t, opts.Description)
 	require.Equal(t, "", *opts.Description)
 
-	require.NotEqual(t, nil, opts.Summary)
+	require.NotNil(t, opts.Summary)
 	require.Equal(t, "", *opts.Summary)
 
-	require.NotEqual(t, nil, opts.IsRequired)
+	require.NotNil(t, opts.Category)
+	require.Equal(t, "", *opts.Category)
+
+	require.NotNil(t, opts.IsRequired)
 	require.Equal(t, DefaultIsRequired, *opts.IsRequired)
 
-	require.NotEqual(t, nil, opts.IsExpand)
+	require.NotNil(t, opts.IsExpand)
 	require.Equal(t, DefaultIsExpand, *opts.IsExpand)
 
-	require.NotEqual(t, nil, opts.IsDontChangeValue)
+	require.NotNil(t, opts.IsDontChangeValue)
 	require.Equal(t, DefaultIsDontChangeValue, *opts.IsDontChangeValue)
 
-	require.NotEqual(t, nil, opts.IsTemplate)
+	require.NotNil(t, opts.IsTemplate)
 	require.Equal(t, DefaultIsDontChangeValue, *opts.IsTemplate)
 
-	require.NotEqual(t, nil, opts.SkipIfEmpty)
+	require.NotNil(t, opts.SkipIfEmpty)
 	require.Equal(t, DefaultSkipIfEmpty, *opts.SkipIfEmpty)
 
 	// Filled env
@@ -280,6 +286,7 @@ func TestFillMissingDefaults(t *testing.T) {
 			Title:             pointers.NewStringPtr("test_title"),
 			Description:       pointers.NewStringPtr("test_description"),
 			Summary:           pointers.NewStringPtr("test_summary"),
+			Category:          pointers.NewStringPtr("required"),
 			ValueOptions:      []string{"test_key2", "test_value2"},
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(true),
@@ -289,35 +296,38 @@ func TestFillMissingDefaults(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, nil, env.FillMissingDefaults())
+	require.NoError(t, env.FillMissingDefaults())
 
 	opts, err = env.GetOptions()
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	require.NotEqual(t, nil, opts.Title)
+	require.NotNil(t, opts.Title)
 	require.Equal(t, "test_title", *opts.Title)
 
-	require.NotEqual(t, nil, opts.Description)
+	require.NotNil(t, opts.Description)
 	require.Equal(t, "test_description", *opts.Description)
 
-	require.NotEqual(t, nil, opts.Summary)
+	require.NotNil(t, opts.Summary)
 	require.Equal(t, "test_summary", *opts.Summary)
+
+	require.NotNil(t, opts.Category)
+	require.Equal(t, "required", *opts.Category)
 
 	require.Equal(t, 2, len(opts.ValueOptions))
 
-	require.NotEqual(t, nil, opts.IsRequired)
+	require.NotNil(t, opts.IsRequired)
 	require.Equal(t, true, *opts.IsRequired)
 
-	require.NotEqual(t, nil, opts.IsExpand)
+	require.NotNil(t, opts.IsExpand)
 	require.Equal(t, true, *opts.IsExpand)
 
-	require.NotEqual(t, nil, opts.IsDontChangeValue)
+	require.NotNil(t, opts.IsDontChangeValue)
 	require.Equal(t, false, *opts.IsDontChangeValue)
 
-	require.NotEqual(t, nil, opts.IsTemplate)
+	require.NotNil(t, opts.IsTemplate)
 	require.Equal(t, false, *opts.IsTemplate)
 
-	require.NotEqual(t, nil, opts.SkipIfEmpty)
+	require.NotNil(t, opts.SkipIfEmpty)
 	require.Equal(t, false, *opts.SkipIfEmpty)
 }
 
@@ -328,23 +338,24 @@ func TestValidate(t *testing.T) {
 			Title:             pointers.NewStringPtr("test_title"),
 			Description:       pointers.NewStringPtr("test_description"),
 			Summary:           pointers.NewStringPtr("test_summary"),
+			Category:          pointers.NewStringPtr("required"),
 			ValueOptions:      []string{"test_key2", "test_value2"},
 			IsRequired:        pointers.NewBoolPtr(true),
 			IsExpand:          pointers.NewBoolPtr(true),
 			IsDontChangeValue: pointers.NewBoolPtr(false),
 		},
 	}
-	require.NotEqual(t, nil, env.Validate())
+	require.EqualError(t, env.Validate(), "no environment key found, keys: [opts]")
 
 	// Empty key
 	env = EnvironmentItemModel{
 		"": "test_value",
 	}
-	require.NotEqual(t, nil, env.Validate())
+	require.EqualError(t, env.Validate(), "no environment key found, keys: []")
 
 	// Valid env
 	env = EnvironmentItemModel{
 		"test_key": "test_value",
 	}
-	require.Equal(t, nil, env.Validate())
+	require.NoError(t, env.Validate())
 }

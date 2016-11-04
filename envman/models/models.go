@@ -9,6 +9,7 @@ type EnvironmentItemOptionsModel struct {
 	Title             *string  `json:"title,omitempty" yaml:"title,omitempty"`
 	Description       *string  `json:"description,omitempty" yaml:"description,omitempty"`
 	Summary           *string  `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Category          *string  `json:"category,omitempty" yaml:"category,omitempty"`
 	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
