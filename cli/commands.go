@@ -268,6 +268,11 @@ var (
 					},
 				},
 				{
+					Name:   "update",
+					Usage:  "Update bitrise plugin.",
+					Action: pluginUpdate,
+				},
+				{
 					Name:   "delete",
 					Usage:  "Delete bitrise plugin.",
 					Action: pluginDelete,
