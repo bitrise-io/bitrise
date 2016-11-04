@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"runtime"
+
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/version"
@@ -14,6 +16,8 @@ import (
 type VersionOutputModel struct {
 	Version       string `json:"version"`
 	FormatVersion string `json:"format_version"`
+	OS            string `json:"os"`
+	GO            string `json:"go"`
 	BuildNumber   string `json:"build_number"`
 	Commit        string `json:"commit"`
 }
@@ -33,13 +37,23 @@ func printVersionCmd(c *cli.Context) error {
 		versionOutput.FormatVersion = models.Version
 		versionOutput.BuildNumber = version.BuildNumber
 		versionOutput.Commit = version.Commit
+		versionOutput.OS = fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
+		versionOutput.GO = runtime.Version()
 	}
 
 	if output.Format == output.FormatRaw {
 		if fullVersion {
-			fmt.Fprintf(c.App.Writer, "version: %v\nformat version: %v\nbuild number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.FormatVersion, versionOutput.BuildNumber, versionOutput.Commit)
+			versionStr := fmt.Sprintf(`version: %s
+format version: %s
+os: %s
+go: %s
+build number: %s
+commit: %s
+`, versionOutput.Version, versionOutput.FormatVersion, versionOutput.OS, versionOutput.GO, versionOutput.BuildNumber, versionOutput.Commit)
+			fmt.Println(versionStr)
 		} else {
-			fmt.Fprintf(c.App.Writer, "%v\n", versionOutput.Version)
+			versionStr := fmt.Sprintf("%s", versionOutput.Version)
+			fmt.Println(versionStr)
 		}
 	} else {
 		output.Print(versionOutput, output.Format)
