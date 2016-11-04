@@ -26,9 +26,9 @@ func Test_VersionOutput(t *testing.T) {
 		expectedVersionOut := fmt.Sprintf(`version: 1.4.3
 format version: 1.3.1
 os: %s
-go: go1.7.3
+go: %s
 build number: 
-commit:`, expectedOSVersion)
+commit:`, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
 	}
