@@ -1,6 +1,8 @@
 package integration
 
 import (
+	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -19,11 +21,15 @@ func Test_VersionOutput(t *testing.T) {
 	{
 		out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version", "--full")
 		require.NoError(t, err)
-		require.Equal(t, `version: 1.4.3
+
+		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
+		expectedVersionOut := fmt.Sprintf(`version: 1.4.3
 format version: 1.3.1
-os: darwin (amd64)
+os: %s
 go: go1.7.3
 build number: 
-commit:`, out)
+commit:`, expectedOSVersion)
+
+		require.Equal(t, expectedVersionOut, out)
 	}
 }
