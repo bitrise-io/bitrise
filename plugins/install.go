@@ -22,9 +22,9 @@ import (
 
 func validatePath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return fmt.Errorf("failed to check bitrise-plugin.yml path (%s), error: %s", pth, err)
+		return fmt.Errorf("failed to check path (%s), error: %s", pth, err)
 	} else if !exist {
-		return fmt.Errorf("no bitrise-plugin.yml found at (%s)", pth)
+		return fmt.Errorf("no file found at (%s)", pth)
 	}
 	return nil
 }
