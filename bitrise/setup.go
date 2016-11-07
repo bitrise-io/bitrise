@@ -19,24 +19,13 @@ const (
 // PluginDependency ..
 type PluginDependency struct {
 	Source     string
-	Binary     string
 	MinVersion string
 }
 
-// OSXPluginDependencyMap ...
-var OSXPluginDependencyMap = map[string]PluginDependency{
+// PluginDependencyMap ...
+var PluginDependencyMap = map[string]PluginDependency{
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.5/analytics-Darwin-x86_64",
-		MinVersion: "0.9.5",
-	},
-}
-
-// LinuxPluginDependencyMap ...
-var LinuxPluginDependencyMap = map[string]PluginDependency{
-	"analytics": PluginDependency{
-		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		Binary:     "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.5/analytics-Linux-x86_64",
 		MinVersion: "0.9.5",
 	},
 }
@@ -56,12 +45,12 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 		if err := doSetupOnOSX(isFullSetupMode); err != nil {
 			return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
 		}
-	case "linux":
-		if err := doSetupOnLinux(); err != nil {
-			return fmt.Errorf("Failed to do Linux specific setup, error: %s", err)
-		}
 	default:
 		return errors.New("unsupported platform :(")
+	}
+
+	if err := doSetupPlugins(); err != nil {
+		return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
 	}
 
 	if err := doSetupToolkits(); err != nil {
@@ -115,21 +104,36 @@ func doSetupToolkits() error {
 	return nil
 }
 
+func doSetupPlugins() error {
+	log.Infoln("Checking Bitrise Plugins...")
+
+	for pluginName, pluginDependency := range PluginDependencyMap {
+		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
+			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
+		}
+	}
+
+	return nil
+}
+
 func doSetupBitriseCoreTools() error {
 	log.Infoln("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
 		return fmt.Errorf("Envman failed to install: %s", err)
 	}
+
 	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
 		return fmt.Errorf("Stepman failed to install: %s", err)
 	}
+
 	return nil
 }
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
 	log.Infoln("Doing OS X specific setup")
 	log.Infoln("Checking required tools...")
+
 	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
@@ -137,31 +141,5 @@ func doSetupOnOSX(isMinimalSetupMode bool) error {
 	if err := PrintInstalledXcodeInfos(); err != nil {
 		return errors.New(fmt.Sprint("Failed to detect installed Xcode and Xcode Command Line Tools infos. Err:", err))
 	}
-	// if err := CheckIsXcodeCLTInstalled(); err != nil {
-	// 	return errors.New(fmt.Sprint("Xcode Command Line Tools not installed. Err:", err))
-	// }
-	// if err := checkIsAnsibleInstalled(); err != nil {
-	// 	return errors.New("Ansible failed to install")
-	// }
-
-	for pluginName, pluginDependency := range OSXPluginDependencyMap {
-		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
-			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
-		}
-	}
-
-	return nil
-}
-
-func doSetupOnLinux() error {
-	log.Infoln("Doing Linux specific setup")
-	log.Infoln("Checking required tools...")
-
-	for pluginName, pluginDependency := range LinuxPluginDependencyMap {
-		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
-			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
-		}
-	}
-
 	return nil
 }
