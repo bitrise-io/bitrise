@@ -16,7 +16,6 @@ func pluginInstall(c *cli.Context) error {
 		log.Fatal("Missing required input: source")
 	}
 
-	pluginBinary := c.String("bin-source")
 	pluginVersionTag := c.String("version")
 
 	// Install
@@ -26,7 +25,7 @@ func pluginInstall(c *cli.Context) error {
 		log.Infof("=> Installing plugin (%s) with version (%s)...", pluginSource, pluginVersionTag)
 	}
 
-	plugin, version, err := plugins.InstallPlugin(pluginSource, pluginBinary, pluginVersionTag)
+	plugin, version, err := plugins.InstallPlugin(pluginSource, pluginVersionTag)
 	if err != nil {
 		log.Fatalf("Failed to install plugin from (%s), error: %s", pluginSource, err)
 	}
@@ -136,7 +135,7 @@ func pluginUpdate(c *cli.Context) error {
 			log.Fatalf("no route found for already loaded plugin (%s)", plugin.Name)
 		}
 
-		plugin, version, err := plugins.InstallPlugin(route.Source, "", newVersion)
+		plugin, version, err := plugins.InstallPlugin(route.Source, newVersion)
 		if err != nil {
 			log.Fatalf("Failed to install plugin from (%s), error: %s", route.Source, err)
 		}

@@ -258,10 +258,6 @@ var (
 							Usage: "Plugin source url.",
 						},
 						cli.StringFlag{
-							Name:  "bin-source",
-							Usage: "Plugin binary url.",
-						},
-						cli.StringFlag{
 							Name:  "version",
 							Usage: "Plugin version tag.",
 						},

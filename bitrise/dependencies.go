@@ -79,7 +79,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 					fmt.Println()
 					fmt.Print("==> Download failed, retrying ...")
 				}
-				p, _, err := plugins.InstallPlugin(dependency.Source, dependency.Binary, dependency.MinVersion)
+				p, _, err := plugins.InstallPlugin(dependency.Source, dependency.MinVersion)
 				plugin = p
 				return err
 			})
