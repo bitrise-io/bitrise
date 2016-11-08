@@ -22,6 +22,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -352,7 +353,14 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	// so that if a Toolkit requires/allows the use of additional dependencies
 	// required for the step (e.g. a brew installed OpenSSH) it can be done
 	// with a Toolkit+Deps
-	if err := checkAndInstallStepDependencies(step); err != nil {
+	if err := retry.Times(2).Try(func(attempt uint) error {
+		if attempt > 0 {
+			fmt.Println()
+			log.Warn("Installing Step dependency failed, retrying ...")
+		}
+
+		return checkAndInstallStepDependencies(step)
+	}); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}
 
