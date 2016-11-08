@@ -133,8 +133,6 @@ func (s ByVersion) Less(i, j int) bool {
 	return s[i].LessThan(s[j])
 }
 
-///
-
 // GitVersionTags ...
 func GitVersionTags(gitRepoDir string) ([]*ver.Version, error) {
 	tagList, err := gitRemoteTagList(gitRepoDir)
