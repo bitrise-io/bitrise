@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/parseutil"
 	"github.com/bitrise-io/go-utils/pointers"
 )
@@ -39,47 +39,66 @@ func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
 
 // GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
-	if len(env) > 2 {
-		return "", "", fmt.Errorf("Invalid env: more than 2 fields: %#v", env)
-	}
-
-	retKey := ""
-	retValue := ""
+	// Collect keys and values
+	keys := []string{}
+	values := []interface{}{}
 
 	for key, value := range env {
-		if key != OptionsKey {
-			if retKey != "" {
-				return "", "", fmt.Errorf("Invalid env: more than 1 key-value field found: %#v", env)
-			}
+		keys = append(keys, key)
+		values = append(values, value)
+	}
 
-			valueStr, ok := value.(string)
-			if !ok {
-				if value == nil {
-					valueStr = ""
-				} else {
-					valueStr = parseutil.CastToString(value)
-					if valueStr == "" {
-						return "", "", fmt.Errorf("Invalid value, not a string (key:%#v) (value:%#v)", key, value)
-					}
-				}
-			}
+	if len(keys) == 0 {
+		return "", "", errors.New("no environment key specified")
+	} else if len(keys) > 2 {
+		sort.Strings(keys)
+		return "", "", fmt.Errorf("more than 2 keys specified: %v", keys)
+	}
 
-			retKey = key
-			retValue = valueStr
+	// Collect env key and value
+	key := ""
+	var value interface{}
+	optionsFound := false
+
+	for i := 0; i < len(keys); i++ {
+		k := keys[i]
+		if k != OptionsKey {
+			key = k
+			value = values[i]
+		} else {
+			optionsFound = true
 		}
 	}
 
-	if retKey == "" {
-		return "", "", errors.New("Invalid env: no envKey specified!")
+	if key == "" {
+		sort.Strings(keys)
+		return "", "", fmt.Errorf("no environment key found, keys: %v", keys)
+	}
+	if len(keys) > 1 && !optionsFound {
+		sort.Strings(keys)
+		return "", "", fmt.Errorf("more than 1 environment key specified: %v", keys)
 	}
 
-	return retKey, retValue, nil
+	// Cast env value to string
+	valueStr := ""
+
+	if value != nil {
+		if str, ok := value.(string); ok {
+			valueStr = str
+		} else if str := parseutil.CastToString(value); str != "" {
+			valueStr = str
+		} else {
+			return "", "", fmt.Errorf("value (%#v) is not a string for key (%s)", value, key)
+		}
+	}
+
+	return key, valueStr, nil
 }
 
 // ParseFromInterfaceMap ...
 func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[string]interface{}) error {
 	for keyStr, value := range input {
-		log.Debugf("  ** processing (key:%#v) (value:%#v) (envSerModel:%#v)", keyStr, value, envSerModel)
+
 		switch keyStr {
 		case "title":
 			envSerModel.Title = parseutil.CastToStringPtr(value)
@@ -87,6 +106,8 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			envSerModel.Description = parseutil.CastToStringPtr(value)
 		case "summary":
 			envSerModel.Summary = parseutil.CastToStringPtr(value)
+		case "category":
+			envSerModel.Category = parseutil.CastToStringPtr(value)
 		case "value_options":
 			castedValue, ok := value.([]string)
 			if !ok {
@@ -95,14 +116,14 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				castedValue = []string{}
 				interfArr, ok := value.([]interface{})
 				if !ok {
-					return fmt.Errorf("Invalid value type (key:%s): %#v", keyStr, value)
+					return fmt.Errorf("invalid value type (%#v) for key: %s", value, keyStr)
 				}
 				for _, interfItm := range interfArr {
 					castedItm, ok := interfItm.(string)
 					if !ok {
 						castedItm = parseutil.CastToString(interfItm)
 						if castedItm == "" {
-							return fmt.Errorf("Invalid value in value_options (%#v), not a string: %#v", interfArr, interfItm)
+							return fmt.Errorf("not a string value (%#v) in value_options", interfItm)
 						}
 					}
 					castedValue = append(castedValue, castedItm)
@@ -112,35 +133,35 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 		case "is_required":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsRequired = castedBoolPtr
 		case "is_expand":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsExpand = castedBoolPtr
 		case "is_dont_change_value":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsDontChangeValue = castedBoolPtr
 		case "is_template":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsTemplate = castedBoolPtr
 		case "skip_if_empty":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
-				return fmt.Errorf("Failed to parse bool value (%#v) for key (%s)", value, keyStr)
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.SkipIfEmpty = castedBoolPtr
 		default:
-			return fmt.Errorf("Not supported key found in options: %#v", keyStr)
+			return fmt.Errorf("not supported key found in options: %s", keyStr)
 		}
 	}
 	return nil
@@ -158,8 +179,6 @@ func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error
 		return envItmCasted, nil
 	}
 
-	log.Debugf(" * processing env:%#v", env)
-
 	// if it's read from a file (YAML/JSON) then it's most likely not the proper type
 	//  so cast it from the generic interface-interface map
 	normalizedOptsInterfaceMap := make(map[string]interface{})
@@ -169,7 +188,7 @@ func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error
 		for key, value := range optionsInterfaceMap {
 			keyStr, ok := key.(string)
 			if !ok {
-				return EnvironmentItemOptionsModel{}, fmt.Errorf("Failed to cask Options key to String: %#v", key)
+				return EnvironmentItemOptionsModel{}, fmt.Errorf("failed to cask options key (%#v) to string", key)
 			}
 			normalizedOptsInterfaceMap[keyStr] = value
 		}
@@ -188,11 +207,10 @@ func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error
 			return EnvironmentItemOptionsModel{}, err
 		}
 
-		log.Debugf("Parsed options: %#v\n", options)
 		return options, nil
 	}
 
-	return EnvironmentItemOptionsModel{}, fmt.Errorf("Invalid options (value:%#v) - failed to cast", value)
+	return EnvironmentItemOptionsModel{}, fmt.Errorf("failed to cast options value: (%#v)", value)
 }
 
 // Normalize ...
@@ -220,6 +238,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	if options.Summary == nil {
 		options.Summary = pointers.NewStringPtr("")
 	}
+	if options.Category == nil {
+		options.Category = pointers.NewStringPtr("")
+	}
 	if options.IsRequired == nil {
 		options.IsRequired = pointers.NewBoolPtr(DefaultIsRequired)
 	}
@@ -246,7 +267,7 @@ func (env EnvironmentItemModel) Validate() error {
 		return err
 	}
 	if key == "" {
-		return errors.New("Invalid environment: empty env_key")
+		return errors.New("no environment key found")
 	}
 	_, err = env.GetOptions()
 	if err != nil {
