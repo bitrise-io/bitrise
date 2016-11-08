@@ -32,7 +32,7 @@ workflows:
       2, Run tests
       3, Announce test result
     before_run:
-    - _prepare_and_setup
+    - _prepare-and-setup
     - test
     steps:
     - slack:
@@ -147,7 +147,7 @@ workflows:
 
             bitrise setup
 
-  _prepare_and_setup:
+  _prepare-and-setup:
     title: Prepare bitrise and install testing tools
     description: |
         Prepares the environment for testing
@@ -191,7 +191,7 @@ workflows:
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing
-  create_release:
+  create-release:
     title: Create Release version
     description: |
         Creates new version with specified RELEASE_VERSION environment
@@ -199,7 +199,7 @@ workflows:
         1, Create CHANGELOG and git release
         2, Create binaries
     after_run:
-    - create_binaries
+    - create-binaries
     steps:
     - script:
         title: Create CHANGELOG and git release
@@ -213,7 +213,7 @@ workflows:
               --version $RELEASE_VERSION \
               --set-version-script "bash _scripts/set_version.sh version/version.go"
 
-  announce_release:
+  announce-release:
     title: Announce Release
     description: |-
       Notifying about new version of bitrise
@@ -243,7 +243,7 @@ workflows:
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ":rocket:"
 
-  create_binaries:
+  create-binaries:
     title: Create binaries
     description: |
         Creates Linux and Darwin binaries
@@ -303,7 +303,7 @@ workflows:
     description: |
       Used for updating bitrise dependencies with godep
     before_run:
-    - _prepare_and_setup
+    - _prepare-and-setup
     steps:
     - script:
         title: Dependency update
