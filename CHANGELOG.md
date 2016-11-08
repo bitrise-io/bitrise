@@ -1,6 +1,49 @@
-## Changelog (Current version: 1.4.3)
+## Changelog (Current version: 1.4.4)
 
 -----------------
+
+## 1.4.4 (2016 Nov 08)
+
+### Release Notes
+
+* apt get package install check fix: previous apt-get package install check (`dpkg -l PACKAGE`) was returning with exist code: `0`, even if the package is not fully installed. This version of `bitrise-cli` uses `dpkg -s PACKAGE` command to check if package is installed or not.
+* `bitrise version --full` command now prints the __Go__ and __OS__ version, which was used to build the bitrise-cli binary.
+* `bitrise plugin` command group now get a new command: `update`.  
+This command can be used to update bitrise plugins, like: `bitrise plugin update analytics`.
+* retry step dependency install, if it fails, for improved reliability.
+* envman minimum version updated to: [1.1.2](https://github.com/bitrise-io/envman/releases/tag/1.1.2)
+* used analytics plugin version updated to: [0.9.6](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.6) 
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.4.4/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.4.3 -> 1.4.4
+
+* [7ad576b] Krisztian Godrei - workflow refactors (2016 Nov 08)
+* [cce35e6] Krisztián Gödrei - godeps update, test update (#439) (2016 Nov 08)
+* [a5c0329] Krisztián Gödrei - retry if step dependency install failed (#438) (2016 Nov 08)
+* [7a78c50] Krisztián Gödrei - envman min version bumped to: 1.1.2, analytics min version bumped to: 0.9.6, bitrise.yml update (#437) (2016 Nov 08)
+* [65ca4b3] Krisztián Gödrei - Plugin update (#436) (2016 Nov 08)
+* [607f20d] Krisztián Gödrei - print go and os version in version command (#435) (2016 Nov 04)
+* [e11bc96] Viktor Benei - apt get package installed check fix (#434) (2016 Nov 02)
+
 
 ## 1.4.3 (2016 Oct 24)
 
@@ -2344,4 +2387,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Oct 24
+Updated: 2016 Nov 08
