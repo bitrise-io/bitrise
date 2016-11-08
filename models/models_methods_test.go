@@ -715,7 +715,7 @@ workflows:
 
 		warnings, err := config.Validate()
 		require.Error(t, err)
-		require.Equal(t, true, strings.Contains(err.Error(), "Invalid env: more than 2 fields:"))
+		require.Equal(t, true, strings.Contains(err.Error(), "more than 2 keys specified: [BAD_KEY content opts]"))
 		require.Equal(t, 0, len(warnings))
 	}
 

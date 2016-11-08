@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/bitrise-io/bitrise",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GodepVersion": "v75",
 	"Packages": [
 		"./..."
 	],
@@ -13,8 +13,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/envman/models",
-			"Comment": "1.1.1",
-			"Rev": "d1c4f5bdab06ba1927460f9cbbac6eab5d337912"
+			"Comment": "1.1.2",
+			"Rev": "3245ba98bdce9fb75b24d6499b61a3e5d8a0de82"
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
@@ -66,8 +66,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.23-1-gab2eb60",
-			"Rev": "ab2eb600980a6edcf20d7566ef122af2deafd917"
+			"Comment": "0.9.25",
+			"Rev": "e846365e3da66b3c985f610bc61e9c4e8d3f4d3f"
 		},
 		{
 			"ImportPath": "github.com/bitrise-tools/gows/gows",
