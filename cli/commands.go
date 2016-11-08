@@ -258,14 +258,15 @@ var (
 							Usage: "Plugin source url.",
 						},
 						cli.StringFlag{
-							Name:  "bin-source",
-							Usage: "Plugin binary url.",
-						},
-						cli.StringFlag{
 							Name:  "version",
 							Usage: "Plugin version tag.",
 						},
 					},
+				},
+				{
+					Name:   "update",
+					Usage:  "Update bitrise plugin.",
+					Action: pluginUpdate,
 				},
 				{
 					Name:   "delete",

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -16,12 +17,12 @@ import (
 // Util
 //=======================================
 
-func filterVersionTags(tagList []string) []ver.Version {
-	versionTags := []ver.Version{}
+func filterVersionTags(tagList []string) []*ver.Version {
+	versionTags := []*ver.Version{}
 	for _, tag := range tagList {
 		versionTag, err := ver.NewVersion(tag)
 		if err == nil && versionTag != nil {
-			versionTags = append(versionTags, *versionTag)
+			versionTags = append(versionTags, versionTag)
 		}
 	}
 	return versionTags
@@ -119,14 +120,33 @@ func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
 // Main
 //=======================================
 
+// ByVersion ..
+type ByVersion []*ver.Version
+
+func (s ByVersion) Len() int {
+	return len(s)
+}
+func (s ByVersion) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByVersion) Less(i, j int) bool {
+	return s[i].LessThan(s[j])
+}
+
+///
+
 // GitVersionTags ...
-func GitVersionTags(gitRepoDir string) ([]ver.Version, error) {
+func GitVersionTags(gitRepoDir string) ([]*ver.Version, error) {
 	tagList, err := gitRemoteTagList(gitRepoDir)
 	if err != nil {
-		return []ver.Version{}, fmt.Errorf("Could not get version tag list, error: %s", err)
+		return []*ver.Version{}, fmt.Errorf("Could not get version tag list, error: %s", err)
 	}
 
-	return filterVersionTags(tagList), nil
+	tags := filterVersionTags(tagList)
+
+	sort.Sort(ByVersion(tags))
+
+	return tags, nil
 }
 
 // GitCloneAndCheckoutVersion ...
@@ -143,7 +163,16 @@ func GitCloneAndCheckoutVersion(cloneIntoDir, repositoryURL, checkoutVersion str
 			return nil, "", fmt.Errorf("Could not get version tag list, error: %s", err)
 		}
 
-		version = versionTagList[len(versionTagList)-1]
+		if len(versionTagList) == 0 {
+			return nil, "", fmt.Errorf("no version tag found")
+		}
+
+		versionPtr := versionTagList[len(versionTagList)-1]
+		if versionPtr == nil {
+			return nil, "", fmt.Errorf("uninitialized version found")
+		}
+
+		version = *versionPtr
 	} else {
 		versionPtr, err := ver.NewVersion(checkoutVersion)
 		if err != nil {

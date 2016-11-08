@@ -22,9 +22,9 @@ import (
 
 func validatePath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return fmt.Errorf("failed to check bitrise-plugin.yml path (%s), error: %s", pth, err)
+		return fmt.Errorf("failed to check path (%s), error: %s", pth, err)
 	} else if !exist {
-		return fmt.Errorf("no bitrise-plugin.yml found at (%s)", pth)
+		return fmt.Errorf("no file found at (%s)", pth)
 	}
 	return nil
 }
@@ -150,7 +150,7 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 //=======================================
 
 // InstallPlugin ...
-func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
+func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 	//
 	// Download plugin src
 	pluginSrcTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-src-tmp")
@@ -185,8 +185,9 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 		return Plugin{}, "", fmt.Errorf("failed to parse bitrise-plugin.yml (%s), error: %s", tmpPluginYMLPath, err)
 	}
 
-	// Check if executable exist
-	if newPlugin.ExecutableURL() == "" && binURL == "" {
+	// Check for plugin executable
+	if newPlugin.ExecutableURL() == "" {
+		// Running as bash script
 		tmpPluginExecutablePath := filepath.Join(pluginSrcTmpDir, pluginShName)
 		if err := validatePath(tmpPluginExecutablePath); err != nil {
 			return Plugin{}, "", fmt.Errorf("bitrise-plugin.sh validation failed, error: %s", err)
@@ -267,9 +268,6 @@ func InstallPlugin(srcURL, binURL, versionTag string) (Plugin, string, error) {
 	}
 
 	executableURL := newPlugin.ExecutableURL()
-	if binURL != "" {
-		executableURL = binURL
-	}
 	if executableURL != "" {
 		// Install plugin bin
 		pluginBinTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-bin-tmp")
