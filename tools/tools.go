@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/errorutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 // UnameGOOS ...
@@ -85,18 +86,36 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 // InstallFromURL ...
 func InstallFromURL(toolBinName, downloadURL string) error {
 	if len(toolBinName) < 1 {
-		return fmt.Errorf("No Tool (bin) Name provided! URL was: %s", downloadURL)
+		return fmt.Errorf("no Tool (bin) Name provided! URL was: %s", downloadURL)
+	}
+
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__tmp_download_dest__")
+	if err != nil {
+		return fmt.Errorf("failed to create tmp dir for download destination")
+	}
+	tmpDestinationPth := filepath.Join(tmpDir, toolBinName)
+
+	if err := DownloadFile(downloadURL, tmpDestinationPth); err != nil {
+		return fmt.Errorf("failed to download, error: %s", err)
 	}
 
 	bitriseToolsDirPath := configs.GetBitriseToolsDirPath()
 	destinationPth := filepath.Join(bitriseToolsDirPath, toolBinName)
 
-	if err := DownloadFile(downloadURL, destinationPth); err != nil {
-		return fmt.Errorf("Failed to download, error: %s", err)
+	if exist, err := pathutil.IsPathExists(destinationPth); err != nil {
+		return fmt.Errorf("failed to check if file exist (%s), error: %s", destinationPth, err)
+	} else if exist {
+		if err := os.Remove(destinationPth); err != nil {
+			return fmt.Errorf("failed to remove file (%s), error: %s", destinationPth, err)
+		}
+	}
+
+	if err := os.Rename(tmpDestinationPth, destinationPth); err != nil {
+		return fmt.Errorf("failed to copy (%s) to (%s), error: %s", tmpDestinationPth, destinationPth, err)
 	}
 
 	if err := os.Chmod(destinationPth, 0755); err != nil {
-		return fmt.Errorf("Failed to make file (%s) executable, error: %s", destinationPth, err)
+		return fmt.Errorf("failed to make file (%s) executable, error: %s", destinationPth, err)
 	}
 
 	return nil
