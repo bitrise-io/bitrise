@@ -45,6 +45,7 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 		if err := doSetupOnOSX(isFullSetupMode); err != nil {
 			return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
 		}
+	case "linux":
 	default:
 		return errors.New("unsupported platform :(")
 	}

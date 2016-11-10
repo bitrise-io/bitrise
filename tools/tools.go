@@ -102,6 +102,8 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 	bitriseToolsDirPath := configs.GetBitriseToolsDirPath()
 	destinationPth := filepath.Join(bitriseToolsDirPath, toolBinName)
 
+	// For replacing a running executable in linux, we need to rm (unlink) it first.
+	// http://stackoverflow.com/questions/1712033/replacing-a-running-executable-in-linux
 	if exist, err := pathutil.IsPathExists(destinationPth); err != nil {
 		return fmt.Errorf("failed to check if file exist (%s), error: %s", destinationPth, err)
 	} else if exist {
