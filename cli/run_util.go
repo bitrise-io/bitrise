@@ -170,7 +170,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 	}
 	if !isConfigVersionOK {
 		log.Warnf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s).", bitriseConfig.FormatVersion, models.Version)
-		return models.BitriseDataModel{}, warnings, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml!")
+		return models.BitriseDataModel{}, warnings, errors.New("This bitrise.yml was created with and for a newer version of bitrise CLI, please upgrade your bitrise CLI to use this bitrise.yml")
 	}
 
 	return bitriseConfig, warnings, nil
@@ -824,7 +824,7 @@ func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bi
 	for _, beforeWorkflowID := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowID]
 		if !exist {
-			return buildRunResults, fmt.Errorf("Specified Workflow (%s) does not exist!", beforeWorkflowID)
+			return buildRunResults, fmt.Errorf("Specified Workflow (%s) does not exist", beforeWorkflowID)
 		}
 		if beforeWorkflow.Title == "" {
 			beforeWorkflow.Title = beforeWorkflowID
@@ -843,7 +843,7 @@ func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bi
 	for _, afterWorkflowID := range workflow.AfterRun {
 		afterWorkflow, exist := bitriseConfig.Workflows[afterWorkflowID]
 		if !exist {
-			return buildRunResults, fmt.Errorf("Specified Workflow (%s) does not exist!", afterWorkflowID)
+			return buildRunResults, fmt.Errorf("Specified Workflow (%s) does not exist", afterWorkflowID)
 		}
 		if afterWorkflow.Title == "" {
 			afterWorkflow.Title = afterWorkflowID
@@ -883,7 +883,7 @@ func runWorkflowWithConfiguration(
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Specified Workflow (%s) does not exist!", workflowToRunID)
+		return models.BuildRunResultsModel{}, fmt.Errorf("Specified Workflow (%s) does not exist", workflowToRunID)
 	}
 
 	if workflowToRun.Title == "" {

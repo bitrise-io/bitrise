@@ -673,12 +673,12 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 // GetStepIDStepDataPair ...
 func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModels.StepModel, error) {
 	if len(stepListItem) > 1 {
-		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair!")
+		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair")
 	}
 	for key, value := range stepListItem {
 		return key, value, nil
 	}
-	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair!")
+	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
 }
 
 // CreateStepIDDataFromString ...
