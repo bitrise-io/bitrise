@@ -97,7 +97,7 @@ func auditStepLibBeforeSharePullRequest(gitURI string) error {
 	if exist, err := stepman.RootExistForCollection(gitURI); err != nil {
 		return err
 	} else if !exist {
-		return fmt.Errorf("Missing routing for collection, call 'stepman setup -c %s' before audit.", gitURI)
+		return fmt.Errorf("Missing routing for collection, call 'stepman setup -c %s' before audit", gitURI)
 	}
 
 	collection, err := stepman.ReadStepSpec(gitURI)

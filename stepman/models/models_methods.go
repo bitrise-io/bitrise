@@ -18,6 +18,8 @@ const (
 	DefaultIsRequiresAdminUser = false
 	// DefaultIsSkippable ...
 	DefaultIsSkippable = false
+	// DefaultTimeout ...
+	DefaultTimeout = 0
 )
 
 // CreateFromJSON ...
@@ -112,6 +114,10 @@ func (step StepModel) AuditBeforeShare() error {
 		return errors.New("Invalid step: missing or empty required 'website' property")
 	}
 
+	if step.Timeout != nil && *step.Timeout < 0 {
+		return errors.New("Invalid step: timeout less then 0")
+	}
+
 	if err := step.ValidateInputAndOutputEnvs(true); err != nil {
 		return err
 	}
@@ -166,6 +172,9 @@ func (step *StepModel) FillMissingDefaults() error {
 	}
 	if step.RunIf == nil {
 		step.RunIf = pointers.NewStringPtr("")
+	}
+	if step.Timeout == nil {
+		step.Timeout = pointers.NewIntPtr(DefaultTimeout)
 	}
 
 	for _, input := range step.Inputs {

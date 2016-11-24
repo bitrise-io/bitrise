@@ -24,44 +24,48 @@ func TestValidate(t *testing.T) {
 	require.Equal(t, nil, step.Audit())
 
 	step.Title = nil
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'title' property")
 
 	step.Title = new(string)
 	*step.Title = ""
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'title' property")
+	*step.Title = "title"
 
 	step.PublishedAt = nil
 	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'PublishedAt' property")
 	step.PublishedAt = new(time.Time)
 
 	*step.PublishedAt = time.Time{}
-	require.NotEqual(t, nil, step.Audit())
-
-	step.Description = nil
-	require.NotEqual(t, nil, step.Audit())
-	step.Description = new(string)
-
-	*step.Description = ""
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'PublishedAt' property")
+	step.PublishedAt = pointers.NewTimePtr(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	step.Website = nil
-	require.NotEqual(t, nil, step.Audit())
-	step.Website = new(string)
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'website' property")
 
+	step.Website = new(string)
 	*step.Website = ""
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'website' property")
+	*step.Website = "website"
 
 	step.Source.Git = ""
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'source.git' property")
+	step.Source.Git = "git"
 
 	step.Source.Git = "git@github.com:bitrise-io/bitrise.git"
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: step source should start with http:// or https://")
 
 	step.Source.Git = "https://github.com/bitrise-io/bitrise"
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: step source should end with .git")
+	step.Source.Git = "https://github.com/bitrise-io/bitrise.git"
 
 	step.Source.Commit = ""
-	require.NotEqual(t, nil, step.Audit())
+	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'source.commit' property")
+	step.Source.Commit = "1e1482141079fc12def64d88cb7825b8f1cb1dc3"
+
+	step.Timeout = new(int)
+	*step.Timeout = -1
+	require.EqualError(t, step.Audit(), "Invalid step: timeout less then 0")
 }
 
 func TestValidateStepInputOutputModel(t *testing.T) {
@@ -164,6 +168,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	}
 	if step.RunIf == nil || *step.RunIf != "" {
 		t.Fatal("RunIf missing")
+	}
+	if step.Timeout == nil || *step.Timeout != 0 {
+		t.Fatal("Timeout missing")
 	}
 }
 
