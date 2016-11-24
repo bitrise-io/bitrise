@@ -356,10 +356,10 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 	// it's not cached, so compile it
 
 	if step.Toolkit == nil {
-		return errors.New("No Toolkit information specified in step!")
+		return errors.New("No Toolkit information specified in step")
 	}
 	if step.Toolkit.Go == nil {
-		return errors.New("No Toolkit.Go information specified in step!")
+		return errors.New("No Toolkit.Go information specified in step")
 	}
 	packageName := step.Toolkit.Go.PackageName
 

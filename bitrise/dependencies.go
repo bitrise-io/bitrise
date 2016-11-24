@@ -259,7 +259,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	if !isVersionOk {
 		log.Warn("Installed "+toolname+" found, but not a supported version: ", verStr)
 		if !isInstall {
-			return errors.New("Failed to install required version.")
+			return errors.New("Failed to install required version")
 		}
 		log.Warn("Updating...")
 		return doInstall()
