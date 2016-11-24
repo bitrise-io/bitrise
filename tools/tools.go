@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/cmdex"
@@ -309,6 +311,37 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
 	args = append(args, cmd...)
 
 	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
+}
+
+// EnvmanRunWithTimeout ...
+func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdSlice []string, timeout int) (int, error) {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
+	args = append(args, cmdSlice...)
+
+	cmd := cmdex.NewCommand("envman", args...)
+	cmd.SetDir(workDirPth)
+	cmd.SetStdout(os.Stdout)
+	cmd.SetStderr(os.Stderr)
+
+	timedOut := false
+	if timeout > 0 {
+		timer := time.AfterFunc(time.Second*time.Duration(timeout), func() {
+			timedOut = true
+			if err := cmd.GetCmd().Process.Kill(); err != nil {
+				log.Errorf("Failed to kill process, error: %s", err)
+			}
+		})
+		defer timer.Stop()
+	}
+
+	exitCode, err := cmd.RunAndReturnExitCode()
+
+	if timedOut {
+		return exitCode, fmt.Errorf("Step run timed out")
+	}
+
+	return exitCode, err
 }
 
 // EnvmanJSONPrint ...
