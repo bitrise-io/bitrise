@@ -302,8 +302,6 @@ workflows:
     title: Godeps update
     description: |
       Used for updating bitrise dependencies with godep
-    before_run:
-    - _prepare-and-setup
     steps:
     - script:
         title: Dependency update

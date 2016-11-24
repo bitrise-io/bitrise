@@ -26,6 +26,12 @@ func NewCommand(name string, args ...string) *CommandModel {
 	}
 }
 
+// NewCommandWithStandardOuts - same as NewCommand, but sets the command's
+// stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
+func NewCommandWithStandardOuts(name string, args ...string) *CommandModel {
+	return NewCommand(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
+}
+
 // NewCommandFromSlice ...
 func NewCommandFromSlice(cmdSlice []string) (*CommandModel, error) {
 	if len(cmdSlice) == 0 {
@@ -104,6 +110,11 @@ func (command CommandModel) RunAndReturnTrimmedOutput() (string, error) {
 // RunAndReturnTrimmedCombinedOutput ...
 func (command CommandModel) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	return RunCmdAndReturnTrimmedCombinedOutput(command.cmd)
+}
+
+// PrintableCommandArgs ...
+func (command CommandModel) PrintableCommandArgs() string {
+	return PrintableCommandArgs(false, command.cmd.Args)
 }
 
 // ----------
