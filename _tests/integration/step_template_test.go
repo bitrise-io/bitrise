@@ -25,4 +25,12 @@ func Test_StepTemplate(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
+
+	t.Log("go toolkit step template test")
+	{
+		cmd := cmdex.NewCommand(binPath(), "run", "test", "--config", configPth)
+		cmd.SetDir("go_toolkit_step_template")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+	}
 }
