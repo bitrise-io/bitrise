@@ -1,0 +1,10 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  timeout:
+    steps:
+    - script:
+        timeout: 2
+        inputs:
+        - content: sleep 10
