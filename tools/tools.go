@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"time"
 
@@ -319,29 +321,42 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdSlice []string, tim
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdSlice...)
 
-	cmd := cmdex.NewCommand("envman", args...)
-	cmd.SetDir(workDirPth)
-	cmd.SetStdout(os.Stdout)
-	cmd.SetStderr(os.Stderr)
+	command := cmdex.NewCommand("envman", args...)
+	command.SetDir(workDirPth)
+	command.SetStdout(os.Stdout)
+	command.SetStderr(os.Stderr)
 
-	timedOut := false
+	cmd := command.GetCmd()
+
+	timer := new(time.Timer)
 	if timeout > 0 {
-		timer := time.AfterFunc(time.Second*time.Duration(timeout), func() {
-			timedOut = true
-			if err := cmd.GetCmd().Process.Kill(); err != nil {
+		timer = time.AfterFunc(time.Second*time.Duration(timeout), func() {
+			// kill the process group, to stop all child processes
+			pgid, err := syscall.Getpgid(cmd.Process.Pid)
+			if err != nil {
 				log.Errorf("Failed to kill process, error: %s", err)
 			}
+			syscall.Kill(-pgid, syscall.SIGKILL)
 		})
 		defer timer.Stop()
 	}
 
-	exitCode, err := cmd.RunAndReturnExitCode()
+	// create a new process group for our child processes
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	if timedOut {
-		return exitCode, fmt.Errorf("Step run timed out")
+	exit, err := command.RunAndReturnExitCode()
+	if timer != nil {
+		timer.Stop()
 	}
 
-	return exitCode, err
+	if err != nil {
+		if err.Error() == "signal: killed" {
+			return exit, errors.New("timeout")
+		}
+		return exit, err
+	}
+
+	return 0, nil
 }
 
 // EnvmanJSONPrint ...
