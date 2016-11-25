@@ -328,15 +328,16 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdSlice []string, tim
 
 	cmd := command.GetCmd()
 
-	timer := new(time.Timer)
+	var timer *time.Timer
 	if timeout > 0 {
 		timer = time.AfterFunc(time.Second*time.Duration(timeout), func() {
 			// kill the process group, to stop all child processes
 			pgid, err := syscall.Getpgid(cmd.Process.Pid)
 			if err != nil {
-				log.Errorf("Failed to kill process, error: %s", err)
+				log.Errorf("failed to get process group id, error: %s", err)
+			} else if err := syscall.Kill(-pgid, syscall.SIGKILL); err != nil {
+				log.Errorf("failed to kill process group, error: %s", err)
 			}
-			syscall.Kill(-pgid, syscall.SIGKILL)
 		})
 		defer timer.Stop()
 	}
