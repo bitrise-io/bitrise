@@ -466,17 +466,21 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	}
 
 	// Support URL
-	if content != "" {
-		content = fmt.Sprintf("%s\n%s", content, issueRow)
-	} else {
-		content = fmt.Sprintf("%s", issueRow)
+	if issueRow != "" {
+		if content != "" {
+			content = fmt.Sprintf("%s\n%s", content, issueRow)
+		} else {
+			content = fmt.Sprintf("%s", issueRow)
+		}
 	}
 
 	// Source Code URL
-	if content != "" {
-		content = fmt.Sprintf("%s\n%s", content, sourceRow)
-	} else {
-		content = fmt.Sprintf("%s", sourceRow)
+	if sourceRow != "" {
+		if content != "" {
+			content = fmt.Sprintf("%s\n%s", content, sourceRow)
+		} else {
+			content = fmt.Sprintf("%s", sourceRow)
+		}
 	}
 
 	// Deprecation
@@ -523,7 +527,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	fmt.Println(sep)
 	fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 	fmt.Println(sep)
-	if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" {
+	if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 		if footerSubSection != "" {
 			fmt.Println(footerSubSection)
@@ -568,7 +572,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 		fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
-		if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" {
+		if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 			if footerSubSection != "" {
 				fmt.Println(footerSubSection)
