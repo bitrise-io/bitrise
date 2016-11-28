@@ -137,6 +137,10 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 		}
 	}()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("non success status code (%d)", resp.StatusCode)
+	}
+
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to download from (%s), error: %s", sourceURL, err)
@@ -237,7 +241,7 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 
 	//
 	// Intsall plugin into bitrise
-	installSuccess := true
+	installSuccess := false
 
 	pluginDir := GetPluginDir(newPlugin.Name)
 
@@ -258,12 +262,10 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 	plginSrcDir := GetPluginSrcDir(newPlugin.Name)
 
 	if err := os.MkdirAll(plginSrcDir, 0777); err != nil {
-		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to create plugin src dir (%s), error: %s", plginSrcDir, err)
 	}
 
 	if err := cmdex.CopyDir(pluginSrcTmpDir, plginSrcDir, true); err != nil {
-		installSuccess = false
 		return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginSrcTmpDir, plginSrcDir, err)
 	}
 
@@ -272,7 +274,6 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 		// Install plugin bin
 		pluginBinTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-bin-tmp")
 		if err != nil {
-			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to create plugin bin temp directory, error: %s", err)
 		}
 		defer func() {
@@ -284,26 +285,22 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 		pluginBinTmpFilePath := filepath.Join(pluginBinTmpDir, newPlugin.Name)
 
 		if err := downloadPluginBin(executableURL, pluginBinTmpFilePath); err != nil {
-			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to download plugin executable from (%s), error: %s", executableURL, err)
 		}
 
 		plginBinDir := GetPluginBinDir(newPlugin.Name)
 
 		if err := os.MkdirAll(plginBinDir, 0777); err != nil {
-			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to create plugin bin dir (%s), error: %s", plginBinDir, err)
 		}
 
 		pluginBinFilePath := filepath.Join(plginBinDir, newPlugin.Name)
 
 		if err := cmdex.CopyFile(pluginBinTmpFilePath, pluginBinFilePath); err != nil {
-			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginBinTmpFilePath, pluginBinFilePath, err)
 		}
 
 		if err := os.Chmod(pluginBinFilePath, 0777); err != nil {
-			installSuccess = false
 			return Plugin{}, "", fmt.Errorf("failed to make plugin bin executable, error: %s", err)
 		}
 	}
@@ -328,6 +325,7 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 		newVersionStr = "local"
 	}
 
+	installSuccess = true
 	return newPlugin, newVersionStr, nil
 }
 
