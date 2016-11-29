@@ -42,12 +42,6 @@ var (
 			},
 		},
 		{
-			Name:    "init",
-			Aliases: []string{"i"},
-			Usage:   "Generates a Workflow/app config file in the current directory, which then can be run immediately.",
-			Action:  initConfig,
-		},
-		{
 			Name:   "version",
 			Usage:  "Prints the version",
 			Action: printVersionCmd,
