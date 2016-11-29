@@ -118,7 +118,7 @@ func create(c *cli.Context) error {
 	if err != nil {
 		log.Fatalf("Failed to get commit hash, err: %s", err)
 	}
-	stepModel.Source = models.StepSourceModel{
+	stepModel.Source = &models.StepSourceModel{
 		Git:    gitURI,
 		Commit: commit,
 	}

@@ -58,6 +58,10 @@ func download(c *cli.Context) error {
 		}
 	}
 
+	if step.Source == nil {
+		log.Fatalf("Missing step's (%s) Source property", id)
+	}
+
 	if err := stepman.DownloadStep(collectionURI, collection, id, version, step.Source.Commit); err != nil {
 		log.Fatal("[STEPMAN] - Failed to download step")
 	}

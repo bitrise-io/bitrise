@@ -74,6 +74,10 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 		return fmt.Errorf("Failed to create a temporary directory for the step's audit, error: %s", err)
 	}
 
+	if step.Source == nil {
+		return fmt.Errorf("Missing Source porperty")
+	}
+
 	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
 		return cmdex.GitCloneTag(step.Source.Git, pth, version)
 	})

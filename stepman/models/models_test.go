@@ -19,7 +19,7 @@ func Test_serialize_StepModel(t *testing.T) {
 		{
 			bytes, err := json.Marshal(step)
 			require.NoError(t, err)
-			require.Equal(t, `{"source":{},"deps":{}}`, string(bytes))
+			require.Equal(t, `{}`, string(bytes))
 		}
 
 		// YAML
@@ -50,7 +50,7 @@ func Test_serialize_StepModel(t *testing.T) {
 		{
 			bytes, err := json.Marshal(step)
 			require.NoError(t, err)
-			require.Equal(t, `{"title":"Test Step","source":{},"toolkit":{"bash":{"entry_file":"step.sh"},"go":{"package_name":"go/package"}},"deps":{}}`, string(bytes))
+			require.Equal(t, `{"title":"Test Step","toolkit":{"bash":{"entry_file":"step.sh"},"go":{"package_name":"go/package"}}}`, string(bytes))
 		}
 
 		// YAML

@@ -86,6 +86,10 @@ func activate(c *cli.Context) error {
 		log.Fatalf("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s)", id, version)
 	}
 
+	if step.Source == nil {
+		log.Fatal("Invalid step, missing Source property")
+	}
+
 	route, found := stepman.ReadRoute(collectionURI)
 	if !found {
 		log.Fatalf("No route found for lib: %s", collectionURI)

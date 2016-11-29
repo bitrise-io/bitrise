@@ -18,7 +18,7 @@ func TestValidateStepCommitHash(t *testing.T) {
 		Summary:     pointers.NewStringPtr("summary"),
 		Website:     pointers.NewStringPtr("website"),
 		PublishedAt: pointers.NewTimePtr(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)),
-		Source: models.StepSourceModel{
+		Source: &models.StepSourceModel{
 			Git:    "https://github.com/bitrise-io/steps-slack-message.git",
 			Commit: "756f39f76f94d525aaea2fc2d0c5a23799f8ec97",
 		},

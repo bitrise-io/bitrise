@@ -15,7 +15,7 @@ func TestValidate(t *testing.T) {
 		Summary:     pointers.NewStringPtr("summary"),
 		Website:     pointers.NewStringPtr("website"),
 		PublishedAt: pointers.NewTimePtr(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)),
-		Source: StepSourceModel{
+		Source: &StepSourceModel{
 			Git:    "https://github.com/bitrise-io/bitrise.git",
 			Commit: "1e1482141079fc12def64d88cb7825b8f1cb1dc3",
 		},
@@ -138,7 +138,7 @@ func TestFillMissingDefaults(t *testing.T) {
 	step := StepModel{
 		Title:   pointers.NewStringPtr(title),
 		Website: pointers.NewStringPtr(website),
-		Source: StepSourceModel{
+		Source: &StepSourceModel{
 			Git: git,
 		},
 		HostOsTags:      []string{"osx"},
@@ -182,7 +182,7 @@ func TestGetStep(t *testing.T) {
 		Description:   pointers.NewStringPtr("desc 1"),
 		Website:       pointers.NewStringPtr("web/1"),
 		SourceCodeURL: pointers.NewStringPtr("fork/1"),
-		Source: StepSourceModel{
+		Source: &StepSourceModel{
 			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
@@ -240,7 +240,7 @@ func TestGetDownloadLocations(t *testing.T) {
 		Description:   pointers.NewStringPtr("desc 1"),
 		Website:       pointers.NewStringPtr("web/1"),
 		SourceCodeURL: pointers.NewStringPtr("fork/1"),
-		Source: StepSourceModel{
+		Source: &StepSourceModel{
 			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
@@ -324,7 +324,7 @@ func TestGetLatestStepVersion(t *testing.T) {
 		Description:   pointers.NewStringPtr("desc 1"),
 		Website:       pointers.NewStringPtr("web/1"),
 		SourceCodeURL: pointers.NewStringPtr("fork/1"),
-		Source: StepSourceModel{
+		Source: &StepSourceModel{
 			Git: "https://git.url",
 		},
 		HostOsTags:          []string{"osx"},
