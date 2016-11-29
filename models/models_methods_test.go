@@ -774,8 +774,11 @@ func TestMergeEnvironmentWith(t *testing.T) {
 	t.Log("Normal merge")
 	{
 		env := envmanModels.EnvironmentItemModel{
-			"test_key":              "test_value",
-			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{},
+			"test_key": "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				SkipIfEmpty: pointers.NewBoolPtr(true),
+				Category:    pointers.NewStringPtr("test"),
+			},
 		}
 		require.NoError(t, MergeEnvironmentWith(&env, diffEnv))
 
@@ -793,6 +796,9 @@ func TestMergeEnvironmentWith(t *testing.T) {
 		require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
 		require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
 		require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
+
+		require.Equal(t, true, *options.SkipIfEmpty)
+		require.Equal(t, "test", *options.Category)
 	}
 }
 
@@ -846,6 +852,12 @@ func TestMergeStepWith(t *testing.T) {
 				"KEY_2": "Value 2 CHANGED",
 			},
 		},
+		Timeout: pointers.NewIntPtr(1),
+		Toolkit: &stepmanModels.StepToolkitModel{
+			Go: &stepmanModels.GoStepToolkitModel{
+				PackageName: "test",
+			},
+		},
 	}
 
 	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
@@ -860,6 +872,8 @@ func TestMergeStepWith(t *testing.T) {
 	require.Equal(t, "linux", mergedStepData.HostOsTags[0])
 	require.Equal(t, "", *mergedStepData.RunIf)
 	require.Equal(t, 1, len(mergedStepData.Dependencies))
+	require.Equal(t, "test", mergedStepData.Toolkit.Go.PackageName)
+	require.Equal(t, 1, *mergedStepData.Timeout)
 
 	dep := mergedStepData.Dependencies[0]
 	require.Equal(t, "brew", dep.Manager)
