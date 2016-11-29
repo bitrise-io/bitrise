@@ -613,7 +613,7 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.PublishedAt = pointers.NewTimePtr(*otherStep.PublishedAt)
 	}
 	if otherStep.Source != nil {
-		otherStep.Source = new(stepmanModels.StepSourceModel)
+		step.Source = new(stepmanModels.StepSourceModel)
 
 		if otherStep.Source.Git != "" {
 			step.Source.Git = otherStep.Source.Git
