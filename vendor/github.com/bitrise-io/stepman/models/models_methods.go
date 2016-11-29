@@ -134,6 +134,9 @@ func (step StepModel) Audit() error {
 	if step.PublishedAt == nil || (*step.PublishedAt).Equal(time.Time{}) {
 		return errors.New("Invalid step: missing or empty required 'PublishedAt' property")
 	}
+	if step.Source == nil {
+		return errors.New("Invalid step: missing or empty required 'Source' property")
+	}
 	if err := step.Source.validateSource(); err != nil {
 		return err
 	}
@@ -223,6 +226,10 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 	step, found := collection.GetStep(id, version)
 	if found == false {
 		return []DownloadLocationModel{}, fmt.Errorf("Collection (%s) doesn't contains step %s (%s)", collection.SteplibSource, id, version)
+	}
+
+	if step.Source == nil {
+		return []DownloadLocationModel{}, errors.New("Missing Source property")
 	}
 
 	locations := []DownloadLocationModel{}

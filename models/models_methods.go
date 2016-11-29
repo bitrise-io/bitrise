@@ -612,11 +612,15 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	if otherStep.PublishedAt != nil {
 		step.PublishedAt = pointers.NewTimePtr(*otherStep.PublishedAt)
 	}
-	if otherStep.Source.Git != "" {
-		step.Source.Git = otherStep.Source.Git
-	}
-	if otherStep.Source.Commit != "" {
-		step.Source.Commit = otherStep.Source.Commit
+	if otherStep.Source != nil {
+		step.Source = new(stepmanModels.StepSourceModel)
+
+		if otherStep.Source.Git != "" {
+			step.Source.Git = otherStep.Source.Git
+		}
+		if otherStep.Source.Commit != "" {
+			step.Source.Commit = otherStep.Source.Commit
+		}
 	}
 	if len(otherStep.AssetURLs) > 0 {
 		step.AssetURLs = otherStep.AssetURLs
@@ -638,7 +642,7 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.Toolkit = new(stepmanModels.StepToolkitModel)
 		*step.Toolkit = *otherStep.Toolkit
 	}
-	if len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0 || len(otherStep.Deps.CheckOnly) > 0 {
+	if otherStep.Deps != nil && (len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0 || len(otherStep.Deps.CheckOnly) > 0) {
 		step.Deps = otherStep.Deps
 	}
 	if otherStep.IsRequiresAdminUser != nil {

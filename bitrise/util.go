@@ -438,11 +438,13 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			workflowStep.SupportURL = nil
 		}
 		workflowStep.PublishedAt = nil
-		if workflowStep.Source.Git == specStep.Source.Git {
-			workflowStep.Source.Git = ""
-		}
-		if workflowStep.Source.Commit == specStep.Source.Commit {
-			workflowStep.Source.Commit = ""
+		if workflowStep.Source != nil && specStep.Source != nil {
+			if workflowStep.Source.Git == specStep.Source.Git {
+				workflowStep.Source.Git = ""
+			}
+			if workflowStep.Source.Commit == specStep.Source.Commit {
+				workflowStep.Source.Commit = ""
+			}
 		}
 		if isStringSliceWithSameElements(workflowStep.HostOsTags, specStep.HostOsTags) {
 			workflowStep.HostOsTags = []string{}

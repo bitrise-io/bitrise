@@ -66,8 +66,8 @@
 		},
 		{
 			"ImportPath": "github.com/bitrise-io/stepman/models",
-			"Comment": "0.9.25-1-gfd38d19",
-			"Rev": "fd38d19757312a34120e6f062a49663eceee726a"
+			"Comment": "0.9.25-2-g80f3ca5",
+			"Rev": "80f3ca5e2c2fe2f3604685a8ed6b974c3d2dd7cb"
 		},
 		{
 			"ImportPath": "github.com/bitrise-tools/gows/gows",

@@ -836,7 +836,7 @@ func TestMergeStepWith(t *testing.T) {
 	stepDiffToMerge := stepmanModels.StepModel{
 		Title:      pointers.NewStringPtr(diffTitle),
 		HostOsTags: []string{"linux"},
-		Source: stepmanModels.StepSourceModel{
+		Source: &stepmanModels.StepSourceModel{
 			Git: "https://git.url",
 		},
 		Dependencies: []stepmanModels.DependencyModel{
@@ -1306,8 +1306,8 @@ workflows:
 			require.Nil(t, step.SourceCodeURL)
 			require.Nil(t, step.SupportURL)
 			require.Nil(t, step.PublishedAt)
-			require.Equal(t, "", step.Source.Git)
-			require.Equal(t, "", step.Source.Commit)
+			require.Nil(t, step.Source)
+			require.Nil(t, step.Deps)
 			require.Equal(t, 0, len(step.HostOsTags))
 			require.Equal(t, 0, len(step.ProjectTypeTags))
 			require.Equal(t, 0, len(step.TypeTags))

@@ -258,7 +258,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
 
-	if len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0 {
+	if step.Deps != nil && (len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0) {
 		//
 		// New dependency handling
 		for _, checkOnlyDep := range step.Deps.CheckOnly {
