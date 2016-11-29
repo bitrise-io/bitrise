@@ -325,6 +325,7 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdSlice []string, tim
 	command.SetDir(workDirPth)
 	command.SetStdout(os.Stdout)
 	command.SetStderr(os.Stderr)
+	command.SetStdin(os.Stdin)
 
 	cmd := command.GetCmd()
 
