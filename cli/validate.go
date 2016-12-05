@@ -2,12 +2,13 @@ package cli
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	"os"
+
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
+	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -24,64 +25,133 @@ type ValidationModel struct {
 	Secrets *ValidationItemModel `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 }
 
-func printRawValidation(validation ValidationModel) error {
-	validConfig := true
-	if validation.Config != nil {
-		fmt.Println(colorstring.Blue("Config validation result:"))
-		configValidation := *validation.Config
-		if configValidation.IsValid {
-			fmt.Printf("is valid: %s\n", colorstring.Greenf("%v", configValidation.IsValid))
-		} else {
-			fmt.Printf("is valid: %s\n", colorstring.Redf("%v", configValidation.IsValid))
-			fmt.Printf("error: %s\n", colorstring.Red(configValidation.Error))
-
-			validConfig = false
-		}
-		fmt.Println()
-	}
-
-	validSecrets := true
-	if validation.Secrets != nil {
-		fmt.Println(colorstring.Blue("Secret validation result:"))
-		secretValidation := *validation.Secrets
-		if secretValidation.IsValid {
-			fmt.Printf("is valid: %s\n", colorstring.Greenf("%v", secretValidation.IsValid))
-		} else {
-			fmt.Printf("is valid: %s\n", colorstring.Redf("%v", secretValidation.IsValid))
-			fmt.Printf("error: %s\n", colorstring.Red(secretValidation.Error))
-
-			validSecrets = false
-		}
-	}
-
-	if !validConfig && !validSecrets {
-		return errors.New("Config and secrets are invalid")
-	} else if !validConfig {
-		return errors.New("Config is invalid")
-	} else if !validSecrets {
-		return errors.New("Secret is invalid")
-	}
-	return nil
+// ValidateResponseModel ...
+type ValidateResponseModel struct {
+	Data     *ValidationModel `json:"data,omitempty" yaml:"data,omitempty"`
+	Error    string           `json:"error,omitempty" yaml:"error,omitempty"`
+	Warnings []string         `json:"warnings,omitempty" yaml:"warnings,omitempty"`
 }
 
-func printJSONValidation(validation ValidationModel) {
-	bytes, err := json.Marshal(validation)
-	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to parse validation result, err: %s, result: %#v", err, validation), []string{}, output.FormatJSON)
+// NewValidationResponse ...
+func NewValidationResponse(validation ValidationModel, warnings ...string) ValidateResponseModel {
+	return ValidateResponseModel{
+		Data:     &validation,
+		Warnings: warnings,
+	}
+}
+
+// NewValidationError ...
+func NewValidationError(err string, warnings ...string) ValidateResponseModel {
+	return ValidateResponseModel{
+		Error:    err,
+		Warnings: warnings,
+	}
+}
+
+// IsValid ...
+func (v ValidationModel) IsValid() bool {
+	if v.Config == nil && v.Secrets == nil {
+		return false
 	}
 
-	fmt.Println(string(bytes))
+	if v.Config != nil && !v.Config.IsValid {
+		return false
+	}
+
+	if v.Secrets != nil && !v.Secrets.IsValid {
+		return false
+	}
+
+	return true
+}
+
+// JSON ...
+func (v ValidateResponseModel) JSON() string {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf(`"Failed to marshal validation result (%#v), err: %s"`, v, err)
+	}
+	return string(bytes)
+}
+
+func (v ValidateResponseModel) String() string {
+	if v.Error != "" {
+		msg := fmt.Sprintf("%s: %s", colorstring.Red("Error"), v.Error)
+		if len(v.Warnings) > 0 {
+			msg += "\nWarning(s):\n"
+			for i, warning := range v.Warnings {
+				msg += fmt.Sprintf("- %s", warning)
+				if i != len(v.Warnings)-1 {
+					msg += "\n"
+				}
+			}
+		}
+		return msg
+	}
+
+	if v.Data != nil {
+		msg := v.Data.String()
+		if len(v.Warnings) > 0 {
+			msg += "\nWarning(s):\n"
+			for i, warning := range v.Warnings {
+				msg += fmt.Sprintf("- %s", warning)
+				if i != len(v.Warnings)-1 {
+					msg += "\n"
+				}
+			}
+		}
+		return msg
+	}
+
+	return ""
+}
+
+// String ...
+func (v ValidationModel) String() string {
+	msg := ""
+
+	if v.Config != nil {
+		config := *v.Config
+		if config.IsValid {
+			msg += fmt.Sprintf("Config is valid: %s", colorstring.Greenf("%v", true))
+		} else {
+			msg += fmt.Sprintf("Config is valid: %s", colorstring.Redf("%v", false))
+			msg += fmt.Sprintf("\nError: %s", colorstring.Red(config.Error))
+		}
+
+		if len(config.Warnings) > 0 {
+			msg += "\nWarning(s):\n"
+			for i, warning := range config.Warnings {
+				msg += fmt.Sprintf("- %s", warning)
+				if i != len(config.Warnings)-1 {
+					msg += "\n"
+				}
+			}
+		}
+	}
+
+	if v.Secrets != nil {
+		if v.Config != nil {
+			msg += "\n"
+		}
+
+		secret := *v.Secrets
+		if secret.IsValid {
+			msg += fmt.Sprintf("Secret is valid: %s", colorstring.Greenf("%v", true))
+		} else {
+			msg += fmt.Sprintf("Secret is valid: %s", colorstring.Redf("%v", false))
+			msg += fmt.Sprintf("\nError: %s", colorstring.Red(secret.Error))
+		}
+	}
+
+	return msg
 }
 
 func validate(c *cli.Context) error {
 	warnings := []string{}
 
 	// Expand cli.Context
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
-
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-
 	bitriseConfigPath := c.String(ConfigKey)
 	deprecatedBitriseConfigPath := c.String(PathKey)
 	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
@@ -89,78 +159,78 @@ func validate(c *cli.Context) error {
 		bitriseConfigPath = deprecatedBitriseConfigPath
 	}
 
-	format := c.String(OuputFormatKey)
-	//
+	inventoryBase64Data := c.String(InventoryBase64Key)
+	inventoryPath := c.String(InventoryKey)
 
+	format := c.String(OuputFormatKey)
 	if format == "" {
 		format = output.FormatRaw
-	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	}
+	//
+
+	var log flog.Logger
+	log = flog.NewDefaultRawLogger()
+	if format == output.FormatRaw {
+		log = flog.NewDefaultRawLogger()
+	} else if format == output.FormatJSON {
+		log = flog.NewDefaultJSONLoger()
+	} else {
+		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format), warnings...))
+		os.Exit(1)
 	}
 
 	validation := ValidationModel{}
 
 	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && err.Error() != "No workflow yml found" {
-		registerFatal(fmt.Sprintf("Failed to get config path, err: %s", err), warnings, format)
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
+		os.Exit(1)
 	}
+
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
-		isValid := true
-		errMsg := ""
-
 		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
-		warnings = append(warnings, warns...)
+		configValidation := ValidationItemModel{
+			IsValid:  true,
+			Warnings: warns,
+		}
 		if err != nil {
-			isValid = false
-			errMsg = err.Error()
+			configValidation.IsValid = false
+			configValidation.Error = err.Error()
 		}
 
-		validation.Config = &ValidationItemModel{
-			IsValid:  isValid,
-			Error:    errMsg,
-			Warnings: warnings,
-		}
-	} else {
-		log.Debug("No config found for validation")
+		validation.Config = &configValidation
 	}
 
 	pth, err = GetInventoryFilePath(inventoryPath)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings, format)
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
+		os.Exit(1)
 	}
+
 	if pth != "" || inventoryBase64Data != "" {
 		// Inventory validation
-		isValid := true
-		errMsg := ""
-
 		_, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		secretValidation := ValidationItemModel{
+			IsValid: true,
+		}
 		if err != nil {
-			isValid = false
-			errMsg = err.Error()
+			secretValidation.IsValid = false
+			secretValidation.Error = err.Error()
 		}
 
-		validation.Secrets = &ValidationItemModel{
-			IsValid: isValid,
-			Error:   errMsg,
-		}
+		validation.Secrets = &secretValidation
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
-		registerFatal("No config or secrets found for validation", warnings, format)
+		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
+		os.Exit(1)
 	}
 
-	switch format {
-	case output.FormatRaw:
-		if err := printRawValidation(validation); err != nil {
-			registerFatal(fmt.Sprintf("Validation failed, err: %s", err), warnings, format)
-		}
-		break
-	case output.FormatJSON:
-		printJSONValidation(validation)
-		break
-	default:
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	log.Print(NewValidationResponse(validation, warnings...))
+
+	if !validation.IsValid() {
+		os.Exit(1)
 	}
 
 	return nil
