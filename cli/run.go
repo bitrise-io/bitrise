@@ -32,20 +32,11 @@ const (
 // Utility
 // --------------------
 
-func aboutUtilityWorkflows() {
-	log.Infoln("Note about utility workflows:")
-	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
-	log.Infoln(" these can't be triggered directly but can be used by other workflows")
-	log.Infoln(" in the before_run and after_run blocks.")
-}
-
-func printAboutUtilityWorkflows() {
-	log.Error("Utility workflows can't be triggered directly")
-	fmt.Println()
-	log.Infoln("Note about utility workflows:")
-	log.Infoln("Utility workflow names start with '_' (example: _my_utility_workflow),")
-	log.Infoln(" these can't be triggered directly but can be used by other workflows")
-	log.Infoln(" in the before_run and after_run blocks.")
+func printAboutUtilityWorkflowsText() {
+	fmt.Println("Note about utility workflows:")
+	fmt.Println(" Utility workflow names start with '_' (example: _my_utility_workflow).")
+	fmt.Println(" These workflows can't be triggered directly, but can be used by other workflows")
+	fmt.Println(" in the before_run and after_run lists.")
 }
 
 func printAvailableWorkflows(config models.BitriseDataModel) {
@@ -63,27 +54,28 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	sort.Strings(utilityWorkflowNames)
 
 	if len(workflowNames) > 0 {
-		log.Infoln("The following workflows are available:")
+		fmt.Println("The following workflows are available:")
 		for _, wfName := range workflowNames {
-			log.Infoln(" * " + wfName)
+			fmt.Println(" * " + wfName)
 		}
 
 		fmt.Println()
-		log.Infoln("You can run a selected workflow with:")
-		log.Infoln("-> bitrise run the-workflow-name")
+		fmt.Println("You can run a selected workflow with:")
+		fmt.Println("$ bitrise run WORKFLOW-ID")
 		fmt.Println()
 	} else {
-		log.Infoln("No workflows are available!")
+		fmt.Println("No workflows are available!")
 	}
 
 	if len(utilityWorkflowNames) > 0 {
-		log.Infoln("The following utility workflows also defined:")
+		fmt.Println()
+		fmt.Println("The following utility workflows are defined:")
 		for _, wfName := range utilityWorkflowNames {
-			log.Infoln(" * " + wfName)
+			fmt.Println(" * " + wfName)
 		}
 
 		fmt.Println()
-		aboutUtilityWorkflows()
+		printAboutUtilityWorkflowsText()
 		fmt.Println()
 	}
 }
@@ -179,13 +171,16 @@ func run(c *cli.Context) error {
 		// no workflow specified
 		//  list all the available ones and then exit
 		log.Error("No workfow specified!")
+		fmt.Println()
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
 	if strings.HasPrefix(runParams.WorkflowToRunID, "_") {
 		// util workflow specified
 		//  print about util workflows and then exit
-		printAboutUtilityWorkflows()
+		log.Error("Utility workflows can't be triggered directly")
+		fmt.Println()
+		printAboutUtilityWorkflowsText()
 		os.Exit(1)
 	}
 	//
