@@ -203,10 +203,16 @@ func (collection StepCollectionModel) IsStepExist(id, version string) bool {
 
 // GetStep ...
 func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bool) {
+	stepVer, isFound := collection.GetStepVersion(id, version)
+	return stepVer.Step, isFound
+}
+
+// GetStepVersion ...
+func (collection StepCollectionModel) GetStepVersion(id, version string) (StepVersionModel, bool) {
 	stepHash := collection.Steps
 	stepVersions, found := stepHash[id]
 	if !found {
-		return StepModel{}, false
+		return StepVersionModel{}, false
 	}
 
 	if version == "" {
@@ -215,10 +221,14 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 
 	step, found := stepVersions.Versions[version]
 	if !found {
-		return StepModel{}, false
+		return StepVersionModel{}, false
 	}
 
-	return step, true
+	return StepVersionModel{
+		Step:                   step,
+		Version:                version,
+		LatestAvailableVersion: stepVersions.LatestVersionNumber,
+	}, true
 }
 
 // GetDownloadLocations ...

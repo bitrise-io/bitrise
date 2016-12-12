@@ -147,11 +147,14 @@ func ParseBool(userInputStr string) (bool, error) {
 
 // AskForBoolFromReaderWithDefaultValue ...
 func AskForBoolFromReaderWithDefaultValue(messageToPrint string, defaultValue bool, inputReader io.Reader) (bool, error) {
-	defaultValueStr := "no"
-	if defaultValue {
-		defaultValueStr = "yes"
+	keywordYes := "yes"
+	keywordNo := "no"
+	if defaultValue == true {
+		keywordYes = "YES"
+	} else {
+		keywordNo = "NO"
 	}
-	fmt.Printf("%s [yes/no] [%s] : ", messageToPrint, defaultValueStr)
+	fmt.Printf("%s [%s/%s]: ", messageToPrint, keywordYes, keywordNo)
 
 	scanner := bufio.NewScanner(inputReader)
 	scannedText := ""

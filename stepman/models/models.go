@@ -111,6 +111,13 @@ type StepModel struct {
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
+// StepVersionModel ...
+type StepVersionModel struct {
+	Step                   StepModel
+	Version                string
+	LatestAvailableVersion string
+}
+
 // StepGroupInfoModel ...
 type StepGroupInfoModel struct {
 	RemovalDate    string            `json:"removal_date,omitempty" yaml:"removal_date,omitempty"`
@@ -123,6 +130,15 @@ type StepGroupModel struct {
 	Info                StepGroupInfoModel   `json:"info,omitempty" yaml:"info,omitempty"`
 	LatestVersionNumber string               `json:"latest_version_number,omitempty" yaml:"latest_version_number,omitempty"`
 	Versions            map[string]StepModel `json:"versions,omitempty" yaml:"versions,omitempty"`
+}
+
+// LatestVersion ...
+func (stepGroup StepGroupModel) LatestVersion() (StepModel, bool) {
+	step, found := stepGroup.Versions[stepGroup.LatestVersionNumber]
+	if !found {
+		return StepModel{}, false
+	}
+	return step, true
 }
 
 // StepHash ...

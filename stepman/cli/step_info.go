@@ -140,6 +140,43 @@ func printStepInfo(stepInfo models.StepInfoModel, format string, isShort, isLoca
 	return nil
 }
 
+// ReadStepInfo ...
+func ReadStepInfo(collectionURI, stepID, stepVersionID string, isSetupCollectionIfMissing, isSilentSetup bool) (models.StepVersionModel, error) {
+	// Input validation
+	if stepID == "" {
+		return models.StepVersionModel{}, errors.New("Missing required input: step id")
+	}
+
+	// Check if setup was done for collection
+	if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
+		return models.StepVersionModel{}, fmt.Errorf("Failed to check if setup was done for steplib (%s), error: %s", collectionURI, err)
+	} else if !exist {
+		if !isSetupCollectionIfMissing {
+			return models.StepVersionModel{}, fmt.Errorf("Collection does not exist (uri: %s), error: %s", collectionURI, err)
+		}
+
+		if err := setupSteplib(collectionURI, isSilentSetup); err != nil {
+			return models.StepVersionModel{}, errors.New("Failed to setup steplib")
+		}
+	}
+
+	// Check if step exist in collection
+	collection, err := stepman.ReadStepSpec(collectionURI)
+	if err != nil {
+		return models.StepVersionModel{}, fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
+	}
+
+	stepWithVersion, stepFound := collection.GetStepVersion(stepID, stepVersionID)
+	if !stepFound {
+		if stepVersionID == "" {
+			return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain any version of step (id:%s)", stepID)
+		}
+		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step (id:%s) (version:%s)", stepID, stepVersionID)
+	}
+
+	return stepWithVersion, nil
+}
+
 func stepInfo(c *cli.Context) error {
 	// Input validation
 	format := c.String(FormatKey)
@@ -192,42 +229,15 @@ func stepInfo(c *cli.Context) error {
 		//
 		// StepLib step info
 
-		// Input validation
-		if id == "" {
-			return errors.New("Missing required input: step id")
-		}
-
-		// Check if setup was done for collection
-		if exist, err := stepman.RootExistForCollection(collectionURI); err != nil {
-			return fmt.Errorf("Failed to check if setup was done for steplib (%s), error: %s", collectionURI, err)
-		} else if !exist {
-			if err := setupSteplib(collectionURI, format != OutputFormatRaw); err != nil {
-				return errors.New("Failed to setup steplib")
-			}
-		}
-
-		// Check if step exist in collection
-		collection, err := stepman.ReadStepSpec(collectionURI)
+		stepVersion, err := ReadStepInfo(collectionURI, id, version, true, format != OutputFormatRaw)
 		if err != nil {
-			return fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
-		}
-
-		step, stepFound := collection.GetStep(id, version)
-		if !stepFound {
-			if version == "" {
-				return fmt.Errorf("Collection doesn't contain any version of step (id:%s)", id)
-			}
-			return fmt.Errorf("Collection doesn't contain step (id:%s) (version:%s)", id, version)
-		}
-
-		latest, err := collection.GetLatestStepVersion(id)
-		if err != nil {
-			return fmt.Errorf("Failed to get latest version of step (id:%s)", id)
+			return fmt.Errorf("Failed to read Step information, error: %s", err)
 		}
 
 		if version == "" {
-			version = latest
+			version = stepVersion.Version
 		}
+		step := stepVersion.Step
 
 		inputs, err := getEnvInfos(step.Inputs)
 		if err != nil {
@@ -242,7 +252,7 @@ func stepInfo(c *cli.Context) error {
 		stepInfo := models.StepInfoModel{
 			ID:          id,
 			Version:     version,
-			Latest:      latest,
+			Latest:      stepVersion.LatestAvailableVersion,
 			Description: *step.Description,
 			StepLib:     collectionURI,
 			Source:      *step.SourceCodeURL,

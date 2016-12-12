@@ -6,21 +6,51 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
 
-func printRawStepList(stepList models.StepListModel, isShort bool) {
-	fmt.Println(colorstring.Bluef("Step in StepLib (%s):", stepList.StepLib))
-	for _, stepID := range stepList.Steps {
-		fmt.Printf("%s\n", stepID)
-	}
+func printRawStepList(stepLibURI string, stepLib models.StepCollectionModel, isShort bool) {
+	fmt.Println(colorstring.Bluef("Steps in StepLib (%s):", stepLibURI))
 	fmt.Println()
+	for stepID, stepGroupInfo := range stepLib.Steps {
+		if isShort {
+			// print only step IDs
+			fmt.Printf("%s\n", stepID)
+			continue
+		}
+
+		latestStepVerInfos, isFound := stepGroupInfo.LatestVersion()
+		if !isFound {
+			log.Errorf("No version found for step: %s", stepID)
+			continue
+		}
+		fmt.Printf(" * %s\n", pointers.String(latestStepVerInfos.Title))
+		fmt.Printf("   ID: %s\n", stepID)
+		fmt.Printf("   Latest Version: %s\n", stepGroupInfo.LatestVersionNumber)
+		summaryText := "no summary specified"
+		if latestStepVerInfos.Summary != nil {
+			stepSumText := *latestStepVerInfos.Summary
+			// stepSumText = strings.Replace(stepSumText, "\n", " ", -1)
+			summaryText = stringutil.IndentTextWithMaxLength(stepSumText, "            ", 130, false)
+		}
+		fmt.Printf("   Summary: %s\n", summaryText)
+		fmt.Println()
+	}
 	fmt.Println()
 }
 
-func printJSONStepList(stepList models.StepListModel, isShort bool) error {
+func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, isShort bool) error {
+	stepList := models.StepListModel{
+		StepLib: stepLibURI,
+	}
+	for stepID := range stepLib.Steps {
+		stepList.Steps = append(stepList.Steps, stepID)
+	}
+
 	bytes, err := json.Marshal(stepList)
 	if err != nil {
 		return err
@@ -45,20 +75,12 @@ func listSteps(stepLibURI, format string) error {
 		return err
 	}
 
-	// List
-	stepList := models.StepListModel{
-		StepLib: stepLibURI,
-	}
-	for stepID := range stepLib.Steps {
-		stepList.Steps = append(stepList.Steps, stepID)
-	}
-
 	switch format {
 	case OutputFormatRaw:
-		printRawStepList(stepList, false)
+		printRawStepList(stepLibURI, stepLib, false)
 		break
 	case OutputFormatJSON:
-		if err := printJSONStepList(stepList, false); err != nil {
+		if err := printJSONStepList(stepLibURI, stepLib, false); err != nil {
 			return err
 		}
 		break

@@ -315,7 +315,6 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 
 // ReadStepSpec ...
 func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
-
 	route, found := ReadRoute(uri)
 	if !found {
 		return models.StepCollectionModel{}, errors.New("No route found for lib: " + uri)
@@ -329,6 +328,7 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 	if err := json.Unmarshal(bytes, &stepLib); err != nil {
 		return models.StepCollectionModel{}, err
 	}
+
 	return stepLib, nil
 }
 
