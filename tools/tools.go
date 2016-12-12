@@ -2,7 +2,6 @@ package tools
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,9 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
-
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
@@ -313,52 +309,6 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
 	args = append(args, cmd...)
 
 	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
-}
-
-// EnvmanRunWithTimeout ...
-func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdSlice []string, timeout int) (int, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
-	args = append(args, cmdSlice...)
-
-	command := cmdex.NewCommand("envman", args...)
-	command.SetDir(workDirPth)
-	command.SetStdout(os.Stdout)
-	command.SetStderr(os.Stderr)
-	command.SetStdin(os.Stdin)
-
-	cmd := command.GetCmd()
-
-	var timer *time.Timer
-	if timeout > 0 {
-		timer = time.AfterFunc(time.Second*time.Duration(timeout), func() {
-			// kill the process group, to stop all child processes
-			pgid, err := syscall.Getpgid(cmd.Process.Pid)
-			if err != nil {
-				log.Errorf("failed to get process group id, error: %s", err)
-			} else if err := syscall.Kill(-pgid, syscall.SIGKILL); err != nil {
-				log.Errorf("failed to kill process group, error: %s", err)
-			}
-		})
-		defer timer.Stop()
-	}
-
-	// create a new process group for our child processes
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	exit, err := command.RunAndReturnExitCode()
-	if timer != nil {
-		timer.Stop()
-	}
-
-	if err != nil {
-		if err.Error() == "signal: killed" {
-			return exit, errors.New("timeout")
-		}
-		return exit, err
-	}
-
-	return 0, nil
 }
 
 // EnvmanJSONPrint ...
