@@ -6,8 +6,27 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* StepModel got a new property: `Timeout`. This new property prepares a feature step timeout handling. 
+* StepModel json and yml representation now ommits empty `Source` and `Deps` properties, intsead of printing empty struct for this values. 
+* `step-list` command revision, to easily get summary of steps in the specified steplib. 
+
+steplis item looks like:
+
+```
+ * STEP_TITLE
+   ID: STEP_ID
+   Latest Version: LATEST_VERSION
+   Summary: STEP_SUMMARY
+``` 
+
+for example:
+
+```
+ * Sign APK
+   ID: sign-apk
+   Latest Version: 1.1.1
+   Summary: Sign APK
+```
 
 ### Install or upgrade
 
