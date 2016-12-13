@@ -1,6 +1,53 @@
-## Changelog (Current version: 1.4.5)
+## Changelog (Current version: 1.5.0)
 
 -----------------
+
+## 1.5.0 (2016 Dec 13)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.4.5 -> 1.5.0
+
+* [a20102d] Krisztian Godrei - prepare for 1.5.0 (2016 Dec 13)
+* [8315903] Krisztián Gödrei - init (#460) (2016 Dec 13)
+* [5b38532] Krisztián Gödrei - Validate fix (#459) (2016 Dec 13)
+* [5fbb00c] Krisztián Gödrei - remove timeout (#458) (2016 Dec 12)
+* [6a7dc40] Krisztián Gödrei - version bump to 1.5.0, format version bump to 1.4.0 (#457) (2016 Dec 08)
+* [50e3241] Viktor Benei - don't print timestamp for workflow list (#455) (2016 Dec 07)
+* [d41571a] Viktor Benei - Go 1.7.4 (#452) (2016 Dec 07)
+* [ab98213] Viktor Benei - Update bitrise-yml-format-spec.md (2016 Dec 06)
+* [4b440cc] Viktor Benei - Feature/docs property ref docs (#456) (2016 Dec 06)
+* [21708e5] Krisztián Gödrei - version bump to 1.4.6-pre (#450) (2016 Nov 29)
+* [89dc8db] Krisztián Gödrei - Godeps update (#449) (2016 Nov 29)
+* [a0e962c] Krisztián Gödrei - Init (#447) (2016 Nov 29)
+* [22e93de] Krisztián Gödrei - Step timeout (#445) (2016 Nov 29)
+* [d6d19a3] Krisztián Gödrei - go-toolkit step template test (#446) (2016 Nov 29)
+* [14d74d0] Krisztián Gödrei - print update available if any (#448) (2016 Nov 29)
+* [0a6e522] Krisztián Gödrei - godeps update (#444) (2016 Nov 24)
+
 
 ## 1.4.5 (2016 Nov 10)
 
@@ -2419,4 +2466,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Nov 10
+Updated: 2016 Dec 13
