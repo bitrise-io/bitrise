@@ -31,6 +31,7 @@ const (
 
 var (
 	commands = []cli.Command{
+		initCmd,
 		{
 			Name:    "setup",
 			Aliases: []string{"s"},
