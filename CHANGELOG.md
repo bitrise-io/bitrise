@@ -6,8 +6,19 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* init command moved to a separate [plugin](https://github.com/bitrise-core/bitrise-plugins-init), this means you can initialize a new bitrise config by running `bitrise :init`, (previous `bitrise init` command also exists, but it calls the plugin).
+  
+  The new init plugin uses the [core](https://github.com/bitrise-core/bitrise-init) of the [Project Scanner step](https://github.com/bitrise-steplib/steps-project-scanner), which used by the [btrise.io](https://www.bitrise.io) website to add new app.
+
+  You can create a project type based init by running: `bitrise :init` or create a 'custom' configuration by calling `bitrise :init --minimal`.
+
+* bitrise now prints available step update, even if step does not fail
+* bitrise-cli docs are expanded with __bitrise.yml format specification / reference__
+* improvements on available workflows log
+* fixed `validate` command
+  - the validate command fails if bitrise config or bitrise secrets is empty
+  - fixed exit status if validate fails
+  - integration tests
 
 ### Install or upgrade
 
