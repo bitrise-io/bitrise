@@ -109,6 +109,88 @@ func Test_ValidateTestJSON(t *testing.T) {
 	}
 }
 
+func Test_SecretValidateTest(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, os.RemoveAll(tmpDir))
+	}()
+
+	t.Log("valid secret")
+	{
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", "global_flag_test_secrets.yml")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err)
+		require.Equal(t, "Secret is valid: \x1b[32;1mtrue\x1b[0m", out)
+	}
+
+	t.Log("invalid - empty secret")
+	{
+		secretsPth := filepath.Join(tmpDir, "secrets.yml")
+		require.NoError(t, fileutil.WriteStringToFile(secretsPth, emptySecret))
+
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mempty config\x1b[0m"
+		require.Equal(t, expected, out)
+	}
+
+	t.Log("invalid - invalid secret model")
+	{
+		secretsPth := filepath.Join(tmpDir, "secrets.yml")
+		require.NoError(t, fileutil.WriteStringToFile(secretsPth, invalidSecret))
+
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid invetory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsYMLModel\x1b[0m"
+		require.Equal(t, expected, out)
+	}
+}
+
+func Test_SecretValidateTestJSON(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, os.RemoveAll(tmpDir))
+	}()
+
+	t.Log("valid secret")
+	{
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", "global_flag_test_secrets.yml", "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err)
+		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
+	}
+
+	t.Log("invalid - empty config")
+	{
+		secretsPth := filepath.Join(tmpDir, "secrets.yml")
+		require.NoError(t, fileutil.WriteStringToFile(secretsPth, emptySecret))
+
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", secretsPth, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
+		require.Equal(t, expected, out)
+	}
+
+	t.Log("invalid - invalid secret model")
+	{
+		secretsPth := filepath.Join(tmpDir, "secrets.yml")
+		require.NoError(t, fileutil.WriteStringToFile(secretsPth, invalidSecret))
+
+		cmd := cmdex.NewCommand(binPath(), "validate", "-i", secretsPth, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid invetory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsYMLModel\"}}}"
+		require.Equal(t, expected, out)
+	}
+}
+
+const emptySecret = ""
+const invalidSecret = `- TEST: test`
 const emptyBitriseYML = ""
 const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git

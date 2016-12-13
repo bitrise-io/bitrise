@@ -21,6 +21,7 @@ import (
 	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/errorutil"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
@@ -224,7 +225,15 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 		}
 
 		if inventoryPath != "" {
-			var err error
+			bytes, err := fileutil.ReadBytesFromFile(inventoryPath)
+			if err != nil {
+				return []envmanModels.EnvironmentItemModel{}, err
+			}
+
+			if len(bytes) == 0 {
+				return []envmanModels.EnvironmentItemModel{}, errors.New("empty config")
+			}
+
 			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid invetory format: %s", err)

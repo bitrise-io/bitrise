@@ -50,6 +50,11 @@ func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemMode
 		return []envmanModels.EnvironmentItemModel{}, err
 	}
 
+	return CollectEnvironmentsFromFileContent(bytes)
+}
+
+// CollectEnvironmentsFromFileContent ...
+func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.EnvironmentItemModel, error) {
 	var envstore envmanModels.EnvsYMLModel
 	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
 		return []envmanModels.EnvironmentItemModel{}, err
