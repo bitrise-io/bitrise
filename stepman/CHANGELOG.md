@@ -2,6 +2,37 @@
 
 -----------------
 
+## 0.9.26 (2016 Dec 13)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.26/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.25 -> 0.9.26
+
+* [1318645] Krisztian Godrei - prepare for 0.9.26 (2016 Dec 13)
+* [df0ff3d] Viktor Benei - step info and step list revs (#222) (2016 Dec 12)
+* [80f3ca5] Krisztián Gödrei - omitt source and deps properties if empty (#221) (2016 Nov 29)
+* [fd38d19] Krisztián Gödrei - add timeout to step model (#220) (2016 Nov 24)
+
+
 ## 0.9.25 (2016 Oct 14)
 
 ### Release Notes
@@ -1130,4 +1161,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Oct 14
+Generated at: 2016 Dec 13
