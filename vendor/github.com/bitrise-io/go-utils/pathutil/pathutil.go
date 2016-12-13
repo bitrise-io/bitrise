@@ -74,7 +74,7 @@ func IsDirExists(pth string) (bool, error) {
 		return false, nil
 	}
 	if fileInf == nil {
-		return false, errors.New("No file info available.")
+		return false, errors.New("No file info available")
 	}
 	return fileInf.IsDir(), nil
 }

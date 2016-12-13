@@ -50,6 +50,11 @@ func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemMode
 		return []envmanModels.EnvironmentItemModel{}, err
 	}
 
+	return CollectEnvironmentsFromFileContent(bytes)
+}
+
+// CollectEnvironmentsFromFileContent ...
+func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.EnvironmentItemModel, error) {
 	var envstore envmanModels.EnvsYMLModel
 	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
 		return []envmanModels.EnvironmentItemModel{}, err
@@ -242,7 +247,6 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 
 // ReadBitriseConfig ...
 func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
-	log.Debugln("-> ReadBitriseConfig")
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
@@ -252,6 +256,10 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.BitriseDataModel{}, []string{}, err
+	}
+
+	if len(bytes) == 0 {
+		return models.BitriseDataModel{}, []string{}, errors.New("empty config")
 	}
 
 	if strings.HasSuffix(pth, ".json") {

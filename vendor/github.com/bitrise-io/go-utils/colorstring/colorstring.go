@@ -19,8 +19,16 @@ const (
 	resetColor   Color = "\x1b[0m"
 )
 
+// ColorFunc ...
+type ColorFunc func(a ...interface{}) string
+
 func addColor(color Color, msg string) string {
 	return string(color) + msg + string(resetColor)
+}
+
+// NoColor ...
+func NoColor(a ...interface{}) string {
+	return fmt.Sprint(a...)
 }
 
 // Black ...
@@ -56,6 +64,14 @@ func Magenta(a ...interface{}) string {
 // Cyan ...
 func Cyan(a ...interface{}) string {
 	return addColor(cyanColor, fmt.Sprint(a...))
+}
+
+// ColorfFunc ...
+type ColorfFunc func(format string, a ...interface{}) string
+
+// NoColorf ...
+func NoColorf(format string, a ...interface{}) string {
+	return NoColor(fmt.Sprintf(format, a...))
 }
 
 // Blackf ...
