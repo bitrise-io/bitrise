@@ -25,7 +25,7 @@ func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
 
 func validateEnv(key, value string, envList []models.EnvironmentItemModel) (string, error) {
 	if key == "" {
-		return "", errors.New("Key is not specified, required.")
+		return "", errors.New("Key is not specified, required")
 	}
 
 	configs, err := envman.GetConfigs()
