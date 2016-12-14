@@ -6,8 +6,7 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* `stepman` min version bumped to [0.9.26](https://github.com/bitrise-io/stepman/releases/tag/0.9.26)
 
 ### Install or upgrade
 
