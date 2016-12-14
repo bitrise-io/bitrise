@@ -223,6 +223,16 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
+// Normalize ...
+func (envsSerializeObj *EnvsSerializeModel) Normalize() error {
+	for _, envObj := range envsSerializeObj.Envs {
+		if err := envObj.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FillMissingDefaults ...
 func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	options, err := env.GetOptions()

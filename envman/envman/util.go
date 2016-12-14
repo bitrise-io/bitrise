@@ -121,18 +121,18 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	return nil
 }
 
-func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (models.EnvsYMLModel, error) {
+func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (models.EnvsSerializeModel, error) {
 	envMapSlice := []models.EnvironmentItemModel{}
 	for _, env := range envs {
 		err := removeDefaults(&env)
 		if err != nil {
-			return models.EnvsYMLModel{}, err
+			return models.EnvsSerializeModel{}, err
 		}
 
 		hasOptions := false
 		opts, err := env.GetOptions()
 		if err != nil {
-			return models.EnvsYMLModel{}, err
+			return models.EnvsSerializeModel{}, err
 		}
 
 		if opts.Title != nil {
@@ -170,7 +170,7 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 		envMapSlice = append(envMapSlice, env)
 	}
 
-	return models.EnvsYMLModel{
+	return models.EnvsSerializeModel{
 		Envs: envMapSlice,
 	}, nil
 }
@@ -212,7 +212,7 @@ func InitAtPath(pth string) error {
 
 // ParseEnvsYML ...
 func ParseEnvsYML(bytes []byte) ([]models.EnvironmentItemModel, error) {
-	var envsYML models.EnvsYMLModel
+	var envsYML models.EnvsSerializeModel
 	if err := yaml.Unmarshal(bytes, &envsYML); err != nil {
 		return []models.EnvironmentItemModel{}, err
 	}
