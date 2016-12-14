@@ -1,6 +1,40 @@
-## Changelog (Current version: 1.5.0)
+## Changelog (Current version: 1.5.1)
 
 -----------------
+
+## 1.5.1 (2016 Dec 14)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.1/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.0 -> 1.5.1
+
+* [dc2fd02] Krisztian Godrei - version fix (2016 Dec 14)
+* [27c566f] Krisztian Godrei - prepare for 1.5.1 (2016 Dec 14)
+* [ecdf381] Krisztián Gödrei - stepman version bump to 0.9.26 (#461) (2016 Dec 14)
+
 
 ## 1.5.0 (2016 Dec 13)
 
@@ -2477,4 +2511,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2016 Dec 13
+Updated: 2016 Dec 14
