@@ -14,6 +14,7 @@ import (
 
 func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
 	str := ""
+
 	if triggerItem.PushBranch != "" {
 		str = fmt.Sprintf("push_branch: %s", triggerItem.PushBranch)
 	}
@@ -27,9 +28,10 @@ func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
 			str += fmt.Sprintf("pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
 		}
 		if triggerItem.PullRequestTargetBranch != "" {
-			if str != "" {
+			if triggerItem.PullRequestSourceBranch != "" {
 				str += " && "
 			}
+
 			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 		}
 	}
@@ -413,7 +415,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		}
 
 		if !found {
-			return warnings, fmt.Errorf("workflow (%s) defined in trigger map (%s), but not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
 		}
 	}
 

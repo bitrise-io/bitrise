@@ -292,6 +292,27 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("workflow not exists")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: release
+
+workflows:
+  ci:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		_, err = config.Validate()
+		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but not exist")
+	}
+
 	t.Log("it validates deprecated trigger item")
 	{
 		item := TriggerMapItemModel{
