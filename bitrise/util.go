@@ -23,20 +23,20 @@ import (
 )
 
 // InventoryModelFromYAMLBytes ...
-func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsYMLModel, err error) {
+func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
 	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
 		return
 	}
 
 	for _, env := range inventory.Envs {
 		if err := env.Normalize(); err != nil {
-			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
 		}
 		if err := env.FillMissingDefaults(); err != nil {
-			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
 		}
 		if err := env.Validate(); err != nil {
-			return envmanModels.EnvsYMLModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
 		}
 	}
 
@@ -55,7 +55,7 @@ func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemMode
 
 // CollectEnvironmentsFromFileContent ...
 func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.EnvironmentItemModel, error) {
-	var envstore envmanModels.EnvsYMLModel
+	var envstore envmanModels.EnvsSerializeModel
 	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
 		return []envmanModels.EnvironmentItemModel{}, err
 	}
