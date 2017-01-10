@@ -13,6 +13,186 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
+	t.Log("duplicated push - error")
+	{
+		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				PushBranch: "master",
+				WorkflowID: "ci",
+			},
+			TriggerMapItemModel{
+				PushBranch: "master",
+				WorkflowID: "release",
+			},
+		})
+
+		require.EqualError(t, err, "duplicated trigger item found (push_branch: master)")
+	}
+
+	t.Log("duplicated pull request - error")
+	{
+		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				WorkflowID:              "ci",
+			},
+			TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				WorkflowID:              "release",
+			},
+		})
+
+		require.EqualError(t, err, "duplicated trigger item found (pull_request_source_branch: develop)")
+
+		err = checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "ci",
+			},
+			TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "release",
+			},
+		})
+
+		require.EqualError(t, err, "duplicated trigger item found (pull_request_target_branch: master)")
+
+		err = checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "ci",
+			},
+			TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "release",
+			},
+		})
+
+		require.EqualError(t, err, "duplicated trigger item found (pull_request_source_branch: develop && pull_request_target_branch: master)")
+	}
+
+	t.Log("duplicated tag - error")
+	{
+		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				Tag:        "0.9.0",
+				WorkflowID: "ci",
+			},
+			TriggerMapItemModel{
+				Tag:        "0.9.0",
+				WorkflowID: "release",
+			},
+		})
+
+		require.EqualError(t, err, "duplicated trigger item found (tag: 0.9.0)")
+	}
+
+	t.Log("complex trigger map - no error")
+	{
+		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+			TriggerMapItemModel{
+				PushBranch: "master",
+				WorkflowID: "ci",
+			},
+			TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "ci",
+			},
+			TriggerMapItemModel{
+				Tag:        "0.9.0",
+				WorkflowID: "release",
+			},
+		})
+
+		require.NoError(t, err)
+	}
+}
+
+func TestTriggerMapItemModelString(t *testing.T) {
+	t.Log("push event")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			WorkflowID: "ci",
+		}
+		require.Equal(t, "push_branch: master -> workflow: ci", item.String(true))
+		require.Equal(t, "push_branch: master", item.String(false))
+	}
+
+	t.Log("pull request event")
+	{
+		prSourceItem := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			WorkflowID:              "ci",
+		}
+		require.Equal(t, "pull_request_source_branch: develop -> workflow: ci", prSourceItem.String(true))
+		require.Equal(t, "pull_request_source_branch: develop", prSourceItem.String(false))
+
+		prTargetItem := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "ci",
+		}
+		require.Equal(t, "pull_request_target_branch: master -> workflow: ci", prTargetItem.String(true))
+		require.Equal(t, "pull_request_target_branch: master", prTargetItem.String(false))
+
+		prItem := TriggerMapItemModel{
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			WorkflowID:              "ci",
+		}
+		require.Equal(t, "pull_request_source_branch: develop && pull_request_target_branch: master -> workflow: ci", prItem.String(true))
+		require.Equal(t, "pull_request_source_branch: develop && pull_request_target_branch: master", prItem.String(false))
+	}
+
+	t.Log("tag event")
+	{
+		item := TriggerMapItemModel{
+			Tag:        "0.9.0",
+			WorkflowID: "release",
+		}
+		require.Equal(t, "tag: 0.9.0 -> workflow: release", item.String(true))
+		require.Equal(t, "tag: 0.9.0", item.String(false))
+	}
+
+	t.Log("deprecated type")
+	{
+		prNotAllowedItem := TriggerMapItemModel{
+			Pattern:              "master",
+			IsPullRequestAllowed: false,
+			WorkflowID:           "ci",
+		}
+		require.Equal(t, "pattern: master && is_pull_request_allowed: false -> workflow: ci", prNotAllowedItem.String(true))
+		require.Equal(t, "pattern: master && is_pull_request_allowed: false", prNotAllowedItem.String(false))
+
+		prAllowedItem := TriggerMapItemModel{
+			Pattern:              "master",
+			IsPullRequestAllowed: true,
+			WorkflowID:           "ci",
+		}
+		require.Equal(t, "pattern: master && is_pull_request_allowed: true -> workflow: ci", prAllowedItem.String(true))
+		require.Equal(t, "pattern: master && is_pull_request_allowed: true", prAllowedItem.String(false))
+	}
+
+	t.Log("mixed")
+	{
+		item := TriggerMapItemModel{
+			PushBranch:              "master",
+			PullRequestSourceBranch: "develop",
+			PullRequestTargetBranch: "master",
+			Tag:                  "0.9.0",
+			Pattern:              "*",
+			IsPullRequestAllowed: true,
+			WorkflowID:           "ci",
+		}
+		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci", item.String(true))
+		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true", item.String(false))
+	}
+}
+
 func TestTriggerEventType(t *testing.T) {
 	t.Log("it determins trigger event type")
 	{
@@ -112,6 +292,27 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("workflow not exists")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: release
+
+workflows:
+  ci:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		_, err = config.Validate()
+		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but not exist")
+	}
+
 	t.Log("it validates deprecated trigger item")
 	{
 		item := TriggerMapItemModel{

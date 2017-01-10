@@ -12,6 +12,53 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
+func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
+	str := ""
+
+	if triggerItem.PushBranch != "" {
+		str = fmt.Sprintf("push_branch: %s", triggerItem.PushBranch)
+	}
+
+	if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
+		if str != "" {
+			str += " "
+		}
+
+		if triggerItem.PullRequestSourceBranch != "" {
+			str += fmt.Sprintf("pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
+		}
+		if triggerItem.PullRequestTargetBranch != "" {
+			if triggerItem.PullRequestSourceBranch != "" {
+				str += " && "
+			}
+
+			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
+		}
+	}
+
+	if triggerItem.Tag != "" {
+		if str != "" {
+			str += " "
+		}
+
+		str += fmt.Sprintf("tag: %s", triggerItem.Tag)
+	}
+
+	if triggerItem.Pattern != "" {
+		if str != "" {
+			str += " "
+		}
+
+		str += fmt.Sprintf("pattern: %s && is_pull_request_allowed: %v", triggerItem.Pattern, triggerItem.IsPullRequestAllowed)
+	}
+
+	if printWorkflow {
+		str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
+	}
+
+	return str
+}
+
 func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag string) (TriggerEventType, error) {
 	if pushBranch != "" {
 		// Ensure not mixed with code-push event
@@ -279,7 +326,7 @@ func (triggerItem TriggerMapItemModel) Validate() error {
 	if triggerItem.Pattern == "" {
 		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 		if err != nil {
-			return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
+			return fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem.String(true), err)
 		}
 	} else if triggerItem.PushBranch != "" ||
 		triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" || triggerItem.Tag != "" {
@@ -300,11 +347,79 @@ func (triggerMap TriggerMapModel) Validate() error {
 	return nil
 }
 
+func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
+	triggeTypeItemMap := map[string][]TriggerMapItemModel{}
+
+	for _, triggerItem := range triggerMap {
+		if triggerItem.Pattern == "" {
+			triggerType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
+			if err != nil {
+				return fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem, err)
+			}
+
+			triggerItems := triggeTypeItemMap[string(triggerType)]
+
+			for _, item := range triggerItems {
+				switch triggerType {
+				case TriggerEventTypeCodePush:
+					if triggerItem.PushBranch == item.PushBranch {
+						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
+					}
+				case TriggerEventTypePullRequest:
+					if triggerItem.PullRequestSourceBranch == item.PullRequestSourceBranch &&
+						triggerItem.PullRequestTargetBranch == item.PullRequestTargetBranch {
+						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
+					}
+				case TriggerEventTypeTag:
+					if triggerItem.Tag == item.Tag {
+						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
+					}
+				}
+			}
+
+			triggerItems = append(triggerItems, triggerItem)
+			triggeTypeItemMap[string(triggerType)] = triggerItems
+		} else if triggerItem.Pattern != "" {
+			triggerItems := triggeTypeItemMap["deprecated"]
+
+			for _, item := range triggerItems {
+				if triggerItem.Pattern == item.Pattern &&
+					triggerItem.IsPullRequestAllowed == item.IsPullRequestAllowed {
+					return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
+				}
+			}
+
+			triggerItems = append(triggerItems, triggerItem)
+			triggeTypeItemMap["deprecated"] = triggerItems
+		}
+	}
+
+	return nil
+}
+
 // Validate ...
 func (config *BitriseDataModel) Validate() ([]string, error) {
 	warnings := []string{}
 
 	if err := config.TriggerMap.Validate(); err != nil {
+		return warnings, err
+	}
+
+	for _, triggerMapItem := range config.TriggerMap {
+		found := false
+
+		for workflowID := range config.Workflows {
+			if workflowID == triggerMapItem.WorkflowID {
+				found = true
+			}
+		}
+
+		if !found {
+			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+		}
+	}
+
+	if err := checkDuplicatedTriggerMapItems(config.TriggerMap); err != nil {
 		return warnings, err
 	}
 
