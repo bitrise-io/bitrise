@@ -12,14 +12,13 @@ app:
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
 trigger_map:
-- pattern: "/release"
-  is_pull_request_allowed: false
-  workflow: create_release
-- pattern: "/release/announce"
-  is_pull_request_allowed: false
-  workflow: announce_release
-- pattern: "*"
-  is_pull_request_allowed: true
+- push_branch: "/release"
+  workflow: create-release
+- push_branch: "/release/announce"
+  workflow: announce-release
+- push_branch: "*"
+  workflow: ci
+- pull_request_source_branch: "*"
   workflow: ci
 
 workflows:
