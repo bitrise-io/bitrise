@@ -9,7 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -76,7 +76,7 @@ func (routes SteplibRoutes) writeToFile() error {
 // CleanupRoute ...
 func CleanupRoute(route SteplibRoute) error {
 	pth := path.Join(GetCollectionsDirPath(), route.FolderAlias)
-	if err := cmdex.RemoveDir(pth); err != nil {
+	if err := command.RemoveDir(pth); err != nil {
 		return err
 	}
 	if err := RemoveRoute(route); err != nil {

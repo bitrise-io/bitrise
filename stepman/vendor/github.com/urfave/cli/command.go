@@ -87,10 +87,11 @@ func (c Command) Run(ctx *Context) (err error) {
 		)
 	}
 
-	set, err := flagSet(c.Name, c.Flags)
-	if err != nil {
-		return err
+	if ctx.App.EnableBashCompletion {
+		c.Flags = append(c.Flags, BashCompletionFlag)
 	}
+
+	set := flagSet(c.Name, c.Flags)
 	set.SetOutput(ioutil.Discard)
 
 	if c.SkipFlagParsing {
@@ -131,6 +132,18 @@ func (c Command) Run(ctx *Context) (err error) {
 		err = set.Parse(ctx.Args().Tail())
 	}
 
+	if err != nil {
+		if c.OnUsageError != nil {
+			err := c.OnUsageError(ctx, err, false)
+			HandleExitCoder(err)
+			return err
+		}
+		fmt.Fprintln(ctx.App.Writer, "Incorrect Usage.")
+		fmt.Fprintln(ctx.App.Writer)
+		ShowCommandHelp(ctx, c.Name)
+		return err
+	}
+
 	nerr := normalizeFlags(c.Flags, set)
 	if nerr != nil {
 		fmt.Fprintln(ctx.App.Writer, nerr)
@@ -140,20 +153,9 @@ func (c Command) Run(ctx *Context) (err error) {
 	}
 
 	context := NewContext(ctx.App, set, ctx)
+
 	if checkCommandCompletions(context, c.Name) {
 		return nil
-	}
-
-	if err != nil {
-		if c.OnUsageError != nil {
-			err := c.OnUsageError(ctx, err, false)
-			HandleExitCoder(err)
-			return err
-		}
-		fmt.Fprintln(ctx.App.Writer, "Incorrect Usage:", err.Error())
-		fmt.Fprintln(ctx.App.Writer)
-		ShowCommandHelp(ctx, c.Name)
-		return err
 	}
 
 	if checkCommandHelp(context, c.Name) {
@@ -183,10 +185,6 @@ func (c Command) Run(ctx *Context) (err error) {
 			HandleExitCoder(err)
 			return err
 		}
-	}
-
-	if c.Action == nil {
-		c.Action = helpSubcommand.Action
 	}
 
 	context.Command = c

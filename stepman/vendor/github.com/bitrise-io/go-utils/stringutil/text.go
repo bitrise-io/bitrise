@@ -7,7 +7,7 @@ import (
 )
 
 // IndentTextWithMaxLength ...
-func IndentTextWithMaxLength(text string, indent string, maxTextLineCharWidth int, isIndentFirstLine bool) string {
+func IndentTextWithMaxLength(text, indent string, maxTextLineCharWidth int, isIndentFirstLine bool) string {
 	if maxTextLineCharWidth < 1 {
 		return ""
 	}
@@ -16,13 +16,13 @@ func IndentTextWithMaxLength(text string, indent string, maxTextLineCharWidth in
 
 	addLine := func(line string) {
 		isFirstLine := (formattedText == "")
-		if !isFirstLine {
-			formattedText = formattedText + "\n"
-		}
 		if isFirstLine && !isIndentFirstLine {
 			formattedText = line
 		} else {
-			formattedText = formattedText + indent + line
+			if !isFirstLine {
+				formattedText += "\n"
+			}
+			formattedText += indent + line
 		}
 	}
 

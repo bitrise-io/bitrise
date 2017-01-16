@@ -7,8 +7,8 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
@@ -34,7 +34,7 @@ func (share ShareModel) ShareBranchName() string {
 
 // DeleteShareSteplibFile ...
 func DeleteShareSteplibFile() error {
-	return cmdex.RemoveDir(getShareFilePath())
+	return command.RemoveDir(getShareFilePath())
 }
 
 // ReadShareSteplibFromFile ...

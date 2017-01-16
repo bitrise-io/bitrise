@@ -12,7 +12,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
@@ -128,7 +128,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 		switch downloadLocation.Type {
 		case "zip":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return cmdex.DownloadAndUnZIP(downloadLocation.Src, stepPth)
+				return command.DownloadAndUnZIP(downloadLocation.Src, stepPth)
 			})
 
 			if err != nil {
@@ -139,7 +139,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return cmdex.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
+				return command.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
 			})
 
 			if err != nil {

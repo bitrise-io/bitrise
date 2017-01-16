@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -39,7 +39,7 @@ func finish(c *cli.Context) error {
 	}
 
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
-	if err := cmdex.GitCheckIsNoChanges(collectionDir); err == nil {
+	if err := command.GitCheckIsNoChanges(collectionDir); err == nil {
 		log.Warn("No git changes!")
 		printFinishShare()
 		return nil
@@ -48,18 +48,18 @@ func finish(c *cli.Context) error {
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
 	log.Info("New step.yml:", stepYMLPathInSteplib)
-	if err := cmdex.GitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
+	if err := command.GitAddFile(collectionDir, stepYMLPathInSteplib); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Do commit")
 	msg := share.StepID + " " + share.StepTag
-	if err := cmdex.GitCommit(collectionDir, msg); err != nil {
+	if err := command.GitCommit(collectionDir, msg); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Pushing to your fork: ", share.Collection)
-	if err := cmdex.GitPushToOrigin(collectionDir, share.ShareBranchName()); err != nil {
+	if err := command.GitPushToOrigin(collectionDir, share.ShareBranchName()); err != nil {
 		log.Fatal(err)
 	}
 	printFinishShare()

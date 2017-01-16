@@ -12,8 +12,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -99,7 +99,7 @@ func create(c *cli.Context) error {
 	}
 
 	log.Infof("Cloning Step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
-	if err := cmdex.GitCloneTag(gitURI, tmp, tag); err != nil {
+	if err := command.GitCloneTag(gitURI, tmp, tag); err != nil {
 		log.Fatalf("Git clone failed, err: %s", err)
 	}
 
@@ -114,7 +114,7 @@ func create(c *cli.Context) error {
 		log.Fatalf("Failed to unmarchal Step, err: %s", err)
 	}
 
-	commit, err := cmdex.GitGetCommitHashOfHEAD(tmp)
+	commit, err := command.GitGetCommitHashOfHEAD(tmp)
 	if err != nil {
 		log.Fatalf("Failed to get commit hash, err: %s", err)
 	}
@@ -169,8 +169,8 @@ func create(c *cli.Context) error {
 
 	log.Infof("Checkout branch: %s", share.ShareBranchName())
 	collectionDir := stepman.GetCollectionBaseDirPath(route)
-	if err := cmdex.GitCheckout(collectionDir, share.ShareBranchName()); err != nil {
-		if err := cmdex.GitCreateAndCheckoutBranch(collectionDir, share.ShareBranchName()); err != nil {
+	if err := command.GitCheckout(collectionDir, share.ShareBranchName()); err != nil {
+		if err := command.GitCreateAndCheckoutBranch(collectionDir, share.ShareBranchName()); err != nil {
 			log.Fatalf("Git failed to create and checkout branch, err: %s", err)
 		}
 	}

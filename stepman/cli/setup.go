@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/stepman/output"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -76,7 +76,7 @@ func setupSteplib(steplibURI string, silent bool) error {
 		if strings.HasPrefix(steplibURI, "file://") {
 			stepLibPth = strings.TrimPrefix(steplibURI, "file://")
 		}
-		if err := cmdex.CopyDir(stepLibPth, pth, true); err != nil {
+		if err := command.CopyDir(stepLibPth, pth, true); err != nil {
 			return fmt.Errorf("Failed to copy dir (%s) to (%s), error: %s", stepLibPth, pth, err)
 		}
 	}
@@ -135,7 +135,7 @@ func setup(c *cli.Context) error {
 		}
 
 		sourceSpecJSONPth := stepman.GetStepSpecPath(route)
-		if err := cmdex.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
+		if err := command.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
 			log.Fatalf("Failed to copy spec.json from (%s) to (%s), error: %s", sourceSpecJSONPth, copySpecJSONPath, err)
 		}
 	}

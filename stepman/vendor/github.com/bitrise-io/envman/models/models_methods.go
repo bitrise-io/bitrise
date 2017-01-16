@@ -223,6 +223,20 @@ func (env *EnvironmentItemModel) Normalize() error {
 	return nil
 }
 
+// Normalize - if successful this makes the model JSON serializable.
+// Without this, if the object was created with e.g. a YAML parser,
+// the type of `opts` might be map[interface]interface, which is not JSON serializable.
+// After this call it's ensured that the type of objects is map[string]interface,
+// which is JSON serializable.
+func (envsSerializeObj *EnvsSerializeModel) Normalize() error {
+	for _, envObj := range envsSerializeObj.Envs {
+		if err := envObj.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FillMissingDefaults ...
 func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	options, err := env.GetOptions()

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
@@ -48,7 +48,7 @@ func updateCollection(steplibSource string) (models.StepCollectionModel, error) 
 			if attempt > 0 {
 				log.Infoln("Retrying ...")
 			}
-			return cmdex.GitPull(pth)
+			return command.GitPull(pth)
 		})
 		if err != nil {
 			return models.StepCollectionModel{}, fmt.Errorf("Failed to update StepLib git repository, error: %s", err)
