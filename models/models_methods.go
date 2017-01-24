@@ -406,6 +406,10 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	for _, triggerMapItem := range config.TriggerMap {
+		if strings.HasPrefix(triggerMapItem.WorkflowID, "_") {
+			warnings = append(warnings, fmt.Sprintf("utility workflow (%s) can't be triggered directly", triggerMapItem.WorkflowID))
+		}
+
 		found := false
 
 		for workflowID := range config.Workflows {

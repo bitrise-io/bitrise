@@ -292,6 +292,28 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("utility workflow triggered - Warning")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: _deps-update
+
+workflows:
+  _deps-update:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		warnings, err := config.Validate()
+		require.NoError(t, err)
+		require.Equal(t, []string{"utility workflow (_deps-update) can't be triggered directly"}, warnings)
+	}
+
 	t.Log("workflow not exists")
 	{
 		configStr := `
