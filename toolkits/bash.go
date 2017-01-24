@@ -6,7 +6,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/stringutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -22,7 +22,7 @@ func (toolkit BashToolkit) Check() (bool, ToolkitCheckResult, error) {
 		return false, ToolkitCheckResult{}, fmt.Errorf("Failed to get bash binary path, error: %s", err)
 	}
 
-	verOut, err := cmdex.RunCommandAndReturnStdout("bash", "--version")
+	verOut, err := command.RunCommandAndReturnStdout("bash", "--version")
 	if err != nil {
 		return false, ToolkitCheckResult{}, fmt.Errorf("Failed to check bash version, error: %s", err)
 	}

@@ -11,7 +11,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -83,7 +83,7 @@ func clonePluginSrc(sourceURL, versionTag, destinationDir string) (*ver.Version,
 	if url.Scheme == "file" {
 		sourceDir := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
 
-		if err := cmdex.CopyDir(sourceDir, destinationDir, true); err != nil {
+		if err := command.CopyDir(sourceDir, destinationDir, true); err != nil {
 			return nil, "", fmt.Errorf("failed to copy (%s) to (%s), error: %s", sourceDir, destinationDir, err)
 		}
 
@@ -110,7 +110,7 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 	if url.Scheme == "file" {
 		src := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
 
-		if err := cmdex.CopyFile(src, destinationPth); err != nil {
+		if err := command.CopyFile(src, destinationPth); err != nil {
 			return fmt.Errorf("failed to copy (%s) to (%s)", src, destinationPth)
 		}
 		return nil
@@ -265,7 +265,7 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 		return Plugin{}, "", fmt.Errorf("failed to create plugin src dir (%s), error: %s", plginSrcDir, err)
 	}
 
-	if err := cmdex.CopyDir(pluginSrcTmpDir, plginSrcDir, true); err != nil {
+	if err := command.CopyDir(pluginSrcTmpDir, plginSrcDir, true); err != nil {
 		return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginSrcTmpDir, plginSrcDir, err)
 	}
 
@@ -296,7 +296,7 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 
 		pluginBinFilePath := filepath.Join(plginBinDir, newPlugin.Name)
 
-		if err := cmdex.CopyFile(pluginBinTmpFilePath, pluginBinFilePath); err != nil {
+		if err := command.CopyFile(pluginBinTmpFilePath, pluginBinFilePath); err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginBinTmpFilePath, pluginBinFilePath, err)
 		}
 

@@ -17,7 +17,7 @@
 			"Rev": "4b4be054a126fe6b1f26caddd8ef75fe58c30970"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/go-utils/cmdex",
+			"ImportPath": "github.com/bitrise-io/go-utils/command",
 			"Rev": "6d158a26258c099e22b13ec9222b104f17bf68f7"
 		},
 		{

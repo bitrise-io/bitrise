@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -33,11 +34,15 @@ func filterVersionTags(tagList []string) []*ver.Version {
 //=======================================
 
 func commitHashOfTag(cloneIntoDir, tag string) (string, error) {
-	return commandOutput(cloneIntoDir, "git", "show-ref", "--hash", tag)
+	cmd := command.New("git", "show-ref", "--hash", tag)
+	cmd.SetDir(cloneIntoDir)
+	return cmd.RunAndReturnTrimmedCombinedOutput()
 }
 
 func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
-	out, err := commandOutput(cloneIntoDir, "git", "ls-remote", "--tags")
+	cmd := command.New("git", "ls-remote", "--tags")
+	cmd.SetDir(cloneIntoDir)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return []string{}, err
 	}
@@ -70,23 +75,33 @@ func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
 }
 
 func gitInit(cloneIntoDir string) error {
-	return command(cloneIntoDir, "git", "init")
+	cmd := command.New("git", "init")
+	cmd.SetDir(cloneIntoDir)
+	return cmd.Run()
 }
 
 func gitAddRemote(cloneIntoDir, repositoryURL string) error {
-	return command(cloneIntoDir, "git", "remote", "add", "origin", repositoryURL)
+	cmd := command.New("git", "remote", "add", "origin", repositoryURL)
+	cmd.SetDir(cloneIntoDir)
+	return cmd.Run()
 }
 
 func gitFetch(cloneIntoDir string) error {
-	return command(cloneIntoDir, "git", "fetch")
+	cmd := command.New("git", "fetch")
+	cmd.SetDir(cloneIntoDir)
+	return cmd.Run()
 }
 
 func gitCheckout(cloneIntoDir, gitCheckoutParam string) error {
-	return command(cloneIntoDir, "git", "checkout", gitCheckoutParam)
+	cmd := command.New("git", "checkout", gitCheckoutParam)
+	cmd.SetDir(cloneIntoDir)
+	return cmd.Run()
 }
 
 func gitLog(cloneIntoDir, formatParam string) (string, error) {
-	return commandOutput(cloneIntoDir, "git", "log", "-1", "--format="+formatParam)
+	cmd := command.New("git", "log", "-1", "--format="+formatParam)
+	cmd.SetDir(cloneIntoDir)
+	return cmd.RunAndReturnTrimmedCombinedOutput()
 }
 
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {

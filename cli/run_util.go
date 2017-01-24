@@ -18,7 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -611,20 +611,20 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 
 			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 
-			if err := cmdex.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
+			if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
 
-			if err := cmdex.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
+			if err := command.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				if strings.HasPrefix(stepIDData.IDorURI, "git@") {
 					fmt.Println(colorstring.Yellow(`Note: if the step's repository is an open source one,`))
 					fmt.Println(colorstring.Yellow(`you should probably use a "https://..." git clone URL,`))
@@ -636,7 +636,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := cmdex.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
+			if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
@@ -652,7 +652,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue

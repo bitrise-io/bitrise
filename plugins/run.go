@@ -3,7 +3,6 @@ package plugins
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -52,29 +51,6 @@ func strip(str string) string {
 		}
 	}
 	return strippedStr
-}
-
-func commandOutput(dir, name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = nil
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	if dir != "" {
-		cmd.Dir = dir
-	}
-
-	outBytes, err := cmd.Output()
-	return strip(string(outBytes)), err
-}
-
-func command(dir, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = nil
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	cmd.Dir = dir
-
-	return cmd.Run()
 }
 
 //=======================================

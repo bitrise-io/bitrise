@@ -3,7 +3,7 @@ package integration
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +17,7 @@ func Test_JsonParams(t *testing.T) {
 			"workflow": "json_params_test_target",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "run", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "run", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -29,7 +29,7 @@ func Test_JsonParams(t *testing.T) {
 			"workflow": "exit_code_test_fail",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "run", "--json-params", toJSON(t, config), "--workflow", "json_params_test_target")
+		cmd := command.New(binPath(), "run", "--json-params", toJSON(t, config), "--workflow", "json_params_test_target")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -41,7 +41,7 @@ func Test_JsonParams(t *testing.T) {
 			"pattern": "json_params_test_target",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -53,7 +53,7 @@ func Test_JsonParams(t *testing.T) {
 			"pattern": "exit_code_test_fail",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger", "--json-params", toJSON(t, config), "--pattern", "json_params_test_target")
+		cmd := command.New(binPath(), "trigger", "--json-params", toJSON(t, config), "--pattern", "json_params_test_target")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -65,7 +65,7 @@ func Test_JsonParams(t *testing.T) {
 			"workflow": "json_params_test_target",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "run", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "run", "--json-params-base64", toBase64(t, toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -77,7 +77,7 @@ func Test_JsonParams(t *testing.T) {
 			"pattern": "json_params_test_target",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "trigger", "--json-params-base64", toBase64(t, toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -90,7 +90,7 @@ func Test_JsonParams(t *testing.T) {
 			"format":  "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pattern":"json_params_test_target","workflow":"json_params_test_target"}`, out)
@@ -104,7 +104,7 @@ func Test_JsonParams(t *testing.T) {
 			"format":  "raw",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config), "--format", "json")
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config), "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pattern":"json_params_test_target","workflow":"json_params_test_target"}`, out)

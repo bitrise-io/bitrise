@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
@@ -120,7 +120,7 @@ func CheckIsRubyGemsInstalled() error {
 		log.Warn("Once the installation of RubyGems is finished you should call the bitrise setup again.")
 		return err
 	}
-	verStr, err := cmdex.RunCommandAndReturnStdout("gem", "--version")
+	verStr, err := command.RunCommandAndReturnStdout("gem", "--version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -146,7 +146,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
-	verStr, err := cmdex.RunCommandAndReturnStdout("brew", "--version")
+	verStr, err := command.RunCommandAndReturnStdout("brew", "--version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -154,7 +154,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 
 	if isFullSetupMode {
 		// brew doctor
-		doctorOutput, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		doctorOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		if err != nil {
 			fmt.Println("")
 			log.Warn("brew doctor returned an error:")
@@ -170,7 +170,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 
 // PrintInstalledXcodeInfos ...
 func PrintInstalledXcodeInfos() error {
-	xcodeSelectPth, err := cmdex.RunCommandAndReturnStdout("xcode-select", "--print-path")
+	xcodeSelectPth, err := command.RunCommandAndReturnStdout("xcode-select", "--print-path")
 	if err != nil {
 		xcodeSelectPth = "xcode-select --print-path failed to detect the location of activate Xcode Command Line Tools path"
 	}
@@ -181,7 +181,7 @@ func PrintInstalledXcodeInfos() error {
 	}
 
 	isFullXcodeAvailable := false
-	verStr, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
+	verStr, err := command.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
 	if err != nil {
 		// No full Xcode available, only the Command Line Tools
 		// verStr is something like "xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance"
@@ -244,7 +244,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 		return doInstall()
 	}
-	verStr, err := cmdex.RunCommandAndReturnStdout(toolname, "-version")
+	verStr, err := command.RunCommandAndReturnStdout(toolname, "-version")
 	if err != nil {
 		log.Infoln("")
 		return errors.New("Failed to get version")
@@ -353,7 +353,7 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 	// Can be available from another source, not just from brew,
 	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
 	{
-		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", brewDep.GetBinaryName()); err != nil {
+		if out, err := command.RunCommandAndReturnCombinedStdoutAndStderr("which", brewDep.GetBinaryName()); err != nil {
 			if err.Error() == "exit status 1" && out == "" {
 				isDepInstalled = false
 			} else {
@@ -391,7 +391,7 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 		}
 
 		log.Infof("(%s) isn't installed, installing...", brewDep.Name)
-		if cmdOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
+		if cmdOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
 			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, cmdOut, err)
 			return err
 		}
@@ -408,7 +408,7 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 	// Can be available from another source, not just from brew,
 	// e.g. it's common to use NVM or similar to install and manage the Node.js version.
 	{
-		if out, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("which", aptGetDep.GetBinaryName()); err != nil {
+		if out, err := command.RunCommandAndReturnCombinedStdoutAndStderr("which", aptGetDep.GetBinaryName()); err != nil {
 			if err.Error() == "exit status 1" && out == "" {
 				isDepInstalled = false
 			} else {
@@ -446,7 +446,7 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 		}
 
 		log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
-		if cmdOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
+		if cmdOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
 			log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, cmdOut, err)
 			return err
 		}

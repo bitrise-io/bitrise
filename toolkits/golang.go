@@ -15,7 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
@@ -54,7 +54,7 @@ func checkGoConfiguration(goConfig GoConfigurationModel) (bool, ToolkitCheckResu
 	if len(goConfig.GOROOT) > 0 {
 		cmdEnvs = append(cmdEnvs, "GOROOT="+goConfig.GOROOT)
 	}
-	verOut, err := cmdex.NewCommand(goConfig.GoBinaryPath, "version").SetEnvs(cmdEnvs).RunAndReturnTrimmedOutput()
+	verOut, err := command.New(goConfig.GoBinaryPath, "version").SetEnvs(cmdEnvs...).RunAndReturnTrimmedOutput()
 	if err != nil {
 		return false, ToolkitCheckResult{}, fmt.Errorf("Failed to check go version, error: %s", err)
 	}
@@ -161,7 +161,7 @@ func (toolkit GoToolkit) IsToolAvailableInPATH() bool {
 		return false
 	}
 
-	if _, err := cmdex.RunCommandAndReturnStdout("go", "version"); err != nil {
+	if _, err := command.RunCommandAndReturnStdout("go", "version"); err != nil {
 		return false
 	}
 
@@ -200,7 +200,7 @@ func installGoTar(goTarGzPath string) error {
 		return fmt.Errorf("Failed create Go toolkit directory (path: %s), error: %s", installToPath, err)
 	}
 
-	cmd := cmdex.NewCommand("tar", "-C", installToPath, "-xzf", goTarGzPath)
+	cmd := command.New("tar", "-C", installToPath, "-xzf", goTarGzPath)
 	if combinedOut, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		log.Errorln(" [!] Failed to uncompress Go toolkit, output:")
 		log.Errorln(combinedOut)
