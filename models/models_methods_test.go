@@ -311,7 +311,7 @@ workflows:
 
 		warnings, err := config.Validate()
 		require.NoError(t, err)
-		require.Equal(t, []string{"utility workflow (_deps-update) can't be triggered directly"}, warnings)
+		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
 	}
 
 	t.Log("workflow not exists")
@@ -332,7 +332,7 @@ workflows:
 		require.NoError(t, err)
 
 		_, err = config.Validate()
-		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but not exist")
+		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but does not exist")
 	}
 
 	t.Log("it validates deprecated trigger item")
