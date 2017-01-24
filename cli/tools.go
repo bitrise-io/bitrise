@@ -1,8 +1,7 @@
 package cli
 
 import (
-	"log"
-
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/urfave/cli"
 )
