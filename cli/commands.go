@@ -275,5 +275,7 @@ var (
 				},
 			},
 		},
+		stepmanCommand,
+		envmanCommand,
 	}
 )
