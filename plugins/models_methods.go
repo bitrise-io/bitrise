@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
@@ -59,7 +59,7 @@ func (plugin Plugin) String() string {
 }
 
 func systemOsName() (string, error) {
-	osOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("uname", "-s")
+	osOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("uname", "-s")
 	if err != nil {
 		return "", err
 	}

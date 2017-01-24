@@ -3,7 +3,7 @@ package integration
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +18,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":  "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pattern":"deprecated_code_push","workflow":"deprecated_code_push"}`, out)
@@ -32,7 +32,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":  "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pattern":"deprecated_pr","workflow":"deprecated_pr"}`, out)
@@ -46,7 +46,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":      "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"push-branch":"code_push","workflow":"code_push"}`, out)
@@ -60,7 +60,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":      "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 	}
@@ -74,7 +74,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflow":"pr_source_and_target"}`, out)
@@ -89,7 +89,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 	}
@@ -103,7 +103,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "trigger-check", "--json-params-base64", toBase64(t, toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflow":"pr_source_and_target"}`, out)
@@ -118,7 +118,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target_only","workflow":"pr_target"}`, out)
@@ -133,7 +133,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := cmdex.NewCommand(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source_only","pr-target-branch":"pr_target","workflow":"pr_source"}`, out)

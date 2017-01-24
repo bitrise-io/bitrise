@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/hashicorp/go-version"
 )
 
@@ -13,7 +13,7 @@ func StepmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "--version"}
 
-	versionOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
 		return version.Version{}, err
 	}
@@ -33,7 +33,7 @@ func StepmanVersion() (version.Version, error) {
 func EnvmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--version"}
-	versionOut, err := cmdex.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
 	if err != nil {
 		return version.Version{}, err
 	}

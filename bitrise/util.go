@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -111,12 +111,12 @@ func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error 
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
 	stepYMLPth := filepath.Join(configs.BitriseWorkDirPath, "current_step.yml")
-	if err := cmdex.RemoveFile(stepYMLPth); err != nil {
+	if err := command.RemoveFile(stepYMLPth); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step yml: ", err))
 	}
 
 	stepDir := configs.BitriseWorkStepsDirPath
-	if err := cmdex.RemoveDir(stepDir); err != nil {
+	if err := command.RemoveDir(stepDir); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step work dir: ", err))
 	}
 	return nil
@@ -396,14 +396,14 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		if err != nil {
 			return err
 		}
-		if err := cmdex.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), tempStepYMLFilePath); err != nil {
+		if err := command.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), tempStepYMLFilePath); err != nil {
 			return err
 		}
 	} else if stepIDData.SteplibSource == "git" {
-		if err := cmdex.GitCloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
+		if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
 			return err
 		}
-		if err := cmdex.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
+		if err := command.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
 			return err
 		}
 	} else if stepIDData.SteplibSource == "_" {
@@ -600,10 +600,10 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 	}
 
 	// Cleanup
-	if err := cmdex.RemoveDir(tempStepCloneDirPath); err != nil {
+	if err := command.RemoveDir(tempStepCloneDirPath); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step clone dir: ", err))
 	}
-	if err := cmdex.RemoveDir(tempStepYMLDirPath); err != nil {
+	if err := command.RemoveDir(tempStepYMLDirPath); err != nil {
 		return errors.New(fmt.Sprint("Failed to remove step clone dir: ", err))
 	}
 

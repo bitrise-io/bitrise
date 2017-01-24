@@ -1,4 +1,4 @@
-package cmdex
+package command
 
 import (
 	"errors"
@@ -14,107 +14,107 @@ import (
 
 // ----------
 
-// CommandModel ...
-type CommandModel struct {
+// Model ...
+type Model struct {
 	cmd *exec.Cmd
 }
 
-// NewCommand ...
-func NewCommand(name string, args ...string) *CommandModel {
-	return &CommandModel{
+// New ...
+func New(name string, args ...string) *Model {
+	return &Model{
 		cmd: exec.Command(name, args...),
 	}
 }
 
-// NewCommandWithStandardOuts - same as NewCommand, but sets the command's
+// NewWithStandardOuts - same as NewCommand, but sets the command's
 // stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
-func NewCommandWithStandardOuts(name string, args ...string) *CommandModel {
-	return NewCommand(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
+func NewWithStandardOuts(name string, args ...string) *Model {
+	return New(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
 }
 
-// NewCommandFromSlice ...
-func NewCommandFromSlice(cmdSlice []string) (*CommandModel, error) {
-	if len(cmdSlice) == 0 {
+// NewFromSlice ...
+func NewFromSlice(slice ...string) (*Model, error) {
+	if len(slice) == 0 {
 		return nil, errors.New("no command provided")
-	} else if len(cmdSlice) == 1 {
-		return NewCommand(cmdSlice[0]), nil
+	} else if len(slice) == 1 {
+		return New(slice[0]), nil
 	}
 
-	return NewCommand(cmdSlice[0], cmdSlice[1:]...), nil
+	return New(slice[0], slice[1:]...), nil
 }
 
-// NewCommandWithCmd ...
-func NewCommandWithCmd(cmd *exec.Cmd) *CommandModel {
-	return &CommandModel{
+// NewWithCmd ...
+func NewWithCmd(cmd *exec.Cmd) *Model {
+	return &Model{
 		cmd: cmd,
 	}
 }
 
 // GetCmd ...
-func (command *CommandModel) GetCmd() *exec.Cmd {
-	return command.cmd
+func (m *Model) GetCmd() *exec.Cmd {
+	return m.cmd
 }
 
 // SetDir ...
-func (command *CommandModel) SetDir(dir string) *CommandModel {
-	command.cmd.Dir = dir
-	return command
+func (m *Model) SetDir(dir string) *Model {
+	m.cmd.Dir = dir
+	return m
 }
 
 // SetEnvs ...
-func (command *CommandModel) SetEnvs(envs []string) *CommandModel {
-	command.cmd.Env = envs
-	return command
+func (m *Model) SetEnvs(envs ...string) *Model {
+	m.cmd.Env = envs
+	return m
 }
 
 // AppendEnvs - appends the envs to the current os.Environ()
 // Calling this multiple times will NOT appens the envs one by one,
 // only the last "envs" set will be appended to os.Environ()!
-func (command *CommandModel) AppendEnvs(envs []string) *CommandModel {
-	return command.SetEnvs(append(os.Environ(), envs...))
+func (m *Model) AppendEnvs(envs ...string) *Model {
+	return m.SetEnvs(append(os.Environ(), envs...)...)
 }
 
 // SetStdin ...
-func (command *CommandModel) SetStdin(in io.Reader) *CommandModel {
-	command.cmd.Stdin = in
-	return command
+func (m *Model) SetStdin(in io.Reader) *Model {
+	m.cmd.Stdin = in
+	return m
 }
 
 // SetStdout ...
-func (command *CommandModel) SetStdout(out io.Writer) *CommandModel {
-	command.cmd.Stdout = out
-	return command
+func (m *Model) SetStdout(out io.Writer) *Model {
+	m.cmd.Stdout = out
+	return m
 }
 
 // SetStderr ...
-func (command *CommandModel) SetStderr(err io.Writer) *CommandModel {
-	command.cmd.Stderr = err
-	return command
+func (m *Model) SetStderr(err io.Writer) *Model {
+	m.cmd.Stderr = err
+	return m
 }
 
 // Run ...
-func (command CommandModel) Run() error {
-	return command.cmd.Run()
+func (m Model) Run() error {
+	return m.cmd.Run()
 }
 
 // RunAndReturnExitCode ...
-func (command CommandModel) RunAndReturnExitCode() (int, error) {
-	return RunCmdAndReturnExitCode(command.cmd)
+func (m Model) RunAndReturnExitCode() (int, error) {
+	return RunCmdAndReturnExitCode(m.cmd)
 }
 
 // RunAndReturnTrimmedOutput ...
-func (command CommandModel) RunAndReturnTrimmedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedOutput(command.cmd)
+func (m Model) RunAndReturnTrimmedOutput() (string, error) {
+	return RunCmdAndReturnTrimmedOutput(m.cmd)
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
-func (command CommandModel) RunAndReturnTrimmedCombinedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedCombinedOutput(command.cmd)
+func (m Model) RunAndReturnTrimmedCombinedOutput() (string, error) {
+	return RunCmdAndReturnTrimmedCombinedOutput(m.cmd)
 }
 
 // PrintableCommandArgs ...
-func (command CommandModel) PrintableCommandArgs() string {
-	return PrintableCommandArgs(false, command.cmd.Args)
+func (m Model) PrintableCommandArgs() string {
+	return PrintableCommandArgs(false, m.cmd.Args)
 }
 
 // ----------

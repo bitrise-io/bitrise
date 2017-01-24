@@ -13,7 +13,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -128,7 +128,7 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 func StepmanSetup(collection string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "setup", "--collection", collection}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanActivate ...
@@ -136,14 +136,14 @@ func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error 
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "activate", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanUpdate ...
 func StepmanUpdate(collection string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "update", "--collection", collection}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanRawStepLibStepInfo ...
@@ -151,14 +151,14 @@ func StepmanRawStepLibStepInfo(collection, stepID, stepVersion string) (string, 
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "raw"}
-	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanRawLocalStepInfo ...
 func StepmanRawLocalStepInfo(pth string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "raw"}
-	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepLibStepInfo ...
@@ -170,7 +170,7 @@ func StepmanJSONStepLibStepInfo(collection, stepID, stepVersion string) (string,
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
+	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -185,7 +185,7 @@ func StepmanJSONLocalStepInfo(pth string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
+	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -196,7 +196,7 @@ func StepmanJSONLocalStepInfo(pth string) (string, error) {
 func StepmanRawStepList(collection string) (string, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
-	return cmdex.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...
@@ -207,7 +207,7 @@ func StepmanJSONStepList(collection string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
+	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
@@ -221,35 +221,35 @@ func StepmanJSONStepList(collection string) (string, error) {
 func StepmanShare() error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "share", "--toolmode"}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareAudit ...
 func StepmanShareAudit() error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "share", "audit", "--toolmode"}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareFinish ...
 func StepmanShareFinish() error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "share", "finish", "--toolmode"}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareStart ...
 func StepmanShareStart(collection string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "share", "start", "--collection", collection, "--toolmode"}
-	return cmdex.RunCommand("stepman", args...)
+	return command.RunCommand("stepman", args...)
 }
 
 // ------------------
@@ -259,14 +259,14 @@ func StepmanShareStart(collection string) error {
 func EnvmanInit() error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "init"}
-	return cmdex.RunCommand("envman", args...)
+	return command.RunCommand("envman", args...)
 }
 
 // EnvmanInitAtPath ...
 func EnvmanInitAtPath(envstorePth string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "init", "--clear"}
-	return cmdex.RunCommand("envman", args...)
+	return command.RunCommand("envman", args...)
 }
 
 // EnvmanAdd ...
@@ -291,7 +291,7 @@ func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
 func EnvmanClear(envstorePth string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "clear"}
-	out, err := cmdex.NewCommand("envman", args...).RunAndReturnTrimmedCombinedOutput()
+	out, err := command.New("envman", args...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		errorMsg := err.Error()
 		if errorutil.IsExitStatusError(err) && out != "" {
@@ -308,7 +308,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmd...)
 
-	return cmdex.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
+	return command.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
 }
 
 // EnvmanJSONPrint ...
@@ -319,7 +319,7 @@ func EnvmanJSONPrint(envstorePth string) (string, error) {
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
 
-	if err := cmdex.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "envman", args...); err != nil {
+	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "envman", args...); err != nil {
 		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
 	}
 
