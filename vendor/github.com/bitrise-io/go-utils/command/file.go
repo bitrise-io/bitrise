@@ -1,4 +1,4 @@
-package cmdex
+package command
 
 import (
 	"os"
