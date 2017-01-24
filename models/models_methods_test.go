@@ -292,6 +292,28 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("utility workflow triggered - Warning")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: _deps-update
+
+workflows:
+  _deps-update:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		warnings, err := config.Validate()
+		require.NoError(t, err)
+		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
+	}
+
 	t.Log("workflow not exists")
 	{
 		configStr := `
@@ -310,7 +332,7 @@ workflows:
 		require.NoError(t, err)
 
 		_, err = config.Validate()
-		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but not exist")
+		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but does not exist")
 	}
 
 	t.Log("it validates deprecated trigger item")

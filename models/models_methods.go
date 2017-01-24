@@ -406,6 +406,10 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	for _, triggerMapItem := range config.TriggerMap {
+		if strings.HasPrefix(triggerMapItem.WorkflowID, "_") {
+			warnings = append(warnings, fmt.Sprintf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerMapItem.WorkflowID, triggerMapItem.String(true)))
+		}
+
 		found := false
 
 		for workflowID := range config.Workflows {
@@ -415,7 +419,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		}
 
 		if !found {
-			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
 		}
 	}
 
