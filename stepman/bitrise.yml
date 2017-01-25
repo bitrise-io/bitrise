@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - RELEASE_VERSION: 0.9.26
+  - RELEASE_VERSION: 0.9.27
   - BIN_NAME: stepman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
@@ -11,8 +11,9 @@ app:
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
 trigger_map:
-- pattern: '*'
-  is_pull_request_allowed: true
+- push_branch: "*"
+  workflow: ci
+- pull_request_source_branch: "*"
   workflow: ci
 
 workflows:
@@ -310,7 +311,7 @@ workflows:
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing
-  create_release:
+  create-release:
     title: Create Release version
     description: |-
         Creates new version with specified RELEASE_VERSION environment
@@ -319,7 +320,7 @@ workflows:
         2, Export RELEASE_VERSION
         3, Create binaries
     after_run:
-    - create_binaries
+    - create-binaries
     steps:
     - script:
         title: Create CHANGELOG and git release
@@ -351,7 +352,7 @@ workflows:
             You can find it at ${GITHUB_RELEASES_URL}
         - emoji: ':rocket:'
 
-  create_binaries:
+  create-binaries:
     title: Create binaries
     description: |
         Creates Linux and Darwin binaries
