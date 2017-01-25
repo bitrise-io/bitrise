@@ -2,6 +2,36 @@
 
 -----------------
 
+## 0.9.27 (2017 Jan 25)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.27/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.26 -> 0.9.27
+
+* [c03c13a] Krisztian Godrei - godeps update (2017 Jan 25)
+* [e649be4] Krisztian Godrei - prepare for 0.9.27 (2017 Jan 25)
+* [876ce6f] Krisztián Gödrei - print SteplibInfoModel in collections command (#223) (2017 Jan 16)
+
+
 ## 0.9.26 (2016 Dec 13)
 
 ### Release Notes
@@ -1180,4 +1210,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2016 Dec 13
+Generated at: 2017 Jan 25
