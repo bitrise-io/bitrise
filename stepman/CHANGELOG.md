@@ -6,8 +6,17 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+- `stepman collections` command now prints the collection's spec.json path as well:
+
+```
+https://github.com/bitrise-io/bitrise-steplib.git
+  spec_path: $HOME/.stepman/step_collections/1485356810/spec/spec.json
+```
+
+This update allows the [Workflow Editor](https://github.com/bitrise-io/bitrise-workflow-editor) to use local steplib spec through stepman, instead of custom logic.
+
+- Use the new command package ([go-utils/command](https://github.com/bitrise-io/go-utils/tree/master/command)) instead of previous version ([go-utils/cmdex](https://github.com/bitrise-io/go-utils/pull/44/files))
+
 
 ### Install or upgrade
 
