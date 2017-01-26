@@ -13,7 +13,7 @@ import (
 
 const (
 	minEnvmanVersion  = "1.1.3"
-	minStepmanVersion = "0.9.26"
+	minStepmanVersion = "0.9.27"
 )
 
 // PluginDependency ..
