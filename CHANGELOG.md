@@ -6,8 +6,14 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* use envman & stepman throught bitrise-cli
+
+bitrise-cli manages his envman and stepman dependencies internally, but you may want to use stepman or envman direct.  
+From now you can use `bitrise envman` to access envman commands or `bitrise stepman` to stepman's.
+
+* `bitrise validate` now warns you if your trigger item would trigger utility workflow (_utility workflow's workflow id starts with underscore (`_`) character_)
+
+* stepman min version bumped to: [0.9.27](https://github.com/bitrise-io/stepman/releases/tag/0.9.27)
 
 ### Install or upgrade
 
