@@ -1,6 +1,43 @@
-## Changelog (Current version: 1.5.2)
+## Changelog (Current version: 1.5.3)
 
 -----------------
+
+## 1.5.3 (2017 Jan 26)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.3/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.2 -> 1.5.3
+
+* [5e48e55] Krisztian Godrei - prepare for 1.5.3 (2017 Jan 26)
+* [f528276] Krisztián Gödrei - prepare for 1.5.3, min stepman version bumped to 0.9.27 (#468) (2017 Jan 26)
+* [74cc0f6] Krisztián Gödrei - logrus instead of log package (#467) (2017 Jan 24)
+* [576ed57] Krisztián Gödrei - trigger utility workflow (#466) (2017 Jan 24)
+* [8f832e7] Krisztián Gödrei - use envman & stepman throught bitrise-cli (#464) (2017 Jan 24)
+* [d45c6e6] Krisztián Gödrei - godeps update (#465) (2017 Jan 24)
+
 
 ## 1.5.2 (2017 Jan 10)
 
@@ -2547,4 +2584,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Jan 10
+Updated: 2017 Jan 26
