@@ -3,13 +3,11 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/stepman/output"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -25,73 +23,6 @@ func gitClone(uri, pth string) (string, error) {
 	command := exec.Command("git", "clone", "--recursive", uri, pth)
 	bytes, err := command.CombinedOutput()
 	return string(bytes), err
-}
-
-func setupSteplib(steplibURI string, silent bool) error {
-	logger := output.NewLogger(silent)
-
-	if exist, err := stepman.RootExistForCollection(steplibURI); err != nil {
-		return fmt.Errorf("Failed to check if routing exist for steplib (%s), error: %s", steplibURI, err)
-	} else if exist {
-
-		logger.Debugf("Steplib (%s) already initialized, ready to use", steplibURI)
-		return nil
-	}
-
-	alias := stepman.GenerateFolderAlias()
-	route := stepman.SteplibRoute{
-		SteplibURI:  steplibURI,
-		FolderAlias: alias,
-	}
-
-	// Cleanup
-	isSuccess := false
-	defer func() {
-		if !isSuccess {
-			if err := stepman.CleanupRoute(route); err != nil {
-				logger.Errorf("Failed to cleanup routing for steplib (%s), error: %s", steplibURI, err)
-			}
-		}
-	}()
-
-	// Setup
-	isLocalSteplib := strings.HasPrefix(steplibURI, "file://")
-
-	pth := stepman.GetCollectionBaseDirPath(route)
-	if !isLocalSteplib {
-		if out, err := gitClone(steplibURI, pth); err != nil {
-			return fmt.Errorf("Failed to setup steplib (%s), output: %s, error: %s", steplibURI, out, err)
-		}
-	} else {
-		// Local spec path
-		logger.Warn("Using local steplib")
-		logger.Infof("Creating steplib dir: %s", pth)
-
-		if err := os.MkdirAll(pth, 0777); err != nil {
-			return fmt.Errorf("Failed to create steplib dir (%s), error: %s", pth, err)
-		}
-
-		logger.Info("Collection dir created - OK")
-		stepLibPth := steplibURI
-		if strings.HasPrefix(steplibURI, "file://") {
-			stepLibPth = strings.TrimPrefix(steplibURI, "file://")
-		}
-		if err := command.CopyDir(stepLibPth, pth, true); err != nil {
-			return fmt.Errorf("Failed to copy dir (%s) to (%s), error: %s", stepLibPth, pth, err)
-		}
-	}
-
-	if err := stepman.ReGenerateStepSpec(route); err != nil {
-		return fmt.Errorf("Failed to re-generate steplib (%s), error: %s", steplibURI, err)
-	}
-
-	if err := stepman.AddRoute(route); err != nil {
-		return fmt.Errorf("Failed to setup routing: %s", err)
-	}
-
-	isSuccess = true
-
-	return nil
 }
 
 func setup(c *cli.Context) error {
@@ -121,7 +52,7 @@ func setup(c *cli.Context) error {
 	}
 
 	// Setup
-	if err := setupSteplib(steplibURI, false); err != nil {
+	if err := stepman.SetupLibrary(steplibURI); err != nil {
 		log.Fatalf("Setup failed, error: %s", err)
 	}
 

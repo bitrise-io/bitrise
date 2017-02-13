@@ -46,7 +46,7 @@ func download(c *cli.Context) error {
 	if !found {
 		if update {
 			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating collection", id, version)
-			if err := stepman.ReGenerateStepSpec(route); err != nil {
+			if err := stepman.ReGenerateLibrarySpec(route); err != nil {
 				log.Fatalf("[STEPMAN] - Failed to update collection:%s error:%v", collectionURI, err)
 			}
 

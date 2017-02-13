@@ -53,7 +53,7 @@ func activate(c *cli.Context) error {
 			log.Infof("[STEPMAN] - Collection doesn't contain step (id:%s) (version:%s) -- Updating StepLib", id, version)
 		}
 
-		collection, err = updateCollection(collectionURI)
+		collection, err = stepman.UpdateLibrary(collectionURI)
 		if err != nil {
 			log.Fatalf("Failed to update collection (%s), err: %s", collectionURI, err)
 		}

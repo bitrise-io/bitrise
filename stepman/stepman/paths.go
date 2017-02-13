@@ -85,8 +85,8 @@ func CleanupRoute(route SteplibRoute) error {
 	return nil
 }
 
-// CleanupDanglingLib ...
-func CleanupDanglingLib(URI string) error {
+// CleanupDanglingLibrary ...
+func CleanupDanglingLibrary(URI string) error {
 	route := SteplibRoute{
 		SteplibURI:  URI,
 		FolderAlias: "",
@@ -94,8 +94,8 @@ func CleanupDanglingLib(URI string) error {
 	return RemoveRoute(route)
 }
 
-// RootExistForCollection ...
-func RootExistForCollection(collectionURI string) (bool, error) {
+// RootExistForLibrary ...
+func RootExistForLibrary(collectionURI string) (bool, error) {
 	routes, err := readRouteMap()
 	if err != nil {
 		return false, err
@@ -200,8 +200,8 @@ func GetCacheBaseDir(route SteplibRoute) string {
 	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "cache")
 }
 
-// GetCollectionBaseDirPath ...
-func GetCollectionBaseDirPath(route SteplibRoute) string {
+// GetLibraryBaseDirPath ...
+func GetLibraryBaseDirPath(route SteplibRoute) string {
 	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "collection")
 }
 
@@ -229,13 +229,13 @@ func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
 
 // GetStepGlobalInfoPath ...
 func GetStepGlobalInfoPath(route SteplibRoute, id string) string {
-	return path.Join(GetCollectionBaseDirPath(route), "steps", id, "step-info.yml")
+	return path.Join(GetLibraryBaseDirPath(route), "steps", id, "step-info.yml")
 }
 
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
 func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
-	return path.Join(GetCollectionBaseDirPath(route), "steps", id, version)
+	return path.Join(GetLibraryBaseDirPath(route), "steps", id, version)
 }
 
 // GetStepmanDirPath ...

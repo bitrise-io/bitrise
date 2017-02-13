@@ -37,9 +37,6 @@ func before(c *cli.Context) error {
 		return err
 	}
 
-	// Debug mode
-	stepman.DebugMode = c.Bool(DebugKey)
-
 	return nil
 }
 

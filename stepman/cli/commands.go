@@ -54,19 +54,7 @@ var (
 				flFormat,
 			},
 		},
-		{
-			Name:   "step-info",
-			Usage:  "Provides information (step ID, last version, given version) about specified step.",
-			Action: stepInfo,
-			Flags: []cli.Flag{
-				flCollection,
-				flID,
-				flVersion,
-				flFormat,
-				flShort,
-				flStepYML,
-			},
-		},
+		stepInfoCommand,
 		{
 			Name:   "download",
 			Usage:  "Download the step with provided --id and --version, from specified --collection, into local step downloads cache. If no --version defined, the latest version of the step (latest found in the collection) will be downloaded into the cache.",

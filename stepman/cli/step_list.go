@@ -62,10 +62,10 @@ func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, is
 
 func listSteps(stepLibURI, format string) error {
 	// Check if setup was done for collection
-	if exist, err := stepman.RootExistForCollection(stepLibURI); err != nil {
+	if exist, err := stepman.RootExistForLibrary(stepLibURI); err != nil {
 		return err
 	} else if !exist {
-		if err := setupSteplib(stepLibURI, format != OutputFormatRaw); err != nil {
+		if err := stepman.SetupLibrary(stepLibURI); err != nil {
 			log.Fatal("Failed to setup steplib")
 		}
 	}

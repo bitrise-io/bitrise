@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/urlutil"
@@ -22,32 +23,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// DebugMode ...
-var DebugMode bool
-
-// ParseGlobalStepInfoYML ...
-func ParseGlobalStepInfoYML(pth string) (models.GlobalStepInfoModel, bool, error) {
+// ParseStepGroupInfoModel ...
+func ParseStepGroupInfoModel(pth string) (models.StepGroupInfoModel, bool, error) {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return models.GlobalStepInfoModel{}, false, err
+		return models.StepGroupInfoModel{}, false, err
 	} else if !exist {
-		return models.GlobalStepInfoModel{}, false, nil
+		return models.StepGroupInfoModel{}, false, nil
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
-		return models.GlobalStepInfoModel{}, true, err
+		return models.StepGroupInfoModel{}, true, err
 	}
 
-	var globalStepInfo models.GlobalStepInfoModel
+	var globalStepInfo models.StepGroupInfoModel
 	if err := yaml.Unmarshal(bytes, &globalStepInfo); err != nil {
-		return models.GlobalStepInfoModel{}, true, err
+		return models.StepGroupInfoModel{}, true, err
 	}
 
 	return globalStepInfo, true, nil
 }
 
-// ParseStepYml ...
-func ParseStepYml(pth string, validate bool) (models.StepModel, error) {
+// ParseStepDefinition ...
+func ParseStepDefinition(pth string, validate bool) (models.StepModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
 		return models.StepModel{}, err
@@ -132,14 +130,14 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			})
 
 			if err != nil {
-				log.Warn("Failed to download step.zip: ", err)
+				log.Warnf("Failed to download step.zip: ", err)
 			} else {
 				success = true
 				return nil
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return command.GitCloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
+				return git.CloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
 			})
 
 			if err != nil {
@@ -186,8 +184,8 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 
 	stepHash := models.StepHash{}
 
-	stepsSpecDirPth := GetCollectionBaseDirPath(route)
-	err := filepath.Walk(stepsSpecDirPth, func(pth string, f os.FileInfo, err error) error {
+	stepsSpecDirPth := GetLibraryBaseDirPath(route)
+	if err := filepath.Walk(stepsSpecDirPth, func(pth string, f os.FileInfo, err error) error {
 		truncatedPath := strings.Replace(pth, stepsSpecDirPth+"/", "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
 		if matchErr != nil {
@@ -201,7 +199,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 				stepID := components[1]
 				stepVersion := components[2]
 
-				step, parseErr := ParseStepYml(pth, true)
+				step, parseErr := ParseStepDefinition(pth, true)
 				if parseErr != nil {
 					return parseErr
 				}
@@ -272,12 +270,12 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 		}
 
 		return err
-	})
-	if err != nil {
-		log.Error("Failed to walk through path:", err)
-		return models.StepCollectionModel{}, err
+	}); err != nil {
+		return models.StepCollectionModel{}, fmt.Errorf("Failed to walk through path, error: %s", err)
 	}
+
 	collection.Steps = stepHash
+
 	return collection, nil
 }
 
@@ -286,7 +284,6 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 	pth := GetStepSpecPath(route)
 
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		log.Error("Failed to check path:", err)
 		return err
 	} else if !exist {
 		dir, _ := path.Split(pth)
@@ -332,9 +329,33 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 	return stepLib, nil
 }
 
-// ReGenerateStepSpec ...
-func ReGenerateStepSpec(route SteplibRoute) error {
-	pth := GetCollectionBaseDirPath(route)
+// ReadStepVersionInfo ...
+func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.StepVersionModel, error) {
+	// Input validation
+	if stepID == "" {
+		return models.StepVersionModel{}, errors.New("Missing required input: step id")
+	}
+
+	// Check if step exist in collection
+	collection, err := ReadStepSpec(collectionURI)
+	if err != nil {
+		return models.StepVersionModel{}, fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
+	}
+
+	stepWithVersion, stepFound := collection.GetStepVersion(stepID, stepVersionID)
+	if !stepFound {
+		if stepVersionID == "" {
+			return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain any version of step (id:%s)", stepID)
+		}
+		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step (id:%s) (version:%s)", stepID, stepVersionID)
+	}
+
+	return stepWithVersion, nil
+}
+
+// ReGenerateLibrarySpec ...
+func ReGenerateLibrarySpec(route SteplibRoute) error {
+	pth := GetLibraryBaseDirPath(route)
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {

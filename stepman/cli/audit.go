@@ -7,7 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
@@ -16,7 +16,7 @@ import (
 )
 
 func auditStepBeforeShare(pth string) error {
-	stepModel, err := stepman.ParseStepYml(pth, false)
+	stepModel, err := stepman.ParseStepDefinition(pth, false)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func auditStepBeforeSharePullRequest(pth string) error {
 		return err
 	}
 
-	stepModel, err := stepman.ParseStepYml(pth, false)
+	stepModel, err := stepman.ParseStepDefinition(pth, false)
 	if err != nil {
 		return err
 	}
@@ -79,14 +79,14 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 	}
 
 	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-		return command.GitCloneTag(step.Source.Git, pth, version)
+		return git.CloneTagOrBranch(step.Source.Git, pth, version)
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to git-clone the step (url: %s) version (%s), error: %s",
 			step.Source.Git, version, err)
 	}
 
-	latestCommit, err := command.GitGetLatestCommitHashOnHead(pth)
+	latestCommit, err := git.GetCommitHashOfHead(pth)
 	if err != nil {
 		return fmt.Errorf("Failed to get git-latest-commit-hash, error: %s", err)
 	}
@@ -98,7 +98,7 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 }
 
 func auditStepLibBeforeSharePullRequest(gitURI string) error {
-	if exist, err := stepman.RootExistForCollection(gitURI); err != nil {
+	if exist, err := stepman.RootExistForLibrary(gitURI); err != nil {
 		return err
 	} else if !exist {
 		return fmt.Errorf("Missing routing for collection, call 'stepman setup -c %s' before audit", gitURI)

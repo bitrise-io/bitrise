@@ -97,11 +97,11 @@ func export(c *cli.Context) error {
 	log.Infof("Exporting StepLib (%s) spec, export-type: %s, output: %s", steplibURI, exportTypeStr, outputPth)
 
 	// Setup StepLib
-	if exist, err := stepman.RootExistForCollection(steplibURI); err != nil {
+	if exist, err := stepman.RootExistForLibrary(steplibURI); err != nil {
 		return fmt.Errorf("Failed to check if setup was done for StepLib, error: %s", err)
 	} else if !exist {
 		log.Infof("StepLib does not exist, setup...")
-		if err := setupSteplib(steplibURI, false); err != nil {
+		if err := stepman.SetupLibrary(steplibURI); err != nil {
 			return fmt.Errorf("Failed to setup StepLib, error: %s", err)
 		}
 	}

@@ -65,6 +65,32 @@ workflows:
             # Go lint
             go get -u github.com/golang/lint/golint
 
+  integration-test:
+    steps:
+    - script:
+        title: Go build
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            # build the new stepman
+            current_dir=$(pwd)
+            current_stepman=$current_dir/_tmp/ci-bin
+            go build -o $current_stepman
+
+            envman add --key CURRENT_STEPMAN --value $current_stepman
+    - script:
+        title: Run integration tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Running integration tests ..."
+            set -ex
+
+            export INTEGRATION_TEST_BINARY_PATH="$CURRENT_STEPMAN"
+            go test ./_tests/integration/...
+
   test:
     title: Stepman test
     description: |-
@@ -72,6 +98,8 @@ workflows:
       2, Go Lint
       3, Go Test
       4, Integration tests
+    after_run:
+    - integration-test
     steps:
     - script:
         title: Print infos for the test
@@ -81,16 +109,12 @@ workflows:
             go version
             echo $GO15VENDOREXPERIMENT
     - script:
-        title: Go list without vendor
+        title: Export go files to test
         inputs:
         - content: |-
             set -ex
             no_vendor_paths="$(go list ./... | grep -v vendor)"
             envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
-    - script:
-        title: Go Test
-        inputs:
-        - content: go test ./...
     - script:
         title: Err check
         inputs:
@@ -111,203 +135,9 @@ workflows:
               fi
             done <<< "$GOLIST_WITHOUT_VENDOR"
     - script:
-        title: Go build
+        title: Go Test
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            # build the new stepman
-            current_dir=$(pwd)
-            current_stepman=$current_dir/_tmp/ci-bin
-            go build -o $current_stepman
-
-            envman add --key CURRENT_STEPMAN --value $current_stepman
-    - script:
-        title: Exit code test
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -x
-
-            # default setup - desired exit code: 0
-            $CURRENT_STEPMAN setup --collection https://github.com/bitrise-io/bitrise-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # latest version - desired exit code: 0
-            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # latest version, json format - desired exit code: 0
-            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --format json
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # invalid version -1 - desired exit code: NOT 0
-            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --version -1
-            if [ $? -eq 0 ] ; then
-              exit 1
-            fi
-
-            # invalid version -1, json format - desired exit code: NOT 0
-            $CURRENT_STEPMAN step-info --collection https://github.com/bitrise-io/bitrise-steplib.git --id script --version -1 --format json
-            if [ $? -eq 0 ] ; then
-              exit 1
-            fi
-    - script:
-        title: Cleanup test StepLib
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -ex
-            rm -rf "_tmp/steplib"
-    - git-clone:
-        title: Git clone test StepLib
-        run_if: true
-        inputs:
-        - repository_url: https://github.com/bitrise-io/bitrise-steplib.git
-        - commit: ""
-        - tag: ""
-        - branch: master
-        - pull_request_id: ""
-        - clone_into_dir: _tmp/steplib
-        - auth_ssh_private_key: ""
-        - clone_depth: ""
-    - script:
-        title: Setup test
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -x
-
-            # Cleanup remote StepLib
-            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Setup remote StepLib
-            $CURRENT_STEPMAN setup -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Cleanup remote StepLib
-            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            echo
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c _tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Setup local StepLib - deprecated --local flag
-            $CURRENT_STEPMAN setup --local -c _tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            echo
-
-            # Setup local StepLib - deprecated --local flag && file:// prefix
-            $CURRENT_STEPMAN setup --local -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            echo
-
-            # Setup local StepLib - with file:// prefix
-            $CURRENT_STEPMAN setup -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-    - script:
-        title: Update test
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -x
-
-            # Cleanup remote StepLib
-            $CURRENT_STEPMAN delete -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Setup remote StepLib
-            $CURRENT_STEPMAN setup -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Update remote StepLib
-            $CURRENT_STEPMAN update -c https://github.com/bitrise-samples/sample-steplib.git
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            echo
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Setup local StepLib - with file:// prefix
-            $CURRENT_STEPMAN setup -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Update local StepLib - fail - missing file:// prefix
-            $CURRENT_STEPMAN update -c _tmp/steplib
-            if [ $? -eq 0 ] ; then
-              exit 1
-            fi
-
-            echo
-
-            # Update local StepLib - success
-            $CURRENT_STEPMAN update -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
-
-            # Cleanup local StepLib
-            $CURRENT_STEPMAN delete -c file://_tmp/steplib
-            if [ $? -ne 0 ] ; then
-              exit 1
-            fi
+        - content: go test ./...
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing

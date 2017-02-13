@@ -88,13 +88,7 @@ var (
 		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
 		EnvVar: LogLevelEnvKey,
 	}
-	flDebug = cli.BoolFlag{
-		Name:   DebugKey + ", " + debugKeyShort,
-		Usage:  "Debug mode.",
-		EnvVar: DebugEnvKey,
-	}
 	flags = []cli.Flag{
-		flDebug,
 		flLogLevel,
 	}
 	// Command flags
