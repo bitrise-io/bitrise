@@ -2,6 +2,74 @@
 
 -----------------
 
+## 0.9.28 (2017 Feb 14)
+
+### Release Notes
+
+__BREAKING__ : `step-info` command revision: 
+
+We added local and git step support to this command and also updated its log, to provide all neccessary infos about every type of the supported steps.
+
+You can specify the step's source with the new `--library` flag. As a value you can provide: 
+
+- `STEPLI_URI` - the git uri of the step library
+- `path` - specifies local step
+- `git` - if you want to use a step from its git source
+
+With `--id` flag, you can specify the unique identifier of the step in its collection:
+
+- in case of __step library step__: the unique identifier in the library
+- in case of __local step__: the local path of the step directory
+- in case of __git step__: the git uri of the step reporitory
+
+`--version` 
+
+- in case of __steplib step__: the step version in the steplib
+- in case of __local step__: _not used_
+- in case of __git step__: git tag or branch
+
+__Examples:__
+
+Get info about step from the step library:
+
+`stepman step-info --library https://github.com/bitrise-io/bitrise-steplib.git --id script --version 1.1.1`
+
+Get info about local step:
+
+`stepman step-info --library path --id /PATH/TO/THE/STEP/DIRECTORY`
+
+Get step info about step, defined its git repository uri:
+
+`stepman step-info --library git --id https://github.com/bitrise-io/steps-script.git --version master`
+
+Command flag changes:
+
+- `--collection` is deprecated, use `--library` instead
+- `--short` is deprecated and no more used
+- `--step-yml` is deprecated, use `--library path` and `--id PATH_TO_YOUR_STEP_DIR` instead
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.28/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.27 -> 0.9.28
+
+* [ce0083d] Krisztian Godrei - release workflow updates & preare for 0.9.28 (2017 Feb 14)
+* [3355572] Krisztián Gödrei - step-info revision (#224) (2017 Feb 13)
+
+
 ## 0.9.27 (2017 Jan 25)
 
 ### Release Notes
@@ -1219,4 +1287,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Jan 25
+Generated at: 2017 Feb 14
