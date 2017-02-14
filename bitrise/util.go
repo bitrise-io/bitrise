@@ -17,6 +17,7 @@ import (
 	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -400,7 +401,7 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			return err
 		}
 	} else if stepIDData.SteplibSource == "git" {
-		if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
+		if err := git.CloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
 			return err
 		}
 		if err := command.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {

@@ -6,10 +6,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/colorstring"
+	log "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -25,13 +25,13 @@ const (
 //------------------------------
 
 func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
-	if stepInfo.Latest == "" {
+	if stepInfo.LatestVersion == "" {
 		return false
 	}
 
-	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.Latest)
+	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.LatestVersion)
 	if err != nil {
-		log.Debugf("Failed to compare versions, err: %s", err)
+		log.Errorf("Failed to compare versions, err: %s", err)
 	}
 
 	return (res == 1)
@@ -44,8 +44,12 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 
 	stepInfo := stepRunResult.StepInfo
 
-	title := stepInfo.Title
-	if stepInfo.GlobalInfo.RemovalDate != "" {
+	title := ""
+	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
+		title = *stepInfo.Step.Title
+	}
+
+	if stepInfo.GroupInfo.RemovalDate != "" {
 		title = fmt.Sprintf("[Deprecated] %s", title)
 	}
 
@@ -68,7 +72,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		}
 		break
 	default:
-		log.Error("Unkown result code")
+		log.Errorf("Unkown result code")
 		return ""
 	}
 
@@ -76,7 +80,10 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 }
 
 func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
-	title := stepInfo.Title
+	title := ""
+	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
+		title = *stepInfo.Step.Title
+	}
 
 	content := fmt.Sprintf("| (%d) %s |", idx, title)
 	charDiff := len(content) - stepRunSummaryBoxWidthInChars
@@ -138,7 +145,7 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 
 	collectionRow := ""
 	{
-		collection := stepInfo.StepLib
+		collection := stepInfo.Library
 		collectionRow = fmt.Sprintf("| collection: %s |", collection)
 		charDiff := len(collectionRow) - stepRunSummaryBoxWidthInChars
 		if charDiff < 0 {
@@ -224,7 +231,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 		coloringFunc = colorstring.Blue
 		break
 	default:
-		log.Error("Unkown result code")
+		log.Errorf("Unkown result code")
 		return ""
 	}
 
@@ -297,7 +304,7 @@ func getDeprecateNotesRows(notes string) string {
 				noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 			} else if charDiff > 0 {
 				// longer than desired - should not
-				log.Errorln("Should not be longer then expected")
+				log.Errorf("Should not be longer then expected")
 			}
 
 			if formattedNote == "" {
@@ -317,7 +324,7 @@ func getDeprecateNotesRows(notes string) string {
 					noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 				} else if charDiff > 0 {
 					// longer than desired - should not
-					log.Errorln("Should not be longer then expected")
+					log.Errorf("Should not be longer then expected")
 				}
 
 				if formattedNote == "" {
@@ -339,7 +346,7 @@ func getDeprecateNotesRows(notes string) string {
 					noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 				} else if charDiff > 0 {
 					// longer than desired - should not
-					log.Errorln("Should not be longer then expected")
+					log.Errorf("Should not be longer then expected")
 				}
 
 				if formattedNote == "" {
@@ -357,8 +364,8 @@ func getDeprecateNotesRows(notes string) string {
 func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) string {
 	stepInfo := stepRunResult.StepInfo
 
-	removalDate := stepInfo.GlobalInfo.RemovalDate
-	deprecateNotes := stepInfo.GlobalInfo.DeprecateNotes
+	removalDate := stepInfo.GroupInfo.RemovalDate
+	deprecateNotes := stepInfo.GroupInfo.DeprecateNotes
 	removalDateRow := ""
 	deprecateNotesRow := ""
 	if removalDate != "" {
@@ -378,17 +385,17 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.Latest)
+		updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.LatestVersion)
 		charDiff := len(updateRow) - stepRunSummaryBoxWidthInChars
 		if charDiff < 0 {
 			// shorter than desired - fill with space
-			updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.Latest, strings.Repeat(" ", -charDiff))
+			updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
 		} else if charDiff > 0 {
 			// longer than desired - trim title
 			if charDiff > 6 {
 				updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-stepRunSummaryBoxWidthInChars))
 			} else {
-				updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.Latest, strings.Repeat(" ", -len("| Update available: -> %s |")-stepRunSummaryBoxWidthInChars))
+				updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.LatestVersion, strings.Repeat(" ", -len("| Update available: -> %s |")-stepRunSummaryBoxWidthInChars))
 			}
 		}
 	}
@@ -398,7 +405,10 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	if stepRunResult.Error != nil {
 		// Support URL
 		var coloringFunc func(...interface{}) string
-		supportURL := stepInfo.SupportURL
+		supportURL := ""
+		if stepInfo.Step.SupportURL != nil && *stepInfo.Step.SupportURL != "" {
+			supportURL = *stepInfo.Step.SupportURL
+		}
 		if supportURL == "" {
 			coloringFunc = colorstring.Yellow
 			supportURL = "Not provided"
@@ -429,7 +439,10 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 
 		// Source Code URL
 		coloringFunc = nil
-		sourceCodeURL := stepInfo.SourceCodeURL
+		sourceCodeURL := ""
+		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
+			sourceCodeURL = *stepInfo.Step.SourceCodeURL
+		}
 		if sourceCodeURL == "" {
 			coloringFunc = colorstring.Yellow
 			sourceCodeURL = "Not provided"
@@ -527,7 +540,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	fmt.Println(sep)
 	fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 	fmt.Println(sep)
-	if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+	if stepRunResult.Error != nil || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 		if footerSubSection != "" {
 			fmt.Println(footerSubSection)
@@ -545,7 +558,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
 	fmt.Println()
-	log.Infoln(colorstring.Blue("Switching to workflow:"), title)
+	log.Infof(colorstring.Blue("Switching to workflow:"), title)
 	fmt.Println()
 }
 
@@ -572,7 +585,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 		fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
-		if stepRunResult.Error != nil || stepRunResult.StepInfo.GlobalInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+		if stepRunResult.Error != nil || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 			if footerSubSection != "" {
 				fmt.Println(footerSubSection)
