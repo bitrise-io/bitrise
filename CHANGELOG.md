@@ -1,6 +1,52 @@
-## Changelog (Current version: 1.5.3)
+## Changelog (Current version: 1.5.4)
 
 -----------------
+
+## 1.5.4 (2017 Feb 14)
+
+### Release Notes
+
+* To allow bitrise-cli, to use [stepman](https://github.com/bitrise-io/stepman)'s new features we updated the required minimal stepman version to [0.9.28](https://github.com/bitrise-io/stepman/releases/tag/0.9.28).
+
+The new stepman version adds support for local and git setps in `step-info` command. This update will allow the [offline workflow-editor](https://github.com/bitrise-io/bitrise-workflow-editor) to handle every type of steps, even it is a git or local step.
+
+* This version of bitrise-cli ships with the [offline workflow-editor](https://github.com/bitrise-io/bitrise-workflow-editor) as a default plugin. 
+
+This means, once you update your bitrise-cli to 1.5.4, it will install the workflow editor for you, during the setup process. To run the editor, just call:
+
+`bitrise :workflow-editor`
+
+* bitrise-cli checks, if there is a new version of any installed plugin, from now it will print a command for you, which you can use to update a plugin. Do not miss any updates!
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.4/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.3 -> 1.5.4
+
+* [dd61696] Krisztian Godrei - prepare for 1.5.4 (2017 Feb 14)
+* [be02cbb] Krisztian Godrei - Merge branch 'master' of github.com:bitrise-io/bitrise (2017 Feb 14)
+* [2b1c1a4] Krisztián Gödrei - create-release wf update, switch workflow log fix, min stepman version bumped to 0.9.28, workflow-editor default plugin (#471) (2017 Feb 14)
+* [8810152] trapacska - New plugin warning extended with instructions (#470) (2017 Feb 14)
+* [9b39206] trapacska - New plugin warning extended with instructions (#470) (2017 Feb 14)
+* [20af75e] Krisztián Gödrei - Stepman update (#469) (2017 Feb 14)
+
 
 ## 1.5.3 (2017 Jan 26)
 
@@ -2590,4 +2636,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Jan 26
+Updated: 2017 Feb 14
