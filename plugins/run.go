@@ -11,6 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
+	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -84,6 +85,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		} else if newVersion != "" {
 			log.Warnf("")
 			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
+			log.Warnf("Run command to update plugin (%s):", plugin.Name)
+			fmt.Println()
+			flog.Donef("$ bitrise plugin update workflow-editor")
 
 			route, found, err := ReadPluginRoute(plugin.Name)
 			if err != nil {
@@ -119,6 +123,10 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		if route.LatestAvailableVersion != "" {
 			log.Warnf("")
 			log.Warnf("New version (%s) of plugin (%s) available", route.LatestAvailableVersion, plugin.Name)
+			log.Warnf("Run command to update plugin (%s):", plugin.Name)
+			fmt.Println()
+			flog.Donef("$ bitrise plugin update workflow-editor")
+			fmt.Println()
 		}
 	}
 
