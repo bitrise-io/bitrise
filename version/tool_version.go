@@ -11,7 +11,7 @@ import (
 // StepmanVersion ...
 func StepmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "--version"}
+	args := []string{"--loglevel", logLevel, "--version"}
 
 	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pointers"
 )
 
@@ -22,6 +24,42 @@ const (
 	DefaultTimeout = 0
 )
 
+// String ...
+func (stepInfo StepInfoModel) String() string {
+	str := ""
+	if stepInfo.GroupInfo.DeprecateNotes != "" {
+		str += colorstring.Red("This step is deprecated")
+
+		if stepInfo.GroupInfo.RemovalDate != "" {
+			str += colorstring.Redf(" and will be removed: %s", stepInfo.GroupInfo.RemovalDate)
+		}
+		str += "\n"
+	}
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("Library:"), stepInfo.Library)
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("ID:"), stepInfo.ID)
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("Version:"), stepInfo.Version)
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("LatestVersion:"), stepInfo.LatestVersion)
+	str += fmt.Sprintf("%s\n\n", colorstring.Blue("Definition:"))
+
+	definition, err := fileutil.ReadStringFromFile(stepInfo.DefinitionPth)
+	if err != nil {
+		str += colorstring.Redf("Failed to read step definition, error: %s", err)
+		return str
+	}
+
+	str += definition
+	return str
+}
+
+// JSON ...
+func (stepInfo StepInfoModel) JSON() string {
+	bytes, err := json.Marshal(stepInfo)
+	if err != nil {
+		return fmt.Sprintf(`"Failed to marshal step info (%#v), err: %s"`, stepInfo, err)
+	}
+	return string(bytes)
+}
+
 // CreateFromJSON ...
 func (stepInfo StepInfoModel) CreateFromJSON(jsonStr string) (StepInfoModel, error) {
 	info := StepInfoModel{}
@@ -30,9 +68,6 @@ func (stepInfo StepInfoModel) CreateFromJSON(jsonStr string) (StepInfoModel, err
 	}
 	return info, nil
 }
-
-// -------------------
-// --- Struct methods
 
 // Normalize ...
 func (step StepModel) Normalize() error {

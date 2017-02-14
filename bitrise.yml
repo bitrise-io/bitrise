@@ -92,7 +92,7 @@ workflows:
       3, Go Test
       4, Test-build
       5, Step-template test
-      6, integration tests
+      6, Integration tests
     after_run:
     - integration-test
     steps:

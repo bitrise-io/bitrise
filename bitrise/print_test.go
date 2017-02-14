@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -19,8 +20,8 @@ func TestIsUpdateAvailable(t *testing.T) {
 	t.Log("simple compare versions - ture")
 	{
 		stepInfo1 := stepmanModels.StepInfoModel{
-			Version: "1.0.0",
-			Latest:  "1.1.0",
+			Version:       "1.0.0",
+			LatestVersion: "1.1.0",
 		}
 
 		require.Equal(t, true, isUpdateAvailable(stepInfo1))
@@ -29,8 +30,8 @@ func TestIsUpdateAvailable(t *testing.T) {
 	t.Log("simple compare versions - false")
 	{
 		stepInfo1 := stepmanModels.StepInfoModel{
-			Version: "1.0.0",
-			Latest:  "1.0.0",
+			Version:       "1.0.0",
+			LatestVersion: "1.0.0",
 		}
 
 		require.Equal(t, false, isUpdateAvailable(stepInfo1))
@@ -39,8 +40,8 @@ func TestIsUpdateAvailable(t *testing.T) {
 	t.Log("issue - no latest - false")
 	{
 		stepInfo1 := stepmanModels.StepInfoModel{
-			Version: "1.0.0",
-			Latest:  "",
+			Version:       "1.0.0",
+			LatestVersion: "",
 		}
 
 		require.Equal(t, false, isUpdateAvailable(stepInfo1))
@@ -49,8 +50,8 @@ func TestIsUpdateAvailable(t *testing.T) {
 	t.Log("issue - no current - false")
 	{
 		stepInfo1 := stepmanModels.StepInfoModel{
-			Version: "",
-			Latest:  "1.0.0",
+			Version:       "",
+			LatestVersion: "1.0.0",
 		}
 
 		require.Equal(t, false, isUpdateAvailable(stepInfo1))
@@ -61,7 +62,9 @@ func TestGetTrimmedStepName(t *testing.T) {
 	t.Log("successful step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   longStr,
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(longStr),
+			},
 			Version: longStr,
 		}
 
@@ -82,7 +85,9 @@ func TestGetTrimmedStepName(t *testing.T) {
 	t.Log("failed step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   "",
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(""),
+			},
 			Version: longStr,
 		}
 
@@ -103,7 +108,9 @@ func TestGetTrimmedStepName(t *testing.T) {
 
 func TestGetRunningStepHeaderMainSection(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(longStr),
+		},
 		Version: longStr,
 	}
 
@@ -114,8 +121,10 @@ func TestGetRunningStepHeaderMainSection(t *testing.T) {
 
 func TestGetRunningStepHeaderSubSection(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		ID:      longStr,
-		Title:   longStr,
+		ID: longStr,
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(longStr),
+		},
 		Version: longStr,
 	}
 
@@ -127,7 +136,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	t.Log("failed step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   longStr,
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(longStr),
+			},
 			Version: longStr,
 		}
 
@@ -148,7 +159,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	t.Log("successful step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   "",
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(""),
+			},
 			Version: longStr,
 		}
 		result := models.StepRunResultsModel{
@@ -168,7 +181,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	t.Log("long Runtime")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   "",
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(""),
+			},
 			Version: longStr,
 		}
 		result := models.StepRunResultsModel{
@@ -188,7 +203,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 	t.Log("long Runtime")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   "",
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(""),
+			},
 			Version: longStr,
 		}
 		result := models.StepRunResultsModel{
@@ -219,9 +236,11 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 	t.Log("Update available, no support_url, no source_code_url")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:   longStr,
-			Version: "1.0.0",
-			Latest:  "1.1.0",
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(longStr),
+			},
+			Version:       "1.0.0",
+			LatestVersion: "1.1.0",
 		}
 
 		result := models.StepRunResultsModel{
@@ -249,10 +268,12 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 		// supportURL :=
 		stepInfo := stepmanModels.StepInfoModel{
-			Title:      longStr,
-			Version:    "1.0.0",
-			Latest:     "1.0.0",
-			SupportURL: supportURL,
+			Step: stepmanModels.StepModel{
+				Title:      pointers.NewStringPtr(longStr),
+				SupportURL: pointers.NewStringPtr(supportURL),
+			},
+			Version:       "1.0.0",
+			LatestVersion: "1.0.0",
 		}
 
 		result := models.StepRunResultsModel{
@@ -277,28 +298,32 @@ func TestPrintRunningWorkflow(t *testing.T) {
 
 func TestPrintRunningStepHeader(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		Title:   "",
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(""),
+		},
 		Version: "",
 	}
 	step := stepmanModels.StepModel{}
 	PrintRunningStepHeader(stepInfo, step, 0)
 
-	stepInfo.Title = longStr
+	stepInfo.Step.Title = pointers.NewStringPtr(longStr)
 	stepInfo.Version = ""
 	PrintRunningStepHeader(stepInfo, step, 0)
 
-	stepInfo.Title = ""
+	stepInfo.Step.Title = pointers.NewStringPtr("")
 	stepInfo.Version = longStr
 	PrintRunningStepHeader(stepInfo, step, 0)
 
-	stepInfo.Title = longStr
+	stepInfo.Step.Title = pointers.NewStringPtr(longStr)
 	stepInfo.Version = longStr
 	PrintRunningStepHeader(stepInfo, step, 0)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
 	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(longStr),
+		},
 		Version: longStr,
 	}
 
@@ -313,7 +338,7 @@ func TestPrintRunningStepFooter(t *testing.T) {
 	PrintRunningStepFooter(result, true)
 	PrintRunningStepFooter(result, false)
 
-	stepInfo.Title = ""
+	stepInfo.Step.Title = pointers.NewStringPtr("")
 	result = models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
@@ -330,7 +355,9 @@ func TestPrintSummary(t *testing.T) {
 	PrintSummary(models.BuildRunResultsModel{})
 
 	stepInfo := stepmanModels.StepInfoModel{
-		Title:   longStr,
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(longStr),
+		},
 		Version: longStr,
 	}
 
@@ -343,7 +370,7 @@ func TestPrintSummary(t *testing.T) {
 		ExitCode: 1,
 	}
 
-	stepInfo.Title = ""
+	stepInfo.Step.Title = pointers.NewStringPtr("")
 	result2 := models.StepRunResultsModel{
 		StepInfo: stepInfo,
 		Status:   models.StepRunStatusCodeSuccess,
