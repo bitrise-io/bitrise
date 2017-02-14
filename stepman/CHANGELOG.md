@@ -22,30 +22,68 @@ With `--id` flag, you can specify the unique identifier of the step in its colle
 - in case of __local step__: the local path of the step directory
 - in case of __git step__: the git uri of the step reporitory
 
-`--version` 
+`--version` flag:
 
 - in case of __steplib step__: the step version in the steplib
 - in case of __local step__: _not used_
 - in case of __git step__: git tag or branch
 
+You can define the __output format__ of the command by passing `--format FROMAT` flag. 
+
+Format can be either `raw` (default):
+
+```
+$ stepman step-info --library https://github.com/bitrise-io/bitrise-steplib.git --id script --version 1.1.1 --format raw
+
+Library: https://github.com/bitrise-io/bitrise-steplib.git
+ID: script
+Version: 1.1.1
+LatestVersion: 1.1.3
+Definition:
+
+[step.yml content]
+```
+
+or `json` to use the command's output by other tools:
+
+```
+$ stepman step-info --library https://github.com/bitrise-io/bitrise-steplib.git --id script --version 1.1.1 --format json
+
+{
+   "library":"https://github.com/bitrise-io/bitrise-steplib.git",
+   "id":"script",
+   "version":"1.1.1",
+   "latest_version":"1.1.3",
+   "info":{
+
+   },
+   "step":{
+
+     [serialized step model]
+
+   },
+   "definition_pth":"$HOME/.stepman/step_collections/1487001505/collection/steps/script/1.1.1/step.yml"
+}
+```
+
 __Examples:__
 
-Get info about step from the step library:
+Get info about a step from the step library:
 
 `stepman step-info --library https://github.com/bitrise-io/bitrise-steplib.git --id script --version 1.1.1`
 
-Get info about local step:
+Get info about a local step:
 
 `stepman step-info --library path --id /PATH/TO/THE/STEP/DIRECTORY`
 
-Get step info about step, defined its git repository uri:
+Get step info about a step, defined by its git repository uri:
 
 `stepman step-info --library git --id https://github.com/bitrise-io/steps-script.git --version master`
 
 Command flag changes:
 
 - `--collection` is deprecated, use `--library` instead
-- `--short` is deprecated and no more used
+- `--short` is deprecated and no longer used
 - `--step-yml` is deprecated, use `--library path` and `--id PATH_TO_YOUR_STEP_DIR` instead
 
 ### Install or upgrade
