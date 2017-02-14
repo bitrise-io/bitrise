@@ -28,7 +28,7 @@ With `--id` flag, you can specify the unique identifier of the step in its colle
 - in case of __local step__: _not used_
 - in case of __git step__: git tag or branch
 
-You can define the __output format__ of the command by passing `--format FROMAT` flag. 
+You can define the __output format__ of the command by passing `--format FORMAT` flag. 
 
 Format can be either `raw` (default):
 
@@ -290,9 +290,9 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.22 -> 0.9.23
 
-* [04e670e] Krisztián Gödrei - Merge branch 'master' of github.com:bitrise-io/stepman (2016 Sep 13)
+* [04e670e] Krisztián Gödrei - Merge branch 'master' of github.com:bitrise-io/stepman (2016 Sep 13)
 * [578ad1f] Krisztián Gödrei - Godep update (#214) (2016 Sep 13)
-* [61ef1e5] Krisztián Gödrei - prepare for 0.9.23 (2016 Sep 13)
+* [61ef1e5] Krisztián Gödrei - prepare for 0.9.23 (2016 Sep 13)
 * [ec33a9d] Viktor Benei - Merge pull request #213 from bitrise-io/feature/deps-bin-name (2016 Sep 11)
 * [ff5807b] Viktor Benei - deps GetBinaryName (2016 Sep 11)
 * [aad8c23] Viktor Benei - Deps extended with BinName (2016 Sep 11)
@@ -315,7 +315,7 @@ That's all, you're ready to call `stepman`!
 * [4927863] Krisztián Gödrei - Merge pull request #204 from bitrise-io/viktorbenei-patch-1 (2016 Aug 11)
 * [8a6da10] Viktor Benei - Log - path ref fix (2016 Aug 11)
 * [97db84b] Krisztián Gödrei - Merge pull request #203 from godrei/master (2016 Jul 19)
-* [d512bad] Krisztián Gödrei - changelog (2016 Jul 19)
+* [d512bad] Krisztián Gödrei - changelog (2016 Jul 19)
 
 
 ## 0.9.22 (2016 Jul 19)
@@ -342,13 +342,13 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.21 -> 0.9.22
 
-* [2e6dec1] Krisztián Gödrei - prepare for 0.9.22 (2016 Jul 19)
+* [2e6dec1] Krisztián Gödrei - prepare for 0.9.22 (2016 Jul 19)
 * [f49f77f] Krisztián Gödrei - Merge pull request #202 from godrei/local_steplib (2016 Jul 19)
-* [086baf8] Krisztián Gödrei - fixed cleanup dangling route (2016 Jul 19)
-* [31b4e43] Krisztián Gödrei - PR fix (2016 Jul 19)
-* [d4e345f] Krisztián Gödrei - steplib fix & tests (2016 Jul 19)
+* [086baf8] Krisztián Gödrei - fixed cleanup dangling route (2016 Jul 19)
+* [31b4e43] Krisztián Gödrei - PR fix (2016 Jul 19)
+* [d4e345f] Krisztián Gödrei - steplib fix & tests (2016 Jul 19)
 * [b2a4a26] Krisztián Gödrei - Merge pull request #200 from godrei/master (2016 Jul 12)
-* [e4cf91b] Krisztián Gödrei - changelog (2016 Jul 12)
+* [e4cf91b] Krisztián Gödrei - changelog (2016 Jul 12)
 
 
 ## 0.9.21 (2016 Jul 12)
@@ -375,12 +375,12 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.20 -> 0.9.21
 
-* [86b6172] Krisztián Gödrei - prepare for 0.9.21 (2016 Jul 12)
+* [86b6172] Krisztián Gödrei - prepare for 0.9.21 (2016 Jul 12)
 * [4a24916] Krisztián Gödrei - Merge pull request #199 from godrei/exit_status_fix (2016 Jul 12)
-* [d8cca3a] Krisztián Gödrei - exist status test (2016 Jul 12)
-* [40c8517] Krisztián Gödrei - exist status fix (2016 Jul 12)
-* [92830ff] Krisztián Gödrei - Merge branch 'master' of github.com:bitrise-io/stepman (2016 Jul 12)
-* [d34225e] Krisztián Gödrei - changelog update (2016 Jul 12)
+* [d8cca3a] Krisztián Gödrei - exist status test (2016 Jul 12)
+* [40c8517] Krisztián Gödrei - exist status fix (2016 Jul 12)
+* [92830ff] Krisztián Gödrei - Merge branch 'master' of github.com:bitrise-io/stepman (2016 Jul 12)
+* [d34225e] Krisztián Gödrei - changelog update (2016 Jul 12)
 * [a6b4a3f] Krisztián Gödrei - Merge pull request #198 from godrei/master (2016 Jul 12)
 
 
@@ -416,31 +416,31 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.19 -> 0.9.20
 
-* [7f0878f] Krisztián Gödrei - prepare for 0.9.20 (2016 Jul 12)
+* [7f0878f] Krisztián Gödrei - prepare for 0.9.20 (2016 Jul 12)
 * [ede2058] Krisztián Gödrei - Merge pull request #197 from godrei/spec (2016 Jul 12)
-* [10f144b] Krisztián Gödrei - specify output path (2016 Jul 12)
-* [813af05] Krisztián Gödrei - export StepLib spec (2016 Jul 12)
+* [10f144b] Krisztián Gödrei - specify output path (2016 Jul 12)
+* [813af05] Krisztián Gödrei - export StepLib spec (2016 Jul 12)
 * [8269283] Krisztián Gödrei - Merge pull request #196 from godrei/step_info (2016 Jul 11)
 * [99e557d] Krisztián Gödrei - Merge pull request #195 from godrei/short_commands (2016 Jul 11)
-* [54d8d5b] Krisztián Gödrei - step-info requires StepLib (2016 Jul 11)
-* [98acc03] Krisztián Gödrei - remove short commands,  delete log fix (2016 Jul 11)
+* [54d8d5b] Krisztián Gödrei - step-info requires StepLib (2016 Jul 11)
+* [98acc03] Krisztián Gödrei - remove short commands,  delete log fix (2016 Jul 11)
 * [c96f79d] Krisztián Gödrei - Merge pull request #194 from godrei/update_fix (2016 Jul 08)
-* [972e1e2] Krisztián Gödrei - return with error (2016 Jul 08)
-* [dc13f84] Krisztián Gödrei - steplib update logging fix (2016 Jul 08)
+* [972e1e2] Krisztián Gödrei - return with error (2016 Jul 08)
+* [dc13f84] Krisztián Gödrei - steplib update logging fix (2016 Jul 08)
 * [d432605] Krisztián Gödrei - Merge pull request #193 from godrei/deprecation_fix (2016 Jul 08)
-* [83fdfd1] Krisztián Gödrei - deprecation fix (2016 Jul 08)
+* [83fdfd1] Krisztián Gödrei - deprecation fix (2016 Jul 08)
 * [8306a8e] Krisztián Gödrei - Merge pull request #192 from godrei/master (2016 Jul 08)
-* [145a034] Krisztián Gödrei - gows godep save (2016 Jul 08)
-* [8c13bf2] Krisztián Gödrei - Merged branch master into master (2016 Jul 08)
+* [145a034] Krisztián Gödrei - gows godep save (2016 Jul 08)
+* [8c13bf2] Krisztián Gödrei - Merged branch master into master (2016 Jul 08)
 * [7323eeb] Viktor Benei - LICENSE (MIT) (2016 Jun 03)
 * [400b51a] Viktor Benei - gows.yml (2016 Jun 03)
 * [f392873] Viktor Benei - Merge pull request #185 from godrei/goinp_fix (2016 May 23)
-* [3be5c7b] Krisztián Gödrei - godep update (2016 May 23)
-* [1084a3d] Krisztián Gödrei - goinp fix (2016 May 23)
+* [3be5c7b] Krisztián Gödrei - godep update (2016 May 23)
+* [1084a3d] Krisztián Gödrei - goinp fix (2016 May 23)
 * [294c5eb] Krisztián Gödrei - Merge pull request #184 from godrei/setup_fix (2016 May 11)
-* [008dbc8] Krisztián Gödrei - setup review (2016 May 11)
+* [008dbc8] Krisztián Gödrei - setup review (2016 May 11)
 * [d822310] Krisztián Gödrei - Merge pull request #183 from godrei/master (2016 May 09)
-* [623e925] Krisztián Gödrei - changelog (2016 May 09)
+* [623e925] Krisztián Gödrei - changelog (2016 May 09)
 
 
 ## 0.9.19 (2016 May 09)
@@ -521,22 +521,22 @@ That's all, you're ready to call `stepman`!
 * [db278aa] Viktor Benei - godeps-update (2015 Dec 22)
 * [3d2293b] Viktor Benei - Merge pull request #168 from godrei/step_info_fix (2015 Dec 22)
 * [64d6c5e] Viktor Benei - Merge pull request #169 from godrei/master (2015 Dec 22)
-* [84b8550] Krisztián Gödrei - create changelog (2015 Dec 22)
-* [952806c] Krisztián Gödrei - LOG: print step.yml path FIX: removed global step info handling from local steps (2015 Dec 22)
+* [84b8550] Krisztián Gödrei - create changelog (2015 Dec 22)
+* [952806c] Krisztián Gödrei - LOG: print step.yml path FIX: removed global step info handling from local steps (2015 Dec 22)
 * [64fd086] Viktor Benei - Merge pull request #167 from godrei/godep_update (2015 Dec 17)
-* [136eb00] Krisztián Gödrei - godep update (2015 Dec 17)
+* [136eb00] Krisztián Gödrei - godep update (2015 Dec 17)
 * [0104b69] Viktor Benei - Merge pull request #166 from godrei/println_fix (2015 Dec 17)
-* [4658ac9] Krisztián Gödrei - FIX: typo (2015 Dec 17)
-* [75f6f52] Krisztián Gödrei - merge (2015 Dec 17)
+* [4658ac9] Krisztián Gödrei - FIX: typo (2015 Dec 17)
+* [75f6f52] Krisztián Gödrei - merge (2015 Dec 17)
 * [e3c43be] Viktor Benei - Merge pull request #163 from godrei/step_info (2015 Dec 17)
 * [d5cd881] Viktor Benei - Merge pull request #164 from godrei/typo (2015 Dec 17)
-* [653b2d4] Krisztián Gödrei - FIX: typo Faild (2015 Dec 17)
-* [34b647d] Krisztián Gödrei - printf fix (2015 Dec 17)
-* [aa88983] Krisztián Gödrei - global step info handling (2015 Dec 16)
+* [653b2d4] Krisztián Gödrei - FIX: typo Faild (2015 Dec 17)
+* [34b647d] Krisztián Gödrei - printf fix (2015 Dec 17)
+* [aa88983] Krisztián Gödrei - global step info handling (2015 Dec 16)
 * [ff863dd] Viktor Benei - Merge pull request #162 from viktorbenei/master (2015 Dec 12)
 * [ad697ee] Viktor Benei - godeps-update (2015 Dec 12)
 * [9a31b91] Viktor Benei - Merge pull request #161 from godrei/share_fixes (2015 Dec 12)
-* [6e82130] Krisztián Gödrei - step sharing improvements (2015 Dec 08)
+* [6e82130] Krisztián Gödrei - step sharing improvements (2015 Dec 08)
 * [5f6705b] Viktor Benei - Merge pull request #160 from viktorbenei/master (2015 Oct 05)
 * [266202b] Viktor Benei - changelog fix (2015 Oct 02)
 * [fb6b688] Viktor Benei - Merge pull request #159 from viktorbenei/master (2015 Oct 02)
