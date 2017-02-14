@@ -83,9 +83,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 			log.Warnf("")
 			log.Warnf("Failed to check for plugin (%s) new version, error: %s", plugin.Name, err)
 		} else if newVersion != "" {
-			log.Warnf("")
-			log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
-			log.Warnf("Run command to update plugin (%s):", plugin.Name)
+			flog.Warnf("")
+			flog.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
+			flog.Printf("Run command to update plugin:")
 			fmt.Println()
 			flog.Donef("$ bitrise plugin update workflow-editor")
 
@@ -121,9 +121,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		}
 
 		if route.LatestAvailableVersion != "" {
-			log.Warnf("")
-			log.Warnf("New version (%s) of plugin (%s) available", route.LatestAvailableVersion, plugin.Name)
-			log.Warnf("Run command to update plugin (%s):", plugin.Name)
+			flog.Warnf("")
+			flog.Warnf("New version (%s) of plugin (%s) available", route.LatestAvailableVersion, plugin.Name)
+			flog.Printf("Run command to update plugin:")
 			fmt.Println()
 			flog.Donef("$ bitrise plugin update workflow-editor")
 			fmt.Println()
