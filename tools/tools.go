@@ -127,14 +127,14 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "setup", "--collection", collection}
+	args := []string{"--loglevel", logLevel, "setup", "--collection", collection}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanActivate ...
 func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "activate", "--collection", collection,
+	args := []string{"--loglevel", logLevel, "activate", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth}
 	return command.RunCommand("stepman", args...)
 }
@@ -142,14 +142,14 @@ func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error 
 // StepmanUpdate ...
 func StepmanUpdate(collection string) error {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "update", "--collection", collection}
+	args := []string{"--loglevel", logLevel, "update", "--collection", collection}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanRawStepLibStepInfo ...
 func StepmanRawStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
+	args := []string{"--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
@@ -157,14 +157,14 @@ func StepmanRawStepLibStepInfo(collection, stepID, stepVersion string) (string, 
 // StepmanRawLocalStepInfo ...
 func StepmanRawLocalStepInfo(pth string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "raw"}
+	args := []string{"--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepLibStepInfo ...
 func StepmanJSONStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--collection", collection,
+	args := []string{"--loglevel", logLevel, "step-info", "--collection", collection,
 		"--id", stepID, "--version", stepVersion, "--format", "json"}
 
 	var outBuffer bytes.Buffer
@@ -180,7 +180,7 @@ func StepmanJSONStepLibStepInfo(collection, stepID, stepVersion string) (string,
 // StepmanJSONLocalStepInfo ...
 func StepmanJSONLocalStepInfo(pth string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "json"}
+	args := []string{"--loglevel", logLevel, "step-info", "--step-yml", pth, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -195,14 +195,14 @@ func StepmanJSONLocalStepInfo(pth string) (string, error) {
 // StepmanRawStepList ...
 func StepmanRawStepList(collection string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
+	args := []string{"--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...
 func StepmanJSONStepList(collection string) (string, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--debug", "--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
+	args := []string{"--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer

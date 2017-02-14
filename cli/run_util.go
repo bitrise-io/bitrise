@@ -471,19 +471,6 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
 		}
 
-		/*
-			// StepInfoModel ...
-			type StepInfoModel struct {
-				Library       string             `json:"library,omitempty" yaml:"library,omitempty"`
-				ID            string             `json:"id,omitempty" yaml:"id,omitempty"`
-				Version       string             `json:"version,omitempty" yaml:"version,omitempty"`
-				LatestVersion string             `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-				GroupInfo     StepGroupInfoModel `json:"info,omitempty" yaml:"info,omitempty"`
-				Step          StepModel          `json:"step,omitempty" yaml:"step,omitempty"`
-				DefinitionPth string             `json:"definition_pth,omitempty" yaml:"definition_pth,omitempty"`
-			}
-		*/
-
 		stepInfoCopy := stepmanModels.StepInfoModel{
 			Library:       stepInfoPtr.Library,
 			ID:            stepInfoPtr.ID,

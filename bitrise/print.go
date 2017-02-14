@@ -6,10 +6,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/colorstring"
+	log "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -31,7 +31,7 @@ func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 
 	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.LatestVersion)
 	if err != nil {
-		log.Debugf("Failed to compare versions, err: %s", err)
+		log.Errorf("Failed to compare versions, err: %s", err)
 	}
 
 	return (res == 1)
@@ -72,7 +72,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		}
 		break
 	default:
-		log.Error("Unkown result code")
+		log.Errorf("Unkown result code")
 		return ""
 	}
 
@@ -231,7 +231,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 		coloringFunc = colorstring.Blue
 		break
 	default:
-		log.Error("Unkown result code")
+		log.Errorf("Unkown result code")
 		return ""
 	}
 
@@ -304,7 +304,7 @@ func getDeprecateNotesRows(notes string) string {
 				noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 			} else if charDiff > 0 {
 				// longer than desired - should not
-				log.Errorln("Should not be longer then expected")
+				log.Errorf("Should not be longer then expected")
 			}
 
 			if formattedNote == "" {
@@ -324,7 +324,7 @@ func getDeprecateNotesRows(notes string) string {
 					noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 				} else if charDiff > 0 {
 					// longer than desired - should not
-					log.Errorln("Should not be longer then expected")
+					log.Errorf("Should not be longer then expected")
 				}
 
 				if formattedNote == "" {
@@ -346,7 +346,7 @@ func getDeprecateNotesRows(notes string) string {
 					noteRow = fmt.Sprintf("| %s%s |", line, strings.Repeat(" ", -charDiff))
 				} else if charDiff > 0 {
 					// longer than desired - should not
-					log.Errorln("Should not be longer then expected")
+					log.Errorf("Should not be longer then expected")
 				}
 
 				if formattedNote == "" {
@@ -558,7 +558,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
 	fmt.Println()
-	log.Infoln(colorstring.Blue("Switching to workflow:"), title)
+	log.Infof(colorstring.Blue("Switching to workflow:"), title)
 	fmt.Println()
 }
 
