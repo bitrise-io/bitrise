@@ -18,11 +18,13 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -469,14 +471,27 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
 		}
 
+		/*
+			// StepInfoModel ...
+			type StepInfoModel struct {
+				Library       string             `json:"library,omitempty" yaml:"library,omitempty"`
+				ID            string             `json:"id,omitempty" yaml:"id,omitempty"`
+				Version       string             `json:"version,omitempty" yaml:"version,omitempty"`
+				LatestVersion string             `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
+				GroupInfo     StepGroupInfoModel `json:"info,omitempty" yaml:"info,omitempty"`
+				Step          StepModel          `json:"step,omitempty" yaml:"step,omitempty"`
+				DefinitionPth string             `json:"definition_pth,omitempty" yaml:"definition_pth,omitempty"`
+			}
+		*/
+
 		stepInfoCopy := stepmanModels.StepInfoModel{
+			Library:       stepInfoPtr.Library,
 			ID:            stepInfoPtr.ID,
-			Title:         stepInfoPtr.Title,
 			Version:       stepInfoPtr.Version,
-			Latest:        stepInfoPtr.Latest,
-			SupportURL:    stepInfoPtr.SupportURL,
-			SourceCodeURL: stepInfoPtr.SourceCodeURL,
-			GlobalInfo:    stepInfoPtr.GlobalInfo,
+			LatestVersion: stepInfoPtr.LatestVersion,
+			GroupInfo:     stepInfoPtr.GroupInfo,
+			Step:          stepInfoPtr.Step,
+			DefinitionPth: stepInfoPtr.DefinitionPth,
 		}
 
 		stepResults := models.StepRunResultsModel{
@@ -499,27 +514,27 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			break
 		case models.StepRunStatusCodeFailed:
 			if !isExitStatusError {
-				log.Errorf("Step (%s) failed, error: %s", stepInfoCopy.Title, err)
+				log.Errorf("Step (%s) failed, error: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 			}
 
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeFailedSkippable:
 			if !isExitStatusError {
-				log.Warnf("Step (%s) failed, but was marked as skippable, error: %s", stepInfoCopy.Title, err)
+				log.Warnf("Step (%s) failed, but was marked as skippable, error: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 			} else {
-				log.Warnf("Step (%s) failed, but was marked as skippable", stepInfoCopy.Title)
+				log.Warnf("Step (%s) failed, but was marked as skippable", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 			}
 
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkipped:
-			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", stepInfoCopy.Title)
+			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
-			log.Warn("The step's (" + stepInfoCopy.Title + ") Run-If expression evaluated to false - skipping")
+			log.Warn("The step's (" + pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title") + ") Run-If expression evaluated to false - skipping")
 			if runIf != "" {
 				log.Info("The Run-If expression was: ", colorstring.Blue(runIf))
 			}
@@ -577,9 +592,9 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 		stepInfoPtr.ID = compositeStepIDStr
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
-			stepInfoPtr.Title = *workflowStep.Title
+			stepInfoPtr.Step.Title = pointers.NewStringPtr(*workflowStep.Title)
 		} else {
-			stepInfoPtr.Title = compositeStepIDStr
+			stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
 		}
 
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
@@ -589,11 +604,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			continue
 		}
 		stepInfoPtr.ID = stepIDData.IDorURI
-		if stepInfoPtr.Title == "" {
-			stepInfoPtr.Title = stepIDData.IDorURI
+		if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
+			stepInfoPtr.Step.Title = pointers.NewStringPtr(stepIDData.IDorURI)
 		}
 		stepInfoPtr.Version = stepIDData.Version
-		stepInfoPtr.StepLib = stepIDData.SteplibSource
+		stepInfoPtr.Library = stepIDData.SteplibSource
 
 		//
 		// Activating the step
@@ -624,7 +639,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 		} else if stepIDData.SteplibSource == "git" {
 			log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-			if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := git.CloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				if strings.HasPrefix(stepIDData.IDorURI, "git@") {
 					fmt.Println(colorstring.Yellow(`Note: if the step's repository is an open source one,`))
 					fmt.Println(colorstring.Yellow(`you should probably use a "https://..." git clone URL,`))
@@ -652,7 +667,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 				continue
 			}
 
-			if err := command.GitCloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
+			if err := git.CloneTagOrBranch(stepIDData.IDorURI, stepDir, stepIDData.Version); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
@@ -707,12 +722,12 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			}
 
 			stepInfoPtr.ID = stepInfo.ID
-			if stepInfoPtr.Title == "" {
-				stepInfoPtr.Title = stepInfo.ID
+			if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
+				stepInfoPtr.Step.Title = pointers.NewStringPtr(stepInfo.ID)
 			}
 			stepInfoPtr.Version = stepInfo.Version
-			stepInfoPtr.Latest = stepInfo.Latest
-			stepInfoPtr.GlobalInfo = stepInfo.GlobalInfo
+			stepInfoPtr.LatestVersion = stepInfo.LatestVersion
+			stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 			if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
@@ -747,10 +762,10 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 		}
 
 		if mergedStep.SupportURL != nil {
-			stepInfoPtr.SupportURL = *mergedStep.SupportURL
+			stepInfoPtr.Step.SupportURL = pointers.NewStringPtr(*mergedStep.SupportURL)
 		}
 		if mergedStep.SourceCodeURL != nil {
-			stepInfoPtr.SourceCodeURL = *mergedStep.SourceCodeURL
+			stepInfoPtr.Step.SourceCodeURL = pointers.NewStringPtr(*mergedStep.SourceCodeURL)
 		}
 
 		//
