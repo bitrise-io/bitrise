@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,19 +9,6 @@ import (
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
-
-func gitClone(uri, pth string) (string, error) {
-	if uri == "" {
-		return "", errors.New("Git Clone 'uri' missing")
-	}
-	if pth == "" {
-		return "", errors.New("Git Clone 'pth' missing")
-	}
-
-	command := exec.Command("git", "clone", "--recursive", uri, pth)
-	bytes, err := command.CombinedOutput()
-	return string(bytes), err
-}
 
 func setup(c *cli.Context) error {
 	log.Debug("Setup")
