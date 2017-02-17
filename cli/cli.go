@@ -29,7 +29,6 @@ func before(c *cli.Context) error {
 
 	initLogFormatter()
 	initHelpAndVersionFlags()
-	initAppHelpTemplate()
 
 	// Debug mode?
 	if c.Bool(DebugModeKey) {
@@ -111,6 +110,8 @@ func printVersion(c *cli.Context) {
 
 // Run ...
 func Run() {
+	initAppHelpTemplate()
+
 	// Parse cl
 	cli.VersionPrinter = printVersion
 
