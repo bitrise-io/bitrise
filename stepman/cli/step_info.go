@@ -3,12 +3,14 @@ package cli
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/command/git"
 	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -116,7 +118,9 @@ func stepInfo(c *cli.Context) error {
 			tagOrBranch = "master"
 		}
 
-		if err := git.CloneTagOrBranchCommand(stepGitSourceURI, tmpStepDir, tagOrBranch).Run(); err != nil {
+		if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			return git.CloneTagOrBranchCommand(stepGitSourceURI, tmpStepDir, tagOrBranch).Run()
+		}); err != nil {
 			return fmt.Errorf("failed to clone step from: %s, error: %s", stepGitSourceURI, err)
 		}
 

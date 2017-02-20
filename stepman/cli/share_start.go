@@ -2,10 +2,12 @@ package cli
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command/git"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -70,8 +72,11 @@ func start(c *cli.Context) error {
 	}
 
 	pth := stepman.GetLibraryBaseDirPath(route)
-	if err := git.Clone(collectionURI, pth); err != nil {
-		log.Fatal("[STEPMAN] - Failed to setup step spec:", err)
+	if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+		return git.Clone(collectionURI, pth)
+	}); err != nil {
+		log.Fatalf("[STEPMAN] - Failed to setup step spec (url: %s) version (%s), error: %s",
+			collectionURI, pth, err)
 	}
 
 	specPth := pth + "/steplib.yml"

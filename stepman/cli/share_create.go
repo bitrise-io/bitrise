@@ -13,10 +13,11 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/command/git"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -99,8 +100,11 @@ func create(c *cli.Context) error {
 	}
 
 	log.Infof("Cloning Step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
-	if err := git.CloneTagOrBranch(gitURI, tmp, tag); err != nil {
-		log.Fatalf("Git clone failed, err: %s", err)
+	if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+		return git.CloneTagOrBranch(gitURI, tmp, tag)
+	}); err != nil {
+		log.Fatalf("Failed to git-clone (url: %s) version (%s), error: %s",
+			gitURI, tag, err)
 	}
 
 	// Update step.yml
