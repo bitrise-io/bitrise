@@ -35,10 +35,6 @@ COMMAND HELP: {{.Name}} COMMAND --help/-h
 )
 
 func getPluginsList() string {
-	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize plugin path, error: %s", err)
-	}
-
 	pluginListString := "PLUGINS:\n"
 
 	pluginList, err := plugins.InstalledPluginList()
