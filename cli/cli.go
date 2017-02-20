@@ -29,7 +29,6 @@ func before(c *cli.Context) error {
 
 	initLogFormatter()
 	initHelpAndVersionFlags()
-	initAppHelpTemplate()
 
 	// Debug mode?
 	if c.Bool(DebugModeKey) {
@@ -78,10 +77,6 @@ func before(c *cli.Context) error {
 		log.Fatalf("Failed to initialize required paths, error: %s", err)
 	}
 
-	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required plugin paths, error: %s", err)
-	}
-
 	// Pull Request Mode check
 	if c.Bool(PRKey) {
 		// if PR mode indicated make sure we set the related env
@@ -111,6 +106,12 @@ func printVersion(c *cli.Context) {
 
 // Run ...
 func Run() {
+	if err := plugins.InitPaths(); err != nil {
+		log.Fatalf("Failed to initialize plugin path, error: %s", err)
+	}
+
+	initAppHelpTemplate()
+
 	// Parse cl
 	cli.VersionPrinter = printVersion
 
