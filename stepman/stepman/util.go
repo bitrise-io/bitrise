@@ -130,7 +130,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			})
 
 			if err != nil {
-				log.Warnf("Failed to download step.zip: ", err)
+				log.Warnf("Failed to download step.zip: %s", err)
 			} else {
 				success = true
 				return nil
