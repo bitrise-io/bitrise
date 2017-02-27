@@ -6,6 +6,8 @@ import (
 
 	"os"
 
+	"strings"
+
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	flog "github.com/bitrise-io/go-utils/log"
@@ -182,7 +184,7 @@ func validate(c *cli.Context) error {
 	validation := ValidationModel{}
 
 	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
-	if err != nil && err.Error() != "No workflow yml found" {
+	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
 		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
 		os.Exit(1)
 	}
