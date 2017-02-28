@@ -122,14 +122,12 @@ func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataM
 // GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	if bitriseConfigPath == "" {
-		log.Debugln("[BITRISE_CLI] - Workflow path not defined, searching for " + DefaultBitriseConfigFileName + " in current folder...")
-
 		bitriseConfigPath = filepath.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
 
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			return "", err
 		} else if !exist {
-			return "", errors.New("No workflow yml found")
+			return "", fmt.Errorf("bitrise.yml path not defined and not found on it's default path: %s", bitriseConfigPath)
 		}
 	}
 
