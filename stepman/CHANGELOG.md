@@ -2,6 +2,40 @@
 
 -----------------
 
+## 0.9.29 (2017 Mar 13)
+
+### Release Notes
+
+* Every git command bundled in retry block, to avoid github networking issues
+* Log improvements, for better error messages and logs
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.29/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.28 -> 0.9.29
+
+* [063e8d2] Krisztian Godrei - prepare for 0.9.29 (2017 Mar 13)
+* [91afbe9] Krisztián Gödrei - godeps update (#228) (2017 Mar 13)
+* [c091444] Krisztián Gödrei - warn fix (#227) (2017 Feb 24)
+* [41dd088] Tamas Papik - Git commands bundled in retry (#226) (2017 Feb 20)
+* [e31a6b9] Tamas Papik - Unused function removed (#225) (2017 Feb 16)
+* [0fd591f] Krisztián Gödrei - Update CHANGELOG.md (2017 Feb 14)
+* [836e01c] Krisztian Godrei - changelog update (2017 Feb 14)
+
+
 ## 0.9.28 (2017 Feb 14)
 
 ### Release Notes
@@ -1325,4 +1359,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Feb 14
+Generated at: 2017 Mar 13
