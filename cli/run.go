@@ -9,7 +9,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -85,11 +84,8 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		log.Fatal("No workflow id specified")
 	}
 
-	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
-		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
-		if err := bitrise.RunSetup(version.VERSION, false); err != nil {
-			log.Fatalf("Setup failed, error: %s", err)
-		}
+	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+		log.Fatalf("Setup failed, error: %s", err)
 	}
 
 	startTime := time.Now()
