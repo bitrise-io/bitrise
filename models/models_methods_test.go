@@ -804,6 +804,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Valid bitriseData ID")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"A-Za-z0-9-_.": WorkflowModel{},
 			},
@@ -817,6 +818,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - empty")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"": WorkflowModel{},
 			},
@@ -830,6 +832,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - contains: `/`")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"wf/id": WorkflowModel{},
 			},
@@ -844,6 +847,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - contains: `:`")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"wf:id": WorkflowModel{},
 			},
@@ -858,6 +862,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - contains: ` `")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"wf id": WorkflowModel{},
 			},
@@ -872,6 +877,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - contains: ` `")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				" wfid": WorkflowModel{},
 			},
@@ -886,6 +892,7 @@ func TestValidateConfig(t *testing.T) {
 	t.Log("Invalid bitriseData ID - contains: ` `")
 	{
 		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
 				"wfid ": WorkflowModel{},
 			},
@@ -914,7 +921,8 @@ func TestValidateWorkflow(t *testing.T) {
 	t.Log("invalid workflow - Invalid env: more than 2 fields")
 	{
 		configStr := `
-format_version: 1.3.0
+format_version: 1.4.0
+
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -944,8 +952,8 @@ workflows:
 
 	t.Log("vali workflow - Warning: duplicated inputs")
 	{
-		configStr := `
-format_version: 1.3.0
+		configStr := `format_version: 1.4.0
+
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
@@ -1454,8 +1462,7 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 }
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
+	configStr := `format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 app:

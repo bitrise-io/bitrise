@@ -401,6 +401,10 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 func (config *BitriseDataModel) Validate() ([]string, error) {
 	warnings := []string{}
 
+	if config.FormatVersion == "" {
+		return warnings, fmt.Errorf("missing format_version")
+	}
+
 	if err := config.TriggerMap.Validate(); err != nil {
 		return warnings, err
 	}
