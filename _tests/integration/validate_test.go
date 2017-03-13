@@ -116,7 +116,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
-		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
+		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
 	}
 }
