@@ -7,6 +7,7 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
@@ -131,8 +132,6 @@ func Run() {
 	app.Action = func(c *cli.Context) error {
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
-			log.Debugf("Try to run bitrise plugin: (%s) with args: (%v)", pluginName, pluginArgs)
-
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
 				return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)
@@ -141,7 +140,10 @@ func Run() {
 				return fmt.Errorf("Plugin (%s) not installed", pluginName)
 			}
 
-			log.Debugf("Start plugin: (%s)", pluginName)
+			if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+				log.Fatalf("Setup failed, error: %s", err)
+			}
+
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
 				return fmt.Errorf("Failed to run plugin (%s), error: %s", pluginName, err)
 			}

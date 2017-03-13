@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/toolkits"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
@@ -36,6 +37,15 @@ var PluginDependencyMap = map[string]PluginDependency{
 		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
 		MinVersion: "0.9.3",
 	},
+}
+
+// RunSetupIfNeeded ...
+func RunSetupIfNeeded(appVersion string, isFullSetupMode bool) error {
+	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
+		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
+		return RunSetup(version.VERSION, false)
+	}
+	return nil
 }
 
 // RunSetup ...
