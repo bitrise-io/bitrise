@@ -107,6 +107,18 @@ func Test_ValidateTestJSON(t *testing.T) {
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
 		require.Equal(t, expected, out)
 	}
+
+	t.Log("invalid - only one space in bitrise.yml")
+	{
+		configPth := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(configPth, spaceBitriseYML))
+
+		cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
+		require.Equal(t, expected, out)
+	}
 }
 
 func Test_SecretValidateTest(t *testing.T) {
@@ -191,7 +203,9 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 
 const emptySecret = ""
 const invalidSecret = `- TEST: test`
+
 const emptyBitriseYML = ""
+const spaceBitriseYML = ` `
 const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
