@@ -92,7 +92,8 @@ func TestMigratePatternToParams(t *testing.T) {
 func TestGetWorkflowIDByParamsInCompatibleMode_new_param_test(t *testing.T) {
 	t.Log("params - push_branch")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - push_branch: master
   workflow: master
@@ -112,7 +113,8 @@ workflows:
 
 	t.Log("params  - pull_request_source_branch")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pull_request_source_branch: feature/*
   workflow: test
@@ -136,7 +138,8 @@ workflows:
 
 	t.Log("params - pull_request_target_branch")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pull_request_target_branch: deploy_*
   workflow: release
@@ -160,7 +163,8 @@ workflows:
 
 	t.Log("params - pull_request_source_branch, pull_request_target_branch")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pull_request_source_branch: feature/*
   pull_request_target_branch: develop
@@ -185,7 +189,8 @@ workflows:
 
 	t.Log("params - tag")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: 1.*
   workflow: deploy
@@ -208,7 +213,8 @@ workflows:
 
 	t.Log("params - tag")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "*.*.*"
   workflow: deploy
@@ -231,7 +237,8 @@ workflows:
 
 	t.Log("params - tag")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "v*.*"
   workflow: deploy
@@ -254,7 +261,8 @@ workflows:
 
 	t.Log("params - tag - no match")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "v*.*"
   workflow: deploy
@@ -277,7 +285,8 @@ workflows:
 
 	t.Log("params - tag")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "v*.*.*"
   workflow: deploy
@@ -300,7 +309,8 @@ workflows:
 
 	t.Log("params - tag - no match")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "*.*.*"
   workflow: deploy
@@ -323,7 +333,8 @@ workflows:
 
 	t.Log("params - tag - no match")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - tag: "v*.*.*"
   workflow: deploy
@@ -346,7 +357,8 @@ workflows:
 
 	t.Log("complex trigger map")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pattern: feature/*
   workflow: test
@@ -378,7 +390,8 @@ workflows:
 
 	t.Log("complex trigger map")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pattern: feature/*
   workflow: test
@@ -411,7 +424,8 @@ workflows:
 func TestGetWorkflowIDByParamsInCompatibleMode_migration_test(t *testing.T) {
 	t.Log("deprecated code push trigger item")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pattern: master
   is_pull_request_allowed: false
@@ -449,7 +463,8 @@ workflows:
 
 	t.Log("deprecated pr trigger item")
 	{
-		configStr := `
+		configStr := `format_version: 1.4.0
+
 trigger_map:
 - pattern: master
   is_pull_request_allowed: true
@@ -487,7 +502,8 @@ workflows:
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_old_tests(t *testing.T) {
-	configStr := `
+	configStr := `format_version: 1.4.0
+
 trigger_map:
 - pattern: master
   is_pull_request_allowed: false
@@ -555,20 +571,21 @@ workflows:
 		require.Equal(t, "primary", workflowID)
 	}
 
-	configStr = `
-  trigger_map:
-  - pattern: master
-    is_pull_request_allowed: false
-    workflow: master
-  - pattern: feature/*
-    is_pull_request_allowed: true
-    workflow: feature
+	configStr = `format_version: 1.4.0
 
-  workflows:
-    test:
-    master:
-    feature:
-    primary:
+trigger_map:
+- pattern: master
+  is_pull_request_allowed: false
+  workflow: master
+- pattern: feature/*
+  is_pull_request_allowed: true
+  workflow: feature
+
+workflows:
+  test:
+  master:
+  feature:
+  primary:
   `
 	config, warnings, err = bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
