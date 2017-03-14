@@ -59,8 +59,8 @@ COMMAND HELP: bitrise COMMAND --help/-h
 
 * Dependency updates:
 
-  - minimal go version updated from 1.7.4 to 1.7.5
-  - minimal stepman version: 0.9.29
+  - minimum go version updated from 1.7.4 to 1.8
+  - minimum stepman version: 0.9.29
   - default workflow-editor version: 0.9.6
 
 ### Install or upgrade
