@@ -1,6 +1,100 @@
-## Changelog (Current version: 1.5.4)
+## Changelog (Current version: 1.5.5)
 
 -----------------
+
+## 1.5.5 (2017 Mar 13)
+
+### Release Notes
+
+* __Silent setup__: bitrise will do a setup (_if was not performed for the current version_) before any plugin run.
+
+* From now the `bitrise --help` command output will include __PLUGINS help section__ as well:
+
+```
+NAME: bitrise - Bitrise Automations Workflow Runner
+
+USAGE: bitrise [OPTIONS] COMMAND/PLUGIN [arg...]
+
+VERSION: 1.5.5
+
+GLOBAL OPTIONS:
+  --loglevel value, -l value  Log level (options: debug, info, warn, error, fatal, panic). [$LOGLEVEL]
+  --debug                     If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug. [$DEBUG]
+  --ci                        If true it indicates that we're used by another tool so don't require any user input! [$CI]
+  --pr                        If true bitrise runs in pull request mode.
+  --help, -h                  show help
+  --version, -v               print the version
+
+COMMANDS:
+  init           Init bitrise config.
+  setup          Setup the current host. Install every required tool to run Workflows.
+  version        Prints the version
+  validate       Validates a specified bitrise config.
+  run            Runs a specified Workflow.
+  trigger-check  Prints out which workflow will triggered by specified pattern.
+  trigger        Triggers a specified Workflow.
+  export         Export the bitrise configuration.
+  normalize      Normalize the bitrise configuration.
+  step-list      List of available steps.
+  step-info      Provides information (step ID, last version, given version) about specified step.
+  workflows      List of available workflows in config.
+  share          Publish your step.
+  plugin         Plugin handling.
+  stepman        Runs a stepman command.
+  envman         Runs an envman command.
+  help           Shows a list of commands or help for one command
+
+PLUGINS:
+  :analytics        Submitting anonymized usage information.
+  :init             Initialize bitrise __config (bitrise.yml)__ and __secrets (.bitrise.secrets.yml)__ based on your project.
+  :workflow-editor  Bitrise Workflow Editor.
+
+COMMAND HELP: bitrise COMMAND --help/-h
+```
+
+* `bitrise validate` command fixes:
+
+  - minimal bitrise.yml should contain a `format_version` property
+  - `no bitrise.yml found` error message fix
+
+* Dependency updates:
+
+  - minimal go version updated from 1.7.4 to 1.7.5
+  - minimal stepman version: 0.9.29
+  - default workflow-editor version: 0.9.6
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.5/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.4 -> 1.5.5
+
+* [cb8e402] Krisztian Godrei - prepare for v1.5.5 (2017 Mar 13)
+* [e6dc915] Krisztián Gödrei - min workflow-editor: 0.9.6, min stepman: 0.9.29 (#479) (2017 Mar 13)
+* [be45cd1] Krisztián Gödrei - godeps update (#478) (2017 Mar 13)
+* [2315cd8] Krisztián Gödrei - Silent setup (#477) (2017 Mar 13)
+* [332bea3] Krisztián Gödrei - Validate fix (#476) (2017 Mar 13)
+* [8e98109] Krisztián Gödrei - not bitrise.yml found error message fix (#475) (2017 Feb 28)
+* [3adda49] Viktor Benei - Go toolkit - go version upgrade from 1.7.5 to 1.8 (#474) (2017 Feb 23)
+* [ce11f40] Viktor Benei - Go toolkit - min go version update from 1.7.4 to 1.7.5 (#472) (2017 Feb 20)
+* [4939b98] Tamas Papik - Include plugins list on the help pages (#473) (2017 Feb 20)
+
 
 ## 1.5.4 (2017 Feb 14)
 
@@ -2636,4 +2730,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Feb 14
+Updated: 2017 Mar 13
