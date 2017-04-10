@@ -114,11 +114,11 @@ func stepInfo(c *cli.Context) error {
 			return fmt.Errorf("failed to create tmp dir, error: %s", err)
 		}
 		tagOrBranch := version
-		if tagOrBranch == "" {
-			tagOrBranch = "master"
-		}
 
 		if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+			if tagOrBranch == "" {
+				return git.CloneCommand(stepGitSourceURI, tmpStepDir).Run()
+			}
 			return git.CloneTagOrBranchCommand(stepGitSourceURI, tmpStepDir, tagOrBranch).Run()
 		}); err != nil {
 			return fmt.Errorf("failed to clone step from: %s, error: %s", stepGitSourceURI, err)
