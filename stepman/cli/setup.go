@@ -11,8 +11,6 @@ import (
 )
 
 func setup(c *cli.Context) error {
-	log.Debug("Setup")
-
 	// Input validation
 	steplibURI := c.String(CollectionKey)
 	if steplibURI == "" {

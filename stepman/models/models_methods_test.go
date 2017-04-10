@@ -227,8 +227,8 @@ func TestGetStep(t *testing.T) {
 		},
 	}
 
-	_, found := collection.GetStep("step", "1.0.0")
-	require.Equal(t, true, found)
+	_, stepFound, versionFound := collection.GetStep("step", "1.0.0")
+	require.Equal(t, true, (stepFound && versionFound))
 }
 
 func TestGetDownloadLocations(t *testing.T) {

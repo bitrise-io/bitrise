@@ -342,12 +342,11 @@ func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.St
 		return models.StepVersionModel{}, fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
 	}
 
-	stepWithVersion, stepFound := collection.GetStepVersion(stepID, stepVersionID)
+	stepWithVersion, stepFound, versionFound := collection.GetStepVersion(stepID, stepVersionID)
 	if !stepFound {
-		if stepVersionID == "" {
-			return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain any version of step (id:%s)", stepID)
-		}
-		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step (id:%s) (version:%s)", stepID, stepVersionID)
+		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step with id: %s", stepID)
+	} else if !versionFound {
+		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step (%s) with version: %s", stepID, stepVersionID)
 	}
 
 	return stepWithVersion, nil
