@@ -32,15 +32,20 @@ func NewWithStandardOuts(name string, args ...string) *Model {
 	return New(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
 }
 
-// NewFromSlice ...
-func NewFromSlice(slice ...string) (*Model, error) {
-	if len(slice) == 0 {
+// NewWithParams ...
+func NewWithParams(params ...string) (*Model, error) {
+	if len(params) == 0 {
 		return nil, errors.New("no command provided")
-	} else if len(slice) == 1 {
-		return New(slice[0]), nil
+	} else if len(params) == 1 {
+		return New(params[0]), nil
 	}
 
-	return New(slice[0], slice[1:]...), nil
+	return New(params[0], params[1:]...), nil
+}
+
+// NewFromSlice ...
+func NewFromSlice(slice []string) (*Model, error) {
+	return NewWithParams(slice...)
 }
 
 // NewWithCmd ...

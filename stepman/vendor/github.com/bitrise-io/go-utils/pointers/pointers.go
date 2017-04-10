@@ -30,6 +30,13 @@ func NewIntPtr(val int) *int {
 	return ptrValue
 }
 
+// NewInt64Ptr ...
+func NewInt64Ptr(val int64) *int64 {
+	ptrValue := new(int64)
+	*ptrValue = val
+	return ptrValue
+}
+
 // ------------------------------------------------------
 // --- Safe Getters
 
