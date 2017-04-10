@@ -1462,8 +1462,9 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 }
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
-	configStr := `format_version: 1.3.0
+	configStr := `format_version: 2
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+project_type: ios
 
 app:
   summary: "sum"
@@ -1489,6 +1490,10 @@ workflows:
 
 	err = config.RemoveRedundantFields()
 	require.NoError(t, err)
+
+	require.Equal(t, "2", config.FormatVersion)
+	require.Equal(t, "https://github.com/bitrise-io/bitrise-steplib.git", config.DefaultStepLibSource)
+	require.Equal(t, "ios", config.ProjectType)
 
 	require.Equal(t, "", config.App.Title)
 	require.Equal(t, "", config.App.Description)

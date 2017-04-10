@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "1.4.0"
+	Version = "2"
 )
 
 // StepListItemModel ...
@@ -79,6 +79,7 @@ type TriggerMapModel []TriggerMapItemModel
 type BitriseDataModel struct {
 	FormatVersion        string `json:"format_version" yaml:"format_version"`
 	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
+	ProjectType          string `json:"project_type" yaml:"project_type"`
 	//
 	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
