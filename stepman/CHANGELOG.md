@@ -2,6 +2,38 @@
 
 -----------------
 
+## 0.9.30 (2017 Apr 10)
+
+### Release Notes
+
+* `step-info` command fix in case of git type step: if step version not specified, stepman only does a git clone, instead of force setting `master` branch in clone.
+* better error messages in `step-info` command
+* logging updates
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.30/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.29 -> 0.9.30
+
+* [a9cafb8] Krisztian Godrei - prepare for 0.9.30 (2017 Apr 10)
+* [a53b457] Krisztián Gödrei - godeps update (#231) (2017 Apr 10)
+* [d723791] Krisztián Gödrei - do not force master if branch not specified (#230) (2017 Apr 10)
+* [927e227] Tamas Papik - Updated step-info logging (#229) (2017 Apr 10)
+
+
 ## 0.9.29 (2017 Mar 13)
 
 ### Release Notes
@@ -1359,4 +1391,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Mar 13
+Generated at: 2017 Apr 10
