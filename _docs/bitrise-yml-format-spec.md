@@ -112,5 +112,20 @@ Available trigger events ( with properties ):
     - `run_if: .IsCI` will only run the step if the CLI runs in `CI` mode.
     - `run_if: '{{enveq "TEST_KEY" "test value"}}'` will skip the step unless
       the `TEST_KEY` environment variable is defined, and its value is `test value`.
-- `inputs` : inputs of the step.
-- `outputs` : outputs of the step.
+- `inputs` : inputs Environments of the step.
+- `outputs` : outputs Environments of the step.
+
+## Environment properties
+
+- `title`, `summary` and `description` : metadata, for comments, tools and GUI.
+  _Note: these meta properties can be used for permanent comments. Standard YML comments
+  are not preserved when the YML is normalized, converted to JSON or otherwise
+  generated or transformed. These meta properties are._
+- `is_expand` : if `true` the shell environment variables, in the Environment value, are expanded/resolved.
+- `skip_if_empty` : if `true` and if the Environment's value is empty, these Environment will not be used.
+- `category` : used to categorise the Environment variable.
+- `value_options` : list of the available values.
+- `is_required` : used when the Environment is used as a Step input Environment. If `true` the step requires to define not empty value for this Environment.
+- `is_dont_change_value` : means, that this value should not be changed.
+- `is_template` : if `true` the Environment's value will be evaulated as a go template and the evaulated value will be used.
+
