@@ -100,40 +100,9 @@ docker-compose build && docker-compose run --rm app go test ./...
 
 1. Update go dependencies (`bitrise run godeps-update`)
 1. PR & merge these changes to the `master` branch
-1. Release a new versions of bitrise-tools (stepman, envman) if there are changes, you can find the dependent tools in `./bitrise/setup.go`: 
-
-```
-...
-const (
-	minEnvmanVersion  = "1.1.3"
-	minStepmanVersion = "0.9.30"
-)
-...
-```
-
-4. Release a new versions of default plugins if there are changes, you can find the default plugins in `./bitrise/setup.go`:
-
-```
-...
-// PluginDependencyMap ...
-var PluginDependencyMap = map[string]PluginDependency{
-	"analytics": PluginDependency{
-		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		MinVersion: "0.9.6",
-	},
-	"init": PluginDependency{
-		Source:     "https://github.com/bitrise-core/bitrise-plugins-init.git",
-		MinVersion: "0.9.0",
-	},
-	"workflow-editor": PluginDependency{
-		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
-		MinVersion: "0.9.8",
-	},
-}
-...
-```
-
-5. Bump bitrise-tools and default plugins versions in `./bitrise/setup.go`
+1. Release a new versions of bitrise-tools (stepman, envman) if there are changes, you can find the dependent tools in `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion`
+1. Release a new versions of default plugins if there are changes, you can find the default plugins in `./bitrise/setup.go -> PluginDependencyMap`
+1. Bump bitrise-tools and default plugins versions in `./bitrise/setup.go`
 1. PR & merge these changes to the `master` branch
 1. Bump `RELEASE_VERSION` in bitrise.yml
 1. Run `bitrise-run create-release`
