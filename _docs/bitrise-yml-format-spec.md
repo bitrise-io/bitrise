@@ -5,13 +5,13 @@
 The bare minimum `bitrise.yml` is:
 
 ```
-format_version: 1.3.1
+format_version: 2
 ```
 
 Minimum `bitrise.yml` for a single (no-op) workflow:
 
 ```
-format_version: 1.3.1
+format_version: 2
 workflows:
   test:
 ```
@@ -20,23 +20,47 @@ workflows:
 
 - `format_version` : this property declares the minimum Bitrise CLI format version.
   You can get your Bitrise CLI's supported highest format version with: `bitrise version --full`.
-  If you set the `format_version` to `1.3.1` that means that Bitrise CLI versions which
-  don't support the format version `1.3.1` or higher won't be able to run the configuration.
+  If you set the `format_version` to `2` that means that Bitrise CLI versions which
+  don't support the format version `2` or higher won't be able to run the configuration.
   This is important if you use features which are not available in older Bitrise CLI versions.
 - `default_step_lib_source` : specifies the source to use when no other source is defined for a step.
+- `project_type` : defines your source project's type.
 - `title`, `summary` and `description` : metadata, for comments, tools and GUI.
   _Note: these meta properties can be used for permanent comments. Standard YML comments
   are not preserved when the YML is normalized, converted to JSON or otherwise
   generated or transformed. These meta properties are._
-- `app` : global, "app" specific configurations. The following optional sub properties are supported:
-    - `envs` : configuration global environment variables list
-    - `title`, `summary` and `description` : metadata, for comments, tools and GUI.
-      _Note: these meta properties can be used for permanent comments. Standard YML comments
-      are not preserved when the YML is normalized, converted to JSON or otherwise
-      generated or transformed. These meta properties are._
+- `app` : global, "app" specific configurations.
 - `trigger_map` : Trigger Map definitions.
 - `workflows` : workflow definitions.
 
+## App properties
+
+- `envs` : configuration global environment variables list
+- `title`, `summary` and `description` : metadata, for comments, tools and GUI.
+  _Note: these meta properties can be used for permanent comments. Standard YML comments
+  are not preserved when the YML is normalized, converted to JSON or otherwise
+  generated or transformed. These meta properties are._
+
+##  Trigger Map
+
+Trigger Map is a list of Trigger Map Items. The elements of the list are processed ordered. If one item matches to the current git event, the item defined workflow will be run.
+
+## Trigger Map Item
+
+Trigger Map Item defines what kind of git event should trigger which workflow.
+
+The Trigger Map Item layout: 
+
+```
+git_event_property: pattern
+workflow: workflow_id
+```
+
+Available trigger events ( with properties ):
+
+- Code Push (`push_branch`)
+- Pull Request (`pull_request_source_branch`, `pull_request_target_branch`)
+- Creating Tag (`tag`)
 
 ## Workflow properties
 
@@ -88,5 +112,20 @@ workflows:
     - `run_if: .IsCI` will only run the step if the CLI runs in `CI` mode.
     - `run_if: '{{enveq "TEST_KEY" "test value"}}'` will skip the step unless
       the `TEST_KEY` environment variable is defined, and its value is `test value`.
-- `inputs` : inputs of the step.
-- `outputs` : outputs of the step.
+- `inputs` : inputs Environments of the step.
+- `outputs` : outputs Environments of the step.
+
+## Environment properties
+
+- `title`, `summary` and `description` : metadata, for comments, tools and GUI.
+  _Note: these meta properties can be used for permanent comments. Standard YML comments
+  are not preserved when the YML is normalized, converted to JSON or otherwise
+  generated or transformed. These meta properties are._
+- `is_expand` : if `true` the shell environment variables, in the Environment value, are expanded/resolved.
+- `skip_if_empty` : if `true` and if the Environment's value is empty, these Environment will not be used.
+- `category` : used to categorise the Environment variable.
+- `value_options` : list of the available values.
+- `is_required` : used when the Environment is used as a Step input Environment. If `true` the step requires to define not empty value for this Environment.
+- `is_dont_change_value` : means, that this value should not be changed.
+- `is_template` : if `true` the Environment's value will be evaulated as a go template and the evaulated value will be used.
+
