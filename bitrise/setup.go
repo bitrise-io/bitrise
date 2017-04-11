@@ -14,7 +14,7 @@ import (
 
 const (
 	minEnvmanVersion  = "1.1.3"
-	minStepmanVersion = "0.9.29"
+	minStepmanVersion = "0.9.30"
 )
 
 // PluginDependency ..
@@ -35,7 +35,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"workflow-editor": PluginDependency{
 		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
-		MinVersion: "0.9.6",
+		MinVersion: "0.9.8",
 	},
 }
 
