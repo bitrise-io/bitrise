@@ -1,6 +1,47 @@
-## Changelog (Current version: 1.5.5)
+## Changelog (Current version: 1.5.6)
 
 -----------------
+
+## 1.5.6 (2017 Apr 11)
+
+### Release Notes
+
+* Switch Bitrise Data Model's (bitrise.yml) `format_version` to one component version number.
+* Added `project_type` property to Bitrise Data Model - defines your source project's type.
+* `bitrise.yml` format [specification](https://github.com/bitrise-io/bitrise/blob/master/_docs/bitrise-yml-format-spec.md) update.
+* Dependency updates:
+
+  - minimum [stepman](https://github.com/bitrise-io/stepman) version: [0.9.30](https://github.com/bitrise-io/stepman/releases/tag/0.9.30)
+  - default [workflow-editor](https://github.com/bitrise-io/bitrise-workflow-editor) version: [0.9.8](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/0.9.8)
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.5.6/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.5 -> 1.5.6
+
+* [4920e46] Krisztian Godrei - prepare for 1.5.6 (2017 Apr 11)
+* [08589f2] Krisztián Gödrei - bump min stepman to 0.9.30, bump min wf editor to 0.9.8 (#484) (2017 Apr 11)
+* [bc97566] Krisztián Gödrei - switch format version to one component version number, docs (#483) (2017 Apr 11)
+* [2c0d842] Krisztián Gödrei - godeps update (#482) (2017 Apr 10)
+* [2fa6ef4] Krisztián Gödrei - Update CHANGELOG.md (2017 Mar 14)
+
 
 ## 1.5.5 (2017 Mar 13)
 
@@ -2730,4 +2771,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Mar 13
+Updated: 2017 Apr 11
