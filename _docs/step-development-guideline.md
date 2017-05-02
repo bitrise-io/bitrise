@@ -79,7 +79,7 @@ You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for
 
 You can use `project_type_tags` and `type_tags` to group/categorise your steps.
 
-`project_type_tags` are used to control if the step is available/usefull for the given project type.
+`project_type_tags` are used to control if the step is available/useful for the given project type.
 
 Available `project_type_tags`:
 
@@ -91,7 +91,7 @@ Available `project_type_tags`:
 - cordova
 - ionic
 
-_If step is available for all project type, do not specify project_type_tags, otherwise specify every project type, with which the step can work._
+_If step is available for all project types, do not specify project_type_tags, otherwise specify every project types, with which the step can work._
 
 `type_tags` are used to categorise the steps based on it's functionality.
 
