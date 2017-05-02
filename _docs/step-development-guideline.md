@@ -108,4 +108,4 @@ Available `type_tags`:
 - test
 - notification
 
-_Every step should have at least one type_tag, if you feel you would need a new one, or update an existing's name, please create a github issue, with your suggestion._
+_Every step should have at least one type_tag, if you feel you would need a new one, or update an existing's name, please [create a github issue](https://github.com/bitrise-io/bitrise/issues/new), with your suggestion._
