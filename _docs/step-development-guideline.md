@@ -74,3 +74,38 @@ You should postfix the output ID with `_LIST` (e.g. `OUTPUT_PATH_LIST`), and pro
 ## Version naming convention
 
 You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for your step. For example: `1.2.3`.
+
+## Step Grouping convention
+
+You can use `project_type_tags` and `type_tags` to group/categorise your steps.
+
+`project_type_tags` are used to control if the step is available/useful for the given project type.
+
+Available `project_type_tags`:
+
+- ios
+- macos
+- android
+- xamarin
+- react-native
+- cordova
+- ionic
+
+_If step is available for all project types, do not specify project_type_tags, otherwise specify every project types, with which the step can work._
+
+`type_tags` are used to categorise the steps based on it's functionality.
+
+Available `type_tags`:
+
+- access control
+- artifact info
+- installer
+- deploy
+- utility
+- dependency
+- code sign
+- build
+- test
+- notification
+
+_Every step should have at least one type_tag, if you feel you would need a new one, or update an existing's name, please [create a github issue](https://github.com/bitrise-io/bitrise/issues/new), with your suggestion._
