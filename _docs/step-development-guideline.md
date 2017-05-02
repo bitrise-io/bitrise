@@ -46,6 +46,10 @@ and `bitrise` will manage to call the dependency manager to install the dependen
 and will fail before the Step execution in case it can't retrieve the dependency.
 
 
+## Step id naming convention
+
+Use __delimiter-separated words__ for you step id. The delimiter should be the hyphen (`-`) character.
+
 ## Input naming convention
 
 Use lower case [snake case](https://en.wikipedia.org/wiki/Snake_case) style input IDs, e.g. `input_path`.
