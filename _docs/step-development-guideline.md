@@ -77,7 +77,7 @@ You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for
 
 ## Step Grouping convention
 
-You can use `project_type_tags` and `type_tags` to group your steps.
+You can use `project_type_tags` and `type_tags` to group/categorise your steps.
 
 `project_type_tags` are used to control if the step is available/usefull for the given project type.
 
