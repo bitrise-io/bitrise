@@ -74,3 +74,36 @@ You should postfix the output ID with `_LIST` (e.g. `OUTPUT_PATH_LIST`), and pro
 ## Version naming convention
 
 You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for your step. For example: `1.2.3`.
+
+## Step Grouping convention
+
+You can use `project_type_tags` and `type_tags` to group your steps.
+
+`project_type_tags` are used to control if the step is available/usefull for the given project type.
+
+Available `project_type_tags`:
+
+- ios
+- macos
+- android
+- xamarin
+- react-native
+- cordova
+- ionic
+
+_If step is available for all project type, do not specify project_type_tags, otherwise specify every project type, with which the step can work._
+
+`type_tags` are used to categorise the steps based on it's functionality.
+
+Available `type_tags`:
+
+- access control
+- artifact info
+- installer
+- deploy
+- utility
+- dependency
+- code sign
+- build
+- test
+- notification
