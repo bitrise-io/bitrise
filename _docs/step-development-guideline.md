@@ -46,6 +46,11 @@ and `bitrise` will manage to call the dependency manager to install the dependen
 and will fail before the Step execution in case it can't retrieve the dependency.
 
 
+## Step id naming convention
+
+Use hyphen (`-`) separated words for you step id, like: `set-ios-bundle-identifier`, `xcode-archive-mac`, ...
+
+
 ## Input naming convention
 
 Use lower case [snake case](https://en.wikipedia.org/wiki/Snake_case) style input IDs, e.g. `input_path`.
@@ -71,9 +76,11 @@ Use all-upper-case [snake case](https://en.wikipedia.org/wiki/Snake_case) style 
 
 You should postfix the output ID with `_LIST` (e.g. `OUTPUT_PATH_LIST`), and provide the values as a pipe separated list (e.g. `first value|second value`). This is not a hard requirement, but a strong suggestion. This means that you should prefer this solution unless you really need to use another character for separating values. Based on our experience the pipe character (`|`) works really well as a universal separator character, as it's quite rare in output values (compared to `,`, `;`, `=` or other more common separator characters).
 
+
 ## Version naming convention
 
 You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for your step. For example: `1.2.3`.
+
 
 ## Step Grouping convention
 
