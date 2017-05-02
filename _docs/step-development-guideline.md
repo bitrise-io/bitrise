@@ -97,13 +97,13 @@ _If step is available for all project types, do not specify project_type_tags, o
 
 Available `type_tags`:
 
-- access control
-- artifact info
+- access-control
+- artifact-info
 - installer
 - deploy
 - utility
 - dependency
-- code sign
+- code-sign
 - build
 - test
 - notification
