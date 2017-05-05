@@ -1,68 +1,173 @@
 package plugins
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewPluginFromBytes(t *testing.T) {
-	t.Log("simple plugin")
+func write(t *testing.T, content, toPth string) {
+	toDir := filepath.Dir(toPth)
+	exist, err := pathutil.IsDirExists(toDir)
+	require.NoError(t, err)
+	if !exist {
+		require.NoError(t, os.MkdirAll(toDir, 0700))
+	}
+	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
+}
+
+func TestParseAndValidatePluginFromYML(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
+	require.NoError(t, err)
+
+	t.Log("simple plugin - with executables")
 	{
-		pluginStr := `name: Name
-description: Description
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+executable:
+  osx: bin_url
+  linux: bin_url
 requirements:
-- tool: Tool
-  min_version: 1.0.0
-  max_version: 1.0.2
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
 `
 
-		plugin, err := NewPluginFromBytes([]byte(pluginStr))
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
+
+		plugin, err := ParseAndValidatePluginFromYML(pth)
 		require.NoError(t, err)
-		require.Equal(t, "Name", plugin.Name)
-		require.Equal(t, "Description", plugin.Description)
+		require.Equal(t, "step", plugin.Name)
+		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
 		require.Equal(t, 1, len(plugin.Requirements))
 
 		requirement := plugin.Requirements[0]
-		require.Equal(t, "Tool", requirement.Tool)
-		require.Equal(t, "1.0.0", requirement.MinVersion)
-		require.Equal(t, "1.0.2", requirement.MaxVersion)
+		require.Equal(t, "bitrise", requirement.Tool)
+		require.Equal(t, "1.3.0", requirement.MinVersion)
+		require.Equal(t, "", requirement.MaxVersion)
 	}
-}
 
-func TestValidate(t *testing.T) {
 	t.Log("invalid plugin - no name")
 	{
-		pluginStr := `name: ""
-description: Description
+		pluginStr := `name: 
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+executable:
+  osx: bin_url
+  linux: bin_url
 requirements:
-- tool: Tool
-  min_version: 1.0.0
-  max_version: 1.0.2
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
 `
 
-		_, err := NewPluginFromBytes([]byte(pluginStr))
-		require.Error(t, err)
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
+
+		_, err := ParseAndValidatePluginFromYML(pth)
+		require.EqualError(t, err, "missing name")
 	}
-}
 
-func TestString(t *testing.T) {
-	t.Log("simple plugin")
+	t.Log("invalid plugin - no linux executable")
 	{
-		pluginStr := `name: Name
-description: Description
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+executable:
+  osx: bin_url
+  linux: 
 requirements:
-- tool: Tool
-  min_version: 1.0.0
-  max_version: 1.0.2
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
 `
 
-		plugin, err := NewPluginFromBytes([]byte(pluginStr))
-		require.NoError(t, err)
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
 
-		desiredPrintablePlugin := "\x1b[32;1mName\x1b[0m\n  Description: Description"
-		printablePlugin := plugin.String()
-		require.Equal(t, desiredPrintablePlugin, printablePlugin)
+		_, err := ParseAndValidatePluginFromYML(pth)
+		require.EqualError(t, err, "both osx and linux executable should be defined, or non of them")
+	}
+
+	t.Log("invalid plugin - no osx executable")
+	{
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+executable:
+  osx: 
+  linux: bin_url
+requirements:
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
+`
+
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
+
+		_, err := ParseAndValidatePluginFromYML(pth)
+		require.EqualError(t, err, "both osx and linux executable should be defined, or non of them")
+	}
+
+	t.Log("invalid plugin - no executables, no bitrise-plugin.sh")
+	{
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+requirements:
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
+`
+
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
+
+		_, err := ParseAndValidatePluginFromYML(pth)
+		require.Error(t, err)
+		require.Equal(t, true, strings.Contains(err.Error(), "no executable defined, nor bitrise-plugin.sh exist at:"))
+	}
+
+	t.Log("simple plugin - with bitrise-plugin.sh")
+	{
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger:
+requirements:
+- tool: bitrise
+  min_version: 1.3.0
+  max_version: ""
+`
+
+		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+		write(t, pluginStr, pth)
+
+		write(t, "test", filepath.Join(tmpDir, "bitrise-plugin.sh"))
+
+		plugin, err := ParseAndValidatePluginFromYML(pth)
+		require.NoError(t, err)
+		require.Equal(t, "step", plugin.Name)
+		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
+		require.Equal(t, 1, len(plugin.Requirements))
+
+		requirement := plugin.Requirements[0]
+		require.Equal(t, "bitrise", requirement.Tool)
+		require.Equal(t, "1.3.0", requirement.MinVersion)
+		require.Equal(t, "", requirement.MaxVersion)
 	}
 }
 
@@ -169,18 +274,6 @@ func TestValidateRouting(t *testing.T) {
 		require.Error(t, routing.Validate())
 	}
 }
-
-/*
-// AddRoute ...
-func (routing *PluginRouting) AddRoute(route PluginRoute) {
-	routing.RouteMap[route.Name] = route
-}
-
-// DeleteRoute ...
-func (routing *PluginRouting) DeleteRoute(routeName string) {
-	delete(routing.RouteMap, routeName)
-}
-*/
 
 func TestAddRoute(t *testing.T) {
 	t.Log("simple add")
