@@ -20,7 +20,7 @@ func pluginInstall(c *cli.Context) error {
 
 	// Install
 	if pluginVersionTag == "" {
-		log.Infof("=> Installing plugin from (%s) with latest version...", pluginSource)
+		log.Infof("=> Installing plugin from (%s)...", pluginSource)
 	} else {
 		log.Infof("=> Installing plugin (%s) with version (%s)...", pluginSource, pluginVersionTag)
 	}
