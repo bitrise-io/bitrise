@@ -31,7 +31,11 @@ func pluginInstall(c *cli.Context) error {
 	}
 
 	fmt.Println()
-	log.Infoln(colorstring.Greenf("Plugin (%s) with version (%s) installed ", plugin.Name, version))
+	if version == "" {
+		log.Infoln(colorstring.Greenf("Local plugin (%s) installed ", plugin.Name))
+	} else {
+		log.Infoln(colorstring.Greenf("Plugin (%s) with version (%s) installed ", plugin.Name, version))
+	}
 
 	if len(plugin.Description) > 0 {
 		fmt.Println()
@@ -65,17 +69,17 @@ func pluginDelete(c *cli.Context) error {
 	}
 
 	// Delete
-	version := "local"
 	if versionPtr != nil {
-		version = versionPtr.String()
+		log.Infof("=> Deleting plugin (%s) with version (%s) ...", name, versionPtr.String())
+	} else {
+		log.Infof("=> Deleting local plugin (%s) ...", name)
 	}
-	log.Infof("=> Deleting plugin (%s) with version (%s) ...", name, version)
 	if err := plugins.DeletePlugin(name); err != nil {
-		log.Fatalf("Failed to delete plugin (%s) with version (%s), error: %s", name, version, err)
+		log.Fatalf("Failed to delete plugin (%s), error: %s", name, err)
 	}
 
 	fmt.Println()
-	log.Infof(colorstring.Greenf("Plugin (%s) with version (%s) deleted", name, version))
+	log.Infof(colorstring.Greenf("Plugin deleted"))
 
 	return nil
 }

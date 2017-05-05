@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	pluginsDirName = "plugins"
-	pluginSpecName = "spec.yml"
+	pluginsDirName     = "plugins"
+	pluginSpecFileName = "spec.yml"
 
-	pluginShName  = "bitrise-plugin.sh"
-	pluginYMLName = "bitrise-plugin.yml"
+	pluginScriptFileName     = "bitrise-plugin.sh"
+	pluginDefinitionFileName = "bitrise-plugin.yml"
 )
 
 var (
@@ -31,8 +31,8 @@ var (
 // -----------------------
 
 // CreateAndAddPluginRoute ...
-func CreateAndAddPluginRoute(name, source, executable, version, commitHash, triggerEvent string) error {
-	newRoute, err := NewPluginRoute(name, source, executable, version, commitHash, triggerEvent)
+func CreateAndAddPluginRoute(plugin Plugin, source, version, commitHash string) error {
+	newRoute, err := NewPluginRoute(plugin.Name, source, plugin.ExecutableURL(), version, commitHash, plugin.TriggerEvent)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func GetPluginDataDir(name string) string {
 
 // GetPluginYMLPath ...
 func GetPluginYMLPath(name string) string {
-	return filepath.Join(GetPluginSrcDir(name), pluginYMLName)
+	return filepath.Join(GetPluginSrcDir(name), pluginDefinitionFileName)
 }
 
 // GetPluginExecutablePath ...
@@ -156,7 +156,7 @@ func GetPluginExecutablePath(name string) (string, bool, error) {
 	if route.Executable != "" {
 		return filepath.Join(GetPluginBinDir(name), name), true, nil
 	}
-	return filepath.Join(GetPluginSrcDir(name), pluginShName), false, nil
+	return filepath.Join(GetPluginSrcDir(name), pluginScriptFileName), false, nil
 }
 
 // -----------------------
@@ -180,7 +180,7 @@ func InitPaths() error {
 	pluginsDir = tmpPluginsDir
 
 	// Plugins routing
-	pluginsRoutingPth = filepath.Join(pluginsDir, pluginSpecName)
+	pluginsRoutingPth = filepath.Join(pluginsDir, pluginSpecFileName)
 
 	return nil
 }

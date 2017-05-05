@@ -120,7 +120,7 @@ func LoadPlugin(name string) (Plugin, bool, error) {
 
 	pluginYMLPath := GetPluginYMLPath(name)
 
-	plugin, err := NewPluginFromYML(pluginYMLPath)
+	plugin, err := ParseAndValidatePluginFromYML(pluginYMLPath)
 	if err != nil {
 		return Plugin{}, true, err
 	}
