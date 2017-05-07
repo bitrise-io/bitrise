@@ -112,10 +112,31 @@ Available trigger events ( with properties ):
     - `run_if: .IsCI` will only run the step if the CLI runs in `CI` mode.
     - `run_if: '{{enveq "TEST_KEY" "test value"}}'` will skip the step unless
       the `TEST_KEY` environment variable is defined, and its value is `test value`.
-- `inputs` : inputs Environments of the step.
-- `outputs` : outputs Environments of the step.
+- `inputs` : inputs (Environments) of the step. Syntax described in the **Environment properties** section.
+- `outputs` : outputs (Environments) of the step. Syntax described in the **Environment properties** section.
 
 ## Environment properties
+
+Environment items (including App Env Vars, Workflow env vars, step inputs, step outputs, ...)
+consist of two main parts, a **KEY: value** and an **opts** part.
+
+When specifying an env item the **KEY: value** part is **required**, **opts** is *optional*.
+
+An example environment item, specifying a key-value and some opts:
+
+```
+- MY_KEY_FOR_THE_ENV: my value for the env
+  opts:
+    title: An example env var item
+    is_dont_change_value: false
+    category: example
+```
+
+Or in case when you only want to specify the key and the value:
+
+```
+- MY_KEY_FOR_THE_ENV: my value for the env
+```
 
 - `title`, `summary` and `description` : metadata, for comments, tools and GUI.
   _Note: these meta properties can be used for permanent comments. Standard YML comments
@@ -126,6 +147,6 @@ Available trigger events ( with properties ):
 - `category` : used to categorise the Environment variable.
 - `value_options` : list of the available values.
 - `is_required` : used when the Environment is used as a Step input Environment. If `true` the step requires to define not empty value for this Environment.
-- `is_dont_change_value` : means, that this value should not be changed.
+- `is_dont_change_value` : means, that this value should not be changed / should be hidden on UIs. Mainly used for debug inputs and for "connection" inputs (set to outputs of other steps, to connect this step with another one).
 - `is_template` : if `true` the Environment's value will be evaulated as a go template and the evaulated value will be used.
 
