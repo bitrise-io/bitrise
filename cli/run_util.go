@@ -440,7 +440,12 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
 		}
 
-		return exit, stepOutputs, err
+		updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+		if updateErr != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+		}
+
+		return exit, updatedStepOutputs, err
 	}
 
 	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
@@ -448,9 +453,14 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
+	updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+	if updateErr != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+	}
+
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
-	return 0, stepOutputs, nil
+	return 0, updatedStepOutputs, nil
 }
 
 func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel, isLastWorkflow bool) models.BuildRunResultsModel {
