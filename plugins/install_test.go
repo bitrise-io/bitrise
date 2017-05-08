@@ -13,6 +13,38 @@ import (
 const examplePluginGitURL = "https://github.com/bitrise-core/bitrise-plugins-example.git"
 const analyticsPluginBinURL = "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
 
+func TestIsLocalURL(t *testing.T) {
+	t.Log("local url - absolute")
+	{
+		require.Equal(t, true, isLocalURL("/usr/bin"))
+	}
+
+	t.Log("local url - relative")
+	{
+		require.Equal(t, true, isLocalURL("../usr/bin"))
+	}
+
+	t.Log("local url - with prefix: file://")
+	{
+		require.Equal(t, true, isLocalURL("file:///usr/bin"))
+	}
+
+	t.Log("local url - relative with prefix: file://")
+	{
+		require.Equal(t, true, isLocalURL("file://./../usr/bin"))
+	}
+
+	t.Log("remote url")
+	{
+		require.Equal(t, false, isLocalURL("https://bitrise.io"))
+	}
+
+	t.Log("remote url- git ssh url")
+	{
+		require.Equal(t, false, isLocalURL("git@github.com:bitrise-io/bitrise.git"))
+	}
+}
+
 func TestValidateVersion(t *testing.T) {
 	t.Log("required min - pass")
 	{
@@ -161,57 +193,6 @@ func TestValidateRequirements(t *testing.T) {
 
 		err := validateRequirements(requirements, currentVersionMap)
 		require.Error(t, err)
-	}
-}
-
-func TestClonePluginSrc(t *testing.T) {
-	t.Log("example plugin - latest version")
-	{
-		pluginSource := examplePluginGitURL
-		versionTag := ""
-		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
-		require.NoError(t, err)
-
-		exist, err := pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		if exist {
-			err := os.RemoveAll(destinationDir)
-			require.NoError(t, err)
-		}
-
-		version, hash, err := clonePluginSrc(pluginSource, versionTag, destinationDir)
-		require.NoError(t, err)
-		require.NotNil(t, version)
-		require.NotEmpty(t, hash)
-
-		exist, err = pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		require.Equal(t, true, exist)
-	}
-
-	t.Log("example plugin - 0.9.0 version")
-	{
-		pluginSource := examplePluginGitURL
-		versionTag := "0.9.0"
-		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
-		require.NoError(t, err)
-
-		exist, err := pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		if exist {
-			err := os.RemoveAll(destinationDir)
-			require.NoError(t, err)
-		}
-
-		version, hash, err := clonePluginSrc(pluginSource, versionTag, destinationDir)
-		require.NoError(t, err)
-		require.NotNil(t, version)
-		require.Equal(t, "0.9.0", version.String())
-		require.NotEmpty(t, hash)
-
-		exist, err = pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		require.Equal(t, true, exist)
 	}
 }
 

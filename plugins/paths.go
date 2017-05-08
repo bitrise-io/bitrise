@@ -31,8 +31,8 @@ var (
 // -----------------------
 
 // CreateAndAddPluginRoute ...
-func CreateAndAddPluginRoute(plugin Plugin, source, version, commitHash string) error {
-	newRoute, err := NewPluginRoute(plugin.Name, source, plugin.ExecutableURL(), version, commitHash, plugin.TriggerEvent)
+func CreateAndAddPluginRoute(plugin Plugin, source, version string) error {
+	newRoute, err := NewPluginRoute(plugin.Name, source, plugin.ExecutableURL(), version, plugin.TriggerEvent)
 	if err != nil {
 		return err
 	}

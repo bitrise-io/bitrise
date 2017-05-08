@@ -40,32 +40,6 @@ func validateVersion(current, requiredMin ver.Version, requiredMax *ver.Version)
 	return nil
 }
 
-func clonePluginSrc(sourceURL, versionTag, destinationDir string) (*ver.Version, string, error) {
-	url, err := url.Parse(sourceURL)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to parse url (%s), error: %s", sourceURL, err)
-	}
-
-	// Download local source dir
-	if url.Scheme == "file" {
-		sourceDir := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
-
-		if err := command.CopyDir(sourceDir, destinationDir, true); err != nil {
-			return nil, "", fmt.Errorf("failed to copy (%s) to (%s), error: %s", sourceDir, destinationDir, err)
-		}
-
-		return nil, "", nil
-	}
-
-	// Download remote source dir
-	version, hash, err := GitCloneAndCheckoutVersion(destinationDir, sourceURL, versionTag)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to git clone (%s), error: %s", sourceURL, err)
-	}
-
-	return version, hash, nil
-}
-
 func downloadPluginBin(sourceURL, destinationPth string) error {
 
 	url, err := url.Parse(sourceURL)
@@ -121,9 +95,6 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 //=======================================
 
 func installLocalPlugin(srcDir string) (Plugin, error) {
-	originalSrcDir := srcDir
-	srcDir = strings.TrimPrefix(srcDir, "file://")
-
 	// Parse & validate plugin
 	tmpPluginYMLPath := filepath.Join(srcDir, pluginDefinitionFileName)
 
@@ -141,7 +112,7 @@ func installLocalPlugin(srcDir string) (Plugin, error) {
 	if route, found, err := ReadPluginRoute(newPlugin.Name); err != nil {
 		return Plugin{}, fmt.Errorf("failed to check if plugin already installed, error: %s", err)
 	} else if found {
-		if route.Source != originalSrcDir {
+		if route.Source != srcDir {
 			return Plugin{}, fmt.Errorf("plugin already installed with name (%s) from different source (%s)", route.Name, route.Source)
 		}
 
@@ -232,13 +203,22 @@ func installLocalPlugin(srcDir string) (Plugin, error) {
 	return newPlugin, nil
 }
 
+func isLocalURL(urlStr string) bool {
+	parsed, err := url.Parse(urlStr)
+	if err != nil {
+		return false
+	}
+	if parsed == nil {
+		return false
+	}
+	return (parsed.Scheme == "file" || parsed.Scheme == "")
+}
+
 // InstallPlugin ...
 func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
-	newVersionStr := ""
-	newVersinCommitHash := ""
+	newVersion := ""
 
-	if !strings.HasPrefix(srcURL, "file://") {
-		// Git clone plugin
+	if !isLocalURL(srcURL) {
 		pluginSrcTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-src-tmp")
 		if err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to create plugin src temp directory, error: %s", err)
@@ -249,17 +229,15 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 			}
 		}()
 
-		versionPtr, commitHash, err := clonePluginSrc(srcURL, versionTag, pluginSrcTmpDir)
+		version, err := GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, srcURL, versionTag)
 		if err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to download plugin, error: %s", err)
 		}
 
-		if versionPtr != nil {
-			newVersionStr = (*versionPtr).String()
-		}
-		newVersinCommitHash = commitHash
 		srcURL = pluginSrcTmpDir
-		// ---
+		newVersion = version
+	} else {
+		srcURL = strings.TrimPrefix(srcURL, "file://")
 	}
 
 	newPlugin, err := installLocalPlugin(srcURL)
@@ -268,11 +246,11 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 	}
 
 	// Register to bitrise
-	if err := CreateAndAddPluginRoute(newPlugin, srcURL, newVersionStr, newVersinCommitHash); err != nil {
+	if err := CreateAndAddPluginRoute(newPlugin, srcURL, newVersion); err != nil {
 		return Plugin{}, "", fmt.Errorf("failed to add plugin route, error: %s", err)
 	}
 
-	return newPlugin, newVersionStr, nil
+	return newPlugin, newVersion, nil
 }
 
 // DeletePlugin ...

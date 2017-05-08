@@ -11,9 +11,11 @@ import (
 
 func pluginInstall(c *cli.Context) error {
 	// Input validation
-	pluginSource := c.String("source")
-	if pluginSource == "" {
-		log.Fatal("Missing required input: source")
+	pluginSource := ""
+	if args := c.Args(); len(args) > 0 {
+		pluginSource = args[0]
+	} else {
+		pluginSource = c.String("source")
 	}
 
 	pluginVersionTag := c.String("version")
@@ -22,7 +24,7 @@ func pluginInstall(c *cli.Context) error {
 	if pluginVersionTag == "" {
 		log.Infof("=> Installing plugin from (%s)...", pluginSource)
 	} else {
-		log.Infof("=> Installing plugin (%s) with version (%s)...", pluginSource, pluginVersionTag)
+		log.Infof("=> Installing plugin from (%s) with version (%s)...", pluginSource, pluginVersionTag)
 	}
 
 	plugin, version, err := plugins.InstallPlugin(pluginSource, pluginVersionTag)
@@ -48,11 +50,12 @@ func pluginInstall(c *cli.Context) error {
 
 func pluginDelete(c *cli.Context) error {
 	// Input validation
-	if len(c.Args()) == 0 {
+	args := c.Args()
+	if len(args) == 0 {
 		log.Fatal("Missing plugin name")
 	}
 
-	name := c.Args()[0]
+	name := args[0]
 	if name == "" {
 		log.Fatal("Missing plugin name")
 	}

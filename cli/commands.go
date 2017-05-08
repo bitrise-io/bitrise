@@ -250,7 +250,7 @@ var (
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "source",
-							Usage: "Plugin source url (use file:// prefix for local plugins, or git url for remote plugins).",
+							Usage: "Plugin source url (can be local path or remote url).",
 						},
 						cli.StringFlag{
 							Name:  "version",

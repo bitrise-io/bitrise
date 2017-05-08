@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -34,7 +33,6 @@ type PluginInput map[string]string
 
 // ParseArgs ...
 func ParseArgs(args []string) (string, []string, bool) {
-	log.Debugf("args: %v", args)
 
 	if len(args) == 0 {
 		return "", []string{}, false
@@ -90,9 +88,6 @@ func CheckForNewVersion(plugin Plugin) (string, error) {
 		return "", err
 	}
 
-	log.Debug("")
-	log.Debugf("versions: %v", versions)
-
 	if len(versions) == 0 {
 		return "", nil
 	}
@@ -104,12 +99,7 @@ func CheckForNewVersion(plugin Plugin) (string, error) {
 		return "", fmt.Errorf("failed to check installed plugin (%s) version, error: %s", plugin.Name, err)
 	}
 
-	log.Debug("")
-	log.Debugf("latestVersion: %v", latestVersion)
-	log.Debugf("currentVersion: %v", currentVersion)
-
 	if currentVersion == nil {
-		log.Debugf("Installed plugin (%s) is from local source, nothing to check...", plugin.Name)
 		return "", nil
 	}
 

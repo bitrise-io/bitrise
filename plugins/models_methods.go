@@ -201,13 +201,12 @@ func (s *pluginSorter) Less(i, j int) bool {
 //=======================================
 
 // NewPluginRoute ...
-func NewPluginRoute(name, source, executable, version, commitHash, triggerEvent string) (PluginRoute, error) {
+func NewPluginRoute(name, source, executable, version, triggerEvent string) (PluginRoute, error) {
 	route := PluginRoute{
 		Name:         name,
 		Source:       source,
 		Executable:   executable,
 		Version:      version,
-		CommitHash:   commitHash,
 		TriggerEvent: triggerEvent,
 	}
 	if err := route.Validate(); err != nil {
