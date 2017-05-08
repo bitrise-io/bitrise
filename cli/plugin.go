@@ -11,18 +11,20 @@ import (
 
 func pluginInstall(c *cli.Context) error {
 	// Input validation
-	pluginSource := c.String("source")
-	if pluginSource == "" {
-		log.Fatal("Missing required input: source")
+	pluginSource := ""
+	if args := c.Args(); len(args) > 0 {
+		pluginSource = args[0]
+	} else {
+		pluginSource = c.String("source")
 	}
 
 	pluginVersionTag := c.String("version")
 
 	// Install
 	if pluginVersionTag == "" {
-		log.Infof("=> Installing plugin from (%s) with latest version...", pluginSource)
+		log.Infof("=> Installing plugin from (%s)...", pluginSource)
 	} else {
-		log.Infof("=> Installing plugin (%s) with version (%s)...", pluginSource, pluginVersionTag)
+		log.Infof("=> Installing plugin from (%s) with version (%s)...", pluginSource, pluginVersionTag)
 	}
 
 	plugin, version, err := plugins.InstallPlugin(pluginSource, pluginVersionTag)
@@ -31,7 +33,11 @@ func pluginInstall(c *cli.Context) error {
 	}
 
 	fmt.Println()
-	log.Infoln(colorstring.Greenf("Plugin (%s) with version (%s) installed ", plugin.Name, version))
+	if version == "" {
+		log.Infoln(colorstring.Greenf("Local plugin (%s) installed ", plugin.Name))
+	} else {
+		log.Infoln(colorstring.Greenf("Plugin (%s) with version (%s) installed ", plugin.Name, version))
+	}
 
 	if len(plugin.Description) > 0 {
 		fmt.Println()
@@ -44,11 +50,12 @@ func pluginInstall(c *cli.Context) error {
 
 func pluginDelete(c *cli.Context) error {
 	// Input validation
-	if len(c.Args()) == 0 {
+	args := c.Args()
+	if len(args) == 0 {
 		log.Fatal("Missing plugin name")
 	}
 
-	name := c.Args()[0]
+	name := args[0]
 	if name == "" {
 		log.Fatal("Missing plugin name")
 	}
@@ -65,17 +72,17 @@ func pluginDelete(c *cli.Context) error {
 	}
 
 	// Delete
-	version := "local"
 	if versionPtr != nil {
-		version = versionPtr.String()
+		log.Infof("=> Deleting plugin (%s) with version (%s) ...", name, versionPtr.String())
+	} else {
+		log.Infof("=> Deleting local plugin (%s) ...", name)
 	}
-	log.Infof("=> Deleting plugin (%s) with version (%s) ...", name, version)
 	if err := plugins.DeletePlugin(name); err != nil {
-		log.Fatalf("Failed to delete plugin (%s) with version (%s), error: %s", name, version, err)
+		log.Fatalf("Failed to delete plugin (%s), error: %s", name, err)
 	}
 
 	fmt.Println()
-	log.Infof(colorstring.Greenf("Plugin (%s) with version (%s) deleted", name, version))
+	log.Infof(colorstring.Greenf("Plugin deleted"))
 
 	return nil
 }

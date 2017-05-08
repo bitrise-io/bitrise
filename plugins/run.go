@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
-	envmanModels "github.com/bitrise-io/envman/models"
 	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -107,7 +106,6 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 				return fmt.Errorf("failed to register available plugin (%s) update (%s), error: %s", plugin.Name, newVersion, err)
 			}
 		} else {
-			log.Debugf("No new version of plugin (%s) available", plugin.Name)
 		}
 
 		if err := configs.SavePluginUpdateCheck(); err != nil {
@@ -159,8 +157,6 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		return err
 	}
 
-	log.Debugf("plugin evstore path (%s)", pluginEnvstorePath)
-
 	// Add plugin inputs
 	for key, value := range pluginInput {
 		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
@@ -177,33 +173,13 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	cmd := []string{}
 
 	if isBin {
-		log.Debugf("Run plugin binary (%s)", pluginExecutable)
 		cmd = append([]string{pluginExecutable}, args...)
 	} else {
-		log.Debugf("Run plugin sh (%s)", pluginExecutable)
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	exitCode, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd)
-	log.Debugf("Plugin run finished with exit code (%d)", exitCode)
-	if err != nil {
+	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd); err != nil {
 		return err
-	}
-
-	// Read plugin output
-	outStr, err := tools.EnvmanJSONPrint(pluginEnvstorePath)
-	if err != nil {
-		return err
-	}
-
-	envList, err := envmanModels.NewEnvJSONList(outStr)
-	if err != nil {
-		return err
-	}
-
-	pluginOutputStr, found := envList[bitrisePluginOutputEnvKey]
-	if found {
-		log.Debugf("Plugin output: %s", pluginOutputStr)
 	}
 
 	return nil

@@ -11,8 +11,8 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
@@ -50,7 +50,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 			log.Warnf("Default plugin (%s) is not installed from git, no version info available.", name)
 			fmt.Println()
 
-			currentVersion = "local"
+			currentVersion = ""
 		} else {
 			currentVersion = installedVersion.String()
 

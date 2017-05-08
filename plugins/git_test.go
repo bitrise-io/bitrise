@@ -1,8 +1,10 @@
 package plugins
 
 import (
+	"os"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,5 +36,54 @@ func TestFilterVersionTags(t *testing.T) {
 		versionTags := filterVersionTags([]string{"1.0.0", "release"})
 		require.Equal(t, 1, len(versionTags))
 		require.Equal(t, "1.0.0", versionTags[0].String())
+	}
+}
+
+func TestClonePluginSrc(t *testing.T) {
+	t.Log("example plugin - latest version")
+	{
+		pluginSource := examplePluginGitURL
+		versionTag := ""
+		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
+		require.NoError(t, err)
+
+		exist, err := pathutil.IsPathExists(destinationDir)
+		require.NoError(t, err)
+		if exist {
+			err := os.RemoveAll(destinationDir)
+			require.NoError(t, err)
+		}
+
+		version, err := GitCloneAndCheckoutVersionOrLatestVersion(destinationDir, pluginSource, versionTag)
+		require.NoError(t, err)
+		require.NotNil(t, version)
+
+		exist, err = pathutil.IsPathExists(destinationDir)
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+	}
+
+	t.Log("example plugin - 0.9.0 version")
+	{
+		pluginSource := examplePluginGitURL
+		versionTag := "0.9.0"
+		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestClonePluginSrc")
+		require.NoError(t, err)
+
+		exist, err := pathutil.IsPathExists(destinationDir)
+		require.NoError(t, err)
+		if exist {
+			err := os.RemoveAll(destinationDir)
+			require.NoError(t, err)
+		}
+
+		version, err := GitCloneAndCheckoutVersionOrLatestVersion(destinationDir, pluginSource, versionTag)
+		require.NoError(t, err)
+		require.NotNil(t, version)
+		require.Equal(t, "0.9.0", version)
+
+		exist, err = pathutil.IsPathExists(destinationDir)
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
 	}
 }
