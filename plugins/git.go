@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -33,16 +34,42 @@ func filterVersionTags(tagList []string) []*ver.Version {
 // Git
 //=======================================
 
+func createError(prinatableCmd, cmdOut string, cmdErr error) error {
+	message := fmt.Sprintf("command (%s) failed", prinatableCmd)
+	if len(cmdOut) > 0 {
+		message += "\nout: " + cmdOut
+	}
+	if !errorutil.IsExitStatusError(cmdErr) {
+		message += "\nerr: " + cmdErr.Error()
+	}
+	return errors.New(message)
+}
+
+func runAndHandle(cmd *command.Model) error {
+	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+		return createError(cmd.PrintableCommandArgs(), out, err)
+	}
+	return nil
+}
+
+func runForOutputAndHandle(cmd *command.Model) (string, error) {
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		return "", createError(cmd.PrintableCommandArgs(), out, err)
+	}
+	return out, nil
+}
+
 func commitHashOfTag(cloneIntoDir, tag string) (string, error) {
 	cmd := command.New("git", "show-ref", "--hash", tag)
 	cmd.SetDir(cloneIntoDir)
-	return cmd.RunAndReturnTrimmedCombinedOutput()
+	return runForOutputAndHandle(cmd)
 }
 
 func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
 	cmd := command.New("git", "ls-remote", "--tags")
 	cmd.SetDir(cloneIntoDir)
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	out, err := runForOutputAndHandle(cmd)
 	if err != nil {
 		return []string{}, err
 	}
@@ -77,31 +104,31 @@ func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
 func gitInit(cloneIntoDir string) error {
 	cmd := command.New("git", "init")
 	cmd.SetDir(cloneIntoDir)
-	return cmd.Run()
+	return runAndHandle(cmd)
 }
 
 func gitAddRemote(cloneIntoDir, repositoryURL string) error {
 	cmd := command.New("git", "remote", "add", "origin", repositoryURL)
 	cmd.SetDir(cloneIntoDir)
-	return cmd.Run()
+	return runAndHandle(cmd)
 }
 
 func gitFetch(cloneIntoDir string) error {
 	cmd := command.New("git", "fetch")
 	cmd.SetDir(cloneIntoDir)
-	return cmd.Run()
+	return runAndHandle(cmd)
 }
 
 func gitCheckout(cloneIntoDir, gitCheckoutParam string) error {
 	cmd := command.New("git", "checkout", gitCheckoutParam)
 	cmd.SetDir(cloneIntoDir)
-	return cmd.Run()
+	return runAndHandle(cmd)
 }
 
 func gitLog(cloneIntoDir, formatParam string) (string, error) {
 	cmd := command.New("git", "log", "-1", "--format="+formatParam)
 	cmd.SetDir(cloneIntoDir)
-	return cmd.RunAndReturnTrimmedCombinedOutput()
+	return runForOutputAndHandle(cmd)
 }
 
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
@@ -162,51 +189,33 @@ func GitVersionTags(gitRepoDir string) ([]*ver.Version, error) {
 	return tags, nil
 }
 
-// GitCloneAndCheckoutVersion ...
-func GitCloneAndCheckoutVersion(cloneIntoDir, repositoryURL, checkoutVersion string) (*ver.Version, string, error) {
+// GitCloneAndCheckoutVersionOrLatestVersion ...
+func GitCloneAndCheckoutVersionOrLatestVersion(cloneIntoDir, repositoryURL, checkoutVersion string) (string, error) {
 	if err := gitInitWithRemote(cloneIntoDir, repositoryURL); err != nil {
-		return nil, "", err
+		return "", fmt.Errorf("git init failed, error: %s", err)
 	}
-
-	var version ver.Version
 
 	if checkoutVersion == "" {
 		versionTagList, err := GitVersionTags(cloneIntoDir)
 		if err != nil {
-			return nil, "", fmt.Errorf("Could not get version tag list, error: %s", err)
+			return "", fmt.Errorf("could not get version tag list, error: %s", err)
 		}
 
 		if len(versionTagList) == 0 {
-			return nil, "", fmt.Errorf("no version tag found")
+			return "", fmt.Errorf("no version tag found")
 		}
 
 		versionPtr := versionTagList[len(versionTagList)-1]
 		if versionPtr == nil {
-			return nil, "", fmt.Errorf("uninitialized version found")
+			return "", fmt.Errorf("uninitialized version found")
 		}
 
-		version = *versionPtr
-	} else {
-		versionPtr, err := ver.NewVersion(checkoutVersion)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to parse version (%s), error: %s", checkoutVersion, err)
-		}
-
-		if versionPtr == nil {
-			return nil, "", errors.New("failed to parse version (%s), error: nil version")
-		}
-
-		version = *versionPtr
+		checkoutVersion = versionPtr.String()
 	}
 
-	if err := gitCheckout(cloneIntoDir, version.String()); err != nil {
-		return nil, "", fmt.Errorf("Could not checkout, err :%s", err)
+	if err := gitCheckout(cloneIntoDir, checkoutVersion); err != nil {
+		return "", fmt.Errorf("could not checkout (%s), err :%s", checkoutVersion, err)
 	}
 
-	hash, err := commitHashOfTag(cloneIntoDir, version.String())
-	if err != nil {
-		return nil, "", fmt.Errorf("Could get commit hash of tag (%s), err :%s", version.String(), err)
-	}
-
-	return &version, hash, nil
+	return checkoutVersion, nil
 }

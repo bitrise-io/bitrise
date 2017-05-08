@@ -1,11 +1,14 @@
 package plugins
 
 import (
+	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -17,23 +20,52 @@ import (
 // Plugin
 //=======================================
 
-// NewPluginFromBytes ...
-func NewPluginFromBytes(bytes []byte) (plugin Plugin, err error) {
-	if err = yaml.Unmarshal(bytes, &plugin); err != nil {
-		return Plugin{}, err
+func validateRequirements(requirements []Requirement, currentVersionMap map[string]ver.Version) error {
+	var err error
+
+	for _, requirement := range requirements {
+		currentVersion := currentVersionMap[requirement.Tool]
+
+		var minVersionPtr *ver.Version
+		if requirement.MinVersion == "" {
+			return fmt.Errorf("plugin requirement min version is required")
+		}
+
+		minVersionPtr, err = ver.NewVersion(requirement.MinVersion)
+		if err != nil {
+			return fmt.Errorf("failed to parse plugin required min version (%s) for tool (%s), error: %s", requirement.MinVersion, requirement.Tool, err)
+		}
+
+		var maxVersionPtr *ver.Version
+		if requirement.MaxVersion != "" {
+			maxVersionPtr, err = ver.NewVersion(requirement.MaxVersion)
+			if err != nil {
+				return fmt.Errorf("failed to parse plugin requirement version (%s) for tool (%s), error: %s", requirement.MaxVersion, requirement.Tool, err)
+			}
+		}
+
+		if err := validateVersion(currentVersion, *minVersionPtr, maxVersionPtr); err != nil {
+			return fmt.Errorf("checking plugin tool (%s) requirements failed, error: %s", requirement.Tool, err)
+		}
 	}
-	if err := plugin.Validate(); err != nil {
+
+	return nil
+}
+
+func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
+	if err = yaml.Unmarshal(bytes, &plugin); err != nil {
 		return Plugin{}, err
 	}
 	return plugin, nil
 }
 
-// NewPluginFromYML ...
-func NewPluginFromYML(ymlPth string) (Plugin, error) {
+// ParseAndValidatePluginFromYML ...
+func ParseAndValidatePluginFromYML(ymlPth string) (Plugin, error) {
+	// Parse plugin
 	if isExists, err := pathutil.IsPathExists(ymlPth); err != nil {
 		return Plugin{}, err
 	} else if !isExists {
-		return Plugin{}, fmt.Errorf("Plugin yml path (%s) doesn't exist", ymlPth)
+		return Plugin{}, fmt.Errorf("plugin definition does not exist at: %s", ymlPth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(ymlPth)
@@ -41,15 +73,54 @@ func NewPluginFromYML(ymlPth string) (Plugin, error) {
 		return Plugin{}, err
 	}
 
-	return NewPluginFromBytes(bytes)
-}
-
-// Validate ...
-func (plugin Plugin) Validate() error {
-	if plugin.Name == "" {
-		return fmt.Errorf("invalid plugin: missing required name")
+	plugin, err := parsePluginFromBytes(bytes)
+	if err != nil {
+		return Plugin{}, err
 	}
-	return nil
+	// ---
+
+	// Validate plugin
+	if plugin.Name == "" {
+		return Plugin{}, errors.New("missing name")
+	}
+
+	osxRemoteExecutable := false
+	if plugin.Executable.OSX != "" {
+		osxRemoteExecutable = true
+	}
+
+	linuxRemoteExecutable := false
+	if plugin.Executable.Linux != "" {
+		linuxRemoteExecutable = true
+	}
+
+	if linuxRemoteExecutable != osxRemoteExecutable {
+		return Plugin{}, errors.New("both osx and linux executable should be defined, or non of them")
+	}
+
+	if !linuxRemoteExecutable && !osxRemoteExecutable {
+		pluginDir := filepath.Dir(ymlPth)
+		pluginScriptPth := filepath.Join(pluginDir, pluginScriptFileName)
+		if exist, err := pathutil.IsPathExists(pluginScriptPth); err != nil {
+			return Plugin{}, err
+		} else if !exist {
+			return Plugin{}, fmt.Errorf("no executable defined, nor bitrise-plugin.sh exist at: %s", pluginScriptPth)
+		}
+	}
+	// ---
+
+	// Ensure dependencies
+	currentVersionMap, err := version.ToolVersionMap()
+	if err != nil {
+		return Plugin{}, fmt.Errorf("failed to get current version map, error: %s", err)
+	}
+
+	if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
+		return Plugin{}, fmt.Errorf("requirements validation failed, error: %s", err)
+	}
+	// ---
+
+	return plugin, nil
 }
 
 func (plugin Plugin) String() string {
@@ -130,13 +201,12 @@ func (s *pluginSorter) Less(i, j int) bool {
 //=======================================
 
 // NewPluginRoute ...
-func NewPluginRoute(name, source, executable, version, commitHash, triggerEvent string) (PluginRoute, error) {
+func NewPluginRoute(name, source, executable, version, triggerEvent string) (PluginRoute, error) {
 	route := PluginRoute{
 		Name:         name,
 		Source:       source,
 		Executable:   executable,
 		Version:      version,
-		CommitHash:   commitHash,
 		TriggerEvent: triggerEvent,
 	}
 	if err := route.Validate(); err != nil {

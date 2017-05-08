@@ -25,16 +25,19 @@ type PluginRouting struct {
 	RouteMap map[string]PluginRoute `yaml:"route_map"`
 }
 
+// ExecutableModel ...
+type ExecutableModel struct {
+	OSX   string `yaml:"osx,omitempty"`
+	Linux string `yaml:"linux,omitempty"`
+}
+
 // Plugin ...
 type Plugin struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Executable  struct {
-		OSX   string `yaml:"osx"`
-		Linux string `yaml:"linux"`
-	}
-	TriggerEvent string        `yaml:"trigger"`
-	Requirements []Requirement `yaml:"requirements"`
+	Name         string          `yaml:"name,omitempty"`
+	Description  string          `yaml:"description,omitempty"`
+	Executable   ExecutableModel `yaml:"executable,omitempty"`
+	TriggerEvent string          `yaml:"trigger,omitempty"`
+	Requirements []Requirement   `yaml:"requirements,omitempty"`
 }
 
 // Requirement ...
