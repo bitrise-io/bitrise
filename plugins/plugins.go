@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -34,7 +33,6 @@ type PluginInput map[string]string
 
 // ParseArgs ...
 func ParseArgs(args []string) (string, []string, bool) {
-	log.Debugf("args: %v", args)
 
 	if len(args) == 0 {
 		return "", []string{}, false
@@ -64,6 +62,18 @@ func ParseArgs(args []string) (string, []string, bool) {
 
 // CheckForNewVersion ...
 func CheckForNewVersion(plugin Plugin) (string, error) {
+	route, found, err := ReadPluginRoute(plugin.Name)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
+	}
+	if route.Version == "" {
+		// local plugin, can not update
+		return "", nil
+	}
+
 	pluginSrcDir := GetPluginSrcDir(plugin.Name)
 
 	gitDirPath := filepath.Join(pluginSrcDir, ".git")
@@ -78,9 +88,6 @@ func CheckForNewVersion(plugin Plugin) (string, error) {
 		return "", err
 	}
 
-	log.Debug("")
-	log.Debugf("versions: %v", versions)
-
 	if len(versions) == 0 {
 		return "", nil
 	}
@@ -92,12 +99,7 @@ func CheckForNewVersion(plugin Plugin) (string, error) {
 		return "", fmt.Errorf("failed to check installed plugin (%s) version, error: %s", plugin.Name, err)
 	}
 
-	log.Debug("")
-	log.Debugf("latestVersion: %v", latestVersion)
-	log.Debugf("currentVersion: %v", currentVersion)
-
 	if currentVersion == nil {
-		log.Debugf("Installed plugin (%s) is from local source, nothing to check...", plugin.Name)
 		return "", nil
 	}
 
@@ -120,7 +122,7 @@ func LoadPlugin(name string) (Plugin, bool, error) {
 
 	pluginYMLPath := GetPluginYMLPath(name)
 
-	plugin, err := NewPluginFromYML(pluginYMLPath)
+	plugin, err := ParseAndValidatePluginFromYML(pluginYMLPath)
 	if err != nil {
 		return Plugin{}, true, err
 	}
