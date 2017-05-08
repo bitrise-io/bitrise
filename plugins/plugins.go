@@ -64,6 +64,18 @@ func ParseArgs(args []string) (string, []string, bool) {
 
 // CheckForNewVersion ...
 func CheckForNewVersion(plugin Plugin) (string, error) {
+	route, found, err := ReadPluginRoute(plugin.Name)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
+	}
+	if route.Version == "" {
+		// local plugin, can not update
+		return "", nil
+	}
+
 	pluginSrcDir := GetPluginSrcDir(plugin.Name)
 
 	gitDirPath := filepath.Join(pluginSrcDir, ".git")
