@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +21,69 @@ func minToDuration(min float64) time.Duration {
 
 func hourToDuration(hour float64) time.Duration {
 	return minToDuration(hour * 60)
+}
+
+func TestApplyOutputAliases(t *testing.T) {
+	t.Log("apply alias on signle env")
+	{
+		envs := []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"ORIGINAL_KEY": "value",
+			},
+		}
+
+		outputEnvs := []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"ORIGINAL_KEY": "ALIAS_KEY",
+			},
+		}
+
+		updatedEnvs, err := ApplyOutputAliases(envs, outputEnvs)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(updatedEnvs))
+
+		updatedKey, value, err := updatedEnvs[0].GetKeyValuePair()
+		require.Equal(t, "ALIAS_KEY", updatedKey)
+		require.Equal(t, "value", value)
+	}
+
+	t.Log("apply alias on env list")
+	{
+		envs := []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"ORIGINAL_KEY": "value",
+			},
+			envmanModels.EnvironmentItemModel{
+				"SHOULD_NOT_CHANGE_KEY": "value",
+			},
+		}
+
+		outputEnvs := []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"ORIGINAL_KEY": "ALIAS_KEY",
+			},
+		}
+
+		updatedEnvs, err := ApplyOutputAliases(envs, outputEnvs)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(updatedEnvs))
+
+		{
+			// this env should be updated
+			updatedKey, value, err := updatedEnvs[0].GetKeyValuePair()
+			require.NoError(t, err)
+			require.Equal(t, "ALIAS_KEY", updatedKey)
+			require.Equal(t, "value", value)
+		}
+
+		{
+			// this env should NOT be updated
+			key, value, err := updatedEnvs[1].GetKeyValuePair()
+			require.NoError(t, err)
+			require.Equal(t, "SHOULD_NOT_CHANGE_KEY", key)
+			require.Equal(t, "value", value)
+		}
+	}
 }
 
 func TestTimeToFormattedSeconds(t *testing.T) {
