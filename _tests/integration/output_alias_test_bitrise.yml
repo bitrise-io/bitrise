@@ -9,4 +9,6 @@ workflows:
         - RANDOM_QUOTE: BITRISE_ALIAS_KEY
     - script:
         inputs:
-        - content: if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
+        - content: |-
+            if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
+            if [[ "$RANDOM_QUOTE" != "" ]] ; then exit 1; fi
