@@ -2,15 +2,81 @@ format_version: 2
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
-  test:
-    envs:
-    - RANDOM_QUOTE: orig value
+  test-single-step-single-alias:
+    description: |
+      Single step, with output alias - the "original"
+      output env should not be set.
     steps:
-    - random-quote:
+    - timestamp:
         outputs:
-        - RANDOM_QUOTE: BITRISE_ALIAS_KEY
+        - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
     - script:
         inputs:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
-            if [[ "$RANDOM_QUOTE" != "orig value" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
+  test-double-step-single-alias:
+    description: |
+      No alias in the first step, but there's a second step,
+      with same output, where alias is set.
+      In this case both the "original" and the alias should be
+      available - the "original" should be the output
+      of the first step, while the alias should be of the second step.
+    steps:
+    - timestamp:
+    - script:
+        inputs:
+        - content: |
+            if [[ "$BITRISE_ALIAS_KEY" != "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" == "" ]] ; then exit 1; fi
+            sleep 2
+    - timestamp:
+        outputs:
+        - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
+    - script:
+        inputs:
+        - content: |
+            if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" == "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" == "$BITRISE_ALIAS_KEY" ]] ; then exit 1; fi
+  test-double-step-double-alias:
+    description: |
+      Alias defined for both, so the "original" output env
+      should be empty.
+    steps:
+    - timestamp:
+        outputs:
+        - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY_1
+    - script:
+        inputs:
+        - content: |
+            if [[ "$BITRISE_ALIAS_KEY_1" == "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
+            sleep 2
+    - timestamp:
+        outputs:
+        - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY_2
+    - script:
+        inputs:
+        - content: |
+            if [[ "$BITRISE_ALIAS_KEY_2" == "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
+            if [[ "$BITRISE_ALIAS_KEY_1" == "$BITRISE_ALIAS_KEY_2" ]] ; then exit 1; fi
+  test-wf-env:
+    description: |
+      The output env key is set as a workflow env var,
+      and an alias is specified for the step output.
+      In this case the workflow env should not be changed
+      by the alias, it should be the same as what's defined in the workflow env var,
+      only the step's output should be stored into a different env var.
+    envs:
+    - UNIX_TIMESTAMP: orig value
+    steps:
+    - timestamp:
+        outputs:
+        - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
+    - script:
+        inputs:
+        - content: |-
+            if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
+            if [[ "$UNIX_TIMESTAMP" != "orig value" ]] ; then exit 1; fi
