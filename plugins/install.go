@@ -94,7 +94,7 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 // Main
 //=======================================
 
-func installLocalPlugin(srcDir string) (Plugin, error) {
+func installLocalPlugin(origSrcURI, srcDir string) (Plugin, error) {
 	// Parse & validate plugin
 	tmpPluginYMLPath := filepath.Join(srcDir, pluginDefinitionFileName)
 
@@ -112,7 +112,7 @@ func installLocalPlugin(srcDir string) (Plugin, error) {
 	if route, found, err := ReadPluginRoute(newPlugin.Name); err != nil {
 		return Plugin{}, fmt.Errorf("failed to check if plugin already installed, error: %s", err)
 	} else if found {
-		if route.Source != srcDir {
+		if route.Source != origSrcURI {
 			return Plugin{}, fmt.Errorf("plugin already installed with name (%s) from different source (%s)", route.Name, route.Source)
 		}
 
@@ -217,6 +217,7 @@ func isLocalURL(urlStr string) bool {
 // InstallPlugin ...
 func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 	newVersion := ""
+	pluginDir := ""
 
 	if !isLocalURL(srcURL) {
 		pluginSrcTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-src-tmp")
@@ -234,13 +235,14 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 			return Plugin{}, "", fmt.Errorf("failed to download plugin, error: %s", err)
 		}
 
-		srcURL = pluginSrcTmpDir
+		pluginDir = pluginSrcTmpDir
 		newVersion = version
 	} else {
 		srcURL = strings.TrimPrefix(srcURL, "file://")
+		pluginDir = srcURL
 	}
 
-	newPlugin, err := installLocalPlugin(srcURL)
+	newPlugin, err := installLocalPlugin(srcURL, pluginDir)
 	if err != nil {
 		return Plugin{}, "", err
 	}
