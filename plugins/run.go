@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
 	flog "github.com/bitrise-io/go-utils/log"
@@ -135,6 +136,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	}
 	pluginInput[pluginInputBitriseVersionKey] = bitriseVersion.String()
 	pluginInput[pluginInputDataDirKey] = GetPluginDataDir(plugin.Name)
+	pluginInput[pluginInputFormatVersionKey] = models.Version
 
 	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
