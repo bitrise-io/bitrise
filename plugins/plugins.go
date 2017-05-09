@@ -14,6 +14,7 @@ const (
 	pluginInputTriggerEventKey   = "BITRISE_PLUGIN_INPUT_TRIGGER"
 	pluginInputPluginModeKey     = "BITRISE_PLUGIN_INPUT_PLUGIN_MODE"
 	pluginInputDataDirKey        = "BITRISE_PLUGIN_INPUT_DATA_DIR"
+	pluginInputFormatVersionKey  = "BITRISE_PLUGIN_INPUT_FORMAT_VERSION"
 
 	bitrisePluginOutputEnvKey = "BITRISE_PLUGIN_OUTPUT"
 )
