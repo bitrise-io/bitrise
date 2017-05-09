@@ -44,63 +44,51 @@ func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.
 	return
 }
 
+func searchEnvInSlice(searchForEnvKey string, searchIn []envmanModels.EnvironmentItemModel) (envmanModels.EnvironmentItemModel, int, error) {
+	for idx, env := range searchIn {
+		key, _, err := env.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, -1, err
+		}
+
+		if key == searchForEnvKey {
+			return env, idx, nil
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, -1, nil
+}
+
 // ApplyOutputAliases ...
-func ApplyOutputAliases(envs, outputEnvs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
-	// find env with the given key
-	findEnv := func(key string, envs []envmanModels.EnvironmentItemModel) (envmanModels.EnvironmentItemModel, bool, error) {
-		for _, env := range envs {
-			envKey, _, err := env.GetKeyValuePair()
-			if err != nil {
-				return envmanModels.EnvironmentItemModel{}, false, err
-			}
-
-			if key == envKey {
-				return env, true, nil
-			}
-		}
-		return envmanModels.EnvironmentItemModel{}, false, nil
-	}
-	// ---
-
-	updatedEnvs := []envmanModels.EnvironmentItemModel{}
-
-	for _, env := range envs {
-		envKey, envValue, err := env.GetKeyValuePair()
+func ApplyOutputAliases(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
+	for _, basedOnEnv := range basedOnEnvs {
+		envKey, envKeyAlias, err := basedOnEnv.GetKeyValuePair()
 		if err != nil {
 			return []envmanModels.EnvironmentItemModel{}, err
 		}
 
-		outputEnv, found, err := findEnv(envKey, outputEnvs)
+		envToAlias, idx, err := searchEnvInSlice(envKey, onEnvs)
 		if err != nil {
 			return []envmanModels.EnvironmentItemModel{}, err
 		}
 
-		if found {
-			_, outputEnvValue, err := outputEnv.GetKeyValuePair()
+		if idx > -1 && envKeyAlias != "" {
+			_, origValue, err := envToAlias.GetKeyValuePair()
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{}, err
 			}
 
-			options, err := env.GetOptions()
+			origOptions, err := envToAlias.GetOptions()
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{}, err
 			}
 
-			if outputEnvValue != "" {
-				updatedEnv := envmanModels.EnvironmentItemModel{
-					outputEnvValue:          envValue,
-					envmanModels.OptionsKey: options,
-				}
-				updatedEnvs = append(updatedEnvs, updatedEnv)
-			} else {
-				updatedEnvs = append(updatedEnvs, env)
+			onEnvs[idx] = envmanModels.EnvironmentItemModel{
+				envKeyAlias:             origValue,
+				envmanModels.OptionsKey: origOptions,
 			}
-		} else {
-			updatedEnvs = append(updatedEnvs, env)
 		}
 	}
-
-	return updatedEnvs, nil
+	return onEnvs, nil
 }
 
 // CollectEnvironmentsFromFile ...
