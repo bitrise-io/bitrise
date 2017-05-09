@@ -217,6 +217,7 @@ func isLocalURL(urlStr string) bool {
 // InstallPlugin ...
 func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 	newVersion := ""
+	pluginDir := ""
 
 	if !isLocalURL(srcURL) {
 		pluginSrcTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-src-tmp")
@@ -234,13 +235,14 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 			return Plugin{}, "", fmt.Errorf("failed to download plugin, error: %s", err)
 		}
 
-		srcURL = pluginSrcTmpDir
+		pluginDir = pluginSrcTmpDir
 		newVersion = version
 	} else {
 		srcURL = strings.TrimPrefix(srcURL, "file://")
+		pluginDir = srcURL
 	}
 
-	newPlugin, err := installLocalPlugin(srcURL)
+	newPlugin, err := installLocalPlugin(pluginDir)
 	if err != nil {
 		return Plugin{}, "", err
 	}
