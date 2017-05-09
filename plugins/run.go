@@ -79,7 +79,7 @@ func printPluginUpdateInfos(newVersion string, plugin Plugin) {
 	flog.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
 	flog.Printf("Run command to update plugin:")
 	fmt.Println()
-	flog.Donef("$ bitrise plugin update workflow-editor")
+	flog.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
