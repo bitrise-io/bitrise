@@ -5,16 +5,18 @@ workflows:
   test-single-step-single-alias:
     description: |
       Single step, with output alias - the "original"
-      output env should not be set.
+      output env should not be set, but the non aliased output should!
     steps:
     - timestamp:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
+        # - ISO_DATETIME:
     - script:
         inputs:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
   test-double-step-single-alias:
     description: |
       No alias in the first step, but there's a second step,
@@ -29,6 +31,7 @@ workflows:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY" != "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" == "" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
             sleep 2
     - timestamp:
         outputs:
@@ -39,6 +42,7 @@ workflows:
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" == "$BITRISE_ALIAS_KEY" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
   test-double-step-double-alias:
     description: |
       Alias defined for both, so the "original" output env
@@ -52,6 +56,7 @@ workflows:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY_1" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
             sleep 2
     - timestamp:
         outputs:
@@ -62,6 +67,7 @@ workflows:
             if [[ "$BITRISE_ALIAS_KEY_2" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" != "" ]] ; then exit 1; fi
             if [[ "$BITRISE_ALIAS_KEY_1" == "$BITRISE_ALIAS_KEY_2" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
   test-wf-env:
     description: |
       The output env key is set as a workflow env var,
@@ -80,3 +86,4 @@ workflows:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
             if [[ "$UNIX_TIMESTAMP" != "orig value" ]] ; then exit 1; fi
+            if [[ "$ISO_DATETIME" == "" ]] ; then exit 1; fi
