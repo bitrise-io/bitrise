@@ -1,6 +1,100 @@
-## Changelog (Current version: 1.5.6)
+## Changelog (Current version: 1.6.0)
 
 -----------------
+
+## 1.6.0 (2017 May 09)
+
+### Release Notes
+
+__1. Install local plugins:__
+
+From this bitrise-cli version you can test your local plugin directly through the CLI, by installing it:
+
+`bitrise plugin install PATH/TO/MY/LOCAL/PLUGIN`
+
+_NOTE: You can specify your plugin's source as a command argument, no need to specify it with --src flag, however using the flag is still supported._
+
+__2. Step Output Aliases__
+
+You can specify the output's alias, by setting value to the desired alias key and the cli will export the output with the given alias.
+
+It is as simple as :
+
+```
+...
+workflows:
+  primary:
+    steps:
+    - gradle-runner:
+        outputs:
+        - BITRISE_APK_PATH: ALIAS_APK_PATH
+...
+```
+
+_The generated apk path will be available under `ALIAS_APK_PATH` key, instead of the default `BITRISE_APK_PATH` key._
+
+_Note: if alias specified the output will be exported only with the alias, so the value will NOT be available with the original environment key._
+
+__3. bitrise-cli got a new default plugin: `step`__
+
+Bitrise Plugin to interact with steps, list them, retrieve information, or create your own!
+
+Want to create your own step? Just run `bitrise :step create` and you can create the perfect Step in no time!
+
+__4. default plugin updates:__
+
+- init 0.9.1
+- workflow-editor 0.9.9
+- analytics 0.9.8
+
+__5. Step development guidline updates, read more in [docs](https://github.com/bitrise-io/bitrise/blob/master/_docs/step-development-guideline.md).__
+
+__6. bitrise.yml format specification updates, read more in [docs](https://github.com/bitrise-io/bitrise/blob/master/_docs/bitrise-yml-format-spec.md).__
+
+__7. Go toolkit's mininum go version bumped to: 1.8.1__
+
+__8. Format version bumped to: 3__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.6.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.5.6 -> 1.6.0
+
+* [3064a4b] Krisztian Godrei - prepare for 1.6.0 (2017 May 09)
+* [5a2d97a] Krisztián Gödrei - default plugin version updates (#498) (2017 May 09)
+* [ab1565d] Viktor Benei - proper plugin available message (#499) (2017 May 09)
+* [c4039d0] Krisztián Gödrei - send bitrise format version to plugins (#497) (2017 May 09)
+* [87fa22f] Krisztián Gödrei - alias fix (#496) (2017 May 09)
+* [6e8307f] Viktor Benei - output alias test (#494) (2017 May 09)
+* [fc69c58] Krisztián Gödrei - format version bumped to 3 (#495) (2017 May 09)
+* [095c9a8] Krisztián Gödrei - step output alias (#493) (2017 May 09)
+* [6fe235d] Viktor Benei - Step and env var spec enhancement (#492) (2017 May 08)
+* [bd4d909] Viktor Benei - README: replace Slack with discuss link (#491) (2017 May 08)
+* [f48ecec] Krisztián Gödrei - install local plugins (#490) (2017 May 08)
+* [a3be4d7] Krisztián Gödrei - Step id naming convention (#489) (2017 May 02)
+* [a22c2a9] Krisztian Godrei - type tag names update (2017 May 02)
+* [ad15062] Krisztián Gödrei - Step grouping (#488) (2017 May 02)
+* [d264edf] Viktor Benei - Go for toolkit version bump, from 1.8 to 1.8.1 (#486) (2017 Apr 28)
+* [07a7827] Karol Wrótniak - Added version naming convention advice (#487) (2017 Apr 28)
+* [2882891] Krisztián Gödrei - Release a new version description (#485) (2017 Apr 25)
+
 
 ## 1.5.6 (2017 Apr 11)
 
@@ -2771,4 +2865,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Apr 11
+Updated: 2017 May 09
