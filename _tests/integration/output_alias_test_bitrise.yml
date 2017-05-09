@@ -3,6 +3,8 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
   test:
+    envs:
+    - RANDOM_QUOTE: orig value
     steps:
     - random-quote:
         outputs:
@@ -11,4 +13,4 @@ workflows:
         inputs:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
-            if [[ "$RANDOM_QUOTE" != "" ]] ; then exit 1; fi
+            if [[ "$RANDOM_QUOTE" != "orig value" ]] ; then exit 1; fi
