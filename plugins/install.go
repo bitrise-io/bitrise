@@ -34,7 +34,7 @@ func validateVersion(current, requiredMin ver.Version, requiredMax *ver.Version)
 	}
 
 	if requiredMax != nil && current.Compare(requiredMax) == 1 {
-		return fmt.Errorf("Current version (%s) is greater then max version (%s)  ", current.String(), (*requiredMax).String())
+		return fmt.Errorf("Current version (%s) is greater than max version (%s)  ", current.String(), (*requiredMax).String())
 	}
 
 	return nil
@@ -94,17 +94,21 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 // Main
 //=======================================
 
-func installLocalPlugin(origSrcURI, srcDir string) (Plugin, error) {
+func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) {
 	// Parse & validate plugin
-	tmpPluginYMLPath := filepath.Join(srcDir, pluginDefinitionFileName)
+	tmpPluginYMLPath := filepath.Join(pluginLocalPth, pluginDefinitionFileName)
 
 	if err := validatePath(tmpPluginYMLPath); err != nil {
 		return Plugin{}, fmt.Errorf("bitrise-plugin.yml validation failed, error: %s", err)
 	}
 
-	newPlugin, err := ParseAndValidatePluginFromYML(tmpPluginYMLPath)
+	newPlugin, err := ParsePluginFromYML(tmpPluginYMLPath)
 	if err != nil {
 		return Plugin{}, fmt.Errorf("failed to parse bitrise-plugin.yml (%s), error: %s", tmpPluginYMLPath, err)
+	}
+
+	if err := validate(newPlugin, pluginSourceURI); err != nil {
+		return Plugin{}, err
 	}
 	// ---
 
@@ -112,7 +116,7 @@ func installLocalPlugin(origSrcURI, srcDir string) (Plugin, error) {
 	if route, found, err := ReadPluginRoute(newPlugin.Name); err != nil {
 		return Plugin{}, fmt.Errorf("failed to check if plugin already installed, error: %s", err)
 	} else if found {
-		if route.Source != origSrcURI {
+		if route.Source != pluginSourceURI {
 			return Plugin{}, fmt.Errorf("plugin already installed with name (%s) from different source (%s)", route.Name, route.Source)
 		}
 
@@ -149,8 +153,8 @@ func installLocalPlugin(origSrcURI, srcDir string) (Plugin, error) {
 	if err := os.MkdirAll(pluginSrcDir, 0777); err != nil {
 		return Plugin{}, fmt.Errorf("failed to create plugin src dir (%s), error: %s", pluginSrcDir, err)
 	}
-	if err := command.CopyDir(srcDir, pluginSrcDir, true); err != nil {
-		return Plugin{}, fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", srcDir, pluginSrcDir, err)
+	if err := command.CopyDir(pluginLocalPth, pluginSrcDir, true); err != nil {
+		return Plugin{}, fmt.Errorf("failed to copy plugin from temp dir (%s) to (%s), error: %s", pluginLocalPth, pluginSrcDir, err)
 	}
 	// ---
 
@@ -215,11 +219,11 @@ func isLocalURL(urlStr string) bool {
 }
 
 // InstallPlugin ...
-func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
+func InstallPlugin(pluginSourceURI, versionTag string) (Plugin, string, error) {
 	newVersion := ""
 	pluginDir := ""
 
-	if !isLocalURL(srcURL) {
+	if !isLocalURL(pluginSourceURI) {
 		pluginSrcTmpDir, err := pathutil.NormalizedOSTempDirPath("plugin-src-tmp")
 		if err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to create plugin src temp directory, error: %s", err)
@@ -230,7 +234,7 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 			}
 		}()
 
-		version, err := GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, srcURL, versionTag)
+		version, err := GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, pluginSourceURI, versionTag)
 		if err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to download plugin, error: %s", err)
 		}
@@ -238,17 +242,17 @@ func InstallPlugin(srcURL, versionTag string) (Plugin, string, error) {
 		pluginDir = pluginSrcTmpDir
 		newVersion = version
 	} else {
-		srcURL = strings.TrimPrefix(srcURL, "file://")
-		pluginDir = srcURL
+		pluginSourceURI = strings.TrimPrefix(pluginSourceURI, "file://")
+		pluginDir = pluginSourceURI
 	}
 
-	newPlugin, err := installLocalPlugin(srcURL, pluginDir)
+	newPlugin, err := installLocalPlugin(pluginSourceURI, pluginDir)
 	if err != nil {
 		return Plugin{}, "", err
 	}
 
 	// Register to bitrise
-	if err := CreateAndAddPluginRoute(newPlugin, srcURL, newVersion); err != nil {
+	if err := CreateAndAddPluginRoute(newPlugin, pluginSourceURI, newVersion); err != nil {
 		return Plugin{}, "", fmt.Errorf("failed to add plugin route, error: %s", err)
 	}
 

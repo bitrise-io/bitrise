@@ -59,8 +59,53 @@ func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
 	return plugin, nil
 }
 
-// ParseAndValidatePluginFromYML ...
-func ParseAndValidatePluginFromYML(ymlPth string) (Plugin, error) {
+func validate(plugin Plugin, pluginDefinitionPth string) error {
+	// Validate plugin
+	if plugin.Name == "" {
+		return errors.New("missing name")
+	}
+
+	osxRemoteExecutable := false
+	if plugin.Executable.OSX != "" {
+		osxRemoteExecutable = true
+	}
+
+	linuxRemoteExecutable := false
+	if plugin.Executable.Linux != "" {
+		linuxRemoteExecutable = true
+	}
+
+	if linuxRemoteExecutable != osxRemoteExecutable {
+		return errors.New("both osx and linux executable should be defined, or non of them")
+	}
+
+	if !linuxRemoteExecutable && !osxRemoteExecutable {
+		pluginDir := filepath.Dir(pluginDefinitionPth)
+		pluginScriptPth := filepath.Join(pluginDir, pluginScriptFileName)
+		if exist, err := pathutil.IsPathExists(pluginScriptPth); err != nil {
+			return err
+		} else if !exist {
+			return fmt.Errorf("no executable defined, nor bitrise-plugin.sh exist at: %s", pluginScriptPth)
+		}
+	}
+	// ---
+
+	// Ensure dependencies
+	currentVersionMap, err := version.ToolVersionMap()
+	if err != nil {
+		return fmt.Errorf("failed to get current version map, error: %s", err)
+	}
+
+	if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
+		return fmt.Errorf("requirements validation failed, error: %s", err)
+	}
+	// ---
+
+	return nil
+}
+
+// ParsePluginFromYML ...
+func ParsePluginFromYML(ymlPth string) (Plugin, error) {
 	// Parse plugin
 	if isExists, err := pathutil.IsPathExists(ymlPth); err != nil {
 		return Plugin{}, err
@@ -77,48 +122,6 @@ func ParseAndValidatePluginFromYML(ymlPth string) (Plugin, error) {
 	if err != nil {
 		return Plugin{}, err
 	}
-	// ---
-
-	// Validate plugin
-	if plugin.Name == "" {
-		return Plugin{}, errors.New("missing name")
-	}
-
-	osxRemoteExecutable := false
-	if plugin.Executable.OSX != "" {
-		osxRemoteExecutable = true
-	}
-
-	linuxRemoteExecutable := false
-	if plugin.Executable.Linux != "" {
-		linuxRemoteExecutable = true
-	}
-
-	if linuxRemoteExecutable != osxRemoteExecutable {
-		return Plugin{}, errors.New("both osx and linux executable should be defined, or non of them")
-	}
-
-	if !linuxRemoteExecutable && !osxRemoteExecutable {
-		pluginDir := filepath.Dir(ymlPth)
-		pluginScriptPth := filepath.Join(pluginDir, pluginScriptFileName)
-		if exist, err := pathutil.IsPathExists(pluginScriptPth); err != nil {
-			return Plugin{}, err
-		} else if !exist {
-			return Plugin{}, fmt.Errorf("no executable defined, nor bitrise-plugin.sh exist at: %s", pluginScriptPth)
-		}
-	}
-	// ---
-
-	// Ensure dependencies
-	currentVersionMap, err := version.ToolVersionMap()
-	if err != nil {
-		return Plugin{}, fmt.Errorf("failed to get current version map, error: %s", err)
-	}
-
-	if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
-		return Plugin{}, fmt.Errorf("requirements validation failed, error: %s", err)
-	}
-	// ---
 
 	return plugin, nil
 }

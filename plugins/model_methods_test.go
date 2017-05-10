@@ -43,8 +43,11 @@ requirements:
 		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
 		write(t, pluginStr, pth)
 
-		plugin, err := ParseAndValidatePluginFromYML(pth)
+		plugin, err := ParsePluginFromYML(pth)
 		require.NoError(t, err)
+
+		require.NoError(t, validate(plugin, pth))
+
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
 		require.Equal(t, 1, len(plugin.Requirements))
@@ -73,8 +76,9 @@ requirements:
 		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
 		write(t, pluginStr, pth)
 
-		_, err := ParseAndValidatePluginFromYML(pth)
-		require.EqualError(t, err, "missing name")
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+		require.EqualError(t, validate(plugin, pth), "missing name")
 	}
 
 	t.Log("invalid plugin - no linux executable")
@@ -95,8 +99,9 @@ requirements:
 		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
 		write(t, pluginStr, pth)
 
-		_, err := ParseAndValidatePluginFromYML(pth)
-		require.EqualError(t, err, "both osx and linux executable should be defined, or non of them")
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+		require.EqualError(t, validate(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no osx executable")
@@ -117,8 +122,9 @@ requirements:
 		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
 		write(t, pluginStr, pth)
 
-		_, err := ParseAndValidatePluginFromYML(pth)
-		require.EqualError(t, err, "both osx and linux executable should be defined, or non of them")
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+		require.EqualError(t, validate(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no executables, no bitrise-plugin.sh")
@@ -136,7 +142,10 @@ requirements:
 		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
 		write(t, pluginStr, pth)
 
-		_, err := ParseAndValidatePluginFromYML(pth)
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+
+		err = validate(plugin, pth)
 		require.Error(t, err)
 		require.Equal(t, true, strings.Contains(err.Error(), "no executable defined, nor bitrise-plugin.sh exist at:"))
 	}
@@ -158,8 +167,11 @@ requirements:
 
 		write(t, "test", filepath.Join(tmpDir, "bitrise-plugin.sh"))
 
-		plugin, err := ParseAndValidatePluginFromYML(pth)
+		plugin, err := ParsePluginFromYML(pth)
 		require.NoError(t, err)
+
+		require.NoError(t, validate(plugin, pth))
+
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
 		require.Equal(t, 1, len(plugin.Requirements))
