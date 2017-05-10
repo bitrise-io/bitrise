@@ -22,8 +22,8 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 	}
 
 	pluginInput := PluginInput{
-		pluginInputPayloadKey:      string(payloadBytes),
-		pluginInputTriggerEventKey: string(name),
+		PluginInputPayloadKey:      string(payloadBytes),
+		PluginInputTriggerEventKey: string(name),
 	}
 
 	// Load plugins

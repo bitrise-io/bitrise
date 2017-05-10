@@ -9,21 +9,30 @@ import (
 )
 
 const (
-	pluginInputPayloadKey        = "BITRISE_PLUGIN_INPUT_PAYLOAD"
-	pluginInputBitriseVersionKey = "BITRISE_PLUGIN_INPUT_BITRISE_VERSION"
-	pluginInputTriggerEventKey   = "BITRISE_PLUGIN_INPUT_TRIGGER"
-	pluginInputPluginModeKey     = "BITRISE_PLUGIN_INPUT_PLUGIN_MODE"
-	pluginInputDataDirKey        = "BITRISE_PLUGIN_INPUT_DATA_DIR"
-	pluginInputFormatVersionKey  = "BITRISE_PLUGIN_INPUT_FORMAT_VERSION"
+	// PluginInputPayloadKey ...
+	PluginInputPayloadKey = "BITRISE_PLUGIN_INPUT_PAYLOAD"
+	// PluginInputBitriseVersionKey ...
+	PluginInputBitriseVersionKey = "BITRISE_PLUGIN_INPUT_BITRISE_VERSION"
+	// PluginInputTriggerEventKey ...
+	PluginInputTriggerEventKey = "BITRISE_PLUGIN_INPUT_TRIGGER"
+	// PluginInputPluginModeKey ...
+	PluginInputPluginModeKey = "BITRISE_PLUGIN_INPUT_PLUGIN_MODE"
+	// PluginInputDataDirKey ...
+	PluginInputDataDirKey = "BITRISE_PLUGIN_INPUT_DATA_DIR"
+	// PluginInputFormatVersionKey ...
+	PluginInputFormatVersionKey = "BITRISE_PLUGIN_INPUT_FORMAT_VERSION"
 
-	bitrisePluginOutputEnvKey = "BITRISE_PLUGIN_OUTPUT"
+	// PluginOutputEnvKey ...
+	PluginOutputEnvKey = "BITRISE_PLUGIN_OUTPUT"
 )
 
 const bitrisePluginPrefix = ":"
 
 const (
-	triggerMode PluginMode = "trigger"
-	commandMode PluginMode = "command"
+	// TriggerMode ...
+	TriggerMode PluginMode = "trigger"
+	// CommandMode ...
+	CommandMode PluginMode = "command"
 )
 
 // PluginMode ...
