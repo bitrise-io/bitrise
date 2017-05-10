@@ -27,7 +27,7 @@ type PluginDependency struct {
 var PluginDependencyMap = map[string]PluginDependency{
 	"init": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-init.git",
-		MinVersion: "0.9.1",
+		MinVersion: "0.9.2",
 	},
 	"step": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-step.git",
@@ -39,7 +39,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		MinVersion: "0.9.8",
+		MinVersion: "0.9.9",
 	},
 }
 
