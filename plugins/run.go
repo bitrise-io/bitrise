@@ -60,7 +60,7 @@ func strip(str string) string {
 
 // RunPluginByEvent ...
 func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
-	pluginInput[pluginInputPluginModeKey] = string(triggerMode)
+	pluginInput[PluginInputPluginModeKey] = string(triggerMode)
 
 	return runPlugin(plugin, []string{}, pluginInput)
 }
@@ -68,7 +68,7 @@ func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
 // RunPluginByCommand ...
 func RunPluginByCommand(plugin Plugin, args []string) error {
 	pluginInput := PluginInput{
-		pluginInputPluginModeKey: string(commandMode),
+		PluginInputPluginModeKey: string(commandMode),
 	}
 
 	return runPlugin(plugin, args, pluginInput)
@@ -134,9 +134,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	if err != nil {
 		return err
 	}
-	pluginInput[pluginInputBitriseVersionKey] = bitriseVersion.String()
-	pluginInput[pluginInputDataDirKey] = GetPluginDataDir(plugin.Name)
-	pluginInput[pluginInputFormatVersionKey] = models.Version
+	pluginInput[PluginInputBitriseVersionKey] = bitriseVersion.String()
+	pluginInput[PluginInputDataDirKey] = GetPluginDataDir(plugin.Name)
+	pluginInput[PluginInputFormatVersionKey] = models.Version
 
 	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
