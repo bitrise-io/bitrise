@@ -29,8 +29,10 @@ const (
 const bitrisePluginPrefix = ":"
 
 const (
-	triggerMode PluginMode = "trigger"
-	commandMode PluginMode = "command"
+	// TriggerMode ...
+	TriggerMode PluginMode = "trigger"
+	// CommandMode ...
+	CommandMode PluginMode = "command"
 )
 
 // PluginMode ...

@@ -60,7 +60,7 @@ func strip(str string) string {
 
 // RunPluginByEvent ...
 func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
-	pluginInput[PluginInputPluginModeKey] = string(triggerMode)
+	pluginInput[PluginInputPluginModeKey] = string(TriggerMode)
 
 	return runPlugin(plugin, []string{}, pluginInput)
 }
@@ -68,7 +68,7 @@ func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
 // RunPluginByCommand ...
 func RunPluginByCommand(plugin Plugin, args []string) error {
 	pluginInput := PluginInput{
-		PluginInputPluginModeKey: string(commandMode),
+		PluginInputPluginModeKey: string(CommandMode),
 	}
 
 	return runPlugin(plugin, args, pluginInput)
