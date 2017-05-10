@@ -1,7 +1,6 @@
 package bitrise
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -73,7 +72,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			Error:    errors.New(longStr),
+			ErrorStr: longStr,
 			ExitCode: 1,
 		}
 
@@ -96,7 +95,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  0,
-			Error:    nil,
+			ErrorStr: "",
 			ExitCode: 0,
 		}
 
@@ -147,7 +146,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeFailed,
 			Idx:      0,
 			RunTime:  10000000,
-			Error:    errors.New(longStr),
+			ErrorStr: longStr,
 			ExitCode: 1,
 		}
 
@@ -169,7 +168,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  0,
-			Error:    nil,
+			ErrorStr: "",
 			ExitCode: 0,
 		}
 
@@ -191,7 +190,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  100 * 1000 * 1e9, // 100 * 1000 * 10^9 nanosec = 100 000 sec
-			Error:    nil,
+			ErrorStr: "",
 			ExitCode: 0,
 		}
 
@@ -213,7 +212,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  hourToDuration(1000),
-			Error:    nil,
+			ErrorStr: "",
 			ExitCode: 0,
 		}
 
@@ -248,7 +247,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			Error:    errors.New(longStr),
+			ErrorStr: longStr,
 			ExitCode: 1,
 		}
 
@@ -281,7 +280,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			Error:    errors.New(longStr),
+			ErrorStr: longStr,
 			ExitCode: 1,
 		}
 
@@ -332,7 +331,7 @@ func TestPrintRunningStepFooter(t *testing.T) {
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
-		Error:    errors.New(longStr),
+		ErrorStr: longStr,
 		ExitCode: 1,
 	}
 	PrintRunningStepFooter(result, true)
@@ -344,7 +343,7 @@ func TestPrintRunningStepFooter(t *testing.T) {
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
-		Error:    nil,
+		ErrorStr: "",
 		ExitCode: 0,
 	}
 	PrintRunningStepFooter(result, true)
@@ -366,7 +365,7 @@ func TestPrintSummary(t *testing.T) {
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  10000000,
-		Error:    errors.New(longStr),
+		ErrorStr: longStr,
 		ExitCode: 1,
 	}
 
@@ -376,7 +375,7 @@ func TestPrintSummary(t *testing.T) {
 		Status:   models.StepRunStatusCodeSuccess,
 		Idx:      0,
 		RunTime:  0,
-		Error:    nil,
+		ErrorStr: "",
 		ExitCode: 0,
 	}
 
