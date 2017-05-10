@@ -1,6 +1,41 @@
-## Changelog (Current version: 1.6.0)
+## Changelog (Current version: 1.6.1)
 
 -----------------
+
+## 1.6.1 (2017 May 10)
+
+### Release Notes
+
+* FIX regression: previous version (1.6.0) of bitrise-cli thrown and error when bitrise was on setting up the help template: failed to get current version map.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.6.1/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.6.0 -> 1.6.1
+
+* [bf6da15] Krisztian Godrei - prepare for 1.6.1 (2017 May 10)
+* [8441798] Krisztián Gödrei - default plugin updates (#503) (2017 May 10)
+* [30c383f] Krisztián Gödrei - plugin list fix (#502) (2017 May 10)
+* [3ec4e0d] Krisztián Gödrei - StepRunResultsModel’s Error field fix (#501) (2017 May 10)
+* [bde77b8] Krisztián Gödrei - define plugin env keys as exported const (#500) (2017 May 10)
+
 
 ## 1.6.0 (2017 May 09)
 
@@ -2865,4 +2900,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 May 09
+Updated: 2017 May 10
