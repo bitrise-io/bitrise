@@ -104,20 +104,20 @@ type StepIDData struct {
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
-	StartTime            time.Time
-	StepmanUpdates       map[string]int
-	SuccessSteps         []StepRunResultsModel
-	FailedSteps          []StepRunResultsModel
-	FailedSkippableSteps []StepRunResultsModel
-	SkippedSteps         []StepRunResultsModel
+	StartTime            time.Time             `json:"start_time" yaml:"start_time"`
+	StepmanUpdates       map[string]int        `json:"stepman_updates" yaml:"stepman_updates"`
+	SuccessSteps         []StepRunResultsModel `json:"success_steps" yaml:"success_steps"`
+	FailedSteps          []StepRunResultsModel `json:"failed_steps" yaml:"failed_steps"`
+	FailedSkippableSteps []StepRunResultsModel `json:"failed_skippable_steps" yaml:"failed_skippable_steps"`
+	SkippedSteps         []StepRunResultsModel `json:"skipped_steps" yaml:"skipped_steps"`
 }
 
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
-	StepInfo stepmanModels.StepInfoModel
-	Status   int
-	Idx      int
-	RunTime  time.Duration
-	Error    error
-	ExitCode int
+	StepInfo stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
+	Status   int                         `json:"status" yaml:"status"`
+	Idx      int                         `json:"idx" yaml:"idx"`
+	RunTime  time.Duration               `json:"run_time" yaml:"run_time"`
+	ErrorStr string                      `json:"error_str" yaml:"error_str"`
+	ExitCode int                         `json:"exit_code" yaml:"exit_code"`
 }

@@ -402,7 +402,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 
 	issueRow := ""
 	sourceRow := ""
-	if stepRunResult.Error != nil {
+	if stepRunResult.ErrorStr != "" {
 		// Support URL
 		var coloringFunc func(...interface{}) string
 		supportURL := ""
@@ -540,7 +540,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	fmt.Println(sep)
 	fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 	fmt.Println(sep)
-	if stepRunResult.Error != nil || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 		if footerSubSection != "" {
 			fmt.Println(footerSubSection)
@@ -585,7 +585,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 		fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
-		if stepRunResult.Error != nil || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+		if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 			if footerSubSection != "" {
 				fmt.Println(footerSubSection)

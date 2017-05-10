@@ -489,12 +489,17 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			DefinitionPth: stepInfoPtr.DefinitionPth,
 		}
 
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+
 		stepResults := models.StepRunResultsModel{
 			StepInfo: stepInfoCopy,
 			Status:   resultCode,
 			Idx:      buildRunResults.ResultsCount(),
 			RunTime:  time.Now().Sub(stepStartTime),
-			Error:    err,
+			ErrorStr: errStr,
 			ExitCode: exitCode,
 		}
 
