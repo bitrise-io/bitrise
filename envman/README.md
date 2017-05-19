@@ -128,8 +128,7 @@ file.unlink
 ```
 import "os/exec"
 
-cmd := "envman add --key SOME_KEY --value 'some value'"
-c := exec.Command("bash", "-c", cmd)
+c := exec.Command("envman", "add", "--key", "SOME_KEY", "--value", "some value")
 err := c.Run()
 if err != nil {
    // Handle error
@@ -163,8 +162,7 @@ import (
 	"fmt"
 )
 
-cmd := fmt.Sprintf("envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value")
-c := exec.Command("bash", "-c", cmd)
+c := exec.Command("envman", "add", "--key", "SOME_KEY", "--valuefile", "/path/to/file/which/contains/the/value")
 err := c.Run()
 if err != nil {
 	// Handle error
