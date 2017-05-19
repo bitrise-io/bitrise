@@ -45,7 +45,7 @@ Or use the included scripts:
 ## How does it work?
 
 `envman` will run the command you specify
-with the environments found in it's environment store.
+with the environments found in its environment store.
 
 When you add a new key-value pair with `envman add` it stores
 the key and value in an `.envstore` file in the current
