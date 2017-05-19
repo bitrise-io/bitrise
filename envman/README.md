@@ -83,7 +83,7 @@ envman run bash -c 'echo "Environment test: $MY_TEST_ENV_KEY"'
 
 *Why `bash -c` is required? Because `echo` in itself
 does not do any environment expansion, it simply prints
-it's input. So if you want to see the value of an environment
+its input. So if you want to see the value of an environment
 you have to run it through a tool/shell which actually
 performs the environment expansion (replaces the environment
 key with the value associated with it).*
