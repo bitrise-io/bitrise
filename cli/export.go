@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/urfave/cli"
+
+	"os/exec"
 )
 
 func export(c *cli.Context) error {
@@ -28,10 +31,13 @@ func export(c *cli.Context) error {
 	//
 
 	if outfilePth == "" {
-		log.Fatal("No output file path specified!")
+		bitriseHelp()
+		log.Fatalf("No output file path specified!")
 	}
+
 	if outFormat == "" {
-		log.Fatal("No output file format specified!")
+		bitriseHelp()
+		log.Fatalf("No output file format specified!")
 	}
 
 	// Config validation
@@ -71,4 +77,12 @@ func export(c *cli.Context) error {
 	log.Infof("Done, saved to path: %s", outfilePth)
 
 	return nil
+}
+
+func bitriseHelp() {
+	out, err := exec.Command("bitrise", "export", "-h").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf(string(out))
 }
