@@ -2,7 +2,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"gopkg.in/yaml.v2"
 
@@ -10,8 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/urfave/cli"
-
-	"os/exec"
 )
 
 func export(c *cli.Context) error {
@@ -31,12 +28,12 @@ func export(c *cli.Context) error {
 	//
 
 	if outfilePth == "" {
-		bitriseHelp()
+		bitriseHelp(c)
 		log.Fatalf("No output file path specified!")
 	}
 
 	if outFormat == "" {
-		bitriseHelp()
+		bitriseHelp(c)
 		log.Fatalf("No output file format specified!")
 	}
 
@@ -79,10 +76,8 @@ func export(c *cli.Context) error {
 	return nil
 }
 
-func bitriseHelp() {
-	out, err := exec.Command("bitrise", "export", "-h").Output()
-	if err != nil {
-		log.Fatal(err)
+func bitriseHelp(c *cli.Context) {
+	if err := cli.ShowAppHelp(c); err != nil {
+		log.Warnf("Failed to show help, error: %s", err)
 	}
-	fmt.Printf(string(out))
 }
