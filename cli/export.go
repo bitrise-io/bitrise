@@ -29,12 +29,12 @@ func export(c *cli.Context) error {
 
 	if outfilePth == "" {
 		bitriseHelp(c)
-		log.Fatalf("No output file path specified!")
+		log.Fatal("No output file path specified!")
 	}
 
 	if outFormat == "" {
 		bitriseHelp(c)
-		log.Fatalf("No output file format specified!")
+		log.Fatal("No output file format specified!")
 	}
 
 	// Config validation
