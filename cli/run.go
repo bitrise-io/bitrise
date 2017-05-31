@@ -99,25 +99,25 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
-func printWorkflowSteps(bitriseConfig models.BitriseDataModel, workflowToRunID string) {
-	workflowStepsBeforeRun := bitriseConfig.Workflows[workflowToRunID].BeforeRun
-	workflowStepsAfterRun := bitriseConfig.Workflows[workflowToRunID].AfterRun
-
-	if len(workflowStepsBeforeRun) != 0 {
-		log.Infoln(colorstring.Green("Steps before running the workflow:"))
-		for stepIdx, stepName := range workflowStepsBeforeRun {
-			log.Infoln(stepIdx+1, stepName)
+func printWorkflowSteps(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
+	beforeWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].BeforeRun
+	afterWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].AfterRun
+	workflowsString := "Running workflows: "
+	if len(beforeWorkflowIDs) != 0 {
+		for _, workflowName := range beforeWorkflowIDs {
+			workflowsString = workflowsString + workflowName + " --> "
 		}
 	}
 
-	log.Infoln(colorstring.Green("Running workflow:"), workflowToRunID)
+	workflowsString = workflowsString + colorstring.Green(targetWorkflowToRunID)
 
-	if len(workflowStepsAfterRun) != 0 {
-		log.Infoln(colorstring.Green("Steps after running the workflow:"))
-		for stepIdx, stepName := range workflowStepsAfterRun {
-			log.Infoln(stepIdx+1, stepName)
+	if len(afterWorkflowIDs) != 0 {
+		for _, workflowName := range afterWorkflowIDs {
+			workflowsString = workflowsString + " --> " + workflowName
 		}
 	}
+
+	log.Infof(workflowsString)
 }
 
 // --------------------
