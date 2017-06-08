@@ -28,9 +28,12 @@ func export(c *cli.Context) error {
 	//
 
 	if outfilePth == "" {
+		exportCommandHelp(c)
 		log.Fatal("No output file path specified!")
 	}
+
 	if outFormat == "" {
+		exportCommandHelp(c)
 		log.Fatal("No output file format specified!")
 	}
 
@@ -40,6 +43,7 @@ func export(c *cli.Context) error {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
+		exportCommandHelp(c)
 		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
@@ -71,4 +75,10 @@ func export(c *cli.Context) error {
 	log.Infof("Done, saved to path: %s", outfilePth)
 
 	return nil
+}
+
+func exportCommandHelp(c *cli.Context) {
+	if err := cli.ShowCommandHelp(c, "export"); err != nil {
+		log.Warnf("Failed to show help, error: %s", err)
+	}
 }
