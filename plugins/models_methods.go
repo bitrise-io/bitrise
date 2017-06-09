@@ -59,7 +59,7 @@ func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
 	return plugin, nil
 }
 
-func validate(plugin Plugin, pluginDefinitionPth string) error {
+func validatePlugin(plugin Plugin, pluginDefinitionPth string) error {
 	// Validate plugin
 	if plugin.Name == "" {
 		return errors.New("missing name")
