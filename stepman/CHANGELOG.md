@@ -2,6 +2,34 @@
 
 -----------------
 
+## 0.9.31 (2017 Jun 12)
+
+### Release Notes
+
+* godeps-update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.31/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.30 -> 0.9.31
+
+* [f53b5da] Krisztian Godrei - prepare for 0.9.31 (2017 Jun 12)
+* [5a930c6] Krisztián Gödrei - godeps-update (#232) (2017 Jun 12)
+
+
 ## 0.9.30 (2017 Apr 10)
 
 ### Release Notes
@@ -1391,4 +1419,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Apr 10
+Generated at: 2017 Jun 12
