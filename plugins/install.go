@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -133,10 +133,10 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 
 		if installedPluginVersionPtr != nil {
 			fmt.Println()
-			log.Infof("Installed plugin found with version (%s), overriding it...", (*installedPluginVersionPtr).String())
+			log.Warnf("Installed plugin found with version (%s), overriding it...", (*installedPluginVersionPtr).String())
 		} else {
 			fmt.Println()
-			log.Infof("Installed local plugin found, overriding it...")
+			log.Warnf("Installed local plugin found, overriding it...")
 		}
 	}
 	// ---

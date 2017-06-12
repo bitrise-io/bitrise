@@ -6,9 +6,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -138,8 +138,8 @@ func GetPluginDataDir(name string) string {
 	return filepath.Join(GetPluginDir(name), "data")
 }
 
-// GetPluginYMLPath ...
-func GetPluginYMLPath(name string) string {
+// GetPluginDefinitionPath ...
+func GetPluginDefinitionPath(name string) string {
 	return filepath.Join(GetPluginSrcDir(name), pluginDefinitionFileName)
 }
 

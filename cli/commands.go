@@ -239,42 +239,7 @@ var (
 				},
 			},
 		},
-		{
-			Name:  "plugin",
-			Usage: "Plugin handling.",
-			Subcommands: []cli.Command{
-				{
-					Name:   "install",
-					Usage:  "Intsall bitrise plugin.",
-					Action: pluginInstall,
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "source",
-							Usage: "Plugin source url (can be local path or remote url).",
-						},
-						cli.StringFlag{
-							Name:  "version",
-							Usage: "Plugin version tag.",
-						},
-					},
-				},
-				{
-					Name:   "update",
-					Usage:  "Update bitrise plugin.",
-					Action: pluginUpdate,
-				},
-				{
-					Name:   "delete",
-					Usage:  "Delete bitrise plugin.",
-					Action: pluginDelete,
-				},
-				{
-					Name:   "list",
-					Usage:  "List installed bitrise plugins.",
-					Action: pluginList,
-				},
-			},
-		},
+		pluginCommand,
 		stepmanCommand,
 		envmanCommand,
 	}

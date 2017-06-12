@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -19,6 +20,51 @@ import (
 //=======================================
 // Plugin
 //=======================================
+
+// String ...
+func (info PluginInfoModel) String() string {
+	str := fmt.Sprintf("%s %s\n", colorstring.Blue("Name:"), info.Name)
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("Version:"), info.Version)
+	str += fmt.Sprintf("%s %s\n", colorstring.Blue("Source:"), info.Source)
+	str += fmt.Sprintf("%s\n", colorstring.Blue("Definition:"))
+
+	definition, err := fileutil.ReadStringFromFile(info.DefinitionPth)
+	if err != nil {
+		str += colorstring.Redf("Failed to read plugin definition, error: %s", err)
+		return str
+	}
+
+	str += definition
+	return str
+}
+
+// JSON ...
+func (info PluginInfoModel) JSON() string {
+	bytes, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Sprintf(`"Failed to marshal plugin info (%#v), err: %s"`, info, err)
+	}
+	return string(bytes) + "\n"
+}
+
+// String ...
+func (infos PluginInfos) String() string {
+	str := ""
+	for _, info := range infos {
+		str += info.String()
+		str += "\n---\n\n"
+	}
+	return str
+}
+
+// JSON ...
+func (infos PluginInfos) JSON() string {
+	bytes, err := json.Marshal(infos)
+	if err != nil {
+		return fmt.Sprintf(`"Failed to marshal plugin infos (%#v), err: %s"`, infos, err)
+	}
+	return string(bytes) + "\n"
+}
 
 func validateRequirements(requirements []Requirement, currentVersionMap map[string]ver.Version) error {
 	var err error
