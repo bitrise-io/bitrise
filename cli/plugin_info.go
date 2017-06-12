@@ -40,7 +40,7 @@ func createPluginInfo(name string) (plugins.PluginInfoModel, error) {
 
 	route, found, err := plugins.ReadPluginRoute(plugin.Name)
 	if err != nil {
-		return plugins.PluginInfoModel{}, fmt.Errorf("failed toread plugin route, error: %s", err)
+		return plugins.PluginInfoModel{}, fmt.Errorf("failed to read plugin route, error: %s", err)
 	} else if !found {
 		return plugins.PluginInfoModel{}, errors.New("no route found for loaded plugin")
 	}
