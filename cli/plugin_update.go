@@ -67,7 +67,7 @@ func pluginUpdate(c *cli.Context) error {
 		if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
 			return fmt.Errorf("failed to check for plugin new version, error: %s", err)
 		} else if newVersion != "" {
-			log.Infof("Installing new version (%s)", newVersion)
+			log.Printf("Installing new version (%s)", newVersion)
 
 			route, found, err := plugins.ReadPluginRoute(plugin.Name)
 			if err != nil {
@@ -94,6 +94,8 @@ func pluginUpdate(c *cli.Context) error {
 		} else {
 			log.Donef("No new version available")
 		}
+
+		fmt.Println()
 	}
 	// ---
 
