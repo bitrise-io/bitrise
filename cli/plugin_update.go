@@ -12,7 +12,7 @@ import (
 
 var pluginUpdateCommand = cli.Command{
 	Name:  "update",
-	Usage: "Update bitrise plugin.",
+	Usage: "Update bitrise plugin. If <plugin_name> not specified, every plugin will be updated.",
 	Action: func(c *cli.Context) error {
 		if err := pluginUpdate(c); err != nil {
 			log.Errorf("Plugin update failed, error: %s", err)
@@ -20,61 +20,80 @@ var pluginUpdateCommand = cli.Command{
 		}
 		return nil
 	},
-	ArgsUsage: "<plugin_name>",
+	ArgsUsage: "[<plugin_name>]",
 }
 
 func pluginUpdate(c *cli.Context) error {
 	// Input validation
-	args := c.Args()
-	if len(args) == 0 {
-		showSubcommandHelp(c)
-		return errors.New("plugin_name not defined")
-	}
+	pluginNameToUpdate := ""
 
-	name := args[0]
-	if name == "" {
-		showSubcommandHelp(c)
-		return errors.New("plugin_name not defined")
+	args := c.Args()
+	if len(args) != 0 {
+		pluginNameToUpdate = args[0]
 	}
 	// ---
 
 	// Update
-	plugin, found, err := plugins.LoadPlugin(name)
-	if err != nil {
-		return fmt.Errorf("failed to check if plugin installed, error: %s", err)
-	} else if !found {
-		return fmt.Errorf("plugin is not installed")
+	pluginsToUpdate := []plugins.Plugin{}
+
+	if pluginNameToUpdate != "" {
+		plugin, found, err := plugins.LoadPlugin(pluginNameToUpdate)
+		if err != nil {
+			return fmt.Errorf("failed to check if plugin installed, error: %s", err)
+		} else if !found {
+			return fmt.Errorf("plugin is not installed")
+		}
+
+		pluginsToUpdate = append(pluginsToUpdate, plugin)
+	} else {
+		installedPlugins, err := plugins.InstalledPluginList()
+		if err != nil {
+			return fmt.Errorf("failed to list plugins, error: %s", err)
+		}
+
+		if len(installedPlugins) == 0 {
+			log.Warnf("No installed plugin found")
+			return nil
+		}
+
+		plugins.SortByName(installedPlugins)
+
+		pluginsToUpdate = append(pluginsToUpdate, installedPlugins...)
 	}
 
-	if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
-		return fmt.Errorf("failed to check for plugin new version, error: %s", err)
-	} else if newVersion != "" {
-		log.Infof("Installing new version (%s)", newVersion)
+	for _, plugin := range pluginsToUpdate {
+		log.Infof("Updaing plugin: %s", plugin.Name)
 
-		route, found, err := plugins.ReadPluginRoute(plugin.Name)
-		if err != nil {
-			return fmt.Errorf("failed to read plugin route, error: %s", err)
-		}
-		if !found {
-			return errors.New("no route found for already loaded plugin")
-		}
+		if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
+			return fmt.Errorf("failed to check for plugin new version, error: %s", err)
+		} else if newVersion != "" {
+			log.Infof("Installing new version (%s)", newVersion)
 
-		plugin, version, err := plugins.InstallPlugin(route.Source, newVersion)
-		if err != nil {
-			return fmt.Errorf("failed to install plugin from (%s), error: %s", route.Source, err)
-		}
+			route, found, err := plugins.ReadPluginRoute(plugin.Name)
+			if err != nil {
+				return fmt.Errorf("failed to read plugin route, error: %s", err)
+			}
+			if !found {
+				return errors.New("no route found for already loaded plugin")
+			}
 
-		fmt.Println()
-		log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
+			plugin, version, err := plugins.InstallPlugin(route.Source, newVersion)
+			if err != nil {
+				return fmt.Errorf("failed to install plugin from (%s), error: %s", route.Source, err)
+			}
 
-		if len(plugin.Description) > 0 {
 			fmt.Println()
-			log.Infof("Description:")
-			fmt.Println(plugin.Description)
-			fmt.Println()
+			log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
+
+			if len(plugin.Description) > 0 {
+				fmt.Println()
+				log.Infof("Description:")
+				fmt.Println(plugin.Description)
+				fmt.Println()
+			}
+		} else {
+			log.Donef("No new version available")
 		}
-	} else {
-		log.Donef("No new version available")
 	}
 	// ---
 
