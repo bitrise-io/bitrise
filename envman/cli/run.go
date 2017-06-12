@@ -6,7 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/cmdex"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/urfave/cli"
 )
 
@@ -57,7 +57,7 @@ func runCommandModel(cmdModel CommandModel) (int, error) {
 		return 1, err
 	}
 
-	return cmdex.RunCommandWithEnvsAndReturnExitCode(cmdEnvs, cmdModel.Command, cmdModel.Argumentums...)
+	return command.RunCommandWithEnvsAndReturnExitCode(cmdEnvs, cmdModel.Command, cmdModel.Argumentums...)
 }
 
 func run(c *cli.Context) error {
