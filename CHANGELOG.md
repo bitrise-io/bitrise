@@ -1,6 +1,92 @@
-## Changelog (Current version: 1.6.1)
+## Changelog (Current version: 1.6.2)
 
 -----------------
+
+## 1.6.2 (2017 Jun 12)
+
+### Release Notes
+
+__plugin info command__
+
+bitrise-cli got a new command: `bitrise plugin info`
+
+Prints infos about the specified installed bitrise plugin. You use the command's `--format` flag to specify the output format (valid options: `raw`, `json`).
+
+The command prints the following infos:
+
+```
+Name: PLUGIN_NAME
+Version: PLUGIN_VERSION
+Source: PLUGIN_SOURCE
+Definition: PLUGIN_DEFINITION
+```
+
+__plugin list command__
+
+`bitrise plugin list` command prints infos about the installed plugins, the command got a new flag: `--format`, which you can use to specify the output's format (valid options: `raw`, `json`). 
+
+The command prints the same infos about the plugins as the new `bitrise plugin info` command.
+
+__plugin update command__
+
+In previous versions specifying the plugin's name, to update, was required. From now, if you do not specify which plugin to update `bitrise plugin update` command will update every installed bitrise plugin.
+
+__plugin update command fix__
+
+From now `bitrise plugin update` prepares the new plugin version as a sandbox and once everything is downloaded to install the plugin, the cli just copies it to the plugins directory (`$HOME/.bitrise/plugins`).
+
+__export command fix__
+
+From now `bitrise export` command will print the command's help, if required arguments/flags were not provided.
+
+__Bitrise temporary directory__
+
+This bitrise-cli version creates an exports a temporary directory: `BITRISE_TMP_DIR` (if it is not already set). This directory is dedicated to store temporary files, during the bitrise-cli commands.
+
+__go toolkit__
+
+go version bump from 1.8.1 to 1.8.3
+
+__Dependency updates:__
+
+  - min envman version: 1.1.4
+  - min stepman version: 0.9.31
+  - default init plugin version: 0.9.4
+  - default step plugin version: 0.9.3
+  - default workflow-editor plugin version: 1.0.9
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.6.2/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.6.1 -> 1.6.2
+
+* [d6ba2d7] Krisztian Godrei - prepare for 1.6.2 (2017 Jun 12)
+* [573f411] Krisztián Gödrei - bitrise deps and tools update (#515) (2017 Jun 12)
+* [006e187] Krisztián Gödrei - godeps update (#514) (2017 Jun 12)
+* [69be428] Krisztián Gödrei - Plugin update (#513) (2017 Jun 12)
+* [0fc8020] Krisztián Gödrei - plugin info cmd, plugin list cmd update, plugin review (#512) (2017 Jun 12)
+* [f25a2ee] Krisztián Gödrei - BITRISE_TMP_DIR & tests (#511) (2017 Jun 09)
+* [0b36108] Krisztián Gödrei - plugin update fix (#510) (2017 Jun 09)
+* [7b9e900] Zsolt - Bitrise export fix (#508) (2017 Jun 08)
+* [cdc9d51] Viktor Benei - go toolkit - go version bump from 1.8.1 to 1.8.3 (#506) (2017 Jun 08)
+
 
 ## 1.6.1 (2017 May 10)
 
@@ -2900,4 +2986,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 May 10
+Updated: 2017 Jun 12
