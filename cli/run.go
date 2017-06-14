@@ -99,10 +99,16 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	os.Exit(0)
 }
 
-func printWorkflowSteps(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
+func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
 	beforeWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].BeforeRun
 	afterWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].AfterRun
-	workflowsString := "Running workflows: "
+	workflowsString := ""
+	if len(beforeWorkflowIDs) == 0 && len(afterWorkflowIDs) == 0 {
+		workflowsString = "Running workflow: "
+	} else {
+		workflowsString = "Running workflows: "
+	}
+
 	if len(beforeWorkflowIDs) != 0 {
 		for _, workflowName := range beforeWorkflowIDs {
 			workflowsString = workflowsString + workflowName + " --> "
@@ -222,7 +228,7 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	printWorkflowSteps(bitriseConfig, runParams.WorkflowToRunID)
+	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
 	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
 	//
