@@ -1363,6 +1363,17 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 		require.Equal(t, "develop", stepIDData.Version)
 	}
 
+	t.Log("direct git uri")
+	{
+		stepCompositeIDString := "git::https://github.com/bitrise-io/steps-timestamp.git"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
+
+		require.NoError(t, err)
+		require.Equal(t, "git", stepIDData.SteplibSource)
+		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
+		require.Equal(t, "master", stepIDData.Version)
+	}
+
 	//
 	// ----- Old step
 	t.Log("old step")

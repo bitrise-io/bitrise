@@ -900,6 +900,10 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
 	}
 
+	if stepSrc == "git" && stepVersion == "" {
+		stepVersion = "master"
+	}
+
 	return StepIDData{
 		SteplibSource: stepSrc,
 		IDorURI:       stepIDOrURI,
