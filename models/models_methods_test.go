@@ -824,9 +824,8 @@ func TestValidateConfig(t *testing.T) {
 			},
 		}
 		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (): empty", warnings[0])
+		require.EqualError(t, err, "invalid workflow ID (): empty")
+		require.Equal(t, 0, len(warnings))
 	}
 
 	t.Log("Invalid bitriseData ID - contains: `/`")

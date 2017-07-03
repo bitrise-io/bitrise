@@ -405,6 +405,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		return warnings, fmt.Errorf("missing format_version")
 	}
 
+	// trigger map
 	if err := config.TriggerMap.Validate(); err != nil {
 		return warnings, err
 	}
@@ -430,14 +431,18 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	if err := checkDuplicatedTriggerMapItems(config.TriggerMap); err != nil {
 		return warnings, err
 	}
+	// ---
 
+	// app
 	if err := config.App.Validate(); err != nil {
 		return warnings, err
 	}
+	// ---
 
+	// workflows
 	for ID, workflow := range config.Workflows {
 		if ID == "" {
-			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): empty", ID))
+			return warnings, fmt.Errorf("invalid workflow ID (%s): empty", ID)
 		}
 
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
@@ -455,6 +460,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 	}
+	// ---
 
 	return warnings, nil
 }
