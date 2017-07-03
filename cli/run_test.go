@@ -1342,7 +1342,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 workflows:
   before:
     steps:
-    - script:
+    - script@1.1.3:
         inputs:
         - working_dir: $HOME
 
@@ -1351,13 +1351,13 @@ workflows:
     before_run:
     - before
     steps:
-    - script:
+    - script@1.1.3:
         title: "${working_dir} should not exist"
         inputs:
         - content: |
             #!/bin/bash
             set -v
-            echo ${ENV}
+            env
             if [ ! -z "$working_dir" ] ; then
               echo ${working_dir}
               exit 3
