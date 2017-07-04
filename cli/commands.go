@@ -32,16 +32,7 @@ const (
 var (
 	commands = []cli.Command{
 		initCmd,
-		{
-			Name:    "setup",
-			Aliases: []string{"s"},
-			Usage:   "Setup the current host. Install every required tool to run Workflows.",
-			Action:  setup,
-			Flags: []cli.Flag{
-				flMinimalSetup,
-				flFullModeSteup,
-			},
-		},
+		setupCommand,
 		{
 			Name:   "version",
 			Usage:  "Prints the version",
