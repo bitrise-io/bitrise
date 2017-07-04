@@ -3,9 +3,7 @@ package tools
 import (
 	"path/filepath"
 	"testing"
-	"log"
 	"os"
-	"syscall"
 	"os/exec"
 	"runtime"
 	"io/ioutil"
@@ -13,6 +11,8 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
+	"bytes"
+	"strings"
 )
 
 func TestMoveFile(t *testing.T) {
@@ -32,15 +32,25 @@ func TestMoveFile(t *testing.T) {
 }
 
 func TestMoveFileDifferentDevices(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		log.Println("Test requires linux")
-		return
+	require.True(t, runtime.GOOS == "linux" || runtime.GOOS == "darwin")
+
+	ramdiskPath := ""
+	ramdiskName := "RAMDISK"
+	volumeName := ""
+	if runtime.GOOS == "linux" {
+		dir, err := ioutil.TempDir("", ramdiskName)
+		require.Equal(t, nil, err)
+		require.NoError(t, exec.Command("mount", "-t", "tmpfs", "-o", "size=12m", "tmpfs", dir).Run())
+	} else if runtime.GOOS == "darwin" {
+		var stdout bytes.Buffer
+		cmd := exec.Command("hdiutil", "attach", "-nomount", "ram://64")
+		cmd.Stdout = &stdout
+		require.NoError(t, cmd.Run())
+		volumeName =  strings.TrimSpace(stdout.String())
+
+		require.NoError(t, exec.Command("diskutil", "erasevolume", "MS-DOS", ramdiskName, volumeName).Run())
+		ramdiskPath = "/Volumes/" + ramdiskName
 	}
-
-	dir, err := ioutil.TempDir("", "ramdisk")
-	require.Equal(t, nil, err)
-
-	require.NoError(t, syscall.Mount("tmpfs", dir, "tmpfs", 0, "size=16m"))
 
 	filename := "test.tmp"
 	srcPath := os.TempDir() + "/" + filename
@@ -48,14 +58,18 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 	require.NotEqual(t, nil, srcFile)
 	require.Equal(t, nil, err)
 
-	dstPath := dir + "/" + filename
+	dstPath := ramdiskPath + "/" + filename
 	require.NoError(t, MoveFile(srcPath, dstPath))
 	info, err:= os.Stat(dstPath)
 	require.Equal(t, nil, err)
 	require.Equal(t, false, info.IsDir())
 
-	require.NoError(t, exec.Command("umount", dir).Run())
-	require.NoError(t, os.RemoveAll(dir))
+	if runtime.GOOS == "linux" {
+		require.NoError(t, exec.Command("umount", ramdiskPath).Run())
+		require.NoError(t, os.RemoveAll(ramdiskPath))
+	} else if runtime.GOOS == "darwin" {
+		require.NoError(t, exec.Command("hdiutil", "detach", volumeName).Run())
+	}
 }
 
 func TestStepmanJSONStepLibStepInfo(t *testing.T) {
