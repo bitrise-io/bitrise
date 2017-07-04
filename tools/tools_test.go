@@ -3,11 +3,60 @@ package tools
 import (
 	"path/filepath"
 	"testing"
+	"log"
+	"os"
+	"syscall"
+	"os/exec"
+	"runtime"
+	"io/ioutil"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMoveFile(t *testing.T) {
+	srcPath := os.TempDir() + "/src.tmp"
+	_, err := os.Create(srcPath)
+	require.Equal(t, nil, err)
+
+	dstPath := os.TempDir() + "/dst.tmp"
+
+	require.NoError(t, MoveFile(srcPath, dstPath))
+
+	info, err:= os.Stat(dstPath)
+	require.Equal(t, nil, err)
+	require.Equal(t, false, info.IsDir())
+
+	require.NoError(t, os.Remove(dstPath))
+}
+
+func TestMoveFileDifferentDevices(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		log.Println("Test requires linux")
+		return
+	}
+
+	dir, err := ioutil.TempDir("", "ramdisk")
+	require.Equal(t, nil, err)
+
+	require.NoError(t, syscall.Mount("tmpfs", dir, "tmpfs", 0, "size=16m"))
+
+	filename := "test.tmp"
+	srcPath := os.TempDir() + "/" + filename
+	srcFile, err := os.Create(srcPath)
+	require.NotEqual(t, nil, srcFile)
+	require.Equal(t, nil, err)
+
+	dstPath := dir + "/" + filename
+	require.NoError(t, MoveFile(srcPath, dstPath))
+	info, err:= os.Stat(dstPath)
+	require.Equal(t, nil, err)
+	require.Equal(t, false, info.IsDir())
+
+	require.NoError(t, exec.Command("umount", dir).Run())
+	require.NoError(t, os.RemoveAll(dir))
+}
 
 func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 	// setup
