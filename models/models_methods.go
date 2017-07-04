@@ -354,7 +354,7 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 		if triggerItem.Pattern == "" {
 			triggerType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 			if err != nil {
-				return fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem, err)
+				return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
 			}
 
 			triggerItems := triggeTypeItemMap[string(triggerType)]
@@ -898,6 +898,10 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 
 	if stepIDOrURI == "" {
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+	}
+
+	if stepSrc == "git" && stepVersion == "" {
+		stepVersion = "master"
 	}
 
 	return StepIDData{
