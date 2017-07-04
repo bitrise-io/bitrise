@@ -133,15 +133,7 @@ var (
 		Name:  InventoryBase64Key,
 		Usage: "base64 decoded inventory data.",
 	}
-	// Setup
-	flMinimalSetup = cli.BoolFlag{
-		Name:  MinimalModeKey,
-		Usage: "[Deprecated!!!] Minimal setup mode: skips more thorough checking, like brew doctor.",
-	}
-	flFullModeSteup = cli.BoolFlag{
-		Name:  FullModeKey,
-		Usage: "Full setup mode: also calls 'brew doctor'.",
-	}
+
 	// Export
 	flFormat = cli.StringFlag{
 		Name:  OuputFormatKey,

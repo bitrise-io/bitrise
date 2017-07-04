@@ -132,11 +132,9 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		}
 
 		if installedPluginVersionPtr != nil {
-			fmt.Println()
-			log.Warnf("Installed plugin found with version (%s), overriding it...", (*installedPluginVersionPtr).String())
+			log.Warnf("installed plugin found with version (%s), overriding it...", (*installedPluginVersionPtr).String())
 		} else {
-			fmt.Println()
-			log.Warnf("Installed local plugin found, overriding it...")
+			log.Warnf("installed local plugin found, overriding it...")
 		}
 	}
 	// ---
