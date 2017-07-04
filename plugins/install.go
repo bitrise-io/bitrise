@@ -152,6 +152,8 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 			return Plugin{}, fmt.Errorf("failed to create tmp plugin bin dir, error: %s", err)
 		}
 
+		log.Printf("downloading plugin binary")
+
 		tmpPluginBinPth := filepath.Join(tmpPluginBinDir, newPlugin.Name)
 		if err := downloadPluginBin(executableURL, tmpPluginBinPth); err != nil {
 			return Plugin{}, fmt.Errorf("failed to download plugin executable from (%s), error: %s", executableURL, err)
@@ -229,6 +231,8 @@ func InstallPlugin(pluginSourceURI, versionTag string) (Plugin, string, error) {
 				log.Warnf("Failed to remove path (%s)", pluginSrcTmpDir)
 			}
 		}()
+
+		log.Printf("git clone plugin source")
 
 		version, err := GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, pluginSourceURI, versionTag)
 		if err != nil {
