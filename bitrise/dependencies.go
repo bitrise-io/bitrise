@@ -3,7 +3,6 @@ package bitrise
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -130,7 +129,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 			fmt.Println("")
 			log.Warnf("brew doctor returned an error:")
 			log.Warnf("%s", doctorOutput)
-			return errors.New("Failed to: brew doctor")
+			return errors.New("command failed: brew doctor")
 		}
 	}
 
@@ -264,53 +263,45 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 }
 
 func checkIfBrewPackageInstalled(packageName string) bool {
-	cmd := exec.Command("brew", "list", packageName)
-
-	outBytes, err := cmd.CombinedOutput()
+	out, err := command.New("brew", "list", packageName).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return false
 	}
-
-	return len(outBytes) > 0
+	return len(out) > 0
 }
 
 func checkIfAptPackageInstalled(packageName string) bool {
-	cmd := exec.Command("dpkg", "-s", packageName)
-
-	if _, err := cmd.CombinedOutput(); err != nil {
-		return false
-	}
-
-	return true
+	err := command.New("dpkg", "-s", packageName).Run()
+	return (err == nil)
 }
 
 // DependencyTryCheckTool ...
 func DependencyTryCheckTool(tool string) error {
-	var cmd *exec.Cmd
+	var cmd *command.Model
 	errMsg := ""
 
 	switch tool {
 	case "xcode":
-		cmd = exec.Command("xcodebuild", "-version")
+		cmd = command.New("xcodebuild", "-version")
 		errMsg = "The full Xcode app is not installed, required for this step. You can install it from the App Store."
 		break
 	default:
 		cmdFields := strings.Fields(tool)
 		if len(cmdFields) >= 2 {
-			cmd = exec.Command(cmdFields[0], cmdFields[1:]...)
+			cmd = command.New(cmdFields[0], cmdFields[1:]...)
 		} else if len(cmdFields) == 1 {
-			cmd = exec.Command(cmdFields[0])
+			cmd = command.New(cmdFields[0])
 		} else {
 			return fmt.Errorf("Invalid tool name (%s)", tool)
 		}
 	}
 
-	outBytes, err := cmd.CombinedOutput()
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		if errMsg != "" {
 			return errors.New(errMsg)
 		}
-		log.Infof("Output was: %s", outBytes)
+		log.Infof("Output was: %s", out)
 		return fmt.Errorf("Dependency check failed for: %s", tool)
 	}
 
