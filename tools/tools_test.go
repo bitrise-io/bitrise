@@ -1,32 +1,30 @@
 package tools
 
 import (
-	"path/filepath"
-	"testing"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
-	"io/ioutil"
+	"testing"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
-	"bytes"
-	"strings"
 )
 
 func TestMoveFile(t *testing.T) {
-	srcPath := os.TempDir() + "/src.tmp"
+	srcPath := filepath.Join(os.TempDir(), "src.tmp")
 	_, err := os.Create(srcPath)
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
-	dstPath := os.TempDir() + "/dst.tmp"
-
+	dstPath := filepath.Join(os.TempDir(), "dst.tmp")
 	require.NoError(t, MoveFile(srcPath, dstPath))
 
-	info, err:= os.Stat(dstPath)
-	require.Equal(t, nil, err)
-	require.Equal(t, false, info.IsDir())
+	info, err := os.Stat(dstPath)
+	require.NoError(t, err)
+	require.False(t, info.IsDir())
 
 	require.NoError(t, os.Remove(dstPath))
 }
@@ -39,31 +37,31 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 	volumeName := ""
 	if runtime.GOOS == "linux" {
 		tmpDir, err := ioutil.TempDir("", ramdiskName)
+		require.NoError(t, err)
+
 		ramdiskPath = tmpDir
-		require.Equal(t, nil, err)
 		require.NoError(t, exec.Command("mount", "-t", "tmpfs", "-o", "size=12m", "tmpfs", ramdiskPath).Run())
 	} else if runtime.GOOS == "darwin" {
-		var stdout bytes.Buffer
-		cmd := exec.Command("hdiutil", "attach", "-nomount", "ram://64")
-		cmd.Stdout = &stdout
-		require.NoError(t, cmd.Run())
-		volumeName =  strings.TrimSpace(stdout.String())
+		out, err := command.New("hdiutil", "attach", "-nomount", "ram://64").RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err)
 
+		volumeName = out
 		require.NoError(t, exec.Command("diskutil", "erasevolume", "MS-DOS", ramdiskName, volumeName).Run())
+
 		ramdiskPath = "/Volumes/" + ramdiskName
 	}
 
 	filename := "test.tmp"
-	srcPath := os.TempDir() + "/" + filename
-	srcFile, err := os.Create(srcPath)
-	require.NotEqual(t, nil, srcFile)
-	require.Equal(t, nil, err)
+	srcPath := filepath.Join(os.TempDir(), filename)
+	_, err := os.Create(srcPath)
+	require.NoError(t, err)
 
-	dstPath := ramdiskPath + "/" + filename
+	dstPath := filepath.Join(ramdiskPath, filename)
 	require.NoError(t, MoveFile(srcPath, dstPath))
-	info, err:= os.Stat(dstPath)
-	require.Equal(t, nil, err)
-	require.Equal(t, false, info.IsDir())
+
+	info, err := os.Stat(dstPath)
+	require.NoError(t, err)
+	require.False(t, info.IsDir())
 
 	if runtime.GOOS == "linux" {
 		require.NoError(t, exec.Command("umount", ramdiskPath).Run())
@@ -81,7 +79,7 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 	require.Equal(t, nil, StepmanSetup("https://github.com/bitrise-io/bitrise-steplib"))
 
 	outStr, err := StepmanJSONStepLibStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "0.9.0")
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.NotEqual(t, "", outStr)
 
 	// Invalid params -- Err should empty, output filled
@@ -93,19 +91,19 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 func TestEnvmanJSONPrint(t *testing.T) {
 	// Initialized envstore -- Err should empty, output filled
 	testDirPth, err := pathutil.NormalizedOSTempDirPath("test_env_store")
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	envstorePth := filepath.Join(testDirPth, "envstore.yml")
 
 	require.Equal(t, nil, EnvmanInitAtPath(envstorePth))
 
 	outStr, err := EnvmanJSONPrint(envstorePth)
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 	require.NotEqual(t, "", outStr)
 
 	// Not initialized envstore -- Err should filled, output empty
 	testDirPth, err = pathutil.NormalizedOSTempDirPath("test_env_store")
-	require.Equal(t, nil, err)
+	require.NoError(t, err)
 
 	envstorePth = filepath.Join("test_env_store", "envstore.yml")
 

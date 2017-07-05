@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
 	"golang.org/x/sys/unix"
-	"io/ioutil"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
@@ -334,26 +335,27 @@ func MoveFile(oldpath, newpath string) error {
 	if err == nil {
 		return nil
 	}
+
 	if linkErr, ok := err.(*os.LinkError); ok {
 		if linkErr.Err == unix.EXDEV {
 			info, err := os.Stat(oldpath)
 			if err != nil {
 				return err
 			}
+
 			data, err := ioutil.ReadFile(oldpath)
 			if err != nil {
 				return err
 			}
+
 			err = ioutil.WriteFile(newpath, data, info.Mode())
 			if err != nil {
 				return err
 			}
-			err = os.Remove(oldpath)
-			if err != nil {
-				return err
-			}
-			return nil
+
+			return os.Remove(oldpath)
 		}
 	}
+
 	return err
 }
