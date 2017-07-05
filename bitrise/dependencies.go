@@ -121,7 +121,11 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 
 	if isFullSetupMode {
 		// brew doctor
-		doctorOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		doctorOutput := ""
+		var err error
+		progress.NewDefaultWrapper("brew doctor").WrapAction(func() {
+			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		})
 		if err != nil {
 			fmt.Println("")
 			log.Warnf("brew doctor returned an error:")
@@ -190,7 +194,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 		// Install
 		var err error
-		progress.NewDefaultWrapper("installing").WrapAction(func() {
+		progress.NewDefaultWrapper("Installing").WrapAction(func() {
 			err = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					log.Warnf("Download failed, retrying ...")
