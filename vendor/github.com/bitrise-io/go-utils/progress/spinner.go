@@ -10,9 +10,10 @@ import (
 
 // Spinner ...
 type Spinner struct {
-	chars  []string
-	delay  time.Duration
-	writer io.Writer
+	message string
+	chars   []string
+	delay   time.Duration
+	writer  io.Writer
 
 	active     bool
 	lastOutput string
@@ -20,11 +21,12 @@ type Spinner struct {
 }
 
 // NewSpinner ...
-func NewSpinner(chars []string, delay time.Duration, writer io.Writer) Spinner {
+func NewSpinner(message string, chars []string, delay time.Duration, writer io.Writer) Spinner {
 	return Spinner{
-		chars:  chars,
-		delay:  delay,
-		writer: writer,
+		message: message,
+		chars:   chars,
+		delay:   delay,
+		writer:  writer,
 
 		active:   false,
 		stopChan: make(chan bool),
@@ -32,11 +34,11 @@ func NewSpinner(chars []string, delay time.Duration, writer io.Writer) Spinner {
 }
 
 // NewDefaultSpinner ...
-func NewDefaultSpinner() Spinner {
+func NewDefaultSpinner(message string) Spinner {
 	chars := []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 	delay := 100 * time.Millisecond
 	writer := os.Stdout
-	return NewSpinner(chars, delay, writer)
+	return NewSpinner(message, chars, delay, writer)
 }
 
 func (s *Spinner) erase() {
@@ -65,7 +67,7 @@ func (s *Spinner) Start() {
 				default:
 					s.erase()
 
-					out := s.chars[i]
+					out := fmt.Sprintf("%s %s", s.message, s.chars[i])
 					fmt.Fprint(s.writer, out)
 					s.lastOutput = out
 

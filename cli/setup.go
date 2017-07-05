@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +42,7 @@ func PrintBitriseHeaderASCIIArt(appVersion string) {
   ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
   ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
 	fmt.Println()
-	fmt.Println(colorstring.Greenf("Version: %s", appVersion))
+	log.Donef("  version: %s", appVersion)
 	fmt.Println()
 }
 
@@ -55,30 +52,17 @@ func setup(c *cli.Context) error {
 	fullMode := c.Bool("full")
 	cleanMode := c.Bool("clean")
 
-	if cleanMode {
-		if err := configs.DeleteBitriseConfigDir(); err != nil {
-			return err
-		}
-
-		if err := configs.InitPaths(); err != nil {
-			return err
-		}
-
-		if err := plugins.InitPaths(); err != nil {
-			return err
-		}
-	}
-
-	if err := bitrise.RunSetup(c.App.Version, fullMode); err != nil {
+	if err := bitrise.RunSetup(c.App.Version, fullMode, cleanMode); err != nil {
 		return err
 	}
 
-	log.Infoln("To start using bitrise:")
-	log.Infoln("* cd into your project's directory (if you're not there already)")
-	log.Infoln("* call: bitrise init")
-	log.Infoln("* follow the guide")
 	fmt.Println()
-	log.Infoln("That's all :)")
+	log.Infof("To start using bitrise:")
+	log.Printf("* cd into your project's directory (if you're not there already)")
+	log.Printf("* call: bitrise init")
+	log.Printf("* follow the guide")
+	fmt.Println()
+	log.Donef("That's all :)")
 
 	return nil
 }

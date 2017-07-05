@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"runtime"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/log"
 )
 
 const (
@@ -46,17 +47,32 @@ var PluginDependencyMap = map[string]PluginDependency{
 // RunSetupIfNeeded ...
 func RunSetupIfNeeded(appVersion string, isFullSetupMode bool) error {
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
-		log.Warnln(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
-		return RunSetup(version.VERSION, false)
+		log.Warnf(colorstring.Yellow("Setup was not performed for this version of bitrise, doing it now..."))
+		return RunSetup(version.VERSION, false, false)
 	}
 	return nil
 }
 
 // RunSetup ...
-func RunSetup(appVersion string, isFullSetupMode bool) error {
-	log.Infoln("Setup")
-	log.Infof("Full setup: %v", isFullSetupMode)
-	log.Infoln("Detected OS:", runtime.GOOS)
+func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) error {
+	log.Infof("Setup")
+	log.Printf("Full setup: %v", isFullSetupMode)
+	log.Printf("Clean setup: %v", isCleanSetupMode)
+	log.Printf("Detected OS: %s", runtime.GOOS)
+
+	if isCleanSetupMode {
+		if err := configs.DeleteBitriseConfigDir(); err != nil {
+			return err
+		}
+
+		if err := configs.InitPaths(); err != nil {
+			return err
+		}
+
+		if err := plugins.InitPaths(); err != nil {
+			return err
+		}
+	}
 
 	if err := doSetupBitriseCoreTools(); err != nil {
 		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
@@ -80,21 +96,19 @@ func RunSetup(appVersion string, isFullSetupMode bool) error {
 		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
 	}
 
-	log.Infoln("All the required tools are installed!")
+	fmt.Println()
+	log.Donef("All the required tools are installed! We're ready to rock!!")
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
 		return fmt.Errorf("failed to save setup-success into config file, error: %s", err)
 	}
 
-	// guide
-	log.Infoln("We're ready to rock!!")
-	fmt.Println()
-
 	return nil
 }
 
 func doSetupToolkits() error {
-	log.Infoln("Checking Bitrise Toolkits...")
+	fmt.Println()
+	log.Infof("Checking Bitrise Toolkits...")
 
 	coreToolkits := toolkits.AllSupportedToolkits()
 
@@ -106,7 +120,7 @@ func doSetupToolkits() error {
 		}
 
 		if isInstallRequired {
-			log.Infoln("No installed/suitable '" + toolkitName + "' found, installing toolkit ...")
+			log.Warnf("No installed/suitable %s found, installing toolkit ...", toolkitName)
 			if err := aCoreTK.Install(); err != nil {
 				return fmt.Errorf("Failed to install toolkit (%s), error: %s", toolkitName, err)
 			}
@@ -120,15 +134,15 @@ func doSetupToolkits() error {
 			return fmt.Errorf("Toolkit (%s) still reports that it isn't (properly) installed", toolkitName)
 		}
 
-		log.Infoln(" * "+colorstring.Green("[OK]")+" "+toolkitName+" :", checkResult.Path)
-		log.Infoln("        version :", checkResult.Version)
+		log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolkitName, checkResult.Version, checkResult.Path)
 	}
 
 	return nil
 }
 
 func doSetupPlugins() error {
-	log.Infoln("Checking Bitrise Plugins...")
+	fmt.Println()
+	log.Infof("Checking Bitrise Plugins...")
 
 	for pluginName, pluginDependency := range PluginDependencyMap {
 		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
@@ -140,7 +154,8 @@ func doSetupPlugins() error {
 }
 
 func doSetupBitriseCoreTools() error {
-	log.Infoln("Checking Bitrise Core tools...")
+	fmt.Println()
+	log.Infof("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
 		return fmt.Errorf("Envman failed to install: %s", err)
@@ -154,8 +169,9 @@ func doSetupBitriseCoreTools() error {
 }
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
-	log.Infoln("Doing OS X specific setup")
-	log.Infoln("Checking required tools...")
+	fmt.Println()
+	log.Infof("Doing OS X specific setup")
+	log.Printf("Checking required tools...")
 
 	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
