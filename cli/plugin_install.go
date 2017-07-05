@@ -50,15 +50,17 @@ func pluginInstall(c *cli.Context) error {
 	// ---
 
 	// Install
-	if pluginVersionTag == "" {
-		log.Infof("=> Installing plugin...")
-	} else {
-		log.Infof("=> Installing plugin version (%s)...", pluginVersionTag)
-	}
+	log.Infof("Installing plugin")
 
 	plugin, version, err := plugins.InstallPlugin(pluginSource, pluginVersionTag)
 	if err != nil {
 		return err
+	}
+
+	if len(plugin.Description) > 0 {
+		fmt.Println()
+		log.Infof("Description:")
+		fmt.Println(plugin.Description)
 	}
 
 	fmt.Println()
@@ -66,13 +68,6 @@ func pluginInstall(c *cli.Context) error {
 		log.Donef("Local plugin (%s) installed ", plugin.Name)
 	} else {
 		log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
-	}
-
-	if len(plugin.Description) > 0 {
-		fmt.Println()
-		log.Infof("Description:")
-		fmt.Println(plugin.Description)
-		fmt.Println()
 	}
 	// ---
 

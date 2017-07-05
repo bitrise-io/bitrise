@@ -46,21 +46,11 @@ func pluginDelete(c *cli.Context) error {
 		return nil
 	}
 
-	versionPtr, err := plugins.GetPluginVersion(name)
-	if err != nil {
-		return fmt.Errorf("failed to read plugin version, error: %s", err)
-	}
-
-	if versionPtr != nil {
-		log.Infof("=> Deleting plugin (%s) with version (%s) ...", name, versionPtr.String())
-	} else {
-		log.Infof("=> Deleting local plugin (%s) ...", name)
-	}
+	log.Infof("Deleting plugin")
 	if err := plugins.DeletePlugin(name); err != nil {
 		return fmt.Errorf("failed to delete plugin, error: %s", err)
 	}
 
-	fmt.Println()
 	log.Donef("Plugin deleted")
 	// ---
 

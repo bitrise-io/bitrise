@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/progress"
 	ver "github.com/hashicorp/go-version"
 )
 
@@ -153,7 +154,12 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		}
 
 		tmpPluginBinPth := filepath.Join(tmpPluginBinDir, newPlugin.Name)
-		if err := downloadPluginBin(executableURL, tmpPluginBinPth); err != nil {
+
+		var err error
+		progress.NewDefaultWrapper("Downloading plugin binary").WrapAction(func() {
+			err = downloadPluginBin(executableURL, tmpPluginBinPth)
+		})
+		if err != nil {
 			return Plugin{}, fmt.Errorf("failed to download plugin executable from (%s), error: %s", executableURL, err)
 		}
 	}
@@ -230,7 +236,13 @@ func InstallPlugin(pluginSourceURI, versionTag string) (Plugin, string, error) {
 			}
 		}()
 
-		version, err := GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, pluginSourceURI, versionTag)
+		version := ""
+		err = nil
+
+		progress.NewDefaultWrapper("git clone plugin source").WrapAction(func() {
+			version, err = GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, pluginSourceURI, versionTag)
+		})
+
 		if err != nil {
 			return Plugin{}, "", fmt.Errorf("failed to download plugin, error: %s", err)
 		}

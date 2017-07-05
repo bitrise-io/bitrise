@@ -62,7 +62,7 @@ func pluginUpdate(c *cli.Context) error {
 	}
 
 	for _, plugin := range pluginsToUpdate {
-		log.Infof("Updaing plugin: %s", plugin.Name)
+		log.Infof("Updating plugin")
 
 		if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
 			return fmt.Errorf("failed to check for plugin new version, error: %s", err)
@@ -82,20 +82,17 @@ func pluginUpdate(c *cli.Context) error {
 				return fmt.Errorf("failed to install plugin from (%s), error: %s", route.Source, err)
 			}
 
-			fmt.Println()
-			log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
-
 			if len(plugin.Description) > 0 {
 				fmt.Println()
 				log.Infof("Description:")
 				fmt.Println(plugin.Description)
-				fmt.Println()
 			}
+
+			fmt.Println()
+			log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
 		} else {
 			log.Donef("No new version available")
 		}
-
-		fmt.Println()
 	}
 	// ---
 

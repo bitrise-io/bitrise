@@ -3,16 +3,15 @@ package bitrise
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
@@ -20,6 +19,17 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	ver "github.com/hashicorp/go-version"
 )
+
+func removeEmptyNewLines(text string) string {
+	split := strings.Split(text, "\n")
+	cleanedLines := []string{}
+	for _, line := range split {
+		if strings.TrimSpace(line) != "" {
+			cleanedLines = append(cleanedLines, line)
+		}
+	}
+	return strings.Join(cleanedLines, "\n")
+}
 
 // CheckIsPluginInstalled ...
 func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
@@ -32,11 +42,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 	installOrUpdate := false
 
 	if !found {
-		fmt.Println()
-		log.Warnf("Default plugin (%s) NOT found.", name)
-		fmt.Println()
-
-		fmt.Print("Installing...")
+		log.Warnf("Default plugin (%s) NOT found, installing...", name)
 		installOrUpdate = true
 		currentVersion = dependency.MinVersion
 	} else {
@@ -46,10 +52,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		}
 
 		if installedVersion == nil {
-			fmt.Println()
 			log.Warnf("Default plugin (%s) is not installed from git, no version info available.", name)
-			fmt.Println()
-
 			currentVersion = ""
 		} else {
 			currentVersion = installedVersion.String()
@@ -60,11 +63,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 			}
 
 			if installedVersion.LessThan(minVersion) {
-				fmt.Println()
-				log.Warnf("Default plugin (%s) version (%s) is lower than required (%s).", name, installedVersion.String(), minVersion.String())
-				fmt.Println()
-
-				log.Infoln("Updating...")
+				log.Warnf("Default plugin (%s) version (%s) is lower than required (%s), updating...", name, installedVersion.String(), minVersion.String())
 				installOrUpdate = true
 				currentVersion = dependency.MinVersion
 			}
@@ -73,60 +72,27 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 
 	if installOrUpdate {
 		var plugin plugins.Plugin
-		err := progress.SimpleProgressE(".", 2*time.Second, func() error {
-			return retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
-				if attempt > 0 {
-					fmt.Println()
-					fmt.Print("==> Download failed, retrying ...")
-				}
-				p, _, err := plugins.InstallPlugin(dependency.Source, dependency.MinVersion)
-				plugin = p
-				return err
-			})
+		err := retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
+			if attempt > 0 {
+				log.Warnf("Download failed, retrying ...")
+			}
+			p, _, err := plugins.InstallPlugin(dependency.Source, dependency.MinVersion)
+			plugin = p
+			return err
 		})
-		fmt.Println()
-
 		if err != nil {
 			return fmt.Errorf("Failed to install plugin, error: %s", err)
 		}
 
 		if len(plugin.Description) > 0 {
-			fmt.Println()
-			fmt.Println(plugin.Description)
-			fmt.Println()
+			fmt.Println(removeEmptyNewLines(plugin.Description))
 		}
 	}
 
 	pluginDir := plugins.GetPluginDir(name)
 
-	log.Infof(" * %s Plugin (%s) : %s", colorstring.Green("[OK]"), name, pluginDir)
-	log.Infof("        version : %s", currentVersion)
+	log.Printf("%s Plugin %s (%s): %s", colorstring.Green("[OK]"), name, currentVersion, pluginDir)
 
-	return nil
-}
-
-// CheckIsRubyGemsInstalled ...
-func CheckIsRubyGemsInstalled() error {
-	officialSiteURL := "https://rubygems.org"
-
-	progInstallPth, err := utils.CheckProgramInstalledPath("gem")
-	if err != nil {
-		fmt.Println()
-		log.Warn("It seems that RubyGems is not installed on your system.")
-		log.Infoln("RubyGems is required in order to be able to auto-install all the bitrise dependencies.")
-		// log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
-		// log.Infoln(brewRubyInstallCmdString)
-		log.Infoln("You can find more information about RubyGems on its official site at:", officialSiteURL)
-		log.Warn("Once the installation of RubyGems is finished you should call the bitrise setup again.")
-		return err
-	}
-	verStr, err := command.RunCommandAndReturnStdout("gem", "--version")
-	if err != nil {
-		log.Infoln("")
-		return errors.New("Failed to get version")
-	}
-	log.Debugln(" * [OK] RubyGems :", progInstallPth)
-	log.Debugln("        version :", verStr)
 	return nil
 }
 
@@ -138,33 +104,43 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 	progInstallPth, err := utils.CheckProgramInstalledPath("brew")
 	if err != nil {
 		fmt.Println()
-		log.Warn("It seems that Homebrew is not installed on your system.")
-		log.Infoln("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
-		log.Infoln("You should be able to install brew by copying this command and running it in your Terminal:")
-		log.Infoln(brewRubyInstallCmdString)
-		log.Infoln("You can find more information about Homebrew on its official site at:", officialSiteURL)
-		log.Warn("Once the installation of brew is finished you should call the bitrise setup again.")
+		log.Warnf("It seems that Homebrew is not installed on your system.")
+		log.Infof("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
+		log.Infof("You should be able to install brew by copying this command and running it in your Terminal:")
+		log.Infof(brewRubyInstallCmdString)
+		log.Infof("You can find more information about Homebrew on its official site at:", officialSiteURL)
+		log.Warnf("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
 	verStr, err := command.RunCommandAndReturnStdout("brew", "--version")
 	if err != nil {
-		log.Infoln("")
+		log.Infof("")
 		return errors.New("Failed to get version")
 	}
 
 	if isFullSetupMode {
 		// brew doctor
-		doctorOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		doctorOutput := ""
+		var err error
+		progress.NewDefaultWrapper("brew doctor").WrapAction(func() {
+			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
+		})
 		if err != nil {
 			fmt.Println("")
-			log.Warn("brew doctor returned an error:")
+			log.Warnf("brew doctor returned an error:")
 			log.Warnf("%s", doctorOutput)
-			return errors.New("Failed to: brew doctor")
+			return errors.New("command failed: brew doctor")
 		}
 	}
 
-	log.Infoln(" * "+colorstring.Green("[OK]")+" Homebrew :", progInstallPth)
-	log.Infoln("        version :", verStr)
+	verSplit := strings.Split(verStr, "\n")
+	if len(verSplit) == 2 {
+		log.Printf("%s %s: %s", colorstring.Green("[OK]"), verSplit[0], progInstallPth)
+		log.Printf("%s %s", colorstring.Green("[OK]"), verSplit[1])
+	} else {
+		log.Printf("%s %s: %s", colorstring.Green("[OK]"), verStr, progInstallPth)
+	}
+
 	return nil
 }
 
@@ -193,16 +169,17 @@ func PrintInstalledXcodeInfos() error {
 		verStr = strings.Join(strings.Split(verStr, "\n"), " | ")
 	}
 
-	log.Infoln(" * "+colorstring.Green("[OK]")+" xcodebuild path :", progInstallPth)
 	if !isFullXcodeAvailable {
-		log.Infoln("        version (xcodebuild) :", colorstring.Yellowf("%s", verStr))
+		log.Printf("%s xcodebuild (%s): %s", colorstring.Green("[OK]"), colorstring.Yellow(verStr), progInstallPth)
 	} else {
-		log.Infoln("        version (xcodebuild) :", verStr)
+		log.Printf("%s xcodebuild (%s): %s", colorstring.Green("[OK]"), verStr, progInstallPth)
 	}
-	log.Infoln("        active Xcode (Command Line Tools) path (xcode-select --print-path) :", xcodeSelectPth)
+
+	log.Printf("%s active Xcode (Command Line Tools) path (xcode-select --print-path): %s", colorstring.Green("[OK]"), xcodeSelectPth)
+
 	if !isFullXcodeAvailable {
-		log.Warn(colorstring.Yellowf("%s", "No Xcode found, only the Xcode Command Line Tools are available!"))
-		log.Warn(colorstring.Yellowf("%s", "Full Xcode is required to build, test and archive iOS apps!"))
+		log.Warnf("No Xcode found, only the Xcode Command Line Tools are available!")
+		log.Warnf("Full Xcode is required to build, test and archive iOS apps!")
 	}
 
 	return nil
@@ -211,22 +188,20 @@ func PrintInstalledXcodeInfos() error {
 func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
 	doInstall := func() error {
 		officialGithub := "https://github.com/bitrise-io/" + toolname
-		fmt.Println()
-		log.Warnln("No supported " + toolname + " version found.")
-		log.Infoln("You can find more information about "+toolname+" on its official GitHub page:", officialGithub)
+		log.Warnf("No supported %s version found", toolname)
+		log.Printf("You can find more information about %s on its official GitHub page: %s", toolname, officialGithub)
 
 		// Install
-		fmt.Print("Installing...")
-		err := progress.SimpleProgressE(".", 2*time.Second, func() error {
-			return retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
+		var err error
+		progress.NewDefaultWrapper("Installing").WrapAction(func() {
+			err = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
-					fmt.Println()
-					fmt.Print("==> Download failed, retrying ...")
+					log.Warnf("Download failed, retrying ...")
 				}
 				return tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion)
 			})
 		})
-		fmt.Println()
+
 		if err != nil {
 			return err
 		}
@@ -241,32 +216,29 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		if !isInstall {
 			return err
 		}
-
 		return doInstall()
 	}
 	verStr, err := command.RunCommandAndReturnStdout(toolname, "-version")
 	if err != nil {
-		log.Infoln("")
+		log.Infof("")
 		return errors.New("Failed to get version")
 	}
 
 	// version check
 	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minVersion)
 	if err != nil {
-		log.Error("Failed to validate installed version")
+		log.Errorf("Failed to validate installed version")
 		return err
 	}
 	if !isVersionOk {
-		log.Warn("Installed "+toolname+" found, but not a supported version: ", verStr)
 		if !isInstall {
+			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, verStr)
 			return errors.New("Failed to install required version")
 		}
-		log.Warn("Updating...")
 		return doInstall()
 	}
 
-	log.Infoln(" * "+colorstring.Green("[OK]")+" "+toolname+" :", progInstallPth)
-	log.Infoln("        version :", verStr)
+	log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolname, verStr, progInstallPth)
 	return nil
 }
 
@@ -291,55 +263,45 @@ func CheckIsStepmanInstalled(minStepmanVersion string) error {
 }
 
 func checkIfBrewPackageInstalled(packageName string) bool {
-	cmd := exec.Command("brew", "list", packageName)
-
-	outBytes, err := cmd.CombinedOutput()
+	out, err := command.New("brew", "list", packageName).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		log.Debugf("%s", outBytes)
 		return false
 	}
-
-	return len(outBytes) > 0
+	return len(out) > 0
 }
 
 func checkIfAptPackageInstalled(packageName string) bool {
-	cmd := exec.Command("dpkg", "-s", packageName)
-
-	if outBytes, err := cmd.CombinedOutput(); err != nil {
-		log.Debugf("%s", outBytes)
-		return false
-	}
-
-	return true
+	err := command.New("dpkg", "-s", packageName).Run()
+	return (err == nil)
 }
 
 // DependencyTryCheckTool ...
 func DependencyTryCheckTool(tool string) error {
-	var cmd *exec.Cmd
+	var cmd *command.Model
 	errMsg := ""
 
 	switch tool {
 	case "xcode":
-		cmd = exec.Command("xcodebuild", "-version")
+		cmd = command.New("xcodebuild", "-version")
 		errMsg = "The full Xcode app is not installed, required for this step. You can install it from the App Store."
 		break
 	default:
 		cmdFields := strings.Fields(tool)
 		if len(cmdFields) >= 2 {
-			cmd = exec.Command(cmdFields[0], cmdFields[1:]...)
+			cmd = command.New(cmdFields[0], cmdFields[1:]...)
 		} else if len(cmdFields) == 1 {
-			cmd = exec.Command(cmdFields[0])
+			cmd = command.New(cmdFields[0])
 		} else {
 			return fmt.Errorf("Invalid tool name (%s)", tool)
 		}
 	}
 
-	outBytes, err := cmd.CombinedOutput()
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		if errMsg != "" {
 			return errors.New(errMsg)
 		}
-		log.Infof("Output was: %s", outBytes)
+		log.Infof("Output was: %s", out)
 		return fmt.Errorf("Dependency check failed for: %s", tool)
 	}
 
