@@ -197,8 +197,6 @@ func (c Command) Run(ctx *Context) (err error) {
 	if c.Before != nil {
 		err = c.Before(context)
 		if err != nil {
-			fmt.Fprintln(context.App.Writer, err)
-			fmt.Fprintln(context.App.Writer)
 			ShowCommandHelp(context, c.Name)
 			HandleExitCoder(err)
 			return err
@@ -291,6 +289,7 @@ func (c Command) startApp(ctx *Context) error {
 	} else {
 		app.Action = helpSubcommand.Action
 	}
+	app.OnUsageError = c.OnUsageError
 
 	for index, cc := range app.Commands {
 		app.Commands[index].commandNamePath = []string{c.Name, cc.Name}
