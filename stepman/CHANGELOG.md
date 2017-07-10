@@ -2,6 +2,49 @@
 
 -----------------
 
+## 0.9.32 (2017 Jul 10)
+
+### Release Notes
+
+* git step's default branch is `master`, instead of the repository's default branch.
+
+This means: if you use a step from it's git source, and do not specify the repo's branch to use:
+
+```
+workflows:
+  primary:
+    steps:
+    - git::https://github.com/bitrise-community/steps-ionic-archive.git: 
+```
+
+the master branch will be cloned.
+
+* dependency updates
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.32/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.31 -> 0.9.32
+
+* [ec41577] Krisztian Godrei - prepare for 0.9.32 (2017 Jul 10)
+* [171cae1] Krisztián Gödrei - godeps update (#234) (2017 Jul 10)
+* [58796bd] Krisztián Gödrei - integration test update, git step default branch is master (#233) (2017 Jul 04)
+* [7e77ca8] Krisztian Godrei - README: Release a new version (2017 Jun 12)
+
+
 ## 0.9.31 (2017 Jun 12)
 
 ### Release Notes
@@ -1419,4 +1462,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Jun 12
+Generated at: 2017 Jul 10
