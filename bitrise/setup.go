@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "1.1.4"
-	minStepmanVersion = "0.9.31"
+	minEnvmanVersion  = "1.1.5"
+	minStepmanVersion = "0.9.32"
 )
 
 // PluginDependency ..
@@ -28,15 +28,15 @@ type PluginDependency struct {
 var PluginDependencyMap = map[string]PluginDependency{
 	"init": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-init.git",
-		MinVersion: "0.9.4",
+		MinVersion: "0.9.6",
 	},
 	"step": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-step.git",
-		MinVersion: "0.9.3",
+		MinVersion: "0.9.4",
 	},
 	"workflow-editor": PluginDependency{
 		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
-		MinVersion: "1.0.9",
+		MinVersion: "1.0.11",
 	},
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
