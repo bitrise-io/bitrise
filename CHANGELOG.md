@@ -1,6 +1,96 @@
-## Changelog (Current version: 1.6.2)
+## Changelog (Current version: 1.7.0)
 
 -----------------
+
+## 1.7.0 (2017 Jul 10)
+
+### Release Notes
+
+__empty workflow id validation__
+
+From now on bitrise-cli will fail if the bitrise configuration (bitrise.yml) contains workflow with empty workflow id.
+
+```
+format_version: "3"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  "":
+    steps:
+    - script:
+```
+
+__git step's default branch is master__
+
+If you use a step from its git source without specifying the branch to use:
+
+```
+format_version: "3"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - git::https://github.com/bitrise-io/steps-script.git:
+```
+
+bitrise will activate and use the step repo's master branch.
+
+__support for cross-device file moving__
+
+In previous cli versions, if a user home directory was on different device from the os temporary directory, you received the following error message during the bitrise setup process: `invalid cross-device link`. This version uses a cross-device compatible file moving function.
+
+__progress indicator__
+
+bitrise plugin install and update commands take some time to finish as bitrise-cli git clones the plugin source repository and then downloads and installs the plugin's compiled binary. We added a loading indicator to these commands.
+
+```
+Checking Bitrise Plugins...
+Default plugin (analytics) NOT found, installing...
+git clone plugin source ⣯
+Downloading plugin binary ⡿
+```
+
+__dependency updates:__
+
+  - min envman version: [1.1.5](https://github.com/bitrise-io/envman/releases/tag/1.1.5)
+  - min stepman version: [0.9.32](https://github.com/bitrise-io/stepman/releases/tag/0.9.32)
+  - default init plugin version: [0.9.6](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/0.9.6)
+  - default step plugin version: [0.9.4](https://github.com/bitrise-core/bitrise-plugins-step/releases/tag/0.9.4)
+  - default workflow-editor plugin version: [1.0.11](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.0.11)
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.7.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.6.2 -> 1.7.0
+
+* [ba092dd] Krisztian Godrei - prepare for 1.7.0 (2017 Jul 10)
+* [37cad84] Krisztián Gödrei - stepman, envman and default plugins version update (#527) (2017 Jul 10)
+* [2cb8861] Krisztián Gödrei - godeps update (#526) (2017 Jul 10)
+* [45e9fec] Krisztián Gödrei - Progress (#524) (2017 Jul 05)
+* [a9b29d8] Krisztián Gödrei - code style updates (#525) (2017 Jul 05)
+* [8f00883] Karol Wrótniak - Added support for cross-device file moving, fixes #518 (#523) (2017 Jul 05)
+* [03d1b5d] Krisztián Gödrei - merged (#522) (2017 Jul 04)
+* [6a53b4a] Krisztián Gödrei - git steps default branch is master (#520) (2017 Jul 04)
+* [afd7aa2] Krisztián Gödrei - fail if workflow id is empty (#519) (2017 Jul 03)
+
 
 ## 1.6.2 (2017 Jun 12)
 
@@ -2986,4 +3076,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Jun 12
+Updated: 2017 Jul 10
