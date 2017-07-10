@@ -195,7 +195,8 @@ envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --e
 1. PR & merge these changes to the `master` branch
 1. Bump `RELEASE_VERSION` in bitrise.yml
 1. Commit (do not Push) these changes on `master` branch
-1. Run `bitrise-run create-release`
+1. Run `bitrise run create-release`
+1. Update the version test at: `./_tests/integration/version_test.go`
 1. Fill the current version's `Release Notes` section in `CHANGELOG.md`
 1. Push the changes to the `master` branch
 1. Open the project's bitrise app on bitrise.io, find the triggered `create-release` workflow run's build
