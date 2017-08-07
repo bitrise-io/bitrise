@@ -31,6 +31,13 @@ type ExecutableModel struct {
 	Linux string `yaml:"linux,omitempty"`
 }
 
+// Requirement ...
+type Requirement struct {
+	Tool       string `yaml:"tool"`
+	MinVersion string `yaml:"min_version"`
+	MaxVersion string `yaml:"max_version"`
+}
+
 // Plugin ...
 type Plugin struct {
 	Name         string          `yaml:"name,omitempty"`
@@ -40,9 +47,14 @@ type Plugin struct {
 	Requirements []Requirement   `yaml:"requirements,omitempty"`
 }
 
-// Requirement ...
-type Requirement struct {
-	Tool       string `yaml:"tool"`
-	MinVersion string `yaml:"min_version"`
-	MaxVersion string `yaml:"max_version"`
+// PluginInfoModel ...
+type PluginInfoModel struct {
+	Name          string `json:"name,omitempty"`
+	Version       string `json:"version,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Plugin        Plugin `json:"plugin,omitempty"`
+	DefinitionPth string `json:"definition_pth,omitempty"`
 }
+
+// PluginInfos ...
+type PluginInfos []PluginInfoModel

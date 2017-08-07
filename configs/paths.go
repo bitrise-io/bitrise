@@ -36,6 +36,8 @@ const (
 	BitriseDeployDirEnvKey = "BITRISE_DEPLOY_DIR"
 	// BitriseCacheDirEnvKey ...
 	BitriseCacheDirEnvKey = "BITRISE_CACHE_DIR"
+	// BitriseTmpDirEnvKey ...
+	BitriseTmpDirEnvKey = "BITRISE_TMP_DIR"
 )
 
 // GetBitriseHomeDirPath ...
@@ -182,6 +184,18 @@ func InitPaths() error {
 
 		if err := os.Setenv(BitriseCacheDirEnvKey, cacheDir); err != nil {
 			return fmt.Errorf("Failed to set BITRISE_CACHE_DIR, error: %s", err)
+		}
+	}
+
+	//BITRISE_TMP_DIR
+	if os.Getenv(BitriseTmpDirEnvKey) == "" {
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("tmp")
+		if err != nil {
+			return fmt.Errorf("Failed to set tmp dir, error: %s", err)
+		}
+
+		if err := os.Setenv(BitriseTmpDirEnvKey, tmpDir); err != nil {
+			return fmt.Errorf("Failed to set BITRISE_TMP_DIR, error: %s", err)
 		}
 	}
 

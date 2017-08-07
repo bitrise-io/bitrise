@@ -824,9 +824,8 @@ func TestValidateConfig(t *testing.T) {
 			},
 		}
 		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (): empty", warnings[0])
+		require.EqualError(t, err, "invalid workflow ID (): empty")
+		require.Equal(t, 0, len(warnings))
 	}
 
 	t.Log("Invalid bitriseData ID - contains: `/`")
@@ -1362,6 +1361,17 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 		require.Equal(t, "git", stepIDData.SteplibSource)
 		require.Equal(t, "git@github.com:bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
 		require.Equal(t, "develop", stepIDData.Version)
+	}
+
+	t.Log("direct git uri")
+	{
+		stepCompositeIDString := "git::https://github.com/bitrise-io/steps-timestamp.git"
+		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
+
+		require.NoError(t, err)
+		require.Equal(t, "git", stepIDData.SteplibSource)
+		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
+		require.Equal(t, "master", stepIDData.Version)
 	}
 
 	//

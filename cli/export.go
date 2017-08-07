@@ -28,10 +28,13 @@ func export(c *cli.Context) error {
 	//
 
 	if outfilePth == "" {
+		showSubcommandHelp(c)
 		log.Fatal("No output file path specified!")
 	}
+
 	if outFormat == "" {
-		log.Fatal("No output file format specified!")
+		showSubcommandHelp(c)
+		log.Fatal("No output format format specified!")
 	}
 
 	// Config validation
@@ -40,6 +43,7 @@ func export(c *cli.Context) error {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
+		showSubcommandHelp(c)
 		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 

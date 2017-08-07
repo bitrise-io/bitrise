@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"golang.org/x/sys/unix"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
@@ -110,7 +113,7 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 		}
 	}
 
-	if err := os.Rename(tmpDestinationPth, destinationPth); err != nil {
+	if err := MoveFile(tmpDestinationPth, destinationPth); err != nil {
 		return fmt.Errorf("failed to copy (%s) to (%s), error: %s", tmpDestinationPth, destinationPth, err)
 	}
 
@@ -324,4 +327,35 @@ func EnvmanJSONPrint(envstorePth string) (string, error) {
 	}
 
 	return outBuffer.String(), nil
+}
+
+// MoveFile ...
+func MoveFile(oldpath, newpath string) error {
+	err := os.Rename(oldpath, newpath)
+	if err == nil {
+		return nil
+	}
+
+	if linkErr, ok := err.(*os.LinkError); ok {
+		if linkErr.Err == unix.EXDEV {
+			info, err := os.Stat(oldpath)
+			if err != nil {
+				return err
+			}
+
+			data, err := ioutil.ReadFile(oldpath)
+			if err != nil {
+				return err
+			}
+
+			err = ioutil.WriteFile(newpath, data, info.Mode())
+			if err != nil {
+				return err
+			}
+
+			return os.Remove(oldpath)
+		}
+	}
+
+	return err
 }

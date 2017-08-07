@@ -98,6 +98,12 @@ func saveBitriseConfig(config ConfigModel) error {
 	return fileutil.WriteBytesToFile(configPth, bytes)
 }
 
+// DeleteBitriseConfigDir ...
+func DeleteBitriseConfigDir() error {
+	confDirPth := GetBitriseHomeDirPath()
+	return os.RemoveAll(confDirPth)
+}
+
 // EnsureBitriseConfigDirExists ...
 func EnsureBitriseConfigDirExists() error {
 	confDirPth := GetBitriseHomeDirPath()

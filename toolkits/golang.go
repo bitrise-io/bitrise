@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	minGoVersionForToolkit = "1.8.1"
+	minGoVersionForToolkit = "1.8.3"
 )
 
 // === Base Toolkit struct ===
@@ -153,7 +153,7 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 // IsToolAvailableInPATH ...
 func (toolkit GoToolkit) IsToolAvailableInPATH() bool {
 	if configs.IsDebugUseSystemTools() {
-		log.Warn("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
+		log.Warnf("[BitriseDebug] Using system tools (system installed Go), instead of the ones in BITRISE_HOME")
 		return true
 	}
 
@@ -202,8 +202,8 @@ func installGoTar(goTarGzPath string) error {
 
 	cmd := command.New("tar", "-C", installToPath, "-xzf", goTarGzPath)
 	if combinedOut, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
-		log.Errorln(" [!] Failed to uncompress Go toolkit, output:")
-		log.Errorln(combinedOut)
+		log.Errorf(" [!] Failed to uncompress Go toolkit, output:")
+		log.Errorf(combinedOut)
 		return fmt.Errorf("Failed to uncompress Go toolkit, error: %s", err)
 	}
 	return nil
@@ -218,9 +218,7 @@ func (toolkit GoToolkit) Install() error {
 	if osStr == "windows" {
 		extentionStr = "zip"
 	}
-	downloadURL := fmt.Sprintf("https://storage.googleapis.com/golang/go%s.%s-%s.%s",
-		versionStr, osStr, archStr, extentionStr)
-	log.Debugln("downloadURL: ", downloadURL)
+	downloadURL := fmt.Sprintf("https://storage.googleapis.com/golang/go%s.%s-%s.%s", versionStr, osStr, archStr, extentionStr)
 
 	goTmpDirPath := goToolkitTmpDirPath()
 	if err := pathutil.EnsureDirExist(goTmpDirPath); err != nil {
@@ -231,13 +229,10 @@ func (toolkit GoToolkit) Install() error {
 	goArchiveDownloadPath := filepath.Join(goTmpDirPath, localFileName)
 
 	var downloadErr error
-	fmt.Print("=> Downloading ...")
-	progress.SimpleProgress(".", 2*time.Second, func() {
+	progress.NewDefaultWrapper("Downloading").WrapAction(func() {
 		downloadErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 			if attempt > 0 {
-				fmt.Println()
-				fmt.Println("==> Download failed, retrying ...")
-				fmt.Println()
+				log.Warnf("==> Download failed, retrying ...")
 			}
 			return tools.DownloadFile(downloadURL, goArchiveDownloadPath)
 		})
@@ -245,7 +240,6 @@ func (toolkit GoToolkit) Install() error {
 	if downloadErr != nil {
 		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, downloadErr)
 	}
-	log.Debugln("Toolkit downloaded to: ", goArchiveDownloadPath)
 
 	fmt.Println("=> Installing ...")
 	if err := installGoTar(goArchiveDownloadPath); err != nil {
@@ -262,32 +256,25 @@ func (toolkit GoToolkit) Install() error {
 // === Toolkit: Prepare for Step Run ===
 
 func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
-	log.Debugf("=> Installing package (%s) to path (%s) ...", packageName, srcPath)
 	workspaceRootPath, err := pathutil.NormalizedOSTempDirPath("bitrise-go-toolkit")
 	if err != nil {
 		return fmt.Errorf("Failed to create root directory of isolated workspace, error: %s", err)
 	}
-	log.Debugln("=> Using sandboxed workspace:", workspaceRootPath)
 
 	// origGOPATH := os.Getenv("GOPATH")
 	// if origGOPATH == "" {
 	// 	return fmt.Errorf("You don't have a GOPATH environment - please set it; GOPATH/bin will be symlinked")
 	// }
 
-	// log.Debugln("=> Symlink GOPATH/bin into sandbox ...")
 	// if err := gows.CreateGopathBinSymlink(origGOPATH, workspaceRootPath); err != nil {
 	// 	return fmt.Errorf("Failed to create GOPATH/bin symlink, error: %s", err)
 	// }
-	// log.Debugln("   [DONE]")
 
 	fullPackageWorkspacePath := filepath.Join(workspaceRootPath, "src", packageName)
-	log.Debugf("=> Creating Symlink: (%s) -> (%s)", srcPath, fullPackageWorkspacePath)
 	if err := gows.CreateOrUpdateSymlink(srcPath, fullPackageWorkspacePath); err != nil {
 		return fmt.Errorf("Failed to create Project->Workspace symlink, error: %s", err)
 	}
-	log.Debugf(" [DONE] Symlink is in place")
 
-	log.Debugln("=> Building package " + packageName + " ...")
 	{
 		isInstallRequired, _, goConfig, err := selectGoConfiguration()
 		if err != nil {
@@ -305,15 +292,12 @@ func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
 			return fmt.Errorf("Failed to install package, error: %s", err)
 		}
 	}
-	log.Debugln("   [DONE] Package successfully installed")
 
-	log.Debugln("=> Delete isolated workspace ...")
 	{
 		if err := os.RemoveAll(workspaceRootPath); err != nil {
 			return fmt.Errorf("Failed to delete temporary isolated workspace, error: %s", err)
 		}
 	}
-	log.Debugln("   [DONE]")
 
 	return nil
 }
@@ -323,7 +307,7 @@ func stepBinaryFilename(sIDData models.StepIDData) string {
 	//
 	replaceRexp, err := regexp.Compile("[^A-Za-z0-9.-]")
 	if err != nil {
-		log.Warn("Invalid regex, error: %s", err)
+		log.Warnf("Invalid regex, error: %s", err)
 		return ""
 	}
 
@@ -346,9 +330,8 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 	// try to use cached binary, if possible
 	if sIDData.IsUniqueResourceID() {
 		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
-			log.Warn("Failed to check cached binary for step, error: %s", err)
+			log.Warnf("Failed to check cached binary for step, error: %s", err)
 		} else if exists {
-			log.Debugln("No need to compile, binary already exists")
 			return nil
 		}
 	}
