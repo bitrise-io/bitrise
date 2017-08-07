@@ -2,6 +2,34 @@
 
 -----------------
 
+## 0.9.33 (2017 Aug 07)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.33/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.32 -> 0.9.33
+
+* [1cb040a] Krisztian Godrei - prepare for 0.9.33 (2017 Aug 07)
+* [05d6b20] Krisztián Gödrei - godeps-update (#235) (2017 Aug 07)
+
+
 ## 0.9.32 (2017 Jul 10)
 
 ### Release Notes
@@ -1462,4 +1490,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Jul 10
+Generated at: 2017 Aug 07
