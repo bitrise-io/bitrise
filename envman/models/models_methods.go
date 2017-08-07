@@ -18,14 +18,15 @@ const (
 const (
 	// DefaultIsExpand ...
 	DefaultIsExpand = true
+	// DefaultSkipIfEmpty ...
+	DefaultSkipIfEmpty = false
+
 	//DefaultIsRequired ...
 	DefaultIsRequired = false
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
 	// DefaultIsTemplate ...
 	DefaultIsTemplate = false
-	// DefaultSkipIfEmpty ...
-	DefaultSkipIfEmpty = false
 )
 
 // NewEnvJSONList ...
@@ -160,6 +161,12 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.SkipIfEmpty = castedBoolPtr
+		case "meta":
+			castedMapStringInterface, ok := parseutil.CastToMapStringInterface(value)
+			if !ok {
+				return fmt.Errorf("failed to parse map[string]interface{} value (%#v) for key (%s)", value, keyStr)
+			}
+			envSerModel.Meta = castedMapStringInterface
 		default:
 			return fmt.Errorf("not supported key found in options: %s", keyStr)
 		}
@@ -255,6 +262,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	if options.Category == nil {
 		options.Category = pointers.NewStringPtr("")
 	}
+	if options.ValueOptions == nil {
+		options.ValueOptions = []string{}
+	}
 	if options.IsRequired == nil {
 		options.IsRequired = pointers.NewBoolPtr(DefaultIsRequired)
 	}
@@ -269,6 +279,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	}
 	if options.SkipIfEmpty == nil {
 		options.SkipIfEmpty = pointers.NewBoolPtr(DefaultSkipIfEmpty)
+	}
+	if options.Meta == nil {
+		options.Meta = map[string]interface{}{}
 	}
 	(*env)[OptionsKey] = options
 	return nil

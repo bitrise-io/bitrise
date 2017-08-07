@@ -85,37 +85,70 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	model["value_options"] = []string{"test_key2", "test_value2"}
 	model["is_expand"] = true
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, "test_title", *envOptions.Title)
+	require.Equal(t, "test_key2", envOptions.ValueOptions[0])
+	require.Equal(t, "test_value2", envOptions.ValueOptions[1])
+	require.Equal(t, true, *envOptions.IsExpand)
 
 	// title is not a string
 	model = map[string]interface{}{}
 	model["title"] = true
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, "true", *envOptions.Title)
 
 	// value_options is not a string slice
 	model = map[string]interface{}{}
 	model["value_options"] = []interface{}{true, false}
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, 2, len(envOptions.ValueOptions))
+	require.Equal(t, "true", envOptions.ValueOptions[0])
+	require.Equal(t, "false", envOptions.ValueOptions[1])
 
 	// is_required is not a bool
 	model = map[string]interface{}{}
 	model["is_required"] = pointers.NewBoolPtr(true)
-	require.NotEqual(t, nil, envOptions.ParseFromInterfaceMap(model))
+	require.Error(t, envOptions.ParseFromInterfaceMap(model))
+	require.Nil(t, envOptions.IsRequired)
 
 	model = map[string]interface{}{}
 	model["is_required"] = "YeS"
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, true, *envOptions.IsRequired)
 
 	model = map[string]interface{}{}
 	model["is_required"] = "NO"
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, false, *envOptions.IsRequired)
 
 	model = map[string]interface{}{}
 	model["is_required"] = "y"
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, true, *envOptions.IsRequired)
 
 	model = map[string]interface{}{}
 	model["skip_if_empty"] = "true"
 	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+	require.Equal(t, true, *envOptions.SkipIfEmpty)
+
+	t.Log("parse meta field - Fail: string is not castable to map[string]interface{}")
+	{
+		model := map[string]interface{}{}
+		model["meta"] = "value"
+		require.Error(t, envOptions.ParseFromInterfaceMap(model))
+		require.Nil(t, envOptions.Meta)
+	}
+
+	t.Log("parse meta field")
+	{
+		serializedObj := `key: "value"`
+		var obj interface{}
+		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
+
+		model := map[string]interface{}{}
+		model["meta"] = obj
+		require.NoError(t, envOptions.ParseFromInterfaceMap(model))
+		require.Equal(t, map[string]interface{}{"key": "value"}, envOptions.Meta)
+	}
 
 	// other_key is not supported key
 	model = map[string]interface{}{}
@@ -391,5 +424,66 @@ func Test_EnvsSerializeModel_Normalize(t *testing.T) {
 		jsonContBytes, err := json.Marshal(objFromYAML)
 		require.NoError(t, err)
 		require.Equal(t, `{"envs":[{"KEY_ONE":"first value","opts":{}},{"KEY_TWO":"second value, with options","opts":{"is_expand":true}}]}`, string(jsonContBytes))
+	}
+
+	t.Log("test meta field")
+	{
+		yamlContent := `envs:
+- KEY_ONE: first value
+- KEY_TWO: second value, with options
+  opts:
+    meta: 
+        is_expose: true
+`
+		var objFromYAML EnvsSerializeModel
+		require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &objFromYAML))
+
+		// the objFromYAML object in this state can't be serialized to JSON directly,
+		// as the YAML parser parses the `opts` into map[interface]interface,
+		// which is not supported by JSON
+		{
+			_, err := json.Marshal(objFromYAML)
+			require.EqualError(t, err, `json: unsupported type: map[interface {}]interface {}`)
+		}
+
+		// now, if we call Normalize on this object, that will convert the map[interface]interface
+		// into map[string]interface, which is JSON serializable
+		require.NoError(t, objFromYAML.Normalize())
+
+		// let's try the serialization again - this time it will work!
+		{
+			jsonContBytes, err := json.Marshal(objFromYAML)
+			require.NoError(t, err)
+			require.Equal(t, `{"envs":[{"KEY_ONE":"first value","opts":{}},{"KEY_TWO":"second value, with options","opts":{"meta":{"is_expose":true}}}]}`, string(jsonContBytes))
+
+			var serializeModel EnvsSerializeModel
+			require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &serializeModel))
+			require.Equal(t, 2, len(serializeModel.Envs))
+			for _, env := range serializeModel.Envs {
+				key, value, err := env.GetKeyValuePair()
+				require.NoError(t, err)
+
+				if key == "KEY_ONE" {
+					require.Equal(t, "first value", value)
+
+					options, err := env.GetOptions()
+					require.NoError(t, err)
+					require.Equal(t, EnvironmentItemOptionsModel{}, options)
+				} else if key == "KEY_TWO" {
+					require.Equal(t, "second value, with options", value)
+
+					options, err := env.GetOptions()
+					require.NoError(t, err)
+					require.NotNil(t, options.Meta)
+
+					isExposeValue := options.Meta["is_expose"]
+					isExpose, ok := isExposeValue.(bool)
+					require.Equal(t, true, ok)
+					require.Equal(t, true, isExpose)
+				} else {
+					t.Fatalf("unexpected key found: %s", key)
+				}
+			}
+		}
 	}
 }
