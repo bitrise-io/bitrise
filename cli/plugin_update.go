@@ -62,7 +62,7 @@ func pluginUpdate(c *cli.Context) error {
 	}
 
 	for _, plugin := range pluginsToUpdate {
-		log.Infof("Updating plugin")
+		log.Infof("Updating plugin %s", plugin.Name)
 
 		if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
 			return fmt.Errorf("failed to check for plugin new version, error: %s", err)
