@@ -433,7 +433,7 @@ func Test_EnvsSerializeModel_Normalize(t *testing.T) {
 - KEY_TWO: second value, with options
   opts:
     meta: 
-        is_expose: true
+      is_expose: true
 `
 		var objFromYAML EnvsSerializeModel
 		require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &objFromYAML))
