@@ -14,10 +14,12 @@ import (
 func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {
 	printRawWorkflowMap := func(name string, workflow map[string]string) {
 		fmt.Printf("⚡️ %s\n", colorstring.Green(name))
+		fmt.Printf("  %s: %s\n", colorstring.Yellow("Title"), workflow["title"])
 		fmt.Printf("  %s: %s\n", colorstring.Yellow("Summary"), workflow["summary"])
 		if !minimal {
 			fmt.Printf("  %s: %s\n", colorstring.Yellow("Description"), workflow["description"])
 		}
+		fmt.Printf("  %s: bitrise run %s\n", colorstring.Yellow("Run with"), name)
 		fmt.Println()
 	}
 
@@ -110,11 +112,11 @@ func workflowList(c *cli.Context) error {
 	if len(bitriseConfig.Workflows) > 0 {
 		for workflowID, workflow := range bitriseConfig.Workflows {
 			workflowMap := map[string]string{}
+			workflowMap["title"] = workflow.Title
 			workflowMap["summary"] = workflow.Summary
 			if !minimal {
 				workflowMap["description"] = workflow.Description
 			}
-
 			workflowList[workflowID] = workflowMap
 		}
 	}
