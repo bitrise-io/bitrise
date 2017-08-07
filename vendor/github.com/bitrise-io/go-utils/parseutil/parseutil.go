@@ -70,3 +70,26 @@ func CastToBoolPtr(value interface{}) (*bool, bool) {
 	}
 	return pointers.NewBoolPtr(castedValue), true
 }
+
+// CastToMapStringInterface ...
+func CastToMapStringInterface(value interface{}) (map[string]interface{}, bool) {
+	castedValue, ok := value.(map[interface{}]interface{})
+	desiredMap := map[string]interface{}{}
+	for key, value := range castedValue {
+		keyStr, ok := key.(string)
+		if !ok {
+			return map[string]interface{}{}, false
+		}
+		desiredMap[keyStr] = value
+	}
+	return desiredMap, ok
+}
+
+// CastToMapStringInterfacePtr ...
+func CastToMapStringInterfacePtr(value interface{}) (*map[string]interface{}, bool) {
+	casted, ok := CastToMapStringInterface(value)
+	if !ok {
+		return nil, false
+	}
+	return pointers.NewMapStringInterfacePtr(casted), true
+}
