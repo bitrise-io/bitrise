@@ -75,6 +75,7 @@ includes_DragonFly='
 '
 
 includes_FreeBSD='
+#include <sys/capability.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/event.h>
@@ -173,6 +174,7 @@ struct ltchars {
 #include <linux/ptrace.h>
 #include <linux/sched.h>
 #include <linux/seccomp.h>
+#include <linux/sockios.h>
 #include <linux/wait.h>
 #include <linux/icmpv6.h>
 #include <linux/serial.h>
@@ -400,6 +402,7 @@ ccflags="$@"
 		$2 ~ /^(BPF|DLT)_/ ||
 		$2 ~ /^CLOCK_/ ||
 		$2 ~ /^CAN_/ ||
+		$2 ~ /^CAP_/ ||
 		$2 ~ /^ALG_/ ||
 		$2 ~ /^FS_(POLICY_FLAGS|KEY_DESC|ENCRYPTION_MODE|[A-Z0-9_]+_KEY_SIZE|IOC_(GET|SET)_ENCRYPTION)/ ||
 		$2 ~ /^GRND_/ ||
