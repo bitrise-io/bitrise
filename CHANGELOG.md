@@ -1,6 +1,82 @@
-## Changelog (Current version: 1.7.0)
+## Changelog (Current version: 1.8.0)
 
 -----------------
+
+## 1.8.0 (2017 Aug 07)
+
+### Release Notes
+
+__`bitrise plugin update` command's log fix__
+
+From now on `bitrise plugin update` command will print which plugin is under update.
+
+__`bitrise run WORKFLOW` command's log update__
+
+`bitrise run WORKFLOW` command prints the workflow stack to better understand which workflows will run in what order.
+
+```
+Running workflows: BEFORE_WORKFLOW_1 -> BEFORE_WORKFLOW_2 --> WORKFLOW --> AFTER_WORKFLOW_1 --> AFTER_WORKFLOW_2
+```
+__Bitrise Tools update__
+
+- min envman version: [1.1.6](https://github.com/bitrise-io/envman/releases/tag/1.1.6)
+- min stepman version: [0.9.33](https://github.com/bitrise-io/stepman/releases/tag/0.9.33)
+
+__Bitrise Plugins update__
+
+- default init plugin version: [0.9.7](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/0.9.7)
+- default workflow-editor plugin version: [1.0.13](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.0.13)
+- default analytics plugin version: [0.9.10](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.10)
+
+__Bitrise Model's version bumped to 4__
+
+Meta field (`meta`) added to `EnvironmentItemOptionsModel`, this property of the environment options is used to define extra options without creating a new [envman](https://github.com/bitrise-io/envman) release.
+
+The __bitrise-cli__ does not use `meta` field directly, but other tools can use this property to expand the environment options.
+
+For example the `bitrise.io` website will use the `meta` field to define if secret environment variables should be used in pull request triggered builds or not.
+
+```
+.bitrise.secrets.yml
+
+envs:
+- MY_SECRET_ENV: secret value
+  opts:
+    meta:
+      is_expose: true
+```
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.8.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.7.0 -> 1.8.0
+
+* [83309a7] Krisztian Godrei - prepare for 1.8.0 (2017 Aug 07)
+* [a79a5ab] Krisztian Godrei - bitrise plugin analytics updated to 0.9.10 (2017 Aug 07)
+* [7cc355d] Krisztian Godrei - bump model version to 4 (2017 Aug 07)
+* [97d835c] Krisztian Godrei - prepare for 1.8.0 (2017 Aug 07)
+* [9412a8c] Krisztián Gödrei - bitrise tools and plugins version update (#530) (2017 Aug 07)
+* [b982443] Krisztián Gödrei - godeps-update (#529) (2017 Aug 07)
+* [313384d] Zsolt - CLI workflow prints (#507) (2017 Aug 07)
+* [7998a20] Krisztián Gödrei - print plugin name in update command (#528) (2017 Aug 07)
+
 
 ## 1.7.0 (2017 Jul 10)
 
@@ -3076,4 +3152,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Jul 10
+Updated: 2017 Aug 07
