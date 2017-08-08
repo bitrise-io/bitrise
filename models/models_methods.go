@@ -525,6 +525,20 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 
 	hasOptions := false
 
+	if options.IsExpand != nil {
+		if *options.IsExpand == envmanModels.DefaultIsExpand {
+			options.IsExpand = nil
+		} else {
+			hasOptions = true
+		}
+	}
+	if options.SkipIfEmpty != nil {
+		if *options.SkipIfEmpty == envmanModels.DefaultSkipIfEmpty {
+			options.SkipIfEmpty = nil
+		} else {
+			hasOptions = true
+		}
+	}
 	if options.Title != nil {
 		if *options.Title == "" {
 			options.Title = nil
@@ -546,16 +560,19 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.IsRequired != nil {
-		if *options.IsRequired == envmanModels.DefaultIsRequired {
-			options.IsRequired = nil
+	if options.Category != nil {
+		if *options.Category == "" {
+			options.Category = nil
 		} else {
 			hasOptions = true
 		}
 	}
-	if options.IsExpand != nil {
-		if *options.IsExpand == envmanModels.DefaultIsExpand {
-			options.IsExpand = nil
+	if options.ValueOptions != nil && len(options.ValueOptions) > 0 {
+		hasOptions = true
+	}
+	if options.IsRequired != nil {
+		if *options.IsRequired == envmanModels.DefaultIsRequired {
+			options.IsRequired = nil
 		} else {
 			hasOptions = true
 		}
@@ -573,6 +590,9 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 		} else {
 			hasOptions = true
 		}
+	}
+	if options.Meta != nil && len(options.Meta) > 0 {
+		hasOptions = true
 	}
 
 	if hasOptions {
