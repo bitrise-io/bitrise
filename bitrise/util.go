@@ -562,6 +562,18 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 			hasOptions := false
 
+			if wfOptions.IsExpand != nil && sOptions.IsExpand != nil && *wfOptions.IsExpand == *sOptions.IsExpand {
+				wfOptions.IsExpand = nil
+			} else {
+				hasOptions = true
+			}
+
+			if wfOptions.SkipIfEmpty != nil && sOptions.SkipIfEmpty != nil && *wfOptions.SkipIfEmpty == *sOptions.SkipIfEmpty {
+				wfOptions.SkipIfEmpty = nil
+			} else {
+				hasOptions = true
+			}
+
 			if wfOptions.Title != nil && sOptions.Title != nil && *wfOptions.Title == *sOptions.Title {
 				wfOptions.Title = nil
 			} else {
@@ -580,6 +592,12 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 				hasOptions = true
 			}
 
+			if wfOptions.Category != nil && sOptions.Category != nil && *wfOptions.Category == *sOptions.Category {
+				wfOptions.Category = nil
+			} else {
+				hasOptions = true
+			}
+
 			if isStringSliceWithSameElements(wfOptions.ValueOptions, sOptions.ValueOptions) {
 				wfOptions.ValueOptions = []string{}
 			} else {
@@ -592,14 +610,14 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 				hasOptions = true
 			}
 
-			if wfOptions.IsExpand != nil && sOptions.IsExpand != nil && *wfOptions.IsExpand == *sOptions.IsExpand {
-				wfOptions.IsExpand = nil
+			if wfOptions.IsDontChangeValue != nil && sOptions.IsDontChangeValue != nil && *wfOptions.IsDontChangeValue == *sOptions.IsDontChangeValue {
+				wfOptions.IsDontChangeValue = nil
 			} else {
 				hasOptions = true
 			}
 
-			if wfOptions.IsDontChangeValue != nil && sOptions.IsDontChangeValue != nil && *wfOptions.IsDontChangeValue == *sOptions.IsDontChangeValue {
-				wfOptions.IsDontChangeValue = nil
+			if wfOptions.IsTemplate != nil && sOptions.IsTemplate != nil && *wfOptions.IsTemplate == *sOptions.IsTemplate {
+				wfOptions.IsTemplate = nil
 			} else {
 				hasOptions = true
 			}

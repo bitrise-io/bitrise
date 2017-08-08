@@ -1391,20 +1391,42 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 // ----------------------------
 // --- RemoveRedundantFields
 
+/*
+	// These fields are processed by envman at envman run
+	IsExpand    *bool `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
+	SkipIfEmpty *bool `json:"skip_if_empty,omitempty" yaml:"skip_if_empty,omitempty"`
+	// These fields used only by bitrise
+	Title             *string  `json:"title,omitempty" yaml:"title,omitempty"`
+	Description       *string  `json:"description,omitempty" yaml:"description,omitempty"`
+	Summary           *string  `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Category          *string  `json:"category,omitempty" yaml:"category,omitempty"`
+	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
+	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
+	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
+	IsTemplate        *bool    `json:"is_template,omitempty" yaml:"is_template,omitempty"`
+	//
+	Meta map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
+*/
+
 func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 	t.Log("Trivial remove - all fields should be default value")
 	{
 		env := envmanModels.EnvironmentItemModel{
 			"TEST_KEY": "test_value",
 			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsExpand:    pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
+				SkipIfEmpty: pointers.NewBoolPtr(envmanModels.DefaultSkipIfEmpty),
+
 				Title:             pointers.NewStringPtr(""),
 				Description:       pointers.NewStringPtr(""),
 				Summary:           pointers.NewStringPtr(""),
+				Category:          pointers.NewStringPtr(""),
 				ValueOptions:      []string{},
 				IsRequired:        pointers.NewBoolPtr(envmanModels.DefaultIsRequired),
-				IsExpand:          pointers.NewBoolPtr(envmanModels.DefaultIsExpand),
 				IsDontChangeValue: pointers.NewBoolPtr(envmanModels.DefaultIsDontChangeValue),
 				IsTemplate:        pointers.NewBoolPtr(envmanModels.DefaultIsTemplate),
+
+				Meta: map[string]interface{}{},
 			},
 		}
 		require.NoError(t, removeEnvironmentRedundantFields(&env))
@@ -1412,14 +1434,19 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 		options, err := env.GetOptions()
 		require.NoError(t, err)
 
+		require.Equal(t, (*bool)(nil), options.IsExpand)
+		require.Equal(t, (*bool)(nil), options.SkipIfEmpty)
+
 		require.Equal(t, (*string)(nil), options.Title)
 		require.Equal(t, (*string)(nil), options.Description)
 		require.Equal(t, (*string)(nil), options.Summary)
+		require.Equal(t, (*string)(nil), options.Category)
 		require.Equal(t, 0, len(options.ValueOptions))
 		require.Equal(t, (*bool)(nil), options.IsRequired)
-		require.Equal(t, (*bool)(nil), options.IsExpand)
 		require.Equal(t, (*bool)(nil), options.IsDontChangeValue)
 		require.Equal(t, (*bool)(nil), options.IsTemplate)
+
+		require.Equal(t, 0, len(options.Meta))
 	}
 
 	t.Log("Trivial don't remove - no fields should be default value")
@@ -1427,14 +1454,19 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 		env := envmanModels.EnvironmentItemModel{
 			"TEST_KEY": "test_value",
 			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsExpand:    pointers.NewBoolPtr(false),
+				SkipIfEmpty: pointers.NewBoolPtr(true),
+
 				Title:             pointers.NewStringPtr("t"),
 				Description:       pointers.NewStringPtr("d"),
 				Summary:           pointers.NewStringPtr("s"),
+				Category:          pointers.NewStringPtr("c"),
 				ValueOptions:      []string{"i"},
 				IsRequired:        pointers.NewBoolPtr(true),
-				IsExpand:          pointers.NewBoolPtr(false),
 				IsDontChangeValue: pointers.NewBoolPtr(true),
 				IsTemplate:        pointers.NewBoolPtr(true),
+
+				Meta: map[string]interface{}{"is_expose": true},
 			},
 		}
 		require.NoError(t, removeEnvironmentRedundantFields(&env))
@@ -1442,14 +1474,19 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 		options, err := env.GetOptions()
 		require.NoError(t, err)
 
+		require.Equal(t, false, *options.IsExpand)
+		require.Equal(t, true, *options.SkipIfEmpty)
+
 		require.Equal(t, "t", *options.Title)
 		require.Equal(t, "d", *options.Description)
 		require.Equal(t, "s", *options.Summary)
+		require.Equal(t, "c", *options.Category)
 		require.Equal(t, "i", options.ValueOptions[0])
 		require.Equal(t, true, *options.IsRequired)
-		require.Equal(t, false, *options.IsExpand)
 		require.Equal(t, true, *options.IsDontChangeValue)
 		require.Equal(t, true, *options.IsTemplate)
+
+		require.Equal(t, map[string]interface{}{"is_expose": true}, options.Meta)
 	}
 
 	t.Log("No options - opts field shouldn't exist")
@@ -1461,6 +1498,24 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 
 		_, ok := env[envmanModels.OptionsKey]
 		require.Equal(t, false, ok)
+	}
+
+	t.Log("Only meta options - opts field should remain")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"TEST_KEY": "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				Meta: map[string]interface{}{
+					"is_expose": true,
+				},
+			},
+		}
+		require.NoError(t, removeEnvironmentRedundantFields(&env))
+
+		options, err := env.GetOptions()
+		require.NoError(t, err)
+
+		require.Equal(t, map[string]interface{}{"is_expose": true}, options.Meta)
 	}
 }
 
