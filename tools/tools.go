@@ -334,19 +334,26 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdArgs []string, time
 		return 1, err
 	}
 
+	var timer *time.Timer
+
+	// Setpgid: true creates a new process group for cmd and its subprocesses
+	// this way cmd will not belong to its parent process group,
+	// cmd will not be killed when you hit ^C in your terminal
+	// to fix this, we listen and handle Interrupt signal manually
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for _ = range c {
-			// sig is a ^C, handle it
-			log.Printf("Passing kill\n")
 			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 				log.Warnf("Failed to kill process, error: %s", err)
 			}
+			timer.Stop()
+			os.Exit(1)
 		}
 	}()
+	//
 
-	timer := time.AfterFunc(timeout, func() {
+	timer = time.AfterFunc(timeout, func() {
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 			log.Warnf("Failed to kill process, error: %s", err)
 		}
