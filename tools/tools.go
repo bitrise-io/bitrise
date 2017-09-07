@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,6 +12,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -312,6 +315,52 @@ func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
 	args = append(args, cmd...)
 
 	return command.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
+}
+
+// EnvmanRunWithTimeout ...
+func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration) (int, error) {
+	logLevel := log.GetLevel().String()
+	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
+	args = append(args, cmdArgs...)
+
+	command := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin).SetDir(workDirPth)
+
+	// create a new process group for our process and its child processes
+	cmd := command.GetCmd()
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if err := cmd.Start(); err != nil {
+		return 1, err
+	}
+
+	timer := time.AfterFunc(timeout, func() {
+		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+			log.Warnf("Failed to kill process, error: %s", err)
+		}
+	})
+	defer timer.Stop()
+
+	err := cmd.Wait()
+	timer.Stop()
+
+	exitCode := 0
+
+	if err != nil {
+		exitCode = 1
+
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				exitCode = status.ExitStatus()
+			}
+		}
+
+		if err.Error() == "signal: killed" {
+			return exitCode, errors.New("timeout")
+		}
+		return exitCode, err
+	}
+
+	return 0, nil
 }
 
 // EnvmanJSONPrint ...

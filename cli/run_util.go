@@ -351,6 +351,12 @@ func executeStep(step stepmanModels.StepModel, sIDData models.StepIDData, stepAb
 			toolkitName, err)
 	}
 
+	if step.Timeout != nil && *step.Timeout > 0 {
+		timeoutSeconds := *step.Timeout
+		timeout := time.Duration(timeoutSeconds) * time.Second
+		return tools.EnvmanRunWithTimeout(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout)
+	}
+
 	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd)
 }
 
