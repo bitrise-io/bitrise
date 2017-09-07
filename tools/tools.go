@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -332,6 +333,18 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdArgs []string, time
 	if err := cmd.Start(); err != nil {
 		return 1, err
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for _ = range c {
+			// sig is a ^C, handle it
+			log.Printf("Passing kill\n")
+			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+				log.Warnf("Failed to kill process, error: %s", err)
+			}
+		}
+	}()
 
 	timer := time.AfterFunc(timeout, func() {
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
