@@ -38,8 +38,8 @@ func Test_TimeoutTest(t *testing.T) {
 		elapsed := time.Since(start)
 
 		require.EqualError(t, err, "exit status 1", out)
-		require.Equal(t, true, elapsed < 12*time.Second)
-		require.Equal(t, true, elapsed > 10*time.Second)
+		require.Equal(t, true, elapsed < 10*time.Second)
+		require.Equal(t, true, elapsed > 5*time.Second)
 
 		t.Log("Should exist")
 		{
