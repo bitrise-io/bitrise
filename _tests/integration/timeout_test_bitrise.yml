@@ -5,9 +5,6 @@ workflows:
   timeout:
     steps:
     - script:
-        inputs:
-        - content: echo "test" >> "$TIMEOUT_TEST_FILE_PTH_1"
-    - script:
         timeout: 5
         inputs:
-        - content: sleep 10; echo "test" >> "$TIMEOUT_TEST_FILE_PTH_2"
+        - content: echo "test" >> "$TIMEOUT_TEST_FILE_PTH_1"; sleep 15; echo "test" >> "$TIMEOUT_TEST_FILE_PTH_2"
