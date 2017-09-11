@@ -1,0 +1,94 @@
+format_version: 1.1.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  _install_test_tools:
+    steps:
+    - script:
+        title: Install required testing tools
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+
+            # Install dependencies
+            go get -u github.com/tools/godep
+
+            # Check for unhandled errors
+            go get -u github.com/kisielk/errcheck
+
+            # Go lint
+            go get -u github.com/golang/lint/golint
+
+  _test:
+    steps:
+    - script:
+        title: Godeps - GOPATH patch
+        inputs:
+        - content: |-
+            set -e
+            set -v
+            envman add --key ORIG_GOPATH --value "$GOPATH"
+            envman add --key GOPATH --value "$(godep path):$GOPATH"
+    - script:
+        title: Go Test
+        inputs:
+        - content: godep go test ./...
+    - script:
+        title: Err check
+        inputs:
+        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+    - script:
+        title: Go Lint
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+
+            golint_out="$(golint ./...)"
+            if [[ "${golint_out}" != "" ]] ; then
+              echo "=> Golint issues found:"
+              echo "${golint_out}"
+              exit 1
+            fi
+    - script:
+        title: Restore original GOPATH
+        inputs:
+        - content: envman add --key GOPATH --value "$ORIG_GOPATH"
+
+  godeps-update:
+    steps:
+    - script:
+        title: Dependency update
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -x
+            go get -u ./...
+            rm -rf ./Godeps
+            godep save ./...
+
+  ci:
+    before_run:
+    - _install_test_tools
+    - _test
+    steps:
+    - slack:
+        run_if: .IsCI
+        inputs:
+        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
+        - channel: $INTERNAL_DEV_SLACK_CHANNEL
+        - from_username: ${BIN_NAME} - CI - OK
+        - from_username_on_error: ${BIN_NAME} - CI - ERROR
+        - emoji: ":white_check_mark:"
+        - emoji_on_error: ":no_entry_sign:"
+        - message: |-
+            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
+        - message_on_error: |-
+            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
+
+            Build URL: ${BITRISE_BUILD_URL}
