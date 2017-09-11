@@ -341,7 +341,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	go func() {
 		<-c
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-			log.Warnf("Failed to kill process, error: %s", errors.WithStack(err))
+			log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
 		}
 		os.Exit(130)
 	}()
@@ -352,7 +352,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	timer := time.AfterFunc(timeout, func() {
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-			log.Warnf("Failed to kill process, error: %s", errors.WithStack(err))
+			log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
 		}
 	})
 
