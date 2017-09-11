@@ -1,0 +1,7 @@
+.bitrise*
+_tmp
+.gows
+.gows.user.yml
+
+.vscode
+.directory

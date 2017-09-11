@@ -316,8 +316,12 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	command := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin).SetDir(workDirPth)
 
-	if timeout < 0 {
-		return command.RunAndReturnExitCode()
+	if timeout <= 0 {
+		exitCode, err := command.RunAndReturnExitCode()
+		if err != nil {
+			err = errors.WithStack(err)
+		}
+		return exitCode, err
 	}
 
 	// create a new process group for our process and its child processes
@@ -325,7 +329,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if err := cmd.Start(); err != nil {
-		return -1, err
+		return -1, errors.WithStack(err)
 	}
 
 	// Setpgid: true creates a new process group for cmd and its subprocesses
@@ -335,9 +339,9 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		_ = <-c
+		<-c
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-			log.Warnf("Failed to kill process, error: %s", err)
+			log.Warnf("Failed to kill process, error: %s", errors.WithStack(err))
 		}
 		os.Exit(130)
 	}()
@@ -348,7 +352,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	timer := time.AfterFunc(timeout, func() {
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-			log.Warnf("Failed to kill process, error: %s", err)
+			log.Warnf("Failed to kill process, error: %s", errors.WithStack(err))
 		}
 	})
 
@@ -367,7 +371,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 				exitCode = status.ExitStatus()
 			}
 		}
-		return exitCode, err
+		return exitCode, errors.WithStack(err)
 	}
 
 	return 0, nil

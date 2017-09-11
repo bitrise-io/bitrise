@@ -1,0 +1,38 @@
+release:
+  development_branch: master
+  release_branch: master
+changelog:
+  path: CHANGELOG.md
+  content_template: |-
+    {{range .ContentItems}}## {{.EndTaggedCommit.Tag}} ({{.EndTaggedCommit.Date.Format "2006 Jan 02"}})
+
+    ### Release Notes
+
+    * __BREAKING__ : change 1
+    * change 2
+
+    ### Install or upgrade
+
+    To install this version, run the following commands (in a bash shell):
+
+    ```
+    curl -fL https://github.com/bitrise-io/envman/releases/download/{{.EndTaggedCommit.Tag}}/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+    ```
+
+    Then:
+
+    ```
+    chmod +x /usr/local/bin/envman
+    ```
+
+    That's all, you're ready to call `envman`!
+
+    ### Release Commits - {{.StartTaggedCommit.Tag}} -> {{.EndTaggedCommit.Tag}}
+
+    {{range .Commits}}* [{{firstChars .Hash 7}}] {{.Author}} - {{.Message}} ({{.Date.Format "2006 Jan 02"}})
+    {{end}}
+
+    {{end}}
+  header_template: '# Changelog'
+  footer_template: |
+    Generated at: {{.CurrentDate.Format "2006 Jan 02"}}
