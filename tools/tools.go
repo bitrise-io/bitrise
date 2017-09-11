@@ -2,7 +2,6 @@ package tools
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,13 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sys/unix"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 )
 
 // UnameGOOS ...
@@ -310,31 +309,24 @@ func EnvmanClear(envstorePth string) error {
 }
 
 // EnvmanRun ...
-func EnvmanRun(envstorePth, workDirPth string, cmd []string) (int, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
-	args = append(args, cmd...)
-
-	return command.RunCommandInDirAndReturnExitCode(workDirPth, "envman", args...)
-}
-
-// EnvmanRunWithTimeout ...
-func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration) (int, error) {
+func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration) (int, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdArgs...)
 
 	command := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin).SetDir(workDirPth)
 
+	if timeout < 0 {
+		return command.RunAndReturnExitCode()
+	}
+
 	// create a new process group for our process and its child processes
 	cmd := command.GetCmd()
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if err := cmd.Start(); err != nil {
-		return 1, err
+		return -1, err
 	}
-
-	var timer *time.Timer
 
 	// Setpgid: true creates a new process group for cmd and its subprocesses
 	// this way cmd will not belong to its parent process group,
@@ -343,39 +335,37 @@ func EnvmanRunWithTimeout(envstorePth, workDirPth string, cmdArgs []string, time
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		for _ = range c {
-			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-				log.Warnf("Failed to kill process, error: %s", err)
-			}
-			timer.Stop()
-			os.Exit(1)
+		_ = <-c
+		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+			log.Warnf("Failed to kill process, error: %s", err)
 		}
+		os.Exit(130)
+	}()
+	defer func() {
+		signal.Stop(c)
 	}()
 	//
 
-	timer = time.AfterFunc(timeout, func() {
+	timer := time.AfterFunc(timeout, func() {
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 			log.Warnf("Failed to kill process, error: %s", err)
 		}
 	})
-	defer timer.Stop()
 
 	err := cmd.Wait()
+
 	timer.Stop()
 
-	exitCode := 0
-
 	if err != nil {
-		exitCode = 1
+		if err.Error() == "signal: killed" {
+			return -2, errors.New("timeout")
+		}
 
+		exitCode := 1
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 				exitCode = status.ExitStatus()
 			}
-		}
-
-		if err.Error() == "signal: killed" {
-			return exitCode, errors.New("timeout")
 		}
 		return exitCode, err
 	}
