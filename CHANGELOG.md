@@ -1,6 +1,84 @@
-## Changelog (Current version: 1.8.0)
+## Changelog (Current version: 1.9.0)
 
 -----------------
+
+## 1.9.0 (2017 Sep 12)
+
+### Release Notes
+
+__step timeout handling__
+
+From this bitrise version on you can specify step's `timeout` property to restrict the step's max run time.
+
+In the following bitrise.yml:
+
+```
+format_version: "4"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  timeout:
+    steps:
+    - script:
+        timeout: 5
+        inputs:
+        - content: echo "This script is fast"
+    - script:
+        timeout: 5
+        inputs:
+        - content: echo "sleep makes this script too slow :("; sleep 10
+```
+
+the secound script step will fail:
+
+```
+sleep makes this script too slow :(
+ERRO[12:29:14] Step (script) failed, error: timeout
+```
+
+__bitrise tools update__
+
+- envman update to version [1.1.7](https://github.com/bitrise-io/envman/releases/tag/1.1.7)
+- stepman update to version [0.9.34](https://github.com/bitrise-io/stepman/releases/tag/0.9.34)
+
+__bitrise default plugins update__
+
+- init plugin update to version [0.9.10](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/0.9.10)
+- step plugin update to version [0.9.5](https://github.com/bitrise-core/bitrise-plugins-step/releases/tag/0.9.5)
+
+__go toolkit's go version update to 1.9__
+
+__`bitrise normalize` command fixes__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.9.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.8.0 -> 1.9.0
+
+* [424d300] Krisztián Gödrei - preparf for 1.9.0 (2017 Sep 12)
+* [8de988f] Krisztián Gödrei - plugins & tools update (#535) (2017 Sep 12)
+* [b14b157] Krisztián Gödrei - deps update (#534) (2017 Sep 12)
+* [200f2a3] Krisztián Gödrei - Timeout (#532) (2017 Sep 11)
+* [41dcd11] Krisztián Gödrei - go toolkit go version update to 1.9 (#533) (2017 Sep 10)
+* [7571f7b] Krisztián Gödrei - normalize cmd fix (#531) (2017 Aug 08)
+
 
 ## 1.8.0 (2017 Aug 07)
 
@@ -3152,4 +3230,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Aug 07
+Updated: 2017 Sep 12
