@@ -8,7 +8,7 @@
 
 __step timeout handling__
 
-From this bitrise version on you can specify step's `timeout` property to restrict the step's max run time.
+From this bitrise version on you can specify the step's `timeout` property to restrict the step's max run time.
 
 In the following bitrise.yml:
 
@@ -29,7 +29,7 @@ workflows:
         - content: echo "sleep makes this script too slow :("; sleep 10
 ```
 
-the secound script step will fail:
+the second script step will fail:
 
 ```
 sleep makes this script too slow :(
@@ -72,7 +72,7 @@ time you call bitrise run.
 
 ### Release Commits - 1.8.0 -> 1.9.0
 
-* [424d300] Krisztián Gödrei - preparf for 1.9.0 (2017 Sep 12)
+* [424d300] Krisztián Gödrei - preparf for 1.9.0 (2017 Sep 12)
 * [8de988f] Krisztián Gödrei - plugins & tools update (#535) (2017 Sep 12)
 * [b14b157] Krisztián Gödrei - deps update (#534) (2017 Sep 12)
 * [200f2a3] Krisztián Gödrei - Timeout (#532) (2017 Sep 11)
