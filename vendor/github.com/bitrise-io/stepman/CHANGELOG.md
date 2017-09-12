@@ -2,6 +2,35 @@
 
 -----------------
 
+## 0.9.34 (2017 Sep 12)
+
+### Release Notes
+
+* manage dependencies with [dep](https://github.com/golang/dep)
+* dependency updates
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.34/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.33 -> 0.9.34
+
+* [a8a5cba] Krisztián Gödrei - prepare for 0.9.34 (2017 Sep 12)
+* [2ff164b] Krisztián Gödrei - manage dependencies with dep, dependency updates (#237) (2017 Sep 12)
+
+
 ## 0.9.33 (2017 Aug 07)
 
 ### Release Notes
@@ -1490,4 +1519,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Aug 07
+Generated at: 2017 Sep 12

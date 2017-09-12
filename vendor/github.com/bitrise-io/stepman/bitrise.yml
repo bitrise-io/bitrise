@@ -1,9 +1,9 @@
-format_version: "2"
+format_version: "4"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - RELEASE_VERSION: 0.9.33
+  - RELEASE_VERSION: 0.9.34
   - BIN_NAME: stepman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
@@ -240,7 +240,6 @@ workflows:
 
   # ----------------------------------------------------------------
   # --- workflows for Utility
-
   regenerate-default-collection:
     before_run:
     - delete-stepman-dir
@@ -266,24 +265,16 @@ workflows:
             rm -rf ~/.stepman
 
   godeps-update:
-    description: |-
-      Dependenci Update
-
-      Used for updating stepman dependencies with godep
+    title: Godeps update
+    description: |
+      Used for updating bitrise dependencies with godep
     steps:
     - script:
         title: Dependency update
         inputs:
-        - content: |
+        - content: |-
             #!/bin/bash
             set -ex
-            go get -u -v github.com/tools/godep
-            #
-            rm -rf ./Godeps
-            rm -rf ./vendor
-            #
-            go get -t -d ./...
-            go get golang.org/x/sys/unix
-            go get github.com/davecgh/go-spew/spew
-            go get github.com/pmezard/go-difflib/difflib
-            godep save ./...
+            go get -u -v github.com/golang/dep/cmd/dep
+            dep ensure -v
+            dep ensure -v -update
