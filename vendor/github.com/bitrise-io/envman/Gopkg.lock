@@ -8,15 +8,9 @@
   version = "v1.0.3"
 
 [[projects]]
-  name = "github.com/bitrise-io/envman"
-  packages = ["models"]
-  revision = "cde1244f808bd58f7e92b7607f3274ee0bcade87"
-  version = "1.1.7"
-
-[[projects]]
   branch = "master"
   name = "github.com/bitrise-io/go-utils"
-  packages = ["colorstring","command","command/git","errorutil","fileutil","log","parseutil","pathutil","pointers","progress","retry","stringutil","versions"]
+  packages = ["command","errorutil","fileutil","parseutil","pathutil","pointers"]
   revision = "6eb582e08179a025ed2deb86ea6dffbd13ba1ff6"
 
 [[projects]]
@@ -26,46 +20,16 @@
   revision = "a602d207503f909271ecd91a17abd9ac919e273c"
 
 [[projects]]
-  name = "github.com/bitrise-io/stepman"
-  packages = ["models"]
-  revision = "5609b753e57f9d2e4f18160fc2ee8667b1e34652"
-  version = "0.9.34"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/bitrise-tools/gows"
-  packages = ["gows"]
-  revision = "e4fb47946c852c6f46d28b27a4d0d1a02f5eb0ac"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-version"
-  packages = ["."]
-  revision = "03c5bf6be031b6dd45afec16b1cf94fc8938bc77"
-
-[[projects]]
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
-
-[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/ryanuber/go-glob"
-  packages = ["."]
-  revision = "572520ed46dbddaed19ea3d9541bdd0494163693"
-  version = "v0.1"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -100,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "879d89ca678d2d748a8e7d483750653a6e5b182a032eb3ac42de82e444f04e0e"
+  inputs-digest = "acda3d02f1273fd202a303413621e6ecbc76c5590e5375bceced0c6079084c1e"
   solver-name = "gps-cdcl"
   solver-version = 1

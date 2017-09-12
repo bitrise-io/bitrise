@@ -1,4 +1,4 @@
-format_version: "2"
+format_version: "4"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
@@ -9,7 +9,7 @@ trigger_map:
 
 app:
   envs:
-  - RELEASE_VERSION: 1.1.6
+  - RELEASE_VERSION: 1.1.7
   - BIN_NAME: envman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
 
@@ -213,16 +213,8 @@ workflows:
     - script:
         title: Dependency update
         inputs:
-        - content: |
+        - content: |-
             #!/bin/bash
             set -ex
-            go get -u -v github.com/tools/godep
-            #
-            rm -rf ./Godeps
-            rm -rf ./vendor
-            #
-            go get -t -d ./...
-            go get golang.org/x/sys/unix
-            go get github.com/davecgh/go-spew/spew
-            go get github.com/pmezard/go-difflib/difflib
-            godep save ./...
+            go get -u -v github.com/golang/dep/cmd/dep
+            dep ensure -v -update

@@ -23,7 +23,6 @@
 
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  version = ">=1.0.3, <=11.0.0-g89742ae"
 
 [[constraint]]
   name = "github.com/bitrise-io/envman"
@@ -38,37 +37,10 @@
   name = "github.com/bitrise-io/goinp"
 
 [[constraint]]
-  name = "github.com/bitrise-io/stepman"
-  version = "0.9.34"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/bitrise-tools/gows"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/hashicorp/go-version"
-
-[[constraint]]
-  name = "github.com/pkg/errors"
-  version = ">=0.8.0, <=6.0.0-g2b3a18b"
-
-[[constraint]]
-  name = "github.com/ryanuber/go-glob"
-  version = ">=0.1.0, <=4.0.0-g256dc44"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
-  version = ">=1.1.4, <=71.0.0-g890a5c3"
 
 [[constraint]]
   name = "github.com/urfave/cli"
-  version = ">=1.20.0, <=5.0.0-g7fb9c86"
 
 [[constraint]]
-  branch = "master"
-  name = "golang.org/x/sys"
-
-[[constraint]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
