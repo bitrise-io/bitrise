@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/urfave/cli"
@@ -32,6 +34,6 @@ var envmanCommand = cli.Command{
 
 func runCommandWith(toolName string, c *cli.Context) error {
 	args := c.Args()
-	cmd := command.NewWithStandardOuts(toolName, args...)
+	cmd := command.NewWithStandardOuts(toolName, args...).SetStdin(os.Stdin)
 	return cmd.Run()
 }
