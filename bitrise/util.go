@@ -197,10 +197,7 @@ func SetBuildFailedEnv(failed bool) error {
 		return err
 	}
 
-	if err := os.Setenv("BITRISE_BUILD_STATUS", statusStr); err != nil {
-		return err
-	}
-	return nil
+	return os.Setenv("BITRISE_BUILD_STATUS", statusStr)
 }
 
 // FormattedSecondsToMax8Chars ...
@@ -238,10 +235,7 @@ func SaveConfigToFile(pth string, bitriseConf models.BitriseDataModel) error {
 	if err != nil {
 		return err
 	}
-	if err := fileutil.WriteBytesToFile(pth, contBytes); err != nil {
-		return err
-	}
-	return nil
+	return fileutil.WriteBytesToFile(pth, contBytes)
 }
 
 func generateYAML(v interface{}) ([]byte, error) {
@@ -685,9 +679,5 @@ func RemoveConfigRedundantFieldsAndFillStepOutputs(config *models.BitriseDataMod
 			}
 		}
 	}
-	if err := config.RemoveRedundantFields(); err != nil {
-		return err
-	}
-
-	return nil
+	return config.RemoveRedundantFields()
 }
