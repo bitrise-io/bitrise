@@ -1,74 +1,51 @@
-
-# Gopkg.toml example
-#
-# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
-# for detailed Gopkg.toml documentation.
-#
-# required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
-#
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
-#
-# [[constraint]]
-#   name = "github.com/user/project2"
-#   branch = "dev"
-#   source = "github.com/myfork/project2"
-#
-# [[override]]
-#  name = "github.com/x/y"
-#  version = "2.4.0"
-
-
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  version = ">=1.0.3, <=11.0.0-g89742ae"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/bitrise-io/envman"
-  version = "1.1.7"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/bitrise-io/go-utils"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/bitrise-io/goinp"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/bitrise-io/stepman"
-  version = "0.9.34"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/bitrise-tools/gows"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/hashicorp/go-version"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/pkg/errors"
-  version = ">=0.8.0, <=6.0.0-g2b3a18b"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/ryanuber/go-glob"
-  version = ">=0.1.0, <=4.0.0-g256dc44"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  version = ">=1.1.4, <=71.0.0-g890a5c3"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/urfave/cli"
-  version = ">=1.20.0, <=5.0.0-g7fb9c86"
-
-[[constraint]]
   branch = "master"
-  name = "golang.org/x/sys"
 
 [[constraint]]
-  branch = "v2"
+  name = "golang.org/x/sys"
+  branch = "master"
+
+[[constraint]]
   name = "gopkg.in/yaml.v2"
+  branch = "v2"

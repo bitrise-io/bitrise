@@ -20,10 +20,7 @@ func auditStepBeforeShare(pth string) error {
 	if err != nil {
 		return err
 	}
-	if err := stepModel.AuditBeforeShare(); err != nil {
-		return err
-	}
-	return nil
+	return stepModel.AuditBeforeShare()
 }
 
 func detectStepIDAndVersionFromPath(pth string) (stepID, stepVersion string, err error) {
@@ -58,10 +55,7 @@ func auditStepBeforeSharePullRequest(pth string) error {
 		return err
 	}
 
-	if err := auditStepModelBeforeSharePullRequest(stepModel, stepID, version); err != nil {
-		return err
-	}
-	return nil
+	return auditStepModelBeforeSharePullRequest(stepModel, stepID, version)
 }
 
 func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {

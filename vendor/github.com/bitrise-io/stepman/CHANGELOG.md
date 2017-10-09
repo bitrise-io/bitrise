@@ -2,6 +2,34 @@
 
 -----------------
 
+## 0.9.35 (2017 Oct 09)
+
+### Release Notes
+
+* dependency updates
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.35/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.34 -> 0.9.35
+
+* [6a9ecf9] Krisztián Gödrei - prepare for 0.9.35 (2017 Oct 09)
+* [42e27e6] Krisztián Gödrei - dep update (#238) (2017 Oct 09)
+
+
 ## 0.9.34 (2017 Sep 12)
 
 ### Release Notes
@@ -1519,4 +1547,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Sep 12
+Generated at: 2017 Oct 09

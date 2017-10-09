@@ -313,8 +313,5 @@ func (env EnvironmentItemModel) NormalizeValidateFillDefaults() error {
 		return err
 	}
 
-	if err := env.FillMissingDefaults(); err != nil {
-		return err
-	}
-	return nil
+	return env.FillMissingDefaults()
 }
