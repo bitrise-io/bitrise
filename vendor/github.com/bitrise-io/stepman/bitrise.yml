@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - RELEASE_VERSION: 0.9.34
+  - RELEASE_VERSION: 0.9.35
   - BIN_NAME: stepman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
   - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
@@ -264,10 +264,10 @@ workflows:
             set -ex
             rm -rf ~/.stepman
 
-  godeps-update:
-    title: Godeps update
+  dep-update:
+    title: Dep update
     description: |
-      Used for updating bitrise dependencies with godep
+      Used for updating bitrise dependencies with dep
     steps:
     - script:
         title: Dependency update
