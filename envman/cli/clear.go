@@ -18,11 +18,7 @@ func clearEnvs() error {
 		return errors.New(errMsg)
 	}
 
-	if err := envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, []models.EnvironmentItemModel{}); err != nil {
-		return err
-	}
-
-	return nil
+	return envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, []models.EnvironmentItemModel{})
 }
 
 func clear(c *cli.Context) error {

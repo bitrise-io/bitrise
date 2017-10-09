@@ -89,11 +89,7 @@ func addEnv(key string, value string, expand, replace, skipIfEmpty bool) error {
 		return err
 	}
 
-	if err := envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, newEnvSlice); err != nil {
-		return err
-	}
-
-	return nil
+	return envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, newEnvSlice)
 }
 
 func loadValueFromFile(pth string) (string, error) {
