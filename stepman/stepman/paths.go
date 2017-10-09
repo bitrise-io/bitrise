@@ -79,10 +79,7 @@ func CleanupRoute(route SteplibRoute) error {
 	if err := command.RemoveDir(pth); err != nil {
 		return err
 	}
-	if err := RemoveRoute(route); err != nil {
-		return err
-	}
-	return nil
+	return RemoveRoute(route)
 }
 
 // CleanupDanglingLibrary ...
@@ -131,10 +128,7 @@ func RemoveRoute(route SteplibRoute) error {
 			newRoutes = append(newRoutes, aRoute)
 		}
 	}
-	if err := newRoutes.writeToFile(); err != nil {
-		return err
-	}
-	return nil
+	return newRoutes.writeToFile()
 }
 
 // AddRoute ...
@@ -145,11 +139,7 @@ func AddRoute(route SteplibRoute) error {
 	}
 
 	routes = append(routes, route)
-	if err := routes.writeToFile(); err != nil {
-		return err
-	}
-
-	return nil
+	return routes.writeToFile()
 }
 
 // GenerateFolderAlias ...

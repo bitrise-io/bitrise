@@ -2,6 +2,34 @@
 
 -----------------
 
+## 1.1.8 (2017 Oct 09)
+
+### Release Notes
+
+* dependency updates
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/envman/releases/download/1.1.8/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/envman
+```
+
+That's all, you're ready to call `envman`!
+
+### Release Commits - 1.1.7 -> 1.1.8
+
+* [c80708d] Krisztián Gödrei - prepare for 1.1.8 (2017 Oct 09)
+* [f9d7874] Krisztián Gödrei - dep updates (#126) (2017 Oct 09)
+
+
 ## 1.1.7 (2017 Sep 12)
 
 ### Release Notes
@@ -695,4 +723,4 @@ That's all, you're ready to call `envman`!
 
 -----------------
 
-Generated at: 2017 Sep 12
+Generated at: 2017 Oct 09

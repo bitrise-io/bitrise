@@ -130,11 +130,7 @@ func (step StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) error
 		return nil
 	}
 
-	if err := validateEnvs(append(step.Inputs, step.Outputs...)); err != nil {
-		return err
-	}
-
-	return nil
+	return validateEnvs(append(step.Inputs, step.Outputs...))
 }
 
 // AuditBeforeShare ...
@@ -153,11 +149,7 @@ func (step StepModel) AuditBeforeShare() error {
 		return errors.New("Invalid step: timeout less then 0")
 	}
 
-	if err := step.ValidateInputAndOutputEnvs(true); err != nil {
-		return err
-	}
-
-	return nil
+	return step.ValidateInputAndOutputEnvs(true)
 }
 
 // Audit ...
@@ -172,11 +164,7 @@ func (step StepModel) Audit() error {
 	if step.Source == nil {
 		return errors.New("Invalid step: missing or empty required 'Source' property")
 	}
-	if err := step.Source.validateSource(); err != nil {
-		return err
-	}
-
-	return nil
+	return step.Source.validateSource()
 }
 
 // FillMissingDefaults ...

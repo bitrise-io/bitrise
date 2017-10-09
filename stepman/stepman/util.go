@@ -367,8 +367,5 @@ func ReGenerateLibrarySpec(route SteplibRoute) error {
 		return err
 	}
 
-	if err := WriteStepSpecToFile(collection, route); err != nil {
-		return err
-	}
-	return nil
+	return WriteStepSpecToFile(collection, route)
 }
