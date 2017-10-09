@@ -94,11 +94,7 @@ func cleanupPlugin(name string) error {
 		return err
 	}
 
-	if err := DeletePluginRoute(name); err != nil {
-		return err
-	}
-
-	return nil
+	return DeletePluginRoute(name)
 }
 
 func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) {
