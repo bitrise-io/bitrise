@@ -1,6 +1,56 @@
-## Changelog (Current version: 1.9.0)
+## Changelog (Current version: 1.10.0)
 
 -----------------
+
+## 1.10.0 (2017 Oct 10)
+
+### Release Notes
+
+__set Stdin for bitrise tools commands__
+
+__update min go version from 1.9 to 1.9.1__
+
+__bitrise tools update__
+
+- envman update to version [1.1.8](https://github.com/bitrise-io/envman/releases/tag/1.1.8)
+- stepman update to version [0.9.35](https://github.com/bitrise-io/stepman/releases/tag/0.9.35)
+
+__bitrise default plugins update__
+
+- init plugin update to version [0.9.11](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/0.9.11)
+- workflow-editor plugin update to version [1.0.17](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.0.17)
+
+__go dependencies update__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.10.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.9.0 -> 1.10.0
+
+* [caae040] Krisztián Gödrei - prepare for 1.10.0 (2017 Oct 10)
+* [320337f] Krisztián Gödrei - tools update (#539) (2017 Oct 10)
+* [2796fa7] Krisztián Gödrei - dep update (#538) (2017 Oct 09)
+* [a5ea4c0] Viktor Benei - Update min go version: 1.9 -> 1.9.1 (#537) (2017 Oct 09)
+* [0869613] Viktor Benei - set Stdin for bitrise tools commands (#536) (2017 Sep 12)
+* [d5b98d3] Krisztián Gödrei - Update CHANGELOG.md (2017 Sep 12)
+
 
 ## 1.9.0 (2017 Sep 12)
 
@@ -3230,4 +3280,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Sep 12
+Updated: 2017 Oct 10
