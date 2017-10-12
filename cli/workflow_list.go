@@ -29,11 +29,11 @@ var workflowListCommand = cli.Command{
 		flConfig,
 		flConfigBase64,
 		cli.StringFlag{
-			Name:  OuputFormatKey,
+			Name:  "format",
 			Usage: "Output format. Accepted: raw, json, yml.",
 		},
 		cli.BoolFlag{
-			Name:  MinimalModeKey,
+			Name:  "minimal",
 			Usage: "Print only workflow summary.",
 		},
 	},
