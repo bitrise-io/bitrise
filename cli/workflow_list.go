@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 )
 
 func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {
@@ -70,10 +71,18 @@ func printWorkflList(workflowList map[string]map[string]string, format string, m
 			return err
 		}
 		fmt.Println(string(bytes))
+
+	case output.FormatYML:
+		bytes, err := yaml.Marshal(workflowList)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(bytes))
 	default:
 		return fmt.Errorf("Invalid output format: %s", format)
 	}
 	return nil
+
 }
 
 func workflowList(c *cli.Context) error {
@@ -97,7 +106,7 @@ func workflowList(c *cli.Context) error {
 	// Input validation
 	if format == "" {
 		format = output.FormatRaw
-	} else if !(format == output.FormatRaw || format == output.FormatJSON) {
+	} else if !(format == output.FormatRaw || format == output.FormatJSON || format == output.FormatYML) {
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
 
