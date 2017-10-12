@@ -128,7 +128,7 @@ func workflowList(c *cli.Context) error {
 	format := c.String(OuputFormatKey)
 
 	minimal := c.Bool(MinimalModeKey)
-	//
+	workflowIDOnly := c.Bool(WorkFlowIDOnlyKey)
 
 	// Input validation
 	if format == "" {
@@ -144,8 +144,17 @@ func workflowList(c *cli.Context) error {
 		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, output.FormatJSON)
 	}
 
-	workflowList := map[string]map[string]string{}
 	if len(bitriseConfig.Workflows) > 0 {
+		if workflowIDOnly {
+			workflowIDs := []string{}
+			for workflowID := range bitriseConfig.Workflows {
+				workflowIDs = append(workflowIDs, workflowID)
+			}
+			fmt.Println(strings.Join(workflowIDs, " "))
+			return nil
+		}
+
+		workflowList := map[string]map[string]string{}
 		for workflowID, workflow := range bitriseConfig.Workflows {
 			workflowMap := map[string]string{}
 			workflowMap["title"] = workflow.Title
@@ -155,10 +164,10 @@ func workflowList(c *cli.Context) error {
 			}
 			workflowList[workflowID] = workflowMap
 		}
-	}
 
-	if err := printWorkflList(workflowList, format, minimal); err != nil {
-		registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, output.FormatJSON)
+		if err := printWorkflList(workflowList, format, minimal); err != nil {
+			registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, output.FormatJSON)
+		}
 	}
 
 	return nil
