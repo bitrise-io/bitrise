@@ -3,14 +3,41 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
+
+var workflowListCommand = cli.Command{
+	Name:  "workflows",
+	Usage: "List of available workflows in config.",
+	Action: func(c *cli.Context) error {
+		if err := workflowList(c); err != nil {
+			log.Errorf("List of available workflows in config failed, error: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		flPath,
+		flConfig,
+		flConfigBase64,
+		cli.StringFlag{
+			Name:  OuputFormatKey,
+			Usage: "Output format. Accepted: raw, json, yml.",
+		},
+		cli.BoolFlag{
+			Name:  MinimalModeKey,
+			Usage: "Print only workflow summary.",
+		},
+	},
+}
 
 func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {
 	printRawWorkflowMap := func(name string, workflow map[string]string) {
