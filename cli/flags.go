@@ -50,9 +50,6 @@ const (
 	// FullModeKey ...
 	FullModeKey = "full"
 
-	// WorkFlowIDOnlyKey ...
-	WorkFlowIDOnlyKey = "id-only"
-
 	ouputFormatKeyShort = "f"
 	// OuputPathKey ...
 	OuputPathKey = "outpath"

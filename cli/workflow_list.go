@@ -11,7 +11,6 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
 )
 
 var workflowListCommand = cli.Command{
@@ -30,144 +29,208 @@ var workflowListCommand = cli.Command{
 		flConfigBase64,
 		cli.StringFlag{
 			Name:  "format",
-			Usage: "Output format. Accepted: raw, json, yml.",
+			Usage: "Output format. Accepted: raw, json.",
 		},
 		cli.BoolFlag{
 			Name:  "minimal",
-			Usage: "Print only workflow summary.",
+			Usage: "Print summary of workflows only.",
+		},
+		cli.BoolFlag{
+			Name:  "id-only",
+			Usage: "Print workflow ids only.",
 		},
 	},
 }
 
-func printWorkflList(workflowList map[string]map[string]string, format string, minimal bool) error {
-	printRawWorkflowMap := func(name string, workflow map[string]string) {
-		fmt.Printf("⚡️ %s\n", colorstring.Green(name))
-		fmt.Printf("  %s: %s\n", colorstring.Yellow("Title"), workflow["title"])
-		fmt.Printf("  %s: %s\n", colorstring.Yellow("Summary"), workflow["summary"])
-		if !minimal {
-			fmt.Printf("  %s: %s\n", colorstring.Yellow("Description"), workflow["description"])
-		}
-		fmt.Printf("  %s: bitrise run %s\n", colorstring.Yellow("Run with"), name)
-		fmt.Println()
+// WorkflowListOutputModel ...
+type WorkflowListOutputModel struct {
+	Data     map[string]map[string]string `json:"data,omitempty" yml:"data,omitempty"`
+	Warnings []string                     `json:"warnings,omitempty" yml:"warnings,omitempty"`
+	Error    string                       `json:"error,omitempty" yml:"error,omitempty"`
+}
+
+// NewOutput ...
+func NewOutput(data map[string]map[string]string, warnings ...string) WorkflowListOutputModel {
+	return WorkflowListOutputModel{
+		Data:     data,
+		Warnings: warnings,
+	}
+}
+
+// NewErrorOutput ...
+func NewErrorOutput(err string, warnings ...string) WorkflowListOutputModel {
+	return WorkflowListOutputModel{
+		Error:    err,
+		Warnings: warnings,
+	}
+}
+
+func printableRawWorkflow(id string, info map[string]string) string {
+	message := ""
+	message += fmt.Sprintf("⚡️ %s\n", colorstring.Green(id))
+	message += fmt.Sprintf("  %s: %s\n", colorstring.Yellow("Title"), info["title"])
+	message += fmt.Sprintf("  %s: %s\n", colorstring.Yellow("Summary"), info["summary"])
+
+	if info["description"] != "" {
+		message += fmt.Sprintf("  %s: %s\n", colorstring.Yellow("Description"), info["description"])
+	}
+	message += fmt.Sprintf("  %s: bitrise run %s\n", colorstring.Yellow("Run with"), id)
+	message += "\n"
+	return message
+}
+
+// String ...
+func (output WorkflowListOutputModel) String() string {
+	message := ""
+	for _, warning := range output.Warnings {
+		message += colorstring.Yellow(warning) + "\n"
+	}
+	if output.Error != "" {
+		message += colorstring.Red(output.Error) + "\n"
+		return message
 	}
 
-	switch format {
-	case output.FormatRaw:
-		workflowNames := []string{}
-		utilityWorkflowNames := []string{}
+	workflowIDs := []string{}
+	utilityWorkflowIDs := []string{}
 
-		for wfName := range workflowList {
-			if strings.HasPrefix(wfName, "_") {
-				utilityWorkflowNames = append(utilityWorkflowNames, wfName)
-			} else {
-				workflowNames = append(workflowNames, wfName)
-			}
-		}
-		sort.Strings(workflowNames)
-		sort.Strings(utilityWorkflowNames)
-
-		fmt.Println()
-
-		if len(workflowNames) > 0 {
-			fmt.Printf("%s\n", "Workflows")
-			fmt.Printf("%s\n", "---------")
-			for _, name := range workflowNames {
-				workflow := workflowList[name]
-				printRawWorkflowMap(name, workflow)
-			}
-			fmt.Println()
+	idOnly := false
+	minimal := true
+	for id, info := range output.Data {
+		if strings.HasPrefix(id, "_") {
+			utilityWorkflowIDs = append(utilityWorkflowIDs, id)
+		} else {
+			workflowIDs = append(workflowIDs, id)
 		}
 
-		if len(utilityWorkflowNames) > 0 {
-			fmt.Printf("%s\n", "Util Workflows")
-			fmt.Printf("%s\n", "--------------")
-			for _, name := range utilityWorkflowNames {
-				workflow := workflowList[name]
-				printRawWorkflowMap(name, workflow)
-			}
-			fmt.Println()
+		if !idOnly && (info == nil || len(info) == 0) {
+			idOnly = true
 		}
-
-		if len(workflowNames) == 0 && len(utilityWorkflowNames) == 0 {
-			fmt.Printf("Config doesn't contain any workflow")
+		if minimal && info["description"] != "" {
+			minimal = false
 		}
-
-	case output.FormatJSON:
-		bytes, err := json.Marshal(workflowList)
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(bytes))
-
-	case output.FormatYML:
-		bytes, err := yaml.Marshal(workflowList)
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(bytes))
-	default:
-		return fmt.Errorf("Invalid output format: %s", format)
 	}
-	return nil
 
+	sort.Strings(workflowIDs)
+	sort.Strings(utilityWorkflowIDs)
+
+	if idOnly {
+		return strings.Join(workflowIDs, " ")
+	}
+
+	if len(workflowIDs) > 0 {
+		message += "Workflows\n"
+		message += "---------\n"
+		for _, id := range workflowIDs {
+			workflow := output.Data[id]
+			message += printableRawWorkflow(id, workflow)
+		}
+	}
+
+	if len(utilityWorkflowIDs) > 0 {
+		message += "Util Workflows\n"
+		message += "--------------\n"
+		for _, id := range utilityWorkflowIDs {
+			workflow := output.Data[id]
+			message += printableRawWorkflow(id, workflow)
+		}
+	}
+
+	if len(workflowIDs) == 0 && len(utilityWorkflowIDs) == 0 {
+		message += colorstring.Red("Config doesn't contain any workflow")
+	}
+
+	return message
+}
+
+// JSON ...
+func (output WorkflowListOutputModel) JSON() string {
+	workflowIDs := []string{}
+	idOnly := false
+	for id, info := range output.Data {
+		if !strings.HasPrefix(id, "_") {
+			workflowIDs = append(workflowIDs, id)
+		}
+
+		if !idOnly && (info == nil || len(info) == 0) {
+			idOnly = true
+		}
+	}
+
+	var toMarshal interface{}
+	if idOnly {
+		toMarshal = workflowIDs
+	} else {
+		toMarshal = output
+	}
+
+	data, err := json.MarshalIndent(toMarshal, "", "\t")
+	if err != nil {
+		return fmt.Sprintf(`{"error":"%s"}`, err.Error())
+	}
+	return string(data) + "\n"
 }
 
 func workflowList(c *cli.Context) error {
-	warnings := []string{}
-
 	// Expand cli.Context
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
+	bitriseConfigBase64Data := c.String("config-base64")
+	bitriseConfigPath := c.String("config")
+	deprecatedBitriseConfigPath := c.String("path")
 
-	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
-
-	format := c.String(OuputFormatKey)
-
-	minimal := c.Bool(MinimalModeKey)
-	workflowIDOnly := c.Bool(WorkFlowIDOnlyKey)
+	format := c.String("format")
+	minimal := c.Bool("minimal")
+	idOnly := c.Bool("id-only")
 
 	// Input validation
 	if format == "" {
 		format = output.FormatRaw
-	} else if !(format == output.FormatRaw || format == output.FormatJSON || format == output.FormatYML) {
-		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
+	}
+	if format != output.FormatRaw && format != output.FormatJSON {
+		showSubcommandHelp(c)
+		return fmt.Errorf("invalid format: %s", format)
+	}
+
+	var logger log.Logger
+	logger = log.NewDefaultRawLogger()
+	if format == output.FormatJSON {
+		logger = log.NewDefaultJSONLoger()
+	}
+
+	if minimal && idOnly {
+		logger.Print(NewErrorOutput("Eighter define --minimal or --id-only"))
+		os.Exit(1)
+	}
+
+	warnings := []string{}
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
 	}
 
 	// Config validation
 	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	warnings = append(warnings, warns...)
 	if err != nil {
-		registerFatal(fmt.Sprintf("Failed to create bitrise config, err: %s", err), warnings, output.FormatJSON)
+		logger.Print(NewErrorOutput("Eighter define --minimal or --id-only", warnings...))
+		os.Exit(1)
 	}
 
 	if len(bitriseConfig.Workflows) > 0 {
-		if workflowIDOnly {
-			workflowIDs := []string{}
-			for workflowID := range bitriseConfig.Workflows {
-				workflowIDs = append(workflowIDs, workflowID)
-			}
-			fmt.Println(strings.Join(workflowIDs, " "))
-			return nil
-		}
-
-		workflowList := map[string]map[string]string{}
+		workflowInfoMap := map[string]map[string]string{}
 		for workflowID, workflow := range bitriseConfig.Workflows {
-			workflowMap := map[string]string{}
-			workflowMap["title"] = workflow.Title
-			workflowMap["summary"] = workflow.Summary
-			if !minimal {
-				workflowMap["description"] = workflow.Description
+			var workflowInfo map[string]string
+			if !idOnly {
+				workflowInfo = map[string]string{}
+				workflowInfo["title"] = workflow.Title
+				workflowInfo["summary"] = workflow.Summary
+				if !minimal {
+					workflowInfo["description"] = workflow.Description
+				}
 			}
-			workflowList[workflowID] = workflowMap
+
+			workflowInfoMap[workflowID] = workflowInfo
 		}
 
-		if err := printWorkflList(workflowList, format, minimal); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print workflows, err: %s", err), warnings, output.FormatJSON)
-		}
+		logger.Print(NewOutput(workflowInfoMap, warnings...))
 	}
 
 	return nil
