@@ -180,21 +180,7 @@ var (
 				flStepYML,
 			},
 		},
-		{
-			Name:   "workflows",
-			Usage:  "List of available workflows in config.",
-			Action: workflowList,
-			Flags: []cli.Flag{
-				flPath,
-				flConfig,
-				flConfigBase64,
-				flFormat,
-				cli.BoolFlag{
-					Name:  MinimalModeKey,
-					Usage: "Print only workflow summary.",
-				},
-			},
-		},
+		workflowListCommand,
 		{
 			Name:   "share",
 			Usage:  "Publish your step.",
