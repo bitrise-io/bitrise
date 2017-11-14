@@ -6,8 +6,13 @@
 
 ### Release Notes
 
-* __BREAKING__ : change 1
-* change 2
+* go dependencies update
+
+* go toolkit: version bump: go 1.9.1 -> 1.9.2
+
+* workflows command update (#542)
+
+* YML support for `bitrise workflow --format` (#541)
 
 ### Install or upgrade
 
