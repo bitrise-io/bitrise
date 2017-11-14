@@ -98,7 +98,7 @@ docker-compose build && docker-compose run --rm app go test ./...
 
 ### Release a new version
 
-1. Update go dependencies (`bitrise run godeps-update`)
+1. Update go dependencies (`bitrise run dep-update`)
 1. PR & merge these changes to the `master` branch
 1. Release a new versions of bitrise-tools (stepman, envman) if there are changes, you can find the dependent tools in `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion`
 1. Release a new versions of default plugins if there are changes, you can find the default plugins in `./bitrise/setup.go -> PluginDependencyMap`
