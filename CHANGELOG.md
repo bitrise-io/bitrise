@@ -12,8 +12,6 @@
 
 * workflows command update (#542)
 
-* YML support for `bitrise workflow --format` (#541)
-
 ### Install or upgrade
 
 To install this version, run the following commands (in a bash shell):
