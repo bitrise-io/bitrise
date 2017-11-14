@@ -17,13 +17,13 @@
   branch = "master"
   name = "github.com/bitrise-io/go-utils"
   packages = ["colorstring","command","command/git","errorutil","fileutil","log","parseutil","pathutil","pointers","progress","retry","stringutil","versions"]
-  revision = "6eb582e08179a025ed2deb86ea6dffbd13ba1ff6"
+  revision = "961320f9011cedf55e1da0578949bf63450a96c0"
 
 [[projects]]
   branch = "master"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
-  revision = "a602d207503f909271ecd91a17abd9ac919e273c"
+  revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
   name = "github.com/bitrise-io/stepman"
@@ -53,7 +53,7 @@
   branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb"
+  revision = "f15c970de5b76fac0b59abb32d62c17cc7bed265"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -71,25 +71,25 @@
   branch = "master"
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
-  revision = "890a5c3458b43e6104ff5da8dfa139d013d77544"
+  revision = "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f"
 
 [[projects]]
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "2997500ba5f393daa5d76c18544c6367b2c48d16"
+  revision = "44cb242eeb4d76cc813fdc69ba5c4b224677e799"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9419663f5a44be8b34ca85f08abc5fe1be11f8a3"
+  revision = "9f005a07e0d31d45e6656d241bb5c0f2efd4bc94"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "ebfc5b4631820b793c9010c87fd8fef0f39eb082"
+  revision = "665f6529cca930e27b831a0d1dafffbe1c172924"
 
 [[projects]]
   branch = "v2"
