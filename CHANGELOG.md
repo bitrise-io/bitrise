@@ -38,8 +38,6 @@ time you call bitrise run.
 * [787e38e] Tamas Papik - deps-update, bumped wf editor, fixed typo in readme (#547) (2017 Nov 14)
 * [e72885d] Viktor Benei - Go toolkit: version bump: go 1.9.1 -> 1.9.2 (#545) (2017 Nov 14)
 * [a9b23e3] Krisztián Gödrei - Workflows command update (#542) (2017 Oct 19)
-* [2e91bdb] Tamás Kádár - YML support for `bitrise workflow --format` (#541) (2017 Oct 12)
-
 
 ## 1.10.0 (2017 Oct 10)
 
