@@ -1,6 +1,42 @@
-## Changelog (Current version: 1.10.0)
+## Changelog (Current version: 1.10.1)
 
 -----------------
+
+## 1.10.1 (2017 Nov 14)
+
+### Release Notes
+
+* __BREAKING__ : change 1
+* change 2
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.10.1/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.10.0 -> 1.10.1
+
+* [0d83c79] trapacska - Prepare for v1.10.1 (2017 Nov 14)
+* [787e38e] Tamas Papik - deps-update, bumped wf editor, fixed typo in readme (#547) (2017 Nov 14)
+* [e72885d] Viktor Benei - Go toolkit: version bump: go 1.9.1 -> 1.9.2 (#545) (2017 Nov 14)
+* [a9b23e3] Krisztián Gödrei - Workflows command update (#542) (2017 Oct 19)
+* [2e91bdb] Tamás Kádár - YML support for `bitrise workflow --format` (#541) (2017 Oct 12)
+
 
 ## 1.10.0 (2017 Oct 10)
 
@@ -3280,4 +3316,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Oct 10
+Updated: 2017 Nov 14
