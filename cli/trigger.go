@@ -156,10 +156,6 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	// for _, workflowID := range workflowToRunID {
-	// 	runAndExit(bitriseConfig, inventoryEnvironments, workflowID)
-	// }
-
 	runAllAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 
 	return nil
