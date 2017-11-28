@@ -16,7 +16,7 @@ func Test_TriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "pr_allowed", "--config", configPth, "--inventory", secretsPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"pr_allowed","workflow":"pr_allowed"}`, out, out)
+		require.Equal(t, `{"pattern":"pr_allowed","workflows":["pr_allowed"]}`, out, out)
 	}
 
 	t.Log("Not PR mode - is_pull_request_allowed : true")
@@ -24,7 +24,7 @@ func Test_TriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "pr_allowed", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"pr_allowed","workflow":"pr_allowed"}`, out)
+		require.Equal(t, `{"pattern":"pr_allowed","workflows":["pr_allowed"]}`, out)
 	}
 
 	t.Log("Not PR mode - is_pull_request_allowed : false")
@@ -32,7 +32,7 @@ func Test_TriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "only_code_push", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"only_code_push","workflow":"only_code_push"}`, out, out)
+		require.Equal(t, `{"pattern":"only_code_push","workflows":["only_code_push"]}`, out, out)
 	}
 
 	t.Log("PR mode : from secrets - is_pull_request_allowed : false")
@@ -40,7 +40,7 @@ func Test_TriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "only_code_push", "--config", configPth, "--inventory", secretsPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"only_code_push","workflow":"fall_back"}`, out)
+		require.Equal(t, `{"pattern":"only_code_push","workflows":["fall_back"]}`, out)
 	}
 
 	t.Log("Not PR mode - is_pull_request_allowed : false")
@@ -48,7 +48,7 @@ func Test_TriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "fall_back", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"fall_back","workflow":"fall_back"}`, out)
+		require.Equal(t, `{"pattern":"fall_back","workflows":["fall_back"]}`, out)
 	}
 }
 
