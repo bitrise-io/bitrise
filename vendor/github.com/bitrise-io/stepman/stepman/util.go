@@ -137,7 +137,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return git.CloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
+				return cloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
 			})
 
 			if err != nil {
@@ -279,6 +279,29 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 	return collection, nil
 }
 
+func generateSlimStepLib(collection models.StepCollectionModel) models.StepCollectionModel {
+
+	slimCollection := models.StepCollectionModel{
+		FormatVersion:         collection.FormatVersion,
+		GeneratedAtTimeStamp:  collection.GeneratedAtTimeStamp,
+		SteplibSource:         collection.SteplibSource,
+		DownloadLocations:     collection.DownloadLocations,
+		AssetsDownloadBaseURI: collection.AssetsDownloadBaseURI,
+	}
+	steps := models.StepHash{}
+
+	for stepID, stepGroupModel := range collection.Steps {
+		steps[stepID] = models.StepGroupModel{
+			Info:     stepGroupModel.Info,
+			Versions: map[string]models.StepModel{stepGroupModel.LatestVersionNumber: stepGroupModel.Versions[stepGroupModel.LatestVersionNumber]},
+		}
+	}
+
+	slimCollection.Steps = steps
+
+	return slimCollection
+}
+
 // WriteStepSpecToFile ...
 func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route SteplibRoute) error {
 	pth := GetStepSpecPath(route)
@@ -307,6 +330,22 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 	if err != nil {
 		return err
 	}
+
+	if err := fileutil.WriteBytesToFile(pth, bytes); err != nil {
+		return err
+	}
+
+	pth = GetSlimStepSpecPath(route)
+	slimCollection := generateSlimStepLib(collection)
+	if err != nil {
+		return err
+	}
+
+	bytes, err = json.MarshalIndent(slimCollection, "", "\t")
+	if err != nil {
+		return err
+	}
+
 	return fileutil.WriteBytesToFile(pth, bytes)
 }
 
@@ -368,4 +407,25 @@ func ReGenerateLibrarySpec(route SteplibRoute) error {
 	}
 
 	return WriteStepSpecToFile(collection, route)
+}
+
+func cloneTagOrBranchAndValidateCommitHash(uri, destination, tagOrBranch, commithash string) error {
+	gitModel := git.New(destination)
+	cmd := gitModel.CloneTagOrBranch(uri, destination, tagOrBranch)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("(%s) failed, error: %s", cmd.PrintableCommandArgs(), err)
+	}
+
+	cmd = gitModel.RevParse("HEAD")
+	cmd.SetDir(destination)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		return fmt.Errorf("(%s) failed, error: %s", cmd.PrintableCommandArgs(), err)
+	}
+	if commithash != out {
+		return fmt.Errorf("commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected commit hash: %s) (got: %s)", tagOrBranch, out, commithash)
+	}
+
+	return nil
 }
