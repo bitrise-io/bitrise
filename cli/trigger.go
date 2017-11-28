@@ -23,18 +23,18 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 		if triggerItem.Pattern != "" {
 			log.Infof(" * pattern: %s", triggerItem.Pattern)
 			log.Infof("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
-			log.Infof("   workflow: %s", triggerItem.WorkflowID)
+			log.Infof(triggerItem.WorkflowsToString("   "))
 		} else {
 			if triggerItem.PushBranch != "" {
 				log.Infof(" * push_branch: %s", triggerItem.PushBranch)
-				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(triggerItem.WorkflowsToString("   "))
 			} else if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
 				log.Infof(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
 				log.Infof("   pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
-				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(triggerItem.WorkflowsToString("   "))
 			} else if triggerItem.Tag != "" {
 				log.Infof(" * tag: %s", triggerItem.Tag)
-				log.Infof("   workflow: %s", triggerItem.WorkflowID)
+				log.Infof(triggerItem.WorkflowsToString("   "))
 			}
 		}
 	}
@@ -156,8 +156,11 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
-	//
+	// for _, workflowID := range workflowToRunID {
+	// 	runAndExit(bitriseConfig, inventoryEnvironments, workflowID)
+	// }
+
+	runAllAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
 
 	return nil
 }

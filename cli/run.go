@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -97,6 +98,36 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func runAllAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowsToRun []string) {
+	if len(workflowsToRun) == 0 {
+		log.Fatal("No workflow id specified")
+	}
+
+	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+		log.Fatalf("Setup failed, error: %s", err)
+	}
+
+	buildStatusCode := 0
+
+	for i, workflowID := range workflowsToRun {
+		startTime := time.Now()
+		buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowID, bitriseConfig, inventoryEnvironments)
+		if err != nil {
+			log.Fatalf("Failed to run workflow, error: %s", err)
+		}
+		if buildRunResults.IsBuildFailed() {
+			buildStatusCode = 1
+		}
+		if i < len(workflowsToRun)-1 {
+			if err := configs.InitPaths(); err != nil {
+				log.Fatalf("Failed to initialize required paths, error: %s", err)
+			}
+		}
+	}
+
+	os.Exit(buildStatusCode)
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {

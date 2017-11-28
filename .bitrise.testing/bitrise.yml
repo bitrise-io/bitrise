@@ -1,0 +1,38 @@
+format_version: "4"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- push_branch: "test/*"
+  workflow: wf1
+- push_branch: "test"
+  workflows:
+  - fail
+  - wf1
+  - wf2
+
+workflows:
+  # ----------------------------------------------------------------
+  # --- workflows for CI and testing
+  fail:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "WORKFLOW FAIL"
+            exit 1
+
+  wf1:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "WORKFLOW 1"
+  wf2:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "WORKFLOW 2"
