@@ -93,7 +93,7 @@ func Test_JsonParams(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"json_params_test_target","workflow":"json_params_test_target"}`, out)
+		require.Equal(t, `{"pattern":"json_params_test_target","workflows":"[json_params_test_target]"}`, out)
 	}
 
 	t.Log("trigger check test - param override")

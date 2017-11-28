@@ -21,7 +21,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"deprecated_code_push","workflow":"deprecated_code_push"}`, out)
+		require.Equal(t, `{"pattern":"deprecated_code_push","workflows":["deprecated_code_push"]}`, out)
 	}
 
 	t.Log("deprecated trigger test - PR mode")

@@ -77,7 +77,7 @@ func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "--pr=true", "trigger-check", "master", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"master","workflow":"deprecated_pr"}`, out)
+		require.Equal(t, `{"pattern":"master","workflows":["deprecated_pr"]}`, out)
 	}
 
 	t.Log("global flag sets NOT pr mode")
@@ -88,7 +88,7 @@ func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
 		cmd := command.New(binPath(), "--pr=false", "trigger-check", "master", "--config", configPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"master","workflow":"deprecated_code_push"}`, out)
+		require.Equal(t, `{"pattern":"master","workflows":"[deprecated_code_push]"}`, out)
 	}
 }
 
