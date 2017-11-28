@@ -58,23 +58,26 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 	return params
 }
 
-func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
+func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) ([]string, error) {
 	for _, item := range triggerMap {
 		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if match {
-			return item.WorkflowID, nil
+			if item.HasWorkflowList() {
+				return item.WorkflowIDs, nil
+			}
+			return []string{item.WorkflowID}, nil
 		}
 	}
 
-	return "", fmt.Errorf("no matching workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
+	return nil, fmt.Errorf("no matching workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
 // and returns the triggered workflow id
-func getWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, error) {
+func getWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) ([]string, error) {
 	if params.TriggerPattern != "" {
 		params = migratePatternToParams(params, isPullRequestMode)
 	}
@@ -173,7 +176,7 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
-	triggerModel := map[string]string{"workflow": workflowToRunID}
+	triggerModel := map[string]interface{}{"workflows": workflowToRunID}
 
 	if triggerParams.TriggerPattern != "" {
 		triggerModel["pattern"] = triggerParams.TriggerPattern
