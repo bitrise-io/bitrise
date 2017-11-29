@@ -242,7 +242,6 @@ func run(c *cli.Context) error {
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
 	runAllAndExit(bitriseConfig, inventoryEnvironments, []string{runParams.WorkflowToRunID})
-	//
 
 	return nil
 }

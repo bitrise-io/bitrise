@@ -18,12 +18,12 @@ func (triggerItem TriggerMapItemModel) HasWorkflowList() bool {
 }
 
 // WorkflowsToString ...
-func (triggerItem TriggerMapItemModel) WorkflowsToString(indent string) string {
+func (triggerItem TriggerMapItemModel) WorkflowsToString() string {
 	str := ""
 	if triggerItem.HasWorkflowList() {
-		str += fmt.Sprintf("%sworkflows: [%s]", indent, strings.Join(triggerItem.WorkflowIDs, ", "))
+		str += fmt.Sprintf("workflows: [%s]", strings.Join(triggerItem.WorkflowIDs, ", "))
 	} else {
-		str += fmt.Sprintf("%sworkflow: %s", indent, triggerItem.WorkflowID)
+		str += fmt.Sprintf("workflow: %s", triggerItem.WorkflowID)
 	}
 	return str
 }
@@ -69,7 +69,7 @@ func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
 	}
 
 	if printWorkflow {
-		str += triggerItem.WorkflowsToString(" -> ")
+		str += fmt.Sprintf(" -> %s", triggerItem.WorkflowsToString())
 	}
 
 	return str
