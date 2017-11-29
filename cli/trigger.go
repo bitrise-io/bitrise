@@ -135,7 +135,7 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
+	workflowIDsToRun, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		log.Errorf("Failed to get workflow id by pattern, error: %s", err)
 		if strings.Contains(err.Error(), "no matching workflow found with trigger params:") {
@@ -145,18 +145,18 @@ func trigger(c *cli.Context) error {
 	}
 
 	if triggerParams.TriggerPattern != "" {
-		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
+		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowIDsToRun)
 	} else {
 		if triggerParams.PushBranch != "" {
-			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
+			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowIDsToRun)
 		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
-			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
+			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowIDsToRun)
 		} else if triggerParams.Tag != "" {
-			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
+			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowIDsToRun)
 		}
 	}
 
-	runAllAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	runAllAndExit(bitriseConfig, inventoryEnvironments, workflowIDsToRun)
 
 	return nil
 }

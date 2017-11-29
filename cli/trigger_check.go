@@ -171,12 +171,12 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, triggerParams.Format)
 	}
 
-	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
+	workflowIDsToRun, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
-	triggerModel := map[string]interface{}{"workflows": workflowToRunID}
+	triggerModel := map[string]interface{}{"workflows": workflowIDsToRun}
 
 	if triggerParams.TriggerPattern != "" {
 		triggerModel["pattern"] = triggerParams.TriggerPattern
