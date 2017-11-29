@@ -80,26 +80,6 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	}
 }
 
-func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string) {
-	if workflowToRunID == "" {
-		log.Fatal("No workflow id specified")
-	}
-
-	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
-		log.Fatalf("Setup failed, error: %s", err)
-	}
-
-	startTime := time.Now()
-
-	// Run selected configuration
-	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
-		log.Fatalf("Failed to run workflow, error: %s", err)
-	} else if buildRunResults.IsBuildFailed() {
-		os.Exit(1)
-	}
-	os.Exit(0)
-}
-
 func runAllAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowsToRun []string) {
 	if len(workflowsToRun) == 0 {
 		log.Fatal("No workflow id specified")
@@ -261,7 +241,7 @@ func run(c *cli.Context) error {
 
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
-	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
+	runAllAndExit(bitriseConfig, inventoryEnvironments, []string{runParams.WorkflowToRunID})
 	//
 
 	return nil
