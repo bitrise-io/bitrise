@@ -442,7 +442,8 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			return err
 		}
 	} else if stepIDData.SteplibSource == "git" {
-		if err := git.CloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version); err != nil {
+		gitModel := git.New(tempStepCloneDirPath)
+		if err := gitModel.CloneTagOrBranch(stepIDData.IDorURI, tempStepCloneDirPath, stepIDData.Version).Run(); err != nil {
 			return err
 		}
 		if err := command.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
