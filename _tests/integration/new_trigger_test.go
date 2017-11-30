@@ -21,7 +21,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"deprecated_code_push","workflow":"deprecated_code_push"}`, out)
+		require.Equal(t, `{"pattern":"deprecated_code_push","workflows":["deprecated_code_push"]}`, out)
 	}
 
 	t.Log("deprecated trigger test - PR mode")
@@ -35,7 +35,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"deprecated_pr","workflow":"deprecated_pr"}`, out)
+		require.Equal(t, `{"pattern":"deprecated_pr","workflows":["deprecated_pr"]}`, out)
 	}
 
 	t.Log("new trigger test - code push")
@@ -49,7 +49,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"push-branch":"code_push","workflow":"code_push"}`, out)
+		require.Equal(t, `{"push-branch":"code_push","workflows":["code_push"]}`, out)
 	}
 
 	t.Log("new trigger test - code push - no match")
@@ -77,7 +77,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflow":"pr_source_and_target"}`, out)
+		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflows":["pr_source_and_target"]}`, out)
 	}
 
 	t.Log("new trigger test - pull request - defined source and target pattern  - no match")
@@ -106,7 +106,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params-base64", toBase64(t, toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflow":"pr_source_and_target"}`, out)
+		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflows":["pr_source_and_target"]}`, out)
 	}
 
 	t.Log("new trigger test - pull request - defined target pattern")
@@ -121,7 +121,7 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target_only","workflow":"pr_target"}`, out)
+		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target_only","workflows":["pr_target"]}`, out)
 	}
 
 	t.Log("new trigger test - pull request - defined source pattern")
@@ -136,6 +136,6 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"pr-source-branch":"pr_source_only","pr-target-branch":"pr_target","workflow":"pr_source"}`, out)
+		require.Equal(t, `{"pr-source-branch":"pr_source_only","pr-target-branch":"pr_target","workflows":["pr_source"]}`, out)
 	}
 }
