@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "4"
+	Version = "5"
 )
 
 // StepListItemModel ...
@@ -61,11 +61,12 @@ const (
 
 // TriggerMapItemModel ...
 type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	PushBranch              string   `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	PullRequestSourceBranch string   `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch string   `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	Tag                     string   `json:"tag,omitempty" yaml:"tag,omitempty"`
+	WorkflowID              string   `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	WorkflowIDs             []string `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 
 	// deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`

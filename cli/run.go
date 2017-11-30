@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -79,8 +80,8 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	}
 }
 
-func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string) {
-	if workflowToRunID == "" {
+func runAllAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowsToRun []string) {
+	if len(workflowsToRun) == 0 {
 		log.Fatal("No workflow id specified")
 	}
 
@@ -88,15 +89,25 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		log.Fatalf("Setup failed, error: %s", err)
 	}
 
-	startTime := time.Now()
+	buildStatusCode := 0
 
-	// Run selected configuration
-	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
-		log.Fatalf("Failed to run workflow, error: %s", err)
-	} else if buildRunResults.IsBuildFailed() {
-		os.Exit(1)
+	for i, workflowID := range workflowsToRun {
+		startTime := time.Now()
+		buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowID, bitriseConfig, inventoryEnvironments)
+		if err != nil {
+			log.Fatalf("Failed to run workflow, error: %s", err)
+		}
+		if buildRunResults.IsBuildFailed() {
+			buildStatusCode = 1
+		}
+		if i < len(workflowsToRun)-1 {
+			if err := configs.InitPaths(); err != nil {
+				log.Fatalf("Failed to initialize required paths, error: %s", err)
+			}
+		}
 	}
-	os.Exit(0)
+
+	os.Exit(buildStatusCode)
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
@@ -230,8 +241,7 @@ func run(c *cli.Context) error {
 
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
-	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
-	//
+	runAllAndExit(bitriseConfig, inventoryEnvironments, []string{runParams.WorkflowToRunID})
 
 	return nil
 }

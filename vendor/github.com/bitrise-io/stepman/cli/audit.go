@@ -73,7 +73,8 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 	}
 
 	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-		return git.CloneTagOrBranch(step.Source.Git, pth, version)
+		gitModel := git.New(pth)
+		return gitModel.CloneTagOrBranch(step.Source.Git, pth, version).Run()
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to git-clone the step (url: %s) version (%s), error: %s",

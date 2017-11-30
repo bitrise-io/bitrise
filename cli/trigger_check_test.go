@@ -108,7 +108,7 @@ workflows:
 
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "master", workflowID)
+		require.Equal(t, []string{"master"}, workflowID)
 	}
 
 	t.Log("params  - pull_request_source_branch")
@@ -133,7 +133,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "test", workflowID)
+		require.Equal(t, []string{"test"}, workflowID)
 	}
 
 	t.Log("params - pull_request_target_branch")
@@ -158,7 +158,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "release", workflowID)
+		require.Equal(t, []string{"release"}, workflowID)
 	}
 
 	t.Log("params - pull_request_source_branch, pull_request_target_branch")
@@ -184,7 +184,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "test", workflowID)
+		require.Equal(t, []string{"test"}, workflowID)
 	}
 
 	t.Log("params - tag")
@@ -208,7 +208,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "deploy", workflowID)
+		require.Equal(t, []string{"deploy"}, workflowID)
 	}
 
 	t.Log("params - tag")
@@ -232,7 +232,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "deploy", workflowID)
+		require.Equal(t, []string{"deploy"}, workflowID)
 	}
 
 	t.Log("params - tag")
@@ -256,7 +256,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "deploy", workflowID)
+		require.Equal(t, []string{"deploy"}, workflowID)
 	}
 
 	t.Log("params - tag - no match")
@@ -280,7 +280,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.EqualError(t, err, "no matching workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 	}
 
 	t.Log("params - tag")
@@ -304,7 +304,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "deploy", workflowID)
+		require.Equal(t, []string{"deploy"}, workflowID)
 	}
 
 	t.Log("params - tag - no match")
@@ -328,7 +328,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.EqualError(t, err, "no matching workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 	}
 
 	t.Log("params - tag - no match")
@@ -352,7 +352,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.EqualError(t, err, "no matching workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: v1.0")
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 	}
 
 	t.Log("complex trigger map")
@@ -385,7 +385,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "test", workflowID)
+		require.Equal(t, []string{"test"}, workflowID)
 	}
 
 	t.Log("complex trigger map")
@@ -417,7 +417,7 @@ workflows:
 		}
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
 		require.NoError(t, err)
-		require.Equal(t, "deploy", workflowID)
+		require.Equal(t, []string{"deploy"}, workflowID)
 	}
 }
 
@@ -443,21 +443,21 @@ workflows:
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 
 		t.Log("it works with new params")
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 
 		t.Log("it works with new params")
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 	}
 
@@ -482,21 +482,21 @@ workflows:
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 
 		t.Log("it works with new params")
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, false)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 
 		t.Log("it works with new params")
 		{
 			workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{PushBranch: "master"}, true)
 			require.NoError(t, err)
-			require.Equal(t, "master", workflowID)
+			require.Equal(t, []string{"master"}, workflowID)
 		}
 	}
 }
@@ -529,46 +529,46 @@ workflows:
 	{
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "master", workflowID)
+		require.Equal(t, []string{"master"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/a"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "primary", workflowID)
+		require.Equal(t, []string{"primary"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "test"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "primary", workflowID)
+		require.Equal(t, []string{"primary"}, workflowID)
 	}
 
 	t.Log("Default pattern defined &  Pull request mode")
 	{
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "primary", workflowID)
+		require.Equal(t, []string{"primary"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/a"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "primary", workflowID)
+		require.Equal(t, []string{"primary"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "test"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "primary", workflowID)
+		require.Equal(t, []string{"primary"}, workflowID)
 	}
 
 	configStr = `format_version: 1.4.0
@@ -595,45 +595,45 @@ workflows:
 	{
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "master", workflowID)
+		require.Equal(t, []string{"master"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/a"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/"}, false)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature"}, false)
 		require.NotEqual(t, nil, err)
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "test"}, false)
 		require.NotEqual(t, nil, err)
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 	}
 
 	t.Log("No default pattern defined & Pull request mode")
 	{
 		workflowID, err := getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "master"}, true)
 		require.NotEqual(t, nil, err)
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/a"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature/"}, true)
 		require.NoError(t, err)
-		require.Equal(t, "feature", workflowID)
+		require.Equal(t, []string{"feature"}, workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "feature"}, true)
 		require.NotEqual(t, nil, err)
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 
 		workflowID, err = getWorkflowIDByParamsInCompatibleMode(config.TriggerMap, RunAndTriggerParamsModel{TriggerPattern: "test"}, true)
 		require.NotEqual(t, nil, err)
-		require.Equal(t, "", workflowID)
+		require.Equal(t, []string(nil), workflowID)
 	}
 }
