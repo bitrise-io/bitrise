@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "95cd2b9c79aa5e72ab0bc69b7ccc2be15bf850f6"
+  revision = "89742aefa4b206dcf400792f3bd35b542998eb3b"
 
 [[projects]]
   name = "github.com/bitrise-io/envman"
@@ -17,7 +17,7 @@
   branch = "master"
   name = "github.com/bitrise-io/go-utils"
   packages = ["colorstring","command","command/git","errorutil","fileutil","log","parseutil","pathutil","pointers","progress","retry","stringutil","versions"]
-  revision = "aa1f44e4c0f8a3a0e7f108640760fbff74eac652"
+  revision = "961320f9011cedf55e1da0578949bf63450a96c0"
 
 [[projects]]
   branch = "master"
@@ -26,10 +26,10 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
-  branch = "master"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "0bd88cfa5b4c5b54d38a388b4daaaf22f4780904"
+  revision = "f528959740f424f44e678f4f4e74eebf82fdd582"
+  version = "0.9.35"
 
 [[projects]]
   branch = "master"
@@ -77,25 +77,25 @@
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "c6af8847eb2b7b297d07c3ede98903e95e680ef9"
+  revision = "44cb242eeb4d76cc813fdc69ba5c4b224677e799"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "365904b0f3154c6e11a9cf541c9803d1dca0445a"
+  revision = "9f005a07e0d31d45e6656d241bb5c0f2efd4bc94"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "a204229cd828a74741ee7b5da9bf4794497f85ed"
+  revision = "665f6529cca930e27b831a0d1dafffbe1c172924"
 
 [[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
+  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
 
 [solve-meta]
   analyzer-name = "dep"

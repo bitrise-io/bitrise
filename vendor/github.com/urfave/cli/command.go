@@ -55,10 +55,6 @@ type Command struct {
 	HideHelp bool
 	// Boolean to hide this command from help or completion
 	Hidden bool
-	// Boolean to enable short-option handling so user can combine several
-	// single-character bool arguements into one
-	// i.e. foobar -o -v -> foobar -ov
-	UseShortOptionHandling bool
 
 	// Full name of command for help, defaults to full command name, including parent commands.
 	HelpName        string
@@ -145,22 +141,8 @@ func (c Command) Run(ctx *Context) (err error) {
 			} else {
 				flagArgs = args[firstFlagIndex:]
 			}
-			// separate combined flags
-			if c.UseShortOptionHandling {
-				var flagArgsSeparated []string
-				for _, flagArg := range flagArgs {
-					if strings.HasPrefix(flagArg, "-") && strings.HasPrefix(flagArg, "--") == false && len(flagArg) > 2 {
-						for _, flagChar := range flagArg[1:] {
-							flagArgsSeparated = append(flagArgsSeparated, "-"+string(flagChar))
-						}
-					} else {
-						flagArgsSeparated = append(flagArgsSeparated, flagArg)
-					}
-				}
-				err = set.Parse(append(flagArgsSeparated, regularArgs...))
-			} else {
-				err = set.Parse(append(flagArgs, regularArgs...))
-			}
+
+			err = set.Parse(append(flagArgs, regularArgs...))
 		} else {
 			err = set.Parse(ctx.Args().Tail())
 		}
