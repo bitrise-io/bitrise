@@ -185,11 +185,6 @@ func GetStepSpecPath(route SteplibRoute) string {
 	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "spec.json")
 }
 
-// GetSlimStepSpecPath ...
-func GetSlimStepSpecPath(route SteplibRoute) string {
-	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "slim-spec.json")
-}
-
 // GetCacheBaseDir ...
 func GetCacheBaseDir(route SteplibRoute) string {
 	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "cache")
