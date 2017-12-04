@@ -20,6 +20,9 @@ const (
 	// PRTargetBranchKey ...
 	PRTargetBranchKey = "pr-target-branch"
 
+	// IncludeWorkflowMetaKey ...
+	IncludeWorkflowMetaKey = "include-workflow-meta"
+
 	// ConfigKey ...
 	ConfigKey = "config"
 	// InventoryKey ...
@@ -94,6 +97,7 @@ var (
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
+				cli.BoolFlag{Name: IncludeWorkflowMetaKey, Usage: "Include workflow's meta."},
 
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
