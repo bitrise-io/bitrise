@@ -23,18 +23,18 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 		if triggerItem.Pattern != "" {
 			log.Infof(" * pattern: %s", triggerItem.Pattern)
 			log.Infof("   is_pull_request_allowed: %v", triggerItem.IsPullRequestAllowed)
-			log.Infof(fmt.Sprintf("   %s", triggerItem.WorkflowsToString()))
+			log.Infof("   workflow: %s", triggerItem.WorkflowID)
 		} else {
 			if triggerItem.PushBranch != "" {
 				log.Infof(" * push_branch: %s", triggerItem.PushBranch)
-				log.Infof(fmt.Sprintf("   %s", triggerItem.WorkflowsToString()))
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			} else if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
 				log.Infof(" * pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
 				log.Infof("   pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
-				log.Infof(fmt.Sprintf("   %s", triggerItem.WorkflowsToString()))
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			} else if triggerItem.Tag != "" {
 				log.Infof(" * tag: %s", triggerItem.Tag)
-				log.Infof(fmt.Sprintf("   %s", triggerItem.WorkflowsToString()))
+				log.Infof("   workflow: %s", triggerItem.WorkflowID)
 			}
 		}
 	}
@@ -135,7 +135,7 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to register  CI mode, error: %s", err)
 	}
 
-	workflowIDsToRun, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
+	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		log.Errorf("Failed to get workflow id by pattern, error: %s", err)
 		if strings.Contains(err.Error(), "no matching workflow found with trigger params:") {
@@ -145,18 +145,19 @@ func trigger(c *cli.Context) error {
 	}
 
 	if triggerParams.TriggerPattern != "" {
-		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowIDsToRun)
+		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
 	} else {
 		if triggerParams.PushBranch != "" {
-			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowIDsToRun)
+			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
 		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
-			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowIDsToRun)
+			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
 		} else if triggerParams.Tag != "" {
-			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowIDsToRun)
+			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
 		}
 	}
 
-	runAllAndExit(bitriseConfig, inventoryEnvironments, workflowIDsToRun)
+	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	//
 
 	return nil
 }

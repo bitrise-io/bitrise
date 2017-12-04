@@ -2,44 +2,80 @@ package log
 
 import (
 	"bytes"
-	"regexp"
 	"testing"
+
+	"regexp"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestSetOutWriter(t *testing.T) {
-	var b bytes.Buffer
-	SetOutWriter(&b)
-	Printf("test %s", "log")
-	require.Equal(t, "test log\n", b.String())
-}
-
-func TestSetEnableDebugLog(t *testing.T) {
-	t.Log("enable debug log")
+func TestPrintf(t *testing.T) {
+	t.Log("string")
 	{
-		SetEnableDebugLog(true)
 		var b bytes.Buffer
 		SetOutWriter(&b)
-		Debugf("test %s", "log")
-		require.Equal(t, "test log\n", b.String())
+
+		Printf("test")
+		require.Equal(t, "test\n", b.String())
 	}
 
-	t.Log("disable debug log")
+	t.Log("format")
 	{
-		SetEnableDebugLog(false)
 		var b bytes.Buffer
 		SetOutWriter(&b)
-		Debugf("test %s", "log")
-		require.Equal(t, "", b.String())
+
+		Printf("%s", "test")
+		require.Equal(t, "test\n", b.String())
+	}
+
+	t.Log("complex format")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Printf("%s %s", "log", "test")
+		require.Equal(t, "log test\n", b.String())
 	}
 }
 
-func TestSetTimestampLayout(t *testing.T) {
-	var b bytes.Buffer
-	SetOutWriter(&b)
-	SetTimestampLayout("15-04-05")
-	TPrintf("test %s", "log")
-	re := regexp.MustCompile(`\[.+-.+-.+\] test log`)
-	require.True(t, re.MatchString(b.String()), b.String())
+func TestPrintft(t *testing.T) {
+	t.Log("string")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Printft("test")
+
+		pattern := `\[.*\] test`
+		re := regexp.MustCompile(pattern)
+
+		require.Equal(t, true, re.MatchString(b.String()))
+	}
+
+	t.Log("format")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Printft("%s", "test")
+
+		pattern := `\[.*\] test`
+		re := regexp.MustCompile(pattern)
+
+		require.Equal(t, true, re.MatchString(b.String()))
+	}
+
+	t.Log("complex format")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Printft("%s %s", "log", "test")
+
+		pattern := `\[.*\] log test`
+		re := regexp.MustCompile(pattern)
+
+		require.Equal(t, true, re.MatchString(b.String()))
+	}
+
 }
