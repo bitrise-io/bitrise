@@ -35,6 +35,7 @@ type WorkflowModel struct {
 	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
 // AppModel ...
@@ -61,11 +62,12 @@ const (
 
 // TriggerMapItemModel ...
 type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	PushBranch              string                 `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	PullRequestSourceBranch string                 `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch string                 `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	Tag                     string                 `json:"tag,omitempty" yaml:"tag,omitempty"`
+	WorkflowID              string                 `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	WorkflowMeta            map[string]interface{} `json:"workflow-meta,omitempty" yaml:"workflow-meta,omitempty"`
 
 	// deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
