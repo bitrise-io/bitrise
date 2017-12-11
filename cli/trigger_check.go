@@ -181,8 +181,8 @@ func triggerCheck(c *cli.Context) error {
 	}
 
 	if includeWorkflowMeta && bitriseConfig.Workflows[workflowToRunID].Meta != nil {
-		interfaceKeysCleaned := utils.YAMLToJSONKeyTypeConversion(bitriseConfig.Workflows[workflowToRunID].Meta)
-		triggerModel["workflow-meta"] = interfaceKeysCleaned
+		workflowMeta := utils.YAMLToJSONKeyTypeConversion(bitriseConfig.Workflows[workflowToRunID].Meta)
+		triggerModel["workflow-meta"] = workflowMeta
 	}
 
 	if triggerParams.TriggerPattern != "" {
