@@ -2,6 +2,36 @@
 
 -----------------
 
+## 0.9.36 (2017 Dec 12)
+
+### Release Notes
+
+__Generate slim steplib spec__
+
+`stepman setup --collection STEPLI_URI` command will generate a tiny version of the steplib spec, this short version contains only the latest versions of the steps.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.36/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.35 -> 0.9.36
+
+* [7ae3816] godrei - prepare for 0.9.36 (2017 Dec 12)
+* [0bd88cf] Krisztian Dobmayer - Slim steplib (#239) (2017 Nov 28)
+
+
 ## 0.9.35 (2017 Oct 09)
 
 ### Release Notes
@@ -1547,4 +1577,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Oct 09
+Generated at: 2017 Dec 12
