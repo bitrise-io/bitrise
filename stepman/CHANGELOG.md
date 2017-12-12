@@ -8,7 +8,7 @@
 
 __Generate slim steplib spec__
 
-`stepman setup --collection STEPLI_URI` command will generate a tiny version of the steplib spec, this short version contains only the latest versions of the steps.
+`stepman setup --collection STEPLIB_URI` command will generate a tiny version of the steplib spec (`slim-spec.json`) as well, this short version contains only the latest versions of the steps.
 
 ### Install or upgrade
 
@@ -56,7 +56,7 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.34 -> 0.9.35
 
-* [6a9ecf9] Krisztián Gödrei - prepare for 0.9.35 (2017 Oct 09)
+* [6a9ecf9] Krisztián Gödrei - prepare for 0.9.35 (2017 Oct 09)
 * [42e27e6] Krisztián Gödrei - dep update (#238) (2017 Oct 09)
 
 
@@ -85,7 +85,7 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.33 -> 0.9.34
 
-* [a8a5cba] Krisztián Gödrei - prepare for 0.9.34 (2017 Sep 12)
+* [a8a5cba] Krisztián Gödrei - prepare for 0.9.34 (2017 Sep 12)
 * [2ff164b] Krisztián Gödrei - manage dependencies with dep, dependency updates (#237) (2017 Sep 12)
 
 
