@@ -1,6 +1,79 @@
-## Changelog (Current version: 1.10.1)
+## Changelog (Current version: 1.11.0)
 
 -----------------
+
+## 1.11.0 (2017 Dec 12)
+
+### Release Notes
+
+__workflow model new property: `meta`__
+
+From now on you can define workflow's `meta` field:
+
+```
+format_version: 5
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- push_branch: "branch1"
+  workflow: primary
+
+workflows:
+  primary:
+    meta:
+      bitriseio:
+        stack: fast-stack
+    steps:
+    ...
+```
+
+`meta` property is used to define extra options without creating a new bitrise cli release.
+
+The cli does not use `meta` field directly, but other tools can use this property to expand the workflow options.
+
+__tools update__
+
+- stepman update to version [0.9.36](https://github.com/bitrise-io/stepman/releases/tag/0.9.36)
+
+__default plugins update__
+
+- analytics plugin update to version [0.9.11](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.11)
+- init plugin update to version [1.0.0](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/1.0.0)
+- workflow-editor plugin update to version [1.1.0](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.0)
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.11.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.10.1 -> 1.11.0
+
+* [4586598] godrei - prepare for 1.11.0 (2017 Dec 12)
+* [56e5eda] Krisztián Gödrei - update analytics plugin to 0.9.11 (#563) (2017 Dec 12)
+* [457aa0b] Krisztián Gödrei - update bitrise tools versions (#562) (2017 Dec 12)
+* [03b6319] Tamas Papik - bumped format version (#561) (2017 Dec 11)
+* [84cf511] Tamas Papik - added --include-workflow-meta flag (#558) (2017 Dec 11)
+* [c593bca] Tamas Papik - Revert "added multiple workflow handling, bumped version (#554)" (#557) (2017 Dec 04)
+* [acf72fe] Tamas Papik - added multiple workflow handling, bumped version (#554) (2017 Nov 30)
+* [2f2937b] Tamas Papik - updated version info (2017 Nov 14)
+* [b8eabdd] Tamas Papik - Update CHANGELOG.md (2017 Nov 14)
+* [8988eae] Tamas Papik - Update CHANGELOG.md (2017 Nov 14)
+
 
 ## 1.10.1 (2017 Nov 14)
 
@@ -3317,4 +3390,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Nov 14
+Updated: 2017 Dec 12

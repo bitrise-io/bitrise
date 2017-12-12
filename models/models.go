@@ -62,12 +62,11 @@ const (
 
 // TriggerMapItemModel ...
 type TriggerMapItemModel struct {
-	PushBranch              string                 `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	PullRequestSourceBranch string                 `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string                 `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string                 `json:"tag,omitempty" yaml:"tag,omitempty"`
-	WorkflowID              string                 `json:"workflow,omitempty" yaml:"workflow,omitempty"`
-	WorkflowMeta            map[string]interface{} `json:"workflow-meta,omitempty" yaml:"workflow-meta,omitempty"`
+	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
