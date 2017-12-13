@@ -464,6 +464,54 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
+	
+	t.Log("code-push against code-push type item with partial pattern - MATCH")
+	{
+		pushBranch := "feature/xyz"
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "feature/*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
+	
+	t.Log("code-push against code-push type item with single '*' pattern - NO MATCH")
+	{
+		pushBranch := "feature"
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "feature*",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, false, match)
+	}
+	
+	t.Log("code-push against code-push type item with double '**' pattern - MATCH")
+	{
+		pushBranch := "feature"
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := ""
+
+		item := TriggerMapItemModel{
+			PushBranch: "feature**",
+			WorkflowID: "primary",
+		}
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, true, match)
+	}
 
 	t.Log("code-push against code-push type item - MATCH")
 	{
