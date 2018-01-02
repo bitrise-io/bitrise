@@ -23,6 +23,8 @@ Optionally, you can call `bitrise setup` to verify that everything what's requir
 is installed and available, but if you forget to do this it'll be performed the first
 time you call `bitrise run`.
 
+You can enable shell completion for the `bitrise run` command: [https://blog.bitrise.io/workflow-id-completion](https://blog.bitrise.io/workflow-id-completion)
+
 ## Tutorials and Examples
 
 You can find examples in the [_examples](https://github.com/bitrise-io/bitrise/tree/master/_examples) folder.
