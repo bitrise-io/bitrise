@@ -2,33 +2,24 @@ package cli
 
 import "github.com/urfave/cli"
 
+// Flags ...
 const (
-	// JSONParamsKey ...
-	JSONParamsKey = "json-params"
-	// JSONParamsBase64Key ...
+	JSONParamsKey       = "json-params"
 	JSONParamsBase64Key = "json-params-base64"
 
-	// WorkflowKey ...
-	WorkflowKey = "workflow"
+	WorkflowKey   = "workflow"
+	CLIVersionKey = "version"
 
-	// PatternKey ...
-	PatternKey = "pattern"
-	// PushBranchKey ...
-	PushBranchKey = "push-branch"
-	// PRSourceBranchKey ...
+	PatternKey        = "pattern"
+	PushBranchKey     = "push-branch"
 	PRSourceBranchKey = "pr-source-branch"
-	// PRTargetBranchKey ...
 	PRTargetBranchKey = "pr-target-branch"
 
-	// IncludeWorkflowMetaKey ...
 	IncludeWorkflowMetaKey = "include-workflow-meta"
 
-	// ConfigKey ...
-	ConfigKey = "config"
-	// InventoryKey ...
+	ConfigKey    = "config"
 	InventoryKey = "inventory"
 
-	// OuputFormatKey ...
 	OuputFormatKey = "format"
 )
 
@@ -56,6 +47,14 @@ var (
 				flInventory,
 				flInventoryBase64,
 				flFormat,
+			},
+		},
+		{
+			Name:   "update",
+			Usage:  "Updates the Bitrise CLI.",
+			Action: update,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: CLIVersionKey, Usage: "version to update."},
 			},
 		},
 		{

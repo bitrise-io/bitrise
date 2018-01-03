@@ -96,6 +96,9 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	} else if buildRunResults.IsBuildFailed() {
 		os.Exit(1)
 	}
+	if err := checkUpdate(); err != nil {
+		log.Warn(err)
+	}
 	os.Exit(0)
 }
 
@@ -232,6 +235,5 @@ func run(c *cli.Context) error {
 
 	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID)
 	//
-
 	return nil
 }
