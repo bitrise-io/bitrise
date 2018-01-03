@@ -74,6 +74,7 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 	return runPlugin(plugin, args, pluginInput)
 }
 
+// PrintPluginUpdateInfos ...
 func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	flog.Warnf("")
 	flog.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)

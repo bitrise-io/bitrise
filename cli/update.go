@@ -18,8 +18,49 @@ import (
 	"github.com/urfave/cli"
 )
 
-const tagsURL = "https://api.github.com/repos/bitrise-io/bitrise/tags"
-const downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/%s/bitrise-%s-x86_64"
+const (
+	tagsURL     = "https://api.github.com/repos/bitrise-io/bitrise/tags"
+	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/%s/bitrise-%s-x86_64"
+)
+
+var updateCommand = cli.Command{
+	Name:  "update",
+	Usage: "Updates the Bitrise CLI.",
+	Action: func(c *cli.Context) error {
+		log.Infof("Updating Bitrise CLI...")
+		withBrew, err := installedWithBrew()
+		if err != nil {
+			return err
+		}
+		if withBrew {
+			cmd := exec.Command("brew", "upgrade", "bitrise")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		}
+
+		version := c.String("version")
+		if version == "" {
+			latest, err := latestTag()
+			if err != nil {
+				return err
+			}
+			version = latest.String()
+		}
+
+		path, err := exec.LookPath("bitrise")
+		if err != nil {
+			return err
+		}
+		os := strings.Title(runtime.GOOS)
+		url := fmt.Sprintf(downloadURL, version, os)
+		return download(url, path)
+
+	},
+	Flags: []cli.Flag{
+		cli.StringFlag{Name: "version", Usage: "version to update."},
+	},
+}
 
 func checkUpdate() error {
 	if configs.IsCIMode {
@@ -30,7 +71,7 @@ func checkUpdate() error {
 
 		newVersion, err := newCLIVersion()
 		if err != nil {
-			return fmt.Errorf("Failed to check update for CLI, error: %s\n", err)
+			return fmt.Errorf("failed to check update for CLI, error: %s", err)
 		}
 		if newVersion != "" {
 			printCLIUpdateInfos(newVersion)
@@ -39,12 +80,11 @@ func checkUpdate() error {
 		if err := configs.SaveCLIUpdateCheck(); err != nil {
 			return err
 		}
-
 	}
 
 	installedPlugins, err := plugins.InstalledPluginList()
 	if err != nil {
-		return fmt.Errorf("Failed to list installed plugins: %s\n", err)
+		return fmt.Errorf("failed to list installed plugins: %s", err)
 	}
 	for _, plugin := range installedPlugins {
 		if configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
@@ -65,8 +105,8 @@ func checkUpdate() error {
 }
 
 func printCLIUpdateInfos(newVersion string) {
-	log.Warnf("\nNew version (%s) of CLI available", newVersion)
-	log.Printf("Run command to update CLI:\n")
+	log.Warnf("\nNew version (%s) of the Bitrise CLI available", newVersion)
+	log.Printf("Run command to update the Bitrise CLI:\n")
 	log.Donef("$ bitrise update")
 }
 
@@ -121,7 +161,7 @@ func newCLIVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	current, err := ver.NewVersion(version.VERSION)
+	current := ver.Must(ver.NewVersion(version.VERSION))
 	if latest.GreaterThan(current) {
 		return latest.String(), nil
 	}
@@ -133,7 +173,11 @@ func latestTag() (*ver.Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
 
 	var result []struct {
 		Name string `json:"name"`
@@ -151,51 +195,28 @@ func download(url, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Error while downloading url (%s), error: %v\n", url, err)
+		return fmt.Errorf("error while downloading url (%s), error: %v", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Can't download url (%s), status: %s\n", url, http.StatusText(resp.StatusCode))
+		return fmt.Errorf("can't download url (%s), status: %s", url, http.StatusText(resp.StatusCode))
 	}
 
 	_, err = io.Copy(f, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Error while writing to file (%s), error: %v\n", dst, err)
+		return fmt.Errorf("error while writing to file (%s), error: %v", dst, err)
 	}
 	return nil
-}
-
-func update(c *cli.Context) error {
-	log.Infof("Updating Bitrise CLI...")
-	withBrew, err := installedWithBrew()
-	if err != nil {
-		return err
-	}
-	if withBrew {
-		cmd := exec.Command("brew", "upgrade", "bitrise")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
-	}
-
-	version := c.String(CLIVersionKey)
-	if version == "" {
-		latest, err := latestTag()
-		if err != nil {
-			return err
-		}
-		version = latest.String()
-	}
-
-	path, err := exec.LookPath("bitrise")
-	if err != nil {
-		return err
-	}
-	os := strings.Title(runtime.GOOS)
-	url := fmt.Sprintf(downloadURL, version, os)
-	return download(url, path)
 }

@@ -97,7 +97,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		os.Exit(1)
 	}
 	if err := checkUpdate(); err != nil {
-		log.Warn(err)
+		log.Warnf("failed to check for update, error: %s", err)
 	}
 	os.Exit(0)
 }

@@ -7,8 +7,7 @@ const (
 	JSONParamsKey       = "json-params"
 	JSONParamsBase64Key = "json-params-base64"
 
-	WorkflowKey   = "workflow"
-	CLIVersionKey = "version"
+	WorkflowKey = "workflow"
 
 	PatternKey        = "pattern"
 	PushBranchKey     = "push-branch"
@@ -49,14 +48,7 @@ var (
 				flFormat,
 			},
 		},
-		{
-			Name:   "update",
-			Usage:  "Updates the Bitrise CLI.",
-			Action: update,
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: CLIVersionKey, Usage: "version to update."},
-			},
-		},
+		updateCommand,
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
