@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -28,39 +29,11 @@ var updateCommand = cli.Command{
 	Name:  "update",
 	Usage: "Updates the Bitrise CLI.",
 	Action: func(c *cli.Context) error {
-		log.Infof("Updating Bitrise CLI...")
-		version := c.String("version")
-
-		withBrew, err := installedWithBrew()
-		if err != nil {
-			return err
+		if err := update(c); err != nil {
+			log.Errorf("Update Bitrise CLI failed, error: %s", err)
+			os.Exit(1)
 		}
-		if withBrew {
-			if version != "" {
-				return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only valid for GitHub release page installations")
-			}
-			cmd := exec.Command("brew", "upgrade", "bitrise")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
-		}
-
-		if version == "" {
-			latest, err := latestTag()
-			if err != nil {
-				return err
-			}
-			version = latest.String()
-		}
-
-		path, err := exec.LookPath(os.Args[0])
-		if err != nil {
-			return err
-		}
-		os := strings.Title(runtime.GOOS)
-		url := fmt.Sprintf(downloadURL, version, os)
-		return download(url, path)
-
+		return nil
 	},
 	Flags: []cli.Flag{
 		cli.StringFlag{Name: "version", Usage: "version to update - only for GitHub release page installations."},
@@ -147,6 +120,7 @@ func newVersionFromBrew() (string, error) {
 	formulas := strings.Split(string(out), "\n")
 	for _, f := range formulas {
 		if strings.Contains(f, "bitrise") {
+			// formula (version) < newVersion
 			return strings.Split(f, " ")[3], nil
 		}
 	}
@@ -196,12 +170,12 @@ func latestTag() (*ver.Version, error) {
 }
 
 func download(url, dst string) error {
-	f, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, 0755)
+	tmpfile, err := ioutil.TempFile("", "bitrise")
 	if err != nil {
-		return err
+		return fmt.Errorf("can't create temporary file: %s", err)
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
+		if err := os.Remove(tmpfile.Name()); err != nil {
 			log.Warnf(err.Error())
 		}
 	}()
@@ -219,9 +193,53 @@ func download(url, dst string) error {
 		return fmt.Errorf("can't download url (%s), status: %s", url, http.StatusText(resp.StatusCode))
 	}
 
-	_, err = io.Copy(f, resp.Body)
+	_, err = io.Copy(tmpfile, resp.Body)
 	if err != nil {
-		return fmt.Errorf("error while writing to file (%s), error: %v", dst, err)
+		return fmt.Errorf("error while writing to temp file, error: %v", err)
 	}
-	return nil
+
+	if err := os.Remove(dst); err != nil {
+		return fmt.Errorf("can't remove file (%s), error: %s", dst, err)
+	}
+
+	if err := os.Rename(tmpfile.Name(), dst); err != nil {
+		return fmt.Errorf("can't rename file (%s to %s), error: %s", tmpfile.Name(), dst, err)
+	}
+
+	return os.Chmod(dst, 0755)
+}
+
+func update(c *cli.Context) error {
+	log.Infof("Updating Bitrise CLI...")
+	version := c.String("version")
+
+	withBrew, err := installedWithBrew()
+	if err != nil {
+		return err
+	}
+	if withBrew {
+		if version != "" {
+			return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only supported for GitHub release page installations")
+		}
+		cmd := exec.Command("brew", "upgrade", "bitrise")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
+	if version == "" {
+		latest, err := latestTag()
+		if err != nil {
+			return err
+		}
+		version = latest.String()
+	}
+
+	path, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return err
+	}
+	os := strings.Title(runtime.GOOS)
+	url := fmt.Sprintf(downloadURL, version, os)
+	return download(url, path)
 }
