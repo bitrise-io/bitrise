@@ -82,7 +82,7 @@ workflows:
             export PR=""
             export PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$CURRENT_BITRISE"
-            go test -v ./_tests/integration/...
+            go test -v ./_tests/integration/{update_test,helper}.go
 
   test:
     title: Bitrise test

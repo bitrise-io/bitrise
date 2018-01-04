@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,18 +29,22 @@ var updateCommand = cli.Command{
 	Usage: "Updates the Bitrise CLI.",
 	Action: func(c *cli.Context) error {
 		log.Infof("Updating Bitrise CLI...")
+		version := c.String("version")
+
 		withBrew, err := installedWithBrew()
 		if err != nil {
 			return err
 		}
 		if withBrew {
+			if version != "" {
+				return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only valid for GitHub release page installations")
+			}
 			cmd := exec.Command("brew", "upgrade", "bitrise")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
 		}
 
-		version := c.String("version")
 		if version == "" {
 			latest, err := latestTag()
 			if err != nil {
@@ -48,7 +53,7 @@ var updateCommand = cli.Command{
 			version = latest.String()
 		}
 
-		path, err := exec.LookPath("bitrise")
+		path, err := exec.LookPath(os.Args[0])
 		if err != nil {
 			return err
 		}
@@ -58,7 +63,7 @@ var updateCommand = cli.Command{
 
 	},
 	Flags: []cli.Flag{
-		cli.StringFlag{Name: "version", Usage: "version to update."},
+		cli.StringFlag{Name: "version", Usage: "version to update - only for GitHub release page installations."},
 	},
 }
 
