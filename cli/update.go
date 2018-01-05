@@ -174,11 +174,6 @@ func download(url, dst string) error {
 	if err != nil {
 		return fmt.Errorf("can't create temporary file: %s", err)
 	}
-	defer func() {
-		if err := os.Remove(tmpfile.Name()); err != nil {
-			log.Warnf(err.Error())
-		}
-	}()
 
 	resp, err := http.Get(url)
 	if err != nil {
