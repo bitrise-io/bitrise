@@ -197,11 +197,7 @@ func download(url, dst string) error {
 		return fmt.Errorf("can't remove file (%s), error: %s", dst, err)
 	}
 
-	if err := os.Rename(tmpfile.Name(), dst); err != nil {
-		return fmt.Errorf("can't rename file (%s to %s), error: %s", tmpfile.Name(), dst, err)
-	}
-
-	return os.Chmod(dst, 0755)
+	return CopyFile(tmpfile.Name(), dst, true)
 }
 
 func update(c *cli.Context) error {
@@ -237,4 +233,37 @@ func update(c *cli.Context) error {
 	os := strings.Title(runtime.GOOS)
 	url := fmt.Sprintf(downloadURL, version, os)
 	return download(url, path)
+}
+
+// CopyFile ...
+func CopyFile(src, dst string, remove bool) error {
+	from, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := from.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
+
+	to, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := to.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
+
+	_, err = io.Copy(to, from)
+	if err != nil {
+		return err
+	}
+
+	if remove {
+		return os.Remove(src)
+	}
+	return nil
 }
