@@ -1,28 +1,11 @@
 package integration
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
-
-func Test_IncludeWorkflowMeta(t *testing.T) {
-	configPth := "trigger_check_test_include_workflow_meta.yml"
-
-	for flags, result := range map[string]string{
-		"--push-branch|branch1":                         `{"push-branch":"branch1","workflow":"workflow1"}`,
-		"--push-branch|branch2":                         `{"push-branch":"branch2","workflow":"workflow2"}`,
-		"--push-branch|branch1|--include-workflow-meta": `{"push-branch":"branch1","workflow":"workflow1"}`,
-		"--push-branch|branch2|--include-workflow-meta": `{"push-branch":"branch2","workflow":"workflow2","workflow-meta":{"bitriseio":{"other_key":"test value","plusdepth":{"testkey":"testvalue"},"stack":"fast-stack"}}}`,
-	} {
-		mergedFlags := append([]string{"trigger-check", "--config", configPth, "--format", "json"}, strings.Split(flags, "|")...)
-		out, err := command.New(binPath(), mergedFlags...).RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
-		require.Equal(t, result, out, out)
-	}
-}
 
 func Test_TriggerCheck(t *testing.T) {
 	configPth := "trigger_check_test_bitrise.yml"
