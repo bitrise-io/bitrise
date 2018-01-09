@@ -30,14 +30,14 @@ func AskForStringFromReaderWithDefault(messageToPrint, defaultValue string, inpu
 		scannedText = strings.TrimRight(scannedText, " ")
 	}
 	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("Failed to get input - scanner failed wit error: %s.", err)
+		return "", fmt.Errorf("failed to get input - scanner failed wit error: %s", err)
 	}
 
 	if scannedText == "" {
 		if defaultValue != "" {
 			return defaultValue, nil
 		}
-		return "", errors.New("Failed to get input - scanner failed.")
+		return "", errors.New("failed to get input - scanner failed")
 	}
 
 	return scannedText, nil
@@ -131,7 +131,7 @@ func AskForInt(messageToPrint string) (int64, error) {
 // ParseBool ...
 func ParseBool(userInputStr string) (bool, error) {
 	if userInputStr == "" {
-		return false, errors.New("No string to parse")
+		return false, errors.New("no string to parse")
 	}
 	userInputStr = strings.TrimSpace(userInputStr)
 
@@ -162,7 +162,7 @@ func AskForBoolFromReaderWithDefaultValue(messageToPrint string, defaultValue bo
 		scannedText = scanner.Text()
 	}
 	if err := scanner.Err(); err != nil {
-		return false, fmt.Errorf("Failed to get input - scanner failed wit error: %s.", err)
+		return false, fmt.Errorf("failed to get input - scanner failed wit error: %s", err)
 	}
 
 	if scannedText == "" {
@@ -208,15 +208,11 @@ func SelectFromStringsFromReaderWithDefault(messageToPrint string, defaultValue 
 		return "", err
 	}
 
-	fmt.Println()
-	fmt.Printf("selectedOptionNum: %d", selectedOptionNum)
-	fmt.Println()
-
 	if selectedOptionNum < 1 {
-		return "", fmt.Errorf("Invalid option: You entered a number less than 1")
+		return "", fmt.Errorf("invalid option: You entered a number less than 1")
 	}
 	if selectedOptionNum > int64(len(options)) {
-		return "", fmt.Errorf("Invalid option: You entered a number greater than the last option's number")
+		return "", fmt.Errorf("invalid option: You entered a number greater than the last option's number")
 	}
 	return options[selectedOptionNum-1], nil
 }
@@ -235,10 +231,10 @@ func SelectFromStringsFromReader(messageToPrint string, options []string, inputR
 	}
 
 	if selectedOptionNum < 1 {
-		return "", fmt.Errorf("Invalid option: You entered a number less than 1")
+		return "", fmt.Errorf("invalid option: You entered a number less than 1")
 	}
 	if selectedOptionNum > int64(len(options)) {
-		return "", fmt.Errorf("Invalid option: You entered a number greater than the last option's number")
+		return "", fmt.Errorf("invalid option: You entered a number greater than the last option's number")
 	}
 	return options[selectedOptionNum-1], nil
 }

@@ -24,6 +24,7 @@ package unix
 #include <netinet/tcp.h>
 #include <netpacket/packet.h>
 #include <poll.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/epoll.h>
@@ -512,6 +513,7 @@ type EpollEvent C.struct_my_epoll_event
 
 const (
 	AT_FDCWD            = C.AT_FDCWD
+	AT_NO_AUTOMOUNT     = C.AT_NO_AUTOMOUNT
 	AT_REMOVEDIR        = C.AT_REMOVEDIR
 	AT_SYMLINK_FOLLOW   = C.AT_SYMLINK_FOLLOW
 	AT_SYMLINK_NOFOLLOW = C.AT_SYMLINK_NOFOLLOW
@@ -592,4 +594,13 @@ const (
 	CTRL_ATTR_MCAST_GRP_UNSPEC = C.CTRL_ATTR_MCAST_GRP_UNSPEC
 	CTRL_ATTR_MCAST_GRP_NAME   = C.CTRL_ATTR_MCAST_GRP_NAME
 	CTRL_ATTR_MCAST_GRP_ID     = C.CTRL_ATTR_MCAST_GRP_ID
+)
+
+// CPU affinity
+
+type cpuMask C.__cpu_mask
+
+const (
+	_CPU_SETSIZE = C.__CPU_SETSIZE
+	_NCPUBITS    = C.__NCPUBITS
 )

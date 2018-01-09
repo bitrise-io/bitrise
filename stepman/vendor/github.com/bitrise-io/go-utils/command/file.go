@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -10,7 +11,14 @@ import (
 // CopyFile ...
 func CopyFile(src, dst string) error {
 	// replace with a pure Go implementation?
-	//  Golang proposal was: https://go-review.googlesource.com/#/c/1591/5/src/io/ioutil/ioutil.go
+	// Golang proposal was: https://go-review.googlesource.com/#/c/1591/5/src/io/ioutil/ioutil.go
+	isDir, err := pathutil.IsDirExists(src)
+	if err != nil {
+		return err
+	}
+	if isDir {
+		return errors.New("Source is a directory: " + src)
+	}
 	args := []string{src, dst}
 	return RunCommand("rsync", args...)
 }

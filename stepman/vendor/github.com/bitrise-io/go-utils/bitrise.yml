@@ -40,8 +40,7 @@ workflows:
         inputs:
         - content: |-
             set -ex
-
-            go_list="$(go list ./...)"
+            go_list="$(go list ./... | grep -v "github.com/bitrise-io/go-utils/pkcs12*")"
             envman add --key GOLIST --value "$go_list"
     - script:
         title: Err check

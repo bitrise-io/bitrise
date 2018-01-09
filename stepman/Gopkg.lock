@@ -2,28 +2,41 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "89742aefa4b206dcf400792f3bd35b542998eb3b"
-
-[[projects]]
-  name = "github.com/bitrise-io/envman"
-  packages = ["models"]
-  revision = "455072a756cf80ab469ecfbcfd8c1dd614585cfc"
-  version = "1.1.8"
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
 
 [[projects]]
   branch = "master"
+  name = "github.com/bitrise-io/envman"
+  packages = ["models"]
+  revision = "b69e03186e898f9468e88ed19949301bfb94f4c6"
+
+[[projects]]
   name = "github.com/bitrise-io/go-utils"
-  packages = ["colorstring","command","command/git","errorutil","fileutil","log","parseutil","pathutil","pointers","retry","stringutil","urlutil","versions"]
-  revision = "6eb582e08179a025ed2deb86ea6dffbd13ba1ff6"
+  packages = [
+    "colorstring",
+    "command",
+    "command/git",
+    "errorutil",
+    "fileutil",
+    "log",
+    "parseutil",
+    "pathutil",
+    "pointers",
+    "retry",
+    "stringutil",
+    "urlutil",
+    "versions"
+  ]
+  revision = "3cd2fc1c516caded20f67b53428cb793a82ad454"
 
 [[projects]]
   branch = "master"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
-  revision = "a602d207503f909271ecd91a17abd9ac919e273c"
+  revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -40,36 +53,42 @@
 [[projects]]
   branch = "master"
   name = "github.com/stretchr/testify"
-  packages = ["assert","require"]
-  revision = "890a5c3458b43e6104ff5da8dfa139d013d77544"
+  packages = [
+    "assert",
+    "require"
+  ]
+  revision = "87b1dfb5b2fa649f52695dd9eae19abe404a4308"
 
 [[projects]]
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "2997500ba5f393daa5d76c18544c6367b2c48d16"
+  revision = "75104e932ac2ddb944a6ea19d9f9f26316ff1145"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9419663f5a44be8b34ca85f08abc5fe1be11f8a3"
+  revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "ebfc5b4631820b793c9010c87fd8fef0f39eb082"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "d38bf781f16e180a1b2ad82697d2f81d7b7ecfac"
 
 [[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "1244d3ce02e3e1c16820ada0bae506b6c479f106"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9968492a7eadced6f62e309791034cabaeed5d5fa63e13f6a7f5b967f532c7cb"
+  inputs-digest = "0790e61ba05d4fbaade3bed1665362eb42d18d0c97f21b1ef40a0a2bcd756904"
   solver-name = "gps-cdcl"
   solver-version = 1

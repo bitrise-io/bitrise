@@ -395,7 +395,7 @@ func TestSelectFromStringsFromReader(t *testing.T) {
 	t.Log("TestSelectFromStringsFromReader - INVALID input")
 	{
 		_, err := SelectFromStringsFromReader("Select something", availableOptions, strings.NewReader("-1"))
-		require.EqualError(t, err, "Invalid option: You entered a number less than 1")
+		require.EqualError(t, err, "invalid option: You entered a number less than 1")
 	}
 
 	t.Log("TestSelectFromStringsFromReader - input")
@@ -422,6 +422,6 @@ func TestSelectFromStringsFromReader(t *testing.T) {
 	t.Log("TestSelectFromStringsFromReader - INVALID input")
 	{
 		_, err := SelectFromStringsFromReader("Select something", availableOptions, strings.NewReader("4"))
-		require.EqualError(t, err, "Invalid option: You entered a number greater than the last option's number")
+		require.EqualError(t, err, "invalid option: You entered a number greater than the last option's number")
 	}
 }
