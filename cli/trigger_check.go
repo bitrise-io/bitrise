@@ -8,7 +8,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
-	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
@@ -97,8 +96,6 @@ func triggerCheck(c *cli.Context) error {
 		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
 	}
 
-	includeWorkflowMeta := c.Bool(IncludeWorkflowMetaKey)
-
 	triggerPattern := c.String(PatternKey)
 	if triggerPattern == "" && len(c.Args()) > 0 {
 		triggerPattern = c.Args()[0]
@@ -176,13 +173,8 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
-	triggerModel := map[string]interface{}{
+	triggerModel := map[string]string{
 		"workflow": workflowToRunID,
-	}
-
-	if includeWorkflowMeta && bitriseConfig.Workflows[workflowToRunID].Meta != nil {
-		workflowMeta := utils.YAMLToJSONKeyTypeConversion(bitriseConfig.Workflows[workflowToRunID].Meta)
-		triggerModel["workflow-meta"] = workflowMeta
 	}
 
 	if triggerParams.TriggerPattern != "" {

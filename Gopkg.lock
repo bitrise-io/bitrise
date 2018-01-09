@@ -2,22 +2,35 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "89742aefa4b206dcf400792f3bd35b542998eb3b"
-
-[[projects]]
-  name = "github.com/bitrise-io/envman"
-  packages = ["models"]
-  revision = "455072a756cf80ab469ecfbcfd8c1dd614585cfc"
-  version = "1.1.8"
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
 
 [[projects]]
   branch = "master"
+  name = "github.com/bitrise-io/envman"
+  packages = ["models"]
+  revision = "b69e03186e898f9468e88ed19949301bfb94f4c6"
+
+[[projects]]
   name = "github.com/bitrise-io/go-utils"
-  packages = ["colorstring","command","command/git","errorutil","fileutil","log","parseutil","pathutil","pointers","progress","retry","stringutil","versions"]
-  revision = "961320f9011cedf55e1da0578949bf63450a96c0"
+  packages = [
+    "colorstring",
+    "command",
+    "command/git",
+    "errorutil",
+    "fileutil",
+    "log",
+    "parseutil",
+    "pathutil",
+    "pointers",
+    "progress",
+    "retry",
+    "stringutil",
+    "versions"
+  ]
+  revision = "3cd2fc1c516caded20f67b53428cb793a82ad454"
 
 [[projects]]
   branch = "master"
@@ -26,10 +39,10 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "f528959740f424f44e678f4f4e74eebf82fdd582"
-  version = "0.9.35"
+  revision = "050d3e66c6c48c29252f0683bea3c13553f96e06"
 
 [[projects]]
   branch = "master"
@@ -47,13 +60,13 @@
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
-  revision = "fc61389e27c71d120f87031ca8c88a3428f372dd"
+  revision = "4fe82ae3040f80a03d04d2cccb5606a626b8e1ee"
 
 [[projects]]
   branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "f15c970de5b76fac0b59abb32d62c17cc7bed265"
+  revision = "e881fd58d78e04cf6d0de1217f8707c8cc2249bc"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -70,36 +83,42 @@
 [[projects]]
   branch = "master"
   name = "github.com/stretchr/testify"
-  packages = ["assert","require"]
-  revision = "2aa2c176b9dab406a6970f6a55f513e8a8c8b18f"
+  packages = [
+    "assert",
+    "require"
+  ]
+  revision = "87b1dfb5b2fa649f52695dd9eae19abe404a4308"
 
 [[projects]]
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "44cb242eeb4d76cc813fdc69ba5c4b224677e799"
+  revision = "75104e932ac2ddb944a6ea19d9f9f26316ff1145"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9f005a07e0d31d45e6656d241bb5c0f2efd4bc94"
+  revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "665f6529cca930e27b831a0d1dafffbe1c172924"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "d38bf781f16e180a1b2ad82697d2f81d7b7ecfac"
 
 [[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "1244d3ce02e3e1c16820ada0bae506b6c479f106"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dcd8300d855fd26e64eca12837ea418c9fcdbe7d005427327b22181e2238f574"
+  inputs-digest = "f8b9a7a61b8169a326339a495ee8e9bfb16a5230f8567d6050767da5e8ecec11"
   solver-name = "gps-cdcl"
   solver-version = 1
