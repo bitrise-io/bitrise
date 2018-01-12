@@ -2,7 +2,6 @@ package stringutil
 
 import (
 	"bufio"
-	"fmt"
 	"strings"
 )
 
@@ -54,39 +53,22 @@ func MaxFirstCharsWithDots(inStr string, maxCharCount int) string {
 }
 
 func genericTrim(inStr string, maxCharCount int, trimmAtStart, appendDots bool) string {
-	retStr := inStr
-	strLen := len(inStr)
+	sLen := len(inStr)
+	bStr := []rune(inStr)
+	trimIndex := 0
 
-	if maxCharCount >= strLen {
-		return retStr
+	if maxCharCount >= sLen {
+		return inStr
 	}
 
-	if appendDots {
-		if maxCharCount < 4 {
-			fmt.Println("Append dots mode, but string length < 4")
-			return ""
-		}
-	}
 	if trimmAtStart {
-		if appendDots {
-			retStr = inStr[strLen-(maxCharCount-3):]
-		} else {
-			retStr = inStr[strLen-maxCharCount:]
-		}
+		bStr = append([]rune(nil), bStr[(sLen-maxCharCount):]...)
 	} else {
-		if appendDots {
-			retStr = inStr[:maxCharCount-3]
-		} else {
-			retStr = inStr[:maxCharCount]
-		}
+		bStr = append([]rune(nil), bStr[:maxCharCount]...)
+		trimIndex = maxCharCount - 1
 	}
-
 	if appendDots {
-		if trimmAtStart {
-			retStr = "..." + retStr
-		} else {
-			retStr = retStr + "..."
-		}
+		bStr[trimIndex] = '…'
 	}
-	return retStr
+	return string(bStr)
 }

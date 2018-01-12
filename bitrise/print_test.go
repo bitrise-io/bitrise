@@ -77,7 +77,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := "This is a very long string, this is a very long string, thi..."
+		expected := "(0) This is a very long str… (…, this is a very long string.)"
 		require.Equal(t, expected, actual)
 	}
 
@@ -100,7 +100,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := ""
+		expected := "(0)                          (…, this is a very long string.)"
 		require.Equal(t, expected, actual)
 	}
 }
@@ -114,7 +114,7 @@ func TestGetRunningStepHeaderMainSection(t *testing.T) {
 	}
 
 	actual := getRunningStepHeaderMainSection(stepInfo, 0)
-	expected := "| (0) This is a very long string, this is a very long string, this is a ver... |"
+	expected := "| (0) This is a very long string, this is a very long string, this is a very … |"
 	require.Equal(t, expected, actual)
 }
 
@@ -151,7 +151,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very l... (exit code: 1)\x1b[0m| 0.01 sec |"
+		expected := "| \x1b[31;1mx\x1b[0m | \x1b[31;1m(0) This is a very long str… (…, this is a very long string.)\x1b[0m | 0.01 sec |"
 		require.Equal(t, expected, actual)
 	}
 
@@ -173,7 +173,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 0.00 sec |"
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(0)                          (…, this is a very long string.)\x1b[0m | 0.00 sec |"
 		require.Equal(t, expected, actual)
 	}
 
@@ -195,7 +195,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 28 hour  |"
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(0)                          (…, this is a very long string.)\x1b[0m | 28 hour |"
 		require.Equal(t, expected, actual)
 	}
 
@@ -217,7 +217,7 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|"
+		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(0)                          (…, this is a very long string.)\x1b[0m | 999+ hour |"
 		require.Equal(t, expected, actual)
 	}
 }
@@ -251,7 +251,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			ExitCode: 1,
 		}
 
-		actual := getRunningStepFooterSubSection(result)
+		actual := getRunningStepFooterSubSection(result, true)
 		expected := "| Update available: 1.0.0 -> 1.1.0                                             |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
 			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
@@ -284,7 +284,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			ExitCode: 1,
 		}
 
-		actual := getRunningStepFooterSubSection(result)
+		actual := getRunningStepFooterSubSection(result, true)
 		expected := "| Issue tracker: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |" + "\n" +
 			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
