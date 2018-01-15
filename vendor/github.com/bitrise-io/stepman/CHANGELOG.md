@@ -2,6 +2,36 @@
 
 -----------------
 
+## 0.9.36 (2017 Dec 12)
+
+### Release Notes
+
+__Generate slim steplib spec__
+
+`stepman setup --collection STEPLIB_URI` command will generate a tiny version of the steplib spec (`slim-spec.json`) as well, this short version contains only the latest versions of the steps.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.36/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.35 -> 0.9.36
+
+* [7ae3816] godrei - prepare for 0.9.36 (2017 Dec 12)
+* [0bd88cf] Krisztian Dobmayer - Slim steplib (#239) (2017 Nov 28)
+
+
 ## 0.9.35 (2017 Oct 09)
 
 ### Release Notes
@@ -26,7 +56,7 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.34 -> 0.9.35
 
-* [6a9ecf9] Krisztián Gödrei - prepare for 0.9.35 (2017 Oct 09)
+* [6a9ecf9] Krisztián Gödrei - prepare for 0.9.35 (2017 Oct 09)
 * [42e27e6] Krisztián Gödrei - dep update (#238) (2017 Oct 09)
 
 
@@ -55,7 +85,7 @@ That's all, you're ready to call `stepman`!
 
 ### Release Commits - 0.9.33 -> 0.9.34
 
-* [a8a5cba] Krisztián Gödrei - prepare for 0.9.34 (2017 Sep 12)
+* [a8a5cba] Krisztián Gödrei - prepare for 0.9.34 (2017 Sep 12)
 * [2ff164b] Krisztián Gödrei - manage dependencies with dep, dependency updates (#237) (2017 Sep 12)
 
 
@@ -1547,4 +1577,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2017 Oct 09
+Generated at: 2017 Dec 12

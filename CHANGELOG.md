@@ -1,6 +1,56 @@
-## Changelog (Current version: 1.11.0)
+## Changelog (Current version: 1.12.0)
 
 -----------------
+
+## 1.12.0 (2018 Jan 09)
+
+### Release Notes
+
+__removed `include-workflow-meta` flag from `trigger-check` command__
+
+The workflow's meta tag is designed to define extra options for the workflows by other tools, but the cli does not handle this property.
+
+__tools update__
+
+- envman update to version [1.1.9](https://github.com/bitrise-io/envman/releases/tag/1.1.9)
+- stepman update to version [0.9.37](https://github.com/bitrise-io/stepman/releases/tag/0.9.37)
+
+__default plugins update__
+
+- init plugin update to version [1.0.1](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/1.0.1)
+- workflow-editor plugin update to version [1.1.3](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.3)
+
+__go dependencies update__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.12.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.11.0 -> 1.12.0
+
+* [fbe0ff6] godrei - prepare for 1.12.0 (2018 Jan 09)
+* [fedff33] Krisztián Gödrei - update bitrise tools and plugins (#570) (2018 Jan 09)
+* [20664cb] Krisztián Gödrei - revert include-workflow-metadata & godeps update (#569) (2018 Jan 09)
+* [ee7cf78] Krisztian Dobmayer - Add description about shell completion (#567) (2018 Jan 02)
+* [a6abe29] Krisztian Dobmayer - Add fastlane project type (#565) (2017 Dec 19)
+* [1760eb4] Viktor Benei - Added more unit tests for trigger-check/match with Glob patterns (#564) (2017 Dec 15)
+
 
 ## 1.11.0 (2017 Dec 12)
 
@@ -3390,4 +3440,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2017 Dec 12
+Updated: 2018 Jan 09
