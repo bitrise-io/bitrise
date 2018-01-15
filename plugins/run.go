@@ -74,7 +74,8 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 	return runPlugin(plugin, args, pluginInput)
 }
 
-func printPluginUpdateInfos(newVersion string, plugin Plugin) {
+// PrintPluginUpdateInfos ...
+func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	flog.Warnf("")
 	flog.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
 	flog.Printf("Run command to update plugin:")
@@ -83,7 +84,7 @@ func printPluginUpdateInfos(newVersion string, plugin Plugin) {
 }
 
 func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
-	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired() {
+	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
 		// Check for new version
 		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
 
@@ -91,42 +92,14 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 			log.Warnf("")
 			log.Warnf("Failed to check for plugin (%s) new version, error: %s", plugin.Name, err)
 		} else if newVersion != "" {
-			printPluginUpdateInfos(newVersion, plugin)
-
-			route, found, err := ReadPluginRoute(plugin.Name)
-			if err != nil {
-				return err
-			}
-			if !found {
-				return fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
-			}
-
-			route.LatestAvailableVersion = newVersion
-
-			if err := AddPluginRoute(route); err != nil {
-				return fmt.Errorf("failed to register available plugin (%s) update (%s), error: %s", plugin.Name, newVersion, err)
-			}
-		} else {
+			PrintPluginUpdateInfos(newVersion, plugin)
 		}
 
-		if err := configs.SavePluginUpdateCheck(); err != nil {
+		if err := configs.SavePluginUpdateCheck(plugin.Name); err != nil {
 			return err
 		}
 
 		fmt.Println()
-	} else {
-		route, found, err := ReadPluginRoute(plugin.Name)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("no route found for already loaded plugin (%s)", plugin.Name)
-		}
-
-		if route.LatestAvailableVersion != "" {
-			printPluginUpdateInfos(route.LatestAvailableVersion, plugin)
-			fmt.Println()
-		}
 	}
 
 	// Append common data to plugin iputs

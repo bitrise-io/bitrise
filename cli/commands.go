@@ -2,30 +2,21 @@ package cli
 
 import "github.com/urfave/cli"
 
+// Flags ...
 const (
-	// JSONParamsKey ...
-	JSONParamsKey = "json-params"
-	// JSONParamsBase64Key ...
+	JSONParamsKey       = "json-params"
 	JSONParamsBase64Key = "json-params-base64"
 
-	// WorkflowKey ...
 	WorkflowKey = "workflow"
 
-	// PatternKey ...
-	PatternKey = "pattern"
-	// PushBranchKey ...
-	PushBranchKey = "push-branch"
-	// PRSourceBranchKey ...
+	PatternKey        = "pattern"
+	PushBranchKey     = "push-branch"
 	PRSourceBranchKey = "pr-source-branch"
-	// PRTargetBranchKey ...
 	PRTargetBranchKey = "pr-target-branch"
 
-	// ConfigKey ...
-	ConfigKey = "config"
-	// InventoryKey ...
+	IncludeWorkflowMetaKey = "include-workflow-meta"
+	ConfigKey    = "config"
 	InventoryKey = "inventory"
-
-	// OuputFormatKey ...
 	OuputFormatKey = "format"
 )
 
@@ -55,6 +46,7 @@ var (
 				flFormat,
 			},
 		},
+		updateCommand,
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
