@@ -98,6 +98,7 @@ Available `project_type_tags`:
 - cordova
 - ionic
 - fastlane
+- web
 
 _If step is available for all project types, do not specify project_type_tags, otherwise specify every project types, with which the step can work._
 
