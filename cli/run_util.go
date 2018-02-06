@@ -384,6 +384,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to init envman for the Step, error: %s", err)
 	}
 
+	environments = append(environments, envmanModels.EnvironmentItemModel{"BITRISE_STEP_SOURCE_DIR": stepDir})
 	if err := bitrise.ExportEnvironmentsList(environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
 	}
