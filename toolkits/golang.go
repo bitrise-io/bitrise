@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	minGoVersionForToolkit = "1.9.2"
+	minGoVersionForToolkit = "1.9.3"
 )
 
 // === Base Toolkit struct ===
