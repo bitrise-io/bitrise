@@ -80,7 +80,7 @@ To do a full dependency update use [bitrise-tools/gows](https://github.com/bitri
 for a clean workspace:
 
 ```
-gows clear && gows bitrise run godeps-update
+gows clear && gows bitrise run dep-update
 ```
 
 to test that all dependency is included:

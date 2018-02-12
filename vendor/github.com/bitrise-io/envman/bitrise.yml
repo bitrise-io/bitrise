@@ -9,7 +9,7 @@ trigger_map:
 
 app:
   envs:
-  - RELEASE_VERSION: 1.1.8
+  - RELEASE_VERSION: 1.1.9
   - BIN_NAME: envman
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
 
