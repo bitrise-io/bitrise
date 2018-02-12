@@ -191,7 +191,7 @@ envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --e
 
 ### Release a new version
 
-1. Update go dependencies (`bitrise run godeps-update`)
+1. Update go dependencies (`bitrise run dep-update`)
 1. PR & merge these changes to the `master` branch
 1. Bump `RELEASE_VERSION` in bitrise.yml
 1. Commit (do not Push) these changes on `master` branch
