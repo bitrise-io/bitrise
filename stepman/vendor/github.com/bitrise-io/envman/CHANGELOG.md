@@ -2,6 +2,63 @@
 
 -----------------
 
+## 1.1.10 (2018 Feb 12)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/envman/releases/download/1.1.10/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/envman
+```
+
+That's all, you're ready to call `envman`!
+
+### Release Commits - 1.1.9 -> 1.1.10
+
+* [f066882] trapacska - Prepare for 1.1.10 (2018 Feb 12)
+* [039f73d] Tamas Papik - dep-update & updated README.md (#129) (2018 Feb 12)
+
+
+## 1.1.9 (2018 Jan 09)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/envman/releases/download/1.1.9/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/envman
+```
+
+That's all, you're ready to call `envman`!
+
+### Release Commits - 1.1.8 -> 1.1.9
+
+* [32b29f0] godrei - prepare for 1.1.9 (2018 Jan 09)
+* [b69e031] Krisztián Gödrei - lock go-utils package (#128) (2018 Jan 09)
+* [bb820f1] Krisztián Gödrei - dep update (#127) (2018 Jan 08)
+
+
 ## 1.1.8 (2017 Oct 09)
 
 ### Release Notes
@@ -723,4 +780,4 @@ That's all, you're ready to call `envman`!
 
 -----------------
 
-Generated at: 2017 Oct 09
+Generated at: 2018 Feb 12
