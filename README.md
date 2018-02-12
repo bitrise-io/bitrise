@@ -5,11 +5,10 @@ _Discussion forum: [https://discuss.bitrise.io/](https://discuss.bitrise.io/)_
 Run your Bitrise automations with this CLI tool on any Mac or Linux machine, and use the same configuration on
 [bitrise.io](https://www.bitrise.io) (automation service, with a mobile app focus).
 
-*Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
-with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman).*
+_Part of the Bitrise Continuous Integration, Delivery and Automations Stack,
+with [stepman](https://github.com/bitrise-io/stepman) and [envman](https://github.com/bitrise-io/envman)._
 
 For a nice & quick intro you should check: [https://www.bitrise.io/cli](https://www.bitrise.io/cli)
-
 
 ## Install and Setup
 
@@ -27,13 +26,12 @@ You can enable shell completion for the `bitrise run` command: [https://blog.bit
 
 ## Tutorials and Examples
 
-You can find examples in the [_examples](https://github.com/bitrise-io/bitrise/tree/master/_examples) folder.
+You can find examples in the [\_examples](https://github.com/bitrise-io/bitrise/tree/master/_examples) folder.
 
-If you're getting started you should start with [_examples/tutorials](https://github.com/bitrise-io/bitrise/tree/master/_examples/tutorials),
+If you're getting started you should start with [\_examples/tutorials](https://github.com/bitrise-io/bitrise/tree/master/_examples/tutorials),
 this should guide you through the basics, while you'll already use `bitrise` (requires installed `bitrise`).
 
 You can find a complete iOS sample project at: https://github.com/bitrise-io/sample-apps-ios-with-bitrise-yml
-
 
 ## Tooling support & JSON output format
 
@@ -53,7 +51,6 @@ An example calling the `version` command:
 
 Will print `{"version":"1.2.4"}` to the Standard Output (StdOut).
 
-
 ## Share your Step
 
 You can use your own Step as you can see in the `_examples`, even if it's
@@ -65,17 +62,17 @@ guide it prints.
 
 ## Documentation
 
-We added some documents to make it a bit easier to get started with Bitrise CLI. The documentation includes a quick and a little longer guides for CLI, a [React Native](http://facebook.github.io/react-native/) project workflow guide and an overview of the Step share process. You can find them in the [_docs](/_docs/) folder.
+We added some documents to make it a bit easier to get started with Bitrise CLI. The documentation includes a quick and a little longer guides for CLI, a [React Native](http://facebook.github.io/react-native/) project workflow guide and an overview of the Step share process. You can find them in the [\_docs](/_docs/) folder.
 
 ## Development
 
 ### Guidelines
 
-* __Easy to use__: the UX for the end-user, always keep it in mind, make it a pleasant experience to work with this tool (and all of the Bitrise tools)!
-* __Code should be kept simple__: easy to understand, easy to collaborate/contribute (as much as possible of course).
-* __Compatibility__: never do an incompatible change, unless you can't avoid it. Release new features as additional options, to not to break existing configurations.
-* __Stability__: related to compatibility, but in general stability is really important, especially so in a CI/automation environment, where you expect fully reproducible outcomes.
-* __Flexibility__: should also be kept in mind, but only if it does not affect the previous points.
+* **Easy to use**: the UX for the end-user, always keep it in mind, make it a pleasant experience to work with this tool (and all of the Bitrise tools)!
+* **Code should be kept simple**: easy to understand, easy to collaborate/contribute (as much as possible of course).
+* **Compatibility**: never do an incompatible change, unless you can't avoid it. Release new features as additional options, to not to break existing configurations.
+* **Stability**: related to compatibility, but in general stability is really important, especially so in a CI/automation environment, where you expect fully reproducible outcomes.
+* **Flexibility**: should also be kept in mind, but only if it does not affect the previous points.
 
 ### Updating dependencies
 
@@ -102,7 +99,7 @@ docker-compose build && docker-compose run --rm app go test ./...
 
 1. Update go dependencies (`bitrise run dep-update`)
 1. PR & merge these changes to the `master` branch
-1. Release a new versions of bitrise-tools (stepman, envman) if there are changes, you can find the dependent tools in `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion`
+1. Release a new versions of bitrise-tools (stepman, envman) [if no changes applied since the previous release, update the go dependencies and release a new version], you can find the dependent tools in `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion`
 1. Release a new versions of default plugins if there are changes, you can find the default plugins in `./bitrise/setup.go -> PluginDependencyMap`
 1. Bump bitrise-tools and default plugins versions in `./bitrise/setup.go`
 1. PR & merge these changes to the `master` branch
@@ -116,7 +113,8 @@ docker-compose build && docker-compose run --rm app go test ./...
 1. Open the project's bitrise app on bitrise.io, find the triggered `create-release` workflow run's build
 1. Download and test the generated bitrise binaries (`version --full` and plugins)
 1. Create the new version's release on [github](https://github.com/bitrise-io/bitrise/releases/new):
-  - Fill Tag and Version inputs
-  - Copy paste the Changelog's `Release Notes` and `Install or upgrade` sections to the release description on github
-  - Attach the generated (on bitrise.io) linux and darwin binaries to the release
-  - Push the `Publish release` button on github
+
+   * Fill Tag and Version inputs
+   * Copy paste the Changelog's `Release Notes` and `Install or upgrade` sections to the release description on github
+   * Attach the generated (on bitrise.io) linux and darwin binaries to the release
+   * Push the `Publish release` button on github
