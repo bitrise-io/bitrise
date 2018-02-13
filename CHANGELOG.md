@@ -1,6 +1,64 @@
-## Changelog (Current version: 1.12.0)
+## Changelog (Current version: 1.13.0)
 
 -----------------
+
+## 1.13.0 (2018 Feb 13)
+
+### Release Notes
+
+* __added self update__
+
+- Show if CLI update is available
+- New subcommand: update
+- Update is accepting an exact version number
+
+* __added functionality of exporting the directory of the current step__
+
+- Now you will be able to use side-load assets for the step because `BITRISE_STEP_SOURCE_DIR` ENV now will be exported with the root source directory of the currently running step.
+
+__tools update__
+
+- envman update to version [1.1.10](https://github.com/bitrise-io/envman/releases/tag/1.1.10)
+- stepman update to version [0.9.38](https://github.com/bitrise-io/stepman/releases/tag/0.9.38)
+
+__default plugins update__
+
+- workflow-editor plugin update to version [1.1.11](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.3)
+
+__go dependencies update__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.13.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.12.0 -> 1.13.0
+
+* [4f2ef8c] trapacska - Prepare for 1.13.0 (2018 Feb 13)
+* [f74620d] Tamas Papik - updated versions (#579) (2018 Feb 13)
+* [f82f5f4] Tamas Papik - dep-update & readme.md update (#578) (2018 Feb 12)
+* [2268242] Viktor Benei - Go toolkit - go version bump to 1.9.4 (#576) (2018 Feb 12)
+* [a7d713e] Krisztián Gödrei - readme update (#577) (2018 Feb 12)
+* [b5eb848] Viktor Benei - Update golang.go (#575) (2018 Feb 06)
+* [d92ff71] Krisztian Dobmayer - Export the directory of the current step (#574) (2018 Feb 05)
+* [7da2ff5] Krisztián Gödrei - Update step-development-guideline.md (2018 Jan 17)
+* [7445d3a] Krisztian Dobmayer - Self update (#568) (2018 Jan 15)
+
 
 ## 1.12.0 (2018 Jan 09)
 
@@ -3440,4 +3498,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Jan 09
+Updated: 2018 Feb 13
