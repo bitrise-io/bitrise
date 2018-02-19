@@ -58,7 +58,7 @@ func TestIsUpdateAvailable(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
-	t.Log("successful step")
+	t.Log("50-50%")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Step: stepmanModels.StepModel{
@@ -80,27 +80,27 @@ func TestGetTrimmedStepName(t *testing.T) {
 		expected := "(0) This is a very long str… (…, this is a very long string.)"
 		require.Equal(t, expected, actual)
 	}
-
-	t.Log("failed step")
+	t.Log("~75-25%")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Step: stepmanModels.StepModel{
-				Title: pointers.NewStringPtr(""),
+				Title: pointers.NewStringPtr(longStr),
 			},
-			Version: longStr,
+			ID:      "short-id",
+			Version: "0.0.0",
 		}
 
 		result := models.StepRunResultsModel{
 			StepInfo: stepInfo,
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
-			RunTime:  0,
-			ErrorStr: "",
-			ExitCode: 0,
+			RunTime:  10000000,
+			ErrorStr: longStr,
+			ExitCode: 1,
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := "(0)                          (…, this is a very long string.)"
+		expected := "(0) This is a very long string, this is a v… (short-id@0.0.0)"
 		require.Equal(t, expected, actual)
 	}
 }
