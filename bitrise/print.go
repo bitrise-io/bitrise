@@ -54,9 +54,9 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	}
 
 	isGitURL := (stepInfo.Library == "git")
-	hasTitle := (titleMiddle != stepInfo.ID+"@"+stepInfo.Version)
+	hasCustomTitle := (titleMiddle != stepInfo.ID+"@"+stepInfo.Version)
 	if isGitURL {
-		hasTitle = (titleMiddle != "git::"+stepInfo.ID+"@"+stepInfo.Version)
+		hasCustomTitle = (titleMiddle != "git::"+stepInfo.ID+"@"+stepInfo.Version)
 	}
 
 	titleLeft = fmt.Sprintf("(%d) ", stepRunResult.Idx)
@@ -65,7 +65,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		titleLeft += "[Deprecated] "
 	}
 
-	if hasTitle {
+	if hasCustomTitle {
 		info := fmt.Sprintf("%s@%s", stepInfo.ID, stepInfo.Version)
 
 		titleRight = fmt.Sprintf(" (%s)", info)
