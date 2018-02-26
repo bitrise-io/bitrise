@@ -696,7 +696,11 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow("target", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	buildRunResults, err = activateAndRunWorkflow(
+		"target", workflow, config, buildRunResults,
+		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
+		"",
+	)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -791,7 +795,11 @@ workflows:
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow("trivial_fail", workflow, config, buildRunResults, &[]envmanModels.EnvironmentItemModel{}, "")
+	buildRunResults, err = activateAndRunWorkflow(
+		"trivial_fail", workflow, config, buildRunResults,
+		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
+		"",
+	)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))

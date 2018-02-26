@@ -346,7 +346,11 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func executeStep(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath, bitriseSourceDir string) (int, error) {
+func executeStep(
+	step stepmanModels.StepModel, sIDData models.StepIDData,
+	stepAbsDirPath, bitriseSourceDir string,
+	secrets []envmanModels.EnvironmentItemModel,
+) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -367,10 +371,14 @@ func executeStep(step stepmanModels.StepModel, sIDData models.StepIDData, stepAb
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout)
+	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets)
 }
 
-func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string, environments []envmanModels.EnvironmentItemModel, buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
+func runStep(
+	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
+	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	buildRunResults models.BuildRunResultsModel,
+) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -395,7 +403,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	}
 
 	environments = append(environments, envmanModels.EnvironmentItemModel{"BITRISE_STEP_SOURCE_DIR": stepDir})
-	if err := bitrise.ExportEnvironmentsList(environments); err != nil {
+	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
 	}
 
@@ -438,7 +446,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	if err := bitrise.ExportEnvironmentsList(environments); err != nil {
+	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
@@ -451,7 +459,7 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir); err != nil {
+	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -480,7 +488,13 @@ func runStep(step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir
 	return 0, updatedStepOutputs, nil
 }
 
-func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource string, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel, isLastWorkflow bool) models.BuildRunResultsModel {
+func activateAndRunSteps(
+	workflow models.WorkflowModel,
+	defaultStepLibSource string,
+	buildRunResults models.BuildRunResultsModel,
+	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	isLastWorkflow bool,
+) models.BuildRunResultsModel {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	// ------------------------------------------
@@ -594,7 +608,7 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			continue
 		}
 
-		if err := bitrise.ExportEnvironmentsList(*environments); err != nil {
+		if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, *environments); err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 			continue
@@ -827,7 +841,11 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 			registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 				*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep, false)
 		} else {
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, *environments, buildRunResults)
+			exit, outEnvironments, err := runStep(
+				mergedStep, stepIDData, stepDir,
+				*environments, secrets,
+				buildRunResults,
+			)
 
 			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
 				log.Errorf("Failed to clear output envstore, error: %s", err)
@@ -852,14 +870,23 @@ func activateAndRunSteps(workflow models.WorkflowModel, defaultStepLibSource str
 	return buildRunResults
 }
 
-func runWorkflow(workflow models.WorkflowModel, steplibSource string, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel, isLastWorkflow bool) models.BuildRunResultsModel {
+func runWorkflow(
+	workflow models.WorkflowModel,
+	steplibSource string,
+	buildRunResults models.BuildRunResultsModel,
+	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	isLastWorkflow bool) models.BuildRunResultsModel {
 	bitrise.PrintRunningWorkflow(workflow.Title)
 
 	*environments = append(*environments, workflow.Environments...)
-	return activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, isLastWorkflow)
+	return activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow)
 }
 
-func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel, buildRunResults models.BuildRunResultsModel, environments *[]envmanModels.EnvironmentItemModel, lastWorkflowID string) (models.BuildRunResultsModel, error) {
+func activateAndRunWorkflow(
+	workflowID string, workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel,
+	buildRunResults models.BuildRunResultsModel,
+	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	lastWorkflowID string) (models.BuildRunResultsModel, error) {
 	var err error
 	// Run these workflows before running the target workflow
 	for _, beforeWorkflowID := range workflow.BeforeRun {
@@ -870,7 +897,11 @@ func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bi
 		if beforeWorkflow.Title == "" {
 			beforeWorkflow.Title = beforeWorkflowID
 		}
-		buildRunResults, err = activateAndRunWorkflow(beforeWorkflowID, beforeWorkflow, bitriseConfig, buildRunResults, environments, lastWorkflowID)
+		buildRunResults, err = activateAndRunWorkflow(
+			beforeWorkflowID, beforeWorkflow, bitriseConfig,
+			buildRunResults,
+			environments, secrets,
+			lastWorkflowID)
 		if err != nil {
 			return buildRunResults, err
 		}
@@ -878,7 +909,11 @@ func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bi
 
 	// Run the target workflow
 	isLastWorkflow := (workflowID == lastWorkflowID)
-	buildRunResults = runWorkflow(workflow, bitriseConfig.DefaultStepLibSource, buildRunResults, environments, isLastWorkflow)
+	buildRunResults = runWorkflow(
+		workflow, bitriseConfig.DefaultStepLibSource,
+		buildRunResults,
+		environments, secrets,
+		isLastWorkflow)
 
 	// Run these workflows after running the target workflow
 	for _, afterWorkflowID := range workflow.AfterRun {
@@ -889,7 +924,11 @@ func activateAndRunWorkflow(workflowID string, workflow models.WorkflowModel, bi
 		if afterWorkflow.Title == "" {
 			afterWorkflow.Title = afterWorkflowID
 		}
-		buildRunResults, err = activateAndRunWorkflow(afterWorkflowID, afterWorkflow, bitriseConfig, buildRunResults, environments, lastWorkflowID)
+		buildRunResults, err = activateAndRunWorkflow(
+			afterWorkflowID, afterWorkflow, bitriseConfig,
+			buildRunResults,
+			environments, secrets,
+			lastWorkflowID)
 		if err != nil {
 			return buildRunResults, err
 		}
@@ -920,7 +959,8 @@ func runWorkflowWithConfiguration(
 	startTime time.Time,
 	workflowToRunID string,
 	bitriseConfig models.BitriseDataModel,
-	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
+	secretEnvironments []envmanModels.EnvironmentItemModel,
+) (models.BuildRunResultsModel, error) {
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
@@ -981,7 +1021,11 @@ func runWorkflowWithConfiguration(
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow(workflowToRunID, workflowToRun, bitriseConfig, buildRunResults, &environments, lastWorkflowID)
+	buildRunResults, err = activateAndRunWorkflow(
+		workflowToRunID, workflowToRun, bitriseConfig,
+		buildRunResults,
+		&environments, secretEnvironments,
+		lastWorkflowID)
 	if err != nil {
 		return buildRunResults, errors.New("[BITRISE_CLI] - Failed to activate and run workflow " + workflowToRunID)
 	}

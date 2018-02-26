@@ -1,0 +1,18 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            for i in {106..99}; do echo $i; done
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "My ssh key: $SECRET_3"
