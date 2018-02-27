@@ -30,7 +30,7 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-var shouldUpdate = true
+var isAptGetUpdated bool
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
 	if prGlobalFlagPtr != nil {
@@ -289,13 +289,13 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", brewDep.GetBinaryName())
 			}
 		case "linux":
-			if len(step.Deps.AptGet) > 0 && shouldUpdate {
+			if len(step.Deps.AptGet) > 0 && !isAptGetUpdated {
 				cmd := command.New("sudo", "apt-get", "update")
 				log.Infof(cmd.PrintableCommandArgs())
 				if err := cmd.SetStdout(os.Stdout).SetStderr(os.Stderr).Run(); err != nil {
 					log.Errorf("apt-get update failed, error: %s", err)
 				}
-				shouldUpdate = false
+				isAptGetUpdated = true
 			}
 			for _, aptGetDep := range step.Deps.AptGet {
 				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
