@@ -8,8 +8,6 @@ import (
 )
 
 func TestWrite(t *testing.T) {
-	RedactStr = "X"
-
 	t.Log("trivial test")
 	{
 		buff := newBuffer([]string{"abc", "a\nb\nc"})
@@ -24,17 +22,17 @@ func TestWrite(t *testing.T) {
 		require.Equal(t, []string{
 			"test with",
 			"new line",
-			"and single line secret:X",
-			"Xnd multiline secret:X",
-			"X",
-			"X",
+			"and single line secret:[REDACTED]",
+			"[REDACTED]nd multiline secret:[REDACTED]",
+			"[REDACTED]",
+			"[REDACTED]",
 		}, lines)
 	}
 
 	t.Log("chunk without newline")
 	{
 		buff := newBuffer([]string{"ab", "a\nb"})
-		log := []byte("test with without newline, secret:ab")
+		log := []byte("test without newline, secret:ab")
 		wc, err := buff.Write(log)
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
@@ -43,7 +41,24 @@ func TestWrite(t *testing.T) {
 		lines, err := buff.ReadLines()
 		require.NoError(t, err)
 		require.Equal(t, []string{
-			"test with without newline, secret:X",
+			"test without newline, secret:[REDACTED]",
+		}, lines)
+	}
+
+	t.Log("multiple secret in the same line")
+	{
+		buff := newBuffer([]string{"x1", "x\n2"})
+		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
+		wc, err := buff.Write(log)
+		require.NoError(t, err)
+		require.Equal(t, len(log), wc)
+
+		require.NoError(t, buff.Flush())
+		lines, err := buff.ReadLines()
+		require.NoError(t, err)
+		require.Equal(t, []string{
+			"multiple secrets like: [REDACTED] and [REDACTED]",
+			"[REDACTED] and some extra text",
 		}, lines)
 	}
 }
@@ -65,18 +80,6 @@ func TestSecrets(t *testing.T) {
 		[][]byte{[]byte("x"), []byte("c"), []byte("b"), []byte("d")},
 		[][]byte{[]byte("f")},
 	}, buff.secrets)
-}
-
-func Test_lastLines(t *testing.T) {
-	buff := newBuffer([]string{})
-	buff.chunk = []byte("te")
-
-	lines := buff.lastLines([]byte("st\nlast\nlines"))
-	require.Equal(t, [][]byte{
-		[]byte("test\n"),
-		[]byte("last\n"),
-	}, lines)
-	require.Equal(t, []byte("lines"), buff.chunk)
 }
 
 func Test_matchSecrets(t *testing.T) {
@@ -105,9 +108,7 @@ func Test_matchSecrets(t *testing.T) {
 		1: []int{3, 7},
 		2: []int{6},
 	}, matchMap)
-	require.Equal(t, map[int][]int{
-		3: []int{5},
-	}, partialMatchMap)
+	require.Equal(t, map[int]bool{5: true}, partialMatchMap)
 }
 
 func Test_linesToKeepRange(t *testing.T) {
@@ -130,15 +131,9 @@ func Test_linesToKeepRange(t *testing.T) {
 
 	buff := newBuffer(secrets)
 
-	partialMatchMap := map[int][]int{
-		2: []int{6},
-		0: []int{2},
-		3: []int{5},
-		1: []int{2, 7},
-	}
-	first, last := buff.linesToKeepRange(partialMatchMap)
+	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
+	first := buff.linesToKeepRange(partialMatchMap)
 	require.Equal(t, 2, first)
-	require.Equal(t, 9, last)
 }
 
 func Test_matchLine(t *testing.T) {
@@ -257,7 +252,6 @@ func Test_split(t *testing.T) {
 		lines, chunk := split(b)
 		require.Equal(t, 0, len(lines))
 		require.Equal(t, 0, len(chunk))
-		require.Equal(t, b, join(lines))
 	}
 
 	t.Log("newline test")
@@ -267,8 +261,6 @@ func Test_split(t *testing.T) {
 		require.Equal(t, 1, len(lines))
 		require.Equal(t, []byte("\n"), lines[0])
 		require.Equal(t, 0, len(chunk))
-		lines = append(lines, chunk)
-		require.Equal(t, b, join(lines))
 	}
 
 	t.Log("multi line test")
@@ -283,8 +275,6 @@ line 3
 		require.Equal(t, []byte("line 2\n"), lines[1])
 		require.Equal(t, []byte("line 3\n"), lines[2])
 		require.Equal(t, 0, len(chunk))
-		lines = append(lines, chunk)
-		require.Equal(t, b, join(lines))
 	}
 
 	t.Log("multi line test - newlines")
@@ -304,8 +294,6 @@ line 2
 		require.Equal(t, []byte("\n"), lines[3])
 		require.Equal(t, []byte("line 2\n"), lines[4])
 		require.Equal(t, 0, len(chunk))
-		lines = append(lines, chunk)
-		require.Equal(t, b, join(lines))
 	}
 
 	t.Log("chunk test")
@@ -314,8 +302,6 @@ line 2
 		lines, chunk := split(b)
 		require.Equal(t, []byte("line 1"), chunk)
 		require.Equal(t, 0, len(lines))
-		lines = append(lines, chunk)
-		require.Equal(t, b, join(lines), string(join(lines)))
 	}
 
 	t.Log("chunk test")
@@ -327,7 +313,5 @@ line 2`)
 		require.Equal(t, 1, len(lines))
 		require.Equal(t, []byte("line 1\n"), lines[0])
 		require.Equal(t, []byte("line 2"), chunk)
-		lines = append(lines, chunk)
-		require.Equal(t, b, join(lines))
 	}
 }

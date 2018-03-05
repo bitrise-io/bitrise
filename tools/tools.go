@@ -348,11 +348,14 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	cmd.SetDir(workDirPth)
 	cmd.SetTimeout(timeout)
 
-	secretValues := []string{}
+	var secretValues []string
 	for _, secret := range secrets {
 		_, value, err := secret.GetKeyValuePair()
 		if err != nil {
 			return 1, err
+		}
+		if value == "" {
+			continue
 		}
 		secretValues = append(secretValues, value)
 	}

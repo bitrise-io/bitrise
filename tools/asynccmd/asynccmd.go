@@ -18,8 +18,8 @@ type Status struct {
 
 // Cmd ...
 type Cmd struct {
-	Name string
-	Args []string
+	name string
+	args []string
 
 	dir     string
 	secrets []string
@@ -30,41 +30,40 @@ type Cmd struct {
 
 // New ...
 func New(name string, args ...string) *Cmd {
-	return &Cmd{Name: name, Args: args}
+	return &Cmd{name: name, args: args}
 }
 
 // SetDir ...
-func (c *Cmd) SetDir(dir string) *Cmd {
+func (c *Cmd) SetDir(dir string) {
 	c.dir = dir
-	return c
 }
 
 // SetSecrets ...
-func (c *Cmd) SetSecrets(secrets []string) *Cmd {
-	c.secrets = secrets
-	return c
+func (c *Cmd) SetSecrets(secrets []string) {
+	c.secrets = append([]string{}, secrets...)
 }
 
 // SetTimeout ...
-func (c *Cmd) SetTimeout(timeout time.Duration) *Cmd {
+func (c *Cmd) SetTimeout(timeout time.Duration) {
 	c.timeout = timeout
-	return c
 }
 
 // Start starts the command asynchronous
 // and returns a status chanel to observe the command's status
-// and returns a log chanel to fetch the command's log
+// and returns a log chanel to fetch the command's log.
 func (c *Cmd) Start() (chan Status, chan string) {
-	statusChan := make(chan Status, 1)
-	logChan := make(chan string, 1)
+	statusChan := make(chan Status)
+	logChan := make(chan string)
 
 	go func() {
-		cmd := exec.Command(c.Name, c.Args...)
+		cmd := exec.Command(c.name, c.args...)
 		cmd.Dir = c.dir
 
-		// Setpgid: true creates a new process group for cmd and its subprocesses
-		// this way we can kill the whole process group
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		if c.timeout > 0 {
+			// Setpgid: true creates a new process group for cmd and its subprocesses
+			// this way we can kill the whole process group
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		}
 
 		combinedOut := newBuffer(c.secrets)
 		cmd.Stdout = combinedOut
@@ -78,16 +77,18 @@ func (c *Cmd) Start() (chan Status, chan string) {
 
 		c.pid = cmd.Process.Pid
 
-		// Setpgid: true creates a new process group for cmd and its subprocesses
-		// this way cmd will not belong to its parent process group,
-		// cmd will not be killed when you hit ^C in your terminal
-		// to fix this, we listen and handle Interrupt signal manually
-		c.listenOnInterrupt()
+		if c.timeout > 0 {
+			// Setpgid: true creates a new process group for cmd and its subprocesses
+			// this way cmd will not belong to its parent process group,
+			// cmd will not be killed when you hit ^C in your terminal
+			// to fix this, we listen and handle Interrupt signal manually
+			c.listenOnInterrupt()
+		}
 
 		// Check Timeout
-		var timerPtr *time.Timer
+		var timer *time.Timer
 		if c.timeout > 0 {
-			timerPtr = time.AfterFunc(c.timeout, func() {
+			timer = time.AfterFunc(c.timeout, func() {
 				if err := c.Stop(); err != nil {
 					log.Warnf("Failed to kill process, error: %s", err)
 				}
@@ -103,8 +104,17 @@ func (c *Cmd) Start() (chan Status, chan string) {
 					statusChan <- Status{Code: 1, Err: err}
 					return
 				}
-				for _, line := range lines {
-					logChan <- line
+
+				if len(lines) == 0 && combinedOut.lastWrite.After(combinedOut.lastWrite.Add(2*time.Second)) {
+					// may the command waits for user input
+					if err := combinedOut.Flush(); err != nil {
+						statusChan <- Status{Code: 1, Err: err}
+						return
+					}
+				} else {
+					for _, line := range lines {
+						logChan <- line
+					}
 				}
 			}
 		}()
@@ -112,8 +122,8 @@ func (c *Cmd) Start() (chan Status, chan string) {
 		exitErr := cmd.Wait()
 
 		// Stop timers
-		if timerPtr != nil {
-			timerPtr.Stop()
+		if timer != nil {
+			timer.Stop()
 		}
 		ticker.Stop()
 
@@ -141,12 +151,20 @@ func (c *Cmd) Start() (chan Status, chan string) {
 	return statusChan, logChan
 }
 
-// Stop stops the command
+// Stop stops the command.
 func (c *Cmd) Stop() error {
-	return syscall.Kill(-c.pid, syscall.SIGTERM)
+	if c.timeout > 0 {
+		pgid, err := syscall.Getpgid(c.pid)
+		if err != nil {
+			return err
+		}
+
+		return syscall.Kill(-pgid, syscall.SIGKILL)
+	}
+	return syscall.Kill(c.pid, syscall.SIGKILL)
 }
 
-// listenOnInterrupt listens on Interrupt signal
+// listenOnInterrupt listens on Interrupt signal.
 func (c *Cmd) listenOnInterrupt() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
@@ -159,8 +177,10 @@ func (c *Cmd) listenOnInterrupt() {
 	}()
 }
 
-// ExitStatus returns the error's exit status
+// exitStatus returns the error's exit status
 // if the error is an exec.ExitError
+// if the error is nil it return 0
+// otherwise returns 1.
 func exitStatus(err error) (code int) {
 	if err == nil {
 		return

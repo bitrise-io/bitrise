@@ -349,8 +349,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 func executeStep(
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
-	secrets []envmanModels.EnvironmentItemModel,
-) (int, error) {
+	secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -377,8 +376,7 @@ func executeStep(
 func runStep(
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
 	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	buildRunResults models.BuildRunResultsModel,
-) (int, []envmanModels.EnvironmentItemModel, error) {
+	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -493,8 +491,7 @@ func activateAndRunSteps(
 	defaultStepLibSource string,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	isLastWorkflow bool,
-) models.BuildRunResultsModel {
+	isLastWorkflow bool) models.BuildRunResultsModel {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	// ------------------------------------------
@@ -959,8 +956,7 @@ func runWorkflowWithConfiguration(
 	startTime time.Time,
 	workflowToRunID string,
 	bitriseConfig models.BitriseDataModel,
-	secretEnvironments []envmanModels.EnvironmentItemModel,
-) (models.BuildRunResultsModel, error) {
+	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
