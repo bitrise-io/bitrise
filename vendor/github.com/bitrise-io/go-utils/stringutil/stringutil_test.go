@@ -121,9 +121,9 @@ func TestGenericTrim(t *testing.T) {
 	require.Equal(t, "", genericTrim("", 4, true, true))
 
 	require.Equal(t, "1234", genericTrim("123456789", 4, false, false))
-	require.Equal(t, "1...", genericTrim("123456789", 4, false, true))
+	require.Equal(t, "123…", genericTrim("123456789", 4, false, true))
 	require.Equal(t, "6789", genericTrim("123456789", 4, true, false))
-	require.Equal(t, "...9", genericTrim("123456789", 4, true, true))
+	require.Equal(t, "…789", genericTrim("123456789", 4, true, true))
 }
 
 func TestMaxLastChars(t *testing.T) {
@@ -139,12 +139,12 @@ func TestMaxLastChars(t *testing.T) {
 
 func TestMaxLastCharsWithDots(t *testing.T) {
 	require.Equal(t, "", MaxLastCharsWithDots("", 10))
-	require.Equal(t, "", MaxLastCharsWithDots("1234", 1))
-	require.Equal(t, "...56", MaxLastCharsWithDots("123456", 5))
+	require.Equal(t, "…", MaxLastCharsWithDots("1234", 1))
+	require.Equal(t, "…3456", MaxLastCharsWithDots("123456", 5))
 	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 6))
 	require.Equal(t, "123456", MaxLastCharsWithDots("123456", 10))
 
-	require.Equal(t, "... world!", MaxLastCharsWithDots("hello world!", 10))
+	require.Equal(t, "… world!", MaxLastCharsWithDots("hello world!", 8))
 }
 
 func TestMaxFirstChars(t *testing.T) {
@@ -160,10 +160,10 @@ func TestMaxFirstChars(t *testing.T) {
 
 func TestMaxFirstCharsWithDots(t *testing.T) {
 	require.Equal(t, "", MaxFirstCharsWithDots("", 10))
-	require.Equal(t, "", MaxFirstCharsWithDots("1234", 1))
-	require.Equal(t, "12...", MaxFirstCharsWithDots("123456", 5))
+	require.Equal(t, "…", MaxFirstCharsWithDots("1234", 1))
+	require.Equal(t, "1234…", MaxFirstCharsWithDots("123456", 5))
 	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 6))
 	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 10))
 
-	require.Equal(t, "hello w...", MaxFirstCharsWithDots("hello world!", 10))
+	require.Equal(t, "hello wor…", MaxFirstCharsWithDots("hello world!", 10))
 }

@@ -38,45 +38,55 @@ func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 }
 
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
-	iconBoxWidth := len("   ")
-	timeBoxWidth := len(" time (s) ")
-	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
+	iconBoxWidth := len("|   ")
+	timeBoxWidth := len("| time (s) |")
+	titlePaddingLeft := len("| ")
+	titlePaddingRight := len(" ")
+
+	titleLeft := ""
+	titleMiddle := ""
+	titleRight := ""
 
 	stepInfo := stepRunResult.StepInfo
 
-	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
-		title = *stepInfo.Step.Title
+		titleMiddle = *stepInfo.Step.Title
 	}
+
+	isGitURL := (stepInfo.Library == "git")
+	hasCustomTitle := (titleMiddle != stepInfo.ID+"@"+stepInfo.Version)
+	if isGitURL {
+		hasCustomTitle = (titleMiddle != "git::"+stepInfo.ID+"@"+stepInfo.Version)
+	}
+
+	titleLeft = fmt.Sprintf("(%d) ", stepRunResult.Idx)
 
 	if stepInfo.GroupInfo.RemovalDate != "" {
-		title = fmt.Sprintf("[Deprecated] %s", title)
+		titleLeft += "[Deprecated] "
 	}
 
-	titleBox := ""
-	switch stepRunResult.Status {
-	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		titleBox = fmt.Sprintf("%s", title)
-		if len(titleBox) > titleBoxWidth {
-			dif := len(titleBox) - titleBoxWidth
-			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s", title)
+	if hasCustomTitle {
+		info := fmt.Sprintf("%s@%s", stepInfo.ID, stepInfo.Version)
+
+		titleRight = fmt.Sprintf(" (%s)", info)
+		if len(info) > 30 {
+			titleRight = fmt.Sprintf(" (%s)", stringutil.MaxLastCharsWithDots(info, 30))
 		}
-		break
-	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
-		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		if len(titleBox) > titleBoxWidth {
-			dif := len(titleBox) - titleBoxWidth
-			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
-	default:
-		log.Errorf("Unkown result code")
-		return ""
 	}
 
-	return titleBox
+	titleMaxChars := stepRunSummaryBoxWidthInChars - iconBoxWidth - timeBoxWidth - titlePaddingLeft - titlePaddingRight - utf8.RuneCountInString(titleLeft) - utf8.RuneCountInString(titleRight)
+
+	if len(titleMiddle) > titleMaxChars {
+		if !isGitURL {
+			titleMiddle = stringutil.MaxFirstCharsWithDots(titleMiddle, titleMaxChars)
+		} else {
+			titleMiddle = stringutil.MaxLastCharsWithDots(titleMiddle, titleMaxChars)
+		}
+	} else {
+		titleMiddle += strings.Repeat(" ", titleMaxChars-utf8.RuneCountInString(titleMiddle))
+	}
+
+	return fmt.Sprintf("%s%s%s", titleLeft, titleMiddle, titleRight)
 }
 
 func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
@@ -205,63 +215,37 @@ func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepm
 }
 
 func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) string {
-	iconBoxWidth := len("   ")
-	timeBoxWidth := len(" time (s) ")
-	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth - 1
+	lineContent := "| %s | %s | %s |"
 
-	icon := ""
-	title := getTrimmedStepName(stepRunResult)
-	coloringFunc := colorstring.Green
+	titleMaxLength := stepRunSummaryBoxWidthInChars - len(fmt.Sprintf(lineContent, "X", "", "time (s)"))
 
-	switch stepRunResult.Status {
-	case models.StepRunStatusCodeSuccess:
-		icon = "✓"
-		coloringFunc = colorstring.Green
-		break
-	case models.StepRunStatusCodeFailed:
-		icon = "x"
-		coloringFunc = colorstring.Red
-		break
-	case models.StepRunStatusCodeFailedSkippable:
-		icon = "!"
-		coloringFunc = colorstring.Yellow
-		break
-	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		icon = "-"
-		coloringFunc = colorstring.Blue
-		break
-	default:
-		log.Errorf("Unkown result code")
-		return ""
+	statusColors := map[int]func(...interface{}) string{
+		models.StepRunStatusCodeFailed:  colorstring.Red,
+		models.StepRunStatusCodeSkipped: colorstring.Blue, models.StepRunStatusCodeSkippedWithRunIf: colorstring.Blue,
+		models.StepRunStatusCodeSuccess:         colorstring.Green,
+		models.StepRunStatusCodeFailedSkippable: colorstring.Yellow,
 	}
 
-	iconBox := fmt.Sprintf(" %s ", coloringFunc(icon))
+	statusIcons := []string{"✓", "x", "!", "-", "-"}
 
-	titleWhiteSpaceWidth := titleBoxWidth - len(title)
-	coloredTitle := title
-	if strings.HasPrefix(title, "[Deprecated]") {
-		title := strings.TrimPrefix(title, "[Deprecated]")
-		coloredTitle = fmt.Sprintf("%s%s", colorstring.Red("[Deprecated]"), coloringFunc(title))
-	} else {
-		coloredTitle = coloringFunc(title)
-	}
+	statusIcon := statusIcons[stepRunResult.Status]
 
-	titleBox := fmt.Sprintf(" %s%s", coloredTitle, strings.Repeat(" ", titleWhiteSpaceWidth))
+	icon := statusColors[stepRunResult.Status](statusIcon)
 
-	runTimeStr, err := FormattedSecondsToMax8Chars(stepRunResult.RunTime)
+	time, err := FormattedSecondsToMax8Chars(stepRunResult.RunTime)
 	if err != nil {
 		log.Errorf("Failed to format time, error: %s", err)
-		runTimeStr = "999+ hour"
+		time = "999+ hour"
 	}
 
-	timeWhiteSpaceWidth := timeBoxWidth - len(runTimeStr) - 1
-	if timeWhiteSpaceWidth < 0 {
-		log.Errorf("Invalid time box size for RunTime: %#v", stepRunResult.RunTime)
-		timeWhiteSpaceWidth = 0
-	}
-	timeBox := fmt.Sprintf(" %s%s", runTimeStr, strings.Repeat(" ", timeWhiteSpaceWidth))
+	title := getTrimmedStepName(stepRunResult)
 
-	return fmt.Sprintf("|%s|%s|%s|", iconBox, titleBox, timeBox)
+	padding := titleMaxLength - len(title)
+	if padding > 0 {
+		title += strings.Repeat(" ", padding)
+	}
+
+	return fmt.Sprintf(lineContent, icon, statusColors[stepRunResult.Status](title), time)
 }
 
 func getDeprecateNotesRows(notes string) string {
@@ -361,7 +345,7 @@ func getDeprecateNotesRows(notes string) string {
 	return formattedNote
 }
 
-func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) string {
+func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel, appendIssueTracker bool) string {
 	stepInfo := stepRunResult.StepInfo
 
 	removalDate := stepInfo.GroupInfo.RemovalDate
@@ -402,72 +386,74 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 
 	issueRow := ""
 	sourceRow := ""
-	if stepRunResult.ErrorStr != "" {
-		// Support URL
-		var coloringFunc func(...interface{}) string
-		supportURL := ""
-		if stepInfo.Step.SupportURL != nil && *stepInfo.Step.SupportURL != "" {
-			supportURL = *stepInfo.Step.SupportURL
-		}
-		if supportURL == "" {
-			coloringFunc = colorstring.Yellow
-			supportURL = "Not provided"
-		}
-
-		issueRow = fmt.Sprintf("| Issue tracker: %s |", supportURL)
-
-		charDiff := len(issueRow) - stepRunSummaryBoxWidthInChars
-		if charDiff <= 0 {
-			// shorter than desired - fill with space
-
-			if coloringFunc != nil {
-				// We need to do this after charDiff calculation,
-				// because of coloring characters increase the text length, but they do not printed
-				supportURL = coloringFunc("Not provided")
+	if appendIssueTracker {
+		if stepRunResult.ErrorStr != "" {
+			// Support URL
+			var coloringFunc func(...interface{}) string
+			supportURL := ""
+			if stepInfo.Step.SupportURL != nil && *stepInfo.Step.SupportURL != "" {
+				supportURL = *stepInfo.Step.SupportURL
+			}
+			if supportURL == "" {
+				coloringFunc = colorstring.Yellow
+				supportURL = "Not provided"
 			}
 
-			issueRow = fmt.Sprintf("| Issue tracker: %s%s |", supportURL, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(supportURL) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Support url too long, can't present support url at all! : %s", supportURL)
-			} else {
-				issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(supportURL, trimmedWidth))
-			}
-		}
+			issueRow = fmt.Sprintf("| Issue tracker: %s |", supportURL)
 
-		// Source Code URL
-		coloringFunc = nil
-		sourceCodeURL := ""
-		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
-			sourceCodeURL = *stepInfo.Step.SourceCodeURL
-		}
-		if sourceCodeURL == "" {
-			coloringFunc = colorstring.Yellow
-			sourceCodeURL = "Not provided"
-		}
+			charDiff := len(issueRow) - stepRunSummaryBoxWidthInChars
+			if charDiff <= 0 {
+				// shorter than desired - fill with space
 
-		sourceRow = fmt.Sprintf("| Source: %s |", sourceCodeURL)
+				if coloringFunc != nil {
+					// We need to do this after charDiff calculation,
+					// because of coloring characters increase the text length, but they do not printed
+					supportURL = coloringFunc("Not provided")
+				}
 
-		charDiff = len(sourceRow) - stepRunSummaryBoxWidthInChars
-		if charDiff <= 0 {
-			// shorter than desired - fill with space
-
-			if coloringFunc != nil {
-				// We need to do this after charDiff calculation,
-				// because of coloring characters increase the text length, but they do not printed
-				sourceCodeURL = coloringFunc("Not provided")
+				issueRow = fmt.Sprintf("| Issue tracker: %s%s |", supportURL, strings.Repeat(" ", -charDiff))
+			} else if charDiff > 0 {
+				// longer than desired - trim title
+				trimmedWidth := len(supportURL) - charDiff
+				if trimmedWidth < 4 {
+					log.Errorf("Support url too long, can't present support url at all! : %s", supportURL)
+				} else {
+					issueRow = fmt.Sprintf("| Issue tracker: %s |", stringutil.MaxLastCharsWithDots(supportURL, trimmedWidth))
+				}
 			}
 
-			sourceRow = fmt.Sprintf("| Source: %s%s |", sourceCodeURL, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(sourceCodeURL) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Source url too long, can't present source url at all! : %s", sourceCodeURL)
-			} else {
-				sourceRow = fmt.Sprintf("| Source: %s |", stringutil.MaxLastCharsWithDots(sourceCodeURL, trimmedWidth))
+			// Source Code URL
+			coloringFunc = nil
+			sourceCodeURL := ""
+			if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
+				sourceCodeURL = *stepInfo.Step.SourceCodeURL
+			}
+			if sourceCodeURL == "" {
+				coloringFunc = colorstring.Yellow
+				sourceCodeURL = "Not provided"
+			}
+
+			sourceRow = fmt.Sprintf("| Source: %s |", sourceCodeURL)
+
+			charDiff = len(sourceRow) - stepRunSummaryBoxWidthInChars
+			if charDiff <= 0 {
+				// shorter than desired - fill with space
+
+				if coloringFunc != nil {
+					// We need to do this after charDiff calculation,
+					// because of coloring characters increase the text length, but they do not printed
+					sourceCodeURL = coloringFunc("Not provided")
+				}
+
+				sourceRow = fmt.Sprintf("| Source: %s%s |", sourceCodeURL, strings.Repeat(" ", -charDiff))
+			} else if charDiff > 0 {
+				// longer than desired - trim title
+				trimmedWidth := len(sourceCodeURL) - charDiff
+				if trimmedWidth < 4 {
+					log.Errorf("Source url too long, can't present source url at all! : %s", sourceCodeURL)
+				} else {
+					sourceRow = fmt.Sprintf("| Source: %s |", stringutil.MaxLastCharsWithDots(sourceCodeURL, trimmedWidth))
+				}
 			}
 		}
 	}
@@ -541,7 +527,7 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 	fmt.Println(sep)
 	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
-		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
+		footerSubSection := getRunningStepFooterSubSection(stepRunResult, true)
 		if footerSubSection != "" {
 			fmt.Println(footerSubSection)
 			fmt.Println(sep)
@@ -586,7 +572,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		fmt.Println(getRunningStepFooterMainSection(stepRunResult))
 		fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 		if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
-			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
+			footerSubSection := getRunningStepFooterSubSection(stepRunResult, false)
 			if footerSubSection != "" {
 				fmt.Println(footerSubSection)
 				fmt.Printf("+%s+%s+%s+\n", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
