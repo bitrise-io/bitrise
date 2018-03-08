@@ -172,6 +172,99 @@ func Test_matchLine(t *testing.T) {
 	}, remaining)
 }
 
+func Test_secretLinesToRedact(t *testing.T) {
+	secrets := []string{
+		"a\nb\nc",
+		"b",
+	}
+	lines := [][]byte{
+		[]byte("x"),
+		[]byte("a"),
+		[]byte("b"),
+		[]byte("c"),
+		[]byte("b"),
+	}
+
+	buff := newBuffer(secrets)
+
+	matchMap, _ := buff.matchSecrets(lines)
+	require.Equal(t, map[int][]int{
+		0: []int{1},
+		1: []int{2, 4},
+	}, matchMap)
+
+	secretLines := buff.secretLinesToRedact(0, matchMap)
+	require.Equal(t, ([][]byte)(nil), secretLines, fmt.Sprintf("%s\n", secretLines))
+
+	secretLines = buff.secretLinesToRedact(1, matchMap)
+	require.Equal(t, [][]byte{[]byte("a")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+
+	secretLines = buff.secretLinesToRedact(2, matchMap)
+	require.Equal(t, [][]byte{[]byte("b"), []byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+
+	secretLines = buff.secretLinesToRedact(3, matchMap)
+	require.Equal(t, [][]byte{[]byte("c")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+
+	secretLines = buff.secretLinesToRedact(4, matchMap)
+	require.Equal(t, [][]byte{[]byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+}
+
+func Test_redactLine(t *testing.T) {
+	t.Log("redacts the middle of the line")
+	{
+		line := []byte("asdfabcasdf")
+		ranges := []matchRange{ //  asdfabcasdf
+			{first: 4, last: 7}, // ****abc****
+		}
+		redacted := redact(line, ranges)
+		require.Equal(t, []byte("asdf[REDACTED]asdf"), redacted, string(redacted))
+	}
+
+	t.Log("redacts the begining of the line")
+	{
+		line := []byte("asdfabcasdf")
+		ranges := []matchRange{ //  asdfabcasdf
+			{first: 0, last: 5}, // asdfa******
+		}
+		redacted := redact(line, ranges)
+		require.Equal(t, []byte("[REDACTED]bcasdf"), redacted, string(redacted))
+	}
+
+	t.Log("redacts the end of the line")
+	{
+		line := []byte("asdfabcasdf")
+		ranges := []matchRange{ //   asdfabcasdf
+			{first: 9, last: 11}, // *********df
+		}
+		redacted := redact(line, ranges)
+		require.Equal(t, []byte("asdfabcas[REDACTED]"), redacted, string(redacted))
+	}
+
+	t.Log("redacts multiple secrets")
+	{
+		line := []byte("asdfabcasdf")
+		ranges := []matchRange{ //   asdfabcasdf
+			{first: 4, last: 7},  // ****abc****
+			{first: 8, last: 10}, // ********sd*
+		}
+		redacted := redact(line, ranges)
+		require.Equal(t, []byte("asdf[REDACTED]a[REDACTED]f"), redacted, string(redacted))
+	}
+
+	t.Log("redacts the whole line")
+	{
+		line := []byte("asdfabcasdf")
+		ranges := []matchRange{ //   asdfabcasdf
+			{first: 0, last: 4},  // asdf*******
+			{first: 7, last: 11}, // *******asdf
+			{first: 3, last: 9},  // ***fabcas**
+		}
+		ranges = mergeAllRanges(ranges)
+		redacted := redact(line, ranges)
+		require.Equal(t, []byte("[REDACTED]"), redacted, string(redacted))
+	}
+}
+
 func Test_redact(t *testing.T) {
 	secrets := []string{
 		"a\nb\nc",
