@@ -2,6 +2,34 @@
 
 -----------------
 
+## 0.9.38 (2018 Feb 12)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.38/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.37 -> 0.9.38
+
+* [0103a1e] trapacska - Prepare for 0.9.38 (2018 Feb 12)
+* [c04fdd8] Tamas Papik - dep-update & updated README.md (#241) (2018 Feb 12)
+
+
 ## 0.9.37 (2018 Jan 09)
 
 ### Release Notes
@@ -1606,4 +1634,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2018 Jan 09
+Generated at: 2018 Feb 12

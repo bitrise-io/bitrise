@@ -2,16 +2,16 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "9f91ab2ef97544cdca176a1fb9165f2cf6fd709b"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "5e4c240f9ebd50a0571ce47fbb34b7927701435e"
-  version = "1.1.9"
+  revision = "ec6d7d90d102128359596df48baa74d0cdbed4b8"
+  version = "1.1.10"
 
 [[projects]]
   name = "github.com/bitrise-io/go-utils"
@@ -41,8 +41,8 @@
 [[projects]]
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "55ae028f147646a9739a8cc63b15584e0b42d3c6"
-  version = "0.9.37"
+  revision = "fb797e38794b9d9fc015f96249186ee3916268fb"
+  version = "0.9.38"
 
 [[projects]]
   branch = "master"
@@ -66,7 +66,7 @@
   branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "30136e27e2ac8d167177e8a583aa4c3fea5be833"
+  revision = "816c9085562cd7ee03e7f8188a1cfd942858cded"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -87,19 +87,19 @@
     "assert",
     "require"
   ]
-  revision = "be8372ae8ec5c6daaed3cc28ebf73c54b737c240"
+  revision = "b89eecf5ca5db6d3ba60b237ffe3df7bafb7662f"
 
 [[projects]]
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "a1c7408de3f632d86eee604a3bb755f1ffb68226"
+  revision = "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9de5f2eaf759b4c4550b3db39fed2e9e5f86f45c"
+  revision = "c7dcf104e3a7a1417abc0230cb0d5240d764159d"
 
 [[projects]]
   branch = "master"
@@ -108,13 +108,13 @@
     "unix",
     "windows"
   ]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
+  version = "v2.1.1"
 
 [solve-meta]
   analyzer-name = "dep"

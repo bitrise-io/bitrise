@@ -25,7 +25,7 @@ Call `stepman share` and follow the guide it prints.
 
 ### Release a new version
 
-1. Update go dependencies (`bitrise run godeps-update`)
+1. Update go dependencies (`bitrise run dep-update`)
 1. PR & merge these changes to the `master` branch
 1. Bump `RELEASE_VERSION` in bitrise.yml
 1. Update the version test at: `./_tests/integration/version_test.go`
