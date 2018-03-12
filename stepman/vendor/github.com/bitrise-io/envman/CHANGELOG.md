@@ -2,6 +2,34 @@
 
 -----------------
 
+## 1.1.11 (2018 Mar 12)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/envman/releases/download/1.1.11/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/envman
+```
+
+That's all, you're ready to call `envman`!
+
+### Release Commits - 1.1.10 -> 1.1.11
+
+* [eef4a31] Krisztian Dobmayer - Dep update (2018 Mar 12)
+* [448fdaf] Krisztian Dobmayer - Bump version to 1.1.11 (2018 Mar 12)
+
+
 ## 1.1.10 (2018 Feb 12)
 
 ### Release Notes
@@ -780,4 +808,4 @@ That's all, you're ready to call `envman`!
 
 -----------------
 
-Generated at: 2018 Feb 12
+Generated at: 2018 Mar 12
