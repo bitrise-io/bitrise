@@ -59,7 +59,7 @@ workflows:
         title: Go build
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
 
             # build the new bitrise
@@ -75,7 +75,7 @@ workflows:
         title: Run integration tests
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             echo "Running integration tests ..."
             set -ex
 
@@ -119,7 +119,7 @@ workflows:
         title: Go lint
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -e
             while read -r line; do
               echo "-> Linting: $line"
@@ -142,7 +142,7 @@ workflows:
         run_if: ".IsCI"
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
 
             bitrise setup
 
@@ -159,7 +159,7 @@ workflows:
         title: Install testing tools
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
 
             # Check for unhandled errors
@@ -172,7 +172,7 @@ workflows:
         run_if: ".IsCI"
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -e
             set -x
 
@@ -205,7 +205,7 @@ workflows:
         title: Create CHANGELOG and git release
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
 
             go get github.com/bitrise-tools/releaseman
@@ -255,7 +255,7 @@ workflows:
         title: Create binaries
         inputs:
         - content: |
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -e
             set -x
 
@@ -310,7 +310,7 @@ workflows:
         title: Dependency update
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
             go get -u -v github.com/golang/dep/cmd/dep
             dep ensure -v
@@ -343,13 +343,3 @@ workflows:
         is_always_run: false
         inputs:
         - content: exit 0
-
-  filter:
-    steps:
-    - script:
-        title: Success
-        inputs:
-        - content: |
-            echo "Type the year that you want to check (4 digits), followed by [ENTER]:"
-            read year
-            ecgho $year

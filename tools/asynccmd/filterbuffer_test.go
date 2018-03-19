@@ -82,7 +82,7 @@ func TestSecrets(t *testing.T) {
 	}, buff.secrets)
 }
 
-func Test_matchSecrets(t *testing.T) {
+func TestMatchSecrets(t *testing.T) {
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -111,7 +111,7 @@ func Test_matchSecrets(t *testing.T) {
 	require.Equal(t, map[int]bool{5: true}, partialMatchMap)
 }
 
-func Test_linesToKeepRange(t *testing.T) {
+func TestLinesToKeepRange(t *testing.T) {
 	t.Log()
 	secrets := []string{
 		"a\nb\nc",
@@ -136,7 +136,7 @@ func Test_linesToKeepRange(t *testing.T) {
 	require.Equal(t, 2, first)
 }
 
-func Test_matchLine(t *testing.T) {
+func TestMatchLine(t *testing.T) {
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -172,7 +172,7 @@ func Test_matchLine(t *testing.T) {
 	}, remaining)
 }
 
-func Test_secretLinesToRedact(t *testing.T) {
+func TestSecretLinesToRedact(t *testing.T) {
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -209,7 +209,7 @@ func Test_secretLinesToRedact(t *testing.T) {
 	require.Equal(t, [][]byte{[]byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 }
 
-func Test_redactLine(t *testing.T) {
+func TestRedactLine(t *testing.T) {
 	t.Log("redacts the middle of the line")
 	{
 		line := []byte("asdfabcasdf")
@@ -265,7 +265,7 @@ func Test_redactLine(t *testing.T) {
 	}
 }
 
-func Test_redact(t *testing.T) {
+func TestRedact(t *testing.T) {
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -325,7 +325,7 @@ func Test_redact(t *testing.T) {
 	}
 }
 
-func Test_split(t *testing.T) {
+func TestSplit(t *testing.T) {
 	t.Log("bytes")
 	{
 		require.Equal(t, []byte{}, []byte(""))

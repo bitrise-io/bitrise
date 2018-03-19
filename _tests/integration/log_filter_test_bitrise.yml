@@ -7,12 +7,12 @@ workflows:
     - script:
         inputs:
         - content: |
-            #!/bin/bash
+            #!/usr/bin/env bash
             for i in {106..99}; do echo $i; done
   test:
     steps:
     - script:
         inputs:
         - content: |
-            #!/bin/bash
+            #!/usr/bin/env bash
             echo "My ssh key: $SECRET_3"
