@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
@@ -33,6 +34,7 @@ var updateCommand = cli.Command{
 			log.Errorf("Update Bitrise CLI failed, error: %s", err)
 			os.Exit(1)
 		}
+
 		return nil
 	},
 	Flags: []cli.Flag{
@@ -169,7 +171,13 @@ func latestTag() (*ver.Version, error) {
 	return ver.NewVersion(result[0].Name)
 }
 
-func download(url, dst string) error {
+func download(version string) error {
+	path, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf(downloadURL, version, strings.Title(runtime.GOOS))
+
 	tmpfile, err := ioutil.TempFile("", "bitrise")
 	if err != nil {
 		return fmt.Errorf("can't create temporary file: %s", err)
@@ -193,23 +201,29 @@ func download(url, dst string) error {
 		return fmt.Errorf("error while writing to temp file, error: %v", err)
 	}
 
-	if err := os.Remove(dst); err != nil {
-		return fmt.Errorf("can't remove file (%s), error: %s", dst, err)
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("can't remove file (%s), error: %s", path, err)
 	}
 
-	return CopyFile(tmpfile.Name(), dst, true)
+	if err := CopyFile(tmpfile.Name(), path, true); err != nil {
+		return err
+	}
+	log.Donef("Bitrise CLI is successfully updated!")
+
+	return nil
 }
 
 func update(c *cli.Context) error {
+	versionFlag := c.String("version")
 	log.Infof("Updating Bitrise CLI...")
-	version := c.String("version")
+	fmt.Printf("Current version: %s\n", version.VERSION)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
 		return err
 	}
 	if withBrew {
-		if version != "" {
+		if versionFlag != "" {
 			return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only supported for GitHub release page installations")
 		}
 		cmd := exec.Command("brew", "upgrade", "bitrise")
@@ -218,21 +232,24 @@ func update(c *cli.Context) error {
 		return cmd.Run()
 	}
 
-	if version == "" {
+	if versionFlag == "" {
 		latest, err := latestTag()
 		if err != nil {
 			return err
 		}
-		version = latest.String()
+		versionFlag = latest.String()
+		fmt.Printf("Latest version: %s\n", versionFlag)
+	}
+	if versionFlag == version.VERSION {
+		fmt.Println("Bitrise CLI is already up-to-date")
+		return nil
 	}
 
-	path, err := exec.LookPath(os.Args[0])
-	if err != nil {
+	fmt.Println("Downloading Bitrise CLI...")
+	if err := download(versionFlag); err != nil {
 		return err
 	}
-	os := strings.Title(runtime.GOOS)
-	url := fmt.Sprintf(downloadURL, version, os)
-	return download(url, path)
+	return bitrise.RunSetup(versionFlag, false, false)
 }
 
 // CopyFile ...
