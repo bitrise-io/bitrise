@@ -312,11 +312,9 @@ func (b *Buffer) redact(lines [][]byte, matchMap map[int][]int) [][]byte {
 
 // secretsByteList returns the list of secret byte lines.
 func secretsByteList(secrets []string) [][][]byte {
-	s := [][][]byte{}
+	var s [][][]byte
 	for _, secret := range secrets {
-		sBytes := []byte(secret)
-		sByteLines := bytes.Split(sBytes, newLine)
-		s = append(s, sByteLines)
+		s = append(s, bytes.Split([]byte(secret), newLine))
 	}
 	return s
 }
@@ -324,12 +322,7 @@ func secretsByteList(secrets []string) [][][]byte {
 // split splits p after "\n", the split is assigned to lines
 // if last line has no "\n" it is assigned to chunk.
 func split(p []byte) (lines [][]byte, chunk []byte) {
-	if p == nil || len(p) == 0 {
-		return [][]byte{}, []byte{}
-	}
-
-	lines = [][]byte{}
-	chunk = p[:]
+	chunk = p
 	for len(chunk) > 0 {
 		idx := bytes.Index(chunk, newLine)
 		if idx == -1 {
@@ -340,9 +333,9 @@ func split(p []byte) (lines [][]byte, chunk []byte) {
 
 		if idx == len(chunk)-1 {
 			chunk = []byte{}
-		} else {
-			chunk = chunk[idx+1:]
+			continue
 		}
+		chunk = chunk[idx+1:]
 	}
 	return
 }
