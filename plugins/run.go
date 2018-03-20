@@ -153,7 +153,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1); err != nil {
+	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, nil); err != nil {
 		return err
 	}
 

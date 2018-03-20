@@ -123,39 +123,6 @@ func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.Environmen
 	return envstore.Envs, nil
 }
 
-// ExportEnvironmentsList ...
-func ExportEnvironmentsList(envsList []envmanModels.EnvironmentItemModel) error {
-	log.Debugln("[BITRISE_CLI] - Exporting environments:", envsList)
-
-	for _, env := range envsList {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return err
-		}
-
-		opts, err := env.GetOptions()
-		if err != nil {
-			return err
-		}
-
-		isExpand := envmanModels.DefaultIsExpand
-		if opts.IsExpand != nil {
-			isExpand = *opts.IsExpand
-		}
-
-		skipIfEmpty := envmanModels.DefaultSkipIfEmpty
-		if opts.SkipIfEmpty != nil {
-			skipIfEmpty = *opts.SkipIfEmpty
-		}
-
-		if err := tools.EnvmanAdd(configs.InputEnvstorePath, key, value, isExpand, skipIfEmpty); err != nil {
-			log.Errorln("[BITRISE_CLI] - Failed to run envman add")
-			return err
-		}
-	}
-	return nil
-}
-
 // CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
 	stepYMLPth := filepath.Join(configs.BitriseWorkDirPath, "current_step.yml")
