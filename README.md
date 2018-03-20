@@ -104,7 +104,6 @@ docker-compose build && docker-compose run --rm app go test ./...
 1. Bump bitrise-tools and default plugins versions in `./bitrise/setup.go`
 1. PR & merge these changes to the `master` branch
 1. Bump `RELEASE_VERSION` (minor, e.g. 1.9.0 -> 1.10.0) in bitrise.yml
-1. Update the version test at: `./_tests/integration/version_test.go`
 1. Commit (do not push) these changes to the `master` branch
 1. Run `bitrise-run create-release`
 1. Fill the current version's `Release Notes` section in `CHANGELOG.md`

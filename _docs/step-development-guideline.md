@@ -118,3 +118,17 @@ Available `type_tags`:
 - notification
 
 _Every step should have at least one type_tag, if you feel you would need a new one, or update an existing's name, please [create a github issue](https://github.com/bitrise-io/bitrise/issues/new), with your suggestion._
+
+## Step icon convention
+
+The step's icon should match with the following criterias:
+
+- NOT transparent background color
+- size: 256 * 256 px
+- margin: 60 px
+- format: SVG
+
+Submit your step's icon by:
+
+- adding the svg file into your steplib fork repo at: STEPLIB_FORK_ROOT/steps/YOUR_STEP_ID/assets/icon.svg
+- createing a new pull request to the [steplib repo](https://github.com/bitrise-io/bitrise-steplib)
