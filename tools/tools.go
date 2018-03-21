@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
@@ -22,6 +24,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/pkg/errors"
 )
 
 // UnameGOOS ...
@@ -338,11 +341,93 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
-// EnvmanRun ...
+const enableSecretFilteringKey = "BITRISE_ENABLE_SECRET_FILTERING"
+
+// filteringEnabled returns true if enableSecretFilteringKey env presents with true value, false otherwise.
+func filteringEnabled(secrets []envmanModels.EnvironmentItemModel) bool {
+	for _, secret := range secrets {
+		key, value, err := secret.GetKeyValuePair()
+		if err != nil {
+			return false
+		}
+		if key == enableSecretFilteringKey && value == "true" {
+			return true
+		}
+	}
+	return false
+}
+
+// EnvmanRun runs a command through envman.
 func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration, secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdArgs...)
+
+	if !filteringEnabled(secrets) {
+		command := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin).SetDir(workDirPth)
+
+		if timeout <= 0 {
+			exitCode, err := command.RunAndReturnExitCode()
+			if err != nil {
+				err = errors.WithStack(err)
+			}
+			return exitCode, err
+		}
+
+		// create a new process group for our process and its child processes
+		cmd := command.GetCmd()
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+		if err := cmd.Start(); err != nil {
+			return -1, errors.WithStack(err)
+		}
+
+		// Setpgid: true creates a new process group for cmd and its subprocesses
+		// this way cmd will not belong to its parent process group,
+		// cmd will not be killed when you hit ^C in your terminal
+		// to fix this, we listen and handle Interrupt signal manually
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			<-c
+			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+				log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
+			}
+			os.Exit(130)
+		}()
+		defer func() {
+			signal.Stop(c)
+		}()
+		//
+
+		timer := time.AfterFunc(timeout, func() {
+			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+				log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
+			}
+		})
+
+		err := cmd.Wait()
+
+		timer.Stop()
+
+		if err != nil {
+			if err.Error() == "signal: killed" {
+				return -2, errors.New("timeout")
+			}
+
+			exitCode := 1
+			if exiterr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+					exitCode = status.ExitStatus()
+				}
+			}
+			return exitCode, errors.WithStack(err)
+		}
+
+		return 0, nil
+	}
+
+	log.Warnf("Secret filtering enabled")
 
 	cmd := asynccmd.New("envman", args...)
 	cmd.SetDir(workDirPth)
@@ -350,9 +435,12 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	var secretValues []string
 	for _, secret := range secrets {
-		_, value, err := secret.GetKeyValuePair()
+		key, value, err := secret.GetKeyValuePair()
 		if err != nil {
 			return 1, err
+		}
+		if key == enableSecretFilteringKey {
+			continue
 		}
 		if value == "" {
 			continue
