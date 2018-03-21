@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sys/unix"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/asynccmd"
@@ -25,6 +23,7 @@ import (
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 )
 
 // UnameGOOS ...
@@ -347,10 +346,7 @@ const enableSecretFilteringKey = "BITRISE_ENABLE_SECRET_FILTERING"
 func filteringEnabled(secrets []envmanModels.EnvironmentItemModel) bool {
 	for _, secret := range secrets {
 		key, value, err := secret.GetKeyValuePair()
-		if err != nil {
-			return false
-		}
-		if key == enableSecretFilteringKey && value == "true" {
+		if err == nil && key == enableSecretFilteringKey && value == "true" {
 			return true
 		}
 	}
@@ -368,10 +364,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 		if timeout <= 0 {
 			exitCode, err := command.RunAndReturnExitCode()
-			if err != nil {
-				err = errors.WithStack(err)
-			}
-			return exitCode, err
+			return exitCode, errors.WithStack(err)
 		}
 
 		// create a new process group for our process and its child processes
