@@ -105,7 +105,7 @@ func (c *Cmd) Start() (chan Status, chan string) {
 					return
 				}
 
-				if len(lines) == 0 && combinedOut.lastWrite.After(combinedOut.lastWrite.Add(2*time.Second)) {
+				if len(lines) == 0 && time.Since(combinedOut.lastWrite) > 2*time.Second {
 					// may the command waits for user input
 					if err := combinedOut.Flush(); err != nil {
 						statusChan <- Status{Code: 1, Err: err}

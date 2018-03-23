@@ -8,7 +8,7 @@ workflows:
         inputs:
         - content: |
             #!/usr/bin/env bash
-            for i in {106..99}; do echo $i; done
+            for i in {123456..123451}; do echo $i; done
   test:
     steps:
     - script:
