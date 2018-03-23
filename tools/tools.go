@@ -385,8 +385,8 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 			<-c
 			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 				log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
+				os.Exit(130)
 			}
-			os.Exit(130)
 		}()
 		defer func() {
 			signal.Stop(c)
@@ -396,6 +396,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		timer := time.AfterFunc(timeout, func() {
 			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 				log.Warnf("Failed to kill process, error: %+v", errors.WithStack(err))
+				os.Exit(130)
 			}
 		})
 
@@ -403,21 +404,20 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 		timer.Stop()
 
+		exitCode := 0
 		if err != nil {
-			if err.Error() == "signal: killed" {
-				return -2, errors.New("timeout")
-			}
-
-			exitCode := 1
+			exitCode = 1
 			if exiterr, ok := err.(*exec.ExitError); ok {
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 					exitCode = status.ExitStatus()
 				}
 			}
-			return exitCode, errors.WithStack(err)
+			if err.Error() == "signal: killed" {
+				err = errors.New("timeout")
+			}
 		}
 
-		return 0, nil
+		return exitCode, errors.WithStack(err)
 	}
 
 	log.Warnf("Secret filtering enabled")
