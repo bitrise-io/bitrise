@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -33,13 +32,9 @@ func Test_TimeoutTest(t *testing.T) {
 		cmd := command.New(binPath(), "run", "timeout", "--config", configPth)
 		cmd.AppendEnvs(envs...)
 
-		start := time.Now()
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		elapsed := time.Since(start)
 
 		require.EqualError(t, err, "exit status 1", out)
-		require.Equal(t, true, elapsed < 10*time.Second, fmt.Sprintf("elapsed time: %v", elapsed))
-		require.Equal(t, true, elapsed > 5*time.Second, fmt.Sprintf("elapsed time: %v", elapsed))
 
 		t.Log("Should exist")
 		{

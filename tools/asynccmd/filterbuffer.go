@@ -97,6 +97,7 @@ func (b *Buffer) Flush() error {
 	if _, err := b.Buff.Write(redactedBytes); err != nil {
 		return err
 	}
+	b.lastWrite = time.Now()
 	return nil
 }
 

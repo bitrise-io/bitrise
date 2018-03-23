@@ -340,7 +340,7 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
-const enableSecretFilteringKey = "BITRISE_ENABLE_SECRET_FILTERING"
+const enableSecretFilteringKey = "BITRISE_SECRET_FILTERING"
 
 // filteringEnabled returns true if enableSecretFilteringKey env presents with true value, false otherwise.
 func filteringEnabled(secrets []envmanModels.EnvironmentItemModel) bool {
@@ -435,7 +435,8 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		if key == enableSecretFilteringKey {
 			continue
 		}
-		if value == "" {
+		// secret to redact needs to be at least 5 char legth
+		if len(value) < 6 {
 			continue
 		}
 		secretValues = append(secretValues, value)

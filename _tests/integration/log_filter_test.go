@@ -18,20 +18,16 @@ func Test_LogFilter(t *testing.T) {
 		require.NoError(t, err, out)
 		require.Contains(t, out, `[REDACTED]
 [REDACTED]
-104
-103
-102
-101
-100
+123454
+123453
+123452
 [REDACTED]`)
-		require.NotContains(t, out, `106
-105
-104
-103
-102
-101
-100
-99`)
+		require.NotContains(t, out, `123456
+123455
+123454
+123453
+123452
+123451`)
 	}
 
 	t.Log("multi line test")
