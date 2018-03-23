@@ -428,15 +428,8 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	var secretValues []string
 	for _, secret := range secrets {
-		key, value, err := secret.GetKeyValuePair()
-		if err != nil {
-			return 1, err
-		}
-		if key == enableSecretFilteringKey {
-			continue
-		}
-		// secret to redact needs to be at least 5 char legth
-		if len(value) < 6 {
+		_, value, err := secret.GetKeyValuePair()
+		if err != nil || len(value) < 6 { // secret to redact needs to be at least 5 char legth
 			continue
 		}
 		secretValues = append(secretValues, value)
