@@ -125,7 +125,7 @@ func initWorkspaceForProjectPath(projectPath string, isAllowReset bool) error {
 	wsConfig, isFound := gowsConfig.WorkspaceForProjectLocation(projectPath)
 	if isFound {
 		if wsConfig.WorkspaceRootPath == "" {
-			return fmt.Errorf("A workspace is found for this project (path: %s), but the workspace root directory path is not defined!", projectPath)
+			return fmt.Errorf("A workspace is found for this project (path: %s), but the workspace root directory path is not defined", projectPath)
 		}
 		projectWorkspaceAbsPath = wsConfig.WorkspaceRootPath
 

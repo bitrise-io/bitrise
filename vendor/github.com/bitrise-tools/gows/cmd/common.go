@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,9 +8,10 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 
-	"github.com/bitrise-io/go-utils/cmdex"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/gows/config"
@@ -62,7 +62,17 @@ func PrepareEnvironmentAndRunCommand(userConfig config.UserConfigModel, cmdName 
 
 	origGOPATH := os.Getenv("GOPATH")
 	if origGOPATH == "" {
-		return 0, fmt.Errorf("You don't have a GOPATH environment - please set it; GOPATH/bin will be symlinked")
+		// since Go 1.8 GOPATH is no longer required, it defaults to $HOME/go if not set:
+		// https://golang.org/doc/go1.8#gopath
+		p, err := pathutil.AbsPath("$HOME/go")
+		if err != nil {
+			return 0, errors.Wrap(err, "No GOPATH environment variable specified, and failed to get Abs path of default $HOME/go dir")
+		}
+		origGOPATH = p
+	}
+
+	if err := pathutil.EnsureDirExist(origGOPATH); err != nil {
+		return 0, errors.Wrapf(err, "Failed to ensure that GOPATH exists at path: %s", origGOPATH)
 	}
 
 	if wsConfig.WorkspaceRootPath == "" {
@@ -188,7 +198,7 @@ func syncDirWithDir(syncContentOf, syncIntoDir string) error {
 	cmd := exec.Command("rsync", "-avhP", "--delete", syncContentOf+"/", syncIntoDir+"/")
 	cmd.Stdin = os.Stdin
 
-	log.Debugf("[syncDirWithDir] Running command: $ %s", cmdex.PrintableCommandArgs(false, cmd.Args))
+	log.Debugf("[syncDirWithDir] Running command: $ %s", command.NewWithCmd(cmd).PrintableCommandArgs())
 	out, err := cmd.Output()
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {

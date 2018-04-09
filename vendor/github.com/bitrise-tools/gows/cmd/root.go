@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
+
+	"github.com/pkg/errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-tools/gows/config"
@@ -79,7 +80,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&loglevelFlag, "loglevel", "l", "", `Log level (options: debug, info, warn, error, fatal, panic). [$GOWS_LOGLEVEL]`)
 	RootCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("No command specified!")
+			return errors.New("No command specified")
 		}
 		RootCmd.SilenceErrors = true
 		RootCmd.SilenceUsage = true
@@ -89,7 +90,7 @@ func init() {
 		cmdName := args[0]
 		if cmdName == "-h" || cmdName == "--help" {
 			if err := RootCmd.Help(); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			return nil
 		}
