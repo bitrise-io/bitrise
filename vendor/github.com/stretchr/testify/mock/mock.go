@@ -191,6 +191,10 @@ type Mock struct {
 	// Holds the calls that were made to this mocked object.
 	Calls []Call
 
+	// test is An optional variable that holds the test struct, to be used when an
+	// invalid mock call was made.
+	test TestingT
+
 	// TestData holds any data that might be useful for testing.  Testify ignores
 	// this data completely allowing you to do whatever you like with it.
 	testData objx.Map
@@ -212,6 +216,27 @@ func (m *Mock) TestData() objx.Map {
 /*
 	Setting expectations
 */
+
+// Test sets the test struct variable of the mock object
+func (m *Mock) Test(t TestingT) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.test = t
+}
+
+// fail fails the current test with the given formatted format and args.
+// In case that a test was defined, it uses the test APIs for failing a test,
+// otherwise it uses panic.
+func (m *Mock) fail(format string, args ...interface{}) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.test == nil {
+		panic(fmt.Sprintf(format, args...))
+	}
+	m.test.Errorf(format, args...)
+	m.test.FailNow()
+}
 
 // On starts a description of an expectation of the specified method
 // being called.
@@ -249,27 +274,25 @@ func (m *Mock) findExpectedCall(method string, arguments ...interface{}) (int, *
 	return -1, nil
 }
 
-func (m *Mock) findClosestCall(method string, arguments ...interface{}) (bool, *Call) {
-	diffCount := 0
+func (m *Mock) findClosestCall(method string, arguments ...interface{}) (*Call, string) {
+	var diffCount int
 	var closestCall *Call
+	var err string
 
 	for _, call := range m.expectedCalls() {
 		if call.Method == method {
 
-			_, tempDiffCount := call.Arguments.Diff(arguments)
+			errInfo, tempDiffCount := call.Arguments.Diff(arguments)
 			if tempDiffCount < diffCount || diffCount == 0 {
 				diffCount = tempDiffCount
 				closestCall = call
+				err = errInfo
 			}
 
 		}
 	}
 
-	if closestCall == nil {
-		return false, nil
-	}
-
-	return true, closestCall
+	return closestCall, err
 }
 
 func callString(method string, arguments Arguments, includeArgumentValues bool) string {
@@ -316,6 +339,7 @@ func (m *Mock) Called(arguments ...interface{}) Arguments {
 // If Call.WaitFor is set, blocks until the channel is closed or receives a message.
 func (m *Mock) MethodCalled(methodName string, arguments ...interface{}) Arguments {
 	m.mutex.Lock()
+	//TODO: could combine expected and closes in single loop
 	found, call := m.findExpectedCall(methodName, arguments...)
 
 	if found < 0 {
@@ -326,13 +350,18 @@ func (m *Mock) MethodCalled(methodName string, arguments ...interface{}) Argumen
 		//   b) the arguments are not what was expected, or
 		//   c) the developer has forgotten to add an accompanying On...Return pair.
 
-		closestFound, closestCall := m.findClosestCall(methodName, arguments...)
+		closestCall, mismatch := m.findClosestCall(methodName, arguments...)
 		m.mutex.Unlock()
 
-		if closestFound {
-			panic(fmt.Sprintf("\n\nmock: Unexpected Method Call\n-----------------------------\n\n%s\n\nThe closest call I have is: \n\n%s\n\n%s\n", callString(methodName, arguments, true), callString(methodName, closestCall.Arguments, true), diffArguments(closestCall.Arguments, arguments)))
+		if closestCall != nil {
+			m.fail("\n\nmock: Unexpected Method Call\n-----------------------------\n\n%s\n\nThe closest call I have is: \n\n%s\n\n%s\nDiff: %s",
+				callString(methodName, arguments, true),
+				callString(methodName, closestCall.Arguments, true),
+				diffArguments(closestCall.Arguments, arguments),
+				strings.TrimSpace(mismatch),
+			)
 		} else {
-			panic(fmt.Sprintf("\nassert: mock: I don't know what to return because the method call was unexpected.\n\tEither do Mock.On(\"%s\").Return(...) first, or remove the %s() call.\n\tThis method was unexpected:\n\t\t%s\n\tat: %s", methodName, methodName, callString(methodName, arguments, true), assert.CallerInfo()))
+			m.fail("\nassert: mock: I don't know what to return because the method call was unexpected.\n\tEither do Mock.On(\"%s\").Return(...) first, or remove the %s() call.\n\tThis method was unexpected:\n\t\t%s\n\tat: %s", methodName, methodName, callString(methodName, arguments, true), assert.CallerInfo())
 		}
 	}
 
@@ -524,7 +553,7 @@ type Arguments []interface{}
 const (
 	// Anything is used in Diff and Assert when the argument being tested
 	// shouldn't be taken into consideration.
-	Anything string = "mock.Anything"
+	Anything = "mock.Anything"
 )
 
 // AnythingOfTypeArgument is a string that contains the type of an argument
@@ -627,6 +656,7 @@ func (args Arguments) Is(objects ...interface{}) bool {
 //
 // Returns the diff string and number of differences found.
 func (args Arguments) Diff(objects []interface{}) (string, int) {
+	//TODO: could return string as error and nil for No difference
 
 	var output = "\n"
 	var differences int

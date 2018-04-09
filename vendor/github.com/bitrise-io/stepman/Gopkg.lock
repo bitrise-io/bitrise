@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "9f91ab2ef97544cdca176a1fb9165f2cf6fd709b"
+  revision = "778f2e774c725116edbc3d039dc0dfc1cc62aae8"
 
 [[projects]]
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "ec6d7d90d102128359596df48baa74d0cdbed4b8"
-  version = "1.1.10"
+  revision = "194f81495098fb00a5c479cde53ecc136d70c8a5"
+  version = "1.1.11"
 
 [[projects]]
   name = "github.com/bitrise-io/go-utils"
@@ -57,19 +57,19 @@
     "assert",
     "require"
   ]
-  revision = "be8372ae8ec5c6daaed3cc28ebf73c54b737c240"
+  revision = "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
 
 [[projects]]
   branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "a1c7408de3f632d86eee604a3bb755f1ffb68226"
+  revision = "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9de5f2eaf759b4c4550b3db39fed2e9e5f86f45c"
+  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
 
 [[projects]]
   branch = "master"
@@ -78,13 +78,13 @@
     "unix",
     "windows"
   ]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"

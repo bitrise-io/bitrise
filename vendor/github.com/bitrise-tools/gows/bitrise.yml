@@ -1,20 +1,6 @@
 format_version: 1.2.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-
-app:
-  envs: []
-
 workflows:
-  update_tools:
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            go get -u github.com/eaburns/Watch
-            go get -u github.com/tools/godep
-
   test:
     steps:
     - script:
@@ -23,40 +9,17 @@ workflows:
             #!/bin/bash
             set -ex
             go test ./...
-
-  deps-go_get:
+  dep-update:
+    title: Dep update
+    description: |
+      Used for updating bitrise dependencies with dep
     steps:
     - script:
+        title: Dependency update
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
-            go get -u github.com/stretchr/testify/require
-            go get -u golang.org/x/sys/unix
-            go get -u github.com/davecgh/go-spew/spew
-            go get -u github.com/pmezard/go-difflib/difflib
-            go get -u github.com/inconshreveable/mousetrap
-  deps-update:
-    before_run:
-    - update_tools
-    - deps-go_get
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -x
-            rm -rf Godeps
-            rm -rf vendor
-            set -e
-            go get -u ./...
-            godep save ./...
-
-  watch:
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            Watch -t -v -p ./ bash -l -c 'go test ./... && go install'
+            go get -u -v github.com/golang/dep/cmd/dep
+            dep ensure -v
+            dep ensure -v -update
