@@ -83,6 +83,9 @@ __2. Step Development Guideline updated with [Step icon convention section](http
 
 __3. `bitrise update` command got improvements__
 
+- better log messages
+- avoid updating if the current version is the latest
+
 __4. Tools update__
 
 - envman update to version [1.1.12](https://github.com/bitrise-io/envman/releases/tag/1.1.12)
