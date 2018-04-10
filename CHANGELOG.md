@@ -1,6 +1,120 @@
-## Changelog (Current version: 1.14.0)
+## Changelog (Current version: 1.15.0)
 
 -----------------
+
+## 1.15.0 (2018 Apr 09)
+
+### Release Notes
+
+__1. Bitrise secret filtering__
+
+From this version bitrise-cli can filter your secrets from the build log.
+
+Set `BITRISE_SECRET_FILTERING` to `true` in your secrets to enable the new feature. The new functionality can hide single and multiline secrets in the log.
+
+__NOTE:__ Secrets with at least 6 characters will be replaced with `[REDACTED]` pattern in the build log.
+
+Example:
+
+.bitrise.secrets.yml:
+```
+envs:
+- BITRISE_SECRET_FILTERING: true
+- MY_SSH_KEY: |
+    -----BEGIN RSA PRIVATE KEY-----
+    bitrise_testmfsjOSsRK7+uFr1g4jvIz/yoDrSMRcKrBi/c+iJr+aO8xIb7j2WQ
+    5F4h84OLEkQEmfsjOSsRK7+uFr1g4jvIz/yoDrSMRcKrBi/c+iJr+aO8xIb7j2WQ
+    sPXxhoOj4kuoxqFjrQMGyDZ+uIJMD9D+vsov4iDvIBrMkn2TuD/o1X9oISEhDw1l
+    3tsWqgFxpZprcMw64rdEOJ/7+aJczWvi37kGYjQ4wvSnD+MEoFZIM3fhxDDcxb+I
+    COjv7Y+Ta++KGjhyu5OJjTAzFyjal0ub0VaVdu8Vg6tAr1grdhQayPYXZqd1TqaU
+    kniMwxz4hAg+QbhsdSlKzQjgbJJhzn3shiK7kMxL7DrUmhoIgQ1QMUERj4Lt8y9I
+    J3zHmSq27IEXSzwBIL0JRAsKfcq914f3S2tbyQUi2doJTMxWDgcaL6jkzjCwmCx/
+    bitrise_testmfsWwlaF+Y0w0xVfAcABHdYjWHx2UHP02EC1ZGUAqF9z6XaCV8l9
+    oMHHu9lvWKuxpVNPcGY/kR3G897Qn+6vE3yuVwbD4reu0IHAWZzBgt7e3we5
+    -----END RSA PRIVATE KEY-----
+```
+
+bitrise.yml
+```
+format_version: 5
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            echo "My ssh key: $MY_SSH_KEY"
+```
+
+`bitrise run primary`
+```
++------------------------------------------------------------------------------+
+| (0) script                                                                   |
++------------------------------------------------------------------------------+
+| id: script                                                                   |
+| version: 1.1.5                                                               |
+| collection: https://github.com/bitrise-io/bitrise-steplib.git                |
+| toolkit: bash                                                                |
+| time: 2018-04-10T10:10:35+02:00                                              |
++------------------------------------------------------------------------------+
+|                                                                              |
+WARN[10:10:36] Secret filtering enabled
+My ssh key: [REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+[REDACTED]
+|                                                                              |
++---+---------------------------------------------------------------+----------+
+| ✓ | script                                                        | 2.46 sec |
++---+---------------------------------------------------------------+----------+
+```
+
+__2. Step Development Guideline updated with [Step icon convention section](https://github.com/bitrise-io/bitrise/blob/master/_docs/step-development-guideline.md#step-icon-convention)__
+
+__3. `bitrise update` command got improvements__
+
+__4. Go version for toolkit bumped to 1.10.1__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.15.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.14.0 -> 1.15.0
+
+* [b9fc581] Krisztián  Gödrei - prepare for 1.15.0 (2018 Apr 09)
+* [ec6fc4e] Krisztián Gödrei - dep update (#592) (2018 Apr 09)
+* [af3647a] Viktor Benei - Go version for toolkit, bump to 1.10.1 (#590) (2018 Apr 03)
+* [f78a297] Krisztián Gödrei - opt out secret filtering (#589) (2018 Mar 23)
+* [0188f52] Krisztián Gödrei - filter secrets from log lines (#583) (2018 Mar 20)
+* [89d24b9] Krisztian Dobmayer - Bitrise update improvements (#588) (2018 Mar 20)
+* [940b107] Krisztián Gödrei - Update step-development-guideline.md (#585) (2018 Mar 13)
+
 
 ## 1.14.0 (2018 Mar 12)
 
@@ -3541,4 +3655,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Mar 12
+Updated: 2018 Apr 09
