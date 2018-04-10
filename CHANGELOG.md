@@ -16,7 +16,7 @@ __NOTE:__ Secrets with at least 6 characters will be replaced with `[REDACTED]` 
 
 Example:
 
-.bitrise.secrets.yml:
+.bitrise.secrets.yml
 ```
 envs:
 - BITRISE_SECRET_FILTERING: true
@@ -83,7 +83,18 @@ __2. Step Development Guideline updated with [Step icon convention section](http
 
 __3. `bitrise update` command got improvements__
 
-__4. Go version for toolkit bumped to 1.10.1__
+__4. Tools update__
+
+- envman update to version [1.1.12](https://github.com/bitrise-io/envman/releases/tag/1.1.12)
+- stepman update to version [0.9.40](https://github.com/bitrise-io/stepman/releases/tag/0.9.40)
+
+__5. Default plugins update__
+
+- workflow-editor plugin update to version [1.1.14](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.14)
+
+__6. Go version for toolkit bumped to 1.10.1__
+
+__7. Go dependencies update__
 
 ### Install or upgrade
 
@@ -107,7 +118,7 @@ time you call bitrise run.
 
 ### Release Commits - 1.14.0 -> 1.15.0
 
-* [b9fc581] Krisztián  Gödrei - prepare for 1.15.0 (2018 Apr 09)
+* [b9fc581] Krisztián  Gödrei - prepare for 1.15.0 (2018 Apr 09)
 * [ec6fc4e] Krisztián Gödrei - dep update (#592) (2018 Apr 09)
 * [af3647a] Viktor Benei - Go version for toolkit, bump to 1.10.1 (#590) (2018 Apr 03)
 * [f78a297] Krisztián Gödrei - opt out secret filtering (#589) (2018 Mar 23)
@@ -419,7 +430,7 @@ time you call bitrise run.
 
 ### Release Commits - 1.9.0 -> 1.10.0
 
-* [caae040] Krisztián Gödrei - prepare for 1.10.0 (2017 Oct 10)
+* [caae040] Krisztián Gödrei - prepare for 1.10.0 (2017 Oct 10)
 * [320337f] Krisztián Gödrei - tools update (#539) (2017 Oct 10)
 * [2796fa7] Krisztián Gödrei - dep update (#538) (2017 Oct 09)
 * [a5ea4c0] Viktor Benei - Update min go version: 1.9 -> 1.9.1 (#537) (2017 Oct 09)
