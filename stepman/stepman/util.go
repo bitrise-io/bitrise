@@ -137,7 +137,24 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return git.CloneTagOrBranchAndValidateCommitHash(downloadLocation.Src, stepPth, version, commithash)
+				repo, err := git.New(downloadLocation.Src)
+				if err != nil {
+					return err
+				}
+
+				if err := repo.CloneTagOrBranch(downloadLocation.Src, version).Run(); err != nil {
+					return err
+				}
+
+				hash, err := repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
+				if err != nil {
+					return err
+				}
+
+				if hash != commithash {
+					return fmt.Errorf("commit hash (%s) doesn't match the one specified (%s) for the version tag (%s)", hash, commithash, version)
+				}
+				return nil
 			})
 
 			if err != nil {

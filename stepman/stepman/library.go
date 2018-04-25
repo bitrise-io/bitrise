@@ -46,7 +46,11 @@ func SetupLibrary(libraryURI string) error {
 	pth := GetLibraryBaseDirPath(route)
 	if !isLocalLibrary {
 		if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-			return git.Clone(libraryURI, pth)
+			repo, err := git.New(pth)
+			if err != nil {
+				return err
+			}
+			return repo.Clone(libraryURI).Run()
 		}); err != nil {
 			return fmt.Errorf("failed to clone library (%s), error: %s", libraryURI, err)
 		}
@@ -108,7 +112,11 @@ func UpdateLibrary(libraryURI string) (models.StepCollectionModel, error) {
 		}
 
 		if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-			return git.Pull(pth)
+			repo, err := git.New(pth)
+			if err != nil {
+				return err
+			}
+			return repo.Pull().Run()
 		}); err != nil {
 			return models.StepCollectionModel{}, fmt.Errorf("failed to pull library (%s), error: %s", libraryURI, err)
 		}

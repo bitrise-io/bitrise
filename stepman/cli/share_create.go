@@ -100,8 +100,14 @@ func create(c *cli.Context) error {
 	}
 
 	log.Infof("Cloning Step from (%s) with tag (%s) to temporary path (%s)", gitURI, tag, tmp)
+
+	repo, err := git.New(tmp)
+	if err != nil {
+		return err
+	}
+
 	if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-		return git.CloneTagOrBranch(gitURI, tmp, tag)
+		return repo.CloneTagOrBranch(gitURI, tag).Run()
 	}); err != nil {
 		log.Fatalf("Failed to git-clone (url: %s) version (%s), error: %s",
 			gitURI, tag, err)
@@ -118,10 +124,11 @@ func create(c *cli.Context) error {
 		log.Fatalf("Failed to unmarchal Step, err: %s", err)
 	}
 
-	commit, err := git.GetCommitHashOfHead(tmp)
+	commit, err := repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Fatalf("Failed to get commit hash, err: %s", err)
 	}
+
 	stepModel.Source = &models.StepSourceModel{
 		Git:    gitURI,
 		Commit: commit,
@@ -173,8 +180,12 @@ func create(c *cli.Context) error {
 
 	log.Infof("Checkout branch: %s", share.ShareBranchName())
 	collectionDir := stepman.GetLibraryBaseDirPath(route)
-	if err := git.Checkout(collectionDir, share.ShareBranchName()); err != nil {
-		if err := git.CreateAndCheckoutBranch(collectionDir, share.ShareBranchName()); err != nil {
+	steplibRepo, err := git.New(collectionDir)
+	if err != nil {
+		log.Fatalf("Failed to init setplib repo: %s", err)
+	}
+	if err := steplibRepo.Checkout(share.ShareBranchName()).Run(); err != nil {
+		if err := steplibRepo.NewBranch(share.ShareBranchName()).Run(); err != nil {
 			log.Fatalf("Git failed to create and checkout branch, err: %s", err)
 		}
 	}

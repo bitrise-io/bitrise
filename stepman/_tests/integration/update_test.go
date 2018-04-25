@@ -30,7 +30,9 @@ func TestUpdate(t *testing.T) {
 		defer func() {
 			require.NoError(t, os.RemoveAll(tmpDir))
 		}()
-		require.NoError(t, git.Clone(defaultLibraryURI, tmpDir))
+		repo, err := git.New(tmpDir)
+		require.NoError(t, err)
+		require.NoError(t, repo.Clone(defaultLibraryURI).Run())
 
 		out, err := command.New(binPath(), "delete", "-c", "file://"+tmpDir).RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)

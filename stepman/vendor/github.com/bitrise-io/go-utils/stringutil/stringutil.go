@@ -90,3 +90,15 @@ func genericTrim(inStr string, maxCharCount int, trimmAtStart, appendDots bool) 
 	}
 	return retStr
 }
+
+// LastNLines ...
+func LastNLines(s string, n int) string {
+	trimmed := strings.Trim(s, "\n")
+	splitted := strings.Split(trimmed, "\n")
+
+	if len(splitted) >= n {
+		splitted = splitted[len(splitted)-n:]
+	}
+
+	return strings.Join(splitted, "\n")
+}
