@@ -8,7 +8,7 @@
 
 [[constraint]]
   name = "github.com/bitrise-io/go-utils"
-  revision = "3cd2fc1c516caded20f67b53428cb793a82ad454"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/bitrise-io/goinp"

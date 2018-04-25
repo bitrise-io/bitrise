@@ -8,6 +8,7 @@
   revision = "778f2e774c725116edbc3d039dc0dfc1cc62aae8"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "command",
@@ -17,7 +18,7 @@
     "pathutil",
     "pointers"
   ]
-  revision = "3cd2fc1c516caded20f67b53428cb793a82ad454"
+  revision = "2d657206204605ce3b86124c33fea53c3e380d78"
 
 [[projects]]
   branch = "master"
@@ -56,7 +57,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
+  revision = "b0697eccbea9adec5b7ba8008f4c33d98d733388"
 
 [[projects]]
   branch = "master"
@@ -65,7 +66,7 @@
     "unix",
     "windows"
   ]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -76,6 +77,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "43edf0ff97026338b8bc19531a0ac7527f579c9b8c97bbae86826b106d8fcdab"
+  inputs-digest = "0aaba87442e29b26dadcb363bd734f29d8b8d76b7f8f080d2b5b07738a12aa7b"
   solver-name = "gps-cdcl"
   solver-version = 1

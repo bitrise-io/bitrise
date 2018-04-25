@@ -73,7 +73,11 @@ func start(c *cli.Context) error {
 
 	pth := stepman.GetLibraryBaseDirPath(route)
 	if err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-		return git.Clone(collectionURI, pth)
+		repo, err := git.New(pth)
+		if err != nil {
+			return err
+		}
+		return repo.Clone(collectionURI).Run()
 	}); err != nil {
 		log.Fatalf("Failed to setup step spec (url: %s) version (%s), error: %s", collectionURI, pth, err)
 	}

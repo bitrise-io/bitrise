@@ -1,98 +1,21 @@
-format_version: 1.0.0
+format_version: 5
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
-app:
-  envs:
-  - BITRISE_BIN_NAME: go-utils
 
 workflows:
-
-  _install_test_tools:
-    steps:
-    - script:
-        title: Install required testing tools
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            # Check for unhandled errors
-            go get -u github.com/kisielk/errcheck
-
-            # Go lint
-            go get -u github.com/golang/lint/golint
-
-            go get -u github.com/stretchr/testify/require
-            go get -u golang.org/x/crypto/ssh/terminal
-            go get -u gopkg.in/yaml.v2
-
   test:
     steps:
     - script:
-        title: Print go environment
         inputs:
         - content: |-
+            #!/usr/bin/env bash
             set -ex
-
-            go version
-    - script:
-        title: Export go files to test
+            go get -u github.com/stretchr/testify/require
+            go get -u golang.org/x/crypto/ssh/terminal
+            go get -u gopkg.in/yaml.v2
+    - go-list:
         inputs:
-        - content: |-
-            set -ex
-            go_list="$(go list ./... | grep -v "github.com/bitrise-io/go-utils/pkcs12*")"
-            envman add --key GOLIST --value "$go_list"
-    - script:
-        title: Err check
-        inputs:
-        - content: errcheck -asserts=true -blank=true $GOLIST
-    - script:
-        title: Go lint
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            while read -r line; do
-              echo "-> Linting: $line"
-              golint_out="$(golint $line)"
-              if [[ "${golint_out}" != "" ]] ; then
-                echo "=> Golint issues found:"
-                echo "${golint_out}"
-                exit 1
-              fi
-            done <<< "$GOLIST"
-    - script:
-        title: Go test
-        inputs:
-        - content: go test ./...
-    - script:
-        title: Go test coverage
-        description: |
-          To get the HTML report of a single package:
-          go test -coverprofile=coverage.out ./PACKAGE/
-          go tool cover -html coverage.out
-        inputs:
-        - content: go test -cover ./...
-
-  ci:
-    before_run:
-    - _install_test_tools
-    - test
-    steps:
-    - slack:
-        run_if: .IsCI
-        inputs:
-        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-        - channel: $INTERNAL_DEV_SLACK_CHANNEL
-        - from_username: ${BITRISE_BIN_NAME} - CI - OK
-        - from_username_on_error: ${BITRISE_BIN_NAME} - CI - ERROR
-        - emoji: ":white_check_mark:"
-        - emoji_on_error: ":no_entry_sign:"
-        - message: |-
-            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
-        - message_on_error: |-
-            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
+        - exclude: "*/vendor/*\n*/pkcs12*"
+    - golint:
+    - errcheck:
+    - go-test:

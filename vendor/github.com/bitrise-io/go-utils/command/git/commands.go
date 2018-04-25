@@ -16,7 +16,7 @@ func (g *Git) Clone(repo string) *command.Model {
 
 // CloneTagOrBranch is recursively clones a tag or branch.
 func (g *Git) CloneTagOrBranch(repo, tagOrBranch string) *command.Model {
-	return g.command("git", "clone", "--recursive", "--branch", tagOrBranch, repo, ".")
+	return g.command("clone", "--recursive", "--branch", tagOrBranch, repo, ".")
 }
 
 // RemoteList shows a list of existing remote urls with remote names.
