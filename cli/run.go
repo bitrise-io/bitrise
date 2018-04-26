@@ -27,9 +27,30 @@ const (
 	depManagerTryCheck = "_"
 )
 
-// --------------------
-// Utility
-// --------------------
+var runCommand = cli.Command{
+	Name:    "run",
+	Aliases: []string{"r"},
+	Usage:   "Runs a specified Workflow.",
+	Action:  run,
+	Flags: []cli.Flag{
+		// cli params
+		cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
+		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
+		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
+		cli.BoolFlag{Name: "filtering", Usage: "Enables secret filtering", EnvVar: "BITRISE_SECRET_FILTERING"},
+
+		// cli params used in CI mode
+		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
+		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+
+		// deprecated
+		flPath,
+
+		// should deprecate
+		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
+		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
+	},
+}
 
 func printAboutUtilityWorkflowsText() {
 	fmt.Println("Note about utility workflows:")
@@ -129,10 +150,6 @@ func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowT
 	log.Infof(workflowsString)
 }
 
-// --------------------
-// CLI command
-// --------------------
-
 func run(c *cli.Context) error {
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
@@ -146,6 +163,11 @@ func run(c *cli.Context) error {
 	var ciGlobalFlagPtr *bool
 	if c.GlobalIsSet(CIKey) {
 		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
+	}
+
+	var secretFiltering *bool
+	if c.IsSet("filtering") {
+		secretFiltering = pointers.NewBoolPtr(c.Bool("filtering"))
 	}
 
 	workflowToRunID := c.String(WorkflowKey)
@@ -213,22 +235,31 @@ func run(c *cli.Context) error {
 
 	//
 	// Main
+	enabledFiltering, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check Secret Filtering mode, error: %s", err)
+	}
+
+	if err := registerSecretFiltering(enabledFiltering); err != nil {
+		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+	}
+
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, error: %s", err)
+		log.Fatalf("Failed to check PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register  PR mode, error: %s", err)
+		log.Fatalf("Failed to register PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  CI mode, error: %s", err)
+		log.Fatalf("Failed to check CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register  CI mode, error: %s", err)
+		log.Fatalf("Failed to register CI mode, error: %s", err)
 	}
 
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)

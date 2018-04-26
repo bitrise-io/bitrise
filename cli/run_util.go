@@ -106,6 +106,35 @@ func registerCIMode(isCIMode bool) error {
 	return os.Setenv(configs.CIModeEnvKey, "false")
 }
 
+func isSecretFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if filteringFlag != nil {
+		return *filteringFlag, nil
+	}
+
+	for _, env := range inventoryEnvironments {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return false, err
+		}
+
+		if key == configs.IsSecretFilteringKey && value == "true" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func registerSecretFiltering(filtering bool) error {
+	configs.IsSecretFiltering = filtering
+
+	if filtering {
+		log.Info(colorstring.Yellow("bitrise runs in Secret Filtering mode"))
+		return os.Setenv(configs.IsSecretFilteringKey, "true")
+	}
+	return os.Setenv(configs.IsSecretFilteringKey, "false")
+}
+
 // GetBitriseConfigFromBase64Data ...
 func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
