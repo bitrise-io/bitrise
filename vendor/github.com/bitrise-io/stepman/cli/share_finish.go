@@ -39,7 +39,17 @@ func finish(c *cli.Context) error {
 	}
 
 	collectionDir := stepman.GetLibraryBaseDirPath(route)
-	if err := git.CheckIsNoChanges(collectionDir); err == nil {
+
+	repo, err := git.New(collectionDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out, err := repo.Status("--porcelain").RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if out == "" {
 		log.Warn("No git changes!")
 		printFinishShare()
 		return nil
@@ -48,18 +58,18 @@ func finish(c *cli.Context) error {
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
 	log.Info("New step.yml:", stepYMLPathInSteplib)
-	if err := git.AddFile(collectionDir, stepYMLPathInSteplib); err != nil {
+	if err := repo.Add(stepYMLPathInSteplib).Run(); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Do commit")
 	msg := share.StepID + " " + share.StepTag
-	if err := git.Commit(collectionDir, msg); err != nil {
+	if err := repo.Commit(msg).Run(); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Pushing to your fork: ", share.Collection)
-	if err := git.PushToOrigin(collectionDir, share.ShareBranchName()); err != nil {
+	if err := repo.Push(share.ShareBranchName()).Run(); err != nil {
 		log.Fatal(err)
 	}
 	printFinishShare()

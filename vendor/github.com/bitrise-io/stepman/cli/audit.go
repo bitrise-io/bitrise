@@ -72,17 +72,22 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 		return fmt.Errorf("Missing Source porperty")
 	}
 
+	repo, err := git.New(pth)
+	if err != nil {
+		return err
+	}
+
 	err = retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-		return git.CloneTagOrBranch(step.Source.Git, pth, version)
+		return repo.CloneTagOrBranch(step.Source.Git, version).Run()
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to git-clone the step (url: %s) version (%s), error: %s",
 			step.Source.Git, version, err)
 	}
 
-	latestCommit, err := git.GetCommitHashOfHead(pth)
+	latestCommit, err := repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Failed to get git-latest-commit-hash, error: %s", err)
+		return fmt.Errorf("Failed to get commit, error: %s", err)
 	}
 	if latestCommit != step.Source.Commit {
 		return fmt.Errorf("Step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)

@@ -8,12 +8,13 @@
   revision = "778f2e774c725116edbc3d039dc0dfc1cc62aae8"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "0029c0c7628cea2fd0c20dd30e968b34abbc50c4"
-  version = "1.1.12"
+  revision = "8437ec034b73d40a6bba2020af3eedf89e25550a"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -30,7 +31,7 @@
     "stringutil",
     "versions"
   ]
-  revision = "3cd2fc1c516caded20f67b53428cb793a82ad454"
+  revision = "2d657206204605ce3b86124c33fea53c3e380d78"
 
 [[projects]]
   branch = "master"
@@ -39,10 +40,10 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "f5a0417efa88e350b9133d6a8510cf3277f80b84"
-  version = "0.9.40"
+  revision = "bf618fc92acaf08d8e1347666b4014f6b8fbcd7e"
 
 [[projects]]
   branch = "master"
@@ -99,7 +100,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
+  revision = "b0697eccbea9adec5b7ba8008f4c33d98d733388"
 
 [[projects]]
   branch = "master"
@@ -108,7 +109,7 @@
     "unix",
     "windows"
   ]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -119,6 +120,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f8b9a7a61b8169a326339a495ee8e9bfb16a5230f8567d6050767da5e8ecec11"
+  inputs-digest = "dcd8300d855fd26e64eca12837ea418c9fcdbe7d005427327b22181e2238f574"
   solver-name = "gps-cdcl"
   solver-version = 1
