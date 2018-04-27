@@ -28,6 +28,9 @@ var (
 	IsDebugMode = false
 	// IsPullRequestMode ...
 	IsPullRequestMode = false
+
+	// IsSecretFiltering ...
+	IsSecretFiltering = false
 )
 
 // ---------------------------
@@ -44,6 +47,8 @@ const (
 	DebugModeEnvKey = "DEBUG"
 	// LogLevelEnvKey ...
 	LogLevelEnvKey = "LOGLEVEL"
+	// IsSecretFilteringKey ...
+	IsSecretFilteringKey = "BITRISE_SECRET_FILTERING"
 
 	// --- Debug Options
 

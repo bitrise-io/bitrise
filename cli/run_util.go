@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,9 +67,8 @@ func registerPrMode(isPRMode bool) error {
 
 	if isPRMode {
 		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
-		return os.Setenv(configs.PRModeEnvKey, "true")
 	}
-	return os.Setenv(configs.PRModeEnvKey, "false")
+	return os.Setenv(configs.PRModeEnvKey, strconv.FormatBool(isPRMode))
 }
 
 func isCIMode(ciGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -101,9 +101,36 @@ func registerCIMode(isCIMode bool) error {
 
 	if isCIMode {
 		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
-		return os.Setenv(configs.CIModeEnvKey, "true")
 	}
-	return os.Setenv(configs.CIModeEnvKey, "false")
+	return os.Setenv(configs.CIModeEnvKey, strconv.FormatBool(isCIMode))
+}
+
+func isSecretFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if filteringFlag != nil {
+		return *filteringFlag, nil
+	}
+
+	for _, env := range inventoryEnvironments {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return false, err
+		}
+
+		if key == configs.IsSecretFilteringKey && value == "true" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func registerSecretFiltering(filtering bool) error {
+	configs.IsSecretFiltering = filtering
+
+	if filtering {
+		log.Info(colorstring.Yellow("bitrise runs in Secret Filtering mode"))
+	}
+	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
 }
 
 // GetBitriseConfigFromBase64Data ...

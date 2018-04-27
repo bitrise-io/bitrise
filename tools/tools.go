@@ -340,26 +340,13 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
-const enableSecretFilteringKey = "BITRISE_SECRET_FILTERING"
-
-// filteringEnabled returns true if enableSecretFilteringKey env presents with true value, false otherwise.
-func filteringEnabled(secrets []envmanModels.EnvironmentItemModel) bool {
-	for _, secret := range secrets {
-		key, value, err := secret.GetKeyValuePair()
-		if err == nil && key == enableSecretFilteringKey && value == "true" {
-			return true
-		}
-	}
-	return false
-}
-
 // EnvmanRun runs a command through envman.
 func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration, secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdArgs...)
 
-	if !filteringEnabled(secrets) {
+	if !configs.IsSecretFiltering {
 		command := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin).SetDir(workDirPth)
 
 		if timeout <= 0 {
