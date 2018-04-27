@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -37,7 +38,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: "filtering", Usage: "Enables secret filtering", EnvVar: "BITRISE_SECRET_FILTERING"},
+		cli.BoolFlag{Name: "secret-filtering", Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
 
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},

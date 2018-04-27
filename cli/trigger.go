@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -22,7 +23,7 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: "filtering", Usage: "Enables secret filtering", EnvVar: "BITRISE_SECRET_FILTERING"},
+		cli.BoolFlag{Name: "secret-filtering", Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
 
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
