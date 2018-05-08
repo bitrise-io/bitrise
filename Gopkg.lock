@@ -8,10 +8,10 @@
   revision = "778f2e774c725116edbc3d039dc0dfc1cc62aae8"
 
 [[projects]]
-  branch = "master"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "8437ec034b73d40a6bba2020af3eedf89e25550a"
+  revision = "e607e3cb53ff51fe591f33739a36ea05356bf06c"
+  version = "1.1.13"
 
 [[projects]]
   branch = "master"
@@ -40,10 +40,10 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
-  branch = "master"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "bf618fc92acaf08d8e1347666b4014f6b8fbcd7e"
+  revision = "70596c8a17d5e8d429b1abd68222aae9733337d0"
+  version = "0.9.41"
 
 [[projects]]
   branch = "master"
@@ -100,7 +100,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b0697eccbea9adec5b7ba8008f4c33d98d733388"
+  revision = "4ec37c66abab2c7e02ae775328b2ff001c3f025a"
 
 [[projects]]
   branch = "master"
@@ -109,7 +109,7 @@
     "unix",
     "windows"
   ]
-  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
+  revision = "7db1c3b1a98089d0071c84f646ff5c96aad43682"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
