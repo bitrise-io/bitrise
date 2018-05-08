@@ -1,6 +1,70 @@
-## Changelog (Current version: 1.15.0)
+## Changelog (Current version: 1.16.0)
 
 -----------------
+
+## 1.16.0 (2018 May 08)
+
+### Release Notes
+
+__1. Secret filtering updates__
+
+Bitrise cli got a new flag to enable/disable redacting secret values in the output log: `--secret-filtering`.  
+Pass this flag to the `run` or `trigger` commands to enable filtering: `bitrise run WORKFLOW_ID --secret-filtering`.  
+The new flag can be set by an environment variable as well: `BITRISE_SECRET_FILTERING=true bitrise run WORKFLOW_ID` .
+
+_BITRISE_SECRET_FILTERING env var can be set as a secret env (in .bitrise.secrets.yml) as in the previous cli version._
+
+The min length of the secret value to redact was removed.
+
+__2. Tools update__
+
+- envman update to version [1.1.13](https://github.com/bitrise-io/envman/releases/tag/1.1.13)
+- stepman update to version [0.9.41](https://github.com/bitrise-io/stepman/releases/tag/0.9.41)
+
+__3. Default plugins update__
+
+- init plugin updated to version [1.0.2](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/1.0.2)
+- step plugin updated to version [0.9.6](https://github.com/bitrise-core/bitrise-plugins-step/releases/tag/0.9.6)
+- workflow-editor plugin updated to version [1.1.16](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.16)
+- analytics plugin updated to version [0.9.12](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.12)
+
+__4. Go toolkit's Go version bumped to 1.10.2__
+
+__5. Go dependencies update__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.16.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.15.0 -> 1.16.0
+
+* [dc41506] Krisztián  Gödrei - prepare for 1.16.0 (2018 May 08)
+* [e967d07] Krisztián Gödrei - secret filtering update (#600) (2018 May 08)
+* [13c79e1] Krisztián Gödrei - tool and plugin version updates (#598) (2018 May 08)
+* [7443059] Krisztián Gödrei - dep update (#599) (2018 May 08)
+* [2dc00ae] Viktor Benei - Go (toolkit) 1.10.2 (#597) (2018 May 08)
+* [210625f] Krisztián Gödrei - secret filtering flag (#596) (2018 Apr 27)
+* [2b70a67] Krisztián Gödrei - remove secret min length for filtering (#595) (2018 Apr 27)
+* [aa721aa] Krisztián Gödrei - Git update (#594) (2018 Apr 26)
+* [aab9d39] Krisztián Gödrei - Update CHANGELOG.md (2018 Apr 10)
+* [4d2703b] Krisztián Gödrei - Update CHANGELOG.md (2018 Apr 10)
+
 
 ## 1.15.0 (2018 Apr 09)
 
@@ -3669,4 +3733,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Apr 09
+Updated: 2018 May 08
