@@ -198,6 +198,8 @@ workflows:
         1, Create CHANGELOG and git release
         2, Export RELEASE_VERSION
         3, Create binaries
+    before_run:
+    - ci
     after_run:
     - create-binaries
     steps:
