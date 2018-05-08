@@ -407,16 +407,14 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		return exitCode, errors.WithStack(err)
 	}
 
-	log.Warnf("Secret filtering enabled")
-
 	cmd := asynccmd.New("envman", args...)
 	cmd.SetDir(workDirPth)
 	cmd.SetTimeout(timeout)
 
 	var secretValues []string
 	for _, secret := range secrets {
-		_, value, err := secret.GetKeyValuePair()
-		if err != nil || len(value) < 1 { // secret to redact needs to be at least 1 char legth
+		key, value, err := secret.GetKeyValuePair()
+		if err != nil || len(value) < 1 || key == configs.IsSecretFilteringKey {
 			continue
 		}
 		secretValues = append(secretValues, value)
