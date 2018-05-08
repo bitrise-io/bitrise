@@ -23,7 +23,7 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: "secret-filtering", Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
+		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
 
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
@@ -82,8 +82,8 @@ func trigger(c *cli.Context) error {
 	}
 
 	var secretFiltering *bool
-	if c.IsSet("filtering") {
-		secretFiltering = pointers.NewBoolPtr(c.Bool("filtering"))
+	if c.IsSet(secretFilteringFlag) {
+		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
 	}
 
 	triggerPattern := c.String(PatternKey)

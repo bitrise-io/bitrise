@@ -24,8 +24,9 @@ const (
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
 
-	depManagerBrew     = "brew"
-	depManagerTryCheck = "_"
+	depManagerBrew      = "brew"
+	depManagerTryCheck  = "_"
+	secretFilteringFlag = "secret-filtering"
 )
 
 var runCommand = cli.Command{
@@ -38,7 +39,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: "secret-filtering", Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
+		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
 
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
@@ -167,8 +168,8 @@ func run(c *cli.Context) error {
 	}
 
 	var secretFiltering *bool
-	if c.IsSet("filtering") {
-		secretFiltering = pointers.NewBoolPtr(c.Bool("filtering"))
+	if c.IsSet(secretFilteringFlag) {
+		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
 	}
 
 	workflowToRunID := c.String(WorkflowKey)
