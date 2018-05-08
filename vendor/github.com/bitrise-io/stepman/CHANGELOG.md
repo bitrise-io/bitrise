@@ -2,6 +2,34 @@
 
 -----------------
 
+## 0.9.41 (2018 May 07)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.41/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.40 -> 0.9.41
+
+* [e4197eb] Krisztián Gödrei - dep update (#244) (2018 May 07)
+* [bf618fc] Krisztián Gödrei - go-utils update (#243) (2018 Apr 25)
+
+
 ## 0.9.40 (2018 Apr 09)
 
 ### Release Notes
@@ -1689,4 +1717,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2018 Apr 09
+Generated at: 2018 May 07
