@@ -39,7 +39,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
+		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log."},
 
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
@@ -170,6 +170,8 @@ func run(c *cli.Context) error {
 	var secretFiltering *bool
 	if c.IsSet(secretFilteringFlag) {
 		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
+	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
+		secretFiltering = pointers.NewBoolPtr(true)
 	}
 
 	workflowToRunID := c.String(WorkflowKey)
