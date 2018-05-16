@@ -1,6 +1,39 @@
-## Changelog (Current version: 1.16.0)
+## Changelog (Current version: 1.16.1)
 
 -----------------
+
+## 1.16.1 (2018 May 16)
+
+### Release Notes
+
+* __REGRESSION__: fixed step activation from its git source
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.16.1/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.16.0 -> 1.16.1
+
+* [e20fa6d] Krisztián  Gödrei - prepare for 1.16.1 (2018 May 16)
+* [1c5f584] Krisztián Gödrei - stepman version update (#604) (2018 May 16)
+* [e7cf18e] Krisztián Gödrei - bitrise.yml update & version test fix (#601) (2018 May 08)
+
 
 ## 1.16.0 (2018 May 08)
 
@@ -3733,4 +3766,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 May 08
+Updated: 2018 May 16
