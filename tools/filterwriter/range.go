@@ -1,4 +1,4 @@
-package filteroutput
+package filterwriter
 
 import (
 	"bytes"

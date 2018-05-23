@@ -1,4 +1,4 @@
-package filteroutput
+package filterwriter
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ func TestWrite(t *testing.T) {
 	t.Log("trivial test")
 	{
 		var buff bytes.Buffer
-		out := NewOutput([]string{"abc", "a\nb\nc"}, &buff)
+		out := New([]string{"abc", "a\nb\nc"}, &buff)
 		log := []byte("test with\nnew line\nand single line secret:abc\nand multiline secret:a\nb\nc")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -34,7 +34,7 @@ func TestWrite(t *testing.T) {
 	t.Log("chunk without newline")
 	{
 		var buff bytes.Buffer
-		out := NewOutput([]string{"ab", "a\nb"}, &buff)
+		out := New([]string{"ab", "a\nb"}, &buff)
 		log := []byte("test without newline, secret:ab")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestWrite(t *testing.T) {
 	t.Log("multiple secret in the same line")
 	{
 		var buff bytes.Buffer
-		out := NewOutput([]string{"x1", "x\n2"}, &buff)
+		out := New([]string{"x1", "x\n2"}, &buff)
 		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestSecrets(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 	require.Equal(t, [][][]byte{
 		[][]byte{[]byte("a"), []byte("b"), []byte("c")},
 		[][]byte{[]byte("b")},
@@ -104,7 +104,7 @@ func TestMatchSecrets(t *testing.T) {
 		[]byte("b")}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 
 	matchMap, partialMatchMap := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -134,7 +134,7 @@ func TestLinesToKeepRange(t *testing.T) {
 	// 	[]byte("b")}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 
 	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
 	first := out.linesToKeepRange(partialMatchMap)
@@ -160,7 +160,7 @@ func TestMatchLine(t *testing.T) {
 		[]byte("b")}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 
 	_, partialMatchMap := out.matchSecrets(lines)
 	print, remaining := out.matchLines(lines, partialMatchMap)
@@ -192,7 +192,7 @@ func TestSecretLinesToRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 
 	matchMap, _ := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -286,7 +286,7 @@ func TestRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := NewOutput(secrets, &buff)
+	out := New(secrets, &buff)
 
 	matchMap := map[int][]int{0: []int{2}, 1: []int{3}}
 	redacted := out.redact(lines, matchMap)
@@ -314,7 +314,7 @@ func TestRedact(t *testing.T) {
 			[]byte("99")}
 
 		var buff bytes.Buffer
-		out := NewOutput(secrets, &buff)
+		out := New(secrets, &buff)
 
 		matchMap := map[int][]int{
 			0: []int{0},

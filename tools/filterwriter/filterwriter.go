@@ -1,4 +1,4 @@
-package filteroutput
+package filterwriter
 
 import (
 	"bytes"
@@ -14,8 +14,8 @@ const RedactStr = "[REDACTED]"
 
 var newLine = []byte("\n")
 
-// Output ...
-type Output struct {
+// Writer ...
+type Writer struct {
 	writer  io.Writer
 	secrets [][][]byte
 
@@ -23,9 +23,9 @@ type Output struct {
 	store [][]byte
 }
 
-// NewOutput ...
-func NewOutput(secrets []string, target io.Writer) *Output {
-	return &Output{
+// New ...
+func New(secrets []string, target io.Writer) *Writer {
+	return &Writer{
 		writer:  target,
 		secrets: secretsByteList(secrets),
 	}
@@ -37,16 +37,16 @@ func NewOutput(secrets []string, target io.Writer) *Output {
 // There are may lines which needs to be stored, since they are partial matching to a secret.
 // Since we do not know which is the last call of Write we need to call Flush
 // on buffer to write the remaining lines.
-func (o *Output) Write(p []byte) (int, error) {
+func (w *Writer) Write(p []byte) (int, error) {
 	// previous bytes may not ended with newline
-	data := append(o.chunk, p...)
+	data := append(w.chunk, p...)
 
 	lastLines, chunk := split(data)
-	o.chunk = chunk
+	w.chunk = chunk
 	if len(chunk) > 0 {
 		// we have remaining bytes, do not swallow them
 		time.AfterFunc(10*time.Second, func() {
-			if _, err := o.Flush(); err != nil {
+			if _, err := w.Flush(); err != nil {
 				log.Errorf("Failed to print last lines: %s", err)
 			}
 		})
@@ -58,18 +58,18 @@ func (o *Output) Write(p []byte) (int, error) {
 	}
 
 	for _, line := range lastLines {
-		lines := append(o.store, line)
-		matchMap, partialMatchIndexes := o.matchSecrets(lines)
+		lines := append(w.store, line)
+		matchMap, partialMatchIndexes := w.matchSecrets(lines)
 
 		var linesToPrint [][]byte
-		linesToPrint, o.store = o.matchLines(lines, partialMatchIndexes)
+		linesToPrint, w.store = w.matchLines(lines, partialMatchIndexes)
 		if linesToPrint == nil {
 			continue
 		}
 
-		redactedLines := o.redact(linesToPrint, matchMap)
+		redactedLines := w.redact(linesToPrint, matchMap)
 		redactedBytes := bytes.Join(redactedLines, nil)
-		if c, err := o.writer.Write(redactedBytes); err != nil {
+		if c, err := w.writer.Write(redactedBytes); err != nil {
 			return c, err
 		}
 	}
@@ -80,32 +80,32 @@ func (o *Output) Write(p []byte) (int, error) {
 }
 
 // Flush writes the remaining bytes.
-func (o *Output) Flush() (int, error) {
-	if len(o.chunk) > 0 {
+func (w *Writer) Flush() (int, error) {
+	if len(w.chunk) > 0 {
 		// lines are containing newline, chunk may not
-		chunk := o.chunk
-		o.chunk = nil
-		o.store = append(o.store, chunk)
+		chunk := w.chunk
+		w.chunk = nil
+		w.store = append(w.store, chunk)
 	}
 
 	// we only need to care about the full matches in the remaining lines
 	// (no more lines were come, why care about the partial matches?)
-	matchMap, _ := o.matchSecrets(o.store)
-	redactedLines := o.redact(o.store, matchMap)
-	o.store = nil
+	matchMap, _ := w.matchSecrets(w.store)
+	redactedLines := w.redact(w.store, matchMap)
+	w.store = nil
 
-	return o.writer.Write(bytes.Join(redactedLines, nil))
+	return w.writer.Write(bytes.Join(redactedLines, nil))
 }
 
 // matchSecrets collects which secrets matches from which line indexes
 // and which secrets matches partially from which line indexes.
 // matchMap: matching line chunk's first line indexes by secret index
 // partialMatchIndexes: line indexes from which secrets matching but not fully contained in lines
-func (o *Output) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMatchIndexes map[int]bool) {
+func (w *Writer) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMatchIndexes map[int]bool) {
 	matchMap = make(map[int][]int)
 	partialMatchIndexes = make(map[int]bool)
 
-	for secretIdx, secret := range o.secrets {
+	for secretIdx, secret := range w.secrets {
 		secretLine := secret[0] // every match should begin from the secret first line
 		lineIndexes := []int{}  // the indexes of lines which contains the secret's first line
 
@@ -170,7 +170,7 @@ func (o *Output) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMa
 
 // linesToKeepRange returns a range (first, last index) of lines needs to be observed
 // since they contain partially matching secrets.
-func (o *Output) linesToKeepRange(partialMatchIndexes map[int]bool) int {
+func (w *Writer) linesToKeepRange(partialMatchIndexes map[int]bool) int {
 	first := -1
 
 	for lineIdx := range partialMatchIndexes {
@@ -188,8 +188,8 @@ func (o *Output) linesToKeepRange(partialMatchIndexes map[int]bool) int {
 }
 
 // matchLines return which lines can be printed and which should be keept for further observing.
-func (o *Output) matchLines(lines [][]byte, partialMatchIndexes map[int]bool) ([][]byte, [][]byte) {
-	first := o.linesToKeepRange(partialMatchIndexes)
+func (w *Writer) matchLines(lines [][]byte, partialMatchIndexes map[int]bool) ([][]byte, [][]byte) {
+	first := w.linesToKeepRange(partialMatchIndexes)
 	if first == -1 {
 		// no lines needs to be kept
 		return lines, nil
@@ -204,7 +204,7 @@ func (o *Output) matchLines(lines [][]byte, partialMatchIndexes map[int]bool) ([
 }
 
 // secretLinesToRedact returns which secret lines should be redacted
-func (o *Output) secretLinesToRedact(lineIdxToRedact int, matchMap map[int][]int) [][]byte {
+func (w *Writer) secretLinesToRedact(lineIdxToRedact int, matchMap map[int][]int) [][]byte {
 	// which line is which secrets first matching line
 	secretIdxsByLine := make(map[int][]int)
 	for secretIdx, lineIndexes := range matchMap {
@@ -220,7 +220,7 @@ func (o *Output) secretLinesToRedact(lineIdxToRedact int, matchMap map[int][]int
 		}
 
 		for _, secretIdx := range secretIndexes {
-			secret := o.secrets[secretIdx]
+			secret := w.secrets[secretIdx]
 
 			if lineIdxToRedact > firstMatchingLineIdx+len(secret)-1 {
 				continue
@@ -255,7 +255,7 @@ func redact(line []byte, ranges []matchRange) []byte {
 }
 
 // redact hides the given secrets in the given lines.
-func (o *Output) redact(lines [][]byte, matchMap map[int][]int) [][]byte {
+func (w *Writer) redact(lines [][]byte, matchMap map[int][]int) [][]byte {
 	secretIdxsByLine := map[int][]int{}
 	for secretIdx, lineIndexes := range matchMap {
 		for _, lineIdx := range lineIndexes {
@@ -264,7 +264,7 @@ func (o *Output) redact(lines [][]byte, matchMap map[int][]int) [][]byte {
 	}
 
 	for i, line := range lines {
-		linesToRedact := o.secretLinesToRedact(i, matchMap)
+		linesToRedact := w.secretLinesToRedact(i, matchMap)
 		if linesToRedact == nil {
 			continue
 		}

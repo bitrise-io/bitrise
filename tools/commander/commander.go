@@ -72,7 +72,7 @@ func (c *Command) Start() error {
 			<-c.interruptChan
 			signal.Stop(c.interruptChan)
 			if err := c.Stop(); err != nil {
-				log.Warnf("Failed to kill process, error: %s", err)
+				log.Warnf("Failed to kill the process, error: %s", err)
 			}
 		}()
 	}
@@ -83,23 +83,26 @@ func (c *Command) Start() error {
 // Stop terminates the command run.
 func (c *Command) Stop() error {
 	if c.cmd.Process == nil {
+		// not yet started
 		return nil
 	}
 
 	pid := c.cmd.Process.Pid
-	if c.timeoutTimer != nil {
+	if c.timeout > 0 {
+		// stop listening on os.Interrupt signal
+		signal.Stop(c.interruptChan)
+		// stop the timeout timer
+		c.timeoutTimer.Stop()
+
 		// use the negative process group id, to kill the whole process group
 		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
 		if err != nil {
 			return err
 		}
 		pid = -1 * pgid
-
-		// stop listening on os.Interrupt signal
-		signal.Stop(c.interruptChan)
 	}
 
-	c.timeoutTimer.Stop()
+	// kill the process
 	return syscall.Kill(pid, syscall.SIGKILL)
 }
 

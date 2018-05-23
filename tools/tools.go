@@ -16,7 +16,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/commander"
-	"github.com/bitrise-io/bitrise/tools/filteroutput"
+	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
@@ -360,7 +360,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 			secretValues = append(secretValues, value)
 		}
 
-		outWriter = filteroutput.NewOutput(secretValues, os.Stdout)
+		outWriter = filterwriter.New(secretValues, os.Stdout)
 		errWriter = outWriter
 	}
 
