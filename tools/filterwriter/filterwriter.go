@@ -107,7 +107,7 @@ func (w *Writer) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMa
 
 	for secretIdx, secret := range w.secrets {
 		secretLine := secret[0] // every match should begin from the secret first line
-		lineIndexes := []int{}  // the indexes of lines which contains the secret's first line
+		var lineIndexes []int   // the indexes of lines which contains the secret's first line
 
 		for i, line := range lines {
 			if bytes.Contains(line, secretLine) {
@@ -190,17 +190,16 @@ func (w *Writer) linesToKeepRange(partialMatchIndexes map[int]bool) int {
 // matchLines return which lines can be printed and which should be keept for further observing.
 func (w *Writer) matchLines(lines [][]byte, partialMatchIndexes map[int]bool) ([][]byte, [][]byte) {
 	first := w.linesToKeepRange(partialMatchIndexes)
-	if first == -1 {
+	switch first {
+	case -1:
 		// no lines needs to be kept
 		return lines, nil
-	}
-
-	if first == 0 {
+	case 0:
 		// partial match is always longer then the lines
 		return nil, lines
+	default:
+		return lines[:first], lines[first:]
 	}
-
-	return lines[:first], lines[first:]
 }
 
 // secretLinesToRedact returns which secret lines should be redacted

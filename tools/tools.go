@@ -15,8 +15,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/tools/commander"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
+	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
@@ -364,11 +364,11 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		errWriter = outWriter
 	}
 
-	cmd := commander.NewCommand(workDirPth, "envman", args...)
-	cmd.SetInterface(os.Stdin, outWriter, errWriter)
+	cmd := timeoutcmd.New(workDirPth, "envman", args...)
+	cmd.SetStandardIO(os.Stdin, outWriter, errWriter)
 	cmd.SetTimeout(timeout)
 	err := cmd.Start()
-	return commander.ExitStatus(err), err
+	return timeoutcmd.ExitStatus(err), err
 }
 
 // EnvmanJSONPrint ...

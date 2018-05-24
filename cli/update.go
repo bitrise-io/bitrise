@@ -216,40 +216,48 @@ func download(version string) error {
 }
 
 func update(c *cli.Context) error {
-	versionFlag := c.String("version")
 	log.Infof("Updating Bitrise CLI...")
+
+	versionFlag := c.String("version")
 	fmt.Printf("Current version: %s\n", version.VERSION)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
 		return err
 	}
+
 	if withBrew {
 		log.Infof("Bitrise CLI installer with homebrew")
+
 		if versionFlag != "" {
 			return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only supported for GitHub release page installations")
 		}
+
 		cmd := command.New("brew", "upgrade", "bitrise")
+
 		log.Printf("$ %s", cmd.PrintableCommandArgs())
+
 		var out bytes.Buffer
 		cmd.SetStdout(&out)
 		cmd.SetStderr(&out)
 
-		err := cmd.Run()
-		if err != nil {
+		if err := cmd.Run(); err != nil {
 			output := out.String()
 			if strings.Contains(output, "already installed") {
 				log.Donef("Bitrise CLI is already up-to-date")
 				return nil
 			}
+
 			log.Printf(output)
 			return err
 		}
+
 		log.Printf(out.String())
 		return nil
 	}
 
 	log.Infof("Bitrise CLI installer from source")
+
 	if versionFlag == "" {
 		latest, err := latestTag()
 		if err != nil {
@@ -257,6 +265,7 @@ func update(c *cli.Context) error {
 		}
 		versionFlag = latest.String()
 	}
+
 	if versionFlag == version.VERSION {
 		log.Donef("Bitrise CLI is already up-to-date")
 		return nil
@@ -268,6 +277,7 @@ func update(c *cli.Context) error {
 	if err := download(versionFlag); err != nil {
 		return err
 	}
+
 	return bitrise.RunSetup(versionFlag, false, false)
 }
 

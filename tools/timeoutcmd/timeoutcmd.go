@@ -1,4 +1,4 @@
-package commander
+package timeoutcmd
 
 import (
 	"io"
@@ -20,8 +20,8 @@ type Command struct {
 	interruptChan chan os.Signal
 }
 
-// NewCommand creates a command model.
-func NewCommand(dir, name string, args ...string) Command {
+// New creates a command model.
+func New(dir, name string, args ...string) Command {
 	c := Command{}
 
 	c.cmd = exec.Command(name, args...)
@@ -35,8 +35,8 @@ func (c *Command) SetTimeout(t time.Duration) {
 	c.timeout = t
 }
 
-// SetInterface sets the input and outputs of the command.
-func (c *Command) SetInterface(in io.Reader, out, err io.Writer) {
+// SetStandardIO sets the input and outputs of the command.
+func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 	c.cmd.Stdin = in
 	c.cmd.Stdout = out
 	c.cmd.Stderr = err
@@ -110,16 +110,16 @@ func (c *Command) Stop() error {
 // if the error is an exec.ExitError
 // if the error is nil it return 0
 // otherwise returns 1.
-func ExitStatus(err error) (code int) {
+func ExitStatus(err error) int {
 	if err == nil {
-		return
+		return 0
 	}
 
-	code = 1
+	code := 1
 	if exiterr, ok := err.(*exec.ExitError); ok {
 		if waitStatus, ok := exiterr.Sys().(syscall.WaitStatus); ok {
 			code = waitStatus.ExitStatus()
 		}
 	}
-	return
+	return code
 }
