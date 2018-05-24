@@ -1,4 +1,4 @@
-package asynccmd
+package filterwriter
 
 import (
 	"reflect"
@@ -8,8 +8,15 @@ import (
 )
 
 func TestAllRanges(t *testing.T) {
-	ranges := allRanges([]byte("test"), []byte("t"))
-	require.Equal(t, []matchRange{{first: 0, last: 1}, {first: 3, last: 4}}, ranges)
+	{
+		ranges := allRanges([]byte("test"), []byte("t"))
+		require.Equal(t, []matchRange{{first: 0, last: 1}, {first: 3, last: 4}}, ranges)
+	}
+
+	{
+		ranges := allRanges([]byte("test rangetest"), []byte("test"))
+		require.Equal(t, []matchRange{{first: 0, last: 4}, {first: 10, last: 14}}, ranges)
+	}
 }
 
 func TestMergeAllRanges(t *testing.T) {

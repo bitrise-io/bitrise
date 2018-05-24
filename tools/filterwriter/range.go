@@ -1,4 +1,4 @@
-package asynccmd
+package filterwriter
 
 import (
 	"bytes"
@@ -9,11 +9,17 @@ type matchRange struct{ first, last int }
 
 // allRanges returns every indexes of instance of pattern in b, or nil if pattern is not present in b.
 func allRanges(b, pattern []byte) (ranges []matchRange) {
-	for i, idx := 0, bytes.Index(b, pattern); idx != -1; idx = bytes.Index(b[i:], pattern) {
-		ranges = append(ranges, matchRange{idx + i, idx + i + len(pattern)})
+	i := 0
+	for {
+		sub := b[i:len(b)]
+		idx := bytes.Index(sub, pattern)
+		if idx == -1 {
+			return
+		}
+
+		ranges = append(ranges, matchRange{first: idx + i, last: idx + i + len(pattern)})
 		i += idx + 1
 	}
-	return
 }
 
 // mergeAllRanges merges every overlapping ranges in r.

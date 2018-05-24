@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
 	ver "github.com/hashicorp/go-version"
 	"github.com/urfave/cli"
@@ -214,23 +216,47 @@ func download(version string) error {
 }
 
 func update(c *cli.Context) error {
-	versionFlag := c.String("version")
 	log.Infof("Updating Bitrise CLI...")
+
+	versionFlag := c.String("version")
 	fmt.Printf("Current version: %s\n", version.VERSION)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
 		return err
 	}
+
 	if withBrew {
+		log.Infof("Bitrise CLI installer with homebrew")
+
 		if versionFlag != "" {
 			return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only supported for GitHub release page installations")
 		}
-		cmd := exec.Command("brew", "upgrade", "bitrise")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
+
+		cmd := command.New("brew", "upgrade", "bitrise")
+
+		log.Printf("$ %s", cmd.PrintableCommandArgs())
+
+		var out bytes.Buffer
+		cmd.SetStdout(&out)
+		cmd.SetStderr(&out)
+
+		if err := cmd.Run(); err != nil {
+			output := out.String()
+			if strings.Contains(output, "already installed") {
+				log.Donef("Bitrise CLI is already up-to-date")
+				return nil
+			}
+
+			log.Printf(output)
+			return err
+		}
+
+		log.Printf(out.String())
+		return nil
 	}
+
+	log.Infof("Bitrise CLI installer from source")
 
 	if versionFlag == "" {
 		latest, err := latestTag()
@@ -238,17 +264,20 @@ func update(c *cli.Context) error {
 			return err
 		}
 		versionFlag = latest.String()
-		fmt.Printf("Latest version: %s\n", versionFlag)
 	}
+
 	if versionFlag == version.VERSION {
-		fmt.Println("Bitrise CLI is already up-to-date")
+		log.Donef("Bitrise CLI is already up-to-date")
 		return nil
 	}
+
+	fmt.Printf("Updating to version: %s\n", versionFlag)
 
 	fmt.Println("Downloading Bitrise CLI...")
 	if err := download(versionFlag); err != nil {
 		return err
 	}
+
 	return bitrise.RunSetup(versionFlag, false, false)
 }
 

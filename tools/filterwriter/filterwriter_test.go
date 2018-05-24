@@ -1,7 +1,9 @@
-package asynccmd
+package filterwriter
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,56 +12,56 @@ import (
 func TestWrite(t *testing.T) {
 	t.Log("trivial test")
 	{
-		buff := newBuffer([]string{"abc", "a\nb\nc"})
+		var buff bytes.Buffer
+		out := New([]string{"abc", "a\nb\nc"}, &buff)
 		log := []byte("test with\nnew line\nand single line secret:abc\nand multiline secret:a\nb\nc")
-		wc, err := buff.Write(log)
+		wc, err := out.Write(log)
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		require.NoError(t, buff.Flush())
-		lines, err := buff.ReadLines()
+		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, []string{
+		require.Equal(t, strings.Join([]string{
 			"test with",
 			"new line",
 			"and single line secret:[REDACTED]",
 			"[REDACTED]nd multiline secret:[REDACTED]",
 			"[REDACTED]",
 			"[REDACTED]",
-		}, lines)
+		}, "\n"), buff.String())
 	}
 
 	t.Log("chunk without newline")
 	{
-		buff := newBuffer([]string{"ab", "a\nb"})
+		var buff bytes.Buffer
+		out := New([]string{"ab", "a\nb"}, &buff)
 		log := []byte("test without newline, secret:ab")
-		wc, err := buff.Write(log)
+		wc, err := out.Write(log)
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		require.NoError(t, buff.Flush())
-		lines, err := buff.ReadLines()
+		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, []string{
+		require.Equal(t, strings.Join([]string{
 			"test without newline, secret:[REDACTED]",
-		}, lines)
+		}, "\n"), buff.String())
 	}
 
 	t.Log("multiple secret in the same line")
 	{
-		buff := newBuffer([]string{"x1", "x\n2"})
+		var buff bytes.Buffer
+		out := New([]string{"x1", "x\n2"}, &buff)
 		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
-		wc, err := buff.Write(log)
+		wc, err := out.Write(log)
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		require.NoError(t, buff.Flush())
-		lines, err := buff.ReadLines()
+		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, []string{
+		require.Equal(t, strings.Join([]string{
 			"multiple secrets like: [REDACTED] and [REDACTED]",
 			"[REDACTED] and some extra text",
-		}, lines)
+		}, "\n"), buff.String())
 	}
 }
 
@@ -72,14 +74,15 @@ func TestSecrets(t *testing.T) {
 		"f",
 	}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 	require.Equal(t, [][][]byte{
 		[][]byte{[]byte("a"), []byte("b"), []byte("c")},
 		[][]byte{[]byte("b")},
 		[][]byte{[]byte("c"), []byte("b")},
 		[][]byte{[]byte("x"), []byte("c"), []byte("b"), []byte("d")},
 		[][]byte{[]byte("f")},
-	}, buff.secrets)
+	}, out.secrets)
 }
 
 func TestMatchSecrets(t *testing.T) {
@@ -100,9 +103,10 @@ func TestMatchSecrets(t *testing.T) {
 		[]byte("c"),
 		[]byte("b")}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 
-	matchMap, partialMatchMap := buff.matchSecrets(lines)
+	matchMap, partialMatchMap := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
 		0: []int{2},
 		1: []int{3, 7},
@@ -129,10 +133,11 @@ func TestLinesToKeepRange(t *testing.T) {
 	// 	[]byte("c"),
 	// 	[]byte("b")}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 
 	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
-	first := buff.linesToKeepRange(partialMatchMap)
+	first := out.linesToKeepRange(partialMatchMap)
 	require.Equal(t, 2, first)
 }
 
@@ -154,10 +159,11 @@ func TestMatchLine(t *testing.T) {
 		[]byte("c"), // 6.
 		[]byte("b")}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 
-	_, partialMatchMap := buff.matchSecrets(lines)
-	print, remaining := buff.matchLines(lines, partialMatchMap)
+	_, partialMatchMap := out.matchSecrets(lines)
+	print, remaining := out.matchLines(lines, partialMatchMap)
 	require.Equal(t, [][]byte{
 		[]byte("x"),
 		[]byte("a"),
@@ -185,27 +191,28 @@ func TestSecretLinesToRedact(t *testing.T) {
 		[]byte("b"),
 	}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 
-	matchMap, _ := buff.matchSecrets(lines)
+	matchMap, _ := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
 		0: []int{1},
 		1: []int{2, 4},
 	}, matchMap)
 
-	secretLines := buff.secretLinesToRedact(0, matchMap)
+	secretLines := out.secretLinesToRedact(0, matchMap)
 	require.Equal(t, ([][]byte)(nil), secretLines, fmt.Sprintf("%s\n", secretLines))
 
-	secretLines = buff.secretLinesToRedact(1, matchMap)
+	secretLines = out.secretLinesToRedact(1, matchMap)
 	require.Equal(t, [][]byte{[]byte("a")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 
-	secretLines = buff.secretLinesToRedact(2, matchMap)
+	secretLines = out.secretLinesToRedact(2, matchMap)
 	require.Equal(t, [][]byte{[]byte("b"), []byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 
-	secretLines = buff.secretLinesToRedact(3, matchMap)
+	secretLines = out.secretLinesToRedact(3, matchMap)
 	require.Equal(t, [][]byte{[]byte("c")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 
-	secretLines = buff.secretLinesToRedact(4, matchMap)
+	secretLines = out.secretLinesToRedact(4, matchMap)
 	require.Equal(t, [][]byte{[]byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 }
 
@@ -278,10 +285,11 @@ func TestRedact(t *testing.T) {
 		[]byte("c"),
 	}
 
-	buff := newBuffer(secrets)
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
 
 	matchMap := map[int][]int{0: []int{2}, 1: []int{3}}
-	redacted := buff.redact(lines, matchMap)
+	redacted := out.redact(lines, matchMap)
 	require.Equal(t, [][]byte{
 		[]byte("x"),
 		[]byte("a"),
@@ -305,13 +313,14 @@ func TestRedact(t *testing.T) {
 			[]byte("100"),
 			[]byte("99")}
 
-		buff := newBuffer(secrets)
+		var buff bytes.Buffer
+		out := New(secrets, &buff)
 
 		matchMap := map[int][]int{
 			0: []int{0},
 			1: []int{7},
 		}
-		redacted := buff.redact(lines, matchMap)
+		redacted := out.redact(lines, matchMap)
 		require.Equal(t, [][]byte{
 			[]byte(RedactStr),
 			[]byte(RedactStr),
