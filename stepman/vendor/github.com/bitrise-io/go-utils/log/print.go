@@ -56,6 +56,11 @@ func TSuccessf(format string, v ...interface{}) {
 	printf(successSeverity, true, format, v...)
 }
 
+// TDonef ...
+func TDonef(format string, v ...interface{}) {
+	TSuccessf(format, v...)
+}
+
 // TInfof ...
 func TInfof(format string, v ...interface{}) {
 	printf(infoSeverity, true, format, v...)

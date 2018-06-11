@@ -34,9 +34,9 @@ func printVersionCmd(c *cli.Context) error {
 
 	if output.Format == output.FormatRaw {
 		if fullVersion {
-			fmt.Fprintf(c.App.Writer, "version: %v\nbuild_number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.BuildNumber, versionOutput.Commit)
+			fmt.Printf("version: %v\nbuild_number: %v\ncommit: %v\n", versionOutput.Version, versionOutput.BuildNumber, versionOutput.Commit)
 		} else {
-			fmt.Fprintf(c.App.Writer, "%v\n", versionOutput.Version)
+			fmt.Println(versionOutput.Version)
 		}
 	} else {
 		output.Print(versionOutput, output.Format)
