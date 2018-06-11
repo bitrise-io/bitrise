@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "778f2e774c725116edbc3d039dc0dfc1cc62aae8"
+  revision = "ea8897e79973357ba785ac2533559a6297e83c44"
 
 [[projects]]
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "e607e3cb53ff51fe591f33739a36ea05356bf06c"
-  version = "1.1.13"
+  revision = "8a2e2f93c19399d1a62cc8f4bd6bb3c3d084fdf2"
+  version = "1.1.14"
 
 [[projects]]
   branch = "master"
@@ -31,7 +31,7 @@
     "stringutil",
     "versions"
   ]
-  revision = "2d657206204605ce3b86124c33fea53c3e380d78"
+  revision = "d1de0dbcb811588e61362aff67bb700b93c13c17"
 
 [[projects]]
   branch = "master"
@@ -42,8 +42,8 @@
 [[projects]]
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "70596c8a17d5e8d429b1abd68222aae9733337d0"
-  version = "0.9.41"
+  revision = "97351f94da2926202c9f86b3b715cc7ca2686078"
+  version = "0.9.43"
 
 [[projects]]
   branch = "master"
@@ -64,12 +64,6 @@
   revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "816c9085562cd7ee03e7f8188a1cfd942858cded"
-
-[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
@@ -82,13 +76,13 @@
   revision = "256dc444b735e061061cf46c809487313d5b0065"
 
 [[projects]]
-  branch = "master"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require"
   ]
-  revision = "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
@@ -100,7 +94,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "4ec37c66abab2c7e02ae775328b2ff001c3f025a"
+  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
 
 [[projects]]
   branch = "master"
@@ -109,7 +103,7 @@
     "unix",
     "windows"
   ]
-  revision = "7db1c3b1a98089d0071c84f646ff5c96aad43682"
+  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -120,6 +114,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dcd8300d855fd26e64eca12837ea418c9fcdbe7d005427327b22181e2238f574"
+  inputs-digest = "0c29f7c72b2f19802179bc5433edb7e65565de2e7fc5327e0245b907ad81b701"
   solver-name = "gps-cdcl"
   solver-version = 1
