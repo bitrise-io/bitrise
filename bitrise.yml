@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - RELEASE_VERSION: 1.16.1
+  - RELEASE_VERSION: 1.17.0
   - BIN_NAME: bitrise
   - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
 
