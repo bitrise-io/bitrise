@@ -137,7 +137,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				repo, err := git.New(downloadLocation.Src)
+				repo, err := git.New(stepPth)
 				if err != nil {
 					return err
 				}

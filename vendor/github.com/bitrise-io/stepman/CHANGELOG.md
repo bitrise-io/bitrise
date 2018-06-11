@@ -2,6 +2,62 @@
 
 -----------------
 
+## 0.9.43 (2018 Jun 11)
+
+### Release Notes
+
+* go dependencies update
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.43/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.42 -> 0.9.43
+
+* [5e5c8a7] Krisztián  Gödrei - prepare for 0.9.43 (2018 Jun 11)
+* [21a1bea] Krisztián Gödrei - Dep update (#246) (2018 Jun 11)
+
+
+## 0.9.42 (2018 May 16)
+
+### Release Notes
+
+* __REGRESSION__ : fixed step activation from it's git source.
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/stepman/releases/download/0.9.42/stepman-$(uname -s)-$(uname -m) > /usr/local/bin/stepman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/stepman
+```
+
+That's all, you're ready to call `stepman`!
+
+### Release Commits - 0.9.41 -> 0.9.42
+
+* [9f11334] Krisztián  Gödrei - 0.9.42 (2018 May 16)
+* [b459b9d] Krisztián Gödrei - download step fix (#245) (2018 May 16)
+
+
 ## 0.9.41 (2018 May 07)
 
 ### Release Notes
@@ -1717,4 +1773,4 @@ That's all, you're ready to call `stepman`!
 
 -----------------
 
-Generated at: 2018 May 07
+Generated at: 2018 Jun 11

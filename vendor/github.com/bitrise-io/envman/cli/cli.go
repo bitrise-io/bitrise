@@ -78,7 +78,7 @@ func before(c *cli.Context) error {
 }
 
 func printVersion(c *cli.Context) {
-	fmt.Fprintf(c.App.Writer, "%v\n", c.App.Version)
+	fmt.Println(c.App.Version)
 }
 
 // Run the Envman CLI.
