@@ -1,6 +1,56 @@
-## Changelog (Current version: 1.16.1)
+## Changelog (Current version: 1.17.0)
 
 -----------------
+
+## 1.17.0 (2018 Jun 11)
+
+### Release Notes
+
+__1. Secret filtering updates__
+
+Issue fixes around secret filtering.
+
+__2. Tools update__
+
+- envman update to version [1.1.14](https://github.com/bitrise-io/envman/releases/tag/1.1.14)
+- stepman update to version [0.9.43](https://github.com/bitrise-io/stepman/releases/tag/0.9.43)
+
+__3. Default plugins update__
+
+- init plugin updated to version [1.0.4](https://github.com/bitrise-core/bitrise-plugins-init/releases/tag/1.0.4)
+- step plugin updated to version [0.9.8](https://github.com/bitrise-core/bitrise-plugins-step/releases/tag/0.9.8)
+- workflow-editor plugin updated to version [1.1.17](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.17)
+- analytics plugin updated to version [0.9.13](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.13)
+
+__4. Go dependencies update__
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.17.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.16.1 -> 1.17.0
+
+* [552ee66] Krisztián  Gödrei - prepare for 1.17.0 (2018 Jun 11)
+* [656c2b8] Krisztián Gödrei - tools and plugins versions update (#608) (2018 Jun 11)
+* [3fd9d35] Krisztián Gödrei - dep update (#607) (2018 Jun 11)
+* [95291f6] Krisztián Gödrei - secret filtering fixes (#605) (2018 May 24)
+
 
 ## 1.16.1 (2018 May 16)
 
@@ -3766,4 +3816,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 May 16
+Updated: 2018 Jun 11
