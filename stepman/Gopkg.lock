@@ -40,6 +40,12 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/bitrise-tools/colorstring"
+  packages = ["."]
+  revision = "a8cd701151924e6beffb74a34a556b320e0cfcf7"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -70,7 +76,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "a8fb68e7206f8c78be19b432c58eb52a6aa34462"
 
 [[projects]]
   branch = "master"
@@ -79,7 +85,7 @@
     "unix",
     "windows"
   ]
-  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
+  revision = "8014b7b116a67fea23fbb82cd834c9ad656ea44b"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -90,6 +96,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9968492a7eadced6f62e309791034cabaeed5d5fa63e13f6a7f5b967f532c7cb"
+  inputs-digest = "48374eb8a8a0a06446e8c821ca326a603575900fe95183199087a1f8c17502b2"
   solver-name = "gps-cdcl"
   solver-version = 1
