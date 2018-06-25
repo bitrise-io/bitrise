@@ -18,6 +18,8 @@ const (
 const (
 	// DefaultIsExpand ...
 	DefaultIsExpand = true
+	// DefaultIsSensitive ...
+	DefaultIsSensitive = false
 	// DefaultSkipIfEmpty ...
 	DefaultSkipIfEmpty = false
 
@@ -143,6 +145,12 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
 			}
 			envSerModel.IsExpand = castedBoolPtr
+		case "is_sensitive":
+			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
+			if !ok {
+				return fmt.Errorf("failed to parse bool value (%#v) for key (%s)", value, keyStr)
+			}
+			envSerModel.IsSensitive = castedBoolPtr
 		case "is_dont_change_value":
 			castedBoolPtr, ok := parseutil.CastToBoolPtr(value)
 			if !ok {
@@ -270,6 +278,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 	}
 	if options.IsExpand == nil {
 		options.IsExpand = pointers.NewBoolPtr(DefaultIsExpand)
+	}
+	if options.IsSensitive == nil {
+		options.IsSensitive = pointers.NewBoolPtr(DefaultIsSensitive)
 	}
 	if options.IsDontChangeValue == nil {
 		options.IsDontChangeValue = pointers.NewBoolPtr(DefaultIsDontChangeValue)
