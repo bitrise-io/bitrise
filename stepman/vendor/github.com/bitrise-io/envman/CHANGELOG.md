@@ -2,6 +2,35 @@
 
 -----------------
 
+## 1.2.0 (2018 Jun 25)
+
+### Release Notes
+
+* added IsSensitive: `is_sensitive` input option
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/envman/releases/download/1.2.0/envman-$(uname -s)-$(uname -m) > /usr/local/bin/envman
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/envman
+```
+
+That's all, you're ready to call `envman`!
+
+### Release Commits - 1.1.14 -> 1.2.0
+
+* [ee23095] Papik Tamas - Prepare for 1.2.0 (2018 Jun 25)
+* [6e142fd] Tamas Papik - dep update (#137) (2018 Jun 25)
+* [62a6a51] Tamas Papik - added IsSensitive: `is_sensitive` input field (#136) (2018 Jun 25)
+
+
 ## 1.1.14 (2018 Jun 11)
 
 ### Release Notes
@@ -893,4 +922,4 @@ That's all, you're ready to call `envman`!
 
 -----------------
 
-Generated at: 2018 Jun 11
+Generated at: 2018 Jun 25

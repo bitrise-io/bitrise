@@ -126,6 +126,84 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 	}
 
 	require.Error(t, step.ValidateInputAndOutputEnvs(true))
+
+	// IsSensitive is true but IsExpand is not
+	env = envmanModels.EnvironmentItemModel{
+		"test_key": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsSensitive:       pointers.NewBoolPtr(true),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+		},
+	}
+
+	step = StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{env},
+	}
+
+	require.Error(t, step.ValidateInputAndOutputEnvs(true))
+
+	// IsSensitive is not set
+	env = envmanModels.EnvironmentItemModel{
+		"test_key": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+		},
+	}
+
+	step = StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{env},
+	}
+
+	require.NoError(t, step.ValidateInputAndOutputEnvs(true))
+
+	// IsSensitive is set to false
+	env = envmanModels.EnvironmentItemModel{
+		"test_key": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsSensitive:       pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+		},
+	}
+
+	step = StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{env},
+	}
+
+	require.NoError(t, step.ValidateInputAndOutputEnvs(true))
+
+	// IsExpand not set and IsSensitive set
+	env = envmanModels.EnvironmentItemModel{
+		"test_key": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsSensitive:       pointers.NewBoolPtr(true),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+		},
+	}
+
+	step = StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{env},
+	}
+
+	require.Error(t, step.ValidateInputAndOutputEnvs(true))
 }
 
 func TestFillMissingDefaults(t *testing.T) {
