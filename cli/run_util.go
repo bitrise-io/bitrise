@@ -164,7 +164,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 }
 
 // CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string, secrets ...[]envmanModels.EnvironmentItemModel) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
 	warnings := []string{}
 
@@ -184,7 +184,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 			return models.BitriseDataModel{}, []string{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
 		}
 
-		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath, secrets...)
 		warnings = warns
 		if err != nil {
 			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) is not valid: %s", bitriseConfigPath, err)

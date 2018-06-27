@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "ea8897e79973357ba785ac2533559a6297e83c44"
+  revision = "e3292c4c4d7fc915224d48222565b02f6af1900e"
 
 [[projects]]
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "8a2e2f93c19399d1a62cc8f4bd6bb3c3d084fdf2"
-  version = "1.1.14"
+  revision = "7d5180ae4046f109e3dfd73c15082170ae7153d3"
+  version = "1.2.0"
 
 [[projects]]
   branch = "master"
@@ -42,8 +42,8 @@
 [[projects]]
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "97351f94da2926202c9f86b3b715cc7ca2686078"
-  version = "0.9.43"
+  revision = "60db1821f76766e849f8c6eb18b7f90202f15407"
+  version = "0.10.0"
 
 [[projects]]
   branch = "master"
@@ -94,7 +94,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -103,7 +103,7 @@
     "unix",
     "windows"
   ]
-  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
+  revision = "a200a19cb90b19de298170992778b1fda7217bd6"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
