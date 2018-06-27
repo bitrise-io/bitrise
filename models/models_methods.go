@@ -269,7 +269,7 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate(secrets ...[]envmanModels.EnvironmentItemModel) ([]string, error) {
+func (workflow *WorkflowModel) Validate(secrets ...envmanModels.EnvironmentItemModel) ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
 			return []string{}, err
@@ -304,12 +304,23 @@ func (workflow *WorkflowModel) Validate(secrets ...[]envmanModels.EnvironmentIte
 			if err != nil {
 				return warnings, err
 			}
-			if s := opts.IsSensitive; (s != nil && *s) && (opts.IsExpand != nil && !*opts.IsExpand) {
+
+			isSensitive := opts.IsSensitive
+			if isSensitive == nil {
+				isSensitive = pointers.NewBoolPtr(envmanModels.DefaultIsSensitive)
+			}
+
+			isExpand := opts.IsExpand
+			if isExpand == nil {
+				isExpand = pointers.NewBoolPtr(envmanModels.DefaultIsExpand)
+			}
+
+			if *isSensitive && !*isExpand {
 				return warnings, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s) you need to enable is_expand", key)
 			}
 
-			if s := opts.IsSensitive; len(secrets) >= 1 && (s != nil && *s) {
-				if err := isSecretEnv(value, secrets[0]); err != nil {
+			if *isSensitive {
+				if err := isSecretEnv(value, secrets); err != nil {
 					return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
 				}
 			}
@@ -425,7 +436,7 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 }
 
 // Validate ...
-func (config *BitriseDataModel) Validate(secrets ...[]envmanModels.EnvironmentItemModel) ([]string, error) {
+func (config *BitriseDataModel) Validate(secrets ...envmanModels.EnvironmentItemModel) ([]string, error) {
 	warnings := []string{}
 
 	if config.FormatVersion == "" {

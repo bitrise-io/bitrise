@@ -213,7 +213,7 @@ func generateYAML(v interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, secrets ...[]envmanModels.EnvironmentItemModel) ([]string, error) {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, secrets ...envmanModels.EnvironmentItemModel) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
@@ -228,7 +228,7 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, 
 }
 
 // ConfigModelFromYAMLBytes ...
-func ConfigModelFromYAMLBytes(configBytes []byte, secrets ...[]envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromYAMLBytes(configBytes []byte, secrets ...envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
@@ -242,7 +242,7 @@ func ConfigModelFromYAMLBytes(configBytes []byte, secrets ...[]envmanModels.Envi
 }
 
 // ConfigModelFromJSONBytes ...
-func ConfigModelFromJSONBytes(configBytes []byte, secrets ...[]envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromJSONBytes(configBytes []byte, secrets ...envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
@@ -255,7 +255,7 @@ func ConfigModelFromJSONBytes(configBytes []byte, secrets ...[]envmanModels.Envi
 }
 
 // ReadBitriseConfig ...
-func ReadBitriseConfig(pth string, secrets ...[]envmanModels.EnvironmentItemModel) (models.BitriseDataModel, []string, error) {
+func ReadBitriseConfig(pth string, secrets ...envmanModels.EnvironmentItemModel) (models.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
