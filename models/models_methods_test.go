@@ -950,6 +950,34 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 	}
+
+	t.Log("test secret env check")
+	{
+		secrets := []envmanModels.EnvironmentItemModel{
+			{"KEY": "value"},
+			{"KEY2": "value2"},
+			{"KEY3": "value3"},
+			{"KEY_4": "value 4"},
+		}
+
+		for _, env := range secrets {
+			key, _, err := env.GetKeyValuePair()
+			require.NoError(t, err)
+			require.NoError(t, isSecretEnv("$"+key, secrets))
+			require.NoError(t, isSecretEnv("${"+key+"}", secrets))
+			require.NoError(t, isSecretEnv("\"$"+key+"\"", secrets))
+			require.NoError(t, isSecretEnv("\"${"+key+"}\"", secrets))
+		}
+
+		for _, env := range secrets {
+			key, _, err := env.GetKeyValuePair()
+			require.NoError(t, err)
+			require.Error(t, isSecretEnv("$A"+key, secrets))
+			require.Error(t, isSecretEnv("${B"+key+"}", secrets))
+			require.Error(t, isSecretEnv("\"$C"+key+"\"", secrets))
+			require.Error(t, isSecretEnv("\"${D"+key+"}\"", secrets))
+		}
+	}
 }
 
 // ----------------------------
