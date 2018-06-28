@@ -325,7 +325,7 @@ workflows:
 
 	require.NoError(t, configs.InitPaths())
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr), nil)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -377,7 +377,7 @@ workflows:
 
 	require.NoError(t, configs.InitPaths())
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr), nil)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -454,7 +454,7 @@ workflows:
 
 	require.NoError(t, configs.InitPaths())
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr), nil)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
