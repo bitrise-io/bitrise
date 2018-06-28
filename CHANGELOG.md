@@ -1,6 +1,41 @@
-## Changelog (Current version: 1.17.0)
+## Changelog (Current version: 1.18.0)
 
 -----------------
+
+## 1.18.0 (2018 Jun 28)
+
+### Release Notes
+
+* added is_sensitive input option
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.18.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.17.0 -> 1.18.0
+
+* [63c9ca8] Papik Tamas - Prepare for 1.18.0 (2018 Jun 28)
+* [4d216d3] Tamas Papik - tool version update (#614) (2018 Jun 28)
+* [39fd038] Tamas Papik - format version bumped (#612) (2018 Jun 28)
+* [a120cbb] Tamas Papik - go dependency update (#613) (2018 Jun 28)
+* [e9205fd] Tamas Papik - added is_sensitive input option (#610) (2018 Jun 28)
+
 
 ## 1.17.0 (2018 Jun 11)
 
@@ -3816,4 +3851,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Jun 11
+Updated: 2018 Jun 28
