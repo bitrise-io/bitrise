@@ -213,11 +213,11 @@ func generateYAML(v interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) ([]string, error) {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
-	warnings, err := bitriseData.Validate()
+	warnings, err := bitriseData.Validate(secrets)
 	if err != nil {
 		return warnings, err
 	}
@@ -228,12 +228,12 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) 
 }
 
 // ConfigModelFromYAMLBytes ...
-func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromYAMLBytes(configBytes []byte, secrets []envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, secrets)
 	if err != nil {
 		return
 	}
@@ -242,11 +242,11 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 }
 
 // ConfigModelFromJSONBytes ...
-func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromJSONBytes(configBytes []byte, secrets []envmanModels.EnvironmentItemModel) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
 	}
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, secrets)
 	if err != nil {
 		return
 	}
@@ -255,7 +255,7 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 }
 
 // ReadBitriseConfig ...
-func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
+func ReadBitriseConfig(pth string, secrets []envmanModels.EnvironmentItemModel) (models.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
@@ -273,11 +273,11 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 
 	if strings.HasSuffix(pth, ".json") {
 		log.Debugln("=> Using JSON parser for: ", pth)
-		return ConfigModelFromJSONBytes(bytes)
+		return ConfigModelFromJSONBytes(bytes, secrets)
 	}
 
 	log.Debugln("=> Using YAML parser for: ", pth)
-	return ConfigModelFromYAMLBytes(bytes)
+	return ConfigModelFromYAMLBytes(bytes, secrets)
 }
 
 // ReadSpecStep ...
@@ -530,6 +530,12 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 			if wfOptions.IsExpand != nil && sOptions.IsExpand != nil && *wfOptions.IsExpand == *sOptions.IsExpand {
 				wfOptions.IsExpand = nil
+			} else {
+				hasOptions = true
+			}
+
+			if wfOptions.IsSensitive != nil && sOptions.IsSensitive != nil && *wfOptions.IsSensitive == *sOptions.IsSensitive {
+				wfOptions.IsSensitive = nil
 			} else {
 				hasOptions = true
 			}
