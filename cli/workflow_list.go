@@ -196,7 +196,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	if minimal && idOnly {
-		logger.Print(NewErrorOutput("Eighter define --minimal or --id-only"))
+		logger.Print(NewErrorOutput("Either define --minimal or --id-only"))
 		os.Exit(1)
 	}
 
