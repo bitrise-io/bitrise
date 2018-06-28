@@ -640,7 +640,7 @@ func Test0Steps1Workflows(t *testing.T) {
 		},
 	}
 
-	_, err := config.Validate()
+	_, err := config.Validate(nil)
 	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -688,7 +688,7 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		},
 	}
 
-	_, err := config.Validate()
+	_, err := config.Validate(nil)
 	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
@@ -741,7 +741,7 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 		},
 	}
 
-	_, err := config.Validate()
+	_, err := config.Validate(nil)
 	require.Error(t, err)
 
 	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
@@ -1441,7 +1441,7 @@ workflows:
 	_, found := config.Workflows["out-test"]
 	require.Equal(t, true, found)
 
-	_, err = config.Validate()
+	_, err = config.Validate(nil)
 	require.NoError(t, err)
 
 	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})

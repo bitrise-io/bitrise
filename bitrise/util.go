@@ -217,7 +217,7 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, 
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
-	warnings, err := bitriseData.Validate(secrets...)
+	warnings, err := bitriseData.Validate(secrets)
 	if err != nil {
 		return warnings, err
 	}

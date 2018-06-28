@@ -269,7 +269,7 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate(secrets ...envmanModels.EnvironmentItemModel) ([]string, error) {
+func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
 			return []string{}, err
@@ -319,7 +319,7 @@ func (workflow *WorkflowModel) Validate(secrets ...envmanModels.EnvironmentItemM
 				return warnings, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s) you need to enable is_expand", key)
 			}
 
-			if *isSensitive {
+			if *isSensitive && secrets != nil {
 				if err := isSecretEnv(value, secrets); err != nil {
 					return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
 				}
@@ -436,7 +436,7 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 }
 
 // Validate ...
-func (config *BitriseDataModel) Validate(secrets ...envmanModels.EnvironmentItemModel) ([]string, error) {
+func (config *BitriseDataModel) Validate(secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
 	warnings := []string{}
 
 	if config.FormatVersion == "" {
@@ -488,7 +488,7 @@ func (config *BitriseDataModel) Validate(secrets ...envmanModels.EnvironmentItem
 			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
-		warns, err := workflow.Validate(secrets...)
+		warns, err := workflow.Validate(secrets)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err
