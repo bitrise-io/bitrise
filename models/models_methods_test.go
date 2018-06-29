@@ -963,19 +963,19 @@ workflows:
 		for _, env := range secrets {
 			key, _, err := env.GetKeyValuePair()
 			require.NoError(t, err)
-			require.NoError(t, isSecretEnv("$"+key, secrets))
-			require.NoError(t, isSecretEnv("${"+key+"}", secrets))
-			require.NoError(t, isSecretEnv("\"$"+key+"\"", secrets))
-			require.NoError(t, isSecretEnv("\"${"+key+"}\"", secrets))
+			require.Equal(t, true, isSecretEnv("$"+key, secrets))
+			require.Equal(t, true, isSecretEnv("${"+key+"}", secrets))
+			require.Equal(t, true, isSecretEnv("\"$"+key+"\"", secrets))
+			require.Equal(t, true, isSecretEnv("\"${"+key+"}\"", secrets))
 		}
 
 		for _, env := range secrets {
 			key, _, err := env.GetKeyValuePair()
 			require.NoError(t, err)
-			require.Error(t, isSecretEnv("$A"+key, secrets))
-			require.Error(t, isSecretEnv("${B"+key+"}", secrets))
-			require.Error(t, isSecretEnv("\"$C"+key+"\"", secrets))
-			require.Error(t, isSecretEnv("\"${D"+key+"}\"", secrets))
+			require.Equal(t, false, isSecretEnv("$A"+key, secrets))
+			require.Equal(t, false, isSecretEnv("${B"+key+"}", secrets))
+			require.Equal(t, false, isSecretEnv("\"$C"+key+"\"", secrets))
+			require.Equal(t, false, isSecretEnv("\"${D"+key+"}\"", secrets))
 		}
 	}
 }

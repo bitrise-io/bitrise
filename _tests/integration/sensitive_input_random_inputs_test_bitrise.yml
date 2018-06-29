@@ -1,0 +1,16 @@
+format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  - ENV: "echo test env"
+
+workflows:
+  failure-random-inputs:
+    steps:
+    - script:
+        inputs:
+        - script_file_path: "abcdef"
+          opts:
+            is_sensitive: true
+            is_required: true
