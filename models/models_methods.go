@@ -310,19 +310,21 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 				isSensitive = pointers.NewBoolPtr(envmanModels.DefaultIsSensitive)
 			}
 
+			if !*isSensitive {
+				continue
+			}
+
 			isExpand := opts.IsExpand
 			if isExpand == nil {
 				isExpand = pointers.NewBoolPtr(envmanModels.DefaultIsExpand)
 			}
 
-			if *isSensitive && !*isExpand {
+			if !*isExpand {
 				return warnings, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s) you need to enable is_expand", key)
 			}
 
-			if *isSensitive && secrets != nil {
-				if err := isSecretEnv(value, secrets); err != nil {
-					return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
-				}
+			if err := isSecretEnv(value, secrets); err != nil {
+				return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
 			}
 		}
 		stepListItem[stepID] = step
