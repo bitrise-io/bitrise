@@ -47,4 +47,23 @@ func Test_SensitiveInput(t *testing.T) {
 
 		require.Equal(t, 1, strings.Count(out, "is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input"))
 	}
+	configPth = "sensitive_input_test_bitrise.yml"
+	t.Log("no secrets file")
+	{
+		cmd := command.New(binPath(), "run", "successful-formats", "--config", configPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+
+		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
+	}
+	configPth = "sensitive_input_test_bitrise.yml"
+	secretsPth = "sensitive_input_test_empty_secrets.yml"
+	t.Log("empty secrets file")
+	{
+		cmd := command.New(binPath(), "run", "successful-formats", "--config", configPth, "--inventory", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+
+		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
+	}
 }
