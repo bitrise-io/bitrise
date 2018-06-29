@@ -64,6 +64,6 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
+		require.Equal(t, 1, strings.Count(out, "empty config"), out)
 	}
 }
