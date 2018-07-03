@@ -56,6 +56,7 @@ func Test_SensitiveInput(t *testing.T) {
 
 		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
 	}
+
 	configPth = "sensitive_input_empty_inputs_test_bitrise.yml"
 	t.Log("empty inputs for is_sensitive")
 	{
