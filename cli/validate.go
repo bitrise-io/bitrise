@@ -186,7 +186,28 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
+	pth, err := GetInventoryFilePath(inventoryPath)
+	if err != nil {
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
+		os.Exit(1)
+	}
+
+	var inventorySecrets []envmanModels.EnvironmentItemModel
+	if pth != "" || inventoryBase64Data != "" {
+		// Inventory validation
+		inventorySecrets, err = CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		secretValidation := ValidationItemModel{
+			IsValid: true,
+		}
+		if err != nil {
+			secretValidation.IsValid = false
+			secretValidation.Error = err.Error()
+		}
+
+		validation.Secrets = &secretValidation
+	}
+
+	pth, err = GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
 		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
 		os.Exit(1)

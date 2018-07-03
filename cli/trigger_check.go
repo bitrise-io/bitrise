@@ -141,7 +141,7 @@ func triggerCheck(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath, inventoryEnvironments)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, triggerParams.Format)

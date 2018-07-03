@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	minEnvmanVersion  = "1.1.14"
-	minStepmanVersion = "0.9.43"
+	minEnvmanVersion  = "1.2.0"
+	minStepmanVersion = "0.10.0"
 )
 
 // PluginDependency ..
@@ -40,7 +40,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"analytics": PluginDependency{
 		Source:     "https://github.com/bitrise-core/bitrise-plugins-analytics.git",
-		MinVersion: "0.9.13",
+		MinVersion: "0.9.14",
 	},
 }
 

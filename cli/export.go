@@ -38,7 +38,7 @@ func export(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}

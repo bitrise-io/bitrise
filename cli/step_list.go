@@ -34,7 +34,7 @@ func stepList(c *cli.Context) error {
 	}
 
 	if collectionURI == "" {
-		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), warnings, format)
