@@ -950,6 +950,34 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 	}
+
+	t.Log("test secret env check")
+	{
+		secrets := []envmanModels.EnvironmentItemModel{
+			{"KEY": "value"},
+			{"KEY2": "value2"},
+			{"KEY3": "value3"},
+			{"KEY_4": "value 4"},
+		}
+
+		for _, env := range secrets {
+			key, _, err := env.GetKeyValuePair()
+			require.NoError(t, err)
+			require.Equal(t, true, isSecretEnv("$"+key, secrets))
+			require.Equal(t, true, isSecretEnv("${"+key+"}", secrets))
+			require.Equal(t, true, isSecretEnv("\"$"+key+"\"", secrets))
+			require.Equal(t, true, isSecretEnv("\"${"+key+"}\"", secrets))
+		}
+
+		for _, env := range secrets {
+			key, _, err := env.GetKeyValuePair()
+			require.NoError(t, err)
+			require.Equal(t, false, isSecretEnv("$A"+key, secrets))
+			require.Equal(t, false, isSecretEnv("${B"+key+"}", secrets))
+			require.Equal(t, false, isSecretEnv("\"$C"+key+"\"", secrets))
+			require.Equal(t, false, isSecretEnv("\"${D"+key+"}\"", secrets))
+		}
+	}
 }
 
 // ----------------------------
@@ -1577,34 +1605,6 @@ workflows:
 			require.Nil(t, step.RunIf)
 			require.Equal(t, 0, len(step.Inputs))
 			require.Equal(t, 0, len(step.Outputs))
-		}
-	}
-
-	t.Log("test secret env check")
-	{
-		secrets := []envmanModels.EnvironmentItemModel{
-			{"KEY": "value"},
-			{"KEY2": "value2"},
-			{"KEY3": "value3"},
-			{"KEY_4": "value 4"},
-		}
-
-		for _, env := range secrets {
-			key, _, err := env.GetKeyValuePair()
-			require.NoError(t, err)
-			require.Equal(t, true, isSecretEnv("$"+key, secrets))
-			require.Equal(t, true, isSecretEnv("${"+key+"}", secrets))
-			require.Equal(t, true, isSecretEnv("\"$"+key+"\"", secrets))
-			require.Equal(t, true, isSecretEnv("\"${"+key+"}\"", secrets))
-		}
-
-		for _, env := range secrets {
-			key, _, err := env.GetKeyValuePair()
-			require.NoError(t, err)
-			require.Equal(t, false, isSecretEnv("$A"+key, secrets))
-			require.Equal(t, false, isSecretEnv("${B"+key+"}", secrets))
-			require.Equal(t, false, isSecretEnv("\"$C"+key+"\"", secrets))
-			require.Equal(t, false, isSecretEnv("\"${D"+key+"}\"", secrets))
 		}
 	}
 }
