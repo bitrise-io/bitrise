@@ -135,6 +135,14 @@ func trigger(c *cli.Context) error {
 		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
+	warnings, err = bitriseConfig.ValidateSensitiveInputs(inventoryEnvironments)
+	for _, warning := range warnings {
+		log.Warnf("warning: %s", warning)
+	}
+	if err != nil {
+		log.Fatalf("Issue with a sensitive input, error: %s", err)
+	}
+
 	// Trigger filter validation
 	if triggerParams.TriggerPattern == "" &&
 		triggerParams.PushBranch == "" && triggerParams.PRSourceBranch == "" && triggerParams.PRTargetBranch == "" && triggerParams.Tag == "" {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/output"
+	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
@@ -183,36 +184,16 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
-	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
-		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
-		os.Exit(1)
-	}
-
-	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
-		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
-		configValidation := ValidationItemModel{
-			IsValid:  true,
-			Warnings: warns,
-		}
-		if err != nil {
-			configValidation.IsValid = false
-			configValidation.Error = err.Error()
-		}
-
-		validation.Config = &configValidation
-	}
-
-	pth, err = GetInventoryFilePath(inventoryPath)
+	pth, err := GetInventoryFilePath(inventoryPath)
 	if err != nil {
 		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
 		os.Exit(1)
 	}
 
+	var inventorySecrets []envmanModels.EnvironmentItemModel
 	if pth != "" || inventoryBase64Data != "" {
 		// Inventory validation
-		_, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		inventorySecrets, err = CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 		secretValidation := ValidationItemModel{
 			IsValid: true,
 		}
@@ -222,6 +203,34 @@ func validate(c *cli.Context) error {
 		}
 
 		validation.Secrets = &secretValidation
+	}
+
+	pth, err = GetBitriseConfigFilePath(bitriseConfigPath)
+	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
+		os.Exit(1)
+	}
+
+	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
+		// Config validation
+		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		configValidation := ValidationItemModel{
+			IsValid:  true,
+			Warnings: warns,
+		}
+		if err != nil {
+			configValidation.IsValid = false
+			configValidation.Error = err.Error()
+		} else {
+			warns, err = bitriseConfig.ValidateSensitiveInputs(inventorySecrets)
+			configValidation.Warnings = append(configValidation.Warnings, warns...)
+			if err != nil {
+				configValidation.IsValid = false
+				configValidation.Error = err.Error()
+			}
+		}
+
+		validation.Config = &configValidation
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
