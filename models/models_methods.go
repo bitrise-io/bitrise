@@ -332,19 +332,67 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 	return warnings, nil
 }
 
-func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) error {
-	for _, secret := range secrets {
-		key, _, err := secret.GetKeyValuePair()
+// ValidateSensitiveInputs ...
+func (workflow *WorkflowModel) ValidateSensitiveInputs(secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
+	for _, stepListItem := range workflow.Steps {
+		stepID, step, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		for _, k := range []string{`$%s`, `${%s}`, `"$%s"`, `"${%s}"`} {
-			if v := strings.TrimSpace(value); fmt.Sprintf(k, key) == v || v == "" {
-				return nil
+
+		for _, input := range step.Inputs {
+			key, value, err := input.GetKeyValuePair()
+			if err != nil {
+				return nil, err
+			}
+
+			opts, err := input.GetOptions()
+			if err != nil {
+				return nil, err
+			}
+
+			isSensitive := opts.IsSensitive
+			if isSensitive == nil {
+				isSensitive = pointers.NewBoolPtr(envmanModels.DefaultIsSensitive)
+			}
+
+			if !*isSensitive {
+				continue
+			}
+
+			isExpand := opts.IsExpand
+			if isExpand == nil {
+				isExpand = pointers.NewBoolPtr(envmanModels.DefaultIsExpand)
+			}
+
+			if !*isExpand {
+				return nil, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s:%s) you need to enable is_expand", stepID, key)
+			}
+
+			if !isSecretEnv(value, secrets) {
+				return nil, fmt.Errorf("invalid sensitive input value for (%s:%s): value is not a secret environment variable", key, stepID)
 			}
 		}
 	}
-	return fmt.Errorf("value is not a secret environment variable")
+	return nil, nil
+}
+
+func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) bool {
+	if value == "" {
+		return true
+	}
+	for _, secret := range secrets {
+		key, _, err := secret.GetKeyValuePair()
+		if err != nil {
+			return false
+		}
+		for _, k := range []string{`$%s`, `${%s}`, `"$%s"`, `"${%s}"`} {
+			if v := strings.TrimSpace(value); fmt.Sprintf(k, key) == v || v == "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Validate ...
@@ -435,6 +483,18 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 	}
 
 	return nil
+}
+
+// ValidateSensitiveInputs ...
+func (config *BitriseDataModel) ValidateSensitiveInputs(secrets []envmanModels.EnvironmentItemModel) (warnings []string, err error) {
+	for _, workflow := range config.Workflows {
+		warns, err := workflow.ValidateSensitiveInputs(secrets)
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, err
+		}
+	}
+	return warnings, nil
 }
 
 // Validate ...

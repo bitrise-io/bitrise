@@ -8,6 +8,7 @@ import (
 
 	"strings"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -24,8 +25,9 @@ type ValidationItemModel struct {
 
 // ValidationModel ...
 type ValidationModel struct {
-	Config  *ValidationItemModel `json:"config,omitempty" yaml:"config,omitempty"`
-	Secrets *ValidationItemModel `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	Config          *ValidationItemModel `json:"config,omitempty" yaml:"config,omitempty"`
+	Secrets         *ValidationItemModel `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	SensitiveInputs *ValidationItemModel `json:"-" yaml:"-"`
 }
 
 // ValidateResponseModel ...
@@ -211,9 +213,11 @@ func validate(c *cli.Context) error {
 		os.Exit(1)
 	}
 
+	var bitriseConfig models.BitriseDataModel
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, inventorySecrets)
+		var warns []string
+		bitriseConfig, warns, err = CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 		configValidation := ValidationItemModel{
 			IsValid:  true,
 			Warnings: warns,
@@ -224,6 +228,40 @@ func validate(c *cli.Context) error {
 		}
 
 		validation.Config = &configValidation
+	}
+
+	pth, err = GetInventoryFilePath(inventoryPath)
+	if err != nil {
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
+		os.Exit(1)
+	}
+
+	var inventoryEnvironments []envmanModels.EnvironmentItemModel
+	if pth != "" || inventoryBase64Data != "" {
+		// Inventory validation
+		inventoryEnvironments, err = CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		secretValidation := ValidationItemModel{
+			IsValid: true,
+		}
+		if err != nil {
+			secretValidation.IsValid = false
+			secretValidation.Error = err.Error()
+		}
+
+		validation.Secrets = &secretValidation
+	}
+
+	if validation.Config != nil {
+		warns, err := bitriseConfig.ValidateSensitiveInputs(inventoryEnvironments)
+		sensitiveInputsValidation := ValidationItemModel{
+			IsValid:  true,
+			Warnings: warns,
+		}
+		if err != nil {
+			sensitiveInputsValidation.IsValid = false
+			sensitiveInputsValidation.Error = err.Error()
+		}
+		validation.SensitiveInputs = &sensitiveInputsValidation
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
