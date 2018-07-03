@@ -5,13 +5,13 @@
   branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "ea8897e79973357ba785ac2533559a6297e83c44"
+  revision = "e54a77765aca7bbdd8e56c1c54f60579968b2dc9"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
-  revision = "8a2e2f93c19399d1a62cc8f4bd6bb3c3d084fdf2"
-  version = "1.1.14"
+  revision = "7d5180ae4046f109e3dfd73c15082170ae7153d3"
 
 [[projects]]
   branch = "master"
@@ -40,10 +40,10 @@
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
+  branch = "master"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
-  revision = "97351f94da2926202c9f86b3b715cc7ca2686078"
-  version = "0.9.43"
+  revision = "60db1821f76766e849f8c6eb18b7f90202f15407"
 
 [[projects]]
   branch = "master"
@@ -76,13 +76,13 @@
   revision = "256dc444b735e061061cf46c809487313d5b0065"
 
 [[projects]]
+  branch = "master"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require"
   ]
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
@@ -94,7 +94,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -103,13 +103,13 @@
     "unix",
     "windows"
   ]
-  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
+  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
