@@ -210,7 +210,7 @@ func run(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath, inventoryEnvironments)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}

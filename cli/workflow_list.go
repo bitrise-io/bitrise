@@ -196,7 +196,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	if minimal && idOnly {
-		logger.Print(NewErrorOutput("Either define --minimal or --id-only"))
+		logger.Print(NewErrorOutput("Eighter define --minimal or --id-only"))
 		os.Exit(1)
 	}
 
@@ -207,10 +207,10 @@ func workflowList(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	warnings = append(warnings, warns...)
 	if err != nil {
-		logger.Print(NewErrorOutput("Either define --minimal or --id-only", warnings...))
+		logger.Print(NewErrorOutput("Eighter define --minimal or --id-only", warnings...))
 		os.Exit(1)
 	}
 

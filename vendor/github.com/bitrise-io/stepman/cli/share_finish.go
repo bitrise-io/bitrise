@@ -3,79 +3,76 @@ package cli
 import (
 	"fmt"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/bitrise-tools/colorstring"
 	"github.com/urfave/cli"
 )
 
 func printFinishShare() {
-	b := colorstring.NewBuilder()
-	b.Plain(GuideTextForFinish()).NewLine()
-	b.NewLine()
-	b.Plain("On GitHub you can find a ").Blue("Compare & pull request").Plain(" button, in the section called ").Blue("Your recently pushed branches:").Plain(",").NewLine()
-	b.Plain("which will bring you to the page to ").Blue("Open a pull request").Plain(", where you can review and create your Pull Request.")
-	fmt.Println(b.String())
+	fmt.Println()
+	log.Info(" * " + colorstring.Green("[OK] ") + "Yeah!! You rock!!")
+	fmt.Println()
+	fmt.Println("   " + GuideTextForFinish())
+	fmt.Println()
+	msg := `   You can create a pull request in your forked StepLib repository,
+   if you used the main StepLib repository then your repository's url looks like: ` + `
+   ` + colorstring.Green("https://github.com/[your-username]/bitrise-steplib") + `
+
+   On GitHub you can find a ` + colorstring.Green("'Compare & pull request'") + ` button, in the ` + colorstring.Green("'Your recently pushed branches:'") + ` section,
+   which will bring you to the 'Open a pull request' page, where you can review and create your Pull Request.
+	`
+	fmt.Println(msg)
 }
 
 func finish(c *cli.Context) error {
-	log.Infof("Validating Step share params...")
-
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
-		log.Errorf(err.Error())
-		fail("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
+		log.Error(err)
+		log.Fatal("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
 	}
 
 	route, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		log.Fatalln("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	collectionDir := stepman.GetLibraryBaseDirPath(route)
-	log.Donef("all inputs are valid")
 
-	fmt.Println()
-	log.Infof("Checking StepLib changes...")
 	repo, err := git.New(collectionDir)
 	if err != nil {
-		fail(err.Error())
+		log.Fatal(err)
 	}
 
 	out, err := repo.Status("--porcelain").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		fail(err.Error())
+		log.Fatal(err)
 	}
 	if out == "" {
-		log.Warnf("No git changes, it seems you already called this command")
-		fmt.Println()
+		log.Warn("No git changes!")
 		printFinishShare()
 		return nil
 	}
 
 	stepDirInSteplib := stepman.GetStepCollectionDirPath(route, share.StepID, share.StepTag)
 	stepYMLPathInSteplib := stepDirInSteplib + "/step.yml"
-	log.Printf("new step.yml: %s", stepYMLPathInSteplib)
+	log.Info("New step.yml:", stepYMLPathInSteplib)
 	if err := repo.Add(stepYMLPathInSteplib).Run(); err != nil {
-		fail(err.Error())
+		log.Fatal(err)
 	}
 
-	fmt.Println()
-	log.Infof("Submitting the changes...")
+	log.Info("Do commit")
 	msg := share.StepID + " " + share.StepTag
 	if err := repo.Commit(msg).Run(); err != nil {
-		fail(err.Error())
+		log.Fatal(err)
 	}
 
-	log.Printf("pushing to your fork: %s", share.Collection)
-	if out, err := repo.Push(share.ShareBranchName()).RunAndReturnTrimmedCombinedOutput(); err != nil {
-		fail(out)
+	log.Info("Pushing to your fork: ", share.Collection)
+	if err := repo.Push(share.ShareBranchName()).Run(); err != nil {
+		log.Fatal(err)
 	}
-
-	fmt.Println()
 	printFinishShare()
-	fmt.Println()
 
 	return nil
 }

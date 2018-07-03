@@ -193,7 +193,6 @@ struct ltchars {
 #include <linux/stat.h>
 #include <linux/watchdog.h>
 #include <linux/hdreg.h>
-#include <linux/rtc.h>
 #include <net/route.h>
 #include <asm/termbits.h>
 
@@ -405,7 +404,7 @@ ccflags="$@"
 		$2 ~ /^LINUX_REBOOT_CMD_/ ||
 		$2 ~ /^LINUX_REBOOT_MAGIC[12]$/ ||
 		$2 !~ "NLA_TYPE_MASK" &&
-		$2 ~ /^(NETLINK|NLM|NLMSG|NLA|IFA|IFAN|RT|RTC|RTCF|RTN|RTPROT|RTNH|ARPHRD|ETH_P)_/ ||
+		$2 ~ /^(NETLINK|NLM|NLMSG|NLA|IFA|IFAN|RT|RTCF|RTN|RTPROT|RTNH|ARPHRD|ETH_P)_/ ||
 		$2 ~ /^SIOC/ ||
 		$2 ~ /^TIOC/ ||
 		$2 ~ /^TCGET/ ||

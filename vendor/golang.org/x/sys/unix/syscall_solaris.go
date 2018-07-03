@@ -314,11 +314,7 @@ func UtimesNanoAt(dirfd int, path string, ts []Timespec, flags int) error {
 
 // FcntlInt performs a fcntl syscall on fd with the provided command and argument.
 func FcntlInt(fd uintptr, cmd, arg int) (int, error) {
-	valptr, _, errno := sysvicall6(uintptr(unsafe.Pointer(&procfcntl)), 3, uintptr(fd), uintptr(cmd), uintptr(arg), 0, 0, 0)
-	var err error
-	if errno != 0 {
-		err = errno
-	}
+	valptr, _, err := sysvicall6(uintptr(unsafe.Pointer(&procfcntl)), 3, uintptr(fd), uintptr(cmd), uintptr(arg), 0, 0, 0)
 	return int(valptr), err
 }
 
@@ -599,7 +595,6 @@ func Poll(fds []PollFd, timeout int) (n int, err error) {
 //sys	Dup(fd int) (nfd int, err error)
 //sys	Dup2(oldfd int, newfd int) (err error)
 //sys	Exit(code int)
-//sys	Faccessat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fchdir(fd int) (err error)
 //sys	Fchmod(fd int, mode uint32) (err error)
 //sys	Fchmodat(dirfd int, path string, mode uint32, flags int) (err error)

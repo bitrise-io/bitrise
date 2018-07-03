@@ -140,13 +140,10 @@ func (c *Client) get(ctx context.Context, url string, ok resOkay) (*http.Respons
 		case ok(res):
 			return res, nil
 		case isRetriable(res.StatusCode):
-			retry.inc()
-			resErr := responseError(res)
 			res.Body.Close()
-			// Ignore the error value from retry.backoff
-			// and return the one from last retry, as received from the CA.
-			if retry.backoff(ctx, req, res) != nil {
-				return nil, resErr
+			retry.inc()
+			if err := retry.backoff(ctx, req, res); err != nil {
+				return nil, err
 			}
 		default:
 			defer res.Body.Close()
@@ -172,22 +169,20 @@ func (c *Client) post(ctx context.Context, key crypto.Signer, url string, body i
 		if ok(res) {
 			return res, nil
 		}
-		resErr := responseError(res)
+		err = responseError(res)
 		res.Body.Close()
 		switch {
 		// Check for bad nonce before isRetriable because it may have been returned
 		// with an unretriable response code such as 400 Bad Request.
-		case isBadNonce(resErr):
+		case isBadNonce(err):
 			// Consider any previously stored nonce values to be invalid.
 			c.clearNonces()
 		case !isRetriable(res.StatusCode):
-			return nil, resErr
+			return nil, err
 		}
 		retry.inc()
-		// Ignore the error value from retry.backoff
-		// and return the one from last retry, as received from the CA.
 		if err := retry.backoff(ctx, req, res); err != nil {
-			return nil, resErr
+			return nil, err
 		}
 	}
 }

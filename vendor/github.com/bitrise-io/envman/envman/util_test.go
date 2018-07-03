@@ -98,7 +98,6 @@ func TestRemoveDefaults(t *testing.T) {
 			IsRequired:        pointers.NewBoolPtr(models.DefaultIsRequired),
 			IsDontChangeValue: pointers.NewBoolPtr(models.DefaultIsDontChangeValue),
 			IsExpand:          pointers.NewBoolPtr(models.DefaultIsExpand),
-			IsSensitive:       pointers.NewBoolPtr(models.DefaultIsSensitive),
 			SkipIfEmpty:       pointers.NewBoolPtr(models.DefaultSkipIfEmpty),
 		},
 	}
@@ -119,7 +118,6 @@ func TestRemoveDefaults(t *testing.T) {
 	require.Equal(t, (*bool)(nil), opts.IsRequired)
 	require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
 	require.Equal(t, (*bool)(nil), opts.IsExpand)
-	require.Equal(t, (*bool)(nil), opts.IsSensitive)
 	require.Equal(t, (*bool)(nil), opts.SkipIfEmpty)
 
 }

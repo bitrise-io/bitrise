@@ -658,8 +658,6 @@ func (m *Manager) verify(ctx context.Context, client *acme.Client, domain string
 		}
 	}()
 
-	// errs accumulates challenge failure errors, printed if all fail
-	errs := make(map[*acme.Challenge]error)
 	var nextTyp int // challengeType index of the next challenge type to try
 	for {
 		// Start domain authorization and get the challenge.
@@ -685,30 +683,22 @@ func (m *Manager) verify(ctx context.Context, client *acme.Client, domain string
 			nextTyp++
 		}
 		if chal == nil {
-			errorMsg := fmt.Sprintf("acme/autocert: unable to authorize %q", domain)
-			for chal, err := range errs {
-				errorMsg += fmt.Sprintf("; challenge %q failed with error: %v", chal.Type, err)
-			}
-			return errors.New(errorMsg)
+			return fmt.Errorf("acme/autocert: unable to authorize %q; tried %q", domain, challengeTypes)
 		}
 		cleanup, err := m.fulfill(ctx, client, chal)
 		if err != nil {
-			errs[chal] = err
 			continue
 		}
 		defer cleanup()
 		if _, err := client.Accept(ctx, chal); err != nil {
-			errs[chal] = err
 			continue
 		}
 
 		// A challenge is fulfilled and accepted: wait for the CA to validate.
-		if _, err := client.WaitAuthorization(ctx, authz.URI); err != nil {
-			errs[chal] = err
-			continue
+		if _, err := client.WaitAuthorization(ctx, authz.URI); err == nil {
+			delete(pendingAuthzs, authz.URI)
+			return nil
 		}
-		delete(pendingAuthzs, authz.URI)
-		return nil
 	}
 }
 

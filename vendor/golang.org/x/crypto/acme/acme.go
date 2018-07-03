@@ -598,14 +598,10 @@ func (c *Client) TLSALPN01ChallengeCert(token, domain string, opt ...CertOption)
 		return tls.Certificate{}, err
 	}
 	shasum := sha256.Sum256([]byte(ka))
-	extValue, err := asn1.Marshal(shasum[:])
-	if err != nil {
-		return tls.Certificate{}, err
-	}
 	acmeExtension := pkix.Extension{
 		Id:       idPeACMEIdentifierV1,
 		Critical: true,
-		Value:    extValue,
+		Value:    shasum[:],
 	}
 
 	tmpl := defaultTLSChallengeCertTemplate()

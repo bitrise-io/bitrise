@@ -140,7 +140,7 @@ func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataM
 		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
 	}
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes, nil)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
 	if err != nil {
 		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
 	}
@@ -164,7 +164,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 }
 
 // CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string, secrets []envmanModels.EnvironmentItemModel) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
 	warnings := []string{}
 
@@ -184,7 +184,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 			return models.BitriseDataModel{}, []string{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
 		}
 
-		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath, secrets)
+		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 		warnings = warns
 		if err != nil {
 			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) is not valid: %s", bitriseConfigPath, err)
