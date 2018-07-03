@@ -323,8 +323,8 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 				return warnings, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s) you need to enable is_expand", key)
 			}
 
-			if err := isSecretEnv(value, secrets); err != nil {
-				return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
+			if !isSecretEnv(value, secrets) {
+				return warnings, fmt.Errorf("invalid sensitive input value for (%s): value is not a secret environment variable", key)
 			}
 		}
 		stepListItem[stepID] = step
@@ -332,19 +332,22 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 	return warnings, nil
 }
 
-func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) error {
+func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) bool {
+	if value == "" {
+		return true
+	}
 	for _, secret := range secrets {
 		key, _, err := secret.GetKeyValuePair()
 		if err != nil {
-			return err
+			return false
 		}
 		for _, k := range []string{`$%s`, `${%s}`, `"$%s"`, `"${%s}"`} {
 			if v := strings.TrimSpace(value); fmt.Sprintf(k, key) == v || v == "" {
-				return nil
+				return true
 			}
 		}
 	}
-	return fmt.Errorf("value is not a secret environment variable")
+	return false
 }
 
 // Validate ...
