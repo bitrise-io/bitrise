@@ -97,7 +97,7 @@ func stepInfo(c *cli.Context) error {
 		//
 		// Steplib step info
 		if collectionURI == "" {
-			bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
+			bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				registerFatal(fmt.Sprintf("No collection defined and failed to read bitrise config, err: %s", err), warnings, format)

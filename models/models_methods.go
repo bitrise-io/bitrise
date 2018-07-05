@@ -269,7 +269,7 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
+func (workflow *WorkflowModel) Validate() ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
 			return []string{}, err
@@ -289,7 +289,7 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 
 		stepInputMap := map[string]bool{}
 		for _, input := range step.Inputs {
-			key, value, err := input.GetKeyValuePair()
+			key, _, err := input.GetKeyValuePair()
 			if err != nil {
 				return warnings, err
 			}
@@ -299,10 +299,31 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 				warnings = append(warnings, fmt.Sprintf("invalid step: duplicated input found: (%s)", key))
 			}
 			stepInputMap[key] = true
+		}
+
+		stepListItem[stepID] = step
+	}
+
+	return warnings, nil
+}
+
+// ValidateSensitiveInputs ...
+func (workflow *WorkflowModel) ValidateSensitiveInputs(secrets []envmanModels.EnvironmentItemModel) error {
+	for _, stepListItem := range workflow.Steps {
+		stepID, step, err := GetStepIDStepDataPair(stepListItem)
+		if err != nil {
+			return fmt.Errorf("failed to read step id: %s", err)
+		}
+
+		for _, input := range step.Inputs {
+			key, value, err := input.GetKeyValuePair()
+			if err != nil {
+				return fmt.Errorf("failed to read step (%s) input: %s", stepID, err)
+			}
 
 			opts, err := input.GetOptions()
 			if err != nil {
-				return warnings, err
+				return fmt.Errorf("failed to read step (%s) input (%s) options: %s", stepID, key, err)
 			}
 
 			isSensitive := opts.IsSensitive
@@ -320,19 +341,22 @@ func (workflow *WorkflowModel) Validate(secrets []envmanModels.EnvironmentItemMo
 			}
 
 			if !*isExpand {
-				return warnings, fmt.Errorf("is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input: (%s) you need to enable is_expand", key)
+				return fmt.Errorf("security issue in %s step: input (%s) value should be defined as a secret environment variable, but is_expand set to: false", stepID, key)
 			}
 
-			if err := isSecretEnv(value, secrets); err != nil {
-				return warnings, fmt.Errorf("invalid sensitive input value for (%s): %s", key, err)
+			if err := validateSensitiveInput(key, value, secrets); err != nil {
+				return fmt.Errorf("security issue in %s step: %s", stepID, err)
 			}
 		}
-		stepListItem[stepID] = step
 	}
-	return warnings, nil
+	return nil
 }
 
-func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) error {
+func validateSensitiveInput(key, value string, secrets []envmanModels.EnvironmentItemModel) error {
+	if value == "" {
+		return nil
+	}
+
 	for _, secret := range secrets {
 		key, _, err := secret.GetKeyValuePair()
 		if err != nil {
@@ -344,7 +368,8 @@ func isSecretEnv(value string, secrets []envmanModels.EnvironmentItemModel) erro
 			}
 		}
 	}
-	return fmt.Errorf("value is not a secret environment variable")
+
+	return fmt.Errorf("sensitive input (%s) should be defined as a secret environment variable", key)
 }
 
 // Validate ...
@@ -437,8 +462,18 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 	return nil
 }
 
+// ValidateSensitiveInputs ...
+func (config *BitriseDataModel) ValidateSensitiveInputs(secrets []envmanModels.EnvironmentItemModel) error {
+	for _, workflow := range config.Workflows {
+		if err := workflow.ValidateSensitiveInputs(secrets); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Validate ...
-func (config *BitriseDataModel) Validate(secrets []envmanModels.EnvironmentItemModel) ([]string, error) {
+func (config *BitriseDataModel) Validate() ([]string, error) {
 	warnings := []string{}
 
 	if config.FormatVersion == "" {
@@ -490,7 +525,7 @@ func (config *BitriseDataModel) Validate(secrets []envmanModels.EnvironmentItemM
 			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
-		warns, err := workflow.Validate(secrets)
+		warns, err := workflow.Validate()
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err
@@ -565,16 +600,17 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 
 	hasOptions := false
 
-	if options.IsExpand != nil {
-		if *options.IsExpand == envmanModels.DefaultIsExpand {
-			options.IsExpand = nil
+	if options.IsSensitive != nil {
+		if *options.IsSensitive == envmanModels.DefaultIsSensitive {
+			options.IsSensitive = nil
 		} else {
 			hasOptions = true
 		}
 	}
-	if options.IsSensitive != nil {
-		if *options.IsSensitive == envmanModels.DefaultIsSensitive {
-			options.IsSensitive = nil
+
+	if options.IsExpand != nil {
+		if *options.IsExpand == envmanModels.DefaultIsExpand {
+			options.IsExpand = nil
 		} else {
 			hasOptions = true
 		}
@@ -720,11 +756,11 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 		return err
 	}
 
-	if otherOptions.IsExpand != nil {
-		options.IsExpand = pointers.NewBoolPtr(*otherOptions.IsExpand)
-	}
 	if otherOptions.IsSensitive != nil {
 		options.IsSensitive = pointers.NewBoolPtr(*otherOptions.IsSensitive)
+	}
+	if otherOptions.IsExpand != nil {
+		options.IsExpand = pointers.NewBoolPtr(*otherOptions.IsExpand)
 	}
 	if otherOptions.SkipIfEmpty != nil {
 		options.SkipIfEmpty = pointers.NewBoolPtr(*otherOptions.SkipIfEmpty)

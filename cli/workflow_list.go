@@ -207,7 +207,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		logger.Print(NewErrorOutput("Either define --minimal or --id-only", warnings...))

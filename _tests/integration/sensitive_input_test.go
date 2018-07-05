@@ -18,8 +18,8 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
-		require.Equal(t, 2, strings.Count(out, "test content 1"))
-		require.Equal(t, 2, strings.Count(out, "test content 2"))
+		require.Equal(t, 2, strings.Count(out, "test content 1"), out)
+		require.Equal(t, 2, strings.Count(out, "test content 2"), out)
 	}
 	t.Log("non sensitive")
 	{
@@ -27,7 +27,7 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "test env"))
+		require.Equal(t, 1, strings.Count(out, "test env"), out)
 	}
 	configPth = "sensitive_input_nonsecret_test_bitrise.yml"
 	t.Log("env is non secret")
@@ -36,7 +36,7 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
+		require.Equal(t, 1, strings.Count(out, "Security validation failed, error: security issue in script step: sensitive input (content) should be defined as a secret environment variable"), out)
 	}
 	configPth = "sensitive_input_nonisexpand_test_bitrise.yml"
 	t.Log("disabled is_expand")
@@ -45,7 +45,7 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "is_sensitive option set to true but is_expand is not, sensitive inputs cannot have direct values and to be able to use environment variable for input"))
+		require.Equal(t, 1, strings.Count(out, "security issue in script step: input (content) value should be defined as a secret environment variable, but is_expand set to: false"), out)
 	}
 	configPth = "sensitive_input_test_bitrise.yml"
 	t.Log("no secrets file")
@@ -54,7 +54,7 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "value is not a secret environment variable"))
+		require.Equal(t, 1, strings.Count(out, "security issue in script step: sensitive input (content) should be defined as a secret environment variable"), out)
 	}
 	configPth = "sensitive_input_test_bitrise.yml"
 	secretsPth = "sensitive_input_test_empty_secrets.yml"

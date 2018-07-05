@@ -213,7 +213,7 @@ func validate(c *cli.Context) error {
 
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, inventorySecrets)
+		bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 		configValidation := ValidationItemModel{
 			IsValid:  true,
 			Warnings: warns,
@@ -221,6 +221,11 @@ func validate(c *cli.Context) error {
 		if err != nil {
 			configValidation.IsValid = false
 			configValidation.Error = err.Error()
+		} else {
+			if err := bitriseConfig.ValidateSensitiveInputs(inventorySecrets); err != nil {
+				configValidation.IsValid = false
+				configValidation.Error = err.Error()
+			}
 		}
 
 		validation.Config = &configValidation

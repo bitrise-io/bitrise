@@ -28,7 +28,7 @@ func normalize(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, nil)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}

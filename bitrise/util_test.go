@@ -167,7 +167,7 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
           title: Generate timestamps
     `
 
-	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr), nil)
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -320,7 +320,7 @@ workflows:
     - script:
         title: Should skipped
   `
-	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr), nil)
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -400,7 +400,7 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
   }
 }
   `
-	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr), nil)
+	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -434,7 +434,7 @@ workflows:
           opts:
             is_expand: no
 `
-	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr), nil)
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
@@ -486,7 +486,7 @@ func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
   }
 }
 `
-	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr), nil)
+	config, warnings, err := ConfigModelFromJSONBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
