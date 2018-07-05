@@ -156,7 +156,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		cmd := command.New(binPath(), "validate", "-i", secretsPth)
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
-		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid invetory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\x1b[0m"
+		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid inventory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\x1b[0m"
 		require.Equal(t, expected, out)
 	}
 }
@@ -196,7 +196,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
-		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid invetory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
+		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
 	}
 }

@@ -265,7 +265,7 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 
 			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid invetory format: %s", err)
+				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid inventory format: %s", err)
 			}
 			inventoryEnvironments = inventory
 		}
