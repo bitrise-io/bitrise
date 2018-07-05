@@ -222,9 +222,7 @@ func validate(c *cli.Context) error {
 			configValidation.IsValid = false
 			configValidation.Error = err.Error()
 		} else {
-			warns, err = bitriseConfig.ValidateSensitiveInputs(inventorySecrets)
-			configValidation.Warnings = append(configValidation.Warnings, warns...)
-			if err != nil {
+			if err := bitriseConfig.ValidateSensitiveInputs(inventorySecrets); err != nil {
 				configValidation.IsValid = false
 				configValidation.Error = err.Error()
 			}

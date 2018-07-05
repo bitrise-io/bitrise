@@ -963,19 +963,19 @@ workflows:
 		for _, env := range secrets {
 			key, _, err := env.GetKeyValuePair()
 			require.NoError(t, err)
-			require.Equal(t, true, isSecretEnv("$"+key, secrets))
-			require.Equal(t, true, isSecretEnv("${"+key+"}", secrets))
-			require.Equal(t, true, isSecretEnv("\"$"+key+"\"", secrets))
-			require.Equal(t, true, isSecretEnv("\"${"+key+"}\"", secrets))
+			require.NoError(t, validateSensitiveInput("step_input_key", "$"+key, secrets))
+			require.NoError(t, validateSensitiveInput("step_input_key", "${"+key+"}", secrets))
+			require.NoError(t, validateSensitiveInput("step_input_key", "\"$"+key+"\"", secrets))
+			require.NoError(t, validateSensitiveInput("step_input_key", "\"${"+key+"}\"", secrets))
 		}
 
 		for _, env := range secrets {
 			key, _, err := env.GetKeyValuePair()
 			require.NoError(t, err)
-			require.Equal(t, false, isSecretEnv("$A"+key, secrets))
-			require.Equal(t, false, isSecretEnv("${B"+key+"}", secrets))
-			require.Equal(t, false, isSecretEnv("\"$C"+key+"\"", secrets))
-			require.Equal(t, false, isSecretEnv("\"${D"+key+"}\"", secrets))
+			require.EqualError(t, validateSensitiveInput("step_input_key", "$A"+key, secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
+			require.EqualError(t, validateSensitiveInput("step_input_key", "${B"+key+"}", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
+			require.EqualError(t, validateSensitiveInput("step_input_key", "\"$C"+key+"\"", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
+			require.EqualError(t, validateSensitiveInput("step_input_key", "\"${D"+key+"}\"", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
 		}
 	}
 }
