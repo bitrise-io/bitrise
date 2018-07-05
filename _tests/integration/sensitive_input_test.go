@@ -45,7 +45,7 @@ func Test_SensitiveInput(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err, out)
 
-		require.Equal(t, 1, strings.Count(out, "security issue in script step: input (content) value should be defined as a secret environment variable, but is_expand set to: true"), out)
+		require.Equal(t, 1, strings.Count(out, "security issue in script step: input (content) value should be defined as a secret environment variable, but is_expand set to: false"), out)
 	}
 	configPth = "sensitive_input_test_bitrise.yml"
 	t.Log("no secrets file")

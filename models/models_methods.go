@@ -341,7 +341,7 @@ func (workflow *WorkflowModel) ValidateSensitiveInputs(secrets []envmanModels.En
 			}
 
 			if !*isExpand {
-				return fmt.Errorf("security issue in %s step: input (%s) value should be defined as a secret environment variable, but is_expand set to: true", stepID, key)
+				return fmt.Errorf("security issue in %s step: input (%s) value should be defined as a secret environment variable, but is_expand set to: false", stepID, key)
 			}
 
 			if err := validateSensitiveInput(key, value, secrets); err != nil {
