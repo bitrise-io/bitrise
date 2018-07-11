@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/output"
-	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
@@ -190,10 +189,9 @@ func validate(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	var inventorySecrets []envmanModels.EnvironmentItemModel
 	if pth != "" || inventoryBase64Data != "" {
 		// Inventory validation
-		inventorySecrets, err = CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		_, err = CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
 		secretValidation := ValidationItemModel{
 			IsValid: true,
 		}
@@ -222,7 +220,7 @@ func validate(c *cli.Context) error {
 			configValidation.IsValid = false
 			configValidation.Error = err.Error()
 		} else {
-			if err := bitriseConfig.ValidateSensitiveInputs(inventorySecrets); err != nil {
+			if err := bitriseConfig.ValidateSensitiveInputs(); err != nil {
 				configValidation.IsValid = false
 				configValidation.Error = err.Error()
 			}

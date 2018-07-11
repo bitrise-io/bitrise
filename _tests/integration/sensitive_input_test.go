@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -8,62 +9,186 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_SensitiveInput(t *testing.T) {
-	configPth := "sensitive_input_test_bitrise.yml"
-	secretsPth := "sensitive_input_test_secrets.yml"
-
-	t.Log("env format tests")
+func TestSensitiveRun(t *testing.T) {
+	t.Log("prints a warning in case of security issue")
 	{
-		cmd := command.New(binPath(), "run", "successful-formats", "--config", configPth, "--inventory", secretsPth)
+
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: echo "direct value"
+          opts:
+            is_sensitive: true
+            is_expand: true`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "run", "primary", "--config-base64", configBase64)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err)
+		require.True(t, strings.Contains(out, `Security validation failed: security issue in script step's content input: value should be defined as a secret environment variable, but does not starts with '$' mark`), out)
+	}
+}
+
+func TestSensitiveTrigger(t *testing.T) {
+	t.Log("prints a warning in case of security issue")
+	{
+
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- push_branch: master
+  workflow: primary
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: $SECRET_ENV
+          opts:
+            is_sensitive: true
+            is_expand: false`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "trigger", "--push-branch", "master", "--config-base64", configBase64)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err)
+		require.True(t, strings.Contains(out, `Security validation failed: security issue in script step's content input: value should be defined as a secret environment variable, but is_expand set to: false`), out)
+	}
+}
+
+func TestSensitiveValidation(t *testing.T) {
+	t.Log("affects sensitive inputs only")
+	{
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: "direct value"
+          opts:
+            is_sensitive: false`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "validate", "--config-base64", configBase64, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-
-		require.Equal(t, 2, strings.Count(out, "test content 1"), out)
-		require.Equal(t, 2, strings.Count(out, "test content 2"), out)
 	}
-	t.Log("non sensitive")
+
+	t.Log("is expand is required")
 	{
-		cmd := command.New(binPath(), "run", "successful-non-sensitive", "--config", configPth, "--inventory", secretsPth)
+
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: "direct value"
+          opts:
+            is_sensitive: true
+            is_expand: false`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "validate", "--config-base64", configBase64, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err)
+		require.Equal(t, `{"data":{"config":{"is_valid":false,"error":"security issue in script step's content input: value should be defined as a secret environment variable, but is_expand set to: false"}}}`, out, out)
+	}
+
+	t.Log("direct value is not allowed")
+	{
+
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: "direct value"
+          opts:
+            is_sensitive: true
+            is_expand: true`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "validate", "--config-base64", configBase64, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err)
+		require.Equal(t, `{"data":{"config":{"is_valid":false,"error":"security issue in script step's content input: value should be defined as a secret environment variable, but does not starts with '$' mark"}}}`, out, out)
+	}
+
+	t.Log("value should start with '$' mark")
+	{
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: "PREFIX_${SECRET_KEY}"
+          opts:
+            is_sensitive: true
+            is_expand: true`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "validate", "--config-base64", configBase64, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err)
+		require.Equal(t, `{"data":{"config":{"is_valid":false,"error":"security issue in script step's content input: value should be defined as a secret environment variable, but does not starts with '$' mark"}}}`, out, out)
+	}
+
+	t.Log("valid secrets")
+	{
+		bitriseYML := `format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+    - script:
+        inputs:
+        - content: "$SECRET_KEY"
+          opts:
+            is_sensitive: true
+            is_expand: true
+    - script:
+        inputs:
+        - content: "${SECRET_KEY}"
+          opts:
+            is_sensitive: true
+            is_expand: true
+    - script:
+        inputs:
+        - content: "${SECRET_KEY}_WITH_SUFFIX"
+          opts:
+            is_sensitive: true
+            is_expand: true`
+
+		configBase64 := base64.StdEncoding.EncodeToString([]byte(bitriseYML))
+
+		cmd := command.New(binPath(), "validate", "--config-base64", configBase64, "--format", "json")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-
-		require.Equal(t, 1, strings.Count(out, "test env"), out)
-	}
-	configPth = "sensitive_input_nonsecret_test_bitrise.yml"
-	t.Log("env is non secret")
-	{
-		cmd := command.New(binPath(), "run", "failure-non-secret", "--config", configPth, "--inventory", secretsPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-
-		require.Equal(t, 1, strings.Count(out, "Security validation failed, error: security issue in script step: sensitive input (content) should be defined as a secret environment variable"), out)
-	}
-	configPth = "sensitive_input_nonisexpand_test_bitrise.yml"
-	t.Log("disabled is_expand")
-	{
-		cmd := command.New(binPath(), "run", "failure-disabled-is-expand", "--config", configPth, "--inventory", secretsPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-
-		require.Equal(t, 1, strings.Count(out, "security issue in script step: input (content) value should be defined as a secret environment variable, but is_expand set to: false"), out)
-	}
-	configPth = "sensitive_input_test_bitrise.yml"
-	t.Log("no secrets file")
-	{
-		cmd := command.New(binPath(), "run", "successful-formats", "--config", configPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-
-		require.Equal(t, 1, strings.Count(out, "security issue in script step: sensitive input (content) should be defined as a secret environment variable"), out)
-	}
-	configPth = "sensitive_input_test_bitrise.yml"
-	secretsPth = "sensitive_input_test_empty_secrets.yml"
-	t.Log("empty secrets file")
-	{
-		cmd := command.New(binPath(), "run", "successful-formats", "--config", configPth, "--inventory", secretsPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-
-		require.Equal(t, 1, strings.Count(out, "empty config"), out)
 	}
 }
