@@ -14,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	colorLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
@@ -219,7 +220,7 @@ func run(c *cli.Context) error {
 	}
 
 	if err := bitriseConfig.ValidateSensitiveInputs(); err != nil {
-		log.Warnf("Security validation failed: %s", err)
+		colorLog.Warnf("Security validation failed: %s\n", err)
 	}
 
 	// Workflow id validation
