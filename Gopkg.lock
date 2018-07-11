@@ -3,18 +3,23 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:1de88d27ee30c5a0505492391dba659db4153eaf98014e5d8b769d1bf86f8cf4"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
+  pruneopts = ""
   revision = "e54a77765aca7bbdd8e56c1c54f60579968b2dc9"
 
 [[projects]]
   branch = "master"
+  digest = "1:6064f249a81108b7b65128739efee514a1b7c65fb2299820fd80d84e70a19030"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
+  pruneopts = ""
   revision = "7d5180ae4046f109e3dfd73c15082170ae7153d3"
 
 [[projects]]
   branch = "master"
+  digest = "1:2aa540c5a392849eaa3c5a81aee4e2a31025a5bfcf00c43351a97e830cf63d2a"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -29,91 +34,140 @@
     "progress",
     "retry",
     "stringutil",
-    "versions"
+    "versions",
   ]
+  pruneopts = ""
   revision = "d1de0dbcb811588e61362aff67bb700b93c13c17"
 
 [[projects]]
   branch = "master"
+  digest = "1:fb3cc9c055818a84aba159da735a24efce77453a904e7742141f2aa0359a6ae6"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
+  pruneopts = ""
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
   branch = "master"
+  digest = "1:da043817e9e9b930102c642f1db86b1cd53181d5b3e259b5374400db95186ce9"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
+  pruneopts = ""
   revision = "60db1821f76766e849f8c6eb18b7f90202f15407"
 
 [[projects]]
   branch = "master"
+  digest = "1:91b62f8c73647c60c087f597473b9dda4a251c91701f851d2319231101b77915"
   name = "github.com/bitrise-tools/gows"
   packages = ["gows"]
+  pruneopts = ""
   revision = "005d8a8baa6e3c6c76527554bb292061ef7d3af0"
 
 [[projects]]
+  digest = "1:0a39ec8bf5629610a4bc7873a92039ee509246da3cef1a0ea60f1ed7e5f9cea5"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
+  pruneopts = ""
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:94158926759c3333201f81eee5a21112f7ae9d000b4d6926455008c7ab3fb7fc"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
+  pruneopts = ""
   revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
 
 [[projects]]
+  digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
+  pruneopts = ""
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:98891c206223fa262569ea196faad59d2c169de675e74796030524eea327ed7d"
   name = "github.com/ryanuber/go-glob"
   packages = ["."]
+  pruneopts = ""
   revision = "256dc444b735e061061cf46c809487313d5b0065"
 
 [[projects]]
   branch = "master"
+  digest = "1:bc2a12c8863e1080226b7bc69192efd6c37aaa9b85cec508b0a8f54fabb9bd9f"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
-    "require"
+    "require",
   ]
+  pruneopts = ""
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
 
 [[projects]]
   branch = "master"
+  digest = "1:a6f6ba3c203a9bdd53c2a82e48dc4b2d1c8b617ab0949e9c230555448b453042"
   name = "github.com/urfave/cli"
   packages = ["."]
+  pruneopts = ""
   revision = "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff"
 
 [[projects]]
   branch = "master"
+  digest = "1:e79c3d6b195477b429f017aaa02af135249bbdff31c9acbd8a93bb37a4ef7d3b"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
+  pruneopts = ""
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
+  digest = "1:880f5ae3ffdd8741fe179f0f70b46df57fcdd746f3a0e9d0e189bb6a241535e4"
   name = "golang.org/x/sys"
   packages = [
     "unix",
-    "windows"
+    "windows",
   ]
-  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
+  pruneopts = ""
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   branch = "v2"
+  digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
+  pruneopts = ""
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c29f7c72b2f19802179bc5433edb7e65565de2e7fc5327e0245b907ad81b701"
+  input-imports = [
+    "github.com/Sirupsen/logrus",
+    "github.com/bitrise-io/envman/models",
+    "github.com/bitrise-io/go-utils/colorstring",
+    "github.com/bitrise-io/go-utils/command",
+    "github.com/bitrise-io/go-utils/command/git",
+    "github.com/bitrise-io/go-utils/errorutil",
+    "github.com/bitrise-io/go-utils/fileutil",
+    "github.com/bitrise-io/go-utils/log",
+    "github.com/bitrise-io/go-utils/pathutil",
+    "github.com/bitrise-io/go-utils/pointers",
+    "github.com/bitrise-io/go-utils/progress",
+    "github.com/bitrise-io/go-utils/retry",
+    "github.com/bitrise-io/go-utils/stringutil",
+    "github.com/bitrise-io/go-utils/versions",
+    "github.com/bitrise-io/goinp/goinp",
+    "github.com/bitrise-io/stepman/models",
+    "github.com/bitrise-tools/gows/gows",
+    "github.com/hashicorp/go-version",
+    "github.com/ryanuber/go-glob",
+    "github.com/stretchr/testify/require",
+    "github.com/urfave/cli",
+    "golang.org/x/sys/unix",
+    "gopkg.in/yaml.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
