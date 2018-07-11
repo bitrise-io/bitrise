@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
+	colorLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
@@ -136,7 +137,7 @@ func trigger(c *cli.Context) error {
 	}
 
 	if err := bitriseConfig.ValidateSensitiveInputs(); err != nil {
-		log.Warnf("Security validation failed: %s", err)
+		colorLog.Warnf("Security validation failed: %s\n", err)
 	}
 
 	// Trigger filter validation
