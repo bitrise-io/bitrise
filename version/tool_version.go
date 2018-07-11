@@ -11,9 +11,9 @@ import (
 // StepmanVersion ...
 func StepmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--version"}
+	args := []string{"stepman", "--loglevel", logLevel, "--version"}
 
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
 	if err != nil {
 		return version.Version{}, err
 	}
@@ -32,8 +32,8 @@ func StepmanVersion() (version.Version, error) {
 // EnvmanVersion ...
 func EnvmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--version"}
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("envman", args...)
+	args := []string{"envman", "--loglevel", logLevel, "--version"}
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
 	if err != nil {
 		return version.Version{}, err
 	}

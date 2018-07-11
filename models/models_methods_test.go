@@ -882,7 +882,7 @@ func TestValidateConfig(t *testing.T) {
 
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
-	t.Log("before-afetr test")
+	t.Log("before-after test")
 	{
 		workflow := WorkflowModel{
 			BeforeRun: []string{"befor1", "befor2", "befor3"},
@@ -926,7 +926,7 @@ workflows:
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("vali workflow - Warning: duplicated inputs")
+	t.Log("valid workflow - Warning: duplicated inputs")
 	{
 		configStr := `format_version: 1.4.0
 
@@ -950,33 +950,92 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 	}
+}
 
-	t.Log("test secret env check")
+func TestValidateSensitiveInput(t *testing.T) {
+	t.Log("affects sensitive inputs only")
 	{
-		secrets := []envmanModels.EnvironmentItemModel{
-			{"KEY": "value"},
-			{"KEY2": "value2"},
-			{"KEY3": "value3"},
-			{"KEY_4": "value 4"},
+		input := envmanModels.EnvironmentItemModel{
+			"key": "direct value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(false),
+			},
 		}
 
-		for _, env := range secrets {
-			key, _, err := env.GetKeyValuePair()
-			require.NoError(t, err)
-			require.NoError(t, validateSensitiveInput("step_input_key", "$"+key, secrets))
-			require.NoError(t, validateSensitiveInput("step_input_key", "${"+key+"}", secrets))
-			require.NoError(t, validateSensitiveInput("step_input_key", "\"$"+key+"\"", secrets))
-			require.NoError(t, validateSensitiveInput("step_input_key", "\"${"+key+"}\"", secrets))
+		require.NoError(t, validateSensitiveInput(input, "step"))
+	}
+
+	t.Log("is expand is required")
+	{
+		input := envmanModels.EnvironmentItemModel{
+			"sensitive input key": "$SECRET_KEY",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+				IsExpand:    pointers.NewBoolPtr(false),
+			},
 		}
 
-		for _, env := range secrets {
-			key, _, err := env.GetKeyValuePair()
-			require.NoError(t, err)
-			require.EqualError(t, validateSensitiveInput("step_input_key", "$A"+key, secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
-			require.EqualError(t, validateSensitiveInput("step_input_key", "${B"+key+"}", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
-			require.EqualError(t, validateSensitiveInput("step_input_key", "\"$C"+key+"\"", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
-			require.EqualError(t, validateSensitiveInput("step_input_key", "\"${D"+key+"}\"", secrets), "sensitive input (step_input_key) should be defined as a secret environment variable")
+		require.EqualError(t, validateSensitiveInput(input, "step"),
+			`security issue in step step's sensitive input key input: value should be defined as a secret environment variable, but is_expand set to: false`)
+	}
+
+	t.Log("direct value is not allowed")
+	{
+		input := envmanModels.EnvironmentItemModel{
+			"sensitive input key": "direct value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+			},
 		}
+
+		require.EqualError(t, validateSensitiveInput(input, "step"),
+			`security issue in step step's sensitive input key input: value should be defined as a secret environment variable, but does not starts with '$' mark`)
+	}
+
+	t.Log("value should start with '$' mark")
+	{
+		input := envmanModels.EnvironmentItemModel{
+			"sensitive input key": "PREFIX_${SECRET_KEY}",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+			},
+		}
+
+		require.EqualError(t, validateSensitiveInput(input, "step"),
+			`security issue in step step's sensitive input key input: value should be defined as a secret environment variable, but does not starts with '$' mark`)
+	}
+
+	t.Log("valid secrets")
+	{
+		input := envmanModels.EnvironmentItemModel{
+			"sensitive input key": "$SECRET_KEY",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+				IsExpand:    pointers.NewBoolPtr(true),
+			},
+		}
+
+		require.NoError(t, validateSensitiveInput(input, "step"))
+
+		input = envmanModels.EnvironmentItemModel{
+			"sensitive input key": "${SECRET_KEY}",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+				IsExpand:    pointers.NewBoolPtr(true),
+			},
+		}
+
+		require.NoError(t, validateSensitiveInput(input, "step"))
+
+		input = envmanModels.EnvironmentItemModel{
+			"sensitive input key": "${SECRET_KEY}_WITH_SUFFIX",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				IsSensitive: pointers.NewBoolPtr(true),
+				IsExpand:    pointers.NewBoolPtr(true),
+			},
+		}
+
+		require.NoError(t, validateSensitiveInput(input, "step"))
 	}
 }
 

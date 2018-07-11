@@ -218,8 +218,8 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to create bitrise config, error: %s", err)
 	}
 
-	if err := bitriseConfig.ValidateSensitiveInputs(inventoryEnvironments); err != nil {
-		log.Fatalf("Security validation failed, error: %s", err)
+	if err := bitriseConfig.ValidateSensitiveInputs(); err != nil {
+		log.Warnf("Security validation failed: %s", err)
 	}
 
 	// Workflow id validation
