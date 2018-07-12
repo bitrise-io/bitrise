@@ -1,6 +1,92 @@
-## Changelog (Current version: 1.18.1)
+## Changelog (Current version: 1.19.0)
 
 -----------------
+
+## 1.19.0 (2018 Jul 12)
+
+### Release Notes
+
+__1. Sensitive input validation update__
+
+The cli version 1.18.0 introduced a new step input option: `is_sensitive`.  
+Step inputs which store secret values, like passwords, api tokens, an SSH key, etc. can be marked as sensitive.  
+These step input values need to be defined as secret environment variables to make sure they are not visible in the build logs  
+as Bitrise CLI 1.15.0 introduced the secret filtering feature, which redacts the values defined as secret environment variables from the build log.  
+
+As the initial rollout of the sensitive step input feature, the `bitrise run` and `bitrise trigger` commands  
+will print a warning message at the very beginning of the build log if your configuration has a security issue. The warning message looks like this:
+
+`Security validation failed: security issue in slack step's webhook_url input: value should be defined as a secret environment variable, but does not starts with '$' mark`
+
+or
+
+`Security validation failed: security issue in slack step's webhook_url input: value should be defined as a secret environment variable, but is_expand set to: false`.
+
+While the `run` and `trigger` commands are just notifying you about the issue, the `bitrise validate` command fails in case of a security issue.  
+
+`bitrise validate --format json` command will exit with status `1` and a similar output in case of security issue:
+
+```JSON
+{  
+   "data":{  
+      "config":{  
+         "is_valid":false,
+         "error":"security issue in slack step's webhook_url input: value should be defined as a secret environment variable, but is_expand set to: false"
+      },
+      "secrets":{  
+         "is_valid":true
+      }
+   }
+}
+```
+
+As the next phase of the security update, we will go through all of steps maintained by Bitrise  
+and release a new version with sensitive inputs marked as: `is_sensitive`.
+
+__2. Tools update__
+
+- envman update to version [1.2.0](https://github.com/bitrise-io/envman/releases/tag/1.2.0)
+- stepman update to version [0.10.0](https://github.com/bitrise-io/stepman/releases/tag/0.10.0)
+
+__3. Default plugins update__
+
+- workflow-editor plugin updated to version [1.1.20](https://github.com/bitrise-io/bitrise-workflow-editor/releases/tag/1.1.20)
+- analytics plugin updated to version [0.9.14](https://github.com/bitrise-core/bitrise-plugins-analytics/releases/tag/0.9.14)
+
+__4. Go dependencies update__
+
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.19.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.18.1 -> 1.19.0
+
+* [7d12baa] Krisztián  Gödrei - prepare for 1.19.0 (2018 Jul 12)
+* [c3e41cc] Krisztián Gödrei - highlight the security warning (#623) (2018 Jul 11)
+* [08563e5] Krisztián Gödrei - bump min wf editor version (#622) (2018 Jul 11)
+* [a0365b6] Krisztián Gödrei - dep update (#621) (2018 Jul 11)
+* [ff55391] Krisztián Gödrei - ensitive input validation update (#620) (2018 Jul 11)
+* [0b41a29] BirmacherAkos - inventory typo fix (#619) (2018 Jul 06)
+* [13577f0] Tamas Papik - is_sensitive revision (#618) (2018 Jul 05)
+* [c0d570e] Tamas Papik - sensitive validation fix (#615) (2018 Jun 29)
+
 
 ## 1.18.1 (2018 Jun 28)
 
@@ -3882,4 +3968,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Jun 28
+Updated: 2018 Jul 12
