@@ -63,6 +63,55 @@ func TestWrite(t *testing.T) {
 			"[REDACTED] and some extra text",
 		}, "\n"), buff.String())
 	}
+
+	maxRun := 150000
+	t.Log("multiple secret in the same line with multiple gorutine ")
+	{
+		cherr := make(chan error, maxRun)
+		chStr := make(chan string, maxRun)
+
+		var buff bytes.Buffer
+		out := New([]string{"x1", "x\n2"}, &buff)
+		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
+		for i := 0; i < maxRun; i++ {
+			go func(buff bytes.Buffer, out *Writer, log []byte) {
+				// runtime.Gosched()
+				buff.Reset()
+
+				wc, err := out.Write(log)
+				require.NoError(t, err)
+				require.Equal(t, len(log), wc)
+
+				_, err = out.Flush()
+
+				cherr <- err
+				chStr <- buff.String()
+			}(buff, out, log)
+		}
+
+		// close(cherr)
+		// close(chStr)
+
+		errCounter := 0
+		for err := range cherr {
+			require.NoError(t, err)
+
+			errCounter++
+			if errCounter == maxRun {
+				close(cherr)
+			}
+		}
+
+		strCounter := 0
+		for str := range chStr {
+			fmt.Println(str)
+
+			strCounter++
+			if strCounter == maxRun {
+				close(chStr)
+			}
+		}
+	}
 }
 
 func TestSecrets(t *testing.T) {

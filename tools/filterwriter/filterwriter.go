@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/bitrise-io/go-utils/log"
@@ -21,6 +22,7 @@ type Writer struct {
 
 	chunk []byte
 	store [][]byte
+	mux   sync.Mutex
 }
 
 // New ...
@@ -38,6 +40,11 @@ func New(secrets []string, target io.Writer) *Writer {
 // Since we do not know which is the last call of Write we need to call Flush
 // on buffer to write the remaining lines.
 func (w *Writer) Write(p []byte) (int, error) {
+	defer func() {
+		w.mux.Unlock()
+	}()
+	w.mux.Lock()
+
 	// previous bytes may not ended with newline
 	data := append(w.chunk, p...)
 
@@ -81,6 +88,11 @@ func (w *Writer) Write(p []byte) (int, error) {
 
 // Flush writes the remaining bytes.
 func (w *Writer) Flush() (int, error) {
+	w.mux.Lock()
+	defer func() {
+		w.mux.Unlock()
+	}()
+
 	if len(w.chunk) > 0 {
 		// lines are containing newline, chunk may not
 		chunk := w.chunk
