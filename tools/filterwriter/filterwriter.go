@@ -88,10 +88,10 @@ func (w *Writer) Write(p []byte) (int, error) {
 
 // Flush writes the remaining bytes.
 func (w *Writer) Flush() (int, error) {
-	w.mux.Lock()
 	defer func() {
 		w.mux.Unlock()
 	}()
+	w.mux.Lock()
 
 	if len(w.chunk) > 0 {
 		// lines are containing newline, chunk may not

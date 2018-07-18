@@ -3,6 +3,7 @@ package filterwriter
 import (
 	"bytes"
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -75,7 +76,7 @@ func TestWrite(t *testing.T) {
 		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
 		for i := 0; i < maxRun; i++ {
 			go func(buff bytes.Buffer, out *Writer, log []byte) {
-				// runtime.Gosched()
+				runtime.Gosched()
 				buff.Reset()
 
 				wc, err := out.Write(log)
@@ -88,9 +89,6 @@ func TestWrite(t *testing.T) {
 				chStr <- buff.String()
 			}(buff, out, log)
 		}
-
-		// close(cherr)
-		// close(chStr)
 
 		errCounter := 0
 		for err := range cherr {
