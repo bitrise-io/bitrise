@@ -307,80 +307,6 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 	return warnings, nil
 }
 
-// SecurityError ...
-type SecurityError struct {
-	step   string
-	input  string
-	reason string
-}
-
-// NewSecurityError ...
-func NewSecurityError(step, input, reason string) SecurityError {
-	return SecurityError{step: step, input: input, reason: reason}
-}
-
-func (e SecurityError) Error() string {
-	return fmt.Sprintf("security issue in %s step's %s input: %s", e.step, e.input, e.reason)
-}
-
-// ValidateSensitiveInputs ...
-func (workflow *WorkflowModel) ValidateSensitiveInputs() error {
-	for _, stepListItem := range workflow.Steps {
-		stepID, step, err := GetStepIDStepDataPair(stepListItem)
-		if err != nil {
-			return fmt.Errorf("failed to read step id: %s", err)
-		}
-
-		for _, input := range step.Inputs {
-			if err := validateSensitiveInput(input, stepID); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func validateSensitiveInput(input envmanModels.EnvironmentItemModel, stepID string) error {
-	key, value, err := input.GetKeyValuePair()
-	if err != nil {
-		return fmt.Errorf("failed to read %s step inputs: %s", stepID, err)
-	}
-
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return nil
-	}
-
-	opts, err := input.GetOptions()
-	if err != nil {
-		return fmt.Errorf("failed to read %s step %s input options: %s", stepID, key, err)
-	}
-
-	isSensitive := opts.IsSensitive
-	if isSensitive == nil {
-		isSensitive = pointers.NewBoolPtr(envmanModels.DefaultIsSensitive)
-	}
-
-	if !*isSensitive {
-		return nil
-	}
-
-	isExpand := opts.IsExpand
-	if isExpand == nil {
-		isExpand = pointers.NewBoolPtr(envmanModels.DefaultIsExpand)
-	}
-
-	if !*isExpand {
-		return NewSecurityError(stepID, key, "value should be defined as a secret environment variable, but is_expand set to: false")
-	}
-
-	if !strings.HasPrefix(value, "$") {
-		return NewSecurityError(stepID, key, "value should be defined as a secret environment variable, but does not starts with '$' mark")
-	}
-
-	return nil
-}
-
 // Validate ...
 func (app *AppModel) Validate() error {
 	for _, env := range app.Environments {
@@ -468,16 +394,6 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 		}
 	}
 
-	return nil
-}
-
-// ValidateSensitiveInputs ...
-func (config *BitriseDataModel) ValidateSensitiveInputs() error {
-	for _, workflow := range config.Workflows {
-		if err := workflow.ValidateSensitiveInputs(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
