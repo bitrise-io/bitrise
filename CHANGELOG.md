@@ -1,6 +1,40 @@
-## Changelog (Current version: 1.19.0)
+## Changelog (Current version: 1.20.0)
 
 -----------------
+
+## 1.20.0 (2018 Jul 25)
+
+### Release Notes
+
+1. Log filtering issue fix
+1. Sensitive input validation removed
+
+### Install or upgrade
+
+To install this version, run the following commands (in a bash shell):
+
+```
+curl -fL https://github.com/bitrise-io/bitrise/releases/download/1.20.0/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+```
+
+Then:
+
+```
+chmod +x /usr/local/bin/bitrise
+```
+
+That's all, you're ready to go!
+
+Optionally, you can call `bitrise setup` to verify that everything what's required for bitrise to run
+is installed and available, but if you forget to do this it'll be performed the first
+time you call bitrise run.
+
+### Release Commits - 1.19.0 -> 1.20.0
+
+* [8ba1cbb] Krisztián  Gödrei - prepare for 1.20.0 (2018 Jul 25)
+* [ef6c4dc] BirmacherAkos - is_sensitive validation removed (#625) (2018 Jul 25)
+* [33761ae] BirmacherAkos - mutex lock added to the Flush() and Write() methods. (#624) (2018 Jul 18)
+
 
 ## 1.19.0 (2018 Jul 12)
 
@@ -3968,4 +4002,4 @@ time you call bitrise run.
 
 -----------------
 
-Updated: 2018 Jul 12
+Updated: 2018 Jul 25
