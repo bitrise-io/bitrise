@@ -3,15 +3,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1de88d27ee30c5a0505492391dba659db4153eaf98014e5d8b769d1bf86f8cf4"
+  digest = "1:d01d12385e282d582f1ca17c79d1572901a32dc240bc2cc5ed88626cf6cd669a"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = ""
-  revision = "e54a77765aca7bbdd8e56c1c54f60579968b2dc9"
+  revision = "c108f5553c369120b773da633aca62a8b42b1cf4"
 
 [[projects]]
   branch = "master"
-  digest = "1:6064f249a81108b7b65128739efee514a1b7c65fb2299820fd80d84e70a19030"
+  digest = "1:614b715511207a892c7e4f62e1a84ac19d776a90c145b3b42e9c457def85e8ad"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = ""
@@ -19,7 +19,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2aa540c5a392849eaa3c5a81aee4e2a31025a5bfcf00c43351a97e830cf63d2a"
+  digest = "1:5306f1051f67906b51a08c34bfb52fafd0f0634b275dc5b92aa368a3aeb573a7"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -41,7 +41,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fb3cc9c055818a84aba159da735a24efce77453a904e7742141f2aa0359a6ae6"
+  digest = "1:6825c56bedbe125a302e7516f731fa841ce9db05f873dbc5745ee807a8c3d3a2"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
   pruneopts = ""
@@ -49,7 +49,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:da043817e9e9b930102c642f1db86b1cd53181d5b3e259b5374400db95186ce9"
+  digest = "1:5f636199b51467fe12d704be0a84b673f5e78e4045aad46e239c31aa1c460ac0"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
   pruneopts = ""
@@ -57,14 +57,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:91b62f8c73647c60c087f597473b9dda4a251c91701f851d2319231101b77915"
+  digest = "1:f3571d1392019a5ca17e0632f5374531f8b38994eeea456b85bfd5ccb86e081d"
   name = "github.com/bitrise-tools/gows"
   packages = ["gows"]
   pruneopts = ""
   revision = "005d8a8baa6e3c6c76527554bb292061ef7d3af0"
 
 [[projects]]
-  digest = "1:0a39ec8bf5629610a4bc7873a92039ee509246da3cef1a0ea60f1ed7e5f9cea5"
+  digest = "1:56c130d885a4aacae1dd9c7b71cfe39912c7ebc1ff7d2b46083c8812996dc43b"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = ""
@@ -73,11 +73,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:94158926759c3333201f81eee5a21112f7ae9d000b4d6926455008c7ab3fb7fc"
+  digest = "1:139bdc2c89779b8ff8b1150be28f889b0ed964e6da96f32cbc9035bd4642881c"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
   pruneopts = ""
-  revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
+  revision = "270f2f71b1ee587f3b609f00f422b76a6b28f348"
 
 [[projects]]
   digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
@@ -97,7 +97,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bc2a12c8863e1080226b7bc69192efd6c37aaa9b85cec508b0a8f54fabb9bd9f"
+  digest = "1:c587772fb8ad29ad4db67575dad25ba17a51f072ff18a22b4f0257a4d9c24f75"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -108,7 +108,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a6f6ba3c203a9bdd53c2a82e48dc4b2d1c8b617ab0949e9c230555448b453042"
+  digest = "1:2c3cdaaa7ac9f06021636d163884979d008b3c5148203923c3448a0c974d608c"
   name = "github.com/urfave/cli"
   packages = ["."]
   pruneopts = ""
@@ -116,22 +116,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e79c3d6b195477b429f017aaa02af135249bbdff31c9acbd8a93bb37a4ef7d3b"
+  digest = "1:cae234a803b78380e4d769db6036b9fcc8c08ed4ff862571ffc1a958edc1f629"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
 
 [[projects]]
   branch = "master"
-  digest = "1:880f5ae3ffdd8741fe179f0f70b46df57fcdd746f3a0e9d0e189bb6a241535e4"
+  digest = "1:0e1506f3caef942bf9d08a91ebbe8bd87d263e7e440f8e0427b2f85b44eac3f7"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+  revision = "e072cadbbdc8dd3d3ffa82b8b4b9304c261d9311"
 
 [[projects]]
   branch = "v2"

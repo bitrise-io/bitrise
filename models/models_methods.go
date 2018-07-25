@@ -525,6 +525,14 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 
 	hasOptions := false
 
+	if options.IsSensitive != nil {
+		if *options.IsSensitive == envmanModels.DefaultIsSensitive {
+			options.IsSensitive = nil
+		} else {
+			hasOptions = true
+		}
+	}
+
 	if options.IsExpand != nil {
 		if *options.IsExpand == envmanModels.DefaultIsExpand {
 			options.IsExpand = nil
@@ -673,6 +681,9 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 		return err
 	}
 
+	if otherOptions.IsSensitive != nil {
+		options.IsSensitive = pointers.NewBoolPtr(*otherOptions.IsSensitive)
+	}
 	if otherOptions.IsExpand != nil {
 		options.IsExpand = pointers.NewBoolPtr(*otherOptions.IsExpand)
 	}

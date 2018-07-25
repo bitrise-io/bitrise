@@ -528,6 +528,12 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 			hasOptions := false
 
+			if wfOptions.IsSensitive != nil && sOptions.IsSensitive != nil && *wfOptions.IsSensitive == *sOptions.IsSensitive {
+				wfOptions.IsSensitive = nil
+			} else {
+				hasOptions = true
+			}
+
 			if wfOptions.IsExpand != nil && sOptions.IsExpand != nil && *wfOptions.IsExpand == *sOptions.IsExpand {
 				wfOptions.IsExpand = nil
 			} else {
