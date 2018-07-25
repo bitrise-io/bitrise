@@ -113,9 +113,6 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if opts.IsExpand != nil && *opts.IsExpand == models.DefaultIsExpand {
 		opts.IsExpand = nil
 	}
-	if opts.IsSensitive != nil && *opts.IsSensitive == models.DefaultIsSensitive {
-		opts.IsSensitive = nil
-	}
 	if opts.SkipIfEmpty != nil && *opts.SkipIfEmpty == models.DefaultSkipIfEmpty {
 		opts.SkipIfEmpty = nil
 	}
@@ -160,9 +157,6 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 			hasOptions = true
 		}
 		if opts.IsExpand != nil {
-			hasOptions = true
-		}
-		if opts.IsSensitive != nil {
 			hasOptions = true
 		}
 		if opts.SkipIfEmpty != nil {
