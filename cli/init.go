@@ -5,7 +5,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/cli/clierrors"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/log"
@@ -20,8 +19,8 @@ var initCmd = cli.Command{
 		if err := initConfig(c); err != nil {
 
 			// If the plugin is not installed yet run the bitrise setup first and try it again
-			perr, ok := err.(clierrors.PluginError)
-			if ok && perr.Retry {
+			perr, ok := err.(PluginError)
+			if ok {
 				log.Warnf(perr.Error())
 				log.Printf("Runing setup to install the default plugins")
 				fmt.Println()
@@ -57,7 +56,7 @@ func initConfig(c *cli.Context) error {
 	}
 
 	if !found {
-		return clierrors.NewPluginError("Default plugin (init) NOT found.", true)
+		return NewPluginError("Default plugin (init) NOT found.")
 	}
 
 	pluginArgs := []string{}
