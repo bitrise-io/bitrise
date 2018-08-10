@@ -19,7 +19,7 @@ var initCmd = cli.Command{
 		if err := initConfig(c); err != nil {
 
 			// If the plugin is not installed yet run the bitrise setup first and try it again
-			perr, ok := err.(PluginError)
+			perr, ok := err.(plugins.NotInstalledError)
 			if ok {
 				log.Warnf(perr.Error())
 				log.Printf("Runing setup to install the default plugins")
@@ -56,7 +56,7 @@ func initConfig(c *cli.Context) error {
 	}
 
 	if !found {
-		return NewPluginError("Default plugin (init) NOT found.")
+		return plugins.NewNotInstalledError("init")
 	}
 
 	pluginArgs := []string{}
