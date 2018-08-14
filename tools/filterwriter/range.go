@@ -18,7 +18,11 @@ func allRanges(b, pattern []byte) (ranges []matchRange) {
 		}
 
 		ranges = append(ranges, matchRange{first: idx + i, last: idx + i + len(pattern)})
+
 		i += idx + 1
+		if i > len(b)-1 {
+			return
+		}
 	}
 }
 

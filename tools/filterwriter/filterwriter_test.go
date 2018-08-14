@@ -4,11 +4,88 @@ import (
 	"bytes"
 	"fmt"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestSecretsByteList(t *testing.T) {
+	{
+		secrets := []string{"secret value"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("secret value"),
+			},
+		}, byteList)
+	}
+
+	{
+		secrets := []string{"secret value1", "secret value2"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("secret value1"),
+			},
+			[][]byte{
+				[]byte("secret value2"),
+			},
+		}, byteList)
+	}
+
+	{
+		secrets := []string{"multi\nline\nsecret"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("multi\n"),
+				[]byte("line\n"),
+				[]byte("secret"),
+			},
+		}, byteList)
+	}
+
+	{
+		secrets := []string{"ending\nwith\nnewline\n"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("ending\n"),
+				[]byte("with\n"),
+				[]byte("newline\n"),
+			},
+		}, byteList)
+	}
+
+	{
+		secrets := []string{"\nstarting\nwith\nnewline"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("\n"),
+				[]byte("starting\n"),
+				[]byte("with\n"),
+				[]byte("newline"),
+			},
+		}, byteList)
+	}
+
+	{
+		secrets := []string{"newlines\nin\n\nthe\n\n\nmiddle"}
+		byteList := secretsByteList(secrets)
+		require.Equal(t, [][][]byte{
+			[][]byte{
+				[]byte("newlines\n"),
+				[]byte("in\n"),
+				[]byte("\n"),
+				[]byte("the\n"),
+				[]byte("\n"),
+				[]byte("\n"),
+				[]byte("middle"),
+			},
+		}, byteList)
+	}
+}
 
 func TestWrite(t *testing.T) {
 	t.Log("trivial test")
@@ -22,14 +99,7 @@ func TestWrite(t *testing.T) {
 
 		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, strings.Join([]string{
-			"test with",
-			"new line",
-			"and single line secret:[REDACTED]",
-			"[REDACTED]nd multiline secret:[REDACTED]",
-			"[REDACTED]",
-			"[REDACTED]",
-		}, "\n"), buff.String())
+		require.Equal(t, "test with\nnew line\nand single line secret:[REDACTED]\nand multiline secret:[REDACTED]\n[REDACTED]\n[REDACTED]", buff.String())
 	}
 
 	t.Log("chunk without newline")
@@ -43,9 +113,7 @@ func TestWrite(t *testing.T) {
 
 		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, strings.Join([]string{
-			"test without newline, secret:[REDACTED]",
-		}, "\n"), buff.String())
+		require.Equal(t, "test without newline, secret:[REDACTED]", buff.String())
 	}
 
 	t.Log("multiple secret in the same line")
@@ -59,10 +127,7 @@ func TestWrite(t *testing.T) {
 
 		_, err = out.Flush()
 		require.NoError(t, err)
-		require.Equal(t, strings.Join([]string{
-			"multiple secrets like: [REDACTED] and [REDACTED]",
-			"[REDACTED] and some extra text",
-		}, "\n"), buff.String())
+		require.Equal(t, "multiple secrets like: [REDACTED] and [REDACTED]\n[REDACTED] and some extra text", buff.String())
 	}
 
 	maxRun := 150000
@@ -124,10 +189,10 @@ func TestSecrets(t *testing.T) {
 	var buff bytes.Buffer
 	out := New(secrets, &buff)
 	require.Equal(t, [][][]byte{
-		[][]byte{[]byte("a"), []byte("b"), []byte("c")},
+		[][]byte{[]byte("a\n"), []byte("b\n"), []byte("c")},
 		[][]byte{[]byte("b")},
-		[][]byte{[]byte("c"), []byte("b")},
-		[][]byte{[]byte("x"), []byte("c"), []byte("b"), []byte("d")},
+		[][]byte{[]byte("c\n"), []byte("b")},
+		[][]byte{[]byte("x\n"), []byte("c\n"), []byte("b\n"), []byte("d")},
 		[][]byte{[]byte("f")},
 	}, out.secrets)
 }
@@ -141,14 +206,14 @@ func TestMatchSecrets(t *testing.T) {
 		"f",
 	}
 	lines := [][]byte{
-		[]byte("x"),
-		[]byte("a"),
-		[]byte("a"),
-		[]byte("b"),
-		[]byte("c"),
-		[]byte("x"),
-		[]byte("c"),
-		[]byte("b")}
+		[]byte("x\n"),
+		[]byte("a\n"),
+		[]byte("a\n"),
+		[]byte("b\n"),
+		[]byte("c\n"),
+		[]byte("x\n"),
+		[]byte("c\n"),
+		[]byte("b\n")}
 
 	var buff bytes.Buffer
 	out := New(secrets, &buff)
@@ -171,20 +236,20 @@ func TestLinesToKeepRange(t *testing.T) {
 		"x\nc\nb\nd",
 	}
 	// lines := [][]byte{
-	// 	[]byte("x"),
-	// 	[]byte("a"),
-	// 	[]byte("a"),
-	// 	[]byte("b"),
-	// 	[]byte("c"),
-	// 	[]byte("x"), 5.line
-	// 	[]byte("c"),
-	// 	[]byte("b")}
+	// 	[]byte("x\n"),
+	// 	[]byte("a\n"),
+	// 	[]byte("a\n"),
+	// 	[]byte("b\n"),
+	// 	[]byte("c\n"),
+	// 	[]byte("x\n"), 5.line
+	// 	[]byte("c\n"),
+	// 	[]byte("b\n")}
 
 	var buff bytes.Buffer
 	out := New(secrets, &buff)
 
 	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
-	first := out.linesToKeepRange(partialMatchMap)
+	first := out.linesToKeepRange(partialMatchMap) // minimal index in the partialMatchMap
 	require.Equal(t, 2, first)
 }
 
@@ -197,14 +262,14 @@ func TestMatchLine(t *testing.T) {
 		"f",
 	}
 	lines := [][]byte{
-		[]byte("x"), // 0.
-		[]byte("a"),
-		[]byte("a"), // 2.
-		[]byte("b"),
-		[]byte("c"), // 4.
-		[]byte("x"),
-		[]byte("c"), // 6.
-		[]byte("b")}
+		[]byte("x\n"), // 0.
+		[]byte("a\n"),
+		[]byte("a\n"), // 2.
+		[]byte("b\n"),
+		[]byte("c\n"), // 4.
+		[]byte("x\n"),
+		[]byte("c\n"), // 6.
+		[]byte("b\n")}
 
 	var buff bytes.Buffer
 	out := New(secrets, &buff)
@@ -212,16 +277,16 @@ func TestMatchLine(t *testing.T) {
 	_, partialMatchMap := out.matchSecrets(lines)
 	print, remaining := out.matchLines(lines, partialMatchMap)
 	require.Equal(t, [][]byte{
-		[]byte("x"),
-		[]byte("a"),
-		[]byte("a"),
-		[]byte("b"),
-		[]byte("c"),
+		[]byte("x\n"),
+		[]byte("a\n"),
+		[]byte("a\n"),
+		[]byte("b\n"),
+		[]byte("c\n"),
 	}, print)
 	require.Equal(t, [][]byte{
-		[]byte("x"),
-		[]byte("c"),
-		[]byte("b"),
+		[]byte("x\n"),
+		[]byte("c\n"),
+		[]byte("b\n"),
 	}, remaining)
 }
 
@@ -231,11 +296,11 @@ func TestSecretLinesToRedact(t *testing.T) {
 		"b",
 	}
 	lines := [][]byte{
-		[]byte("x"),
-		[]byte("a"),
-		[]byte("b"),
-		[]byte("c"),
-		[]byte("b"),
+		[]byte("x\n"),
+		[]byte("a\n"),
+		[]byte("b\n"),
+		[]byte("c\n"),
+		[]byte("b\n"),
 	}
 
 	var buff bytes.Buffer
@@ -251,10 +316,10 @@ func TestSecretLinesToRedact(t *testing.T) {
 	require.Equal(t, ([][]byte)(nil), secretLines, fmt.Sprintf("%s\n", secretLines))
 
 	secretLines = out.secretLinesToRedact(1, matchMap)
-	require.Equal(t, [][]byte{[]byte("a")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+	require.Equal(t, [][]byte{[]byte("a\n")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 
 	secretLines = out.secretLinesToRedact(2, matchMap)
-	require.Equal(t, [][]byte{[]byte("b"), []byte("b")}, secretLines, fmt.Sprintf("%s\n", secretLines))
+	require.Equal(t, [][]byte{[]byte("b"), []byte("b\n")}, secretLines, fmt.Sprintf("%s\n", secretLines))
 
 	secretLines = out.secretLinesToRedact(3, matchMap)
 	require.Equal(t, [][]byte{[]byte("c")}, secretLines, fmt.Sprintf("%s\n", secretLines))
@@ -325,11 +390,11 @@ func TestRedact(t *testing.T) {
 		"b",
 	}
 	lines := [][]byte{
-		[]byte("x"),
-		[]byte("a"),
-		[]byte("a"),
-		[]byte("b"),
-		[]byte("c"),
+		[]byte("x\n"),
+		[]byte("a\n"),
+		[]byte("a\n"),
+		[]byte("b\n"),
+		[]byte("c\n"),
 	}
 
 	var buff bytes.Buffer
@@ -338,11 +403,11 @@ func TestRedact(t *testing.T) {
 	matchMap := map[int][]int{0: []int{2}, 1: []int{3}}
 	redacted := out.redact(lines, matchMap)
 	require.Equal(t, [][]byte{
-		[]byte("x"),
-		[]byte("a"),
-		[]byte(RedactStr),
-		[]byte(RedactStr),
-		[]byte(RedactStr),
+		[]byte("x\n"),
+		[]byte("a\n"),
+		[]byte(RedactStr + "\n"),
+		[]byte(RedactStr + "\n"),
+		[]byte(RedactStr + "\n"),
 	}, redacted)
 
 	{
@@ -351,14 +416,14 @@ func TestRedact(t *testing.T) {
 			"99",
 		}
 		lines := [][]byte{
-			[]byte("106"),
-			[]byte("105"),
-			[]byte("104"),
-			[]byte("103"),
-			[]byte("102"),
-			[]byte("101"),
-			[]byte("100"),
-			[]byte("99")}
+			[]byte("106\n"),
+			[]byte("105\n"),
+			[]byte("104\n"),
+			[]byte("103\n"),
+			[]byte("102\n"),
+			[]byte("101\n"),
+			[]byte("100\n"),
+			[]byte("99\n")}
 
 		var buff bytes.Buffer
 		out := New(secrets, &buff)
@@ -369,19 +434,19 @@ func TestRedact(t *testing.T) {
 		}
 		redacted := out.redact(lines, matchMap)
 		require.Equal(t, [][]byte{
-			[]byte(RedactStr),
-			[]byte(RedactStr),
-			[]byte("104"),
-			[]byte("103"),
-			[]byte("102"),
-			[]byte("101"),
-			[]byte("100"),
-			[]byte(RedactStr),
+			[]byte(RedactStr + "\n"),
+			[]byte(RedactStr + "\n"),
+			[]byte("104" + "\n"),
+			[]byte("103" + "\n"),
+			[]byte("102" + "\n"),
+			[]byte("101" + "\n"),
+			[]byte("100" + "\n"),
+			[]byte(RedactStr + "\n"),
 		}, redacted, fmt.Sprintf("%s", redacted))
 	}
 }
 
-func TestSplit(t *testing.T) {
+func TestSplitAfterNewline(t *testing.T) {
 	t.Log("bytes")
 	{
 		require.Equal(t, []byte{}, []byte(""))
@@ -390,26 +455,25 @@ func TestSplit(t *testing.T) {
 	t.Log("empty test")
 	{
 		b := []byte{}
-		lines, chunk := split(b)
-		require.Equal(t, 0, len(lines))
-		require.Equal(t, 0, len(chunk))
+		lines, chunk := splitAfterNewline(b)
+		require.Equal(t, [][]byte(nil), lines)
+		require.Equal(t, []byte{}, chunk)
 	}
 
 	t.Log("empty test - empty string bytes")
 	{
 		b := []byte("")
-		lines, chunk := split(b)
-		require.Equal(t, 0, len(lines))
-		require.Equal(t, 0, len(chunk))
+		lines, chunk := splitAfterNewline(b)
+		require.Equal(t, [][]byte(nil), lines)
+		require.Equal(t, []byte{}, chunk)
 	}
 
 	t.Log("newline test")
 	{
 		b := []byte("\n")
-		lines, chunk := split(b)
-		require.Equal(t, 1, len(lines))
-		require.Equal(t, []byte("\n"), lines[0])
-		require.Equal(t, 0, len(chunk))
+		lines, chunk := splitAfterNewline(b)
+		require.Equal(t, [][]byte{[]byte("\n")}, lines)
+		require.Equal(t, []byte(nil), chunk)
 	}
 
 	t.Log("multi line test")
@@ -418,12 +482,12 @@ func TestSplit(t *testing.T) {
 line 2
 line 3
 `)
-		lines, chunk := split(b)
+		lines, chunk := splitAfterNewline(b)
 		require.Equal(t, 3, len(lines))
 		require.Equal(t, []byte("line 1\n"), lines[0])
 		require.Equal(t, []byte("line 2\n"), lines[1])
 		require.Equal(t, []byte("line 3\n"), lines[2])
-		require.Equal(t, 0, len(chunk))
+		require.Equal(t, []byte(nil), chunk)
 	}
 
 	t.Log("multi line test - newlines")
@@ -435,22 +499,22 @@ line 1
 line 2
 `)
 
-		lines, chunk := split(b)
+		lines, chunk := splitAfterNewline(b)
 		require.Equal(t, 5, len(lines))
 		require.Equal(t, []byte("\n"), lines[0])
 		require.Equal(t, []byte("\n"), lines[1])
 		require.Equal(t, []byte("line 1\n"), lines[2])
 		require.Equal(t, []byte("\n"), lines[3])
 		require.Equal(t, []byte("line 2\n"), lines[4])
-		require.Equal(t, 0, len(chunk))
+		require.Equal(t, []byte(nil), chunk)
 	}
 
 	t.Log("chunk test")
 	{
 		b := []byte("line 1")
-		lines, chunk := split(b)
+		lines, chunk := splitAfterNewline(b)
+		require.Equal(t, [][]byte(nil), lines)
 		require.Equal(t, []byte("line 1"), chunk)
-		require.Equal(t, 0, len(lines))
 	}
 
 	t.Log("chunk test")
@@ -458,9 +522,20 @@ line 2
 		b := []byte(`line 1
 line 2`)
 
-		lines, chunk := split(b)
+		lines, chunk := splitAfterNewline(b)
 		require.Equal(t, 1, len(lines))
 		require.Equal(t, []byte("line 1\n"), lines[0])
 		require.Equal(t, []byte("line 2"), chunk)
+	}
+	t.Log("chunk test")
+	{
+		b := []byte("test\n\ntest\n")
+
+		lines, chunk := splitAfterNewline(b)
+		require.Equal(t, 3, len(lines))
+		require.Equal(t, []byte("test\n"), lines[0])
+		require.Equal(t, []byte("\n"), lines[1])
+		require.Equal(t, []byte("test\n"), lines[2])
+		require.Equal(t, []byte(nil), chunk)
 	}
 }
