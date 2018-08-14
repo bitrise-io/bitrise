@@ -16,3 +16,23 @@ workflows:
         - content: |
             #!/usr/bin/env bash
             echo "My ssh key: $SECRET_3"
+
+  newline_test:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -e
+            printf "SECRET_WITH_NEWLINES_IN_THE_MIDDLE: %s" "$SECRET_WITH_NEWLINES_IN_THE_MIDDLE"
+            echo "continue the last line"
+
+  ending_with_newline_test:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -e
+            printf "SECRET_ENDING_WITH_NEWLINE: %s" "$SECRET_ENDING_WITH_NEWLINE"
+            echo "starts in a new line"
