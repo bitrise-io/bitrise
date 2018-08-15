@@ -203,7 +203,7 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 		Inputs: []envmanModels.EnvironmentItemModel{env},
 	}
 
-	require.Error(t, step.ValidateInputAndOutputEnvs(true))
+	require.NoError(t, step.ValidateInputAndOutputEnvs(true))
 }
 
 func TestFillMissingDefaults(t *testing.T) {
