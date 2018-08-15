@@ -3,19 +3,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d01d12385e282d582f1ca17c79d1572901a32dc240bc2cc5ed88626cf6cd669a"
+  digest = "1:3bf89d991e104be4b4cdd77fd6012caca86e14403b468b6b43ac0b713aeaf814"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = ""
-  revision = "c108f5553c369120b773da633aca62a8b42b1cf4"
+  revision = "e4b0c6d7829bcf64435536c4a88f4088a3c76203"
 
 [[projects]]
   branch = "master"
-  digest = "1:614b715511207a892c7e4f62e1a84ac19d776a90c145b3b42e9c457def85e8ad"
+  digest = "1:1d5183e4368b64286a090dfbbc850a4f21def527cbccfed8fa5a29dc4c6ad18c"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = ""
-  revision = "7d5180ae4046f109e3dfd73c15082170ae7153d3"
+  revision = "77b8e2981d1dc13cc637ab8ecdce38e990715787"
 
 [[projects]]
   branch = "master"
@@ -49,11 +49,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5f636199b51467fe12d704be0a84b673f5e78e4045aad46e239c31aa1c460ac0"
+  digest = "1:e2d9b7dcc9e45d82427ce4c7b36b4da9a0baa3e6949a5dd45eb2bc4368cea89b"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
   pruneopts = ""
-  revision = "60db1821f76766e849f8c6eb18b7f90202f15407"
+  revision = "224c18d0d3f7c106477143ff96cccf748352e187"
 
 [[projects]]
   branch = "master"
@@ -116,22 +116,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cae234a803b78380e4d769db6036b9fcc8c08ed4ff862571ffc1a958edc1f629"
+  digest = "1:4cae11053a5fc8e7b08228fcc14d161d3e60b64ba508a8b216937da472690991"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
+  revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
 
 [[projects]]
   branch = "master"
-  digest = "1:0e1506f3caef942bf9d08a91ebbe8bd87d263e7e440f8e0427b2f85b44eac3f7"
+  digest = "1:5e71cf351f5e98043af5f96dedc71c68d2214ce68332b8887d4e21d5fbc0f4c4"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "e072cadbbdc8dd3d3ffa82b8b4b9304c261d9311"
+  revision = "14742f9018cd6651ec7364dc6ee08af0baaa1031"
 
 [[projects]]
   branch = "v2"
