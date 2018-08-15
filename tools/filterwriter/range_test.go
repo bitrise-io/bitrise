@@ -17,6 +17,26 @@ func TestAllRanges(t *testing.T) {
 		ranges := allRanges([]byte("test rangetest"), []byte("test"))
 		require.Equal(t, []matchRange{{first: 0, last: 4}, {first: 10, last: 14}}, ranges)
 	}
+
+	{
+		ranges := allRanges([]byte("\n"), []byte("\n"))
+		require.Equal(t, []matchRange{{first: 0, last: 1}}, ranges)
+	}
+
+	{
+		ranges := allRanges([]byte("test\n"), []byte("\n"))
+		require.Equal(t, []matchRange{{first: 4, last: 5}}, ranges)
+	}
+
+	{
+		ranges := allRanges([]byte("\n\ntest\n"), []byte("\n"))
+		require.Equal(t, []matchRange{{first: 0, last: 1}, {first: 1, last: 2}, {first: 6, last: 7}}, ranges)
+	}
+
+	{
+		ranges := allRanges([]byte("\n\ntest\n"), []byte("test\n"))
+		require.Equal(t, []matchRange{{first: 2, last: 7}}, ranges)
+	}
 }
 
 func TestMergeAllRanges(t *testing.T) {
