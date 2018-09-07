@@ -354,7 +354,7 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		var secretValues []string
 		for _, secret := range secrets {
 			key, value, err := secret.GetKeyValuePair()
-			if err != nil || len(value) < 1 || key == configs.IsSecretFilteringKey {
+			if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
 				continue
 			}
 			secretValues = append(secretValues, value)
@@ -415,4 +415,19 @@ func MoveFile(oldpath, newpath string) error {
 	}
 
 	return err
+}
+
+// IsBuiltInFlagTypeKey returns true if the env key is a built-in flag type env key
+func IsBuiltInFlagTypeKey(env string) bool {
+	switch string(env) {
+	case configs.IsSecretFilteringKey,
+		configs.CIModeEnvKey,
+		configs.PRModeEnvKey,
+		configs.DebugModeEnvKey,
+		configs.LogLevelEnvKey,
+		configs.PullRequestIDEnvKey:
+		return true
+	default:
+		return false
+	}
 }

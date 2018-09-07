@@ -868,7 +868,7 @@ func activateAndRunSteps(
 		if mergedStep.IsAlwaysRun != nil {
 			isAlwaysRun = *mergedStep.IsAlwaysRun
 		} else {
-			log.Warn("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
+			log.Warnf("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
 		}
 
 		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
