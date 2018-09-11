@@ -24,23 +24,24 @@ with [bitrise](https://github.com/bitrise-io/bitrise) and [stepman](https://gith
 
 Check the latest release for instructions at: [https://github.com/bitrise-io/envman/releases](https://github.com/bitrise-io/envman/releases)
 
-
 ## How? - Use cases
 
 - multi PATH handling: you have `packer` in your `$HOME` dir, in a bin subdir and terraform in another
-	- create an envman `.envset` to include these in your `$PATH`
-
+- create an envman `.envset` to include these in your `$PATH`
 
 ## Develop & Test in Docker
 
-* Build: `docker build -t envman .`
-* Run: `docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-dev envman /bin/bash`
+Build:
 
-Or use the included scripts:
+```
+docker build -t envman .
+```
 
-* To build&run: `bash _scripts/docker_build_and_run.sh`
-* Once it's built you can just run it: `bash _scripts/docker_run.sh`
+Run:
 
+```
+docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-dev envman /bin/bash
+```
 
 ## How does it work?
 
@@ -66,7 +67,6 @@ environment set will only be available for that single
 run of `envman` / the command and won't affect subsequent
 calls of the command or `envman`.
 
-
 ## Usage example: Simple Bash example
 
 Add/store an environment variable:
@@ -87,7 +87,6 @@ its input. So if you want to see the value of an environment
 you have to run it through a tool/shell which actually
 performs the environment expansion (replaces the environment
 key with the value associated with it).*
-
 
 ## Usage example: Ruby
 
