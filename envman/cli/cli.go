@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,19 +15,6 @@ import (
 const (
 	defaultEnvStoreName string = ".envstore.yml"
 )
-
-var (
-	stdinValue string
-)
-
-func isPipedData() bool {
-	if stat, err := os.Stdin.Stat(); err != nil {
-		return false
-	} else if (stat.Mode() & os.ModeCharDevice) == 0 {
-		return true
-	}
-	return false
-}
 
 func envStorePathInCurrentDir() (string, error) {
 	return filepath.Abs(path.Join("./", defaultEnvStoreName))
@@ -83,15 +69,6 @@ func printVersion(c *cli.Context) {
 
 // Run the Envman CLI.
 func Run() {
-	// Read piped data
-	if isPipedData() {
-		if bytes, err := ioutil.ReadAll(os.Stdin); err != nil {
-			log.Error("[ENVMAN] - Failed to read stdin:", err)
-		} else if len(bytes) > 0 {
-			stdinValue = string(bytes)
-		}
-	}
-
 	// Parse cl
 	cli.VersionPrinter = printVersion
 

@@ -190,6 +190,7 @@ func add(c *cli.Context) error {
 	// read flag value
 	if c.IsSet(ValueKey) {
 		value = c.String(ValueKey)
+		log.Debugf("adding flag value: (%s)", value)
 	}
 
 	// read flag file
@@ -198,6 +199,7 @@ func add(c *cli.Context) error {
 		if value, err = loadValueFromFile(c.String(ValueFileKey)); err != nil {
 			log.Fatal("[ENVMAN] Failed to read file value: ", err)
 		}
+		log.Debugf("adding file flag value: (%s)", value)
 	}
 
 	// read piped stdin value
@@ -207,6 +209,8 @@ func add(c *cli.Context) error {
 			log.Fatalf("[ENVMAN] Failed to get standard input FileInfo: %s", err)
 		}
 		if info.Mode()&os.ModeNamedPipe == os.ModeNamedPipe {
+			log.Debugf("adding from piped stdin")
+
 			configs, err := envman.GetConfigs()
 			if err != nil {
 				log.Fatalf("[ENVMAN] Failed to load envman config: %s", err)
@@ -220,6 +224,8 @@ func add(c *cli.Context) error {
 					log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
 				}
 			}
+
+			log.Debugf("stdin value: (%s)", value)
 		}
 	}
 

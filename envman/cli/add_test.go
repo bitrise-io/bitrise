@@ -63,11 +63,10 @@ func TestReadMaxWithTimeout(t *testing.T) {
 		require.Equal(t, "some text to be read", s, fmt.Sprintf("s was: (%s)", s))
 	}
 
-	t.Log("reading from closed pipe, with data - timeout")
+	t.Log("reading from closed pipe, with delayed data - timeout")
 	{
 		r, w := io.Pipe()
 
-		// writing without a reader will deadlock so write in a goroutine
 		go func() {
 			time.Sleep(2 * time.Second)
 			defer func() { require.NoError(t, w.Close()) }()
