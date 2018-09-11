@@ -172,6 +172,8 @@ func run(c *cli.Context) error {
 		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
 		secretFiltering = pointers.NewBoolPtr(true)
+	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
+		secretFiltering = pointers.NewBoolPtr(false)
 	}
 
 	workflowToRunID := c.String(WorkflowKey)
