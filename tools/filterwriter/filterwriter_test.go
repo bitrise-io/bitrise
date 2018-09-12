@@ -130,7 +130,7 @@ func TestWrite(t *testing.T) {
 		require.Equal(t, "multiple secrets like: [REDACTED] and [REDACTED]\n[REDACTED] and some extra text", buff.String())
 	}
 
-	maxRun := 100
+	maxRun := 150000
 	t.Log("multiple secret in the same line with multiple gorutine ")
 	{
 		cherr := make(chan error, maxRun)

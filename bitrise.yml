@@ -13,12 +13,10 @@ workflows:
     - go-list:
     - golint:
     - errcheck:
-    - go-test:
-    - codecov:
-        run_if: .IsCI
+    - script:
+        title: Go test
         inputs:
-        - other_options: -f ${GO_CODE_COVERAGE_REPORT_PATH}
-        - CODECOV_TOKEN: "$CODECOV_UPLOAD_TOKEN"
+        - content: go test $BITRISE_GO_PACKAGES
     - script:
         title: Run integration tests
         inputs:
