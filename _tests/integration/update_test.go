@@ -19,8 +19,8 @@ func Test_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err := exec.Command(binPath(), "update", "--version", "1.10.0").Run()
-		require.NoError(t, err)
+		out, err := command.New(binPath(), "update", "--version", "1.10.0").RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
 
 		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err)

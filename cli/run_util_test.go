@@ -13,6 +13,60 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIsSecretFiltering(t *testing.T) {
+	t.Log("flag influences the filtering")
+	{
+		set, err := isSecretFiltering(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.True(t, set)
+
+		set, err = isSecretFiltering(pointers.NewBoolPtr(false), []envmanModels.EnvironmentItemModel{})
+		require.NoError(t, err)
+		require.False(t, set)
+	}
+
+	t.Log("secret influences the filtering")
+	{
+		set, err := isSecretFiltering(nil, []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "true"},
+		})
+		require.NoError(t, err)
+		require.True(t, set)
+
+		set, err = isSecretFiltering(nil, []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "false"},
+		})
+		require.NoError(t, err)
+		require.False(t, set)
+	}
+
+	t.Log("flag has priority")
+	{
+		set, err := isSecretFiltering(pointers.NewBoolPtr(false), []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "true"},
+		})
+		require.NoError(t, err)
+		require.False(t, set)
+	}
+
+	t.Log("secrets are exposed")
+	{
+		set, err := isSecretFiltering(nil, []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "true", "opts": map[string]interface{}{"is_expand": true}},
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "false", "opts": map[string]interface{}{"is_expand": true}},
+		})
+		require.NoError(t, err)
+		require.False(t, set)
+
+		set, err = isSecretFiltering(nil, []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "true", "opts": map[string]interface{}{"is_expand": true}},
+			envmanModels.EnvironmentItemModel{"BITRISE_SECRET_FILTERING": "$BITRISE_SECRET_FILTERING", "opts": map[string]interface{}{"is_expand": true}},
+		})
+		require.NoError(t, err)
+		require.True(t, set)
+	}
+}
+
 func TestIsPRMode(t *testing.T) {
 	prModeEnv := os.Getenv(configs.PRModeEnvKey)
 	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
