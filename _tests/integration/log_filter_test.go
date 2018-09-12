@@ -86,7 +86,7 @@ starts in a new line`)
 	{
 		secretsPth = "log_filter_disabled_test_secrets.yml"
 
-		cmd := command.New(binPath(), "run", "test", "--config", configPth, "--inventory", secretsPth).SetEnvs()
+		cmd := command.New(binPath(), "run", "test", "--config", configPth, "--inventory", secretsPth).SetEnvs([]string{}...)
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Contains(t, out, sshKeyLogChunk)
