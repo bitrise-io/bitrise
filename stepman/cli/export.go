@@ -109,7 +109,7 @@ func export(c *cli.Context) error {
 	// Prepare spec
 	stepLibSpec, err := stepman.ReadStepSpec(steplibURI)
 	if err != nil {
-		log.Fatalln("Failed to read StepLib spec, error: %s", err)
+		log.Fatalf("Failed to read StepLib spec, error: %s", err)
 	}
 
 	switch exportType {

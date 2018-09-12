@@ -10,134 +10,34 @@ app:
   - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
   - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
-trigger_map:
-- push_branch: "*"
-  workflow: ci
-- pull_request_source_branch: "*"
-  workflow: ci
-
 workflows:
   # ----------------------------------------------------------------
   # --- workflows for CI and testing
-  ci:
-    title: Stepman CI
-    description: |-
-      1, Install testing tools
-      2, Run tests
-      3, Announce test result
-    before_run:
-    - _prepare_and_setup
-    - test
+  test:
+    title: Runs tests
     steps:
-    - slack:
-        title: Slack notifications
+    - go-list:
+    - golint:
+    - errcheck:
+    - go-test:
+    - codecov:
         run_if: .IsCI
         inputs:
-        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-        - channel: $INTERNAL_DEV_LIFELINE_SLACK_CHANNEL
-        - from_username: ${BIN_NAME} - CI - OK
-        - from_username_on_error: ${BIN_NAME} - CI - ERROR
-        - message: |-
-            CI was successful on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
-        - message_on_error: |-
-            CI FAILED on branch: *${BITRISE_GIT_BRANCH}*
-
-            Build URL: ${BITRISE_BUILD_URL}
-
-  _prepare_and_setup:
-    title: Install required testing tools
-    description: |-
-        1, Install godep
-        2, Install errcheck
-        3, Install golint
-    steps:
-    - script:
-        title: Install required testing tools
-        run_if: .IsCI
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            # Check for unhandled errors
-            go get -u github.com/kisielk/errcheck
-            # Go lint
-            go get -u github.com/golang/lint/golint
-
-  integration-test:
-    steps:
-    - script:
-        title: Go build
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            # build the new stepman
-            current_dir=$(pwd)
-            current_stepman=$current_dir/_tmp/ci-bin
-            go build -o $current_stepman
-
-            envman add --key CURRENT_STEPMAN --value $current_stepman
+        - other_options: -f ${GO_CODE_COVERAGE_REPORT_PATH}
+        - CODECOV_TOKEN: "$CODECOV_UPLOAD_TOKEN"
     - script:
         title: Run integration tests
         inputs:
         - content: |-
-            #!/bin/bash
-            echo "Running integration tests ..."
+            #!/usr/bin/env bash
             set -ex
 
-            export INTEGRATION_TEST_BINARY_PATH="$CURRENT_STEPMAN"
-            go test ./_tests/integration/...
+            current_stepman="$(pwd)/_tmp/test_stepman"
+            go build -o "$current_stepman"
 
-  test:
-    title: Stepman test
-    description: |-
-      1, Err Check
-      2, Go Lint
-      3, Go Test
-      4, Integration tests
-    after_run:
-    - integration-test
-    steps:
-    - script:
-        title: Print infos for the test
-        inputs:
-        - content: |-
-            set -x
-            go version
-            echo $GO15VENDOREXPERIMENT
-    - script:
-        title: Export go files to test
-        inputs:
-        - content: |-
-            set -ex
-            no_vendor_paths="$(go list ./... | grep -v vendor)"
-            envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
-    - script:
-        title: Err check
-        inputs:
-        - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
-    - script:
-        title: Go Lint
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -e
-            while read -r line; do
-              echo "-> Linting: $line"
-              golint_out="$(golint $line)"
-              if [[ "${golint_out}" != "" ]] ; then
-                echo "=> Golint issues found:"
-                echo "${golint_out}"
-                exit 1
-              fi
-            done <<< "$GOLIST_WITHOUT_VENDOR"
-    - script:
-        title: Go Test
-        inputs:
-        - content: go test ./...
+            export PR="" PULL_REQUEST_ID=""
+            export INTEGRATION_TEST_BINARY_PATH="$current_stepman"
+            go test -v ./_tests/integration/...
 
   # ----------------------------------------------------------------
   # --- workflows for Releasing
