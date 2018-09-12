@@ -4,9 +4,21 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/bitrise-io/envman/models"
 )
+
+func expandEnvRecursive(source map[string]string, str string) string {
+	mape := func(key string) string {
+		if v, ok := source[key]; ok {
+			return v
+		}
+		return ""
+	}
+	ret := os.Expand(str, mape)
+	if ret != str {
+		return expandEnvRecursive(source, ret)
+	}
+	return ret
+}
 
 func envListToMap(envs []string) (map[string]string, error) {
 	envMap := map[string]string{}
@@ -22,40 +34,11 @@ func envListToMap(envs []string) (map[string]string, error) {
 	return envMap, nil
 }
 
-// ExpandEnvItems ...
-func ExpandEnvItems(toExpand []models.EnvironmentItemModel, externalEnvs []string) (map[string]string, error) {
+// ExpandEnv ...
+func ExpandEnv(key string, externalEnvs []string) (string, error) {
 	externalEnvMap, err := envListToMap(externalEnvs)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	mapper := func(key string) string {
-		return externalEnvMap[key]
-	}
-
-	expanded := map[string]string{}
-	for _, env := range toExpand {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return nil, err
-		}
-
-		opts, err := env.GetOptions()
-		if err != nil {
-			return nil, err
-		}
-
-		if opts.SkipIfEmpty != nil && *opts.SkipIfEmpty && value == "" {
-			continue
-		}
-
-		if opts.IsExpand != nil && *opts.IsExpand {
-			value = os.Expand(value, mapper)
-		}
-
-		externalEnvMap[key] = value
-		expanded[key] = value
-	}
-
-	return expanded, nil
+	return expandEnvRecursive(externalEnvMap, externalEnvMap[key]), nil
 }

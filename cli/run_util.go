@@ -110,18 +110,14 @@ func isSecretFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels
 		return *filteringFlag, nil
 	}
 
-	expandedEnvs, err := tools.ExpandEnvItems(inventoryEnvironments, os.Environ())
+	value, err := tools.ExpandEnv(configs.IsSecretFilteringKey, os.Environ())
 	if err != nil {
 		return false, err
 	}
-
-	value, ok := expandedEnvs[configs.IsSecretFilteringKey]
-	if ok {
-		if value == "true" {
-			return true, nil
-		} else if value == "false" {
-			return false, nil
-		}
+	if value == "true" {
+		return true, nil
+	} else if value == "false" {
+		return false, nil
 	}
 
 	return true, nil
