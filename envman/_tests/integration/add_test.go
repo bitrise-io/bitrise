@@ -18,11 +18,11 @@ func addCommand(key, value, envstore string) *command.Model {
 }
 
 func addFileCommand(key, pth, envstore string) *command.Model {
-	return command.New(binPath(), "-p", envstore, "add", "--key", key, "--valuefile", pth)
+	return command.New(binPath(), "-l", "debug", "-p", envstore, "add", "--key", key, "--valuefile", pth)
 }
 
 func addPipeCommand(key string, reader io.Reader, envstore string) *command.Model {
-	return command.New(binPath(), "-p", envstore, "add", "--key", key).SetStdin(reader)
+	return command.New(binPath(), "-l", "debug", "-p", envstore, "add", "--key", key).SetStdin(reader)
 }
 
 func TestAdd(t *testing.T) {
