@@ -125,15 +125,3 @@ var (
 		Usage: "If enabled, expanded envs will use.",
 	}
 )
-
-func initHelpAndVersionFlags() {
-	cli.HelpFlag = cli.BoolFlag{
-		Name:  HelpKey + ", " + helpKeyShort,
-		Usage: "Show help.",
-	}
-
-	cli.VersionFlag = cli.BoolFlag{
-		Name:  VersionKey + ", " + versionKeyShort,
-		Usage: "Print the version.",
-	}
-}

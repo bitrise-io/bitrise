@@ -2,7 +2,10 @@ package cli
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
+	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
@@ -10,6 +13,8 @@ import (
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
+
+var errTimeout = errors.New("timeout")
 
 func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
 	valueSizeInBytes := 0
@@ -109,7 +114,7 @@ func logEnvs() error {
 	}
 
 	if len(environments) == 0 {
-		log.Info("[ENVMAN] - Empty envstore")
+		log.Info("[ENVMAN] Empty envstore")
 	} else {
 		for _, env := range environments {
 			key, value, err := env.GetKeyValuePair()
@@ -134,8 +139,46 @@ func logEnvs() error {
 	return nil
 }
 
+// readMax reads maximum the given amount of bytes
+func readMax(reader io.Reader, maxSize uint) (string, error) {
+	p := make([]byte, maxSize)
+	if _, err := reader.Read(p); err != nil && err != io.EOF {
+		return "", err
+	}
+	var r []byte
+	for _, b := range p {
+		if b != 0 {
+			r = append(r, b)
+		}
+	}
+	return string(r), nil
+}
+
+// readMaxWithTimeout reads maximum a given amount of time using readMax
+func readMaxWithTimeout(reader io.Reader, maxSize uint, timeout time.Duration) (value string, err error) {
+	valueChan := make(chan string)
+	errChan := make(chan error)
+
+	go func() {
+		v, err := readMax(reader, maxSize)
+		if err != nil {
+			errChan <- err
+			return
+		}
+		valueChan <- v
+	}()
+
+	select {
+	case value = <-valueChan:
+	case err = <-errChan:
+	case <-time.After(timeout):
+		err = errTimeout
+	}
+	return
+}
+
 func add(c *cli.Context) error {
-	log.Debugln("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] Work path:", envman.CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
 	expand := !c.Bool(NoExpandKey)
@@ -143,26 +186,57 @@ func add(c *cli.Context) error {
 	skipIfEmpty := c.Bool(SkipIfEmptyKey)
 
 	var value string
-	if stdinValue != "" {
-		value = stdinValue
-	} else if c.IsSet(ValueKey) {
+
+	// read flag value
+	if c.IsSet(ValueKey) {
 		value = c.String(ValueKey)
-	} else if c.String(ValueFileKey) != "" {
-		if v, err := loadValueFromFile(c.String(ValueFileKey)); err != nil {
-			log.Fatal("[ENVMAN] - Failed to read file value: ", err)
-		} else {
-			value = v
+		log.Debugf("adding flag value: (%s)", value)
+	}
+
+	// read flag file
+	if value == "" && c.String(ValueFileKey) != "" {
+		var err error
+		if value, err = loadValueFromFile(c.String(ValueFileKey)); err != nil {
+			log.Fatal("[ENVMAN] Failed to read file value: ", err)
+		}
+		log.Debugf("adding file flag value: (%s)", value)
+	}
+
+	// read piped stdin value
+	if value == "" {
+		info, err := os.Stdin.Stat()
+		if err != nil {
+			log.Fatalf("[ENVMAN] Failed to get standard input FileInfo: %s", err)
+		}
+		if info.Mode()&os.ModeNamedPipe == os.ModeNamedPipe {
+			log.Debugf("adding from piped stdin")
+
+			configs, err := envman.GetConfigs()
+			if err != nil {
+				log.Fatalf("[ENVMAN] Failed to load envman config: %s", err)
+			}
+
+			value, err = readMaxWithTimeout(os.Stdin, uint(configs.EnvBytesLimitInKB*1024), 1*time.Second)
+			if err != nil {
+				if err == errTimeout {
+					log.Warning("[ENVMAN] Standard input read timed out")
+				} else {
+					log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
+				}
+			}
+
+			log.Debugf("stdin value: (%s)", value)
 		}
 	}
 
 	if err := addEnv(key, value, expand, replace, skipIfEmpty); err != nil {
-		log.Fatal("[ENVMAN] - Failed to add env:", err)
+		log.Fatal("[ENVMAN] Failed to add env:", err)
 	}
 
-	log.Debugln("[ENVMAN] - Env added")
+	log.Debugln("[ENVMAN] Env added")
 
 	if err := logEnvs(); err != nil {
-		log.Fatal("[ENVMAN] - Failed to print:", err)
+		log.Fatal("[ENVMAN] Failed to print:", err)
 	}
 
 	return nil
