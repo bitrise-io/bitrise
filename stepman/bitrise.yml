@@ -1,14 +1,10 @@
-format_version: "4"
+format_version: "5"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
 
 app:
   envs:
-  - RELEASE_VERSION: 0.10.1
   - BIN_NAME: stepman
-  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BIN_NAME}/releases
-  - INTERNAL_DEV_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
-  - INTERNAL_DEV_SLACK_CHANNEL: bitrise-devs
-  - INTERNAL_DEV_LIFELINE_SLACK_CHANNEL: bitrise-dev-lifeline
 
 workflows:
   # ----------------------------------------------------------------
@@ -39,57 +35,8 @@ workflows:
             export INTEGRATION_TEST_BINARY_PATH="$current_stepman"
             go test -v ./_tests/integration/...
 
-  # ----------------------------------------------------------------
-  # --- workflows for Releasing
-  create-release:
-    title: Create Release version
-    description: |-
-        Creates new version with specified RELEASE_VERSION environment
-
-        1, Create CHANGELOG and git release
-        2, Export RELEASE_VERSION
-        3, Create binaries
-    after_run:
-    - create-binaries
-    steps:
-    - script:
-        title: Create CHANGELOG and git release
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            go get github.com/bitrise-tools/releaseman
-
-            export CI=true
-
-            releaseman create-changelog \
-              --version $RELEASE_VERSION \
-              --set-version-script "bash _scripts/set_version.sh version/version.go"
-
-  announce-release:
-    title: Announce Release
-    description: |-
-      Notifying about new version of stepman
-
-      1, Export RELEASE_VERSION
-      2, Send Slack notifications
-    steps:
-    - slack@2.1.0:
-        inputs:
-        - webhook_url: $INTERNAL_DEV_SLACK_WEBHOOK_URL
-        - channel: $INTERNAL_DEV_SLACK_CHANNEL
-        - from_username: ${BIN_NAME}
-        - message: |
-            Release v${RELEASE_VERSION} was just published! :tada:
-
-            You can find it at ${GITHUB_RELEASES_URL}
-        - emoji: ':rocket:'
-
   create-binaries:
     title: Create binaries
-    description: |
-        Creates Linux and Darwin binaries
     steps:
     - script:
         title: Create binaries
@@ -138,36 +85,8 @@ workflows:
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
             echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
-  # ----------------------------------------------------------------
-  # --- workflows for Utility
-  regenerate-default-collection:
-    before_run:
-    - delete-stepman-dir
-    envs:
-    - DEFAULT_STEPLIB_GIT: https://github.com/bitrise-io/bitrise-steplib.git
-    steps:
-    - script:
-        title: Setup stepman
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            stepman setup -c ${DEFAULT_STEPLIB_GIT}
-
-  delete-stepman-dir:
-    steps:
-    - script:
-        title: Delete local stepman dir
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            rm -rf ~/.stepman
-
   dep-update:
     title: Dep update
-    description: |
-      Used for updating bitrise dependencies with dep
     steps:
     - script:
         title: Dependency update
