@@ -31,6 +31,5 @@ Call `stepman share` and follow the guide it prints.
 
   - update the version number (in version.go file)
   - update version tests (in _tests/integration/version_test.go file)
-  - update version number in bitrise.yml
 
 - push the new version tag to the master branch
