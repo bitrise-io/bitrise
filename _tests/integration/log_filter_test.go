@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/envutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -87,13 +86,7 @@ starts in a new line`)
 	{
 		secretsPth = "log_filter_disabled_test_secrets.yml"
 
-		revoke, err := envutil.RevokableSetenv("BITRISE_SECRET_FILTERING", "")
-		defer func() {
-			require.NoError(t, revoke())
-		}()
-		require.NoError(t, err)
-
-		cmd := command.New(binPath(), "run", "test", "--config", configPth, "--inventory", secretsPth)
+		cmd := command.New(binPath(), "run", "test", "--config", configPth, "--inventory", secretsPth).SetEnvs()
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Contains(t, out, sshKeyLogChunk)
