@@ -3,19 +3,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3bf89d991e104be4b4cdd77fd6012caca86e14403b468b6b43ac0b713aeaf814"
+  digest = "1:8475bd6c256967469f4e46dc25a136fbe7cf0d678fbddd94287a7758a1d7e58a"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = ""
-  revision = "e4b0c6d7829bcf64435536c4a88f4088a3c76203"
+  revision = "f3df9aeffda7c12bd9f5a03f9251d75d35993165"
 
 [[projects]]
   branch = "master"
-  digest = "1:1d5183e4368b64286a090dfbbc850a4f21def527cbccfed8fa5a29dc4c6ad18c"
+  digest = "1:bdae668215b9f4c1fb2e14370e3da941df61312f194c4a67427ab84482cf57b4"
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = ""
-  revision = "77b8e2981d1dc13cc637ab8ecdce38e990715787"
+  revision = "01375a962d769a142d922f52d32cb260b37137cd"
 
 [[projects]]
   branch = "master"
@@ -56,12 +56,12 @@
   revision = "a8cd701151924e6beffb74a34a556b320e0cfcf7"
 
 [[projects]]
-  digest = "1:56c130d885a4aacae1dd9c7b71cfe39912c7ebc1ff7d2b46083c8812996dc43b"
+  digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = ""
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
@@ -84,30 +84,30 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2c3cdaaa7ac9f06021636d163884979d008b3c5148203923c3448a0c974d608c"
+  digest = "1:c4aa2ca0fdab59048820c0ea7b53a035662d4212e6a8098f23c10ea4c59a2f95"
   name = "github.com/urfave/cli"
   packages = ["."]
   pruneopts = ""
-  revision = "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff"
+  revision = "934abfb2f102315b5794e15ebc7949e4ca253920"
 
 [[projects]]
   branch = "master"
-  digest = "1:4cae11053a5fc8e7b08228fcc14d161d3e60b64ba508a8b216937da472690991"
+  digest = "1:61a86f0be8b466d6e3fbdabb155aaa4006137cb5e3fd3b949329d103fa0ceb0f"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
+  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
 [[projects]]
   branch = "master"
-  digest = "1:5e71cf351f5e98043af5f96dedc71c68d2214ce68332b8887d4e21d5fbc0f4c4"
+  digest = "1:ed900376500543ca05f2a2383e1f541b4606f19cd22f34acb81b17a0b90c7f3e"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "14742f9018cd6651ec7364dc6ee08af0baaa1031"
+  revision = "d0be0721c37eeb5299f245a996a483160fc36940"
 
 [[projects]]
   branch = "v2"

@@ -25,18 +25,11 @@ Call `stepman share` and follow the guide it prints.
 
 ### Release a new version
 
-1. Update go dependencies (`bitrise run dep-update`)
-1. PR & merge these changes to the `master` branch
-1. Bump `RELEASE_VERSION` in bitrise.yml
-1. Update the version test at: `./_tests/integration/version_test.go`
-1. Commit (do not Push) these changes on `master` branch
-1. Run `bitrise run create-release`
-1. Fill the current version's `Release Notes` section in `CHANGELOG.md`
-1. Push the changes to the `master` branch
-1. Open the project's bitrise app on bitrise.io, find the triggered `create-release` workflow run's build
-1. Download and test the generated bitrise binaries (`stepman version --full`)
-1. Create the new version's release on [github](https://github.com/bitrise-io/stepman/releases/new):
-  - Fill Tag and Version inputs
-  - Copy paste the Changelog's `Release Notes` and `Install or upgrade` sections to the release description on github
-  - Attach the generated (on bitrise.io) linux and darwin binaries to the release
-  - Push the `Publish release` button on github
+- merge every code changes to the master branch
+
+- do not forget to merge every version related file changes:
+
+  - update the version number (in version.go file)
+  - update version tests (in _tests/integration/version_test.go file)
+
+- push the new version tag to the master branch

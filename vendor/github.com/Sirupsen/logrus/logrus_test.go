@@ -3,6 +3,7 @@ package logrus
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"sync"
@@ -421,6 +422,27 @@ func TestLoggingRaceWithHooksOnEntry(t *testing.T) {
 	wg.Wait()
 }
 
+func TestReplaceHooks(t *testing.T) {
+	old, cur := &TestHook{}, &TestHook{}
+
+	logger := New()
+	logger.SetOutput(ioutil.Discard)
+	logger.AddHook(old)
+
+	hooks := make(LevelHooks)
+	hooks.Add(cur)
+	replaced := logger.ReplaceHooks(hooks)
+
+	logger.Info("test")
+
+	assert.Equal(t, old.Fired, false)
+	assert.Equal(t, cur.Fired, true)
+
+	logger.ReplaceHooks(replaced)
+	logger.Info("test")
+	assert.Equal(t, old.Fired, true)
+}
+
 // Compile test
 func TestLogrusInterface(t *testing.T) {
 	var buffer bytes.Buffer
@@ -461,4 +483,55 @@ func TestEntryWriter(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, fields["foo"], "bar")
 	assert.Equal(t, fields["level"], "warning")
+}
+
+func TestLogLevelEnabled(t *testing.T) {
+	log := New()
+	log.SetLevel(PanicLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(DebugLevel))
+
+	log.SetLevel(FatalLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(DebugLevel))
+
+	log.SetLevel(ErrorLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(DebugLevel))
+
+	log.SetLevel(WarnLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(DebugLevel))
+
+	log.SetLevel(InfoLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, false, log.IsLevelEnabled(DebugLevel))
+
+	log.SetLevel(DebugLevel)
+	assert.Equal(t, true, log.IsLevelEnabled(PanicLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(FatalLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(ErrorLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(WarnLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(InfoLevel))
+	assert.Equal(t, true, log.IsLevelEnabled(DebugLevel))
 }
