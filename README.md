@@ -97,23 +97,13 @@ docker-compose build && docker-compose run --rm app go test ./...
 
 ### Release a new version
 
-1. Update go dependencies (`bitrise run dep-update`)
-1. PR & merge these changes to the `master` branch
-1. Release a new versions of bitrise-tools (stepman, envman) [if no changes applied since the previous release, update the go dependencies and release a new version], you can find the dependent tools in `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion`
-1. Release a new versions of default plugins if there are changes, you can find the default plugins in `./bitrise/setup.go -> PluginDependencyMap`
-1. Bump bitrise-tools and default plugins versions in `./bitrise/setup.go`
-1. PR & merge these changes to the `master` branch
-1. Bump `RELEASE_VERSION` (minor, e.g. 1.9.0 -> 1.10.0) in bitrise.yml
-1. Commit (do not push) these changes to the `master` branch
-1. Run `bitrise-run create-release`
-1. Fill the current version's `Release Notes` section in `CHANGELOG.md`
-1. Update version integration test in `./_tests/integration/version_test.go`
-1. Push the changes to the master
-1. Open the project's bitrise app on bitrise.io, find the triggered `create-release` workflow run's build
-1. Download and test the generated bitrise binaries (`version --full` and plugins)
-1. Create the new version's release on [github](https://github.com/bitrise-io/bitrise/releases/new):
-
-   * Fill Tag and Version inputs
-   * Copy paste the Changelog's `Release Notes` and `Install or upgrade` sections to the release description on github
-   * Attach the generated (on bitrise.io) linux and darwin binaries to the release
-   * Push the `Publish release` button on github
+- merge every code changes to the master branch
+  - release a new versions of bitrise-tools (stepman, envman) and update the `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion` to the new versions
+  - release a new versions of default plugins if there are changes and update the `./bitrise/setup.go -> PluginDependencyMap` with the new versions
+  - update go dependencies (`bitrise run dep-update`)
+  - do not forget to merge every version related file changes:
+    - update the version number (in `./version/version.go` file)
+    - update version tests (in `./_tests/integration/version_test.go` file)
+- push the new version tag to the master branch
+- download and test the generated bitrise binaries (`version --full` and plugins)
+- update the new version's release note on [github](https://github.com/bitrise-io/bitrise/releases/new)
