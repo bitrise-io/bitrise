@@ -191,11 +191,6 @@ envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --e
 ### Release a new version
 
 - merge every code changes to the master branch
-
 - do not forget to merge every version related file changes:
-
   - update the version number (in version.go file)
-  - update version tests (in _tests/integration/version_test.go file)
-  - update version number in bitrise.yml
-
 - push the new version tag to the master branch
