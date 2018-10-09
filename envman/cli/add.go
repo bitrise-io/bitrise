@@ -2,10 +2,8 @@ package cli
 
 import (
 	"errors"
-	"io"
 	"io/ioutil"
 	"os"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
@@ -139,44 +137,6 @@ func logEnvs() error {
 	return nil
 }
 
-// readMax reads maximum the given amount of bytes
-func readMax(reader io.Reader, maxSize uint) (string, error) {
-	p := make([]byte, maxSize)
-	if _, err := reader.Read(p); err != nil && err != io.EOF {
-		return "", err
-	}
-	var r []byte
-	for _, b := range p {
-		if b != 0 {
-			r = append(r, b)
-		}
-	}
-	return string(r), nil
-}
-
-// readMaxWithTimeout reads maximum a given amount of time using readMax
-func readMaxWithTimeout(reader io.Reader, maxSize uint, timeout time.Duration) (value string, err error) {
-	valueChan := make(chan string)
-	errChan := make(chan error)
-
-	go func() {
-		v, err := readMax(reader, maxSize)
-		if err != nil {
-			errChan <- err
-			return
-		}
-		valueChan <- v
-	}()
-
-	select {
-	case value = <-valueChan:
-	case err = <-errChan:
-	case <-time.After(timeout):
-		err = errTimeout
-	}
-	return
-}
-
 func add(c *cli.Context) error {
 	log.Debugln("[ENVMAN] Work path:", envman.CurrentEnvStoreFilePath)
 
@@ -216,14 +176,36 @@ func add(c *cli.Context) error {
 				log.Fatalf("[ENVMAN] Failed to load envman config: %s", err)
 			}
 
-			value, err = readMaxWithTimeout(os.Stdin, uint(configs.EnvBytesLimitInKB*1024), 1*time.Second)
+			data, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {
-				if err == errTimeout {
-					log.Warning("[ENVMAN] Standard input read timed out")
-				} else {
-					log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
+				log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
+			}
+
+			if configs.EnvBytesLimitInKB > 0 && len(data) > configs.EnvBytesLimitInKB*1024 {
+				valueSizeInKB := ((float64)(len(data))) / 1024.0
+				log.Warnf("environment value too large")
+				log.Warnf("environment value size (%#v KB) - max allowed size: %#v KB", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
+				log.Fatalf("[ENVMAN] environment value too large - rejected")
+			}
+
+			if configs.EnvListBytesLimitInKB > 0 {
+				envList, err := envman.ReadEnvsOrCreateEmptyList()
+				if err != nil {
+					log.Fatalf("[ENVMAN] failed to get env list, error: %s", err)
+				}
+				envListSizeInBytes, err := envListSizeInBytes(envList)
+				if err != nil {
+					log.Fatalf("[ENVMAN] failed to get env list size, error: %s", err)
+				}
+				if envListSizeInBytes+len(data) > configs.EnvListBytesLimitInKB*1024 {
+					listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(len(data))/1024
+					log.Warn("environment list too large")
+					log.Warnf("environment list size (%#v KB) - max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
+					log.Fatalf("[ENVMAN] environment list too large")
 				}
 			}
+
+			value = string(data)
 
 			log.Debugf("stdin value: (%s)", value)
 		}

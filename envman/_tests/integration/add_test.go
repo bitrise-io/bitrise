@@ -1,11 +1,14 @@
 package integration
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/bitrise-io/envman/envman"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -67,7 +70,66 @@ func TestAdd(t *testing.T) {
 		require.Equal(t, "envs:\n- KEY: some piped value\n", cont)
 	}
 
-	t.Log("add empty piped value")
+	t.Log("add piped value - zero EnvBytesLimitInKB")
+	{
+		configPath := filepath.Join(pathutil.UserHomeDir(), ".envman", "configs.json")
+		require.NoError(t, pathutil.EnsureDirExist(filepath.Dir(configPath)))
+
+		exists, err := pathutil.IsPathExists(configPath)
+		require.NoError(t, err)
+
+		var origData []byte
+		if exists {
+			origData, err = fileutil.ReadBytesFromFile(configPath)
+			require.NoError(t, err)
+		}
+
+		cfgData, err := json.Marshal(envman.ConfigsModel{EnvBytesLimitInKB: 0, EnvListBytesLimitInKB: 3})
+		require.NoError(t, err)
+
+		require.NoError(t, fileutil.WriteBytesToFile(configPath, cfgData))
+
+		out, err := addPipeCommand("KEY", strings.NewReader(strings.Repeat("0", 2*1024)), envstore).RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+
+		if exists {
+			require.NoError(t, fileutil.WriteBytesToFile(configPath, origData))
+		} else {
+			require.NoError(t, os.RemoveAll(configPath))
+		}
+	}
+
+	t.Log("add piped value - over limit")
+	{
+		configPath := filepath.Join(pathutil.UserHomeDir(), ".envman", "configs.json")
+		require.NoError(t, pathutil.EnsureDirExist(filepath.Dir(configPath)))
+
+		exists, err := pathutil.IsPathExists(configPath)
+		require.NoError(t, err)
+
+		var origData []byte
+		if exists {
+			origData, err = fileutil.ReadBytesFromFile(configPath)
+			require.NoError(t, err)
+		}
+
+		cfgData, err := json.Marshal(envman.ConfigsModel{EnvBytesLimitInKB: 1, EnvListBytesLimitInKB: 2})
+		require.NoError(t, err)
+
+		require.NoError(t, fileutil.WriteBytesToFile(configPath, cfgData))
+
+		out, err := addPipeCommand("KEY", strings.NewReader(strings.Repeat("0", 2*1024)), envstore).RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err)
+		require.True(t, strings.Contains(out, "environment value size (2 KB) - max allowed size: 1 KB"))
+
+		if exists {
+			require.NoError(t, fileutil.WriteBytesToFile(configPath, origData))
+		} else {
+			require.NoError(t, os.RemoveAll(configPath))
+		}
+	}
+
+	t.Log("add piped value - empty value")
 	{
 		out, err := addPipeCommand("KEY", strings.NewReader(""), envstore).RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
