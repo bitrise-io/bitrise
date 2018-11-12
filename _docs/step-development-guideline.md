@@ -31,6 +31,8 @@ You can mark Step inputs as **Sensitive** to make sure their values do not get e
 
 To mark a Step input as sensitive, use the `is_sensitive` property. It has two values: `true` and `false`. 
 
+Please note that if you mark an input as sensitive, the `is_expand` property of the input also must be `true`!
+
 ```yaml
 inputs:
   - certificate_urls: $BITRISE_CERTIFICATE_URL
