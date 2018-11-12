@@ -25,6 +25,19 @@ By declaring every option as an input you make it easier to test your Step,
 and you also let the user of your Step to easily declare these inputs,
 instead of searching in the code for the required Environment Variable.
 
+### Secret environment variables in Steps 
+
+You can mark Step inputs as **Sensitive** to make sure their values do not get exposed. Sensitive inputs only accept [Secrets](/bitrise-cli/secrets/) - secret environment variables - as values. This ensures they are not visible in build logs. 
+
+To mark a Step input as sensitive, use the `is_sensitive` property. It has two values: `true` and `false`. 
+
+```yaml
+inputs:
+  - certificate_urls: $BITRISE_CERTIFICATE_URL
+    opts:
+      title: "Certificate URL"
+      is_sensitive: true
+```
 
 ## Do not use submodules, or require any other resource downloaded on-demand
 
