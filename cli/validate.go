@@ -228,8 +228,8 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data, validation)
-	validateInventory(inventoryPath, log, warnings, inventoryBase64Data, validation)
+	validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data, &validation)
+	validateInventory(inventoryPath, log, warnings, inventoryBase64Data, &validation)
 
 	if validation.Config == nil && validation.Secrets == nil {
 		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
