@@ -149,7 +149,7 @@ func (v ValidationModel) String() string {
 	return msg
 }
 
-func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []string, bitriseConfigBase64Data string, validation *ValidationModel) {
+func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []string, bitriseConfigBase64Data string) *ValidationItemModel {
 	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
 		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
@@ -168,11 +168,13 @@ func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []st
 			configValidation.Error = err.Error()
 		}
 
-		validation.Config = &configValidation
+		return &configValidation
 	}
+
+	return nil
 }
 
-func validateInventory(inventoryPath string, log flog.Logger, warnings []string, inventoryBase64Data string, validation *ValidationModel) {
+func validateInventory(inventoryPath string, log flog.Logger, warnings []string, inventoryBase64Data string) *ValidationItemModel {
 	pth, err := GetInventoryFilePath(inventoryPath)
 	if err != nil {
 		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
@@ -190,8 +192,10 @@ func validateInventory(inventoryPath string, log flog.Logger, warnings []string,
 			secretValidation.Error = err.Error()
 		}
 
-		validation.Secrets = &secretValidation
+		return &secretValidation
 	}
+
+	return nil
 }
 
 func validate(c *cli.Context) error {
@@ -228,8 +232,8 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data, &validation)
-	validateInventory(inventoryPath, log, warnings, inventoryBase64Data, &validation)
+	validation.Config = validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data)
+	validation.Secrets = validateInventory(inventoryPath, log, warnings, inventoryBase64Data)
 
 	if validation.Config == nil && validation.Secrets == nil {
 		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
