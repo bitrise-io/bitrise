@@ -172,6 +172,28 @@ func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []st
 	}
 }
 
+func validateInventory(inventoryPath string, log flog.Logger, warnings []string, inventoryBase64Data string, validation *ValidationModel) {
+	pth, err := GetInventoryFilePath(inventoryPath)
+	if err != nil {
+		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
+		os.Exit(1)
+	}
+
+	if pth != "" || inventoryBase64Data != "" {
+		// Inventory validation
+		_, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
+		secretValidation := ValidationItemModel{
+			IsValid: true,
+		}
+		if err != nil {
+			secretValidation.IsValid = false
+			secretValidation.Error = err.Error()
+		}
+
+		validation.Secrets = &secretValidation
+	}
+}
+
 func validate(c *cli.Context) error {
 	warnings := []string{}
 
@@ -207,26 +229,7 @@ func validate(c *cli.Context) error {
 	validation := ValidationModel{}
 
 	validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data, validation)
-
-	pth, err = GetInventoryFilePath(inventoryPath)
-	if err != nil {
-		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
-		os.Exit(1)
-	}
-
-	if pth != "" || inventoryBase64Data != "" {
-		// Inventory validation
-		_, err := CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath)
-		secretValidation := ValidationItemModel{
-			IsValid: true,
-		}
-		if err != nil {
-			secretValidation.IsValid = false
-			secretValidation.Error = err.Error()
-		}
-
-		validation.Secrets = &secretValidation
-	}
+	validateInventory(inventoryPath, log, warnings, inventoryBase64Data, validation)
 
 	if validation.Config == nil && validation.Secrets == nil {
 		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
