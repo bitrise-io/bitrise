@@ -206,26 +206,7 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
-	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
-		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
-		os.Exit(1)
-	}
-
-	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
-		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
-		configValidation := ValidationItemModel{
-			IsValid:  true,
-			Warnings: warns,
-		}
-		if err != nil {
-			configValidation.IsValid = false
-			configValidation.Error = err.Error()
-		}
-
-		validation.Config = &configValidation
-	}
+	validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data, validation)
 
 	pth, err = GetInventoryFilePath(inventoryPath)
 	if err != nil {
