@@ -149,11 +149,10 @@ func (v ValidationModel) String() string {
 	return msg
 }
 
-func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []string, bitriseConfigBase64Data string) *ValidationItemModel {
+func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []string, bitriseConfigBase64Data string) (*ValidationItemModel, error) {
 	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
-		log.Print(NewValidationError(fmt.Sprintf("Failed to get config path, err: %s", err), warnings...))
-		os.Exit(1)
+		return nil, fmt.Errorf("Failed to get config path, err: %s", err)
 	}
 
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
@@ -168,17 +167,16 @@ func validateBitriseYML(bitriseConfigPath string, log flog.Logger, warnings []st
 			configValidation.Error = err.Error()
 		}
 
-		return &configValidation
+		return &configValidation, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("no bitrise.yml nor base64 config provided")
 }
 
-func validateInventory(inventoryPath string, log flog.Logger, warnings []string, inventoryBase64Data string) *ValidationItemModel {
+func validateInventory(inventoryPath string, log flog.Logger, warnings []string, inventoryBase64Data string) (*ValidationItemModel, error) {
 	pth, err := GetInventoryFilePath(inventoryPath)
 	if err != nil {
-		log.Print(NewValidationError(fmt.Sprintf("Failed to get secrets path, err: %s", err), warnings...))
-		os.Exit(1)
+		return nil, fmt.Errorf("Failed to get secrets path, err: %s", err)
 	}
 
 	if pth != "" || inventoryBase64Data != "" {
@@ -192,10 +190,10 @@ func validateInventory(inventoryPath string, log flog.Logger, warnings []string,
 			secretValidation.Error = err.Error()
 		}
 
-		return &secretValidation
+		return &secretValidation, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("no secrets yml nor base64 data provided")
 }
 
 func validate(c *cli.Context) error {
@@ -232,8 +230,21 @@ func validate(c *cli.Context) error {
 
 	validation := ValidationModel{}
 
-	validation.Config = validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data)
-	validation.Secrets = validateInventory(inventoryPath, log, warnings, inventoryBase64Data)
+	result, err := validateBitriseYML(bitriseConfigPath, log, warnings, bitriseConfigBase64Data)
+	if err != nil {
+		log.Print(NewValidationError(err.Error(), warnings...))
+		os.Exit(1)
+	}
+
+	validation.Config = result
+
+	result, err = validateInventory(inventoryPath, log, warnings, inventoryBase64Data)
+	if err != nil {
+		log.Print(NewValidationError(err.Error(), warnings...))
+		os.Exit(1)
+	}
+
+	validation.Secrets = result
 
 	if validation.Config == nil && validation.Secrets == nil {
 		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
