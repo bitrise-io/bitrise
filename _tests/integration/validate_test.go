@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/bitrise/cli"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,10 +23,19 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid bitrise.yml")
 	{
-		cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		// cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
+		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		// require.NoError(t, err)
+		// require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
+		cfgPath := "trigger_params_test_bitrise.yml"
+		cfgData := ""
+		secretsPath := ""
+		secretsData := ""
+
+		result, err := cli.Validate(cfgPath, cfgData, secretsPath, secretsData)
+
 		require.NoError(t, err)
-		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
+		require.Equal(t, true, result.Config.IsValid)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")

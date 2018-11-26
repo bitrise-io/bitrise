@@ -196,6 +196,30 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 	return nil, fmt.Errorf("no secrets yml nor base64 data provided")
 }
 
+func Validate(bitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, error) {
+	validation := ValidationModel{}
+
+	result, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
+	if err != nil {
+		return nil, err
+	}
+
+	validation.Config = result
+
+	result, err = validateInventory(inventoryPath, inventoryBase64Data)
+	if err != nil {
+		return nil, err
+	}
+
+	validation.Secrets = result
+
+	if validation.Config == nil && validation.Secrets == nil {
+		return nil, fmt.Errorf("No config or secrets found for validation")
+	}
+
+	return &validation, nil
+}
+
 func validate(c *cli.Context) error {
 	warnings := []string{}
 
@@ -228,30 +252,13 @@ func validate(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	validation := ValidationModel{}
-
-	result, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
+	validation, err := Validate(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
 	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)
 	}
 
-	validation.Config = result
-
-	result, err = validateInventory(inventoryPath, inventoryBase64Data)
-	if err != nil {
-		log.Print(NewValidationError(err.Error(), warnings...))
-		os.Exit(1)
-	}
-
-	validation.Secrets = result
-
-	if validation.Config == nil && validation.Secrets == nil {
-		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
-		os.Exit(1)
-	}
-
-	log.Print(NewValidationResponse(validation, warnings...))
+	log.Print(NewValidationResponse(*validation, warnings...))
 
 	if !validation.IsValid() {
 		os.Exit(1)
