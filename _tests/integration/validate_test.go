@@ -31,8 +31,9 @@ func Test_ValidateTest(t *testing.T) {
 		cfgData := ""
 		secretsPath := ""
 		secretsData := ""
+		cfgDeprecatePath := ""
 
-		result, err := cli.Validate(cfgPath, cfgData, secretsPath, secretsData)
+		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
 
 		require.NoError(t, err)
 		require.Equal(t, true, result.Config.IsValid)
@@ -44,14 +45,14 @@ func Test_ValidateTest(t *testing.T) {
 		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		// require.NoError(t, err)
 		// require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
-		cfgPath, cfgData, secretsPath, secretsData := "trigger_params_test_bitrise.yml", "", "", ""
+		cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData := "", "trigger_params_test_bitrise.yml", "", "", ""
 
-		result, err := cli.Validate(cfgPath, cfgData, secretsPath, secretsData)
+		result, warns, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
 
 		require.NoError(t, err)
 		require.Equal(t, true, result.Config.IsValid)
 		t.Log(result.Config.Warnings)
-		require.Equal(t, "'path' key is deprecated, use 'config' instead!", result.Config.Warnings)
+		require.Equal(t, "'path' key is deprecated, use 'config' instead!", warns[0])
 	}
 
 	t.Log("valid - invalid workflow id")

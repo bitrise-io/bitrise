@@ -197,41 +197,42 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 }
 
 // Validate ...
-func Validate(bitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, error) {
+func Validate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, []string, error) {
+	warnings := []string{}
+
+	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
+		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
+		bitriseConfigPath = deprecatedBitriseConfigPath
+	}
+
 	validation := ValidationModel{}
 
 	result, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
 	if err != nil {
-		return nil, err
+		return nil, warnings, err
 	}
 
 	validation.Config = result
 
 	result, err = validateInventory(inventoryPath, inventoryBase64Data)
 	if err != nil {
-		return nil, err
+		return nil, warnings, err
 	}
 
 	validation.Secrets = result
 
 	if validation.Config == nil && validation.Secrets == nil {
-		return nil, fmt.Errorf("No config or secrets found for validation")
+		return nil, warnings, fmt.Errorf("No config or secrets found for validation")
 	}
 
-	return &validation, nil
+	return &validation, warnings, nil
 }
 
 func validate(c *cli.Context) error {
-	warnings := []string{}
-
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
 	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
@@ -249,11 +250,11 @@ func validate(c *cli.Context) error {
 	} else if format == output.FormatJSON {
 		log = flog.NewDefaultJSONLoger()
 	} else {
-		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format), warnings...))
+		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
 		os.Exit(1)
 	}
 
-	validation, err := Validate(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
+	validation, warnings, err := Validate(bitriseConfigPath, deprecatedBitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
 	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)
