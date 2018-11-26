@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/bitrise/cli"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,76 +22,42 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid bitrise.yml")
 	{
-		cfgPath := "trigger_params_test_bitrise.yml"
-		cfgData := ""
-		secretsPath := ""
-		secretsData := ""
-		cfgDeprecatePath := ""
-
-		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
-
+		cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err)
-		require.Equal(t, true, result.Config.IsValid)
+		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
 	{
-		cfgPath := ""
-		cfgDeprecatePath := "trigger_params_test_bitrise.yml"
-		cfgData := ""
-		secretsPath := ""
-		secretsData := ""
-
-		result, warns, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
-
+		cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err)
-		require.Equal(t, true, result.Config.IsValid)
-		require.Equal(t, "'path' key is deprecated, use 'config' instead!", warns[0])
+		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
 	}
 
 	t.Log("valid - invalid workflow id")
 	{
-		cfgPath := filepath.Join(tmpDir, "bitrise.yml")
-		require.NoError(t, fileutil.WriteStringToFile(cfgPath, invalidWorkflowIDBitriseYML))
+		configPth := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(configPth, invalidWorkflowIDBitriseYML))
 
-		cfgDeprecatePath := ""
-		cfgData := ""
-		secretsPath := ""
-		secretsData := ""
-
-		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
-
+		cmd := command.New(binPath(), "validate", "-c", configPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err)
-		require.Equal(t, true, result.Config.IsValid)
-		require.Equal(t, "invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]", result.Config.Warnings[0])
+		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
+		require.Equal(t, expected, out)
 	}
 
 	t.Log("invalid - empty bitrise.yml")
 	{
-		// configPth := filepath.Join(tmpDir, "bitrise.yml")
-		// require.NoError(t, fileutil.WriteStringToFile(configPth, emptyBitriseYML))
+		configPth := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(configPth, emptyBitriseYML))
 
-		// cmd := command.New(binPath(), "validate", "-c", configPth)
-		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		// require.Error(t, err, out)
-		// expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
-		// require.Equal(t, expected, out)
-
-
-		cfgPath := filepath.Join(tmpDir, "bitrise.yml")
-		require.NoError(t, fileutil.WriteStringToFile(cfgPath, emptyBitriseYML))
-
-		cfgDeprecatePath := ""
-		cfgData := ""
-		secretsPath := ""
-		secretsData := ""
-
-		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
-		expected := fmt.Sprintf("Config (path:%s) is not valid: empty config", cfgPath)
-
-		require.Error(t, err)
-		require.Equal(t, false, result.Config.IsValid)
-		require.Equal(t, expected, result.Config.Error)
+		cmd := command.New(binPath(), "validate", "-c", configPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.Error(t, err, out)
+		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
+		require.Equal(t, expected, out)
 	}
 }
 
