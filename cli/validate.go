@@ -241,7 +241,6 @@ func validate(c *cli.Context) error {
 	if format == "" {
 		format = output.FormatRaw
 	}
-	//
 
 	var log flog.Logger
 	log = flog.NewDefaultRawLogger()

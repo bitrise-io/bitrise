@@ -23,10 +23,6 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid bitrise.yml")
 	{
-		// cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
-		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		// require.NoError(t, err)
-		// require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
 		cfgPath := "trigger_params_test_bitrise.yml"
 		cfgData := ""
 		secretsPath := ""
@@ -41,17 +37,16 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
 	{
-		// cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml")
-		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		// require.NoError(t, err)
-		// require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
-		cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData := "", "trigger_params_test_bitrise.yml", "", "", ""
+		cfgPath := ""
+		cfgDeprecatePath := "trigger_params_test_bitrise.yml"
+		cfgData := ""
+		secretsPath := ""
+		secretsData := ""
 
 		result, warns, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
 
 		require.NoError(t, err)
 		require.Equal(t, true, result.Config.IsValid)
-		t.Log(result.Config.Warnings)
 		require.Equal(t, "'path' key is deprecated, use 'config' instead!", warns[0])
 	}
 
