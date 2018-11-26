@@ -167,7 +167,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 			configValidation.Error = err.Error()
 		}
 
-		return &configValidation, nil
+		return &configValidation, err
 	}
 
 	return nil, nil
@@ -208,21 +208,21 @@ func Validate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitr
 	validation := ValidationModel{}
 
 	result, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
+	validation.Config = result
 	if err != nil {
-		return nil, warnings, err
+		return &validation, warnings, err
 	}
 
-	validation.Config = result
 
 	result, err = validateInventory(inventoryPath, inventoryBase64Data)
+	validation.Secrets = result
 	if err != nil {
-		return nil, warnings, err
+		return &validation, warnings, err
 	}
 
-	validation.Secrets = result
 
 	if validation.Config == nil && validation.Secrets == nil {
-		return nil, warnings, fmt.Errorf("No config or secrets found for validation")
+		return &validation, warnings, fmt.Errorf("No config or secrets found for validation")
 	}
 
 	return &validation, warnings, nil

@@ -69,14 +69,30 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("invalid - empty bitrise.yml")
 	{
-		configPth := filepath.Join(tmpDir, "bitrise.yml")
-		require.NoError(t, fileutil.WriteStringToFile(configPth, emptyBitriseYML))
+		// configPth := filepath.Join(tmpDir, "bitrise.yml")
+		// require.NoError(t, fileutil.WriteStringToFile(configPth, emptyBitriseYML))
 
-		cmd := command.New(binPath(), "validate", "-c", configPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
-		require.Equal(t, expected, out)
+		// cmd := command.New(binPath(), "validate", "-c", configPth)
+		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		// require.Error(t, err, out)
+		// expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
+		// require.Equal(t, expected, out)
+
+
+		cfgPath := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(cfgPath, emptyBitriseYML))
+
+		cfgDeprecatePath := ""
+		cfgData := ""
+		secretsPath := ""
+		secretsData := ""
+
+		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
+		expected := fmt.Sprintf("Config (path:%s) is not valid: empty config", cfgPath)
+
+		require.Error(t, err)
+		require.Equal(t, false, result.Config.IsValid)
+		require.Equal(t, expected, result.Config.Error)
 	}
 }
 
