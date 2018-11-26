@@ -52,14 +52,19 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid - invalid workflow id")
 	{
-		configPth := filepath.Join(tmpDir, "bitrise.yml")
-		require.NoError(t, fileutil.WriteStringToFile(configPth, invalidWorkflowIDBitriseYML))
+		cfgPath := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(cfgPath, invalidWorkflowIDBitriseYML))
 
-		cmd := command.New(binPath(), "validate", "-c", configPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		cfgDeprecatePath := ""
+		cfgData := ""
+		secretsPath := ""
+		secretsData := ""
+
+		result, _, err := cli.Validate(cfgPath, cfgDeprecatePath, cfgData, secretsPath, secretsData)
+
 		require.NoError(t, err)
-		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
-		require.Equal(t, expected, out)
+		require.Equal(t, true, result.Config.IsValid)
+		require.Equal(t, "invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]", result.Config.Warnings[0])
 	}
 
 	t.Log("invalid - empty bitrise.yml")
