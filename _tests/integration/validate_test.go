@@ -40,10 +40,18 @@ func Test_ValidateTest(t *testing.T) {
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
 	{
-		cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		// cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml")
+		// out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		// require.NoError(t, err)
+		// require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
+		cfgPath, cfgData, secretsPath, secretsData := "trigger_params_test_bitrise.yml", "", "", ""
+
+		result, err := cli.Validate(cfgPath, cfgData, secretsPath, secretsData)
+
 		require.NoError(t, err)
-		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
+		require.Equal(t, true, result.Config.IsValid)
+		t.Log(result.Config.Warnings)
+		require.Equal(t, "'path' key is deprecated, use 'config' instead!", result.Config.Warnings)
 	}
 
 	t.Log("valid - invalid workflow id")

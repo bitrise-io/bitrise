@@ -196,6 +196,7 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 	return nil, nil
 }
 
+// Validate ...
 func Validate(bitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, error) {
 	validation := ValidationModel{}
 
