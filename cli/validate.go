@@ -170,7 +170,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 		return &configValidation, nil
 	}
 
-	return nil, fmt.Errorf("no bitrise.yml nor base64 config provided")
+	return nil, nil
 }
 
 func validateInventory(inventoryPath string, inventoryBase64Data string) (*ValidationItemModel, error) {
@@ -193,7 +193,7 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 		return &secretValidation, nil
 	}
 
-	return nil, fmt.Errorf("no secrets yml nor base64 data provided")
+	return nil, nil
 }
 
 func Validate(bitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, error) {
