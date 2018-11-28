@@ -196,7 +196,7 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 	return nil, nil
 }
 
-// Validate ...
+// RunValidate ...
 func RunValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string, log flog.Logger) {
 	warnings := []string{}
 
