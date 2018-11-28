@@ -167,7 +167,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 			configValidation.Error = err.Error()
 		}
 
-		return &configValidation, err
+		return &configValidation, nil
 	}
 
 	return nil, nil
