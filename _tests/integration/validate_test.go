@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
-
 	"os"
 	"time"
 
@@ -13,6 +12,19 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
+
+const emptySecret = ""
+const invalidSecret = `- TEST: test`
+
+const emptyBitriseYML = ""
+const spaceBitriseYML = ` `
+const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  invalid:id:
+`
+const runtimeLimit = 1000 * time.Millisecond
 
 func Test_ValidateTest(t *testing.T) {
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
@@ -278,16 +290,3 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		assertRunTime(t, elapsed, runtimeLimit)
 	}
 }
-
-const emptySecret = ""
-const invalidSecret = `- TEST: test`
-
-const emptyBitriseYML = ""
-const spaceBitriseYML = ` `
-const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-
-workflows:
-  invalid:id:
-`
-const runtimeLimit = 1000 * time.Millisecond
