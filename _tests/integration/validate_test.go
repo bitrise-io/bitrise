@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"os"
+	"time"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -170,10 +171,16 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 
 	t.Log("valid secret")
 	{
+		var out string
+		var err error
 		cmd := command.New(binPath(), "validate", "-i", "global_flag_test_secrets.yml", "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		limit := 1000 * time.Millisecond
+		elapsed := withRunningTimeCheck(func() {
+			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+		}, limit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
+		assertRunTime(t, elapsed, limit)
 	}
 
 	t.Log("invalid - empty config")
@@ -181,23 +188,35 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		secretsPth := filepath.Join(tmpDir, "secrets.yml")
 		require.NoError(t, fileutil.WriteStringToFile(secretsPth, emptySecret))
 
+		var out string
+		var err error
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		limit := 1000 * time.Millisecond
+		elapsed := withRunningTimeCheck(func() {
+			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+		}, limit)
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
 		require.Equal(t, expected, out)
+		assertRunTime(t, elapsed, limit)
 	}
 
 	t.Log("invalid - invalid secret model")
 	{
 		secretsPth := filepath.Join(tmpDir, "secrets.yml")
 		require.NoError(t, fileutil.WriteStringToFile(secretsPth, invalidSecret))
-
+		
+		var out string
+		var err error
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		limit := 1000 * time.Millisecond
+		elapsed := withRunningTimeCheck(func() {
+			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+		}, limit)
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
+		assertRunTime(t, elapsed, limit)
 	}
 }
 
