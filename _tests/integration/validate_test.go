@@ -174,13 +174,13 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		cmd := command.New(binPath(), "validate", "-i", "global_flag_test_secrets.yml", "--format", "json")
-		limit := 1000 * time.Millisecond
+
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, limit)
+		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
-		assertRunTime(t, elapsed, limit)
+		assertRunTime(t, elapsed, runtimeLimit)
 	}
 
 	t.Log("invalid - empty config")
@@ -191,14 +191,14 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
-		limit := 1000 * time.Millisecond
+
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, limit)
+		}, runtimeLimit)
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, limit)
+		assertRunTime(t, elapsed, runtimeLimit)
 	}
 
 	t.Log("invalid - invalid secret model")
@@ -209,14 +209,13 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
-		limit := 1000 * time.Millisecond
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, limit)
+		}, runtimeLimit)
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, limit)
+		assertRunTime(t, elapsed, runtimeLimit)
 	}
 }
 
@@ -231,3 +230,4 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   invalid:id:
 `
+const runtimeLimit = 1000 * time.Millisecond
