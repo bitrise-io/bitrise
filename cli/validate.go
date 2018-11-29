@@ -196,8 +196,7 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 	return nil, nil
 }
 
-// RunValidate ...
-func runValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string, log flog.Logger) error {
+func runValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, []string, error) {
 	warnings := []string{}
 
 	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
@@ -210,31 +209,24 @@ func runValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, b
 	result, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
 	validation.Config = result
 	if err != nil {
-		log.Print(NewValidationError(err.Error(), warnings...))
-		return fmt.Errorf("Bitrise validation failed: %s", err.Error())
+		return &validation, warnings, err
 	}
-
 
 	result, err = validateInventory(inventoryPath, inventoryBase64Data)
 	validation.Secrets = result
 	if err != nil {
-		log.Print(NewValidationError(err.Error(), warnings...))
-		return fmt.Errorf("Secrets validation failed: %s", err.Error())
+		return &validation, warnings, err
 	}
-
 
 	if validation.Config == nil && validation.Secrets == nil {
-		log.Print(NewValidationError("No config or secrets found for validation", warnings...))
-		return fmt.Errorf("No config or secrets found for validation")
+		return &validation, warnings, fmt.Errorf("No config or secrets found for validation")
 	}
-
-	log.Print(NewValidationResponse(validation, warnings...))
 
 	if !validation.IsValid() {
-		return fmt.Errorf("Validation failed")
+		return &validation, warnings, fmt.Errorf("Validation failed")
 	}
 
-	return nil
+	return &validation, warnings, nil
 }
 
 func validate(c *cli.Context) error {
@@ -262,10 +254,13 @@ func validate(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	err := runValidate(bitriseConfigPath, deprecatedBitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, log)
+	validation, warnings, err := runValidate(bitriseConfigPath, deprecatedBitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
 	if (err != nil) {
+		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)
 	}
+
+	log.Print(NewValidationResponse(*validation, warnings...))
 
 	return nil
 }
