@@ -25,6 +25,7 @@ workflows:
   invalid:id:
 `
 const runtimeLimit = 1000 * time.Millisecond
+const runningTimeMsg = "test case too slow: %s is %s above limit"
 
 func Test_ValidateTest(t *testing.T) {
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
@@ -43,7 +44,7 @@ func Test_ValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
@@ -56,7 +57,7 @@ func Test_ValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("valid - invalid workflow id")
@@ -73,7 +74,7 @@ func Test_ValidateTest(t *testing.T) {
 		require.NoError(t, err)
 		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - empty bitrise.yml")
@@ -90,7 +91,7 @@ func Test_ValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 }
 
@@ -111,7 +112,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}}}", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
@@ -124,7 +125,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}},\"warnings\":[\"'path' key is deprecated, use 'config' instead!\"]}", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("valid - invalid workflow id")
@@ -141,7 +142,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.NoError(t, err)
 		expected := "{\"data\":{\"config\":{\"is_valid\":true,\"warnings\":[\"invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]\"]}}}"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - empty bitrise.yml")
@@ -158,7 +159,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - only one space in bitrise.yml")
@@ -175,7 +176,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 }
 
@@ -196,7 +197,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Secret is valid: \x1b[32;1mtrue\x1b[0m", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - empty secret")
@@ -213,7 +214,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mempty config\x1b[0m"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - invalid secret model")
@@ -230,7 +231,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid inventory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\x1b[0m"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 }
 
@@ -252,7 +253,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - empty config")
@@ -270,7 +271,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 
 	t.Log("invalid - invalid secret model")
@@ -287,6 +288,6 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
-		assertRunTime(t, elapsed, runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
 	}
 }

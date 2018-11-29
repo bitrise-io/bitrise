@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/assert"
 )
 
 func binPath() string {
@@ -32,12 +31,4 @@ func withRunningTimeCheck(f func(), ms time.Duration) time.Duration {
 	end := time.Now()
  
 	return end.Sub(start)
-}
-
-func assertRunTime(t *testing.T, elapsed time.Duration, limit time.Duration) {
-		fastEnough := elapsed < limit
-		if (!fastEnough) {
-			t.Logf("test case too slow: %s is %s above limit", elapsed, elapsed - limit)
-		}
-		assert.Equal(t, true, elapsed < limit)
 }
