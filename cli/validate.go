@@ -222,10 +222,6 @@ func runValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, b
 		return &validation, warnings, fmt.Errorf("No config or secrets found for validation")
 	}
 
-	if !validation.IsValid() {
-		return &validation, warnings, fmt.Errorf("Validation failed")
-	}
-
 	return &validation, warnings, nil
 }
 
@@ -255,12 +251,16 @@ func validate(c *cli.Context) error {
 	}
 
 	validation, warnings, err := runValidate(bitriseConfigPath, deprecatedBitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
-	if (err != nil) {
+	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)
 	}
 
 	log.Print(NewValidationResponse(*validation, warnings...))
+
+	if !validation.IsValid() {
+		os.Exit(1)
+	}
 
 	return nil
 }
