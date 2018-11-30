@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -22,4 +23,12 @@ func toJSON(t *testing.T, stringStringMap map[string]string) string {
 	bytes, err := json.Marshal(stringStringMap)
 	require.NoError(t, err)
 	return string(bytes)
+}
+
+func withRunningTimeCheck(f func(), ms time.Duration) time.Duration {
+	start := time.Now()
+	f()
+	end := time.Now()
+ 
+	return end.Sub(start)
 }
