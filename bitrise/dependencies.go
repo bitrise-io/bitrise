@@ -3,6 +3,7 @@ package bitrise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -19,6 +20,8 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	ver "github.com/hashicorp/go-version"
 )
+
+var isAptGetUpdated bool
 
 func removeEmptyNewLines(text string) string {
 	split := strings.Split(text, "\n")
@@ -399,6 +402,15 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 			if !allow {
 				return errors.New("(" + aptGetDep.Name + ") is required for step")
 			}
+		}
+
+		if !isAptGetUpdated {
+			cmd := command.New("sudo", "apt-get", "update")
+			log.Infof(cmd.PrintableCommandArgs())
+			if err := cmd.SetStdout(os.Stdout).SetStderr(os.Stderr).Run(); err != nil {
+				log.Errorf("apt-get update failed, error: %s", err)
+			}
+			isAptGetUpdated = true
 		}
 
 		log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
