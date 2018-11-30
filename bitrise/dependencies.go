@@ -3,6 +3,7 @@ package bitrise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
