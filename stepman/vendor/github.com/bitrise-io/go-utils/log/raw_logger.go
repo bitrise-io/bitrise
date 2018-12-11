@@ -27,5 +27,7 @@ func NewDefaultRawLogger() RawLogger {
 
 // Print ...
 func (l RawLogger) Print(f Formatable) {
-	fmt.Fprintln(l.writer, f.String())
+	if _, err := fmt.Fprintln(l.writer, f.String()); err != nil {
+		fmt.Printf("failed to print message: %s, error: %s\n", f.String(), err)
+	}
 }

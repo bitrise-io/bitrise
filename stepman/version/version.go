@@ -1,4 +1,4 @@
 package version
 
 // VERSION ...
-const VERSION = "0.10.5"
+const VERSION = "0.10.6"

@@ -45,7 +45,9 @@ func (s *Spinner) erase() {
 	n := utf8.RuneCountInString(s.lastOutput)
 	for _, c := range []string{"\b", " ", "\b"} {
 		for i := 0; i < n; i++ {
-			fmt.Fprintf(s.writer, c)
+			if _, err := fmt.Fprintf(s.writer, c); err != nil {
+				fmt.Printf("failed to update progress, error: %s\n", err)
+			}
 		}
 	}
 	s.lastOutput = ""
@@ -68,7 +70,9 @@ func (s *Spinner) Start() {
 					s.erase()
 
 					out := fmt.Sprintf("%s %s", s.message, s.chars[i])
-					fmt.Fprint(s.writer, out)
+					if _, err := fmt.Fprint(s.writer, out); err != nil {
+						fmt.Printf("failed to update progress, error: %s\n", err)
+					}
 					s.lastOutput = out
 
 					time.Sleep(s.delay)

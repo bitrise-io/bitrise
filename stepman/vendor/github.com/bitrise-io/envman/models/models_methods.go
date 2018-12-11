@@ -176,7 +176,7 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			}
 			envSerModel.Meta = castedMapStringInterface
 		default:
-			return fmt.Errorf("not supported key found in options: %s", keyStr)
+			// intentional no-op case -- we just ignore unrecognized fields
 		}
 	}
 	return nil
