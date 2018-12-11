@@ -41,7 +41,9 @@ func (w Wrapper) WrapAction(action func()) {
 		if !strings.HasSuffix(message, ".") {
 			message = message + "..."
 		}
-		fmt.Fprintln(w.spinner.writer, message)
+		if _, err := fmt.Fprintln(w.spinner.writer, message); err != nil {
+			fmt.Printf("failed to print message: %s, error: %s", message, err)
+		}
 		action()
 	}
 }

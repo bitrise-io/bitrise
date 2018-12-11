@@ -156,7 +156,7 @@ func TestParseFromInterfaceMap(t *testing.T) {
 	// other_key is not supported key
 	model = map[string]interface{}{}
 	model["other_key"] = true
-	require.EqualError(t, envOptions.ParseFromInterfaceMap(model), "not supported key found in options: other_key")
+	require.NoError(t, envOptions.ParseFromInterfaceMap(model))
 }
 
 func TestGetOptions(t *testing.T) {
@@ -193,7 +193,7 @@ func TestGetOptions(t *testing.T) {
 		},
 	}
 	_, err = env.GetOptions()
-	require.EqualError(t, err, "not supported key found in options: test")
+	require.NoError(t, err)
 }
 
 func TestNormalize(t *testing.T) {

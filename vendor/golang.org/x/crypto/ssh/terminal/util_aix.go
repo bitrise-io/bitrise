@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build ppc64 ppc64le
+// +build aix
 
-package cpu
+package terminal
 
-const cacheLineSize = 128
+import "golang.org/x/sys/unix"
 
-func doinit() {}
+const ioctlReadTermios = unix.TCGETS
+const ioctlWriteTermios = unix.TCSETS

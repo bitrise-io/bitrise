@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	systemRubyPth = "/usr/bin/ruby"
-	brewRubyPth   = "/usr/local/bin/ruby"
+	systemRubyPth  = "/usr/bin/ruby"
+	brewRubyPth    = "/usr/local/bin/ruby"
+	brewRubyPthAlt = "/usr/local/opt/ruby/bin/ruby"
 )
 
 // InstallType ...
@@ -57,6 +58,8 @@ func installType() InstallType {
 		installType = SystemRuby
 	} else if whichRuby == brewRubyPth {
 		installType = BrewRuby
+	} else if whichRuby == brewRubyPthAlt {
+		installType = BrewRuby
 	} else if cmdExist("rvm", "-v") {
 		installType = RVMRuby
 	} else if cmdExist("rbenv", "-v") {
@@ -90,7 +93,7 @@ func sudoNeeded(installType InstallType, slice ...string) bool {
 func NewWithParams(params ...string) (*command.Model, error) {
 	rubyInstallType := installType()
 	if rubyInstallType == Unkown {
-		return nil, errors.New("unkown ruby installation type")
+		return nil, errors.New("unknown ruby installation type")
 	}
 
 	if sudoNeeded(rubyInstallType, params...) {
