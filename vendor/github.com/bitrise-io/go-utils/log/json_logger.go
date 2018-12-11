@@ -27,5 +27,7 @@ func NewDefaultJSONLoger() JSONLoger {
 
 // Print ...
 func (l JSONLoger) Print(f Formatable) {
-	fmt.Fprint(l.writer, f.JSON())
+	if _, err := fmt.Fprint(l.writer, f.JSON()); err != nil {
+		fmt.Printf("failed to print message: %s, error: %s\n", f.JSON(), err)
+	}
 }
