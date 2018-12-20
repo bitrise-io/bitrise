@@ -31,7 +31,6 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
 	if prGlobalFlagPtr != nil {
 		return *prGlobalFlagPtr, nil
