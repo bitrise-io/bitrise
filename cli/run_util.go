@@ -31,7 +31,6 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
 	if prGlobalFlagPtr != nil {
 		return *prGlobalFlagPtr, nil
@@ -274,23 +273,6 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 	}
 
 	return inventoryEnvironments, nil
-}
-
-func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
-	bitriseSourceDir := os.Getenv(configs.BitriseSourceDirEnvKey)
-	for i := len(envlist) - 1; i >= 0; i-- {
-		env := envlist[i]
-
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return bitriseSourceDir, err
-		}
-
-		if key == configs.BitriseSourceDirEnvKey && value != "" {
-			return value, nil
-		}
-	}
-	return bitriseSourceDir, nil
 }
 
 func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
