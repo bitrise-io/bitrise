@@ -35,6 +35,15 @@ func (c *Command) SetTimeout(t time.Duration) {
 	c.timeout = t
 }
 
+// AppendEnv appends and env to the command's env list.
+func (c *Command) AppendEnv(env string) {
+	if c.cmd.Env != nil {
+		c.cmd.Env = append(c.cmd.Env, env)
+		return
+	}
+	c.cmd.Env = append(os.Environ(), env)
+}
+
 // SetStandardIO sets the input and outputs of the command.
 func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 	c.cmd.Stdin = in

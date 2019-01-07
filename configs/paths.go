@@ -38,8 +38,6 @@ const (
 	BitriseCacheDirEnvKey = "BITRISE_CACHE_DIR"
 	// BitriseTmpDirEnvKey ...
 	BitriseTmpDirEnvKey = "BITRISE_TMP_DIR"
-	// PWDEnvKey ...
-	PWDEnvKey = "PWD"
 )
 
 // GetBitriseHomeDirPath ...
@@ -162,13 +160,6 @@ func InitPaths() error {
 	if os.Getenv(BitriseSourceDirEnvKey) == "" {
 		if err := os.Setenv(BitriseSourceDirEnvKey, currentDir); err != nil {
 			return fmt.Errorf("Failed to set BITRISE_SOURCE_DIR, error: %s", err)
-		}
-	}
-
-	// PWD
-	if os.Getenv(PWDEnvKey) == "" {
-		if err := os.Setenv(PWDEnvKey, currentDir); err != nil {
-			return fmt.Errorf("Failed to set PWD, error: %s", err)
 		}
 	}
 
