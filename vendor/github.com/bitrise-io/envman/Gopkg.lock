@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8cc51ba3217ecd3850b042fcfb4aadc226fdffae9f538f0e3569a7ad6df7a12a"
+  digest = "1:d972dce278dd6023fccf060a44cc51c33f0ce25f0522970c000c502766826cb8"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = ""
-  revision = "9f049671f18633e0991c2cbc2bebc81e0b3c402c"
+  revision = "eef6b768ab01a0598a0a6db97bad2a37d31df1d1"
 
 [[projects]]
   branch = "master"
@@ -58,14 +58,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:67201659c1bc106b419e9acfeae82f60f69c2a77be403d31f0fa7dcf338a7f4f"
+  digest = "1:381bcbeb112a51493d9d998bbba207a529c73dbb49b3fd789e48c63fac1f192c"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
   ]
   pruneopts = ""
-  revision = "8019298d9fa5a04fc2ad10ae03349df3483096a6"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
 
 [[projects]]
   branch = "master"
@@ -77,22 +77,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:887074c37fcefc2f49b5ae9c6f9f36107341aec23185613d0e9f1ee81db7f94a"
+  digest = "1:59b49c47c11a48f1054529207f65907c014ecf5f9a7c0d9c0f1616dec7b062ed"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
+  revision = "ff983b9c42bc9fbf91556e191cc8efb585c16908"
 
 [[projects]]
   branch = "master"
-  digest = "1:f934a0869d3969b7ec9833a1bb9b29e09fb77196bc1ac59081a66d100320f238"
+  digest = "1:30d295ca4b98f09df913be86c1ac48d1d321eb2a84543206a87704e5d25db19b"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "2a47403f2ae58167c4d75973960ccc62b28cb0d8"
+  revision = "7fbe1cd0fcc20051e1fcb87fbabec4a1bacaaeba"
 
 [[projects]]
   branch = "v2"
