@@ -122,3 +122,11 @@ type StepRunResultsModel struct {
 	ErrorStr string                      `json:"error_str" yaml:"error_str"`
 	ExitCode int                         `json:"exit_code" yaml:"exit_code"`
 }
+
+// TestResultStepInfo ...
+type TestResultStepInfo struct {
+	ID      string `json:"id" yaml:"id"`
+	Version string `json:"version" yaml:"version"`
+	Title   string `json:"title" yaml:"title"`
+	Number  int    `json:"number" yaml:"number"`
+}

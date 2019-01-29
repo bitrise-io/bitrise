@@ -3,12 +3,16 @@ package cli
 import (
 	"encoding/base64"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )
@@ -514,4 +518,139 @@ workflows:
 
 	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
+}
+
+func TestInitializeStepDir(t *testing.T) {
+	tempTestResultsDir, err := pathutil.NormalizedOSTempDirPath("testing")
+	if err != nil {
+		t.Fatalf("failed to create testing dir, error: %s", err)
+	}
+
+	if err := os.Setenv("BITRISE_TEST_RESULTS_DIR", tempTestResultsDir); err != nil {
+		t.Fatalf("failed to set env, error: %s", err)
+	}
+
+	if os.Getenv("BITRISE_TEST_RESULT_DIR") != "" {
+		t.Fatal("BITRISE_TEST_RESULT_DIR should be empty")
+	}
+
+	var additionalEnvironments []envmanModels.EnvironmentItemModel
+
+	testDir, err := initializeStepDir(&additionalEnvironments)
+	if err != nil {
+		t.Fatalf("failed to create test dir, error: %s", err)
+	}
+
+	if filepath.Dir(testDir) != tempTestResultsDir {
+		t.Fatal("BITRISE_TEST_RESULT_DIR should be a child of BITRISE_TEST_RESULTS_DIR")
+	}
+
+	if len(additionalEnvironments) != 1 {
+		t.Fatal("should be only one additionalEnvironments")
+	} else {
+		key, value, err := additionalEnvironments[0].GetKeyValuePair()
+		if err != nil {
+			t.Fatalf("failed to get GetKeyValuePair, error: %s", err)
+		}
+		if key != "BITRISE_TEST_RESULT_DIR" {
+			t.Fatal("key should be BITRISE_TEST_RESULT_DIR")
+		}
+		if value != testDir {
+			t.Fatal("value should be the generated test dir path")
+		}
+	}
+
+	if exists, err := pathutil.IsDirExists(testDir); err != nil {
+		t.Fatalf("failed to check if dir exists, error: %s", err)
+	} else if !exists {
+		t.Fatal("BITRISE_TEST_RESULT_DIR path should exists on the FS")
+	}
+}
+
+func TestNormalizeStepDir(t *testing.T) {
+	t.Log("test empty dir")
+	{
+		testDirPath, err := pathutil.NormalizedOSTempDirPath("testing")
+		if err != nil {
+			t.Fatalf("failed to create testing dir, error: %s", err)
+		}
+
+		testResultStepInfo := models.TestResultStepInfo{}
+
+		exists, err := pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		if err := normalizeTestDir(testDirPath, testResultStepInfo); err != nil {
+			t.Fatalf("failed to normalize test dir, error: %s", err)
+		}
+
+		exists, err = pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if exists {
+			t.Fatal("test dir should not exits")
+		}
+	}
+
+	t.Log("test not empty dir")
+	{
+		testDirPath, err := pathutil.NormalizedOSTempDirPath("testing")
+		if err != nil {
+			t.Fatalf("failed to create testing dir, error: %s", err)
+		}
+
+		testResultStepInfo := models.TestResultStepInfo{}
+
+		exists, err := pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		if err := fileutil.WriteStringToFile(filepath.Join(testDirPath, "test-file"), "test-content"); err != nil {
+			t.Fatalf("failed to write file, error: %s", err)
+		}
+
+		if err := normalizeTestDir(testDirPath, testResultStepInfo); err != nil {
+			t.Fatalf("failed to normalize test dir, error: %s", err)
+		}
+
+		exists, err = pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		exists, err = pathutil.IsPathExists(filepath.Join(testDirPath, "test-file"))
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test file should exits")
+		}
+
+		exists, err = pathutil.IsPathExists(filepath.Join(testDirPath, "step-info.json"))
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("step-info.json file should exits")
+		}
+	}
 }
