@@ -886,7 +886,7 @@ func activateAndRunSteps(
 			})
 
 			// will add it's env to the additionalEnvironment list if succeeds
-			testDirPath, err := initializeStepDir(&additionalEnvironments)
+			testDirPath, err := createTestResultDir(&additionalEnvironments)
 			if err != nil {
 				log.Errorf("Failed to initialize test result dir, error: %s", err)
 			}
@@ -897,7 +897,7 @@ func activateAndRunSteps(
 				buildRunResults,
 			)
 
-			if err := normalizeTestDir(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
+			if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
 				log.Errorf("Failed to normalize test result dir, error: %s", err)
 			}
 
@@ -1094,20 +1094,20 @@ func runWorkflowWithConfiguration(
 	return buildRunResults, nil
 }
 
-func initializeStepDir(additionalEnvironments *[]envmanModels.EnvironmentItemModel) (string, error) {
+func createTestResultDir(additionalEnvironments *[]envmanModels.EnvironmentItemModel) (string, error) {
 	// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
-	testDirPath, err := ioutil.TempDir(os.Getenv("BITRISE_TEST_RESULTS_DIR"), "test_result")
+	testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
 	if err != nil {
 		return "", err
 	}
 	// managed to create the test dir, set the env for it for the next step run
 	*additionalEnvironments = append(*additionalEnvironments, envmanModels.EnvironmentItemModel{
-		"BITRISE_TEST_RESULT_DIR": testDirPath,
+		configs.BitriseTestResultDirEnvKey: testDirPath,
 	})
 	return testDirPath, nil
 }
 
-func normalizeTestDir(testDirPath string, testResultStepInfo models.TestResultStepInfo) error {
+func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultStepInfo) error {
 	// check if the test dir is empty
 	if empty, err := isDirEmpty(testDirPath); err != nil {
 		return fmt.Errorf("failed to check if dir empty: %s, error: %s", testDirPath, err)
