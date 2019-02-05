@@ -622,7 +622,7 @@ func TestAddTestMetadata(t *testing.T) {
 			t.Fatalf("failed to write file, error: %s", err)
 		}
 
-		if err := normalizeTestDir(testDirPath, testResultStepInfo); err != nil {
+		if err := addTestMetadata(testDirPath, testResultStepInfo); err != nil {
 			t.Fatalf("failed to normalize test dir, error: %s", err)
 		}
 
