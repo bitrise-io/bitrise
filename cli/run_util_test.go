@@ -520,53 +520,6 @@ workflows:
 	require.Equal(t, 1, len(results.StepmanUpdates))
 }
 
-func TestCreateTestResultDir(t *testing.T) {
-	tempTestResultsDir, err := pathutil.NormalizedOSTempDirPath("testing")
-	if err != nil {
-		t.Fatalf("failed to create testing dir, error: %s", err)
-	}
-
-	if err := os.Setenv(configs.BitriseTestDeployDirEnvKey, tempTestResultsDir); err != nil {
-		t.Fatalf("failed to set env, error: %s", err)
-	}
-
-	if os.Getenv(configs.BitriseTestResultDirEnvKey) != "" {
-		t.Fatalf("%s should be empty", configs.BitriseTestResultDirEnvKey)
-	}
-
-	var additionalEnvironments []envmanModels.EnvironmentItemModel
-
-	testDir, err := createTestResultDir(&additionalEnvironments)
-	if err != nil {
-		t.Fatalf("failed to create test dir, error: %s", err)
-	}
-
-	if filepath.Dir(testDir) != tempTestResultsDir {
-		t.Fatalf("%s should be a child of %s", configs.BitriseTestResultDirEnvKey, configs.BitriseTestDeployDirEnvKey)
-	}
-
-	if len(additionalEnvironments) != 1 {
-		t.Fatal("should be only one additionalEnvironments")
-	} else {
-		key, value, err := additionalEnvironments[0].GetKeyValuePair()
-		if err != nil {
-			t.Fatalf("failed to get GetKeyValuePair, error: %s", err)
-		}
-		if key != configs.BitriseTestResultDirEnvKey {
-			t.Fatalf("key should be %s", configs.BitriseTestResultDirEnvKey)
-		}
-		if value != testDir {
-			t.Fatal("value should be the generated test dir path")
-		}
-	}
-
-	if exists, err := pathutil.IsDirExists(testDir); err != nil {
-		t.Fatalf("failed to check if dir exists, error: %s", err)
-	} else if !exists {
-		t.Fatalf("%s path should exists on the FS", configs.BitriseTestResultDirEnvKey)
-	}
-}
-
 func TestAddTestMetadata(t *testing.T) {
 	t.Log("test empty dir")
 	{

@@ -885,10 +885,17 @@ func activateAndRunSteps(
 				"BITRISE_STEP_SOURCE_DIR": stepDir,
 			})
 
-			// will add it's env to the additionalEnvironment list if succeeds
-			testDirPath, err := createTestResultDir(&additionalEnvironments)
+			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
+			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
 			if err != nil {
-				log.Errorf("Failed to initialize test result dir, error: %s", err)
+				log.Errorf("Failed to create test result dir, error: %s", err)
+			}
+
+			if testDirPath != "" {
+				// managed to create the test dir, set the env for it for the next step run
+				additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
+					configs.BitriseTestResultDirEnvKey: testDirPath,
+				})
 			}
 
 			exit, outEnvironments, err := runStep(
@@ -897,8 +904,10 @@ func activateAndRunSteps(
 				buildRunResults,
 			)
 
-			if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
-				log.Errorf("Failed to normalize test result dir, error: %s", err)
+			if testDirPath != "" {
+				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
+					log.Errorf("Failed to normalize test result dir, error: %s", err)
+				}
 			}
 
 			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
@@ -1092,19 +1101,6 @@ func runWorkflowWithConfiguration(
 	}
 
 	return buildRunResults, nil
-}
-
-func createTestResultDir(additionalEnvironments *[]envmanModels.EnvironmentItemModel) (string, error) {
-	// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
-	testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
-	if err != nil {
-		return "", err
-	}
-	// managed to create the test dir, set the env for it for the next step run
-	*additionalEnvironments = append(*additionalEnvironments, envmanModels.EnvironmentItemModel{
-		configs.BitriseTestResultDirEnvKey: testDirPath,
-	})
-	return testDirPath, nil
 }
 
 func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultStepInfo) error {
