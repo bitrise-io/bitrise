@@ -72,5 +72,5 @@ func TestValidateEnv(t *testing.T) {
 
 	valValue, err = validateEnv("key", str21Kbytes, envs)
 	require.NoError(t, err)
-	require.Equal(t, "environment value too large - rejected", valValue)
+	require.Equal(t, "environment var (key) value too large - rejected", valValue)
 }

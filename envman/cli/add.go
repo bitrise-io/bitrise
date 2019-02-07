@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -40,9 +41,9 @@ func validateEnv(key, value string, envList []models.EnvironmentItemModel) (stri
 	if configs.EnvBytesLimitInKB > 0 {
 		if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
 			valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
-			log.Warnf("environment value (%s...) too large", value[0:100])
+			log.Warnf("environment var (%s) value (%s...) too large", key, value[0:100])
 			log.Warnf("environment value size (%#v KB) - max allowed size: %#v KB", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
-			return "environment value too large - rejected", nil
+			return fmt.Sprintf("environment var (%s) value too large - rejected", key), nil
 		}
 	}
 
