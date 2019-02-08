@@ -2,8 +2,10 @@ package cli
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -132,6 +134,14 @@ func registerSecretFiltering(filtering bool) error {
 		log.Info(colorstring.Yellow("bitrise runs in Secret Filtering mode"))
 	}
 	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
+}
+
+func isDirEmpty(path string) (bool, error) {
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	return len(entries) == 0, nil
 }
 
 // GetBitriseConfigFromBase64Data ...
@@ -420,7 +430,6 @@ func runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to init envman for the Step, error: %s", err)
 	}
 
-	environments = append(environments, envmanModels.EnvironmentItemModel{"BITRISE_STEP_SOURCE_DIR": stepDir})
 	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
 	}
@@ -868,11 +877,38 @@ func activateAndRunSteps(
 			registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 				*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep, false)
 		} else {
+			// beside of the envs coming from the current parent process these will be added as an extra
+			var additionalEnvironments []envmanModels.EnvironmentItemModel
+
+			// add an extra env for the next step run to be able to access the step's source location
+			additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
+				"BITRISE_STEP_SOURCE_DIR": stepDir,
+			})
+
+			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
+			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
+			if err != nil {
+				log.Errorf("Failed to create test result dir, error: %s", err)
+			}
+
+			if testDirPath != "" {
+				// managed to create the test dir, set the env for it for the next step run
+				additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
+					configs.BitriseTestResultDirEnvKey: testDirPath,
+				})
+			}
+
 			exit, outEnvironments, err := runStep(
 				mergedStep, stepIDData, stepDir,
-				*environments, secrets,
+				append(*environments, additionalEnvironments...), secrets,
 				buildRunResults,
 			)
+
+			if testDirPath != "" {
+				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
+					log.Errorf("Failed to normalize test result dir, error: %s", err)
+				}
+			}
 
 			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
 				log.Errorf("Failed to clear output envstore, error: %s", err)
@@ -1065,4 +1101,27 @@ func runWorkflowWithConfiguration(
 	}
 
 	return buildRunResults, nil
+}
+
+func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultStepInfo) error {
+	// check if the test dir is empty
+	if empty, err := isDirEmpty(testDirPath); err != nil {
+		return fmt.Errorf("failed to check if dir empty: %s, error: %s", testDirPath, err)
+	} else if empty {
+		// if the test dir is empty then we need to remove the dir from the temp location to not to spam the system with empty dirs
+		if err := os.Remove(testDirPath); err != nil {
+			return fmt.Errorf("failed to remove dir: %s, error: %s", testDirPath, err)
+		}
+	} else {
+		// if the step put files into the test dir(so it is used) then we won't need to remove the test dir, moreover we need to add extra info from the step parameters
+		stepInfoFilePath := filepath.Join(testDirPath, "step-info.json")
+		stepResultInfoFile, err := os.Create(stepInfoFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to open file: %s, error: %s", stepInfoFilePath, err)
+		}
+		if err := json.NewEncoder(stepResultInfoFile).Encode(testResultStepInfo); err != nil {
+			return fmt.Errorf("failed to encode to JSON, error: %s", err)
+		}
+	}
+	return nil
 }

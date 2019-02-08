@@ -3,12 +3,16 @@ package cli
 import (
 	"encoding/base64"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )
@@ -514,4 +518,92 @@ workflows:
 
 	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
+}
+
+func TestAddTestMetadata(t *testing.T) {
+	t.Log("test empty dir")
+	{
+		testDirPath, err := pathutil.NormalizedOSTempDirPath("testing")
+		if err != nil {
+			t.Fatalf("failed to create testing dir, error: %s", err)
+		}
+
+		testResultStepInfo := models.TestResultStepInfo{}
+
+		exists, err := pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		if err := addTestMetadata(testDirPath, testResultStepInfo); err != nil {
+			t.Fatalf("failed to normalize test dir, error: %s", err)
+		}
+
+		exists, err = pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if exists {
+			t.Fatal("test dir should not exits")
+		}
+	}
+
+	t.Log("test not empty dir")
+	{
+		testDirPath, err := pathutil.NormalizedOSTempDirPath("testing")
+		if err != nil {
+			t.Fatalf("failed to create testing dir, error: %s", err)
+		}
+
+		testResultStepInfo := models.TestResultStepInfo{}
+
+		exists, err := pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		if err := fileutil.WriteStringToFile(filepath.Join(testDirPath, "test-file"), "test-content"); err != nil {
+			t.Fatalf("failed to write file, error: %s", err)
+		}
+
+		if err := addTestMetadata(testDirPath, testResultStepInfo); err != nil {
+			t.Fatalf("failed to normalize test dir, error: %s", err)
+		}
+
+		exists, err = pathutil.IsDirExists(testDirPath)
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test dir should exits")
+		}
+
+		exists, err = pathutil.IsPathExists(filepath.Join(testDirPath, "test-file"))
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("test file should exits")
+		}
+
+		exists, err = pathutil.IsPathExists(filepath.Join(testDirPath, "step-info.json"))
+		if err != nil {
+			t.Fatalf("failed to check if dir exists, error: %s", err)
+		}
+
+		if !exists {
+			t.Fatal("step-info.json file should exits")
+		}
+	}
 }
