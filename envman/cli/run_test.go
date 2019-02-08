@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -233,5 +234,35 @@ func TestCommandEnvs(t *testing.T) {
 			}
 		}
 		require.Equal(t, true, env3Found)
+	}
+
+	t.Log("unset OS envs test")
+	{
+		// given
+		key := "TEST_ENV"
+		val := "test"
+		if err := os.Setenv(key, val); err != nil {
+			require.Equal(t, nil, err, "test setup: error seting env (%s=%s)", key, val)
+		}
+		env := models.EnvironmentItemModel{
+			key: val,
+			models.OptionsKey: models.EnvironmentItemOptionsModel{
+				Unset: pointers.NewBoolPtr(true),
+			},
+		}
+		require.Equal(t, nil, env.FillMissingDefaults())
+		testEnvs := []models.EnvironmentItemModel{
+			env,
+		}
+
+		// when
+		envs, err := commandEnvs(testEnvs)
+		envFmt := "%s=%s" // note: if this format mismatches elements of `envs`, test can be a false positive!
+		unset := fmt.Sprintf(envFmt, key, val)
+
+		// then
+		require.Equal(t, nil, err)
+		require.NotContains(t, envs, unset, "failed to unset env (%s)", key)
+
 	}
 }

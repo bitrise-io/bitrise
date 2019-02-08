@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -31,6 +32,13 @@ func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
 		opts, err := env.GetOptions()
 		if err != nil {
 			return []string{}, err
+		}
+
+		if opts.Unset != nil && *opts.Unset {
+			if err := os.Unsetenv(key); err != nil {
+				return []string{}, fmt.Errorf("unset env (%s): %s", key, err)
+			}
+			continue
 		}
 
 		if *opts.SkipIfEmpty && value == "" {
