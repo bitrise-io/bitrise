@@ -15,6 +15,7 @@ type EnvironmentItemOptionsModel struct {
 	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
 	IsTemplate        *bool    `json:"is_template,omitempty" yaml:"is_template,omitempty"`
 	IsSensitive       *bool    `json:"is_sensitive,omitempty" yaml:"is_sensitive,omitempty"`
+	Unset             *bool    `json:"unset,omitempty" yaml:"unset,omitempty"`
 	//
 	Meta map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
