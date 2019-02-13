@@ -3,15 +3,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d972dce278dd6023fccf060a44cc51c33f0ce25f0522970c000c502766826cb8"
+  digest = "1:19a8384e6f91c04bf09219e0c11643b690e06f2433f042e8a0e27ade6305a26c"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  pruneopts = ""
-  revision = "eef6b768ab01a0598a0a6db97bad2a37d31df1d1"
+  pruneopts = "UT"
+  revision = "cdb2f3857cfba7388d28dfe38316b0a39e694215"
 
 [[projects]]
   branch = "master"
-  digest = "1:6083fc4e90fe661aad326c42fa16fb85774cb55711560d1208c82ff290534836"
+  digest = "1:e060948c7e3c507fda0740da7b39d1ce0af0c3a82745e8bcccf5b1bfada0553f"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "command",
@@ -21,85 +21,85 @@
     "pathutil",
     "pointers",
   ]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "2a09aab8380d7842750328aebd5671bcccea89c8"
 
 [[projects]]
   branch = "master"
-  digest = "1:6825c56bedbe125a302e7516f731fa841ce9db05f873dbc5745ee807a8c3d3a2"
+  digest = "1:f9749f95e34724e0bfb71a3bf0fa00e0e303d42f1de172bf134f013fa1e9dbb7"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
 
 [[projects]]
-  digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:6a874e3ddfb9db2b42bd8c85b6875407c702fa868eed20634ff489bc896ccfd3"
+  digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:381bcbeb112a51493d9d998bbba207a529c73dbb49b3fd789e48c63fac1f192c"
+  digest = "1:eeb0a54ba70c22815143c2c3f104cb4f9ebe2060ba49780bd4895a0179b7aee9"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
   ]
-  pruneopts = ""
-  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  pruneopts = "UT"
+  revision = "363ebb24d041ccea8068222281c2e963e997b9dc"
 
 [[projects]]
   branch = "master"
-  digest = "1:438d5957cf1c26ca62975dc4b1b59242acc9e527f39ed3f6cda57ee6d3653daf"
+  digest = "1:8286f653bf8b8fd155a0c9c3b9ee3dbc2a95b1b51f7a1dc11fe2c66018454a0c"
   name = "github.com/urfave/cli"
   packages = ["."]
-  pruneopts = ""
-  revision = "b67dcf995b6a7b7f14fad5fcb7cc5441b05e814b"
+  pruneopts = "UT"
+  revision = "693af58b4d51b8fcc7f9d89576da170765980581"
 
 [[projects]]
   branch = "master"
-  digest = "1:59b49c47c11a48f1054529207f65907c014ecf5f9a7c0d9c0f1616dec7b062ed"
+  digest = "1:fde12c4da6237363bf36b81b59aa36a43d28061167ec4acb0d41fc49464e28b9"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  pruneopts = ""
-  revision = "ff983b9c42bc9fbf91556e191cc8efb585c16908"
+  pruneopts = "UT"
+  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
 
 [[projects]]
   branch = "master"
-  digest = "1:30d295ca4b98f09df913be86c1ac48d1d321eb2a84543206a87704e5d25db19b"
+  digest = "1:8975c6b66d95adc1cd08820aba7ad6b60b165725a401c4177c0eaa866170bb10"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
-  pruneopts = ""
-  revision = "7fbe1cd0fcc20051e1fcb87fbabec4a1bacaaeba"
+  pruneopts = "UT"
+  revision = "3b5209105503162ded1863c307ac66fec31120dd"
 
 [[projects]]
   branch = "v2"
-  digest = "1:cedccf16b71e86db87a24f8d4c70b0a855872eb967cb906a66b95de56aefbd0d"
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  pruneopts = ""
+  pruneopts = "UT"
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
 
 [solve-meta]

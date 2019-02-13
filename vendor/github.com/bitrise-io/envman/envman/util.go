@@ -119,6 +119,9 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if opts.SkipIfEmpty != nil && *opts.SkipIfEmpty == models.DefaultSkipIfEmpty {
 		opts.SkipIfEmpty = nil
 	}
+	if opts.Unset != nil && *opts.Unset == models.DefaultUnset {
+		opts.Unset = nil
+	}
 
 	(*env)[models.OptionsKey] = opts
 	return nil
@@ -166,6 +169,9 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 			hasOptions = true
 		}
 		if opts.SkipIfEmpty != nil {
+			hasOptions = true
+		}
+		if opts.Unset != nil {
 			hasOptions = true
 		}
 

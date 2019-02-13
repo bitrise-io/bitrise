@@ -68,5 +68,14 @@ var (
 			SkipFlagParsing: true,
 			Action:          run,
 		},
+		{
+			Name:    "unset",
+			Aliases: []string{"rm"},
+			Usage:   "Enlist an environment variable to be unset (for example to clear OS inherited vars for the process).",
+			Action:  unset,
+			Flags: []cli.Flag{
+				flKey,
+			},
+		},
 	}
 )

@@ -21,3 +21,7 @@
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   branch = "v2"
+
+[prune]
+  go-tests = true
+  unused-packages = true
