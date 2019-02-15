@@ -154,6 +154,7 @@ Available `project_type_tags`:
 - react-native
 - cordova
 - ionic
+- flutter
 - fastlane
 - web
 
