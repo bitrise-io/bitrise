@@ -1,5 +1,47 @@
 # Step Development Guideline
 
+## Step dependencies
+
+In the context of Steps, dependency means an executable or a library needed to be executed or utilized by the step.
+
+A step dependency is installed by the `Bitrise CLI` if it is not available in the PATH environment variable. Unused dependencies increase the build time unnecessarily.
+
+Since steps can be performed in any environment where the Bitrise CLI can run, list every used dependency, even if you know that they are pre-installed on the Bitrise stacks.
+
+Step dependencies should not include [toolkit](https://github.com/bitrise-io/bitrise/blob/master/_docs/bitrise-yml-format-spec.md#step-properties) dependencies, as the Bitrise CLI will take care of installing those automatically.
+
+For example:
+
+_A step written in `Go` should not list `Go` as a dependency if the step uses the `Go Bitrise CLI toolkit`_
+
+Bitrise CLI can install step dependencies available in the Homebrew package manager:
+
+```
+deps:
+  brew:
+  - name: cmake
+```
+
+apt-get dependencies available in sources listed in `sources.list` file on the host machine:
+
+```
+deps:
+  apt_get:
+  - name: cmake
+```
+
+Steps can define dependencies which need to be available on the host machine but cannot be installed in an easy way (like using a single brew or apt-get command):
+
+```
+deps:
+  check_only:
+  - name: xcode
+```
+
+Currently, the only supported `check_only` dependency is `xcode`.
+
+Other dependencies need to be installed and checked while the step is running or using other steps.
+
 ## Never depend on Environment Variables in your Step
 
 You should expose every outside variable as an input of your step,
