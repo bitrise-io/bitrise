@@ -2,17 +2,19 @@
 
 ## Step dependencies
 
-In the context of Steps, dependency means an executable available in the PATH environment variable, which is executed by the step.
+In the context of Steps, dependency means an executable or a library needed to be executed or utilized by the step.
 
-`deps` should not include an executable needed to run the step.
+A step dependency is installed by the `Bitrise CLI` if it is not available in the PATH environment variable. Unused dependencies increase the build time unnecessarily.
 
-_For example `go` should not be listed as a step dependency in case of a step written in go, but needs to be listed if the step calls the `go` binary as the [Go test step](https://github.com/bitrise-steplib/steps-go-test/blob/master/main.go#L86) does._
+Since steps can be performed in any environment where the Bitrise CLI can run, list every used dependency, even if you know that they are pre-installed on the Bitrise stacks.
 
-A step dependency is installed by the `Bitrise CLI` if it is not available in the PATH environment variable. Unused dependency increases the build time unnecessarily, avoid listing a dependency which is not executed by the step.
+Step dependencies should not include [toolkit](https://github.com/bitrise-io/bitrise/blob/master/_docs/bitrise-yml-format-spec.md#step-properties) dependencies, as the Bitrise CLI will take care of installing those automatically.
 
-Since steps can be performed in any environment where Bitrise CLI can run, list every used dependency, even if you know that they are pre-installed on the Bitrise build virtual machines.
+For example:
 
-Bitrise CLI can install step dependencies available in Homebrew package manager:
+_A step written in `Go` should not list `Go` as a dependency if the step uses the `Go Bitrise CLI toolkit`_
+
+Bitrise CLI can install step dependencies available in the Homebrew package manager:
 
 ```
 deps:
@@ -28,7 +30,7 @@ deps:
   - name: cmake
 ```
 
-Steps can define dependencies which needs to be available on the host machine but can not be installed on easy way (like using a single brew or apt-get command):
+Steps can define dependencies which need to be available on the host machine but cannot be installed in an easy way (like using a single brew or apt-get command):
 
 ```
 deps:
@@ -36,9 +38,9 @@ deps:
   - name: xcode
 ```
 
-Currently the only one `check_only` dependency is `xcode`.
+Currently, the only supported `check_only` dependency is `xcode`.
 
-Other dependencies needs to be installed and check during the step run time or using other steps.
+Other dependencies need to be installed and checked while the step is running or using other steps.
 
 ## Never depend on Environment Variables in your Step
 
