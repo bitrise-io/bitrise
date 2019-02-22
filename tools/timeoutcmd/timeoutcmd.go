@@ -13,8 +13,7 @@ import (
 
 // Command controls the command run.
 type Command struct {
-	cmd *exec.Cmd
-
+	cmd           *exec.Cmd
 	timeout       time.Duration
 	timeoutTimer  *time.Timer
 	interruptChan chan os.Signal
@@ -53,11 +52,13 @@ func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 
 // Start starts the command run.
 func (c *Command) Start() error {
-	if c.timeout > 0 {
-		// Setpgid: true creates a new process group for cmd and its subprocesses
-		// this way we can kill the whole process group
-		c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	}
+	// Setpgid: true creates a new process group for cmd and its subprocesses
+	// this way cmd will not belong to its parent process group,
+	// cmd will not be killed when you hit ^C in your terminal
+	// to fix this, we listen and handle Interrupt signal manually
+	c.interruptChan = make(chan os.Signal, 1)
+	signal.Notify(c.interruptChan, os.Interrupt)
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if err := c.cmd.Start(); err != nil {
 		return err
@@ -66,53 +67,48 @@ func (c *Command) Start() error {
 	if c.timeout > 0 {
 		// terminate the process after the given timeout
 		c.timeoutTimer = time.AfterFunc(c.timeout, func() {
-			if err := c.Stop(); err != nil {
+			if err := c.Stop(syscall.SIGTERM); err != nil {
 				log.Warnf("Failed to kill the process, error: %s", err)
 			}
 		})
-
-		// Setpgid: true creates a new process group for cmd and its subprocesses
-		// this way cmd will not belong to its parent process group,
-		// cmd will not be killed when you hit ^C in your terminal
-		// to fix this, we listen and handle Interrupt signal manually
-		c.interruptChan = make(chan os.Signal, 1)
-		signal.Notify(c.interruptChan, os.Interrupt)
-		go func() {
-			<-c.interruptChan
-			signal.Stop(c.interruptChan)
-			if err := c.Stop(); err != nil {
-				log.Warnf("Failed to kill the process, error: %s", err)
-			}
-		}()
 	}
 
-	return c.cmd.Wait()
+	var interrupted bool
+	go func() {
+		<-c.interruptChan
+		interrupted = true
+		if err := c.Stop(syscall.SIGINT); err != nil {
+			log.Warnf("Failed to kill the process, error: %s", err)
+		}
+	}()
+
+	if err := c.cmd.Wait(); err != nil {
+		if interrupted {
+			os.Exit(ExitStatus(err))
+		}
+		return err
+	}
+	return nil
 }
 
 // Stop terminates the command run.
-func (c *Command) Stop() error {
+func (c *Command) Stop(sig syscall.Signal) error {
 	if c.cmd.Process == nil {
 		// not yet started
 		return nil
 	}
 
-	pid := c.cmd.Process.Pid
 	if c.timeout > 0 {
-		// stop listening on os.Interrupt signal
-		signal.Stop(c.interruptChan)
 		// stop the timeout timer
 		c.timeoutTimer.Stop()
-
-		// use the negative process group id, to kill the whole process group
-		pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
-		if err != nil {
-			return err
-		}
-		pid = -1 * pgid
 	}
 
-	// kill the process
-	return syscall.Kill(pid, syscall.SIGKILL)
+	pgid, err := syscall.Getpgid(c.cmd.Process.Pid)
+	if err != nil {
+		return err
+	}
+
+	return syscall.Kill(-pgid, sig)
 }
 
 // ExitStatus returns the error's exit status
