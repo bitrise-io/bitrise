@@ -1,6 +1,7 @@
 package timeoutcmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -13,10 +14,8 @@ import (
 
 // Command controls the command run.
 type Command struct {
-	cmd           *exec.Cmd
-	timeout       time.Duration
-	timeoutTimer  *time.Timer
-	interruptChan chan os.Signal
+	cmd     *exec.Cmd
+	timeout time.Duration
 }
 
 // New creates a command model.
@@ -49,70 +48,46 @@ func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 
 // Start starts the command run.
 func (c *Command) Start() error {
-	// Setpgid: true creates a new process group for cmd and its subprocesses
-	// this way cmd will not belong to its parent process group,
-	// cmd will not be killed when you hit ^C in your terminal
-	// to fix this, we listen and handle Interrupt signal manually
-	c.interruptChan = make(chan os.Signal)
-	signal.Notify(c.interruptChan, os.Interrupt, os.Kill)
-	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	// setting up notification for signals so we can have
+	// separated logic to end the process
+	interruptChan := make(chan os.Signal)
+	signal.Notify(interruptChan, os.Interrupt, os.Kill)
+	var interrupted bool
+	go func() {
+		<-interruptChan
+		interrupted = true
+	}()
 
+	// start the process
 	if err := c.cmd.Start(); err != nil {
 		return err
 	}
 
-	if c.timeout > 0 {
-		// terminate the process after the given timeout
-		c.timeoutTimer = time.AfterFunc(c.timeout, func() {
-			if err := c.Stop(os.Kill); err != nil {
-				log.Warnf("Failed to kill process, error: %s", err)
-			}
-		})
-	}
-
-	var interrupted bool
-
+	// Wait for the process to finish
+	done := make(chan error, 1)
 	go func() {
-		for {
-			sig := <-c.interruptChan
-			interrupted = true
-
-			if err := c.Stop(sig); err != nil {
-				log.Warnf("Failed to stop process, error: %s", err)
-			}
-		}
+		done <- c.cmd.Wait()
 	}()
 
-	if err := c.cmd.Wait(); err != nil {
+	// or kill it after a timeout (whichever happens first)
+	var timeoutChan <-chan time.Time
+	if c.timeout > 0 {
+		timeoutChan = time.After(c.timeout)
+	}
+
+	// exiting the method for the two supported cases: finish/error or timeout
+	select {
+	case <-timeoutChan:
+		if err := c.cmd.Process.Kill(); err != nil {
+			log.Warnf("Failed to kill process: %s", err)
+		}
+		return fmt.Errorf("timed out")
+	case err := <-done:
 		if interrupted {
 			os.Exit(ExitStatus(err))
 		}
 		return err
 	}
-	return nil
-}
-
-// Stop terminates the command run.
-func (c *Command) Stop(sig os.Signal) error {
-	if c.cmd.Process == nil {
-		// not yet started or there was an error starting the command
-		return nil
-	}
-
-	if c.timeout > 0 {
-		// stop the timeout timer if it was set
-		c.timeoutTimer.Stop()
-	}
-
-	signum := syscall.SIGKILL
-	if sig == os.Interrupt {
-		signum = syscall.SIGINT
-	}
-
-	// all child processes will be included in the current process' group and
-	// this group ID will be the original PID of the child because of Setpgid
-	// - is to kill the whole group not the only children
-	return syscall.Kill(-c.cmd.Process.Pid, signum)
 }
 
 // ExitStatus returns the error's exit status
