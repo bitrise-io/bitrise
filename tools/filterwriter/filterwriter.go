@@ -28,11 +28,10 @@ type Writer struct {
 
 // New ...
 func New(secrets []string, target io.Writer) *Writer {
-	writer := &Writer{
+	return &Writer{
 		writer:  target,
 		secrets: secretsByteList(secrets),
 	}
-	return writer
 }
 
 // Write implements io.Writer interface.
