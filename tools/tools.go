@@ -370,6 +370,15 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	cmd.AppendEnv("PWD=" + workDirPth)
 
 	err := cmd.Start()
+
+	// flush the writer anyway if the process is finished
+	if configs.IsSecretFiltering {
+		_, ferr := (outWriter.(*filterwriter.Writer)).Flush()
+		if ferr != nil {
+			return 1, ferr
+		}
+	}
+
 	return timeoutcmd.ExitStatus(err), err
 }
 
