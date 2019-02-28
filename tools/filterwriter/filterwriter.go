@@ -23,6 +23,7 @@ type Writer struct {
 	chunk []byte
 	store [][]byte
 	mux   sync.Mutex
+	timer *time.Timer
 }
 
 // New ...
@@ -52,7 +53,11 @@ func (w *Writer) Write(p []byte) (int, error) {
 	w.chunk = chunk
 	if len(chunk) > 0 {
 		// we have remaining bytes, do not swallow them
-		time.AfterFunc(10*time.Second, func() {
+		if w.timer != nil {
+			w.timer.Stop()
+			w.timer.C = nil
+		}
+		w.timer = time.AfterFunc(100*time.Millisecond, func() {
 			if _, err := w.Flush(); err != nil {
 				log.Errorf("Failed to print last lines: %s", err)
 			}
