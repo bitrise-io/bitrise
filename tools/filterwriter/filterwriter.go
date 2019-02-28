@@ -20,17 +20,19 @@ type Writer struct {
 	writer  io.Writer
 	secrets [][][]byte
 
-	chunk []byte
-	store [][]byte
-	mux   sync.Mutex
+	chunk     []byte
+	store     [][]byte
+	mux       sync.Mutex
+	lastTimer *time.Timer
 }
 
 // New ...
 func New(secrets []string, target io.Writer) *Writer {
-	return &Writer{
+	writer := &Writer{
 		writer:  target,
 		secrets: secretsByteList(secrets),
 	}
+	return writer
 }
 
 // Write implements io.Writer interface.
@@ -52,7 +54,12 @@ func (w *Writer) Write(p []byte) (int, error) {
 	w.chunk = chunk
 	if len(chunk) > 0 {
 		// we have remaining bytes, do not swallow them
-		time.AfterFunc(10*time.Second, func() {
+		if w.lastTimer != nil {
+			w.lastTimer.Stop()
+			w.lastTimer.C = nil
+			w.lastTimer = nil
+		}
+		w.lastTimer = time.AfterFunc(100*time.Millisecond, func() {
 			if _, err := w.Flush(); err != nil {
 				log.Errorf("Failed to print last lines: %s", err)
 			}
