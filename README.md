@@ -94,16 +94,3 @@ and/or with `docker-compose`:
 ```
 docker-compose build && docker-compose run --rm app go test ./...
 ```
-
-### Release a new version
-
-- merge every code changes to the master branch
-  - release a new versions of bitrise-tools (stepman, envman) and update the `./bitrise/setup.go -> minEnvmanVersion, minStepmanVersion` to the new versions
-  - release a new versions of default plugins if there are changes and update the `./bitrise/setup.go -> PluginDependencyMap` with the new versions
-  - update go dependencies (`bitrise run dep-update`)
-  - do not forget to merge every version related file changes:
-    - update the version number (in `./version/version.go` file)
-    - update version tests (in `./_tests/integration/version_test.go` file)
-- push the new version tag to the master branch
-- download and test the generated bitrise binaries (`version --full` and plugins)
-- update the new version's release note on [github](https://github.com/bitrise-io/bitrise/releases/new)
