@@ -22,14 +22,3 @@ Check the latest release for instructions at: [https://github.com/bitrise-io/ste
 ## Share your own Step
 
 Call `stepman share` and follow the guide it prints.
-
-### Release a new version
-
-- merge every code changes to the master branch
-
-- do not forget to merge every version related file changes:
-
-  - update the version number (in version.go file)
-  - update version tests (in _tests/integration/version_test.go file)
-
-- push the new version tag to the master branch
