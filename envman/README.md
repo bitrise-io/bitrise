@@ -187,10 +187,3 @@ echo "some value" | envman add --key SOME_KEY
 ```
 envman add --key SOME_KEY --valuefile /path/to/file/which/contains/the/value --expand false
 ```
-
-### Release a new version
-
-- merge every code changes to the master branch
-- do not forget to merge every version related file changes:
-  - update the version number (in version.go file)
-- push the new version tag to the master branch
