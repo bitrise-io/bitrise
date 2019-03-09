@@ -186,12 +186,12 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 								opts, err := input.GetOptions()
 								require.Equal(t, nil, err)
 
-								// script content should keep is_expand: true, becouse it's diffenet from spec default
+								// script content should keep is_expand: true, because it's diffenet from spec default
 								require.Equal(t, true, *opts.IsExpand)
 							}
 						}
 					} else if stepID == "timestamp" {
-						// timestamp title should be nil, becouse it's the same as spec value
+						// timestamp title should be nil, because it's the same as spec value
 						require.Equal(t, (*string)(nil), step.Title)
 
 						for _, output := range step.Outputs {
