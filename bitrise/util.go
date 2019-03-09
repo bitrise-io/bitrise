@@ -431,7 +431,7 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			return err
 		}
 	} else {
-		return errors.New("Failed to fill step ouputs: unkown SteplibSource")
+		return errors.New("Failed to fill step ouputs: unknown SteplibSource")
 	}
 
 	// Fill outputs
