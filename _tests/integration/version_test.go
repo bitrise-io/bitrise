@@ -23,7 +23,7 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
-		expectedVersionOut := fmt.Sprintf(`version: 1.27.1
+		expectedVersionOut := fmt.Sprintf(`version: 1.28.0
 format version: 7
 os: %s
 go: %s
