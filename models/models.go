@@ -105,6 +105,7 @@ type StepIDData struct {
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
+	ProjectType          string                `json:"project_type" yaml:"project_type"`
 	StartTime            time.Time             `json:"start_time" yaml:"start_time"`
 	StepmanUpdates       map[string]int        `json:"stepman_updates" yaml:"stepman_updates"`
 	SuccessSteps         []StepRunResultsModel `json:"success_steps" yaml:"success_steps"`
@@ -115,12 +116,13 @@ type BuildRunResultsModel struct {
 
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
-	StepInfo stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
-	Status   int                         `json:"status" yaml:"status"`
-	Idx      int                         `json:"idx" yaml:"idx"`
-	RunTime  time.Duration               `json:"run_time" yaml:"run_time"`
-	ErrorStr string                      `json:"error_str" yaml:"error_str"`
-	ExitCode int                         `json:"exit_code" yaml:"exit_code"`
+	StepInfo  stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
+	Status    int                         `json:"status" yaml:"status"`
+	Idx       int                         `json:"idx" yaml:"idx"`
+	RunTime   time.Duration               `json:"run_time" yaml:"run_time"`
+	StartTime time.Time                   `json:"start_time" yaml:"start_time"`
+	ErrorStr  string                      `json:"error_str" yaml:"error_str"`
+	ExitCode  int                         `json:"exit_code" yaml:"exit_code"`
 }
 
 // TestResultStepInfo ...
