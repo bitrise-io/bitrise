@@ -72,7 +72,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		}
 		break
 	default:
-		log.Errorf("Unkown result code")
+		log.Errorf("Unknown result code")
 		return ""
 	}
 
@@ -231,7 +231,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 		coloringFunc = colorstring.Blue
 		break
 	default:
-		log.Errorf("Unkown result code")
+		log.Errorf("Unknown result code")
 		return ""
 	}
 

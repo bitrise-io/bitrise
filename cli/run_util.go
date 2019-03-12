@@ -600,7 +600,7 @@ func activateAndRunSteps(
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 			break
 		default:
-			log.Error("Unkown result code")
+			log.Error("Unknown result code")
 			return
 		}
 
