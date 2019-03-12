@@ -552,12 +552,13 @@ func activateAndRunSteps(
 		}
 
 		stepResults := models.StepRunResultsModel{
-			StepInfo: stepInfoCopy,
-			Status:   resultCode,
-			Idx:      buildRunResults.ResultsCount(),
-			RunTime:  time.Now().Sub(stepStartTime),
-			ErrorStr: errStr,
-			ExitCode: exitCode,
+			StepInfo:  stepInfoCopy,
+			Status:    resultCode,
+			Idx:       buildRunResults.ResultsCount(),
+			RunTime:   time.Now().Sub(stepStartTime),
+			ErrorStr:  errStr,
+			ExitCode:  exitCode,
+			StartTime: stepStartTime,
 		}
 
 		isExitStatusError := true
@@ -1081,6 +1082,7 @@ func runWorkflowWithConfiguration(
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},
+		ProjectType:    bitriseConfig.ProjectType,
 	}
 
 	buildRunResults, err = activateAndRunWorkflow(
