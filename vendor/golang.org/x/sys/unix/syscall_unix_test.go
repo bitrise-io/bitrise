@@ -98,6 +98,27 @@ func TestErrnoSignalName(t *testing.T) {
 	}
 }
 
+func TestSignalNum(t *testing.T) {
+	testSignals := []struct {
+		name string
+		want syscall.Signal
+	}{
+		{"SIGHUP", syscall.SIGHUP},
+		{"SIGPIPE", syscall.SIGPIPE},
+		{"SIGSEGV", syscall.SIGSEGV},
+		{"NONEXISTS", 0},
+	}
+	for _, ts := range testSignals {
+		t.Run(fmt.Sprintf("%s/%d", ts.name, ts.want), func(t *testing.T) {
+			got := unix.SignalNum(ts.name)
+			if got != ts.want {
+				t.Errorf("SignalNum(%s) returned %d, want %d", ts.name, got, ts.want)
+			}
+		})
+
+	}
+}
+
 func TestFcntlInt(t *testing.T) {
 	t.Parallel()
 	file, err := ioutil.TempFile("", "TestFnctlInt")
@@ -396,14 +417,24 @@ func TestDup(t *testing.T) {
 		t.Fatalf("Dup: %v", err)
 	}
 
-	err = unix.Dup2(newFd, newFd+1)
+	// Create and reserve a file descriptor.
+	// Dup2 automatically closes it before reusing it.
+	nullFile, err := os.Open("/dev/null")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dupFd := int(file.Fd())
+	err = unix.Dup2(newFd, dupFd)
 	if err != nil {
 		t.Fatalf("Dup2: %v", err)
 	}
+	// Keep the dummy file open long enough to not be closed in
+	// its finalizer.
+	runtime.KeepAlive(nullFile)
 
 	b1 := []byte("Test123")
 	b2 := make([]byte, 7)
-	_, err = unix.Write(newFd+1, b1)
+	_, err = unix.Write(dupFd, b1)
 	if err != nil {
 		t.Fatalf("Write to dup2 fd failed: %v", err)
 	}
@@ -426,6 +457,7 @@ func TestPoll(t *testing.T) {
 		t.Skip("mkfifo syscall is not available on android and iOS, skipping test")
 	}
 
+	defer chtmpdir(t)()
 	f, cleanup := mktmpfifo(t)
 	defer cleanup()
 
