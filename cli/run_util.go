@@ -886,8 +886,8 @@ func activateAndRunSteps(
 				"BITRISE_STEP_SOURCE_DIR": stepDir,
 			})
 
-			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
-			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
+			// ensure a new testDirPath and if created successfuly then attach it to the step process by and envtestDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestResultDirEnvKey), "test_result")
+			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestDeployDirEnvKey), "test_result")
 			if err != nil {
 				log.Errorf("Failed to create test result dir, error: %s", err)
 			}
