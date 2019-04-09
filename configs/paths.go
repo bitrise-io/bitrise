@@ -34,9 +34,9 @@ const (
 	BitriseSourceDirEnvKey = "BITRISE_SOURCE_DIR"
 	// BitriseDeployDirEnvKey ...
 	BitriseDeployDirEnvKey = "BITRISE_DEPLOY_DIR"
-	// BitriseTestDeployDirEnvKey contains a path from Deploy to Bitrise.io step will read each test results (all subdirs / from all steps)
+	// BitriseTestDeployDirEnvKey is the root directory of test reports
 	BitriseTestDeployDirEnvKey = "BITRISE_TEST_DEPLOY_DIR"
-	// BitrisePerStepTestResultDirEnvKey contains a path where test results from a single step can be copied over and will be deployed
+	// BitrisePerStepTestResultDirEnvKey is a unique subdirectory in BITRISE_TEST_DEPLOY_DIR for each step run, steps should place test reports and attachments into this directory
 	BitrisePerStepTestResultDirEnvKey = "BITRISE_TEST_RESULT_DIR"
 	// BitriseCacheDirEnvKey ...
 	BitriseCacheDirEnvKey = "BITRISE_CACHE_DIR"
