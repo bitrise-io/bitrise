@@ -895,7 +895,7 @@ func activateAndRunSteps(
 			if testDirPath != "" {
 				// managed to create the test dir, set the env for it for the next step run
 				additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
-					configs.BitriseTestResultDirEnvKey: testDirPath,
+					configs.BitrisePerStepTestResultDirEnvKey: testDirPath,
 				})
 			}
 

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_DeployDirStructure(t *testing.T) {
@@ -14,6 +13,8 @@ func Test_DeployDirStructure(t *testing.T) {
 
 		cmd := command.New(binPath(), "run", "test-deploy-dir-structure-check", "--config", configPth)
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
+		if err != nil {
+			t.Fatal(err, out)
+		}
 	}
 }
