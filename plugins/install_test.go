@@ -222,7 +222,7 @@ func TestDownloadPluginBin(t *testing.T) {
 	}
 }
 
-func Test_compareSourceURIs(t *testing.T) {
+func Test_isSourceURIChanged(t *testing.T) {
 	for _, tt := range []struct {
 		installed string
 		new       string
@@ -236,8 +236,8 @@ func Test_compareSourceURIs(t *testing.T) {
 		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: true},
 	} {
 		t.Run("", func(t *testing.T) {
-			if got := compareSourceURIs(tt.installed, tt.new); got != tt.want {
-				t.Errorf("compareSourceURIs() = %v, want %v", got, tt.want)
+			if got := isSourceURIChanged(tt.installed, tt.new); got != tt.want {
+				t.Errorf("isSourceURIChanged() = %v, want %v", got, tt.want)
 			}
 		})
 	}

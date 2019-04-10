@@ -97,9 +97,11 @@ func cleanupPlugin(name string) error {
 	return DeletePluginRoute(name)
 }
 
-func compareSourceURIs(installed, new string) bool {
-	return installed != new &&
-		strings.Replace(installed, "/bitrise-core/", "/bitrise-io/", 1) != new
+// plugins from bitrise-core to bitrise-io GitHub org have been moved
+// so it is better to not to detect this as a different plugin source
+func isSourceURIChanged(installed, new string) bool {
+	return strings.Replace(installed, "/bitrise-core/", "/bitrise-io/", 1) != new &&
+		installed != new
 }
 
 func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) {
@@ -124,7 +126,7 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 	if route, found, err := ReadPluginRoute(newPlugin.Name); err != nil {
 		return Plugin{}, fmt.Errorf("failed to check if plugin already installed, error: %s", err)
 	} else if found {
-		if compareSourceURIs(route.Source, pluginSourceURI) {
+		if isSourceURIChanged(route.Source, pluginSourceURI) {
 			return Plugin{}, fmt.Errorf("plugin already installed with name (%s) from different source (%s)", route.Name, route.Source)
 		}
 
