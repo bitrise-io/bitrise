@@ -14,7 +14,7 @@ func Test_VersionOutput(t *testing.T) {
 	{
 		out, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err, out)
-		require.Equal(t, "0.11.2", out)
+		require.Equal(t, "0.11.3", out)
 	}
 
 	t.Log("Version --full")
@@ -23,7 +23,7 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err, out)
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
-		expectedVersionOut := fmt.Sprintf(`version: 0.11.2
+		expectedVersionOut := fmt.Sprintf(`version: 0.11.3
 os: %s
 go: %s
 build_number: 
