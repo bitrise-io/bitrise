@@ -13,6 +13,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
+	"github.com/bitrise-io/go-utils/sliceutil"
 	ver "github.com/hashicorp/go-version"
 )
 
@@ -100,8 +101,17 @@ func cleanupPlugin(name string) error {
 // plugins from bitrise-core to bitrise-io GitHub org have been moved
 // so it is better to not to detect this as a different plugin source
 func isSourceURIChanged(installed, new string) bool {
-	return strings.Replace(installed, "/bitrise-core/", "/bitrise-io/", 1) != new &&
-		installed != new
+	if urlsForOrg := func(org string) []string {
+		return []string{
+			"https://github.com/" + org + "/bitrise-plugins-init.git",
+			"https://github.com/" + org + "/bitrise-plugins-step.git",
+			"https://github.com/" + org + "/bitrise-plugins-analytics.git",
+		}
+	}; (installed == new) || (sliceutil.IsStringInSlice(installed, urlsForOrg("bitrise-core")) &&
+		sliceutil.IsStringInSlice(new, urlsForOrg("bitrise-io"))) {
+		return false
+	}
+	return true
 }
 
 func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) {

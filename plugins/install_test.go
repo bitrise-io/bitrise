@@ -237,6 +237,7 @@ func Test_isSourceURIChanged(t *testing.T) {
 	} {
 		t.Run("", func(t *testing.T) {
 			if got := isSourceURIChanged(tt.installed, tt.new); got != tt.want {
+				t.Log(tt.installed, tt.new)
 				t.Errorf("isSourceURIChanged() = %v, want %v", got, tt.want)
 			}
 		})
