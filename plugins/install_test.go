@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const examplePluginGitURL = "https://github.com/bitrise-core/bitrise-plugins-example.git"
-const analyticsPluginBinURL = "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
+const examplePluginGitURL = "https://github.com/bitrise-io/bitrise-plugins-example.git"
+const analyticsPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
 
 func TestIsLocalURL(t *testing.T) {
 	t.Log("local url - absolute")
@@ -219,5 +219,27 @@ func TestDownloadPluginBin(t *testing.T) {
 		exist, err = pathutil.IsPathExists(destinationPth)
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
+	}
+}
+
+func Test_isSourceURIChanged(t *testing.T) {
+	for _, tt := range []struct {
+		installed string
+		new       string
+		want      bool
+	}{
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: false},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: false},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/myorg/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-team/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: true},
+	} {
+		t.Run("", func(t *testing.T) {
+			if got := isSourceURIChanged(tt.installed, tt.new); got != tt.want {
+				t.Log(tt.installed, tt.new)
+				t.Errorf("isSourceURIChanged() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

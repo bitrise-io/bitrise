@@ -19,7 +19,7 @@
   branch = "master"
 
 [[constraint]]
-  name = "github.com/bitrise-tools/gows"
+  name = "github.com/bitrise-io/gows"
   branch = "master"
 
 [[constraint]]
