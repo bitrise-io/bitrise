@@ -221,3 +221,24 @@ func TestDownloadPluginBin(t *testing.T) {
 		require.Equal(t, true, exist)
 	}
 }
+
+func Test_compareSourceURIs(t *testing.T) {
+	for _, tt := range []struct {
+		installed string
+		new       string
+		want      bool
+	}{
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: false},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: false},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/myorg/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-team/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: true},
+	} {
+		t.Run("", func(t *testing.T) {
+			if got := compareSourceURIs(tt.installed, tt.new); got != tt.want {
+				t.Errorf("compareSourceURIs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -97,6 +97,11 @@ func cleanupPlugin(name string) error {
 	return DeletePluginRoute(name)
 }
 
+func compareSourceURIs(installed, new string) bool {
+	return installed != new &&
+		strings.Replace(installed, "/bitrise-core/", "/bitrise-io/", 1) != new
+}
+
 func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) {
 	// Parse & validate plugin
 	tmpPluginYMLPath := filepath.Join(pluginLocalPth, pluginDefinitionFileName)
@@ -119,7 +124,7 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 	if route, found, err := ReadPluginRoute(newPlugin.Name); err != nil {
 		return Plugin{}, fmt.Errorf("failed to check if plugin already installed, error: %s", err)
 	} else if found {
-		if route.Source != pluginSourceURI {
+		if compareSourceURIs(route.Source, pluginSourceURI) {
 			return Plugin{}, fmt.Errorf("plugin already installed with name (%s) from different source (%s)", route.Name, route.Source)
 		}
 
