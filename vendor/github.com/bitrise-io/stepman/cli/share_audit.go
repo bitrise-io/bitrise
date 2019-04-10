@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
+	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/bitrise-tools/colorstring"
 	"github.com/urfave/cli"
 )
 

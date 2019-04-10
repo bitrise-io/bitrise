@@ -20,8 +20,8 @@ import (
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
+	"github.com/bitrise-io/gows/gows"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-tools/gows/gows"
 )
 
 const (

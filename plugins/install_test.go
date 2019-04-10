@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const examplePluginGitURL = "https://github.com/bitrise-core/bitrise-plugins-example.git"
-const analyticsPluginBinURL = "https://github.com/bitrise-core/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
+const examplePluginGitURL = "https://github.com/bitrise-io/bitrise-plugins-example.git"
+const analyticsPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
 
 func TestIsLocalURL(t *testing.T) {
 	t.Log("local url - absolute")
