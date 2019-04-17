@@ -33,6 +33,7 @@
     "pointers",
     "progress",
     "retry",
+    "sliceutil",
     "stringutil",
     "versions",
   ]
@@ -57,11 +58,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bd0399b1f8cdc308663bc471e7f12e9678b0a775537b43d25a9ea2eb70d1de51"
+  digest = "1:02544032f2c2b6525e3c3a6a7867c69b2f3d66372c6445e9336427031f88eb62"
   name = "github.com/bitrise-io/stepman"
   packages = ["models"]
   pruneopts = ""
-  revision = "9b6ace540ad679bf57868e3429ff4df4e733bd69"
+  revision = "8cd3398fab6c211eef53502b65ec7ad5510f556a"
 
 [[projects]]
   digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
@@ -124,22 +125,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:79c9390c9986545f84bdf2600e380c5938c7b27067290514e964367cd4102476"
+  digest = "1:958ad9932fc5ac9fb5c794f97580ed123ddfed1d965e1de0f98e2a590d6e9e3e"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "38d8ce5564a5b71b2e3a00553993f1b9a7ae852f"
+  revision = "88737f569e3a9c7ab309cdc09a07fe7fc87233c3"
 
 [[projects]]
   branch = "master"
-  digest = "1:55c52474bb389797ed66db92966e2b9ddc98a25d9d05c8aa55787fe03d4d4084"
+  digest = "1:de13f0afd479cb8b33fd54e449a5d455d186c25a8488a94dbc49f854b7348659"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "4b34438f7a67ee5f45cc6132e2bad873a20324e9"
+  revision = "12500544f89f9420afe9529ba8940bf72d294972"
 
 [[projects]]
   branch = "v2"
@@ -165,6 +166,7 @@
     "github.com/bitrise-io/go-utils/pointers",
     "github.com/bitrise-io/go-utils/progress",
     "github.com/bitrise-io/go-utils/retry",
+    "github.com/bitrise-io/go-utils/sliceutil",
     "github.com/bitrise-io/go-utils/stringutil",
     "github.com/bitrise-io/go-utils/versions",
     "github.com/bitrise-io/goinp/goinp",
