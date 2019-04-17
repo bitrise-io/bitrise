@@ -98,8 +98,9 @@ type StepModel struct {
 	//  steps will run which are marked with IsAlwaysRun.
 	IsSkippable *bool `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
 	// RunIf : only run the step if the template example evaluates to true
-	RunIf   *string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Timeout *int    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	RunIf   *string                `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Timeout *int                   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Meta    map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
 	//
 	Inputs  []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`

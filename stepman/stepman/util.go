@@ -51,6 +51,10 @@ func ParseStepDefinition(pth string, validate bool) (models.StepModel, error) {
 		return models.StepModel{}, err
 	}
 
+	return parseStepModel(bytes, validate)
+}
+
+func parseStepModel(bytes []byte, validate bool) (models.StepModel, error) {
 	var stepModel models.StepModel
 	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
 		return models.StepModel{}, err
