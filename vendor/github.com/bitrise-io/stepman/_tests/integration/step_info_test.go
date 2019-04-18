@@ -1,9 +1,8 @@
 package integration
 
 import (
-	"testing"
-
 	"strings"
+	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
@@ -158,7 +157,7 @@ inputs:
       is_required: true
       is_expand: true`
 
-const localTestStepDefinitionJSON = `{"library":"path","id":"./test-step","info":{},"step":{"title":"STEP TEMPLATE","summary":"A short summary of the step. Don't make it too long ;)","description":"This is a Step template.\nContains everything what's required for a valid Stepman managed step.\n\nA Step's description (and generally any description property)\ncan be a [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted text.\n\nTo create your own Step:\n\n1. Create a new repository on GitHub\n2. Copy the files from this folder into your repository\n3. That's all, you can use it on your own machine\n4. Once you're happy with it you can share it with others.","website":"https://github.com/...","source_code_url":"https://github.com/...","support_url":"https://github.com/.../issues","host_os_tags":["osx-10.10"],"project_type_tags":["ios","android","xamarin"],"type_tags":["script"],"deps":{"brew":[{"name":"git"},{"name":"wget"}],"apt_get":[{"name":"git"},{"name":"wget"}]},"is_requires_admin_user":true,"is_always_run":false,"is_skippable":false,"run_if":"","timeout":0,"inputs":[{"example_step_input":"Default Value - you can leave this empty if you want to","opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Input","description":"Description of this input.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":true,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}],"outputs":[{"EXAMPLE_STEP_OUTPUT":null,"opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Output","description":"Description of this output.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":false,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}]},"definition_pth":"test-step/step.yml"}`
+const localTestStepDefinitionJSON = `{"library":"path","id":"./test-step","info":{},"step":{"title":"STEP TEMPLATE","summary":"A short summary of the step. Don't make it too long ;)","description":"This is a Step template.\nContains everything what's required for a valid Stepman managed step.\n\nA Step's description (and generally any description property)\ncan be a [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted text.\n\nTo create your own Step:\n\n1. Create a new repository on GitHub\n2. Copy the files from this folder into your repository\n3. That's all, you can use it on your own machine\n4. Once you're happy with it you can share it with others.","website":"https://github.com/...","source_code_url":"https://github.com/...","support_url":"https://github.com/.../issues","host_os_tags":["osx-10.10"],"project_type_tags":["ios","android","xamarin"],"type_tags":["script"],"deps":{"brew":[{"name":"git"},{"name":"wget"}],"apt_get":[{"name":"git"},{"name":"wget"}]},"is_requires_admin_user":true,"is_always_run":false,"is_skippable":false,"run_if":"","timeout":0,"meta":{"bitrise.io.addons.optional":[{"addon_id":"addons-testing"}],"bitrise.io.addons.required":[{"addon_id":"addons-testing","addon_options":{"required":true,"title":"Testing Addon"},"addon_params":"--token TOKEN"},{"addon_id":"addons-ship","addon_options":{"required":true,"title":"Ship Addon"},"addon_params":"--token TOKEN"}]},"inputs":[{"example_step_input":"Default Value - you can leave this empty if you want to","opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Input","description":"Description of this input.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":true,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}],"outputs":[{"EXAMPLE_STEP_OUTPUT":null,"opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Output","description":"Description of this output.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":false,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}]},"definition_pth":"test-step/step.yml"}`
 
 const localTestStepDefinition = "\x1b[34;1m" + `Library:` + "\x1b[0m" + ` path
 ` + "\x1b[34;1m" + `ID:` + "\x1b[0m" + ` ./test-step
@@ -195,6 +194,19 @@ type_tags:
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
+meta:
+  bitrise.io.addons.required: 
+    - addon_id: "addons-testing"
+      addon_params: "--token TOKEN"
+      addon_options: 
+        required: true
+        title: "Testing Addon"
+    - addon_id: "addons-ship"
+      addon_params: "--token TOKEN"
+      addon_options: 
+        required: true
+        title: "Ship Addon"
+  bitrise.io.addons.optional: [{"addon_id":"addons-testing"}]
 deps:
   brew:
   - name: git

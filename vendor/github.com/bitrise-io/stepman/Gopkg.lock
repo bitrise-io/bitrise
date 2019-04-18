@@ -23,7 +23,7 @@
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = "UT"
-  revision = "c6683c3e097216a80eb72092bf857c8a9591195e"
+  revision = "dce389aa0508c35e26577e66970433e9e6750c14"
 
 [[projects]]
   branch = "master"
@@ -64,6 +64,19 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:2e3c336fc7fde5c984d2841455a658a6d626450b1754a854b3b32e7a8f49a07a"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
+  pruneopts = "UT"
+  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
+  version = "v0.2.0"
+
+[[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
@@ -100,11 +113,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cf353a5a9ffb2d6f850e9c773e25388a425a70c270546480427ed069e87b136a"
+  digest = "1:28d862f4f9bf2d1976d1d320481bff661b7565eb876d4df2a981f79e7f40e4cd"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "4b34438f7a67ee5f45cc6132e2bad873a20324e9"
+  revision = "12500544f89f9420afe9529ba8940bf72d294972"
 
 [[projects]]
   branch = "v2"
@@ -133,6 +146,7 @@
     "github.com/bitrise-io/go-utils/urlutil",
     "github.com/bitrise-io/go-utils/versions",
     "github.com/bitrise-io/goinp/goinp",
+    "github.com/google/go-cmp/cmp",
     "github.com/stretchr/testify/require",
     "github.com/urfave/cli",
     "gopkg.in/yaml.v2",

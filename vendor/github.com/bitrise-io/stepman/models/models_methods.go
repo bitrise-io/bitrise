@@ -69,21 +69,6 @@ func (stepInfo StepInfoModel) CreateFromJSON(jsonStr string) (StepInfoModel, err
 	return info, nil
 }
 
-// Normalize ...
-func (step StepModel) Normalize() error {
-	for _, input := range step.Inputs {
-		if err := input.Normalize(); err != nil {
-			return err
-		}
-	}
-	for _, output := range step.Outputs {
-		if err := output.Normalize(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // ValidateSource ...
 func (source StepSourceModel) validateSource() error {
 	if source.Git == "" {
@@ -103,8 +88,31 @@ func (source StepSourceModel) validateSource() error {
 	return nil
 }
 
+// Normalize ...
+func (step *StepModel) Normalize() error {
+	for _, input := range step.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+	}
+
+	for _, output := range step.Outputs {
+		if err := output.Normalize(); err != nil {
+			return err
+		}
+	}
+
+	normalizedMeta, err := JSONMarshallable(step.Meta)
+	if err != nil {
+		return err
+	}
+	step.Meta = normalizedMeta
+
+	return nil
+}
+
 // ValidateInputAndOutputEnvs ...
-func (step StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) error {
+func (step *StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) error {
 	validateEnvs := func(envs []envmanModels.EnvironmentItemModel) error {
 		for _, env := range envs {
 			key, _, err := env.GetKeyValuePair()
@@ -148,7 +156,7 @@ func (step StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) error
 }
 
 // AuditBeforeShare ...
-func (step StepModel) AuditBeforeShare() error {
+func (step *StepModel) AuditBeforeShare() error {
 	if step.Title == nil || *step.Title == "" {
 		return errors.New("Invalid step: missing or empty required 'title' property")
 	}
@@ -167,7 +175,7 @@ func (step StepModel) AuditBeforeShare() error {
 }
 
 // Audit ...
-func (step StepModel) Audit() error {
+func (step *StepModel) Audit() error {
 	if err := step.AuditBeforeShare(); err != nil {
 		return err
 	}

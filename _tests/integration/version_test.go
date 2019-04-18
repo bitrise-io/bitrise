@@ -24,7 +24,7 @@ func Test_VersionOutput(t *testing.T) {
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
 		expectedVersionOut := fmt.Sprintf(`version: 1.29.0
-format version: 7
+format version: 8
 os: %s
 go: %s
 build number: 
