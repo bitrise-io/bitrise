@@ -5,15 +5,24 @@ import (
 )
 
 func printf(severity Severity, withTime bool, format string, v ...interface{}) {
-	colorFunc := severityColorFuncMap[severity]
-	message := colorFunc(format, v...)
-	if withTime {
-		message = fmt.Sprintf("%s %s", timestampField(), message)
-	}
-
+	message := createLogMsg(severity, withTime, format, v...)
 	if _, err := fmt.Fprintln(outWriter, message); err != nil {
 		fmt.Printf("failed to print message: %s, error: %s\n", message, err)
 	}
+}
+
+func createLogMsg(severity Severity, withTime bool, format string, v ...interface{}) string {
+	colorFunc := severityColorFuncMap[severity]
+	message := colorFunc(format, v...)
+	if withTime {
+		message = prefixCurrentTime(message)
+	}
+
+	return message
+}
+
+func prefixCurrentTime(message string) string {
+	return fmt.Sprintf("%s %s", timestampField(), message)
 }
 
 // Successf ...
@@ -88,4 +97,19 @@ func TWarnf(format string, v ...interface{}) {
 // TErrorf ...
 func TErrorf(format string, v ...interface{}) {
 	printf(errorSeverity, true, format, v...)
+}
+
+// RInfof ...
+func RInfof(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("info", stepID, tag, data, format, v...)
+}
+
+// RWarnf ...
+func RWarnf(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("warn", stepID, tag, data, format, v...)
+}
+
+// RErrorf ...
+func RErrorf(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("error", stepID, tag, data, format, v...)
 }

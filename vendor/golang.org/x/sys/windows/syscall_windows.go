@@ -134,7 +134,7 @@ func NewCallbackCDecl(fn interface{}) uintptr {
 //sys	GetVersion() (ver uint32, err error)
 //sys	FormatMessage(flags uint32, msgsrc uintptr, msgid uint32, langid uint32, buf []uint16, args *byte) (n uint32, err error) = FormatMessageW
 //sys	ExitProcess(exitcode uint32)
-//sys	CreateFile(name *uint16, access uint32, mode uint32, sa *SecurityAttributes, createmode uint32, attrs uint32, templatefile int32) (handle Handle, err error) [failretval==InvalidHandle] = CreateFileW
+//sys	CreateFile(name *uint16, access uint32, mode uint32, sa *SecurityAttributes, createmode uint32, attrs uint32, templatefile Handle) (handle Handle, err error) [failretval==InvalidHandle] = CreateFileW
 //sys	ReadFile(handle Handle, buf []byte, done *uint32, overlapped *Overlapped) (err error)
 //sys	WriteFile(handle Handle, buf []byte, done *uint32, overlapped *Overlapped) (err error)
 //sys	GetOverlappedResult(handle Handle, overlapped *Overlapped, done *uint32, wait bool) (err error)
@@ -171,6 +171,7 @@ func NewCallbackCDecl(fn interface{}) uintptr {
 //sys	GetExitCodeProcess(handle Handle, exitcode *uint32) (err error)
 //sys	GetStartupInfo(startupInfo *StartupInfo) (err error) = GetStartupInfoW
 //sys	GetCurrentProcess() (pseudoHandle Handle, err error)
+//sys	GetCurrentThread() (pseudoHandle Handle, err error)
 //sys	GetProcessTimes(handle Handle, creationTime *Filetime, exitTime *Filetime, kernelTime *Filetime, userTime *Filetime) (err error)
 //sys	DuplicateHandle(hSourceProcessHandle Handle, hSourceHandle Handle, hTargetProcessHandle Handle, lpTargetHandle *Handle, dwDesiredAccess uint32, bInheritHandle bool, dwOptions uint32) (err error)
 //sys	WaitForSingleObject(handle Handle, waitMilliseconds uint32) (event uint32, err error) [failretval==0xffffffff]
@@ -561,9 +562,6 @@ func Fsync(fd Handle) (err error) {
 }
 
 func Chmod(path string, mode uint32) (err error) {
-	if mode == 0 {
-		return syscall.EINVAL
-	}
 	p, e := UTF16PtrFromString(path)
 	if e != nil {
 		return e

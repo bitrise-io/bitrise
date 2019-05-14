@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cabe9ec8289704e71e45138c18ad90275bce25a8d61145c4130b55d9d9a6d6dc"
+  digest = "1:551d79f86d5dbc8154f3b97f37f59ff1f66bf639f7af92c7c382d3141a6203cf"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "9b3cdde74fbe9443d704467498a7dcb61a79de9b"
+  revision = "f0375eb5b588893ff556c71dee32d98e57a9b777"
 
 [[projects]]
   branch = "master"
@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9794bd77a72469ebbcd0cfff08dbc7502f433e9a3f6e278a8396905789a7a4ea"
+  digest = "1:8b2599a91043e42f4ff313f289f82d3cd5a9eb28b1532e613474be7d5d126cd5"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -45,7 +45,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "2a09aab8380d7842750328aebd5671bcccea89c8"
+  revision = "8898129615c9e407fc6b0e60ea882f2b18ec4dc2"
 
 [[projects]]
   branch = "master"
@@ -64,17 +64,18 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:2e3c336fc7fde5c984d2841455a658a6d626450b1754a854b3b32e7a8f49a07a"
+  digest = "1:bf40199583e5143d1472fc34d10d6f4b69d97572142acf343b3e43136da40823"
   name = "github.com/google/go-cmp"
   packages = [
     "cmp",
     "cmp/internal/diff",
+    "cmp/internal/flags",
     "cmp/internal/function",
     "cmp/internal/value",
   ]
   pruneopts = "UT"
-  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
-  version = "v0.2.0"
+  revision = "6f77996f0c42f7b84e5a2b252227263f93432e9b"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
@@ -113,11 +114,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:28d862f4f9bf2d1976d1d320481bff661b7565eb876d4df2a981f79e7f40e4cd"
+  digest = "1:4fc43e824f7e546353de724c00507b1d9c0bab56344b10c2330a97f166a0fba7"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "12500544f89f9420afe9529ba8940bf72d294972"
+  revision = "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
 
 [[projects]]
   branch = "v2"
