@@ -8,6 +8,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
+	"unsafe"
+
+	"github.com/bitrise-io/go-utils/log"
 )
 
 //=======================================
@@ -56,6 +60,95 @@ func AskForStringWithDefault(messageToPrint, defaultValue string) (string, error
 // AskForString ...
 func AskForString(messageToPrint string) (string, error) {
 	return AskForStringFromReader(messageToPrint, os.Stdin)
+}
+
+func writeStdinClearable(text string) error {
+	for _, c := range []byte(text) {
+		if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), syscall.TIOCSTI, uintptr(unsafe.Pointer(&c))); errno != 0 {
+			return fmt.Errorf("failed to write to stdin, err no: %d", errno)
+		}
+	}
+	return nil
+}
+
+// AskOptions ...
+func AskOptions(title string, defaultValue string, optional bool, options ...string) (string, error) {
+	const customValueOptionText = "<custom value>"
+
+	if len(options) == 0 {
+		for {
+			if title != "" {
+				fmt.Print("Enter value for \"" + strings.TrimSuffix(title, ":") + "\": ")
+			}
+			var (
+				input string
+				err   error
+			)
+
+			if defaultValue != "" {
+				if err := writeStdinClearable(defaultValue); err != nil {
+					return "", err
+				}
+			}
+
+			input, err = bufio.NewReader(os.Stdin).ReadString('\n')
+			if err != nil {
+				return "", err
+			}
+
+			if !optional && strings.TrimSpace(input) == "" {
+				log.Errorf("value must be specified")
+				continue
+			}
+
+			return strings.TrimSpace(input), nil
+		}
+	}
+
+	// add last option if optional so user can decide to input value manually
+	if optional && len(options) > 0 {
+		options = append(options, customValueOptionText)
+	}
+
+	// selector with one option -> auto select
+	if len(options) == 1 {
+		return options[0], nil
+	}
+
+	if title != "" {
+		fmt.Println("Select \"" + strings.TrimSuffix(title, ":") + "\" from the list:")
+	}
+
+	for i, option := range options {
+		log.Printf("[%d] : %s", i+1, option)
+	}
+
+	for {
+		fmt.Print("Type in the option's number, then hit Enter: ")
+
+		answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			log.Errorf("failed to read input value")
+			continue
+		}
+
+		optionNo, err := strconv.Atoi(strings.TrimSpace(answer))
+		if err != nil {
+			log.Errorf("failed to parse option number, pick a number from 1-%d", len(options))
+			continue
+		}
+
+		if optionNo-1 < 0 || optionNo-1 >= len(options) {
+			log.Errorf("invalid option number, pick a number 1-%d", len(options))
+			continue
+		}
+
+		if options[optionNo-1] == customValueOptionText {
+			return AskOptions(title, "", true)
+		}
+
+		return options[optionNo-1], nil
+	}
 }
 
 //=======================================

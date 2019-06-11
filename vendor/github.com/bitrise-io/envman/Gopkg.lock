@@ -3,20 +3,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:551d79f86d5dbc8154f3b97f37f59ff1f66bf639f7af92c7c382d3141a6203cf"
+  digest = "1:9ffd8274c90a47cb2bdf4f469722a95027ee0dce146571d86211f08f7d8e2547"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f0375eb5b588893ff556c71dee32d98e57a9b777"
+  revision = "2a22dbedbad1fd454910cd1f44f210ef90c28464"
 
 [[projects]]
   branch = "master"
-  digest = "1:e060948c7e3c507fda0740da7b39d1ce0af0c3a82745e8bcccf5b1bfada0553f"
+  digest = "1:0aa95e1209ba5168533dba715bd04448802025a7503acdee0bdb598c7956ba15"
   name = "github.com/bitrise-io/go-utils"
   packages = [
+    "colorstring",
     "command",
     "errorutil",
     "fileutil",
+    "log",
     "parseutil",
     "pathutil",
     "pointers",
@@ -26,11 +28,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f9749f95e34724e0bfb71a3bf0fa00e0e303d42f1de172bf134f013fa1e9dbb7"
+  digest = "1:094419e25266ad87ac9eec38043f314f474c81f6b1bb7f4ca11cc7fe5a5d9c2d"
   name = "github.com/bitrise-io/goinp"
   packages = ["goinp"]
   pruneopts = "UT"
-  revision = "f451b19ba4d087d8272d411ad91af5f4218fd517"
+  revision = "c9a4dac0f9b3539bbbeb10eece5c3f03d0ec3ea0"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -77,11 +79,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4fc43e824f7e546353de724c00507b1d9c0bab56344b10c2330a97f166a0fba7"
+  digest = "1:010311506e3917b54487c35a4277e2709678a40c1587d82492c40b78b6a0a01d"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
+  revision = "93c9922d18aeb82498a065f07aec7ad7fa60dfb7"
 
 [[projects]]
   branch = "v2"
