@@ -176,12 +176,9 @@ func FormattedSecondsToMax8Chars(t time.Duration) (string, error) {
 	if sec < 1.0 {
 		// 0.999999 sec -> 0.99 sec
 		return fmt.Sprintf("%.2f sec", sec), nil // 8
-	} else if sec < 10.0 {
-		// 9.99999 sec -> 9.99 sec
+	} else if sec < 60.0 {
+		// 59.99999 sec -> 59.99 sec
 		return fmt.Sprintf("%.2f sec", sec), nil // 8
-	} else if sec < 600 {
-		// 599,999 sec -> 599 sec
-		return fmt.Sprintf("%.f sec", sec), nil // 7
 	} else if min < 60 {
 		// 59,999 min -> 59.9 min
 		return fmt.Sprintf("%.1f min", min), nil // 8

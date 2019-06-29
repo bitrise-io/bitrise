@@ -101,18 +101,11 @@ func TestTimeToFormattedSeconds(t *testing.T) {
 		require.Equal(t, "0.11 sec", timeStr)
 	}
 
-	t.Log("sec < 10.0")
+	t.Log("sec < 60.0")
 	{
-		timeStr, err := FormattedSecondsToMax8Chars(secToDuration(9.111))
+		timeStr, err := FormattedSecondsToMax8Chars(secToDuration(59.111))
 		require.NoError(t, err)
-		require.Equal(t, "9.11 sec", timeStr)
-	}
-
-	t.Log("sec < 600 | min < 10")
-	{
-		timeStr, err := FormattedSecondsToMax8Chars(secToDuration(599.111))
-		require.NoError(t, err)
-		require.Equal(t, "599 sec", timeStr)
+		require.Equal(t, "59.11 sec", timeStr)
 	}
 
 	t.Log("min < 60")
