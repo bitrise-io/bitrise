@@ -23,7 +23,7 @@
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = "UT"
-  revision = "eb2e53257e527de59351cec1ecdffb50dadd5a07"
+  revision = "94a0544660e8d2d73612f744bbd66d61216a1221"
 
 [[projects]]
   branch = "master"
