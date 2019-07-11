@@ -1,12 +1,11 @@
-
-# go-utils/envutils is used by integration tests
+# Used by integration tests
 required = ["github.com/bitrise-io/go-utils/envutil",
   "github.com/bitrise-io/envman",
   "github.com/bitrise-io/stepman"]
 
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  version = "1"
+  version = "1.4.2"
 
 [[constraint]]
   branch = "master"
@@ -30,19 +29,19 @@ required = ["github.com/bitrise-io/go-utils/envutil",
 
 [[constraint]]
   name = "github.com/hashicorp/go-version"
-  version = "1"
+  version = "1.2.0"
 
 [[constraint]]
   name = "github.com/ryanuber/go-glob"
-  version = "1"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  version = "1"
+  version = "1.3.0"
 
 [[constraint]]
   name = "github.com/urfave/cli"
-  version = "1"
+  version = "1.20.0"
 
 [[constraint]]
   branch = "master"
