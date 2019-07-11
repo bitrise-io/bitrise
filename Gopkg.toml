@@ -1,4 +1,7 @@
 
+# Used by integration tests
+required = ["github.com/bitrise-io/go-utils/envutil"]
+
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
   version = "1"

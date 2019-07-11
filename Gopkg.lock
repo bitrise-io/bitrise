@@ -19,12 +19,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1b4fc669c328b71ead8fdd00a940d0e9b608a1414c5697b53a67490d31e03afd"
+  digest = "1:2464cf51a030965600f136be22d6966432181cddf4a5ca58a7c126a5519dc0ac"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
     "command",
     "command/git",
+    "envutil",
     "errorutil",
     "fileutil",
     "log",
@@ -159,6 +160,7 @@
     "github.com/bitrise-io/go-utils/colorstring",
     "github.com/bitrise-io/go-utils/command",
     "github.com/bitrise-io/go-utils/command/git",
+    "github.com/bitrise-io/go-utils/envutil",
     "github.com/bitrise-io/go-utils/errorutil",
     "github.com/bitrise-io/go-utils/fileutil",
     "github.com/bitrise-io/go-utils/log",
