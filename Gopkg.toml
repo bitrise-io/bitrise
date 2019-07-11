@@ -1,6 +1,8 @@
 
-# Used by integration tests
-required = ["github.com/bitrise-io/go-utils/envutil"]
+# go-utils/envutils is used by integration tests
+required = ["github.com/bitrise-io/go-utils/envutil",
+  "github.com/bitrise-io/envman",
+  "github.com/bitrise-io/stepman"]
 
 [[constraint]]
   name = "github.com/Sirupsen/logrus"

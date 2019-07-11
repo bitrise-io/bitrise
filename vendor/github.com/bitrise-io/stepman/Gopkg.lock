@@ -19,37 +19,27 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d4f1352d601674fa0044928129d6cb5795e6212d0d11213ed1f1cdf85246833e"
+  digest = "1:4e1c0cc22c53c5ebda9bd380afd5b56a2f1fc9e6fd2eed59ab8ba0c1522eee19"
   name = "github.com/bitrise-io/envman"
-  packages = [
-    ".",
-    "cli",
-    "envman",
-    "models",
-    "output",
-    "version",
-  ]
+  packages = ["models"]
   pruneopts = "UT"
-  revision = "b62ffe18bb760bf14002dd1a80b059180ef910f1"
+  revision = "94a0544660e8d2d73612f744bbd66d61216a1221"
 
 [[projects]]
   branch = "master"
-  digest = "1:33e7db4bd669153252bb9dc8964d6e1df25eb150542f76a65ad044121357dc65"
+  digest = "1:8b2599a91043e42f4ff313f289f82d3cd5a9eb28b1532e613474be7d5d126cd5"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
     "command",
     "command/git",
-    "envutil",
     "errorutil",
     "fileutil",
     "log",
     "parseutil",
     "pathutil",
     "pointers",
-    "progress",
     "retry",
-    "sliceutil",
     "stringutil",
     "urlutil",
     "versions",
@@ -66,28 +56,6 @@
   revision = "bd18a8681e272db4696c50152b288f722d08b914"
 
 [[projects]]
-  branch = "master"
-  digest = "1:d57ff96212b8429c896b7a75b0557499998cc663fb2e7179035e39e519aaf3a9"
-  name = "github.com/bitrise-io/gows"
-  packages = ["gows"]
-  pruneopts = "UT"
-  revision = "8cc2a6a92536486370c8a3daaf70a2886323725a"
-
-[[projects]]
-  branch = "master"
-  digest = "1:56cf909015523bc08b9db8d632635b64191499b26de32e909bd09af21a548221"
-  name = "github.com/bitrise-io/stepman"
-  packages = [
-    ".",
-    "cli",
-    "models",
-    "stepman",
-    "version",
-  ]
-  pruneopts = "UT"
-  revision = "605a625dade4553d2e2c5dcc9e3459844cd2f5b4"
-
-[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -96,12 +64,18 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:88e0b0baeb9072f0a4afbcf12dda615fc8be001d1802357538591155998da21b"
-  name = "github.com/hashicorp/go-version"
-  packages = ["."]
+  digest = "1:bf40199583e5143d1472fc34d10d6f4b69d97572142acf343b3e43136da40823"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/flags",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
   pruneopts = "UT"
-  revision = "ac23dc3fea5d1a983c43f6a0f6e2c13f0195d8bd"
-  version = "v1.2.0"
+  revision = "6f77996f0c42f7b84e5a2b252227263f93432e9b"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
@@ -117,14 +91,6 @@
   packages = ["difflib"]
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:6baa565fe16f8657cf93469b2b8a6c61a277827734400d27e44d589547297279"
-  name = "github.com/ryanuber/go-glob"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "51a8f68e6c24dc43f1e371749c89a267de4ebc53"
   version = "v1.0.0"
 
 [[projects]]
@@ -156,14 +122,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:47a52ed81842d647114b9210719bb6d8e1595094a6cb23e70123bb1f109f3c80"
+  digest = "1:afb5346f71acefc3da7ad800f952cb2bcdb762194b05304bbf54d7f9490e31c5"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "6ec70d6a5542cba804c6d16ebe8392601a0b7b60"
+  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
@@ -178,31 +144,23 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Sirupsen/logrus",
-    "github.com/bitrise-io/envman",
+    "github.com/bitrise-io/colorstring",
     "github.com/bitrise-io/envman/models",
     "github.com/bitrise-io/go-utils/colorstring",
     "github.com/bitrise-io/go-utils/command",
     "github.com/bitrise-io/go-utils/command/git",
-    "github.com/bitrise-io/go-utils/envutil",
-    "github.com/bitrise-io/go-utils/errorutil",
     "github.com/bitrise-io/go-utils/fileutil",
     "github.com/bitrise-io/go-utils/log",
     "github.com/bitrise-io/go-utils/pathutil",
     "github.com/bitrise-io/go-utils/pointers",
-    "github.com/bitrise-io/go-utils/progress",
     "github.com/bitrise-io/go-utils/retry",
-    "github.com/bitrise-io/go-utils/sliceutil",
     "github.com/bitrise-io/go-utils/stringutil",
+    "github.com/bitrise-io/go-utils/urlutil",
     "github.com/bitrise-io/go-utils/versions",
     "github.com/bitrise-io/goinp/goinp",
-    "github.com/bitrise-io/gows/gows",
-    "github.com/bitrise-io/stepman",
-    "github.com/bitrise-io/stepman/models",
-    "github.com/hashicorp/go-version",
-    "github.com/ryanuber/go-glob",
+    "github.com/google/go-cmp/cmp",
     "github.com/stretchr/testify/require",
     "github.com/urfave/cli",
-    "golang.org/x/sys/unix",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
