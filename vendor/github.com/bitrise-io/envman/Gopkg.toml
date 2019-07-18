@@ -1,26 +1,27 @@
+
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  branch = "master"
+  version = "1.4.2"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/bitrise-io/go-utils"
-  branch = "master"
 
 [[constraint]]
-  name = "github.com/bitrise-io/goinp"
   branch = "master"
+  name = "github.com/bitrise-io/goinp"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  branch = "master"
+  version = "1.3.0"
 
 [[constraint]]
   name = "github.com/urfave/cli"
-  branch = "master"
+  version = "1.20.0"
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
-  branch = "v2"
+  version = "v2"
 
 [prune]
   go-tests = true

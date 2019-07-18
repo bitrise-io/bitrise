@@ -1,52 +1,59 @@
+# Used by integration tests
+required = ["github.com/bitrise-io/go-utils/envutil",
+  "github.com/bitrise-io/envman",
+  "github.com/bitrise-io/stepman"]
+
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  branch = "master"
+  version = "1.4.2"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/bitrise-io/envman"
-  branch = "master"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/bitrise-io/go-utils"
-  branch = "master"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/bitrise-io/goinp"
-  branch = "master"
 
 [[constraint]]
-  name = "github.com/bitrise-io/stepman"
   branch = "master"
-
-[[constraint]]
   name = "github.com/bitrise-io/gows"
+
+[[constraint]]
   branch = "master"
+  name = "github.com/bitrise-io/stepman"
 
 [[constraint]]
   name = "github.com/hashicorp/go-version"
-  branch = "master"
-
-[[constraint]]
-  name = "github.com/pkg/errors"
-  branch = "master"
+  version = "1.2.0"
 
 [[constraint]]
   name = "github.com/ryanuber/go-glob"
-  branch = "master"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  branch = "master"
+  version = "1.3.0"
 
-[[constraint]]
+# depending on master branch, as latest release (on 2019-07-11) 1.20.0 was released on 2017-08-11, and there was no release since
+# override is needed to resolve package conflict with envman:
+# master: Could not introduce github.com/bitrise-io/envman@master, as it has a dependency on github.com/urfave/cli with constraint ^1.20.0, which has no overlap with existing constraint master from (root)
+[[override]]
   name = "github.com/urfave/cli"
   branch = "master"
 
 [[constraint]]
-  name = "golang.org/x/sys"
   branch = "master"
+  name = "golang.org/x/sys"
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
-  branch = "v2"
-  
+  version = "v2"
+
+[prune]
+  go-tests = true
+  unused-packages = true

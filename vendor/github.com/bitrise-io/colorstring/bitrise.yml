@@ -1,0 +1,17 @@
+format_version: 5
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            go get -u github.com/stretchr/testify/require
+            go get -u github.com/bitrise-io/go-utils/colorstring
+    - go-list:
+    - golint:
+    - errcheck:
+    - go-test:
