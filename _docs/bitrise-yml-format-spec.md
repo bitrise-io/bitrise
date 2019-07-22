@@ -36,6 +36,7 @@ workflows:
 ## App properties
 
 - `envs` : configuration global environment variables list
+- `bitrise.io.stack` : the default stack for the given project
 - `title`, `summary` and `description` : metadata, for comments, tools and GUI.
   _Note: these meta properties can be used for permanent comments. Standard YML comments
   are not preserved when the YML is normalized, converted to JSON or otherwise
