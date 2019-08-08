@@ -341,31 +341,48 @@ func EnvmanClear(envstorePth string) error {
 // EnvmanRun runs a command through envman.
 func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration, secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
-	args = append(args, cmdArgs...)
-
-	var outWriter io.Writer
-	var errWriter io.Writer
-
-	if !configs.IsSecretFiltering {
-		outWriter = os.Stdout
-		errWriter = os.Stderr
-	} else {
-		var secretValues []string
-		for _, secret := range secrets {
-			key, value, err := secret.GetKeyValuePair()
-			if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
-				continue
-			}
-			secretValues = append(secretValues, value)
-		}
-
-		outWriter = filterwriter.New(secretValues, os.Stdout)
-		errWriter = outWriter
-	}
+	args := append([]string{"--loglevel", logLevel, "--path", envstorePth, "run"}, cmdArgs...)
 
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)
-	cmd.SetStandardIO(os.Stdin, outWriter, errWriter)
+
+	var secretValues []string
+
+	for _, secret := range secrets {
+		key, value, err := secret.GetKeyValuePair()
+		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
+			continue
+		}
+		secretValues = append(secretValues, value)
+	}
+
+	var (
+		index int64
+		b     bytes.Buffer
+		w     = filterwriter.New(secretValues, &b)
+	)
+
+	if configs.IsSecretFiltering {
+		tmpStdFile, _ := ioutil.TempFile("", "std")
+
+		go func() {
+			for {
+				bytesBuffer := make([]byte, 9046, 9046)
+				n, _ := tmpStdFile.ReadAt(bytesBuffer, index)
+
+				b.Reset()
+				w.Write(bytesBuffer)
+
+				os.Stdout.Write(b.Bytes())
+
+				index += int64(n)
+			}
+		}()
+
+		cmd.SetStandardIO(os.Stdin, tmpStdFile, tmpStdFile)
+	} else {
+		cmd.SetStandardIO(os.Stdin, os.Stdout, os.Stderr)
+	}
+
 	cmd.SetTimeout(timeout)
 	cmd.AppendEnv("PWD=" + workDirPth)
 
@@ -373,10 +390,11 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 
 	// flush the writer anyway if the process is finished
 	if configs.IsSecretFiltering {
-		_, ferr := (outWriter.(*filterwriter.Writer)).Flush()
+		_, ferr := (w).Flush()
 		if ferr != nil {
 			return 1, ferr
 		}
+		os.Stdout.Write(b.Bytes())
 	}
 
 	return timeoutcmd.ExitStatus(err), err

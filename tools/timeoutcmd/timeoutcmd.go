@@ -2,7 +2,6 @@ package timeoutcmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -42,7 +41,7 @@ func (c *Command) AppendEnv(env string) {
 }
 
 // SetStandardIO sets the input and outputs of the command.
-func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
+func (c *Command) SetStandardIO(in, out, err *os.File) {
 	c.cmd.Stdin, c.cmd.Stdout, c.cmd.Stderr = in, out, err
 }
 
@@ -55,9 +54,10 @@ func (c *Command) Start() error {
 	var interrupted bool
 	go func() {
 		<-interruptChan
+		_ = syscall.Kill(-c.cmd.Process.Pid, syscall.SIGKILL)
 		interrupted = true
 	}()
-
+	c.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	// start the process
 	if err := c.cmd.Start(); err != nil {
 		return err
