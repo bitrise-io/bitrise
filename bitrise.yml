@@ -18,10 +18,17 @@ workflows:
         inputs:
         - content: go test $BITRISE_GO_PACKAGES
     - script:
-        title: Run integration tests
+        title: Async run test
         inputs:
         - content: |-
             #!/usr/bin/env bash
+            set -ex
+
+            nc -l 9000 &
+    - script:
+        title: Run integration tests
+        inputs:
+        - content: |-
             set -ex
 
             current_bitrise="$(pwd)/_tmp/test_bitrise"
