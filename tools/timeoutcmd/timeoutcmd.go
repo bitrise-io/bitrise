@@ -80,7 +80,6 @@ func (c *Command) Start() error {
 				}
 				break thread
 			}
-			time.Sleep(50 * time.Millisecond)
 		}
 	}()
 
