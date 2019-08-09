@@ -10,9 +10,6 @@ workflows:
   test:
     title: Runs tests
     steps:
-    - go-list:
-    - golint:
-    - errcheck:
     - script:
         title: Go test
         inputs:

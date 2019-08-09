@@ -3,6 +3,7 @@ package tools
 import (
 	"bytes"
 	"fmt"
+	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -343,11 +344,41 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdArgs...)
 
+	var outWriter io.Writer
+	var errWriter io.Writer
+
+	if !configs.IsSecretFiltering {
+		outWriter = os.Stdout
+		errWriter = os.Stderr
+	} else {
+		var secretValues []string
+		for _, secret := range secrets {
+			key, value, err := secret.GetKeyValuePair()
+			if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
+				continue
+			}
+			secretValues = append(secretValues, value)
+		}
+
+		outWriter = filterwriter.New(secretValues, os.Stdout)
+		errWriter = outWriter
+	}
+
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)
-	cmd.SetStandardIO(os.Stdin, os.Stdout, os.Stderr)
+	cmd.SetStandardIO(os.Stdin, outWriter, errWriter)
 	cmd.SetTimeout(timeout)
 	cmd.AppendEnv("PWD=" + workDirPth)
+
 	err := cmd.Start()
+
+	// flush the writer anyway if the process is finished
+	if configs.IsSecretFiltering {
+		_, ferr := (outWriter.(*filterwriter.Writer)).Flush()
+		if ferr != nil {
+			return 1, ferr
+		}
+	}
+
 	return timeoutcmd.ExitStatus(err), err
 }
 
