@@ -247,6 +247,12 @@ func (app *AppModel) Normalize() error {
 			return err
 		}
 	}
+	normalizedMeta, err := stepmanModels.JSONMarshallable(app.Meta)
+	if err != nil {
+		return err
+	}
+	app.Meta = normalizedMeta
+
 	return nil
 }
 
