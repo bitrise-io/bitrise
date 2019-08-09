@@ -65,9 +65,25 @@ func (c *Command) Start() error {
 
 	// Wait for the process to finish
 	done := make(chan error, 1)
-	attachProcessListener(c, done, 1)
 	go func() {
-		done <- c.cmd.Wait()
+		for {
+			switch p, err := c.cmd.Process.Wait(); {
+			case err != nil:
+				done <- err
+				break
+			case !p.Success():
+				done <- &exec.ExitError{ProcessState: p}
+				break
+			case p != nil:
+				if p.ExitCode() == 0 {
+					done <- nil
+				} else {
+					done <- fmt.Errorf("process exited with code %v", p.ExitCode())
+				}
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
 	}()
 
 	// or kill it after a timeout (whichever happens first)
@@ -89,32 +105,6 @@ func (c *Command) Start() error {
 		}
 		return err
 	}
-}
-
-// attachProcessListener is used for checking if a given process has already finished and closes the wait channel if needed.
-func attachProcessListener(c *Command, done chan error, interval int) {
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				p := c.cmd.ProcessState
-				if p != nil {
-					if p.ExitCode() == 0 {
-						done <- nil
-					} else {
-						done <- fmt.Errorf("process exited with code %v", p.ExitCode())
-					}
-					var x struct{}
-					quit <- x
-				}
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
 }
 
 // ExitStatus returns the error's exit status
