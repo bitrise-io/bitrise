@@ -75,11 +75,7 @@ func (c *Command) Start() error {
 				done <- &exec.ExitError{ProcessState: p}
 				break
 			case p != nil:
-				if p.ExitCode() == 0 {
-					done <- nil
-				} else {
-					done <- fmt.Errorf("process exited with code %v", p.ExitCode())
-				}
+				done <- nil
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
