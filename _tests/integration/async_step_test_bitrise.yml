@@ -10,8 +10,7 @@ workflows:
     envs: []
     steps:
       - script:
-        title: nc async step
-        inputs:
+          inputs:
           - content: |-
               #!/usr/bin/env bash
               set -ex
