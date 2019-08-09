@@ -21,6 +21,7 @@ workflows:
         title: Run integration tests
         inputs:
         - content: |-
+            #!/usr/bin/env bash
             set -ex
 
             current_bitrise="$(pwd)/_tmp/test_bitrise"

@@ -3,7 +3,6 @@ package tools
 import (
 	"bytes"
 	"fmt"
-	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
