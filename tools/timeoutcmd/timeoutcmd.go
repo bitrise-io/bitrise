@@ -66,19 +66,14 @@ func (c *Command) Start() error {
 	// Wait for the process to finish
 	done := make(chan error, 1)
 	go func() {
-	thread:
-		for {
-			switch p, err := c.cmd.Process.Wait(); {
-			case err != nil:
-				done <- err
-				break thread
-			case p != nil:
-				if !p.Success() {
-					done <- &exec.ExitError{ProcessState: p}
-				} else {
-					done <- nil
-				}
-				break thread
+		switch p, err := c.cmd.Process.Wait(); {
+		case err != nil:
+			done <- err
+		case p != nil:
+			if !p.Success() {
+				done <- &exec.ExitError{ProcessState: p}
+			} else {
+				done <- nil
 			}
 		}
 	}()
