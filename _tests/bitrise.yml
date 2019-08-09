@@ -59,3 +59,18 @@ workflows:
             #!/bin/bash
             echo "FAIL!!"
             exit 1
+  asynctest:
+    title: Async run test
+    summary: ""
+    before_run: []
+    after_run: []
+    envs: []
+    steps:
+    - script:
+      title: nc async step
+      inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            nc -l 9000 &
