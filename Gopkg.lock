@@ -34,7 +34,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:33e7db4bd669153252bb9dc8964d6e1df25eb150542f76a65ad044121357dc65"
+  digest = "1:81b69f2e9a7499db456730ffac31d11d6d8ab0ca207bfb6c5b8b5232bf6948dc"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -55,7 +55,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "10ba6612803187a89b6935f06a617e9e1cd9d2bf"
+  revision = "fcff02f7bce9d2e56a989e6a78f4f4d12f9b516c"
 
 [[projects]]
   branch = "master"
@@ -86,6 +86,14 @@
   ]
   pruneopts = "UT"
   revision = "605a625dade4553d2e2c5dcc9e3459844cd2f5b4"
+
+[[projects]]
+  digest = "1:7cb4fdca4c251b3ef8027c90ea35f70c7b661a593b9eeae34753c65499098bb1"
+  name = "github.com/cpuguy83/go-md2man"
+  packages = ["md2man"]
+  pruneopts = "UT"
+  revision = "7762f7e404f8416dfa1d9bb6a8c192aa9acb4d19"
+  version = "v1.0.10"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -120,11 +128,27 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:2ee0f15eb0fb04f918db7c2dcf39745f40d69f798ef171610a730e8a56aaa4fd"
+  name = "github.com/russross/blackfriday"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d3b5b032dc8e8927d31a5071b56e14c89f045135"
+  version = "v2.0.1"
+
+[[projects]]
   digest = "1:6baa565fe16f8657cf93469b2b8a6c61a277827734400d27e44d589547297279"
   name = "github.com/ryanuber/go-glob"
   packages = ["."]
   pruneopts = "UT"
   revision = "51a8f68e6c24dc43f1e371749c89a267de4ebc53"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:9421f6e9e28ef86933e824b5caff441366f2b69bb281085b9dca40e1f27a1602"
+  name = "github.com/shurcooL/sanitized_anchor_name"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7bfe4c7ecddb3666a94b053b422cdd8f5aaa3615"
   version = "v1.0.0"
 
 [[projects]]
@@ -140,11 +164,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8286f653bf8b8fd155a0c9c3b9ee3dbc2a95b1b51f7a1dc11fe2c66018454a0c"
+  digest = "1:616d395292cf6850847de68e07d049fdb699d28b3d6d8c5bfc5b6d02cc870333"
   name = "github.com/urfave/cli"
   packages = ["."]
   pruneopts = "UT"
-  revision = "693af58b4d51b8fcc7f9d89576da170765980581"
+  revision = "6cc7e987c4fa553caa5014c7dbc1e7acaea9f0f1"
 
 [[projects]]
   branch = "master"
@@ -156,14 +180,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:47a52ed81842d647114b9210719bb6d8e1595094a6cb23e70123bb1f109f3c80"
+  digest = "1:d52ccbb025caf0a2166e0204ed934567b8d0dfdd23a09d947f1f040708888a0a"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "6ec70d6a5542cba804c6d16ebe8392601a0b7b60"
+  revision = "fde4db37ae7ad8191b03d30d27f258b5291ae4e3"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
