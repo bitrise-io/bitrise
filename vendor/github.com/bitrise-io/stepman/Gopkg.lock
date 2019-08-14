@@ -23,11 +23,11 @@
   name = "github.com/bitrise-io/envman"
   packages = ["models"]
   pruneopts = "UT"
-  revision = "94a0544660e8d2d73612f744bbd66d61216a1221"
+  revision = "b62ffe18bb760bf14002dd1a80b059180ef910f1"
 
 [[projects]]
   branch = "master"
-  digest = "1:8b2599a91043e42f4ff313f289f82d3cd5a9eb28b1532e613474be7d5d126cd5"
+  digest = "1:18434adb06945ee87f2046d82826506c44fce6cde6faa854bacde77753026a43"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -45,7 +45,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "10ba6612803187a89b6935f06a617e9e1cd9d2bf"
+  revision = "fcff02f7bce9d2e56a989e6a78f4f4d12f9b516c"
 
 [[projects]]
   branch = "master"
@@ -64,7 +64,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:bf40199583e5143d1472fc34d10d6f4b69d97572142acf343b3e43136da40823"
+  digest = "1:1d1cbf539d9ac35eb3148129f96be5537f1a1330cadcc7e3a83b4e72a59672a3"
   name = "github.com/google/go-cmp"
   packages = [
     "cmp",
@@ -74,8 +74,8 @@
     "cmp/internal/value",
   ]
   pruneopts = "UT"
-  revision = "6f77996f0c42f7b84e5a2b252227263f93432e9b"
-  version = "v0.3.0"
+  revision = "2d0692c2e9617365a95b295612ac0d4415ba4627"
+  version = "v0.3.1"
 
 [[projects]]
   digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
@@ -105,12 +105,12 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
+  digest = "1:ca4df663ad76879ad38dbd736493679cbb1aa596c6d479fd9fc5e959e5ceb4fb"
   name = "github.com/urfave/cli"
   packages = ["."]
   pruneopts = "UT"
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
+  revision = "e6cf83ec39f6e1158ced1927d4ed14578fda8edb"
+  version = "v1.21.0"
 
 [[projects]]
   branch = "master"
@@ -122,14 +122,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:afb5346f71acefc3da7ad800f952cb2bcdb762194b05304bbf54d7f9490e31c5"
+  digest = "1:d52ccbb025caf0a2166e0204ed934567b8d0dfdd23a09d947f1f040708888a0a"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
+  revision = "fde4db37ae7ad8191b03d30d27f258b5291ae4e3"
 
 [[projects]]
   digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
