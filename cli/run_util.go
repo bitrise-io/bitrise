@@ -684,13 +684,13 @@ func activateAndRunSteps(
 
 			log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 
-			if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
+			if err := command.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
 			}
 
-			if err := command.CopyFile(filepath.Join(stepAbsLocalPth, "step.yml"), stepYMLPth); err != nil {
+			if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
