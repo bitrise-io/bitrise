@@ -39,9 +39,9 @@ required = ["github.com/bitrise-io/go-utils/envutil",
   name = "github.com/stretchr/testify"
   version = "1.3.0"
 
-[[override]]
+[[constraint]]
   name = "github.com/urfave/cli"
-  version = "v1.21.0"
+  revision = "e6cf83ec39f6e1158ced1927d4ed14578fda8edb"
 
 [[constraint]]
   branch = "master"
