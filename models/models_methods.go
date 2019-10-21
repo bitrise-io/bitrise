@@ -261,6 +261,11 @@ func (config *BitriseDataModel) Normalize() error {
 			return err
 		}
 	}
+	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
+	if err != nil {
+		return err
+	}
+	config.Meta = normalizedMeta
 
 	return nil
 }
