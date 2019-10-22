@@ -44,7 +44,6 @@ type AppModel struct {
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
 // TriggerEventType ...
@@ -88,6 +87,7 @@ type BitriseDataModel struct {
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
+	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
