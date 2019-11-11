@@ -105,7 +105,7 @@ and will fail before the Step execution in case it can't retrieve the dependency
 
 ## Step id naming convention
 
-Use hyphen (`-`) separated words for you step id, like: `set-ios-bundle-identifier`, `xcode-archive-mac`, ...
+Use hyphen (`-`) separated words for your step id, like: `set-ios-bundle-identifier`, `xcode-archive-mac`, ...
 
 
 ## Input naming convention
