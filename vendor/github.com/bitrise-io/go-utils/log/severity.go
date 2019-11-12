@@ -20,7 +20,7 @@ var (
 	successSeverityColorFunc severityColorFunc = colorstring.Greenf
 	infoSeverityColorFunc    severityColorFunc = colorstring.Bluef
 	normalSeverityColorFunc  severityColorFunc = colorstring.NoColorf
-	debugSeverityColorFunc   severityColorFunc = colorstring.NoColorf
+	debugSeverityColorFunc   severityColorFunc = colorstring.Magentaf
 	warnSeverityColorFunc    severityColorFunc = colorstring.Yellowf
 	errorSeverityColorFunc   severityColorFunc = colorstring.Redf
 )
