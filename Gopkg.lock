@@ -34,7 +34,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:34d08a627ff41f117f316f453713ae9250e2bd246b170e44e33e3d4bff92d599"
+  digest = "1:185087e9bf92adc74a26b5fd1b7a27d1754f626bde5f31a6abc15e122c922968"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -55,7 +55,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "ad86bf775472ce1934affb9d3cb7d5ea3dffd16f"
+  revision = "5067a2a682f21030f379f88e853b9e0734a24516"
 
 [[projects]]
   branch = "master"
@@ -151,26 +151,26 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "34f69633bfdcf9db92f698f8487115767eebef81"
+  revision = "16651526fdb40c41f6e4da1ad8138f08f012e842"
 
 [[projects]]
   branch = "master"
-  digest = "1:66da9400d3f58a196e86efa1b0c8ea0b1aae330a6ec234b26ad27ba42f74f019"
+  digest = "1:a8d09768b9b35851f498a4ba24ef08b7a72aa29bdb1673324394443e076bb440"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "543471e840be449c53d44b32c7adf1261ad67e37"
+  revision = "d32e6e3b99c40f2bfaea45ea9596ed539eed1c0d"
 
 [[projects]]
-  digest = "1:59f10c1537d2199d9115d946927fe31165959a95190849c82ff11e05803528b0"
+  digest = "1:f26a5d382387e03a40d1471dddfba85dfff9bf05352d7e42d37612677c4d3c5c"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "f221b8435cfb71e54062f6c6e99e9ade30b124d5"
-  version = "v2.2.4"
+  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
+  version = "v2.2.5"
 
 [solve-meta]
   analyzer-name = "dep"
