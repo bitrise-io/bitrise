@@ -90,7 +90,7 @@ This includes the resources / tools used by your Step as well, not just the core
 
 If your Step depends on another tool, which have to be downloaded on-demand, during the execution
 of your Step, there's a chance that even your Step was retrieved correctly but the
-resource it tries to download just fails because of a network, authorization or other error.
+resource it tries to download just fails because of a network, authorisation or other error.
 
 You should try to include everything what's required for your Step into the Step's repository.
 In case of submodules, you should rather include the content of the other repository,
@@ -105,7 +105,7 @@ and will fail before the Step execution in case it can't retrieve the dependency
 
 ## Step id naming convention
 
-Use hyphen (`-`) separated words for you step id, like: `set-ios-bundle-identifier`, `xcode-archive-mac`, ...
+Use hyphen (`-`) separated words for your step id, like: `set-ios-bundle-identifier`, `xcode-archive-mac`, ...
 
 
 ## Input naming convention
@@ -188,4 +188,4 @@ The step's icon should match with the following criterias:
 Submit your step's icon by:
 
 - adding the svg file into your steplib fork repo at: STEPLIB_FORK_ROOT/steps/YOUR_STEP_ID/assets/icon.svg
-- createing a new pull request to the [steplib repo](https://github.com/bitrise-io/bitrise-steplib)
+- creating a new pull request to the [steplib repo](https://github.com/bitrise-io/bitrise-steplib)

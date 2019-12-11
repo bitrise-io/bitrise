@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "8"
+	Version = "9"
 )
 
 // StepListItemModel ...
@@ -87,6 +87,7 @@ type BitriseDataModel struct {
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
+	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
