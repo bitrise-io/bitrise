@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:552acb36b56fc11e8a4e801ea5d32776be34218396ee7c3089f41cba79a99f23"
+  digest = "1:e19743f5727c3f51766d2c351090339d63be98279dd7578606c16234117ba114"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "command",
@@ -22,7 +22,7 @@
     "pointers",
   ]
   pruneopts = "UT"
-  revision = "5067a2a682f21030f379f88e853b9e0734a24516"
+  revision = "948e80486906fb74dfa6012c80cbda6a6dac151a"
 
 [[projects]]
   branch = "master"
@@ -80,18 +80,18 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
+  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
 
 [[projects]]
   branch = "master"
-  digest = "1:77b59f879b437f66aa2d510e2752017a5a1ce3cef6f4744586affbed1ccf2f46"
+  digest = "1:c8faf148023f13e62a93d3ed6c01fc586b3c6b52a40c5c9b0f2220bae71f390a"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
+  revision = "86b910548bc16777f40503131aa424ae0a092199"
 
 [[projects]]
   digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
