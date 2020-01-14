@@ -19,7 +19,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:57125f50aa437fecab487c36b154052b04a66615e8cad062e2520ca35157422c"
+  digest = "1:45f93a7af77540da03239e89a5159b435efa4fcc1fbd49b90c30c88bf95e9513"
   name = "github.com/bitrise-io/envman"
   packages = [
     ".",
@@ -30,11 +30,11 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "62a9103972b53f03bd80d7a391eb15733495b7a0"
+  revision = "24a8f72875981710a8b21e60d81c4126a3af3c67"
 
 [[projects]]
   branch = "master"
-  digest = "1:185087e9bf92adc74a26b5fd1b7a27d1754f626bde5f31a6abc15e122c922968"
+  digest = "1:7834a0fa3ce7950241db4b024f2a170c082e34c83c8f2b4eca937eabd9302e03"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -55,7 +55,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "5067a2a682f21030f379f88e853b9e0734a24516"
+  revision = "948e80486906fb74dfa6012c80cbda6a6dac151a"
 
 [[projects]]
   branch = "master"
@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:894cf5ee5c18ee065fb143ac4cef506fb5ca1fbefe4fcc03f07e472c1e27a387"
+  digest = "1:6047caebb71ca2f33ffa503169e93f1dd8954d7397672f71f356332e755eb8fb"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "bc5d7f8692c3ef82b67d4c103554bf8e8a521e3d"
+  revision = "58721d12c01f89c5034341a29be589ff11c6d391"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -151,18 +151,18 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
+  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
 
 [[projects]]
   branch = "master"
-  digest = "1:77b59f879b437f66aa2d510e2752017a5a1ce3cef6f4744586affbed1ccf2f46"
+  digest = "1:c8faf148023f13e62a93d3ed6c01fc586b3c6b52a40c5c9b0f2220bae71f390a"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
+  revision = "86b910548bc16777f40503131aa424ae0a092199"
 
 [[projects]]
   digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
