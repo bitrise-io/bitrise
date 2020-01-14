@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -55,6 +56,15 @@ func WriteBytesToFileWithPermission(pth string, fileCont []byte, perm os.FileMod
 // WriteBytesToFile ...
 func WriteBytesToFile(pth string, fileCont []byte) error {
 	return WriteBytesToFileWithPermission(pth, fileCont, 0)
+}
+
+// WriteJSONToFile ...
+func WriteJSONToFile(pth string, fileCont interface{}) error {
+	bytes, err := json.Marshal(fileCont)
+	if err != nil {
+		return fmt.Errorf("failed to JSON marshal the provided object: %+v", err)
+	}
+	return WriteBytesToFile(pth, bytes)
 }
 
 // AppendStringToFile ...
