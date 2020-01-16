@@ -238,7 +238,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Step: stepmanModels.StepModel{
 				Title: pointers.NewStringPtr(longStr),
 			},
-			Version:       "1.0.0",
+			Version:       "1.0.1", // NOTE: changed for test purposes until StepInfoModel is updated to contain EvaluatedVersion property
 			LatestVersion: "1.1.0",
 		}
 
@@ -252,7 +252,59 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterSubSection(result)
-		expected := "| Update available: 1.0.0 -> 1.1.0                                             |" + "\n" +
+		expected := "| Update available: 1.0.1 -> 1.1.0                                             |" + "\n" +
+			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
+			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		require.Equal(t, expected, actual)
+	}
+
+	t.Log("Update available, no support_url, no source_code_url, locked on latest minor")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(longStr),
+			},
+			Version:       "1.0",
+			LatestVersion: "1.1.0",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			ErrorStr: longStr,
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1.0 (1.0.1) -> 1.1.0                                       |" + "\n" +
+			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
+			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
+		require.Equal(t, expected, actual)
+	}
+
+	t.Log("Update available, no support_url, no source_code_url, locked on latest major")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title: pointers.NewStringPtr(longStr),
+			},
+			Version:       "1",
+			LatestVersion: "1.1.0",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			ErrorStr: longStr,
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1 (1.0.1) -> 1.1.0                                         |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
 			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
