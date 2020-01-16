@@ -515,6 +515,58 @@ func runStep(
 	return 0, updatedStepOutputs, nil
 }
 
+func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
+	didStepLibUpdate := false
+
+	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+	if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
+		return stepmanModels.StepInfoModel{}, false, err
+	}
+
+	isLatestVersionOfStep := (stepIDData.Version == "")
+	if isLatestVersionOfStep && !isStepLibUpdated {
+		log.Infof("Step uses latest version -- Updating StepLib ...")
+		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+			log.Warnf("Step uses latest version, but failed to update StepLib, err: %s", err)
+		} else {
+			didStepLibUpdate = true
+		}
+	}
+
+	outStr, err := tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+	if err != nil {
+		if isStepLibUpdated {
+			return stepmanModels.StepInfoModel{}, false, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
+		}
+		// May StepLib should be updated
+		log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
+		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+			return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
+		}
+		didStepLibUpdate = true
+
+		outStr, err = tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+		if err != nil {
+			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
+		}
+	}
+
+	stepInfo, err := stepmanModels.StepInfoModel{}.CreateFromJSON(outStr)
+	if err != nil {
+		return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("CreateFromJSON failed, err: %s", err)
+	}
+	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
+		stepInfo.Step.Title = pointers.NewStringPtr(stepInfo.ID)
+	}
+
+	if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, destination, stepYMLCopyPth); err != nil {
+		return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
+	}
+	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
+
+	return stepInfo, didStepLibUpdate, nil
+}
+
 func activateAndRunSteps(
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
@@ -743,68 +795,16 @@ func activateAndRunSteps(
 				continue
 			}
 		} else if stepIDData.SteplibSource != "" {
-			log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-			if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
-				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
-				continue
-			}
-
-			isLatestVersionOfStep := (stepIDData.Version == "")
-			if isLatestVersionOfStep && !buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
-				log.Infof("Step uses latest version -- Updating StepLib ...")
-				if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-					log.Warnf("Step uses latest version, but failed to update StepLib, err: %s", err)
-				} else {
-					buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
-				}
-			}
-
-			outStr, err := tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-			if err != nil {
-				if buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource) {
-					registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-						"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep, true)
-					continue
-				}
-				// May StepLib should be updated
-				log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
-				if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-					registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-						"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
-					continue
-				}
+			isUpdated := buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
+			stepInfo, didUpdate, err := activateStepLibStep(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, isUpdated, stepDir, stepYMLPth)
+			if didUpdate {
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
-
-				outStr, err = tools.StepmanJSONStepLibStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-				if err != nil {
-					registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-						"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err), isLastStep, true)
-					continue
-				}
 			}
-
-			stepInfo, err := stepmanModels.StepInfoModel{}.CreateFromJSON(outStr)
+			stepInfoPtr = stepInfo
 			if err != nil {
-				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep, true)
-				continue
-			}
-
-			stepInfoPtr.ID = stepInfo.ID
-			if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
-				stepInfoPtr.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-			}
-			stepInfoPtr.Version = stepInfo.Version
-			stepInfoPtr.LatestVersion = stepInfo.LatestVersion
-			stepInfoPtr.GroupInfo = stepInfo.GroupInfo
-
-			if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, stepDir, stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
 				continue
-			} else {
-				log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 			}
 		} else {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
