@@ -361,14 +361,19 @@ func getDeprecateNotesRows(notes string) string {
 	return formattedNote
 }
 
-func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
+// evaluatedVersion introduced for testing purposes, until StepInfoModel is updated to have the same property
+func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int, evaluatedVersion string) string {
 	updateRow := ""
 
 	updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.LatestVersion)
 	charDiff := len(updateRow) - width
 	if charDiff < 0 {
 		// shorter than desired - fill with space
-		updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
+		if stepInfo.Version != evaluatedVersion {
+			updateRow = fmt.Sprintf("| Update available: %s (%s) -> %s%s |", stepInfo.Version, evaluatedVersion, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
+		} else {
+			updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
+		}
 	} else if charDiff > 0 {
 		// longer than desired - trim title
 		if charDiff > 6 {
@@ -405,7 +410,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
+		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars, stepInfo.Version)
 	}
 
 	issueRow := ""
