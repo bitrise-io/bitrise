@@ -361,6 +361,26 @@ func getDeprecateNotesRows(notes string) string {
 	return formattedNote
 }
 
+func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
+	updateRow := ""
+
+	updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.LatestVersion)
+	charDiff := len(updateRow) - width
+	if charDiff < 0 {
+		// shorter than desired - fill with space
+		updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
+	} else if charDiff > 0 {
+		// longer than desired - trim title
+		if charDiff > 6 {
+			updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-width))
+		} else {
+			updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.LatestVersion, strings.Repeat(" ", -len("| Update available: -> %s |")-width))
+		}
+	}
+
+	return updateRow
+}
+
 func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) string {
 	stepInfo := stepRunResult.StepInfo
 
@@ -385,19 +405,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.LatestVersion)
-		charDiff := len(updateRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			if charDiff > 6 {
-				updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-stepRunSummaryBoxWidthInChars))
-			} else {
-				updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.LatestVersion, strings.Repeat(" ", -len("| Update available: -> %s |")-stepRunSummaryBoxWidthInChars))
-			}
-		}
+		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
 	}
 
 	issueRow := ""
