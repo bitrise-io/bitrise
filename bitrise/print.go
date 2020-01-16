@@ -363,14 +363,12 @@ func getDeprecateNotesRows(notes string) string {
 
 // evaluatedVersion introduced for testing purposes, until StepInfoModel is updated to have the same property
 func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int, evaluatedVersion string) string {
-	updateRow := ""
-
 	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
 	if stepInfo.Version != evaluatedVersion {
 		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, evaluatedVersion, stepInfo.LatestVersion)
 	}
 
-	updateRow = fmt.Sprintf("| Update available: %s |", vstr)
+	updateRow := fmt.Sprintf("| Update available: %s |", vstr)
 	charDiff := len(updateRow) - width
 
 	if charDiff == 0 {
@@ -386,7 +384,6 @@ func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int, evaluatedVe
 		if charDiff > 6 {
 			updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-width))
 		}
-
 	}
 
 	return updateRow
