@@ -285,9 +285,25 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
+		result.StepInfo.Version = "1.x.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
 		result.StepInfo.Version = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
@@ -321,9 +337,25 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
+		result.StepInfo.Version = "1.x.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
 		result.StepInfo.Version = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
