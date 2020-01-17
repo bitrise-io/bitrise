@@ -498,8 +498,10 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	if isUpdateAvailable {
 		content = fmt.Sprintf("%s", updateRow)
 		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
+			content = fmt.Sprintf("%s\n%s", content, getRow(""))
 			releasesURL := *stepInfo.Step.SourceCodeURL + "/releases"
-			content = fmt.Sprintf("%s\n%s\n%s", content, getRow("Release notes are available on GitHub"), getRow(releasesURL))
+			content = fmt.Sprintf("%s\n%s", content, getRow("Release notes are available on GitHub"))
+			content = fmt.Sprintf("%s\n%s", content, getRow(releasesURL))
 		}
 	}
 

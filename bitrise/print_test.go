@@ -280,6 +280,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 1.1.0                                         |" + "\n" +
+			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
@@ -289,6 +290,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		result.StepInfo.Version = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 1.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
@@ -319,6 +321,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 1.1.0                                         |" + "\n" +
+			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
@@ -328,6 +331,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		result.StepInfo.Version = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 1.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
