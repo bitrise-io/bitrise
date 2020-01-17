@@ -258,6 +258,45 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		require.Equal(t, expected, actual)
 	}
 
+	t.Log("Update available, major/minor lock, with changelog URL cropping")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title:         pointers.NewStringPtr(longStr),
+				SourceCodeURL: pointers.NewStringPtr("https://github.com/test-organization/very-long-test-repository-name-exceeding-max-width"),
+			},
+			Version:       "1",
+			LatestVersion: "1.1.0",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+			ErrorStr: longStr,
+			ExitCode: 1,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1 (1.0.1) -> 1.1.0                                         |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
+			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
+			"| Source: ...t-organization/very-long-test-repository-name-exceeding-max-width |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0 (1.0.1) -> 1.1.0                                       |" + "\n" +
+			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
+			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
+			"| Source: ...t-organization/very-long-test-repository-name-exceeding-max-width |"
+		require.Equal(t, expected, actual)
+
+	}
+
 	t.Log("Update available, major/minor lock")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
