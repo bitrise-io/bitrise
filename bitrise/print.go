@@ -2,6 +2,7 @@ package bitrise
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -13,6 +14,7 @@ import (
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	ver "github.com/hashicorp/go-version"
 )
 
 const (
@@ -24,9 +26,29 @@ const (
 // Util methods
 //------------------------------
 
-func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
+// evaluatedVersion ...string introduced for testing purposes until StepInfoModel is updated
+func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel, evaluatedVersion ...string) bool {
 	if stepInfo.LatestVersion == "" {
 		return false
+	}
+
+	if len(evaluatedVersion) == 0 { // conditional introduced for test purposes to avoid update isUpdateAvailable everywhere
+		evaluatedVersion = append(evaluatedVersion, stepInfo.Version)
+	}
+	if stepInfo.Version != evaluatedVersion[0] { // evaluatedVersion is a slice only to be able to use optional arg pattern in the signature
+		re := regexp.MustCompile(`\d+`)
+		components := re.FindAllString(stepInfo.Version, -1)
+		normalized := strings.Join(components, ".")
+		locked, _ := ver.NewSemver(normalized)
+		latest, _ := ver.NewSemver(stepInfo.LatestVersion)
+
+		switch len(components) {
+		case 1:
+			return locked.Segments()[0] < latest.Segments()[0]
+		case 2:
+			return locked.Segments()[0] < latest.Segments()[0] || locked.Segments()[1] < latest.Segments()[1]
+
+		}
 	}
 
 	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.LatestVersion)
@@ -415,7 +437,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		}
 	}
 
-	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
+	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo, "1.0.1") // 1.0.1 introduced for test purposes until StepInfoModel is updated
 	updateRow := ""
 	if isUpdateAvailable {
 		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars, "1.0.1")
