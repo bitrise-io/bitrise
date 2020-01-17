@@ -361,6 +361,11 @@ func getDeprecateNotesRows(notes string) string {
 	return formattedNote
 }
 
+func getRow(str string) string {
+	str = stringutil.MaxLastCharsWithDots(str, stepRunSummaryBoxWidthInChars-4)
+	return fmt.Sprintf("| %s |", str+strings.Repeat(" ", stepRunSummaryBoxWidthInChars-len(str)-4))
+}
+
 // evaluatedVersion introduced for testing purposes, until StepInfoModel is updated to have the same property
 func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int, evaluatedVersion string) string {
 	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
@@ -492,6 +497,10 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	content := ""
 	if isUpdateAvailable {
 		content = fmt.Sprintf("%s", updateRow)
+		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
+			releasesURL := *stepInfo.Step.SourceCodeURL + "/releases"
+			content = fmt.Sprintf("%s\n%s\n%s", content, getRow("Release notes are available on GitHub"), getRow(releasesURL))
+		}
 	}
 
 	// Support URL
