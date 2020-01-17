@@ -1,11 +1,13 @@
 package models
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -464,4 +466,99 @@ func Test_AptGetDepModel_GetBinaryName(t *testing.T) {
 	require.Equal(t, "", AptGetDepModel{}.GetBinaryName())
 	require.Equal(t, "awscli", AptGetDepModel{Name: "awscli"}.GetBinaryName())
 	require.Equal(t, "aws", AptGetDepModel{Name: "awscli", BinName: "aws"}.GetBinaryName())
+}
+
+func TestStepCollectionModel_GetStepVersion(t *testing.T) {
+	step := StepModel{
+		Title: pointers.NewStringPtr("name 1"),
+	}
+
+	collection := StepCollectionModel{
+		Steps: StepHash{
+			"step": StepGroupModel{
+				Versions: map[string]StepModel{
+					"1.0.0": step,
+					"1.1.0": step,
+					"1.1.1": step,
+					"1.2.0": step,
+					"2.0.0": step,
+				},
+				LatestVersionNumber: "2.0.0",
+			},
+		},
+	}
+
+	type args struct {
+		id      string
+		version string
+	}
+	tests := []struct {
+		name       string
+		collection StepCollectionModel
+		args       args
+		want       StepVersionModel
+		want1      bool
+		want2      bool
+	}{
+		{
+			name:       "Fix version",
+			collection: collection,
+			args: args{
+				id:      "step",
+				version: "1.0.0",
+			},
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.0.0",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+			want2: true,
+		},
+		{
+			name:       "Lock Minor version",
+			collection: collection,
+			args: args{
+				id:      "step",
+				version: "1.1",
+			},
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.1.1",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+			want2: true,
+		},
+		{
+			name:       "Lock Major ersion",
+			collection: collection,
+			args: args{
+				id:      "step",
+				version: "1",
+			},
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.2.0",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+			want2: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collection := tt.collection
+			got, got1, got2 := collection.GetStepVersion(tt.args.id, tt.args.version)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StepCollectionModel.GetStepVersion() got = %+v, want %+v, \n Diff: %s", got, tt.want, cmp.Diff(tt.want, got))
+			}
+			if got1 != tt.want1 {
+				t.Errorf("StepCollectionModel.GetStepVersion() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("StepCollectionModel.GetStepVersion() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
 }

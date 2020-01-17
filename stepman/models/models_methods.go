@@ -253,29 +253,25 @@ func (collection StepCollectionModel) GetStep(id, version string) (StepModel, bo
 }
 
 // GetStepVersion ...
-func (collection StepCollectionModel) GetStepVersion(id, version string) (StepVersionModel, bool, bool) {
+func (collection StepCollectionModel) GetStepVersion(id, version string) (stepVersion StepVersionModel, stepFound bool, versionFound bool) {
 	stepHash := collection.Steps
 	stepVersions, stepFound := stepHash[id]
 
 	if !stepFound {
-		return StepVersionModel{}, stepFound, false
+		return StepVersionModel{}, false, false
 	}
 
 	if version == "" {
 		version = stepVersions.LatestVersionNumber
 	}
 
-	step, versionFound := stepVersions.Versions[version]
-
-	if !stepFound || !versionFound {
-		return StepVersionModel{}, stepFound, versionFound
+	requiredVersion, err := parseRequiredVersion(version)
+	if err != nil {
+		return StepVersionModel{}, true, false
 	}
 
-	return StepVersionModel{
-		Step:                   step,
-		Version:                version,
-		LatestAvailableVersion: stepVersions.LatestVersionNumber,
-	}, true, true
+	stepVersionModel, versionFound := latestMatchingStepVersion(requiredVersion, stepVersions)
+	return stepVersionModel, true, versionFound
 }
 
 // GetDownloadLocations ...
