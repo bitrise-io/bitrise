@@ -796,7 +796,7 @@ func activateAndRunSteps(
 			}
 		} else if stepIDData.SteplibSource != "" {
 			isUpdated := buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
-			stepInfo, didUpdate, err := activateStepLibStep(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, isUpdated, stepDir, stepYMLPth)
+			stepInfo, didUpdate, err := activateStepLibStep(stepIDData, stepDir, stepYMLPth, isUpdated)
 			if didUpdate {
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 			}
