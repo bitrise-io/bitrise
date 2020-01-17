@@ -26,16 +26,12 @@ const (
 // Util methods
 //------------------------------
 
-// evaluatedVersion ...string introduced for testing purposes until StepInfoModel is updated
-func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel, evaluatedVersion ...string) bool {
+func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 	if stepInfo.LatestVersion == "" {
 		return false
 	}
 
-	if len(evaluatedVersion) == 0 { // conditional introduced for test purposes to avoid update isUpdateAvailable everywhere
-		evaluatedVersion = append(evaluatedVersion, stepInfo.Version)
-	}
-	if stepInfo.Version != evaluatedVersion[0] { // evaluatedVersion is a slice only to be able to use optional arg pattern in the signature
+	if stepInfo.Version != stepInfo.EvaluatedVersion {
 		re := regexp.MustCompile(`\d+`)
 		components := re.FindAllString(stepInfo.Version, -1)
 		normalized := strings.Join(components, ".")
@@ -437,10 +433,10 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		}
 	}
 
-	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo, "1.0.1") // 1.0.1 introduced for test purposes until StepInfoModel is updated
+	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars, "1.0.1")
+		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars, stepInfo.EvaluatedVersion)
 	}
 
 	issueRow := ""

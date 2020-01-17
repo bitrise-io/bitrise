@@ -238,8 +238,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Step: stepmanModels.StepModel{
 				Title: pointers.NewStringPtr(longStr),
 			},
-			Version:       "1.0.1", // NOTE: changed for test purposes until StepInfoModel is updated to contain EvaluatedVersion property
-			LatestVersion: "1.1.0",
+			Version:          "1.0.0",
+			LatestVersion:    "1.1.0",
+			EvaluatedVersion: "1.0.0",
 		}
 
 		result := models.StepRunResultsModel{
@@ -252,7 +253,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		}
 
 		actual := getRunningStepFooterSubSection(result)
-		expected := "| Update available: 1.0.1 -> 1.1.0                                             |" + "\n" +
+		expected := "| Update available: 1.0.0 -> 1.1.0                                             |" + "\n" +
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
 			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
@@ -265,8 +266,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/test-organization/very-long-test-repository-name-exceeding-max-width"),
 			},
-			Version:       "1",
-			LatestVersion: "2.1.0",
+			Version:          "1",
+			LatestVersion:    "2.1.0",
+			EvaluatedVersion: "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
@@ -306,8 +308,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
 			},
-			Version:       "1",
-			LatestVersion: "2.1.0",
+			Version:          "1",
+			LatestVersion:    "2.1.0",
+			EvaluatedVersion: "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
@@ -347,8 +350,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
 			},
-			Version:       "1",
-			LatestVersion: "1.0.1",
+			Version:          "1",
+			LatestVersion:    "1.0.1",
+			EvaluatedVersion: "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
