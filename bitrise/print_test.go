@@ -276,17 +276,13 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			ErrorStr: longStr,
-			ExitCode: 1,
 		}
 
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
-			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
-			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: ...t-organization/very-long-test-repository-name-exceeding-max-width |"
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
 		result.StepInfo.Version = "1.0"
@@ -294,9 +290,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
-			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |" + "\n" +
-			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: ...t-organization/very-long-test-repository-name-exceeding-max-width |"
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
 	}
@@ -318,17 +312,13 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			ErrorStr: longStr,
-			ExitCode: 1,
 		}
 
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
-			"| https://github.com/bitrise-steplib/steps-script/releases                     |" + "\n" +
-			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: https://github.com/bitrise-steplib/steps-script                      |"
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
 		result.StepInfo.Version = "1.0"
@@ -336,9 +326,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
 			"| Release notes are available on GitHub                                        |" + "\n" +
-			"| https://github.com/bitrise-steplib/steps-script/releases                     |" + "\n" +
-			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: https://github.com/bitrise-steplib/steps-script                      |"
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
 	}
@@ -360,19 +348,15 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Status:   models.StepRunStatusCodeSuccess,
 			Idx:      0,
 			RunTime:  10000000,
-			ErrorStr: longStr,
-			ExitCode: 1,
 		}
 
 		actual := getRunningStepFooterSubSection(result)
-		expected := "| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: https://github.com/bitrise-steplib/steps-script                      |"
+		expected := ""
 		require.Equal(t, expected, actual)
 
 		result.StepInfo.Version = "1.0"
 		actual = getRunningStepFooterSubSection(result)
-		expected = "| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
-			"| Source: https://github.com/bitrise-steplib/steps-script                      |"
+		expected = ""
 		require.Equal(t, expected, actual)
 
 	}
