@@ -295,7 +295,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 	}
 
-	t.Log("Update available, major/minor lock")
+	t.Log("Update available, major/minor lock, without changelog URL cropping")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Step: stepmanModels.StepModel{
