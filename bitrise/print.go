@@ -352,11 +352,10 @@ func getRow(str string) string {
 	return fmt.Sprintf("| %s |", str+strings.Repeat(" ", stepRunSummaryBoxWidthInChars-len(str)-4))
 }
 
-// evaluatedVersion introduced for testing purposes, until StepInfoModel is updated to have the same property
-func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int, evaluatedVersion string) string {
+func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
 	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
-	if stepInfo.Version != evaluatedVersion {
-		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, evaluatedVersion, stepInfo.LatestVersion)
+	if stepInfo.Version != stepInfo.EvaluatedVersion {
+		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, stepInfo.EvaluatedVersion, stepInfo.LatestVersion)
 	}
 
 	updateRow := fmt.Sprintf("| Update available: %s |", vstr)
@@ -404,7 +403,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars, stepInfo.EvaluatedVersion)
+		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
 	}
 
 	issueRow := ""
