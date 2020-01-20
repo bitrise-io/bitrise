@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bitrise-io/go-utils/log"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	ver "github.com/hashicorp/go-version"
 )
@@ -16,8 +17,18 @@ func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 	re := regexp.MustCompile(`\d+`)
 	components := re.FindAllString(stepInfo.Version, -1)
 	normalized := strings.Join(components, ".")
-	locked, _ := ver.NewSemver(normalized)
-	latest, _ := ver.NewSemver(stepInfo.LatestVersion)
+	locked, err := ver.NewSemver(normalized)
+
+	if err != nil {
+		log.Warnf("Error processing version (%s): normalized version (%s) not in semver format: %s", stepInfo.Version, normalized, err)
+		return false
+	}
+
+	latest, err := ver.NewSemver(stepInfo.LatestVersion)
+	if err != nil {
+		log.Warnf("Error processing latest version (%s): %s", stepInfo.LatestVersion, err)
+		return false
+	}
 
 	switch len(components) {
 	case 1:
