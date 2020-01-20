@@ -352,7 +352,7 @@ func getRow(str string) string {
 	return fmt.Sprintf("| %s |", str+strings.Repeat(" ", stepRunSummaryBoxWidthInChars-len(str)-4))
 }
 
-func buildUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
+func getUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
 	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
 	if stepInfo.Version != stepInfo.EvaluatedVersion {
 		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, stepInfo.EvaluatedVersion, stepInfo.LatestVersion)
@@ -403,7 +403,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = buildUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
+		updateRow = getUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
 	}
 
 	issueRow := ""
