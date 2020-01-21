@@ -238,9 +238,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Step: stepmanModels.StepModel{
 				Title: pointers.NewStringPtr(longStr),
 			},
-			Version:          "1.0.0",
-			LatestVersion:    "1.1.0",
-			EvaluatedVersion: "1.0.0",
+			Version:         "1.0.0",
+			LatestVersion:   "1.1.0",
+			OriginalVersion: "1.0.0",
 		}
 
 		result := models.StepRunResultsModel{
@@ -266,9 +266,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/test-organization/very-long-test-repository-name-exceeding-max-width"),
 			},
-			Version:          "1",
-			LatestVersion:    "2.1.0",
-			EvaluatedVersion: "1.0.1",
+			OriginalVersion: "1",
+			LatestVersion:   "2.1.0",
+			Version:         "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
@@ -285,7 +285,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.x.x"
+		result.StepInfo.OriginalVersion = "1.x.x"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -293,7 +293,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.0"
+		result.StepInfo.OriginalVersion = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -301,7 +301,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.0.x"
+		result.StepInfo.OriginalVersion = "1.0.x"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -318,9 +318,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
 			},
-			Version:          "1",
-			LatestVersion:    "2.1.0",
-			EvaluatedVersion: "1.0.1",
+			OriginalVersion: "1",
+			LatestVersion:   "2.1.0",
+			Version:         "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
@@ -337,7 +337,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.x.x"
+		result.StepInfo.OriginalVersion = "1.x.x"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -345,7 +345,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.0"
+		result.StepInfo.OriginalVersion = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -353,7 +353,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.0.x"
+		result.StepInfo.OriginalVersion = "1.0.x"
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
@@ -370,9 +370,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 				Title:         pointers.NewStringPtr(longStr),
 				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
 			},
-			Version:          "1",
-			LatestVersion:    "1.0.1",
-			EvaluatedVersion: "1.0.1",
+			OriginalVersion: "1",
+			LatestVersion:   "1.0.1",
+			Version:         "1.0.1",
 		}
 
 		result := models.StepRunResultsModel{
@@ -386,7 +386,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		expected := ""
 		require.Equal(t, expected, actual)
 
-		result.StepInfo.Version = "1.0"
+		result.StepInfo.OriginalVersion = "1.0"
 		actual = getRunningStepFooterSubSection(result)
 		expected = ""
 		require.Equal(t, expected, actual)
