@@ -11,7 +11,6 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	log "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/stringutil"
-	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -23,19 +22,6 @@ const (
 //------------------------------
 // Util methods
 //------------------------------
-
-func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
-	if stepInfo.LatestVersion == "" {
-		return false
-	}
-
-	res, err := versions.CompareVersions(stepInfo.Version, stepInfo.LatestVersion)
-	if err != nil {
-		log.Errorf("Failed to compare versions, err: %s", err)
-	}
-
-	return (res == 1)
-}
 
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	iconBoxWidth := len("   ")
@@ -361,6 +347,38 @@ func getDeprecateNotesRows(notes string) string {
 	return formattedNote
 }
 
+func getRow(str string) string {
+	str = stringutil.MaxLastCharsWithDots(str, stepRunSummaryBoxWidthInChars-4)
+	return fmt.Sprintf("| %s |", str+strings.Repeat(" ", stepRunSummaryBoxWidthInChars-len(str)-4))
+}
+
+func getUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
+	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
+	if stepInfo.Version != stepInfo.EvaluatedVersion {
+		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, stepInfo.EvaluatedVersion, stepInfo.LatestVersion)
+	}
+
+	updateRow := fmt.Sprintf("| Update available: %s |", vstr)
+	charDiff := len(updateRow) - width
+
+	if charDiff == 0 {
+		return updateRow
+	}
+
+	// shorter than desired - fill with space
+	updateRow = fmt.Sprintf("| Update available: %s%s |", vstr, strings.Repeat(" ", -charDiff))
+
+	if charDiff > 0 {
+		// longer than desired - trim title
+		updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.LatestVersion, strings.Repeat(" ", -len("| Update available: -> %s |")-width))
+		if charDiff > 6 {
+			updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-width))
+		}
+	}
+
+	return updateRow
+}
+
 func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) string {
 	stepInfo := stepRunResult.StepInfo
 
@@ -385,19 +403,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
 	updateRow := ""
 	if isUpdateAvailable {
-		updateRow = fmt.Sprintf("| Update available: %s -> %s |", stepInfo.Version, stepInfo.LatestVersion)
-		charDiff := len(updateRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			updateRow = fmt.Sprintf("| Update available: %s -> %s%s |", stepInfo.Version, stepInfo.LatestVersion, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			if charDiff > 6 {
-				updateRow = fmt.Sprintf("| Update available!%s |", strings.Repeat(" ", -len("| Update available! |")-stepRunSummaryBoxWidthInChars))
-			} else {
-				updateRow = fmt.Sprintf("| Update available: -> %s%s |", stepInfo.LatestVersion, strings.Repeat(" ", -len("| Update available: -> %s |")-stepRunSummaryBoxWidthInChars))
-			}
-		}
+		updateRow = getUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
 	}
 
 	issueRow := ""
@@ -475,7 +481,13 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	// Update available
 	content := ""
 	if isUpdateAvailable {
-		content = fmt.Sprintf("%s", updateRow)
+		content = updateRow
+		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
+			content += "\n" + getRow("")
+			releasesURL := repoReleasesURL(*stepInfo.Step.SourceCodeURL)
+			content += "\n" + getRow("Release notes are available below")
+			content += "\n" + getRow(releasesURL)
+		}
 	}
 
 	// Support URL
