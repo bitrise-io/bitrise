@@ -559,8 +559,10 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	if info.Step.Title == nil || *info.Step.Title == "" {
 		info.Step.Title = pointers.NewStringPtr(info.ID)
 	}
+	info.EvaluatedVersion = info.Version
+	info.Version = stepIDData.Version
 
-	if err := stepmanCLI.Activate(stepIDData.SteplibSource, stepIDData.IDorURI, info.Version, destination, stepYMLCopyPth, false); err != nil {
+	if err := stepmanCLI.Activate(stepIDData.SteplibSource, stepIDData.IDorURI, info.EvaluatedVersion, destination, stepYMLCopyPth, false); err != nil {
 		return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
 	}
 	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -590,13 +592,14 @@ func activateAndRunSteps(
 		}
 
 		stepInfoCopy := stepmanModels.StepInfoModel{
-			Library:       stepInfoPtr.Library,
-			ID:            stepInfoPtr.ID,
-			Version:       stepInfoPtr.Version,
-			LatestVersion: stepInfoPtr.LatestVersion,
-			GroupInfo:     stepInfoPtr.GroupInfo,
-			Step:          stepInfoPtr.Step,
-			DefinitionPth: stepInfoPtr.DefinitionPth,
+			Library:          stepInfoPtr.Library,
+			ID:               stepInfoPtr.ID,
+			Version:          stepInfoPtr.Version,
+			EvaluatedVersion: stepInfoPtr.EvaluatedVersion,
+			LatestVersion:    stepInfoPtr.LatestVersion,
+			GroupInfo:        stepInfoPtr.GroupInfo,
+			Step:             stepInfoPtr.Step,
+			DefinitionPth:    stepInfoPtr.DefinitionPth,
 		}
 
 		errStr := ""
