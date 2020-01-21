@@ -238,8 +238,9 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			Step: stepmanModels.StepModel{
 				Title: pointers.NewStringPtr(longStr),
 			},
-			Version:       "1.0.0",
-			LatestVersion: "1.1.0",
+			Version:          "1.0.0",
+			LatestVersion:    "1.1.0",
+			EvaluatedVersion: "1.0.0",
 		}
 
 		result := models.StepRunResultsModel{
@@ -256,6 +257,140 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 			"| Issue tracker: \x1b[33;1mNot provided\x1b[0m                                                  |" + "\n" +
 			"| Source: \x1b[33;1mNot provided\x1b[0m                                                         |"
 		require.Equal(t, expected, actual)
+	}
+
+	t.Log("Update available, major/minor lock, with changelog URL cropping")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title:         pointers.NewStringPtr(longStr),
+				SourceCodeURL: pointers.NewStringPtr("https://github.com/test-organization/very-long-test-repository-name-exceeding-max-width"),
+			},
+			Version:          "1",
+			LatestVersion:    "2.1.0",
+			EvaluatedVersion: "1.0.1",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.x.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
+		require.Equal(t, expected, actual)
+
+	}
+
+	t.Log("Update available, major/minor lock, without changelog URL cropping")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title:         pointers.NewStringPtr(longStr),
+				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
+			},
+			Version:          "1",
+			LatestVersion:    "2.1.0",
+			EvaluatedVersion: "1.0.1",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.x.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0.x"
+		actual = getRunningStepFooterSubSection(result)
+		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
+			"|                                                                              |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
+			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
+		require.Equal(t, expected, actual)
+
+	}
+
+	t.Log("Update available, nothing is printed if latest version is within major/minor lock range")
+	{
+		stepInfo := stepmanModels.StepInfoModel{
+			Step: stepmanModels.StepModel{
+				Title:         pointers.NewStringPtr(longStr),
+				SourceCodeURL: pointers.NewStringPtr("https://github.com/bitrise-steplib/steps-script"),
+			},
+			Version:          "1",
+			LatestVersion:    "1.0.1",
+			EvaluatedVersion: "1.0.1",
+		}
+
+		result := models.StepRunResultsModel{
+			StepInfo: stepInfo,
+			Status:   models.StepRunStatusCodeSuccess,
+			Idx:      0,
+			RunTime:  10000000,
+		}
+
+		actual := getRunningStepFooterSubSection(result)
+		expected := ""
+		require.Equal(t, expected, actual)
+
+		result.StepInfo.Version = "1.0"
+		actual = getRunningStepFooterSubSection(result)
+		expected = ""
+		require.Equal(t, expected, actual)
+
 	}
 
 	t.Log("support url row length's chardiff = 0")

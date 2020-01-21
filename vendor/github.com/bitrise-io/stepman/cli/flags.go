@@ -113,14 +113,6 @@ var (
 		Name:  VersionKey + ", " + versionKeyShort,
 		Usage: "Step version.",
 	}
-	flPath = cli.StringFlag{
-		Name:  PathKey + ", " + pathKeyShort,
-		Usage: "Path where the step will copied.",
-	}
-	flCopyYML = cli.StringFlag{
-		Name:  CopyYMLKey + ", " + copyYMLKeyShort,
-		Usage: "Path where the selected/activated step's step.yml will be copied.",
-	}
 	flUpdate = cli.BoolFlag{
 		Name:  UpdateKey + ", " + updateKeyShort,
 		Usage: "If flag is set, and collection doesn't contains the specified step, the collection will updated.",
@@ -140,14 +132,6 @@ var (
 	flFormat = cli.StringFlag{
 		Name:  FormatKey + ", " + formatKeyShort,
 		Usage: "Output format (options: raw, json).",
-	}
-	flShort = cli.BoolFlag{
-		Name:  ShortKey,
-		Usage: "Show short version of infos.",
-	}
-	flStepYML = cli.StringFlag{
-		Name:  StepYMLKey,
-		Usage: "Path of step.yml",
 	}
 	flToolMode = cli.BoolFlag{
 		Name:  ToolMode,
