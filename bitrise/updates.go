@@ -41,3 +41,11 @@ func isUpdateAvailable(stepInfo stepmanModels.StepInfoModel) bool {
 		return false
 	}
 }
+
+func repoReleasesURL(repoURL string) string {
+	if strings.Contains(repoURL, "github") || strings.Contains(repoURL, "gitlab") {
+		return repoURL + "/releases"
+	}
+
+	return repoURL
+}

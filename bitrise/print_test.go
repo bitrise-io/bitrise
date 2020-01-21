@@ -281,7 +281,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
@@ -289,7 +289,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
@@ -297,7 +297,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
@@ -305,7 +305,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| ...-organization/very-long-test-repository-name-exceeding-max-width/releases |"
 		require.Equal(t, expected, actual)
 
@@ -333,7 +333,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual := getRunningStepFooterSubSection(result)
 		expected := "| Update available: 1 (1.0.1) -> 2.1.0                                         |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
@@ -341,7 +341,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.x.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
@@ -349,7 +349,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0 (1.0.1) -> 2.1.0                                       |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
@@ -357,7 +357,7 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 		actual = getRunningStepFooterSubSection(result)
 		expected = "| Update available: 1.0.x (1.0.1) -> 2.1.0                                     |" + "\n" +
 			"|                                                                              |" + "\n" +
-			"| Release notes are available on GitHub                                        |" + "\n" +
+			"| Release notes are available below                                            |" + "\n" +
 			"| https://github.com/bitrise-steplib/steps-script/releases                     |"
 		require.Equal(t, expected, actual)
 
