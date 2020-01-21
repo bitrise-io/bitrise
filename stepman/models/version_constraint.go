@@ -148,7 +148,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 					log.Warnf("Invalid step (%s) version: %s", step.Source, fullVersion)
 					continue
 				}
-				if stepVersion.Major != constraint.Version.Major &&
+				if stepVersion.Major != constraint.Version.Major ||
 					stepVersion.Minor != constraint.Version.Minor {
 					continue
 				}

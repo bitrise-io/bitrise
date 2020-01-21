@@ -137,6 +137,7 @@ func Test_latestMatchingStepVersion(t *testing.T) {
 			"1.1.1": step,
 			"1.2.0": step,
 			"2.0.0": step,
+			"2.1.1": step,
 		},
 		LatestVersionNumber: "2.0.0",
 	}
