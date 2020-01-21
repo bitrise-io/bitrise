@@ -539,7 +539,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	info, err := stepmanCLI.QueryStepInfoFromLibrary(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 	if err != nil {
 		if isStepLibUpdated {
-			return stepmanModels.StepInfoModel{}, false, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
+			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
 		}
 
 		// May StepLib should be updated
@@ -552,7 +552,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 
 		info, err = stepmanCLI.QueryStepInfoFromLibrary(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 		if err != nil {
-			return stepmanModels.StepInfoModel{}, false, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
+			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
 		}
 	}
 
