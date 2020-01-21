@@ -66,19 +66,7 @@ var (
 				flUpdate,
 			},
 		},
-		{
-			Name:   "activate",
-			Usage:  "Copy the step with specified --id, and --version, into provided path. If --version flag is not set, the latest version of the step will be used. If --copyyml flag is set, step.yml will be copied to the given path.",
-			Action: activate,
-			Flags: []cli.Flag{
-				flCollection,
-				flID,
-				flVersion,
-				flPath,
-				flCopyYML,
-				flUpdate,
-			},
-		},
+		activateCommand,
 		{
 			Name:   "audit",
 			Usage:  "Validates Step or Step Collection.",
