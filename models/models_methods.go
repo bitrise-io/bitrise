@@ -294,7 +294,7 @@ func (workflow *WorkflowModel) Validate(defaultStepLibSource string) ([]string, 
 		}
 
 		if err := stepIDData.validate(defaultStepLibSource); err != nil {
-			return warnings, err
+			return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", stepIDData.Version, stepIDData.IDorURI)
 		}
 
 		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
@@ -467,7 +467,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		warns, err := workflow.Validate(config.DefaultStepLibSource)
 		warnings = append(warnings, warns...)
 		if err != nil {
-			return warnings, err
+			return warnings, fmt.Errorf("validation error in workflow: %s, error: %s", ID, err)
 		}
 
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
