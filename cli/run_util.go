@@ -804,10 +804,13 @@ func activateAndRunSteps(
 				buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 			}
 
-			if stepInfoPtr.Step.Title != nil && *stepInfoPtr.Step.Title != "" {
-				stepInfo.Step.Title = pointers.NewStringPtr(*stepInfoPtr.Step.Title)
+			stepInfoPtr.ID = stepInfo.ID
+			if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
+				stepInfoPtr.Step.Title = pointers.NewStringPtr(stepInfo.ID)
 			}
-			stepInfoPtr = stepInfo
+			stepInfoPtr.Version = stepInfo.Version
+			stepInfoPtr.LatestVersion = stepInfo.LatestVersion
+			stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
