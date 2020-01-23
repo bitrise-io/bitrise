@@ -18,8 +18,7 @@ func (v *Semver) String() string {
 	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-// ParseSemver returns Semver model from raw version string
-func ParseSemver(version string) (Semver, error) {
+func parseSemver(version string) (Semver, error) {
 	versionParts := strings.Split(version, ".")
 	if len(versionParts) != 3 {
 		return Semver{}, fmt.Errorf("parse %s: should consist by 3 components", version)
@@ -65,7 +64,7 @@ type VersionConstraint struct {
 	Version         Semver
 }
 
-func parseRequiredVersion(version string) (VersionConstraint, error) {
+func ParseRequiredVersion(version string) (VersionConstraint, error) {
 	parts := strings.Split(version, ".")
 	if len(parts) == 0 || len(parts) > 3 {
 		return VersionConstraint{}, fmt.Errorf("parse %s: should have more than 0 and not more than 3 components", version)
@@ -144,7 +143,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 			latestStep := StepModel{}
 
 			for fullVersion, step := range stepVersions.Versions {
-				stepVersion, err := ParseSemver(fullVersion)
+				stepVersion, err := parseSemver(fullVersion)
 				if err != nil {
 					log.Warnf("Invalid step (%s) version: %s", step.Source, fullVersion)
 					continue
@@ -174,7 +173,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 			latestStep := StepModel{}
 
 			for fullVersion, step := range stepVersions.Versions {
-				stepVersion, err := ParseSemver(fullVersion)
+				stepVersion, err := parseSemver(fullVersion)
 				if err != nil {
 					log.Warnf("Invalid step (%s) version: %s", step.Source, fullVersion)
 					continue
