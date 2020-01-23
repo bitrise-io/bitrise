@@ -675,6 +675,16 @@ func Test_activateStepLibStep(t *testing.T) {
 			wantVersion: "",
 			wantErr:     true,
 		},
+		{
+			name: "Latest version (not supported at the moment)",
+			stepIDData: models.StepIDData{
+				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+				IDorURI:       "xcode-archive",
+				Version:       "x.x.x",
+			},
+			wantVersion: "",
+			wantErr:     true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
