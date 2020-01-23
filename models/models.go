@@ -108,6 +108,15 @@ func (stepIDData StepIDData) isLatest() bool {
 	return len(stepIDData.Version) == 0
 }
 
+func (stepIDData StepIDData) validate(defaultStepLibSource string) (err error) {
+	if !stepIDData.isLatest() &&
+		stepIDData.SteplibSource == defaultStepLibSource {
+
+		_, err = stepmanModels.ParseRequiredVersion(stepIDData.Version)
+	}
+	return err
+}
+
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	ProjectType          string                `json:"project_type" yaml:"project_type"`
