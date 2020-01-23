@@ -288,6 +288,19 @@ func (workflow *WorkflowModel) Validate(defaultStepLibSource string) ([]string, 
 			return warnings, err
 		}
 
+		stepIDData, err := CreateStepIDDataFromString(stepID, defaultStepLibSource)
+		if err != nil {
+			return warnings, err
+		}
+
+		if !stepIDData.isLatest() &&
+			stepIDData.SteplibSource == defaultStepLibSource {
+			_, err = stepmanModels.ParseRequiredVersion(stepIDData.Version)
+			if err != nil {
+				return warnings, err
+			}
+		}
+
 		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
 			return warnings, err
 		}

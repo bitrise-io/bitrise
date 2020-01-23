@@ -104,6 +104,10 @@ type StepIDData struct {
 	Version string
 }
 
+func (stepIDData StepIDData) isLatest() bool {
+	return len(stepIDData.Version) == 0
+}
+
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	ProjectType          string                `json:"project_type" yaml:"project_type"`
