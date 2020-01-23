@@ -274,7 +274,7 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate() ([]string, error) {
+func (workflow *WorkflowModel) Validate(defaultStepLibSource string) ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
 			return []string{}, err
@@ -455,7 +455,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
-		warns, err := workflow.Validate()
+		warns, err := workflow.Validate(config.DefaultStepLibSource)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err

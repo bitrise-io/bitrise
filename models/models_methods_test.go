@@ -183,10 +183,10 @@ func TestTriggerMapItemModelString(t *testing.T) {
 			PushBranch:              "master",
 			PullRequestSourceBranch: "develop",
 			PullRequestTargetBranch: "master",
-			Tag:                  "0.9.0",
-			Pattern:              "*",
-			IsPullRequestAllowed: true,
-			WorkflowID:           "ci",
+			Tag:                     "0.9.0",
+			Pattern:                 "*",
+			IsPullRequestAllowed:    true,
+			WorkflowID:              "ci",
 		}
 		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci", item.String(true))
 		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true", item.String(false))
@@ -889,7 +889,7 @@ func TestValidateWorkflow(t *testing.T) {
 			AfterRun:  []string{"after1", "after2", "after3"},
 		}
 
-		warnings, err := workflow.Validate()
+		warnings, err := workflow.Validate("")
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 	}
