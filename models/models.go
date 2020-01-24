@@ -104,12 +104,8 @@ type StepIDData struct {
 	Version string
 }
 
-func (stepIDData StepIDData) isLatest() bool {
-	return len(stepIDData.Version) == 0
-}
-
 func (stepIDData StepIDData) validate(defaultStepLibSource string) (err error) {
-	if !stepIDData.isLatest() &&
+	if len(stepIDData.Version) > 0 &&
 		stepIDData.SteplibSource == defaultStepLibSource {
 
 		_, err = stepmanModels.ParseRequiredVersion(stepIDData.Version)
