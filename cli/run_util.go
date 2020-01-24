@@ -810,6 +810,7 @@ func activateAndRunSteps(
 			}
 			stepInfoPtr.Version = stepInfo.Version
 			stepInfoPtr.LatestVersion = stepInfo.LatestVersion
+			stepInfoPtr.OriginalVersion = stepInfo.OriginalVersion
 			stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 			if err != nil {
