@@ -889,7 +889,7 @@ func TestValidateWorkflow(t *testing.T) {
 			AfterRun:  []string{"after1", "after2", "after3"},
 		}
 
-		warnings, err := workflow.Validate("")
+		warnings, err := workflow.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 	}

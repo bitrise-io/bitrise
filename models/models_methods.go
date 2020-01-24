@@ -274,7 +274,7 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 // Validate ...
-func (workflow *WorkflowModel) Validate(defaultStepLibSource string) ([]string, error) {
+func (workflow *WorkflowModel) Validate() ([]string, error) {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
 			return []string{}, err
@@ -288,13 +288,13 @@ func (workflow *WorkflowModel) Validate(defaultStepLibSource string) ([]string, 
 			return warnings, err
 		}
 
-		stepIDData, err := CreateStepIDDataFromString(stepID, defaultStepLibSource)
+		stepIDData, err := CreateStepIDDataFromString(stepID, "dummy-todo-to-fix")
 		if err != nil {
 			return warnings, err
 		}
 
-		if err := stepIDData.validate(defaultStepLibSource); err != nil {
-			return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", stepIDData.Version, stepIDData.IDorURI)
+		if err := stepIDData.validate(); err != nil {
+			return warnings, err
 		}
 
 		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
@@ -464,7 +464,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
-		warns, err := workflow.Validate(config.DefaultStepLibSource)
+		warns, err := workflow.Validate()
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, fmt.Errorf("validation error in workflow: %s, error: %s", ID, err)
@@ -956,6 +956,31 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	}, nil
 }
 
+// IsStepLibSource returns true if step source is StepLib
+func (sIDData StepIDData) IsStepLibSource() bool {
+	switch sIDData.SteplibSource {
+	case "path":
+		return false
+	case "git":
+		return false
+	case "_":
+		return false
+	case "":
+		return false
+	default:
+		return true
+	}
+}
+
+func (sIDData StepIDData) validate() error {
+	if len(sIDData.Version) > 0 && sIDData.IsStepLibSource() {
+		if _, err := stepmanModels.ParseRequiredVersion(sIDData.Version); err != nil {
+			return fmt.Errorf("invalid version format (%s) specified for step ID: %s", sIDData.Version, sIDData.IDorURI)
+		}
+	}
+	return nil
+}
+
 // IsUniqueResourceID : true if this ID is a unique resource ID, which is true
 // if the ID refers to the exact same step code/data every time.
 // Practically, this is only true for steps from StepLibrary collections,
@@ -965,14 +990,7 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 // __If the ID is a Unique Resource ID then the step can be cached (locally)__,
 // as it won't change between subsequent step execution.
 func (sIDData StepIDData) IsUniqueResourceID() bool {
-	switch sIDData.SteplibSource {
-	case "path":
-		return false
-	case "git":
-		return false
-	case "_":
-		return false
-	case "":
+	if !sIDData.IsStepLibSource() {
 		return false
 	}
 

@@ -104,15 +104,6 @@ type StepIDData struct {
 	Version string
 }
 
-func (stepIDData StepIDData) validate(defaultStepLibSource string) (err error) {
-	if len(stepIDData.Version) > 0 &&
-		stepIDData.SteplibSource == defaultStepLibSource {
-
-		_, err = stepmanModels.ParseRequiredVersion(stepIDData.Version)
-	}
-	return err
-}
-
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	ProjectType          string                `json:"project_type" yaml:"project_type"`
