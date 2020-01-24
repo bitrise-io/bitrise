@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6047caebb71ca2f33ffa503169e93f1dd8954d7397672f71f356332e755eb8fb"
+  digest = "1:c7461fc604169e530d9e0d6ec86e5f72108dc413a2d2c4e07b455df448f606b5"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "58721d12c01f89c5034341a29be589ff11c6d391"
+  revision = "866cce61a60dbd41c156c21afa633cd5fdf1bc8f"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -147,22 +147,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bbe51412d9915d64ffaa96b51d409e070665efc5194fcf145c4a27d4133107a4"
+  digest = "1:c8b0363634b7f813bd07d829fa98af420d99c68d9e88077a7c86fad8e6e31e27"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
+  revision = "530e935923ad688be97c15eeb8e5ee42ebf2b54a"
 
 [[projects]]
   branch = "master"
-  digest = "1:c8faf148023f13e62a93d3ed6c01fc586b3c6b52a40c5c9b0f2220bae71f390a"
+  digest = "1:90acf443a8ab1cc0fd72406089c69db5c9accbdf98279a5827ca2920face8918"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "86b910548bc16777f40503131aa424ae0a092199"
+  revision = "34d275377bf96a094e8d5b0c61750ddd54cd6b36"
 
 [[projects]]
   digest = "1:b75b3deb2bce8bc079e16bb2aecfe01eb80098f5650f9e93e5643ca8b7b73737"
@@ -196,7 +196,9 @@
     "github.com/bitrise-io/goinp/goinp",
     "github.com/bitrise-io/gows/gows",
     "github.com/bitrise-io/stepman",
+    "github.com/bitrise-io/stepman/cli",
     "github.com/bitrise-io/stepman/models",
+    "github.com/bitrise-io/stepman/stepman",
     "github.com/hashicorp/go-version",
     "github.com/ryanuber/go-glob",
     "github.com/stretchr/testify/require",
