@@ -1195,157 +1195,97 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 func TestCreateStepIDDataFromString(t *testing.T) {
 
 	for _, tt := range []struct {
-		stepCompositeIDString string
-		stepLibSource         string
-		wantStepLibSource     string
-		wantStepID            string
-		wantVersion           string
-		wantErr               bool
-		name                  string
+		composite   string
+		stepSrc     string
+		wantStepSrc string
+		wantStepID  string
+		wantVersion string
+		wantErr     bool
+		name        string
 	}{
 		{
-			stepCompositeIDString: "steplib-src::step-id@0.0.1",
-			stepLibSource:         "",
-			wantStepLibSource:     "steplib-src",
-			wantStepID:            "step-id",
-			wantVersion:           "0.0.1",
-			wantErr:               false,
-			name:                  "default / long / verbose ID mode",
+			composite: "steplib-src::step-id@0.0.1", stepSrc: "",
+			wantStepSrc: "steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
+			name: "default / long / verbose ID mode",
 		},
 		{
-			stepCompositeIDString: "step-id@0.0.1",
-			stepLibSource:         "default-steplib-src",
-			wantStepLibSource:     "default-steplib-src",
-			wantStepID:            "step-id",
-			wantVersion:           "0.0.1",
-			wantErr:               false,
-			name:                  "no steplib-source",
+			composite: "step-id@0.0.1", stepSrc: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
+			name: "no steplib-source",
 		},
 		{
-			stepCompositeIDString: "::step-id@0.0.1",
-			stepLibSource:         "default-steplib-src",
-			wantStepLibSource:     "default-steplib-src",
-			wantStepID:            "step-id",
-			wantVersion:           "0.0.1",
-			wantErr:               false,
-			name:                  "invalid/empty step lib source, but default provided",
+			composite: "::step-id@0.0.1", stepSrc: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
+			name: "invalid/empty step lib source, but default provided",
 		},
 		{
-			stepCompositeIDString: "::step-id@0.0.1",
-			stepLibSource:         "",
-			wantStepLibSource:     "",
-			wantStepID:            "",
-			wantVersion:           "",
-			wantErr:               true,
-			name:                  "invalid/empty step lib source + no default",
+			composite: "::step-id@0.0.1", stepSrc: "",
+			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
+			name: "invalid/empty step lib source + no default",
 		},
 		{
-			stepCompositeIDString: "step-id@0.0.1",
-			stepLibSource:         "",
-			wantStepLibSource:     "",
-			wantStepID:            "",
-			wantVersion:           "",
-			wantErr:               true,
-			name:                  "no steplib-source & no default -> fail",
+			composite: "step-id@0.0.1", stepSrc: "",
+			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
+			name: "no steplib-source & no default -> fail",
 		},
 		{
-			stepCompositeIDString: "step-id",
-			stepLibSource:         "def-lib-src",
-			wantStepLibSource:     "def-lib-src",
-			wantStepID:            "step-id",
-			wantVersion:           "",
-			wantErr:               false,
-			name:                  "no steplib & no version, only step-id",
+			composite: "step-id", stepSrc: "def-lib-src",
+			wantStepSrc: "def-lib-src", wantVersion: "", wantStepID: "step-id", wantErr: false,
+			name: "no steplib & no version, only step-id",
 		},
 		{
-			stepCompositeIDString: "",
-			stepLibSource:         "def-step-src",
-			wantStepLibSource:     "",
-			wantStepID:            "",
-			wantVersion:           "",
-			wantErr:               true,
-			name:                  "empty test",
+			composite: "", stepSrc: "def-step-src",
+			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
+			name: "empty test",
 		},
 		{
-			stepCompositeIDString: "@1.0.0",
-			stepLibSource:         "def-step-src",
-			wantStepLibSource:     "",
-			wantStepID:            "",
-			wantVersion:           "",
-			wantErr:               true,
-			name:                  "special empty test",
+			composite: "@1.0.0", stepSrc: "def-step-src",
+			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
+			name: "special empty test",
 		},
 		{
-			stepCompositeIDString: "path::/some/path",
-			stepLibSource:         "",
-			wantStepLibSource:     "path",
-			wantStepID:            "/some/path",
-			wantVersion:           "",
-			wantErr:               false,
-			name:                  "local Path",
+			composite: "path::/some/path", stepSrc: "",
+			wantStepSrc: "path", wantVersion: "", wantStepID: "/some/path", wantErr: false,
+			name: "local Path",
 		},
 		{
-			stepCompositeIDString: "path::~/some/path/in/home",
-			stepLibSource:         "",
-			wantStepLibSource:     "path",
-			wantStepID:            "~/some/path/in/home",
-			wantVersion:           "",
-			wantErr:               false,
-			name:                  "local Path",
+			composite: "path::~/some/path/in/home", stepSrc: "",
+			wantStepSrc: "path", wantVersion: "", wantStepID: "~/some/path/in/home", wantErr: false,
+			name: "local Path",
 		},
 		{
-			stepCompositeIDString: "path::$HOME/some/path/in/home",
-			stepLibSource:         "",
-			wantStepLibSource:     "path",
-			wantStepID:            "$HOME/some/path/in/home",
-			wantVersion:           "",
-			wantErr:               false,
-			name:                  "local Path",
+			composite: "path::$HOME/some/path/in/home", stepSrc: "",
+			wantStepSrc: "path", wantVersion: "", wantStepID: "$HOME/some/path/in/home", wantErr: false,
+			name: "local Path",
 		},
 		{
-			stepCompositeIDString: "git::https://github.com/bitrise-io/steps-timestamp.git@develop",
-			stepLibSource:         "some-def-coll",
-			wantStepLibSource:     "git",
-			wantStepID:            "https://github.com/bitrise-io/steps-timestamp.git",
-			wantVersion:           "develop",
-			wantErr:               false,
-			name:                  "direct git uri",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", stepSrc: "some-def-coll",
+			wantStepSrc: "git", wantVersion: "develop", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
+			name: "direct git uri",
 		},
 		{
-			stepCompositeIDString: "git::git@github.com:bitrise-io/steps-timestamp.git@develop",
-			stepLibSource:         "",
-			wantStepLibSource:     "git",
-			wantStepID:            "git@github.com:bitrise-io/steps-timestamp.git",
-			wantVersion:           "develop",
-			wantErr:               false,
-			name:                  "direct git uri",
+			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", stepSrc: "",
+			wantStepSrc: "git", wantVersion: "develop", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantErr: false,
+			name: "direct git uri",
 		},
 		{
-			stepCompositeIDString: "git::https://github.com/bitrise-io/steps-timestamp.git",
-			stepLibSource:         "some-def-coll",
-			wantStepLibSource:     "git",
-			wantStepID:            "https://github.com/bitrise-io/steps-timestamp.git",
-			wantVersion:           "master",
-			wantErr:               false,
-			name:                  "direct git uri",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", stepSrc: "some-def-coll",
+			wantStepSrc: "git", wantVersion: "master", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
+			name: "direct git uri",
 		},
 		{
-			stepCompositeIDString: "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0",
-			stepLibSource:         "",
-			wantStepLibSource:     "_",
-			wantStepID:            "https://github.com/bitrise-io/steps-timestamp.git",
-			wantVersion:           "1.0.0",
-			wantErr:               false,
-			name:                  "old step",
+			composite: "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0", stepSrc: "",
+			wantStepSrc: "_", wantVersion: "1.0.0", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
+			name: "old step",
 		},
 	} {
-		stepIDData, err := CreateStepIDDataFromString(tt.stepCompositeIDString, tt.stepLibSource)
+		stepIDData, err := CreateStepIDDataFromString(tt.composite, tt.stepSrc)
 
 		if tt.wantErr && (err == nil) {
 			t.Fatal("tt.wantErr && (err == nil):", err)
 		}
 
-		require.Equal(t, tt.wantStepLibSource, stepIDData.SteplibSource)
+		require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource)
 		require.Equal(t, tt.wantStepID, stepIDData.IDorURI)
 		require.Equal(t, tt.wantVersion, stepIDData.Version)
 	}
