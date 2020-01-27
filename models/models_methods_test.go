@@ -1193,101 +1193,135 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
+	type data struct {
+		composite            string
+		defaultSteplibSource string
+		wantStepSrc          string
+		wantStepID           string
+		wantVersion          string
+		wantErr              bool
+		name                 string
+	}
 
-	for _, tt := range []struct {
-		composite   string
-		stepSrc     string
-		wantStepSrc string
-		wantStepID  string
-		wantVersion string
-		wantErr     bool
-		name        string
-	}{
+	stepLib := []data{
 		{
-			composite: "steplib-src::step-id@0.0.1", stepSrc: "",
-			wantStepSrc: "steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
-			name: "default / long / verbose ID mode",
+			name:      "no steplib-source",
+			composite: "step-id@0.0.1", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
 		},
 		{
-			composite: "step-id@0.0.1", stepSrc: "default-steplib-src",
-			wantStepSrc: "default-steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
-			name: "no steplib-source",
+			name:      "invalid/empty step lib source, but default provided",
+			composite: "::step-id@0.0.1", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
 		},
 		{
-			composite: "::step-id@0.0.1", stepSrc: "default-steplib-src",
-			wantStepSrc: "default-steplib-src", wantVersion: "0.0.1", wantStepID: "step-id", wantErr: false,
-			name: "invalid/empty step lib source, but default provided",
+			name:      "invalid/empty step lib source + no default",
+			composite: "::step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
 		},
 		{
-			composite: "::step-id@0.0.1", stepSrc: "",
-			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
-			name: "invalid/empty step lib source + no default",
+			name:      "no steplib-source & no default -> fail",
+			composite: "step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
 		},
 		{
-			composite: "step-id@0.0.1", stepSrc: "",
-			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
-			name: "no steplib-source & no default -> fail",
+			name:      "no steplib & no version, only step-id",
+			composite: "step-id", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "",
+			wantErr: false,
+		},
+	}
+
+	legacy := []data{
+		{
+			name:      "default / long / verbose ID mode",
+			composite: "steplib-src::step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
 		},
 		{
-			composite: "step-id", stepSrc: "def-lib-src",
-			wantStepSrc: "def-lib-src", wantVersion: "", wantStepID: "step-id", wantErr: false,
-			name: "no steplib & no version, only step-id",
+			name:      "empty test",
+			composite: "", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
 		},
 		{
-			composite: "", stepSrc: "def-step-src",
-			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
-			name: "empty test",
+			name:      "special empty test",
+			composite: "@1.0.0", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
 		},
 		{
-			composite: "@1.0.0", stepSrc: "def-step-src",
-			wantStepSrc: "", wantVersion: "", wantStepID: "", wantErr: true,
-			name: "special empty test",
+			name:      "old step",
+			composite: "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0", defaultSteplibSource: "",
+			wantStepSrc: "_", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "1.0.0",
+			wantErr: false,
+		},
+	}
+
+	path := []data{
+		{
+			name:      "local Path",
+			composite: "path::/some/path", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "/some/path", wantVersion: "",
+			wantErr: false,
 		},
 		{
-			composite: "path::/some/path", stepSrc: "",
-			wantStepSrc: "path", wantVersion: "", wantStepID: "/some/path", wantErr: false,
-			name: "local Path",
+			name:      "local Path",
+			composite: "path::~/some/path/in/home", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "~/some/path/in/home", wantVersion: "",
+			wantErr: false,
 		},
 		{
-			composite: "path::~/some/path/in/home", stepSrc: "",
-			wantStepSrc: "path", wantVersion: "", wantStepID: "~/some/path/in/home", wantErr: false,
-			name: "local Path",
+			name:      "local Path",
+			composite: "path::$HOME/some/path/in/home", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "$HOME/some/path/in/home", wantVersion: "",
+			wantErr: false,
+		},
+	}
+
+	git := []data{
+		{
+			name:      "direct git uri",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "develop",
+			wantErr: false,
 		},
 		{
-			composite: "path::$HOME/some/path/in/home", stepSrc: "",
-			wantStepSrc: "path", wantVersion: "", wantStepID: "$HOME/some/path/in/home", wantErr: false,
-			name: "local Path",
+			name:      "direct git uri",
+			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "",
+			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "develop",
+			wantErr: false,
 		},
 		{
-			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", stepSrc: "some-def-coll",
-			wantStepSrc: "git", wantVersion: "develop", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
-			name: "direct git uri",
+			name:      "direct git uri",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantErr: false,
 		},
-		{
-			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", stepSrc: "",
-			wantStepSrc: "git", wantVersion: "develop", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantErr: false,
-			name: "direct git uri",
-		},
-		{
-			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", stepSrc: "some-def-coll",
-			wantStepSrc: "git", wantVersion: "master", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
-			name: "direct git uri",
-		},
-		{
-			composite: "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0", stepSrc: "",
-			wantStepSrc: "_", wantVersion: "1.0.0", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantErr: false,
-			name: "old step",
-		},
+	}
+
+	for _, group := range [][]data{
+		stepLib,
+		git,
+		path,
+		legacy,
 	} {
-		stepIDData, err := CreateStepIDDataFromString(tt.composite, tt.stepSrc)
+		for _, tt := range group {
+			stepIDData, err := CreateStepIDDataFromString(tt.composite, tt.defaultSteplibSource)
 
-		if tt.wantErr && (err == nil) {
-			t.Fatal("tt.wantErr && (err == nil):", err)
+			if tt.wantErr && (err == nil) {
+				t.Fatal("tt.wantErr && (err == nil):", err)
+			}
+
+			require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource)
+			require.Equal(t, tt.wantStepID, stepIDData.IDorURI)
+			require.Equal(t, tt.wantVersion, stepIDData.Version)
 		}
-
-		require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource)
-		require.Equal(t, tt.wantStepID, stepIDData.IDorURI)
-		require.Equal(t, tt.wantVersion, stepIDData.Version)
 	}
 }
 
