@@ -354,8 +354,8 @@ func getRow(str string) string {
 
 func getUpdateRow(stepInfo stepmanModels.StepInfoModel, width int) string {
 	vstr := fmt.Sprintf("%s -> %s", stepInfo.Version, stepInfo.LatestVersion)
-	if stepInfo.Version != stepInfo.EvaluatedVersion {
-		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.Version, stepInfo.EvaluatedVersion, stepInfo.LatestVersion)
+	if stepInfo.Version != stepInfo.OriginalVersion {
+		vstr = fmt.Sprintf("%s (%s) -> %s", stepInfo.OriginalVersion, stepInfo.Version, stepInfo.LatestVersion)
 	}
 
 	updateRow := fmt.Sprintf("| Update available: %s |", vstr)
