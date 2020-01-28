@@ -288,13 +288,14 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 
-		stepIDData, err := CreateStepIDDataFromString(stepID, "dummy-todo-to-fix")
-		if err != nil {
-			return warnings, err
-		}
+		stepNode := stepNode(stepID)
+		stepVersion := stepNode.version()
+		stepSource := stepNode.source()
 
-		if err := stepIDData.validate(); err != nil {
-			return warnings, err
+		if len(stepVersion) > 0 && stepSource == stepSourceUnknown {
+			if _, err := stepmanModels.ParseRequiredVersion(stepVersion); err != nil {
+				return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", stepVersion, stepID)
+			}
 		}
 
 		if err := step.ValidateInputAndOutputEnvs(false); err != nil {
@@ -911,15 +912,25 @@ func parseCompositeVersion(stepIDAndVersionOrURIStr string) (string, string, err
 	return stepIDOrURI, stepVersion, nil
 }
 
-type stepNode string
+type (
+	stepNode   string
+	stepSource string
+)
 
-func (sn stepNode) source(defaultStepLibSource string) string {
+const (
+	stepSourceGit                stepSource = "git"
+	stepSourcePath               stepSource = "path"
+	stepSourceUnknown            stepSource = ""
+	stepSourceStepLibIndependent stepSource = "_"
+)
+
+func (sn stepNode) source() stepSource {
 	if s := strings.SplitN(string(sn), "::", 2); len(s) == 2 {
 		if src := s[0]; len(src) > 0 {
-			return src
+			return stepSource(src)
 		}
 	}
-	return defaultStepLibSource
+	return stepSourceUnknown
 }
 
 func (sn stepNode) composite() string {
@@ -974,9 +985,12 @@ func (sn stepNode) id() string {
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
 	node := stepNode(compositeVersionStr)
 
-	src := node.source(defaultStepLibSource)
-	if src == "" && defaultStepLibSource == "" {
-		return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+	src := node.source()
+	if src == stepSourceUnknown {
+		if defaultStepLibSource == "" {
+			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+		}
+		src = stepSource(defaultStepLibSource)
 	}
 
 	id := node.id()
@@ -985,13 +999,13 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	}
 
 	version := node.version()
-	if src == "git" && version == "" {
+	if src == stepSourceGit && version == "" {
 		version = "master"
 	}
 
 	return StepIDData{
 		IDorURI:       id,
-		SteplibSource: src,
+		SteplibSource: string(src),
 		Version:       version,
 	}, nil
 }
@@ -1010,15 +1024,6 @@ func (sIDData StepIDData) IsStepLibSource() bool {
 	default:
 		return true
 	}
-}
-
-func (sIDData StepIDData) validate() error {
-	if len(sIDData.Version) > 0 && sIDData.IsStepLibSource() {
-		if _, err := stepmanModels.ParseRequiredVersion(sIDData.Version); err != nil {
-			return fmt.Errorf("invalid version format (%s) specified for step ID: %s", sIDData.Version, sIDData.IDorURI)
-		}
-	}
-	return nil
 }
 
 // IsUniqueResourceID : true if this ID is a unique resource ID, which is true

@@ -1549,24 +1549,24 @@ func Test_stepNode(t *testing.T) {
 			"step-id": {
 				id:         "step-id",
 				version:    "",
-				wantSource: "default",
+				wantSource: "",
 			},
 			"step-id@1.0.0": {
 				id:         "step-id",
 				version:    "1.0.0",
-				wantSource: "default",
+				wantSource: "",
 			},
 		},
 		"::": {
 			"step-id": {
 				id:         "step-id",
 				version:    "",
-				wantSource: "default",
+				wantSource: "",
 			},
 			"step-id@1.0.0": {
 				id:         "step-id",
 				version:    "1.0.0",
-				wantSource: "default",
+				wantSource: "",
 			},
 		},
 		"_::": {
@@ -1626,7 +1626,7 @@ func Test_stepNode(t *testing.T) {
 
 	for source, composites := range combinations {
 		for composite, tt := range composites {
-			if got := stepNode(source + composite).source("default"); got != tt.wantSource {
+			if got := stepNode(source + composite).source(); got != stepSource(tt.wantSource) {
 				t.Fatal("invalid source", source+composite, "got:", got)
 			}
 
@@ -1764,19 +1764,17 @@ func Test_stepNode_version(t *testing.T) {
 }
 
 func Test_stepNode_source(t *testing.T) {
-	defaultSource := "default"
-
 	tests := []struct {
 		id   string
 		want string
 	}{
 		{
 			"step",
-			defaultSource,
+			"",
 		},
 		{
 			"::step",
-			defaultSource,
+			"",
 		},
 		{
 			"_::step",
@@ -1793,7 +1791,7 @@ func Test_stepNode_source(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			if got := stepNode(tt.id).source(defaultSource); got != tt.want {
+			if got := stepNode(tt.id).source(); got != stepSource(tt.want) {
 				t.Errorf("%s: stepNode.source() = %v, want %v", tt.id, got, tt.want)
 			}
 		})
