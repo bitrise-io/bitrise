@@ -289,12 +289,10 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 		}
 
 		stepNode := stepNode(stepID)
-		stepVersion := stepNode.version()
-		stepSource := stepNode.source()
 
-		if len(stepVersion) > 0 && stepSource == stepSourceUnknown {
-			if _, err := stepmanModels.ParseRequiredVersion(stepVersion); err != nil {
-				return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", stepVersion, stepID)
+		if ver, src := stepNode.version(), stepNode.source(); len(ver) > 0 && src == stepSourceUnknown {
+			if _, err := stepmanModels.ParseRequiredVersion(ver); err != nil {
+				return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", ver, stepID)
 			}
 		}
 
