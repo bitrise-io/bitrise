@@ -880,36 +880,6 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModel
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
 }
 
-func parseCompositeVersion(stepIDAndVersionOrURIStr string) (string, string, error) {
-	// now determine the ID-or-URI and the version (if provided)
-	stepIDOrURI := ""
-	stepVersion := ""
-	stepidVersionOrURISplits := strings.Split(stepIDAndVersionOrURIStr, "@")
-	if len(stepidVersionOrURISplits) >= 2 {
-		splitsCnt := len(stepidVersionOrURISplits)
-		allButLastSplits := stepidVersionOrURISplits[:splitsCnt-1]
-		// the ID or URI is all components except the last @version component
-		//  which will be the version itself
-		// for example in case it's a git direct URI like:
-		//  git@github.com:bitrise-io/steps-timestamp.git@develop
-		// which contains 2 at (@) signs only the last should be the version,
-		//  the first one is part of the URI
-		stepIDOrURI = strings.Join(allButLastSplits, "@")
-		// version is simply the last component
-		stepVersion = stepidVersionOrURISplits[splitsCnt-1]
-	} else if len(stepidVersionOrURISplits) == 1 {
-		stepIDOrURI = stepidVersionOrURISplits[0]
-	} else {
-		return "", "", errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionOrURIStr + ")")
-	}
-
-	if stepIDOrURI == "" {
-		return "", "", errors.New("No ID found at all (" + stepIDAndVersionOrURIStr + ")")
-	}
-
-	return stepIDOrURI, stepVersion, nil
-}
-
 type (
 	stepNode   string
 	stepSource string
