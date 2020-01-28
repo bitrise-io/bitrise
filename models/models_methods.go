@@ -881,44 +881,7 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModel
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
 }
 
-// CreateStepIDDataFromString ...
-// compositeVersionStr examples:
-//  * local path:
-//    * path::~/path/to/step/dir
-//  * direct git url and branch or tag:
-//    * git::https://github.com/bitrise-io/steps-timestamp.git@master
-//  * Steplib independent step:
-//    * _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
-//  * full ID with steplib, stepid and version:
-//    * https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
-//  * only stepid and version (requires a default steplib source to be provided):
-//    * script@2.0.0
-//  * only stepid, latest version will be used (requires a default steplib source to be provided):
-//    * script
-func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	// first, determine the steplib-source/type
-	stepSrc := ""
-	stepIDAndVersionOrURIStr := ""
-	libsourceStepSplits := strings.Split(compositeVersionStr, "::")
-	if len(libsourceStepSplits) == 2 {
-		// long/verbose ID mode, ex: step-lib-src::step-id@1.0.0
-		stepSrc = libsourceStepSplits[0]
-		stepIDAndVersionOrURIStr = libsourceStepSplits[1]
-	} else if len(libsourceStepSplits) == 1 {
-		// missing steplib-src mode, ex: step-id@1.0.0
-		//  in this case if we have a default StepLibSource we'll use that
-		stepIDAndVersionOrURIStr = libsourceStepSplits[0]
-	} else {
-		return StepIDData{}, errors.New("No StepLib found, neither default provided (" + compositeVersionStr + ")")
-	}
-
-	if stepSrc == "" {
-		if defaultStepLibSource == "" {
-			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-		}
-		stepSrc = defaultStepLibSource
-	}
-
+func parseCompositeVersion(stepIDAndVersionOrURIStr string) (string, string, error) {
 	// now determine the ID-or-URI and the version (if provided)
 	stepIDOrURI := ""
 	stepVersion := ""
@@ -938,21 +901,98 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	} else if len(stepidVersionOrURISplits) == 1 {
 		stepIDOrURI = stepidVersionOrURISplits[0]
 	} else {
-		return StepIDData{}, errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionOrURIStr + ")")
+		return "", "", errors.New("Step ID and version should be separated with a '@' separator (" + stepIDAndVersionOrURIStr + ")")
 	}
 
 	if stepIDOrURI == "" {
+		return "", "", errors.New("No ID found at all (" + stepIDAndVersionOrURIStr + ")")
+	}
+
+	return stepIDOrURI, stepVersion, nil
+}
+
+type stepNode string
+
+func (sn stepNode) source(defaultStepLibSource string) string {
+	if s := strings.SplitN(string(sn), "::", 2); len(s) == 2 {
+		if src := s[0]; len(src) > 0 {
+			return src
+		}
+	}
+	return defaultStepLibSource
+}
+
+func (sn stepNode) composite() string {
+	if s := strings.SplitN(string(sn), "::", 2); len(s) == 2 {
+		return s[1]
+	}
+	return string(sn)
+}
+
+func (sn stepNode) version() string {
+	composite := sn.composite()
+
+	s := strings.Split(composite, "@")
+	if item := s[0]; item == "git" {
+		s = s[1:]
+		s[0] = item + "@" + s[0]
+	}
+
+	if len(s) > 1 {
+		return s[len(s)-1]
+	}
+
+	return ""
+}
+
+func (sn stepNode) id() string {
+	composite := sn.composite()
+
+	s := strings.Split(composite, "@")
+	if item := s[0]; item == "git" {
+		s = s[1:]
+		s[0] = item + "@" + s[0]
+	}
+
+	return s[0]
+}
+
+// CreateStepIDDataFromString ...
+// compositeVersionStr examples:
+//  * local path:
+//    * path::~/path/to/step/dir
+//  * direct git url and branch or tag:
+//    * git::https://github.com/bitrise-io/steps-timestamp.git@master
+//  * Steplib independent step:
+//    * _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
+//  * full ID with steplib, stepid and version:
+//    * https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
+//  * only stepid and version (requires a default steplib source to be provided):
+//    * script@2.0.0
+//  * only stepid, latest version will be used (requires a default steplib source to be provided):
+//    * script
+func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
+	node := stepNode(compositeVersionStr)
+
+	src := node.source(defaultStepLibSource)
+	if src == "" && defaultStepLibSource == "" {
+		return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+	}
+
+	id := node.id()
+	if id == "" {
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
 	}
 
-	if stepSrc == "git" && stepVersion == "" {
-		stepVersion = "master"
+	version := node.version()
+	if src == "git" && version == "" {
+		version = "master"
 	}
 
 	return StepIDData{
-		SteplibSource: stepSrc,
-		IDorURI:       stepIDOrURI,
-		Version:       stepVersion,
+		IDorURI:       id,
+		SteplibSource: src,
+		Version:       version,
 	}, nil
 }
 

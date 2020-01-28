@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
@@ -1286,19 +1285,19 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 
 	git := []data{
 		{
-			name:      "direct git uri",
+			name:      "direct git uri https",
 			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "default-steplib-src",
 			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "develop",
 			wantErr: false,
 		},
 		{
-			name:      "direct git uri",
+			name:      "direct git uri ssh",
 			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "",
 			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "develop",
 			wantErr: false,
 		},
 		{
-			name:      "direct git uri",
+			name:      "direct git uri no branch",
 			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
 			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "master",
 			wantErr: false,
@@ -1318,9 +1317,9 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 				t.Fatal("tt.wantErr && (err == nil):", err)
 			}
 
-			require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource)
-			require.Equal(t, tt.wantStepID, stepIDData.IDorURI)
-			require.Equal(t, tt.wantVersion, stepIDData.Version)
+			require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource, tt.name)
+			require.Equal(t, tt.wantStepID, stepIDData.IDorURI, tt.name)
+			require.Equal(t, tt.wantVersion, stepIDData.Version, tt.name)
 		}
 	}
 }
@@ -1538,5 +1537,300 @@ workflows:
 			require.Equal(t, 0, len(step.Inputs))
 			require.Equal(t, 0, len(step.Outputs))
 		}
+	}
+}
+
+func Test_stepNode(t *testing.T) {
+	// sources -> composites -> step ID+version
+	combinations := map[string]map[string]struct {
+		id, version, wantSource string
+	}{
+		"": {
+			"step-id": {
+				id:         "step-id",
+				version:    "",
+				wantSource: "default",
+			},
+			"step-id@1.0.0": {
+				id:         "step-id",
+				version:    "1.0.0",
+				wantSource: "default",
+			},
+		},
+		"::": {
+			"step-id": {
+				id:         "step-id",
+				version:    "",
+				wantSource: "default",
+			},
+			"step-id@1.0.0": {
+				id:         "step-id",
+				version:    "1.0.0",
+				wantSource: "default",
+			},
+		},
+		"_::": {
+			"https://github.com/bitrise-io/steps-bash-script.git@1.0.0": {
+				id:         "https://github.com/bitrise-io/steps-bash-script.git",
+				version:    "1.0.0",
+				wantSource: "_",
+			},
+			"git@github.com:bitrise-io/steps-bash-script.git@1.0.0": {
+				id:         "git@github.com:bitrise-io/steps-bash-script.git",
+				version:    "1.0.0",
+				wantSource: "_",
+			},
+		},
+		"git::": {
+			"https://github.com/bitrise-io/bitrise-steplib.git": {
+				id:         "https://github.com/bitrise-io/bitrise-steplib.git",
+				version:    "",
+				wantSource: "git",
+			},
+			"https://github.com/bitrise-io/bitrise-steplib.git@branch": {
+				id:         "https://github.com/bitrise-io/bitrise-steplib.git",
+				version:    "branch",
+				wantSource: "git",
+			},
+			"git@github.com:bitrise-io/steps-bash-script.git": {
+				id:         "git@github.com:bitrise-io/steps-bash-script.git",
+				version:    "",
+				wantSource: "git",
+			},
+			"git@github.com:bitrise-io/steps-bash-script.git@branch": {
+				id:         "git@github.com:bitrise-io/steps-bash-script.git",
+				version:    "branch",
+				wantSource: "git",
+			},
+		},
+		"path::": {
+			"/file/path/to/step": {
+				id:         "/file/path/to/step",
+				version:    "",
+				wantSource: "path",
+			},
+		},
+		"https://github.com/bitrise-io/bitrise-steplib.git::": {
+			"step-id": {
+				id:         "step-id",
+				version:    "",
+				wantSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+			},
+			"step-id@1.0.0": {
+				id:         "step-id",
+				version:    "1.0.0",
+				wantSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+			},
+		},
+	}
+
+	for source, composites := range combinations {
+		for composite, tt := range composites {
+			if got := stepNode(source + composite).source("default"); got != tt.wantSource {
+				t.Fatal("invalid source", source+composite, "got:", got)
+			}
+
+			if got := stepNode(source + composite).composite(); got != composite {
+				t.Fatal("invalid composite", source+composite, "got:", got)
+			}
+
+			if got := stepNode(source + composite).id(); got != tt.id {
+				t.Fatal("invalid id for:", source+composite, "got:", got, "want:", tt.id)
+			}
+
+			if got := stepNode(source + composite).version(); got != tt.version {
+				t.Fatal("invalid version for:", source+composite, "got:", got, "want:", tt.version, []byte(got), []byte(tt.version))
+			}
+		}
+	}
+}
+
+func Test_stepNode_id(t *testing.T) {
+	tests := []struct {
+		id   string
+		want string
+	}{
+		{
+			"step",
+			"step",
+		},
+		{
+			"step@version",
+			"step",
+		},
+		{
+			"/path/to/file",
+			"/path/to/file",
+		},
+		{
+			"https://git.url/yeah/repo",
+			"https://git.url/yeah/repo",
+		},
+		{
+			"https://git.url/yeah/repo@branch",
+			"https://git.url/yeah/repo",
+		},
+		{
+			"https://git.url/yeah/repo.git",
+			"https://git.url/yeah/repo.git",
+		},
+		{
+			"https://git.url/yeah/repo.git@branch",
+			"https://git.url/yeah/repo.git",
+		},
+		{
+			"git@git.url:yeah/repo",
+			"git@git.url:yeah/repo",
+		},
+		{
+			"git@git.url:yeah/repo@branch",
+			"git@git.url:yeah/repo",
+		},
+		{
+			"git@git.url:yeah/repo.git",
+			"git@git.url:yeah/repo.git",
+		},
+		{
+			"git@git.url:yeah/repo.git@branch",
+			"git@git.url:yeah/repo.git",
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			if got := stepNode(tt.id).id(); got != tt.want {
+				t.Errorf("%s: stepNode.id() = %v, want %v", tt.id, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_stepNode_version(t *testing.T) {
+	tests := []struct {
+		id   string
+		want string
+	}{
+		{
+			"step",
+			"",
+		},
+		{
+			"step@version",
+			"version",
+		},
+		{
+			"/path/to/file",
+			"",
+		},
+		{
+			"https://git.url/yeah/repo",
+			"",
+		},
+		{
+			"https://git.url/yeah/repo@branch",
+			"branch",
+		},
+		{
+			"https://git.url/yeah/repo.git",
+			"",
+		},
+		{
+			"https://git.url/yeah/repo.git@branch",
+			"branch",
+		},
+		{
+			"git@git.url:yeah/repo",
+			"",
+		},
+		{
+			"git@git.url:yeah/repo@branch",
+			"branch",
+		},
+		{
+			"git@git.url:yeah/repo.git",
+			"",
+		},
+		{
+			"git@git.url:yeah/repo.git@branch",
+			"branch",
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			if got := stepNode(tt.id).version(); got != tt.want {
+				t.Errorf("%s: stepNode.version() = %v, want %v", tt.id, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_stepNode_source(t *testing.T) {
+	defaultSource := "default"
+
+	tests := []struct {
+		id   string
+		want string
+	}{
+		{
+			"step",
+			defaultSource,
+		},
+		{
+			"::step",
+			defaultSource,
+		},
+		{
+			"_::step",
+			"_",
+		},
+		{
+			"git::step",
+			"git",
+		},
+		{
+			"path::step",
+			"path",
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			if got := stepNode(tt.id).source(defaultSource); got != tt.want {
+				t.Errorf("%s: stepNode.source() = %v, want %v", tt.id, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_stepNode_composite(t *testing.T) {
+	tests := []struct {
+		id   string
+		want string
+	}{
+		{
+			"step",
+			"step",
+		},
+		{
+			"::step",
+			"step",
+		},
+		{
+			"_::step",
+			"step",
+		},
+		{
+			"git::step",
+			"step",
+		},
+		{
+			"path::step",
+			"step",
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			if got := stepNode(tt.id).composite(); got != tt.want {
+				t.Errorf("%s: stepNode.composite() = %v, want %v", tt.id, got, tt.want)
+			}
+		})
 	}
 }
