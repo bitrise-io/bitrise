@@ -1233,9 +1233,6 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "",
 			wantErr: false,
 		},
-	}
-
-	legacy := []data{
 		{
 			name:      "default / long / verbose ID mode",
 			composite: "steplib-src::step-id@0.0.1", defaultSteplibSource: "",
@@ -1308,7 +1305,6 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 		stepLib,
 		git,
 		path,
-		legacy,
 	} {
 		for _, tt := range group {
 			stepIDData, err := CreateStepIDDataFromString(tt.composite, tt.defaultSteplibSource)
@@ -1626,19 +1622,19 @@ func Test_stepNode(t *testing.T) {
 
 	for source, composites := range combinations {
 		for composite, tt := range composites {
-			if got := stepNode(source + composite).source(); got != stepSource(tt.wantSource) {
+			if got := getStepSource(source + composite); got != tt.wantSource {
 				t.Fatal("invalid source", source+composite, "got:", got)
 			}
 
-			if got := stepNode(source + composite).composite(); got != composite {
+			if got := getStepComposite(source + composite); got != composite {
 				t.Fatal("invalid composite", source+composite, "got:", got)
 			}
 
-			if got := stepNode(source + composite).id(); got != tt.id {
+			if got := getStepID(source + composite); got != tt.id {
 				t.Fatal("invalid id for:", source+composite, "got:", got, "want:", tt.id)
 			}
 
-			if got := stepNode(source + composite).version(); got != tt.version {
+			if got := getStepVersion(source + composite); got != tt.version {
 				t.Fatal("invalid version for:", source+composite, "got:", got, "want:", tt.version, []byte(got), []byte(tt.version))
 			}
 		}
@@ -1697,8 +1693,8 @@ func Test_stepNode_id(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			if got := stepNode(tt.id).id(); got != tt.want {
-				t.Errorf("%s: stepNode.id() = %v, want %v", tt.id, got, tt.want)
+			if got := getStepID(tt.id); got != tt.want {
+				t.Errorf("%s: getStepID = %v, want %v", tt.id, got, tt.want)
 			}
 		})
 	}
@@ -1756,8 +1752,8 @@ func Test_stepNode_version(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			if got := stepNode(tt.id).version(); got != tt.want {
-				t.Errorf("%s: stepNode.version() = %v, want %v", tt.id, got, tt.want)
+			if got := getStepVersion(tt.id); got != tt.want {
+				t.Errorf("%s: getStepVersion = %v, want %v", tt.id, got, tt.want)
 			}
 		})
 	}
@@ -1791,8 +1787,8 @@ func Test_stepNode_source(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			if got := stepNode(tt.id).source(); got != stepSource(tt.want) {
-				t.Errorf("%s: stepNode.source() = %v, want %v", tt.id, got, tt.want)
+			if got := getStepSource(tt.id); got != tt.want {
+				t.Errorf("%s: getStepSource = %v, want %v", tt.id, got, tt.want)
 			}
 		})
 	}
@@ -1826,8 +1822,8 @@ func Test_stepNode_composite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			if got := stepNode(tt.id).composite(); got != tt.want {
-				t.Errorf("%s: stepNode.composite() = %v, want %v", tt.id, got, tt.want)
+			if got := getStepComposite(tt.id); got != tt.want {
+				t.Errorf("%s: getStepComposite = %v, want %v", tt.id, got, tt.want)
 			}
 		})
 	}

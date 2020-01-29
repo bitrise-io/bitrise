@@ -288,9 +288,7 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 
-		stepNode := stepNode(stepID)
-
-		if ver, src := stepNode.version(), stepNode.source(); len(ver) > 0 && src == stepSourceUnknown {
+		if ver, src := getStepVersion(stepID), getStepSource(stepID); len(ver) > 0 && isStepLibSource(src) {
 			if _, err := stepmanModels.ParseRequiredVersion(ver); err != nil {
 				return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", ver, stepID)
 			}
@@ -880,60 +878,64 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModel
 	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
 }
 
-type (
-	stepNode   string
-	stepSource string
-)
-
-const (
-	stepSourceGit                stepSource = "git"
-	stepSourcePath               stepSource = "path"
-	stepSourceUnknown            stepSource = ""
-	stepSourceStepLibIndependent stepSource = "_"
-)
-
-func (sn stepNode) source() stepSource {
-	if s := strings.SplitN(string(sn), "::", 2); len(s) == 2 {
+// detaches source from the step node
+// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> "git"
+func getStepSource(compositeVersionStr string) string {
+	if s := strings.SplitN(string(compositeVersionStr), "::", 2); len(s) == 2 {
 		if src := s[0]; len(src) > 0 {
-			return stepSource(src)
+			return src
 		}
 	}
-	return stepSourceUnknown
+	return ""
 }
 
-func (sn stepNode) composite() string {
-	if s := strings.SplitN(string(sn), "::", 2); len(s) == 2 {
+// detaches step id and version composite from the step node
+// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> "git@github.com:bitrise-steplib/steps-script.git@master"
+func getStepComposite(compositeVersionStr string) string {
+	if s := strings.SplitN(compositeVersionStr, "::", 2); len(s) == 2 {
 		return s[1]
 	}
-	return string(sn)
+	return compositeVersionStr
 }
 
-func (sn stepNode) version() string {
-	composite := sn.composite()
-
+// splits step node composite into it's parts by taking care of extra "@" when using SSH git URL
+// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> ["git@github.com:bitrise-steplib/steps-script.git" "master"]
+func splitCompositeComponents(composite string) []string {
 	s := strings.Split(composite, "@")
 	if item := s[0]; item == "git" {
 		s = s[1:]
 		s[0] = item + "@" + s[0]
 	}
+	return s
+}
 
-	if len(s) > 1 {
+// returns step version from compositeString
+// e.g.: "git::https://github.com/bitrise-steplib/steps-script.git@master" -> "master"
+func getStepVersion(compositeVersionStr string) string {
+	composite := getStepComposite(compositeVersionStr)
+
+	if s := splitCompositeComponents(composite); len(s) > 1 {
 		return s[len(s)-1]
 	}
 
 	return ""
 }
 
-func (sn stepNode) id() string {
-	composite := sn.composite()
+// returns step ID from compositeString
+// e.g.: "git::https://github.com/bitrise-steplib/steps-script.git@master" -> "https://github.com/bitrise-steplib/steps-script.git"
+func getStepID(compositeVersionStr string) string {
+	composite := getStepComposite(compositeVersionStr)
+	return splitCompositeComponents(composite)[0]
+}
 
-	s := strings.Split(composite, "@")
-	if item := s[0]; item == "git" {
-		s = s[1:]
-		s[0] = item + "@" + s[0]
+// returns true if step source is StepLib
+func isStepLibSource(source string) bool {
+	switch source {
+	case "path", "git", "_":
+		return false
+	default:
+		return true
 	}
-
-	return s[0]
 }
 
 // CreateStepIDDataFromString ...
@@ -951,23 +953,21 @@ func (sn stepNode) id() string {
 //  * only stepid, latest version will be used (requires a default steplib source to be provided):
 //    * script
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	node := stepNode(compositeVersionStr)
-
-	src := node.source()
-	if src == stepSourceUnknown {
+	src := getStepSource(compositeVersionStr)
+	if src == "" {
 		if defaultStepLibSource == "" {
 			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
 		}
-		src = stepSource(defaultStepLibSource)
+		src = defaultStepLibSource
 	}
 
-	id := node.id()
+	id := getStepID(compositeVersionStr)
 	if id == "" {
 		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
 	}
 
-	version := node.version()
-	if src == stepSourceGit && version == "" {
+	version := getStepVersion(compositeVersionStr)
+	if src == "git" && version == "" {
 		version = "master"
 	}
 
@@ -976,22 +976,6 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 		SteplibSource: string(src),
 		Version:       version,
 	}, nil
-}
-
-// IsStepLibSource returns true if step source is StepLib
-func (sIDData StepIDData) IsStepLibSource() bool {
-	switch sIDData.SteplibSource {
-	case "path":
-		return false
-	case "git":
-		return false
-	case "_":
-		return false
-	case "":
-		return false
-	default:
-		return true
-	}
 }
 
 // IsUniqueResourceID : true if this ID is a unique resource ID, which is true
@@ -1003,7 +987,7 @@ func (sIDData StepIDData) IsStepLibSource() bool {
 // __If the ID is a Unique Resource ID then the step can be cached (locally)__,
 // as it won't change between subsequent step execution.
 func (sIDData StepIDData) IsUniqueResourceID() bool {
-	if !sIDData.IsStepLibSource() {
+	if !isStepLibSource(sIDData.SteplibSource) {
 		return false
 	}
 
