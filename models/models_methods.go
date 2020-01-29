@@ -931,7 +931,7 @@ func getStepID(compositeVersionStr string) string {
 // returns true if step source is StepLib
 func isStepLibSource(source string) bool {
 	switch source {
-	case "path", "git", "_":
+	case "path", "git", "_", "":
 		return false
 	default:
 		return true
