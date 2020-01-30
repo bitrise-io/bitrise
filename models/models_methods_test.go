@@ -1216,25 +1216,25 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:      "invalid/empty step lib source + no default",
+			name:      "invalid/empty step lib source, no default",
 			composite: "::step-id@0.0.1", defaultSteplibSource: "",
 			wantStepSrc: "", wantStepID: "", wantVersion: "",
 			wantErr: true,
 		},
 		{
-			name:      "no steplib-source & no default -> fail",
+			name:      "no steplib-source & no default, fail",
 			composite: "step-id@0.0.1", defaultSteplibSource: "",
 			wantStepSrc: "", wantStepID: "", wantVersion: "",
 			wantErr: true,
 		},
 		{
-			name:      "no steplib & no version, only step-id",
+			name:      "no steplib, no version, only step-id",
 			composite: "step-id", defaultSteplibSource: "default-steplib-src",
 			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "",
 			wantErr: false,
 		},
 		{
-			name:      "default / long / verbose ID mode",
+			name:      "default, long, verbose ID mode",
 			composite: "steplib-src::step-id@0.0.1", defaultSteplibSource: "",
 			wantStepSrc: "steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
 			wantErr: false,
@@ -1261,19 +1261,19 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 
 	path := []data{
 		{
-			name:      "local Path",
+			name:      "local path",
 			composite: "path::/some/path", defaultSteplibSource: "",
 			wantStepSrc: "path", wantStepID: "/some/path", wantVersion: "",
 			wantErr: false,
 		},
 		{
-			name:      "local Path",
+			name:      "local path, tilde",
 			composite: "path::~/some/path/in/home", defaultSteplibSource: "",
 			wantStepSrc: "path", wantStepID: "~/some/path/in/home", wantVersion: "",
 			wantErr: false,
 		},
 		{
-			name:      "local Path",
+			name:      "local path, env",
 			composite: "path::$HOME/some/path/in/home", defaultSteplibSource: "",
 			wantStepSrc: "path", wantStepID: "$HOME/some/path/in/home", wantVersion: "",
 			wantErr: false,
@@ -1282,21 +1282,27 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 
 	git := []data{
 		{
-			name:      "direct git uri https",
+			name:      "direct git uri, https",
 			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "default-steplib-src",
 			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "develop",
 			wantErr: false,
 		},
 		{
-			name:      "direct git uri ssh",
+			name:      "direct git uri, ssh",
 			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "",
 			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "develop",
 			wantErr: false,
 		},
 		{
-			name:      "direct git uri no branch",
+			name:      "direct git uri, https, no branch",
 			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
 			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantErr: false,
+		},
+		{
+			name:      "direct git uri, ssh, no branch",
+			composite: "git::git@github.com:bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "master",
 			wantErr: false,
 		},
 	}
