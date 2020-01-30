@@ -464,7 +464,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		warns, err := workflow.Validate()
 		warnings = append(warnings, warns...)
 		if err != nil {
-			return warnings, fmt.Errorf("validation error in workflow: %s, error: %s", ID, err)
+			return warnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
 		}
 
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
