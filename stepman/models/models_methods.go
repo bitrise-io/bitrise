@@ -28,12 +28,18 @@ const (
 func (stepInfo StepInfoModel) String() string {
 	str := ""
 	if stepInfo.GroupInfo.DeprecateNotes != "" {
-		str += colorstring.Red("This step is deprecated")
+		str += colorstring.Red("This step is deprecated!") + "\n"
+
+		str += colorstring.Red("Note: ")
+		str += strings.TrimSpace(stepInfo.GroupInfo.DeprecateNotes) + "\n"
 
 		if stepInfo.GroupInfo.RemovalDate != "" {
-			str += colorstring.Redf(" and will be removed: %s", stepInfo.GroupInfo.RemovalDate)
+			str += colorstring.Red("Removal date: ")
+			str += strings.TrimSpace(stepInfo.GroupInfo.RemovalDate) + "\n"
 		}
-		str += "\n"
+	}
+	if len(stepInfo.GroupInfo.Maintainer) > 0 {
+		str += fmt.Sprintf("%s %s\n", colorstring.Blue("Maintainer:"), stepInfo.GroupInfo.Maintainer)
 	}
 	str += fmt.Sprintf("%s %s\n", colorstring.Blue("Library:"), stepInfo.Library)
 	str += fmt.Sprintf("%s %s\n", colorstring.Blue("ID:"), stepInfo.ID)

@@ -239,6 +239,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 
 					stepGroupInfo.RemovalDate = deprecationInfo.RemovalDate
 					stepGroupInfo.DeprecateNotes = deprecationInfo.DeprecateNotes
+					stepGroupInfo.Maintainer = deprecationInfo.Maintainer
 				}
 
 				// Check for assets - STEP_SPEC_DIR/steps/step-id/assets

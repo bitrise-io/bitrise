@@ -118,6 +118,7 @@ type StepGroupInfoModel struct {
 	RemovalDate    string            `json:"removal_date,omitempty" yaml:"removal_date,omitempty"`
 	DeprecateNotes string            `json:"deprecate_notes,omitempty" yaml:"deprecate_notes,omitempty"`
 	AssetURLs      map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
+	Maintainer     string            `json:"maintainer,omitempty" yaml:"maintainer,omitempty"`
 }
 
 // StepGroupModel ...
