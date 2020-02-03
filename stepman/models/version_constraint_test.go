@@ -114,7 +114,7 @@ func Test_parseRequiredVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseRequiredVersion(tt.requiredVersion)
+			got, err := ParseRequiredVersion(tt.requiredVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseRequiredVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
