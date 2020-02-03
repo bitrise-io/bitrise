@@ -210,6 +210,13 @@ func QueryStepInfoFromLibrary(library, id, version string) (models.StepInfoModel
 	stepDir := stepman.GetStepCollectionDirPath(route, id, stepVersion.Version)
 	stepDefinitionPth := filepath.Join(stepDir, "step.yml")
 
+	infoPath := stepman.GetStepGlobalInfoPath(route, id)
+
+	groupInfo, _, err := stepman.ParseStepGroupInfoModel(infoPath)
+	if err != nil {
+		return models.StepInfoModel{}, err
+	}
+
 	return models.StepInfoModel{
 		Library:       library,
 		ID:            id,
@@ -217,5 +224,6 @@ func QueryStepInfoFromLibrary(library, id, version string) (models.StepInfoModel
 		LatestVersion: stepVersion.LatestAvailableVersion,
 		Step:          stepVersion.Step,
 		DefinitionPth: stepDefinitionPth,
+		GroupInfo:     groupInfo,
 	}, nil
 }

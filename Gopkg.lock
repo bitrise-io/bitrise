@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c00c845c38d8fa032d653a9a642708b01f4776183d64238793391320ca286566"
+  digest = "1:1770d9645388d0e0eac9cf12f71fe6732f285d7f6fcbce17c6590ed5d9526dc4"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "c5786a2391826aefdac460762104f9a5ccf33296"
+  revision = "dabf2163ea4336d68451e999570fbd5baa366e45"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
