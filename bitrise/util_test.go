@@ -161,10 +161,11 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
     `
 
 	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Equal(t, nil, err)
+	require.Equal(t, nil, err, err.Error())
 	require.Equal(t, 0, len(warnings))
 
-	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
+	removeErr := RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
+	require.Equal(t, nil, removeErr, removeErr.Error())
 
 	for workflowID, workflow := range config.Workflows {
 		if workflowID == "remove_test" {
