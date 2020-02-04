@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
@@ -183,10 +182,10 @@ func TestTriggerMapItemModelString(t *testing.T) {
 			PushBranch:              "master",
 			PullRequestSourceBranch: "develop",
 			PullRequestTargetBranch: "master",
-			Tag:                  "0.9.0",
-			Pattern:              "*",
-			IsPullRequestAllowed: true,
-			WorkflowID:           "ci",
+			Tag:                     "0.9.0",
+			Pattern:                 "*",
+			IsPullRequestAllowed:    true,
+			WorkflowID:              "ci",
 		}
 		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci", item.String(true))
 		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true", item.String(false))
@@ -1193,175 +1192,137 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
-	t.Log("default / long / verbose ID mode")
-	{
-		stepCompositeIDString := "steplib-src::step-id@0.0.1"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "steplib-src", stepIDData.SteplibSource)
-		require.Equal(t, "step-id", stepIDData.IDorURI)
-		require.Equal(t, "0.0.1", stepIDData.Version)
+	type data struct {
+		composite            string
+		defaultSteplibSource string
+		wantStepSrc          string
+		wantStepID           string
+		wantVersion          string
+		wantErr              bool
+		name                 string
 	}
 
-	t.Log("no steplib-source")
-	{
-		stepCompositeIDString := "step-id@0.0.1"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
-
-		require.NoError(t, err)
-		require.Equal(t, "default-steplib-src", stepIDData.SteplibSource)
-		require.Equal(t, "step-id", stepIDData.IDorURI)
-		require.Equal(t, "0.0.1", stepIDData.Version)
+	stepLib := []data{
+		{
+			name:      "no steplib-source",
+			composite: "step-id@0.0.1", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
+		},
+		{
+			name:      "invalid/empty step lib source, but default provided",
+			composite: "::step-id@0.0.1", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
+		},
+		{
+			name:      "invalid/empty step lib source, no default",
+			composite: "::step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
+		},
+		{
+			name:      "no steplib-source & no default, fail",
+			composite: "step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
+		},
+		{
+			name:      "no steplib, no version, only step-id",
+			composite: "step-id", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "default-steplib-src", wantStepID: "step-id", wantVersion: "",
+			wantErr: false,
+		},
+		{
+			name:      "default, long, verbose ID mode",
+			composite: "steplib-src::step-id@0.0.1", defaultSteplibSource: "",
+			wantStepSrc: "steplib-src", wantStepID: "step-id", wantVersion: "0.0.1",
+			wantErr: false,
+		},
+		{
+			name:      "empty test",
+			composite: "", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
+		},
+		{
+			name:      "special empty test",
+			composite: "@1.0.0", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "", wantStepID: "", wantVersion: "",
+			wantErr: true,
+		},
+		{
+			name:      "old step",
+			composite: "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0", defaultSteplibSource: "",
+			wantStepSrc: "_", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "1.0.0",
+			wantErr: false,
+		},
 	}
 
-	t.Log("invalid/empty step lib source, but default provided")
-	{
-		stepCompositeIDString := "::step-id@0.0.1"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "default-steplib-src")
-
-		require.NoError(t, err)
-		require.Equal(t, "default-steplib-src", stepIDData.SteplibSource)
-		require.Equal(t, "step-id", stepIDData.IDorURI)
-		require.Equal(t, "0.0.1", stepIDData.Version)
+	path := []data{
+		{
+			name:      "local path",
+			composite: "path::/some/path", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "/some/path", wantVersion: "",
+			wantErr: false,
+		},
+		{
+			name:      "local path, tilde",
+			composite: "path::~/some/path/in/home", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "~/some/path/in/home", wantVersion: "",
+			wantErr: false,
+		},
+		{
+			name:      "local path, env",
+			composite: "path::$HOME/some/path/in/home", defaultSteplibSource: "",
+			wantStepSrc: "path", wantStepID: "$HOME/some/path/in/home", wantVersion: "",
+			wantErr: false,
+		},
 	}
 
-	t.Log("invalid/empty step lib source + no default")
-	{
-		stepCompositeIDString := "::step-id@0.0.1"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.Error(t, err)
-		require.Equal(t, "", stepIDData.SteplibSource)
-		require.Equal(t, "", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
+	git := []data{
+		{
+			name:      "direct git uri, https",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "develop",
+			wantErr: false,
+		},
+		{
+			name:      "direct git uri, ssh",
+			composite: "git::git@github.com:bitrise-io/steps-timestamp.git@develop", defaultSteplibSource: "",
+			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "develop",
+			wantErr: false,
+		},
+		{
+			name:      "direct git uri, https, no branch",
+			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantErr: false,
+		},
+		{
+			name:      "direct git uri, ssh, no branch",
+			composite: "git::git@github.com:bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
+			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantErr: false,
+		},
 	}
 
-	t.Log("no steplib-source & no default -> fail")
-	{
-		stepCompositeIDString := "step-id@0.0.1"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
+	for _, group := range [][]data{
+		stepLib,
+		git,
+		path,
+	} {
+		for _, tt := range group {
+			stepIDData, err := CreateStepIDDataFromString(tt.composite, tt.defaultSteplibSource)
 
-		require.Error(t, err)
-		require.Equal(t, "", stepIDData.SteplibSource)
-		require.Equal(t, "", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
+			if tt.wantErr && (err == nil) {
+				t.Fatal("tt.wantErr && (err == nil):", err)
+			}
 
-	t.Log("no steplib & no version, only step-id")
-	{
-		stepCompositeIDString := "step-id"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-lib-src")
-
-		require.NoError(t, err)
-		require.Equal(t, "def-lib-src", stepIDData.SteplibSource)
-		require.Equal(t, "step-id", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	t.Log("empty test")
-	{
-		stepCompositeIDString := ""
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
-
-		require.Error(t, err)
-		require.Equal(t, "", stepIDData.SteplibSource)
-		require.Equal(t, "", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	t.Log("special empty test")
-	{
-		stepCompositeIDString := "@1.0.0"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "def-step-src")
-
-		require.Error(t, err)
-		require.Equal(t, "", stepIDData.SteplibSource)
-		require.Equal(t, "", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	//
-	// ----- Local Path
-	t.Log("local Path")
-	{
-		stepCompositeIDString := "path::/some/path"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "path", stepIDData.SteplibSource)
-		require.Equal(t, "/some/path", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	t.Log("local Path")
-	{
-		stepCompositeIDString := "path::~/some/path/in/home"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "path", stepIDData.SteplibSource)
-		require.Equal(t, "~/some/path/in/home", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	t.Log("local Path")
-	{
-		stepCompositeIDString := "path::$HOME/some/path/in/home"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "path", stepIDData.SteplibSource)
-		require.Equal(t, "$HOME/some/path/in/home", stepIDData.IDorURI)
-		require.Equal(t, "", stepIDData.Version)
-	}
-
-	//
-	// ----- Direct git uri
-	t.Log("direct git uri")
-	{
-		stepCompositeIDString := "git::https://github.com/bitrise-io/steps-timestamp.git@develop"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
-
-		require.NoError(t, err)
-		require.Equal(t, "git", stepIDData.SteplibSource)
-		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
-		require.Equal(t, "develop", stepIDData.Version)
-	}
-
-	t.Log("direct git uri")
-	{
-		stepCompositeIDString := "git::git@github.com:bitrise-io/steps-timestamp.git@develop"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "git", stepIDData.SteplibSource)
-		require.Equal(t, "git@github.com:bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
-		require.Equal(t, "develop", stepIDData.Version)
-	}
-
-	t.Log("direct git uri")
-	{
-		stepCompositeIDString := "git::https://github.com/bitrise-io/steps-timestamp.git"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "some-def-coll")
-
-		require.NoError(t, err)
-		require.Equal(t, "git", stepIDData.SteplibSource)
-		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
-		require.Equal(t, "master", stepIDData.Version)
-	}
-
-	//
-	// ----- Old step
-	t.Log("old step")
-	{
-		stepCompositeIDString := "_::https://github.com/bitrise-io/steps-timestamp.git@1.0.0"
-		stepIDData, err := CreateStepIDDataFromString(stepCompositeIDString, "")
-
-		require.NoError(t, err)
-		require.Equal(t, "_", stepIDData.SteplibSource)
-		require.Equal(t, "https://github.com/bitrise-io/steps-timestamp.git", stepIDData.IDorURI)
-		require.Equal(t, "1.0.0", stepIDData.Version)
+			require.Equal(t, tt.wantStepSrc, stepIDData.SteplibSource, tt.name)
+			require.Equal(t, tt.wantStepID, stepIDData.IDorURI, tt.name)
+			require.Equal(t, tt.wantVersion, stepIDData.Version, tt.name)
+		}
 	}
 }
 

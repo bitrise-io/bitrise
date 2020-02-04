@@ -64,7 +64,8 @@ type VersionConstraint struct {
 	Version         Semver
 }
 
-func parseRequiredVersion(version string) (VersionConstraint, error) {
+// ParseRequiredVersion returns VersionConstraint model from raw version string
+func ParseRequiredVersion(version string) (VersionConstraint, error) {
 	parts := strings.Split(version, ".")
 	if len(parts) == 0 || len(parts) > 3 {
 		return VersionConstraint{}, fmt.Errorf("parse %s: should have more than 0 and not more than 3 components", version)
