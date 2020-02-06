@@ -2,8 +2,11 @@ package bitrise
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/bitrise-io/go-utils/command"
 
 	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -164,7 +167,15 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(warnings))
 
-	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
+	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
+	if err != nil {
+		cmd := command.NewWithStandardOuts("tree", "-L", "4", "$HOME/.stepman")
+		fmt.Println(cmd.PrintableCommandArgs())
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
+	}
+	require.Equal(t, nil, err)
 
 	for workflowID, workflow := range config.Workflows {
 		if workflowID == "remove_test" {
