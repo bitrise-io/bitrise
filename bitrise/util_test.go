@@ -170,6 +170,12 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(warnings))
 
+	cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
+	fmt.Println(cmd.PrintableCommandArgs())
+	if err := cmd.Run(); err != nil {
+		fmt.Println(err)
+	}
+
 	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
 	if err != nil {
 		cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
