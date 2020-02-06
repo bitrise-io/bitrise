@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/go-utils/pathutil"
+
 	"github.com/bitrise-io/go-utils/command"
 
 	"github.com/bitrise-io/bitrise/configs"
@@ -169,7 +171,7 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 
 	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
 	if err != nil {
-		cmd := command.NewWithStandardOuts("tree", "-L", "4", "$HOME/.stepman")
+		cmd := command.NewWithStandardOuts("tree", "-L", "4", pathutil.UserHomeDir())
 		fmt.Println(cmd.PrintableCommandArgs())
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
