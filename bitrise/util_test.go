@@ -2,14 +2,8 @@ package bitrise
 
 import (
 	"encoding/json"
-	"fmt"
-	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/bitrise-io/go-utils/pathutil"
-
-	"github.com/bitrise-io/go-utils/command"
 
 	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -170,19 +164,23 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(warnings))
 
-	cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
-	fmt.Println(cmd.PrintableCommandArgs())
-	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
-	}
-
-	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
-	if err != nil {
+	/*
 		cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
 		fmt.Println(cmd.PrintableCommandArgs())
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
 		}
+	*/
+
+	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
+	if err != nil {
+		/*
+			cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
+			fmt.Println(cmd.PrintableCommandArgs())
+			if err := cmd.Run(); err != nil {
+				fmt.Println(err)
+			}
+		*/
 	}
 	require.Equal(t, nil, err)
 

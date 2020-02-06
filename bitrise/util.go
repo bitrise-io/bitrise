@@ -421,11 +421,30 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		// Steplib independent steps are completly defined in workflow
 		tempStepYMLFilePath = ""
 	} else if stepIDData.SteplibSource != "" {
+		fmt.Println("before stepman setup")
+		cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
+		fmt.Println(cmd.PrintableCommandArgs())
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
+
 		if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
 			return err
 		}
+		fmt.Println("after stepman setup")
+		cmd = command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
+		fmt.Println(cmd.PrintableCommandArgs())
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
 		if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
 			return err
+		}
+		fmt.Println("after stepman activate")
+		cmd = command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
+		fmt.Println(cmd.PrintableCommandArgs())
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
 		}
 	} else {
 		return errors.New("Failed to fill step ouputs: unknown SteplibSource")
