@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	stepmanCLI "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -437,9 +438,16 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
 		}
-		if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
+
+		if err := stepmanCLI.Activate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath, false); err != nil {
 			return err
 		}
+
+		/*
+			if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath); err != nil {
+				return err
+			}
+		*/
 		fmt.Println("after stepman activate")
 		cmd = command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
 		fmt.Println(cmd.PrintableCommandArgs())
