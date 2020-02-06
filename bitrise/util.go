@@ -439,6 +439,12 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			fmt.Println(err)
 		}
 
+		cmd = command.NewWithStandardOuts("stepman", "version")
+		fmt.Println(cmd.PrintableCommandArgs())
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
+
 		if err := stepmanCLI.Activate(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version, tempStepCloneDirPath, tempStepYMLFilePath, false); err != nil {
 			return err
 		}
