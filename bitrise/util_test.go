@@ -3,6 +3,7 @@ package bitrise
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -171,7 +172,7 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 
 	err = RemoveConfigRedundantFieldsAndFillStepOutputs(&config)
 	if err != nil {
-		cmd := command.NewWithStandardOuts("tree", "-L", "4", pathutil.UserHomeDir())
+		cmd := command.NewWithStandardOuts("tree", "-L", "4", filepath.Join(pathutil.UserHomeDir(), ".stepman"))
 		fmt.Println(cmd.PrintableCommandArgs())
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
