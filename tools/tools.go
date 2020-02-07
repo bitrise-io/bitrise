@@ -343,6 +343,9 @@ func getSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 	for _, secret := range secrets {
 		key, value, err := secret.GetKeyValuePair()
 		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
+			if err != nil {
+				log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
+			}
 			continue
 		}
 		secretValues = append(secretValues, value)
