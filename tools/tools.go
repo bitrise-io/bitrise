@@ -338,6 +338,22 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
+func getSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
+	var secretValues []string
+	for _, secret := range secrets {
+		key, value, err := secret.GetKeyValuePair()
+		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
+			if err != nil {
+				log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
+			}
+			continue
+		}
+		secretValues = append(secretValues, value)
+	}
+
+	return secretValues
+}
+
 // EnvmanRun runs a command through envman.
 func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration, secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	logLevel := log.GetLevel().String()
@@ -351,16 +367,8 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		outWriter = os.Stdout
 		errWriter = os.Stderr
 	} else {
-		var secretValues []string
-		for _, secret := range secrets {
-			key, value, err := secret.GetKeyValuePair()
-			if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
-				continue
-			}
-			secretValues = append(secretValues, value)
-		}
 
-		outWriter = filterwriter.New(secretValues, os.Stdout)
+		outWriter = filterwriter.New(getSecretValues(secrets), os.Stdout)
 		errWriter = outWriter
 	}
 
