@@ -20,7 +20,7 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "9"
+	Version = "10"
 )
 
 // StepListItemModel ...
