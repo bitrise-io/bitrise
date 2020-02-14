@@ -4,7 +4,7 @@ required = ["github.com/bitrise-io/go-utils/envutil",
   "github.com/bitrise-io/stepman"]
 
 [[constraint]]
-  name = "github.com/Sirupsen/logrus"
+  name = "github.com/sirupsen/logrus"
   version = "1.4.2"
 
 [[constraint]]
