@@ -523,14 +523,25 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 	if err := stepman.SetupLibrary(stepIDData.SteplibSource); err != nil {
 		return stepmanModels.StepInfoModel{}, false, err
-
 	}
 
-	isLatestVersionOfStep := (stepIDData.Version == "")
-	if isLatestVersionOfStep && !isStepLibUpdated {
+	versionConstraint, err := stepmanModels.ParseRequiredVersion(stepIDData.Version)
+	if err != nil {
+		return stepmanModels.StepInfoModel{}, false,
+			fmt.Errorf("activating step (%s) from source (%s) failed, invalid version specified: %s", stepIDData.IDorURI, stepIDData.SteplibSource, err)
+	}
+	if versionConstraint.VersionLockType == stepmanModels.InvalidVersionConstraint {
+		return stepmanModels.StepInfoModel{}, false,
+			fmt.Errorf("activating step (%s) from source (%s) failed, version constraint is invalid", stepIDData.IDorURI, stepIDData.SteplibSource)
+	}
+
+	isStepLibUpdateNeeded := (versionConstraint.VersionLockType == stepmanModels.Latest) ||
+		(versionConstraint.VersionLockType == stepmanModels.MinorLocked) ||
+		(versionConstraint.VersionLockType == stepmanModels.MajorLocked)
+	if !isStepLibUpdated && isStepLibUpdateNeeded {
 		log.Infof("Step uses latest version -- Updating StepLib ...")
 		if _, err := stepman.UpdateLibrary(stepIDData.SteplibSource); err != nil {
-			log.Warnf("Step uses latest version, but failed to update StepLib, err: %s", err)
+			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
 		} else {
 			didStepLibUpdate = true
 		}

@@ -34,7 +34,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7834a0fa3ce7950241db4b024f2a170c082e34c83c8f2b4eca937eabd9302e03"
+  digest = "1:3b14453437372635a238af887d4dcedf3d381fc00208d22cd7bbf1d63f74c27b"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -55,7 +55,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "948e80486906fb74dfa6012c80cbda6a6dac151a"
+  revision = "e212188d99b41373b4ff8b69e7b1f677bc427bde"
 
 [[projects]]
   branch = "master"
@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4b99c58580383a086fbba497da2f25455651c5440d18faa33c60fbb5c4eb9d35"
+  digest = "1:474b1a9dd1b046743a231f08ed055f5c7742d4c38e9a25ff9f0493769b356b1c"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "66ac315742f8048a8c296d9934df9d27cc9d4297"
+  revision = "2a08fa58249ac4e4596836dd6842c1c18b69d5d0"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -128,15 +128,15 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:99d32780e5238c2621fff621123997c3e3cca96db8be13179013aea77dfab551"
+  digest = "1:49b1087f45b1e49687da2f8eb49d9e07919d4bad3813344251c722141dcb31d6"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
   ]
   pruneopts = "UT"
-  revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
-  version = "v1.4.0"
+  revision = "3ebf1ddaeb260c4b1ae502a01c7844fa8c1fa0e9"
+  version = "v1.5.1"
 
 [[projects]]
   digest = "1:ca4df663ad76879ad38dbd736493679cbb1aa596c6d479fd9fc5e959e5ceb4fb"
@@ -151,18 +151,18 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "1d94cc7ab1c630336ab82ccb9c9cda72a875c382"
+  revision = "2aa609cf4a9d7d1126360de73b55b6002f9e052a"
 
 [[projects]]
   branch = "master"
-  digest = "1:cc2f66816d35b969d6c72e63fed6d1e01b4c4c7ab2cadf4cf68346869358670b"
+  digest = "1:e6f3eca022d18ff28112534a46d8bad7400b1523724061dff2d1bfc737bee376"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "12a6c2dcc1e4cb348b57847c73987099e261714b"
+  revision = "d5e6a3e2c0ae16fc7480523ebcb7fd4dd3215489"
 
 [[projects]]
   digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
