@@ -48,8 +48,10 @@ func parseSemver(version string) (Semver, error) {
 type VersionLockType int
 
 const (
+	// InvalidVersionConstraint is the value assigned to a VersionLockType if not explicitly initialized
+	InvalidVersionConstraint VersionLockType = iota
 	// Fixed is an exact version, e.g. 1.2.5
-	Fixed VersionLockType = iota
+	Fixed
 	// Latest means the latest available version
 	Latest
 	// MajorLocked means the latest available version with a given major version, e.g. 1.*.*
@@ -66,6 +68,12 @@ type VersionConstraint struct {
 
 // ParseRequiredVersion returns VersionConstraint model from raw version string
 func ParseRequiredVersion(version string) (VersionConstraint, error) {
+	if version == "" {
+		return VersionConstraint{
+			VersionLockType: Latest,
+		}, nil
+	}
+
 	parts := strings.Split(version, ".")
 	if len(parts) == 0 || len(parts) > 3 {
 		return VersionConstraint{}, fmt.Errorf("parse %s: should have more than 0 and not more than 3 components", version)

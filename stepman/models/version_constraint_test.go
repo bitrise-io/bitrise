@@ -102,8 +102,10 @@ func Test_parseRequiredVersion(t *testing.T) {
 		{
 			name:            "No version specified",
 			requiredVersion: "",
-			want:            VersionConstraint{},
-			wantErr:         true,
+			want: VersionConstraint{
+				VersionLockType: Latest,
+			},
+			wantErr: false,
 		},
 		{
 			name:            "Invalid major version, negative number",
