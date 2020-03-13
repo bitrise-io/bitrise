@@ -132,6 +132,12 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		return err
 	}
 
+	var payload []byte = nil
+	if payloadString, keyExists := pluginInput[PluginInputPayloadKey]; keyExists {
+		payload = []byte(payloadString)
+		delete(pluginInput, PluginInputPayloadKey)
+	}
+
 	// Add plugin inputs
 	for key, value := range pluginInput {
 		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
@@ -153,7 +159,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, nil); err != nil {
+	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, nil, payload); err != nil {
 		return err
 	}
 
