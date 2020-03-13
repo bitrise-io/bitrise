@@ -379,10 +379,9 @@ func EnvmanRun(envstorePth,
 		errWriter = outWriter
 	}
 
+	inReader = os.Stdin
 	if stdInPayload != nil {
 		inReader = bytes.NewReader(stdInPayload)
-	} else {
-		inReader = os.Stdin
 	}
 
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)

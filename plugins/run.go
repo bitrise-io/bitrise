@@ -132,7 +132,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		return err
 	}
 
-	var payload []byte = nil
+	var payload []byte
 	if payloadString, keyExists := pluginInput[PluginInputPayloadKey]; keyExists {
 		payload = []byte(payloadString)
 		delete(pluginInput, PluginInputPayloadKey)
