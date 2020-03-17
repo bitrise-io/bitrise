@@ -355,11 +355,18 @@ func getSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 }
 
 // EnvmanRun runs a command through envman.
-func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Duration, secrets []envmanModels.EnvironmentItemModel) (int, error) {
+func EnvmanRun(envstorePth,
+	workDirPth string,
+	cmdArgs []string,
+	timeout time.Duration,
+	secrets []envmanModels.EnvironmentItemModel,
+	stdInPayload []byte,
+) (int, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "run"}
 	args = append(args, cmdArgs...)
 
+	var inReader io.Reader
 	var outWriter io.Writer
 	var errWriter io.Writer
 
@@ -372,8 +379,13 @@ func EnvmanRun(envstorePth, workDirPth string, cmdArgs []string, timeout time.Du
 		errWriter = outWriter
 	}
 
+	inReader = os.Stdin
+	if stdInPayload != nil {
+		inReader = bytes.NewReader(stdInPayload)
+	}
+
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)
-	cmd.SetStandardIO(os.Stdin, outWriter, errWriter)
+	cmd.SetStandardIO(inReader, outWriter, errWriter)
 	cmd.SetTimeout(timeout)
 	cmd.AppendEnv("PWD=" + workDirPth)
 

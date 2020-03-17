@@ -59,19 +59,19 @@ func strip(str string) string {
 //=======================================
 
 // RunPluginByEvent ...
-func RunPluginByEvent(plugin Plugin, pluginInput PluginInput) error {
-	pluginInput[PluginInputPluginModeKey] = string(TriggerMode)
+func RunPluginByEvent(plugin Plugin, pluginConfig PluginConfig, input []byte) error {
+	pluginConfig[PluginConfigPluginModeKey] = string(TriggerMode)
 
-	return runPlugin(plugin, []string{}, pluginInput)
+	return runPlugin(plugin, []string{}, pluginConfig, input)
 }
 
 // RunPluginByCommand ...
 func RunPluginByCommand(plugin Plugin, args []string) error {
-	pluginInput := PluginInput{
-		PluginInputPluginModeKey: string(CommandMode),
+	pluginConfig := PluginConfig{
+		PluginConfigPluginModeKey: string(CommandMode),
 	}
 
-	return runPlugin(plugin, args, pluginInput)
+	return runPlugin(plugin, args, pluginConfig, nil)
 }
 
 // PrintPluginUpdateInfos ...
@@ -83,7 +83,7 @@ func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	flog.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
-func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
+func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) error {
 	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
 		// Check for new version
 		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
@@ -107,9 +107,9 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	if err != nil {
 		return err
 	}
-	pluginInput[PluginInputBitriseVersionKey] = bitriseVersion.String()
-	pluginInput[PluginInputDataDirKey] = GetPluginDataDir(plugin.Name)
-	pluginInput[PluginInputFormatVersionKey] = models.Version
+	envs[PluginConfigBitriseVersionKey] = bitriseVersion.String()
+	envs[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
+	envs[PluginConfigFormatVersionKey] = models.Version
 
 	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
@@ -133,7 +133,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 	}
 
 	// Add plugin inputs
-	for key, value := range pluginInput {
+	for key, value := range envs {
 		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func runPlugin(plugin Plugin, args []string, pluginInput PluginInput) error {
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, nil); err != nil {
+	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, nil, input); err != nil {
 		return err
 	}
 

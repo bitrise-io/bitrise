@@ -21,9 +21,8 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 		return err
 	}
 
-	pluginInput := PluginInput{
-		PluginInputPayloadKey:      string(payloadBytes),
-		PluginInputTriggerEventKey: string(name),
+	pluginConfig := PluginConfig{
+		PluginConfigTriggerEventKey: string(name),
 	}
 
 	// Load plugins
@@ -34,7 +33,7 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 
 	// Run plugins
 	for _, plugin := range plugins {
-		if err := RunPluginByEvent(plugin, pluginInput); err != nil {
+		if err := RunPluginByEvent(plugin, pluginConfig, payloadBytes); err != nil {
 			return err
 		}
 	}
