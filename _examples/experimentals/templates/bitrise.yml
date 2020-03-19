@@ -114,6 +114,16 @@ workflows:
             #!/bin/bash
             echo "RunIf expression was true"
     #
+    # You can also use 'or'
+    - script:
+        title: CI and Not Failed
+        run_if: |-
+          {{.IsCI | or (not .IsBuildFailed)}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
     # Pull Request condition
     - script:
         title: Only if NOT a Pull Request
