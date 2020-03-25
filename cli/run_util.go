@@ -617,14 +617,25 @@ func activateAndRunSteps(
 			errStr = err.Error()
 		}
 
+		stepInputs := make(map[string]string)
+
+		for _, environmentItem := range step.Inputs {
+			for inputName, inputValue := range environmentItem {
+				if inputName != "opts" {
+					stepInputs[inputName] = fmt.Sprintf("%v", inputValue)
+				}
+			}
+		}
+
 		stepResults := models.StepRunResultsModel{
-			StepInfo:  stepInfoCopy,
-			Status:    resultCode,
-			Idx:       buildRunResults.ResultsCount(),
-			RunTime:   time.Now().Sub(stepStartTime),
-			ErrorStr:  errStr,
-			ExitCode:  exitCode,
-			StartTime: stepStartTime,
+			StepInfo:   stepInfoCopy,
+			StepInputs: stepInputs,
+			Status:     resultCode,
+			Idx:        buildRunResults.ResultsCount(),
+			RunTime:    time.Now().Sub(stepStartTime),
+			ErrorStr:   errStr,
+			ExitCode:   exitCode,
+			StartTime:  stepStartTime,
 		}
 
 		isExitStatusError := true

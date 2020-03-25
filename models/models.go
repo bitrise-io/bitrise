@@ -117,13 +117,14 @@ type BuildRunResultsModel struct {
 
 // StepRunResultsModel ...
 type StepRunResultsModel struct {
-	StepInfo  stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
-	Status    int                         `json:"status" yaml:"status"`
-	Idx       int                         `json:"idx" yaml:"idx"`
-	RunTime   time.Duration               `json:"run_time" yaml:"run_time"`
-	StartTime time.Time                   `json:"start_time" yaml:"start_time"`
-	ErrorStr  string                      `json:"error_str" yaml:"error_str"`
-	ExitCode  int                         `json:"exit_code" yaml:"exit_code"`
+	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
+	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
+	Status     int                         `json:"status" yaml:"status"`
+	Idx        int                         `json:"idx" yaml:"idx"`
+	RunTime    time.Duration               `json:"run_time" yaml:"run_time"`
+	StartTime  time.Time                   `json:"start_time" yaml:"start_time"`
+	ErrorStr   string                      `json:"error_str" yaml:"error_str"`
+	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
 }
 
 // TestResultStepInfo ...
