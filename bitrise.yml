@@ -10,6 +10,10 @@ workflows:
   test:
     title: Runs tests
     steps:
+    - script:
+        title: install pstree
+        inputs:
+        - content: brew install pstree
     - go-list:
     - golint:
     - errcheck:
