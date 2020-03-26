@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// W ...
 func W(str string) {
 	f, err := os.OpenFile(filepath.Join(os.Getenv("BITRISE_DEPLOY_DIR"), "times.log"),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
