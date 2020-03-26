@@ -619,10 +619,24 @@ func activateAndRunSteps(
 
 		stepInputs := make(map[string]string)
 
+		var mappingFunc func(string) string
+		mappingFunc = func(key string) string {
+			for _, environmentItem := range *environments {
+				envValue := environmentItem[key]
+				if envValue != nil {
+					return os.Expand(fmt.Sprintf("%v", envValue), mappingFunc)
+				}
+			}
+
+			return os.Getenv(key)
+		}
+
+		// Expand inputs
 		for _, environmentItem := range step.Inputs {
 			for inputName, inputValue := range environmentItem {
 				if inputName != "opts" {
-					stepInputs[inputName] = fmt.Sprintf("%v", inputValue)
+					inputString := fmt.Sprintf("%v", inputValue)
+					stepInputs[inputName] = os.Expand(inputString, mappingFunc)
 				}
 			}
 		}
