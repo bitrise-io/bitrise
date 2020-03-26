@@ -1,17 +1,25 @@
 package bitrise
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEvaluateStepTemplateToBool(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := `{{eq 1 1}}`
@@ -64,6 +72,11 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 }
 
 func TestRegisteredFunctions(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	defer func() {
 		// env cleanup
 		require.Equal(t, nil, os.Unsetenv("TEST_KEY"))
@@ -97,6 +110,11 @@ func TestRegisteredFunctions(t *testing.T) {
 }
 
 func TestCIFlagsAndEnvs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	defer func() {
 		// env cleanup
 		if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
@@ -199,6 +217,11 @@ func TestCIFlagsAndEnvs(t *testing.T) {
 }
 
 func TestPullRequestFlagsAndEnvs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	defer func() {
 		// env cleanup
 		if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
@@ -238,6 +261,11 @@ func TestPullRequestFlagsAndEnvs(t *testing.T) {
 }
 
 func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	defer func() {
 		// env cleanup
 		if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
@@ -314,6 +342,11 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 }
 
 func TestEvaluateTemplateToString(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := ""

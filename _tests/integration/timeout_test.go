@@ -5,13 +5,20 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_TimeoutTest(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configPth := "timeout_test_bitrise.yml"
 
 	t.Log("Step with timeout")

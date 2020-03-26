@@ -1,13 +1,21 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_TriggerParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("deprecated trigger with pattern - pr allowed")
 	{
 		cmd := command.New(binPath(), "trigger", "deprecated_pr_allowed", "--config", "trigger_params_test_bitrise.yml")

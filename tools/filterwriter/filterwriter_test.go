@@ -5,11 +5,18 @@ import (
 	"fmt"
 	"runtime"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSecretsByteList(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	{
 		secrets := []string{"secret value"}
 		byteList := secretsByteList(secrets)
@@ -88,6 +95,11 @@ func TestSecretsByteList(t *testing.T) {
 }
 
 func TestWrite(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("trivial test")
 	{
 		var buff bytes.Buffer
@@ -178,6 +190,11 @@ func TestWrite(t *testing.T) {
 }
 
 func TestSecrets(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -198,6 +215,11 @@ func TestSecrets(t *testing.T) {
 }
 
 func TestMatchSecrets(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -228,6 +250,11 @@ func TestMatchSecrets(t *testing.T) {
 }
 
 func TestLinesToKeepRange(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log()
 	secrets := []string{
 		"a\nb\nc",
@@ -254,6 +281,11 @@ func TestLinesToKeepRange(t *testing.T) {
 }
 
 func TestMatchLine(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -291,6 +323,11 @@ func TestMatchLine(t *testing.T) {
 }
 
 func TestSecretLinesToRedact(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -329,6 +366,11 @@ func TestSecretLinesToRedact(t *testing.T) {
 }
 
 func TestRedactLine(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("redacts the middle of the line")
 	{
 		line := []byte("asdfabcasdf")
@@ -385,6 +427,11 @@ func TestRedactLine(t *testing.T) {
 }
 
 func TestRedact(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	secrets := []string{
 		"a\nb\nc",
 		"b",
@@ -447,6 +494,11 @@ func TestRedact(t *testing.T) {
 }
 
 func TestSplitAfterNewline(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("bytes")
 	{
 		require.Equal(t, []byte{}, []byte(""))

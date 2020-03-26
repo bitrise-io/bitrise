@@ -1,13 +1,21 @@
 package filterwriter
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllRanges(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	{
 		ranges := allRanges([]byte("test"), []byte("t"))
 		require.Equal(t, []matchRange{{first: 0, last: 1}, {first: 3, last: 4}}, ranges)
@@ -40,6 +48,11 @@ func TestAllRanges(t *testing.T) {
 }
 
 func TestMergeAllRanges(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	var testCases = []struct {
 		name   string
 		ranges []matchRange
@@ -68,6 +81,11 @@ func TestMergeAllRanges(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			start := time.Now().UnixNano()
+			defer func(s int64) {
+				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+			}(start)
+
 			if got := mergeAllRanges(tc.ranges); !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("got %v, want %v", got, tc.want)
 			}

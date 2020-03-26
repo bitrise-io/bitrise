@@ -1,20 +1,28 @@
 package tools
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMoveFile(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	srcPath := filepath.Join(os.TempDir(), "src.tmp")
 	_, err := os.Create(srcPath)
 	require.NoError(t, err)
@@ -30,6 +38,11 @@ func TestMoveFile(t *testing.T) {
 }
 
 func TestMoveFileDifferentDevices(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	require.True(t, runtime.GOOS == "linux" || runtime.GOOS == "darwin")
 
 	ramdiskPath := ""
@@ -72,6 +85,11 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 }
 
 func TestStepmanJSONStepLibStepInfo(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	// setup
 	require.NoError(t, configs.InitPaths())
 
@@ -89,6 +107,11 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 }
 
 func TestEnvmanJSONPrint(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	// Initialized envstore -- Err should empty, output filled
 	testDirPth, err := pathutil.NormalizedOSTempDirPath("test_env_store")
 	require.NoError(t, err)

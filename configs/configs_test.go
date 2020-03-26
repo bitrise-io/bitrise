@@ -1,14 +1,22 @@
 package configs
 
 import (
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSetupForVersionChecks(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
 	require.Equal(t, nil, err)
 	originalHome := os.Getenv("HOME")

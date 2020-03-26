@@ -1,10 +1,12 @@
 package bitrise
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -16,6 +18,11 @@ const longStr = "This is a very long string, this is a very long string, " +
 	"this is a very long string, this is a very long string."
 
 func TestIsUpdateAvailable(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("simple compare versions - ture")
 	{
 		stepInfo1 := stepmanModels.StepInfoModel{
@@ -58,6 +65,11 @@ func TestIsUpdateAvailable(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("successful step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
@@ -106,6 +118,11 @@ func TestGetTrimmedStepName(t *testing.T) {
 }
 
 func TestGetRunningStepHeaderMainSection(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepInfo := stepmanModels.StepInfoModel{
 		Step: stepmanModels.StepModel{
 			Title: pointers.NewStringPtr(longStr),
@@ -119,6 +136,11 @@ func TestGetRunningStepHeaderMainSection(t *testing.T) {
 }
 
 func TestGetRunningStepHeaderSubSection(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepInfo := stepmanModels.StepInfoModel{
 		ID: longStr,
 		Step: stepmanModels.StepModel{
@@ -132,6 +154,11 @@ func TestGetRunningStepHeaderSubSection(t *testing.T) {
 }
 
 func TestGetRunningStepFooterMainSection(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("failed step")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
@@ -223,6 +250,11 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 }
 
 func TestGetDeprecateNotesRows(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	notes := "Removal notes: " + longStr
 	actual := getDeprecateNotesRows(notes)
 	expected := "| \x1b[31;1mRemoval notes:\x1b[0m This is a very long string, this is a very long string, this  |" + "\n" +
@@ -232,6 +264,11 @@ func TestGetDeprecateNotesRows(t *testing.T) {
 }
 
 func TestGetRunningStepFooterSubSection(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("Update available, no support_url, no source_code_url")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
@@ -427,10 +464,20 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 }
 
 func TestPrintRunningWorkflow(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	PrintRunningWorkflow(longStr)
 }
 
 func TestPrintRunningStepHeader(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepInfo := stepmanModels.StepInfoModel{
 		Step: stepmanModels.StepModel{
 			Title: pointers.NewStringPtr(""),
@@ -454,6 +501,11 @@ func TestPrintRunningStepHeader(t *testing.T) {
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepInfo := stepmanModels.StepInfoModel{
 		Step: stepmanModels.StepModel{
 			Title: pointers.NewStringPtr(longStr),
@@ -486,6 +538,11 @@ func TestPrintRunningStepFooter(t *testing.T) {
 }
 
 func TestPrintSummary(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	PrintSummary(models.BuildRunResultsModel{})
 
 	stepInfo := stepmanModels.StepInfoModel{

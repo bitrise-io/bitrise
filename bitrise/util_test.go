@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/debug"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -29,6 +30,11 @@ func hourToDuration(hour float64) time.Duration {
 }
 
 func TestApplyOutputAliases(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("apply alias on signle env")
 	{
 		envs := []envmanModels.EnvironmentItemModel{
@@ -92,6 +98,11 @@ func TestApplyOutputAliases(t *testing.T) {
 }
 
 func TestTimeToFormattedSeconds(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("formatted print rounds")
 	{
 		timeStr, err := FormattedSecondsToMax8Chars(secToDuration(0.999))
@@ -143,6 +154,11 @@ func TestTimeToFormattedSeconds(t *testing.T) {
 }
 
 func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	// setup
 	require.NoError(t, configs.InitPaths())
 
@@ -222,6 +238,11 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 }
 
 func TestSsStringSliceWithSameElements(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	s1 := []string{}
 	s2 := []string{}
 	require.Equal(t, true, isStringSliceWithSameElements(s1, s2))
@@ -238,6 +259,11 @@ func TestSsStringSliceWithSameElements(t *testing.T) {
 }
 
 func TestIsDependecyEqual(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
 
@@ -255,6 +281,11 @@ func TestIsDependecyEqual(t *testing.T) {
 }
 
 func TestContainsDependecy(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
 	d2 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep2"}
 	d3 := stepmanModels.DependencyModel{Manager: "manager1", Name: "dep3"}
@@ -270,6 +301,11 @@ func TestContainsDependecy(t *testing.T) {
 }
 
 func TestIsDependencySliceWithSameElements(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	s1 := []stepmanModels.DependencyModel{}
 	s2 := []stepmanModels.DependencyModel{}
 	require.Equal(t, true, isDependencySliceWithSameElements(s1, s2))
@@ -290,6 +326,11 @@ func TestIsDependencySliceWithSameElements(t *testing.T) {
 }
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -332,6 +373,11 @@ workflows:
 }
 
 func TestConfigModelFromJSONBytes(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 {
   "format_version": "1.0.0",
@@ -412,6 +458,11 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
 }
 
 func TestConfigModelFromYAMLBytesNormalize(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -446,6 +497,11 @@ workflows:
 }
 
 func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 {
   "format_version": "1.0.0",

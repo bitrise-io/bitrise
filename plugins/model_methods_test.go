@@ -1,11 +1,14 @@
 package plugins
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
@@ -22,6 +25,11 @@ func write(t *testing.T, content, toPth string) {
 }
 
 func TestParseAndValidatePluginFromYML(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
 	require.NoError(t, err)
 
@@ -184,6 +192,11 @@ requirements:
 }
 
 func TestSortByName(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("single plugin")
 	{
 		pluginA := Plugin{Name: "A"}
@@ -210,6 +223,11 @@ func TestSortByName(t *testing.T) {
 }
 
 func TestNewPluginRoutingFromBytes(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("simple routing")
 	{
 		routingStr := `route_map:
@@ -235,6 +253,11 @@ func TestNewPluginRoutingFromBytes(t *testing.T) {
 }
 
 func TestValidateRouting(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("simple routing")
 	{
 		routing := PluginRouting{
@@ -288,6 +311,11 @@ func TestValidateRouting(t *testing.T) {
 }
 
 func TestAddRoute(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("simple add")
 	{
 		routing := PluginRouting{
@@ -331,6 +359,11 @@ func TestAddRoute(t *testing.T) {
 }
 
 func DeleteRoute(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("simple delete")
 	{
 		routing := PluginRouting{

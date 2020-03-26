@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/base64"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -18,6 +20,11 @@ import (
 )
 
 func TestIsSecretFiltering(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("flag influences the filtering")
 	{
 		set, err := isSecretFiltering(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
@@ -72,6 +79,11 @@ func TestIsSecretFiltering(t *testing.T) {
 }
 
 func TestIsPRMode(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	prModeEnv := os.Getenv(configs.PRModeEnvKey)
 	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
 
@@ -265,6 +277,11 @@ envs:
 }
 
 func TestIsCIMode(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
 
 	defer func() {
@@ -355,6 +372,11 @@ envs:
 }
 
 func TestExpandEnvs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -396,6 +418,11 @@ workflows:
 }
 
 func TestEvaluateInputs(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -448,6 +475,11 @@ workflows:
 }
 
 func TestGetBitriseConfigFromBase64Data(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 0.9.10
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -472,6 +504,11 @@ workflows:
 }
 
 func TestGetInventoryFromBase64Data(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	inventoryStr := `
 envs:
   - MY_HOME: $HOME
@@ -497,6 +534,11 @@ envs:
 }
 
 func TestInvalidStepID(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -521,6 +563,11 @@ workflows:
 }
 
 func TestAddTestMetadata(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("test empty dir")
 	{
 		testDirPath, err := pathutil.NormalizedOSTempDirPath("testing")
@@ -609,6 +656,11 @@ func TestAddTestMetadata(t *testing.T) {
 }
 
 func Test_activateStepLibStep(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	tests := []struct {
 		name        string
 		stepIDData  models.StepIDData
@@ -688,6 +740,11 @@ func Test_activateStepLibStep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			start := time.Now().UnixNano()
+			defer func(s int64) {
+				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+			}(start)
+
 			tmpDir, err := pathutil.NormalizedOSTempDirPath("activateStepLibStep")
 			if err != nil {
 				t.Errorf("failed to create tmp dir: %s", err)

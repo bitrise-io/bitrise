@@ -3,8 +3,11 @@ package cli
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,6 +23,11 @@ func toJSON(t *testing.T, stringStringMap map[string]string) string {
 }
 
 func TestParseRunAndTriggerJSONParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it parses cli params")
 	{
 		paramsMap := map[string]string{
@@ -82,6 +90,11 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 }
 
 func TestParseRunAndTriggerParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it parses cli params")
 	{
 		workflow := "primary"
@@ -351,6 +364,11 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 }
 
 func TestParseRunParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it parses cli params")
 	{
 		workflow := "primary"
@@ -391,6 +409,11 @@ func TestParseRunParams(t *testing.T) {
 }
 
 func TestParseTriggerParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it parses cli params")
 	{
 		pattern := "*"
@@ -436,6 +459,11 @@ func TestParseTriggerParams(t *testing.T) {
 }
 
 func TestParseTriggerCheckParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it parses cli params")
 	{
 		pattern := "*"

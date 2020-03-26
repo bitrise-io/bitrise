@@ -1,13 +1,21 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_TriggerCheck(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configPth := "trigger_check_test_bitrise.yml"
 	secretsPth := "trigger_check_test_secrets.yml"
 
@@ -53,6 +61,11 @@ func Test_TriggerCheck(t *testing.T) {
 }
 
 func Test_InvalidTriggerCheck(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configPth := "trigger_check_test_empty_bitrise.yml"
 	secretsPth := "trigger_check_test_secrets.yml"
 

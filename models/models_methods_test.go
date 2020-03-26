@@ -1,10 +1,12 @@
 package models
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -13,6 +15,11 @@ import (
 )
 
 func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("duplicated push - error")
 	{
 		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
@@ -112,6 +119,11 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 }
 
 func TestTriggerMapItemModelString(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("push event")
 	{
 		item := TriggerMapItemModel{
@@ -193,6 +205,11 @@ func TestTriggerMapItemModelString(t *testing.T) {
 }
 
 func TestTriggerEventType(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("it determins trigger event type")
 	{
 		pushBranch := "master"
@@ -291,6 +308,11 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("utility workflow triggered - Warning")
 	{
 		configStr := `
@@ -448,6 +470,11 @@ workflows:
 }
 
 func TestMatchWithParamsCodePushItem(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("The following patterns are all matches")
 	{
 		for aPattern, aPushBranch := range map[string]string{
@@ -540,6 +567,11 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 }
 
 func TestMatchWithParamsPrTypeItem(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("pr against pr type item - MATCH")
 	{
 		pushBranch := ""
@@ -691,6 +723,11 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 }
 
 func TestMatchWithParamsTagTypeItem(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("tag against tag type item - MATCH")
 	{
 		pushBranch := ""
@@ -777,6 +814,11 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 
 // Config
 func TestValidateConfig(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("Valid bitriseData ID")
 	{
 		bitriseData := BitriseDataModel{
@@ -881,6 +923,11 @@ func TestValidateConfig(t *testing.T) {
 
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("before-after test")
 	{
 		workflow := WorkflowModel{
@@ -955,6 +1002,11 @@ workflows:
 // --- Merge
 
 func TestMergeEnvironmentWith(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	diffEnv := envmanModels.EnvironmentItemModel{
 		"test_key": "test_value",
 		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
@@ -1009,6 +1061,11 @@ func TestMergeEnvironmentWith(t *testing.T) {
 }
 
 func TestMergeStepWith(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	desc := "desc 1"
 	summ := "sum 1"
 	website := "web/1"
@@ -1102,6 +1159,11 @@ func TestMergeStepWith(t *testing.T) {
 }
 
 func TestGetInputByKey(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepData := stepmanModels.StepModel{
 		Inputs: []envmanModels.EnvironmentItemModel{
 			envmanModels.EnvironmentItemModel{
@@ -1124,6 +1186,11 @@ func TestGetInputByKey(t *testing.T) {
 // --- StepIDData
 
 func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepIDDataWithIDAndVersionSpecified := StepIDData{IDorURI: "stepid", Version: "version"}
 	stepIDDataWithOnlyVersionSpecified := StepIDData{Version: "version"}
 	stepIDDataWithOnlyIDSpecified := StepIDData{IDorURI: "stepid"}
@@ -1165,6 +1232,11 @@ func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
 }
 
 func TestGetStepIDStepDataPair(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	stepData := stepmanModels.StepModel{}
 
 	t.Log("valid steplist item")
@@ -1192,6 +1264,11 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	type data struct {
 		composite            string
 		defaultSteplibSource string
@@ -1330,6 +1407,11 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 // --- RemoveRedundantFields
 
 func TestRemoveEnvironmentRedundantFields(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("Trivial remove - all fields should be default value")
 	{
 		env := envmanModels.EnvironmentItemModel{
@@ -1448,6 +1530,11 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 }
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `format_version: 2
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 project_type: ios

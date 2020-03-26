@@ -1,8 +1,11 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/envutil"
 	"github.com/stretchr/testify/require"
@@ -21,6 +24,11 @@ oMHHu9lvWKuxpVNPcGY/kR3G897Qn+6vE3yuVwbD4reu0IHAWZzBgt7e3we5
 -----END RSA PRIVATE KEY-----`
 
 func Test_LogFilter(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configPth := "log_filter_test_bitrise.yml"
 	secretsPth := "log_filter_test_secrets.yml"
 

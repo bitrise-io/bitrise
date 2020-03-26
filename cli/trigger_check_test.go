@@ -1,13 +1,21 @@
 package cli
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMigratePatternToParams(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("converts pattern in NON PR MODE to push-branch param")
 	{
 		isPullRequestMode := false
@@ -90,6 +98,11 @@ func TestMigratePatternToParams(t *testing.T) {
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_new_param_test(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("params - push_branch")
 	{
 		configStr := `format_version: 1.4.0
@@ -422,6 +435,11 @@ workflows:
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_migration_test(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("deprecated code push trigger item")
 	{
 		configStr := `format_version: 1.4.0
@@ -502,6 +520,11 @@ workflows:
 }
 
 func TestGetWorkflowIDByParamsInCompatibleMode_old_tests(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	configStr := `format_version: 1.4.0
 
 trigger_map:

@@ -1,13 +1,21 @@
 package toolkits
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_stepBinaryFilename(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	{
 		sIDData := models.StepIDData{SteplibSource: "path", IDorURI: "./", Version: ""}
 		require.Equal(t, "path-._-", stepBinaryFilename(sIDData))
@@ -30,6 +38,11 @@ func Test_stepBinaryFilename(t *testing.T) {
 }
 
 func Test_parseGoVersionFromGoVersionOutput(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("Example OK")
 	{
 		verStr, err := parseGoVersionFromGoVersionOutput("go version go1.7 darwin/amd64")

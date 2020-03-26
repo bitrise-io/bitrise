@@ -1,14 +1,22 @@
 package plugins
 
 import (
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFilterVersionTags(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("single version tag")
 	{
 		versionTags := filterVersionTags([]string{"1.0.0"})
@@ -40,6 +48,11 @@ func TestFilterVersionTags(t *testing.T) {
 }
 
 func TestClonePluginSrc(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("example plugin - latest version")
 	{
 		pluginSource := examplePluginGitURL

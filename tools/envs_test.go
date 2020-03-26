@@ -1,19 +1,32 @@
 package tools
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEnvListToMap(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	m, err := envListToMap([]string{"TEST=test"})
 	require.NoError(t, err)
 	require.Equal(t, map[string]string{"TEST": "test"}, m)
 }
 
 func TestExpandEnvItems(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("expands using the external environment")
 	{
 		toExpand := []envmanModels.EnvironmentItemModel{

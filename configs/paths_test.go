@@ -1,13 +1,21 @@
 package configs
 
 import (
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/bitrise-io/bitrise/debug"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGeneratePATHEnvString(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	t.Log("Empty starting PATH")
 	require.Equal(t, "/MY/PATH",
 		GeneratePATHEnvString("", "/MY/PATH"))
@@ -42,6 +50,11 @@ func TestGeneratePATHEnvString(t *testing.T) {
 }
 
 func TestInitPaths(t *testing.T) {
+	start := time.Now().UnixNano()
+	defer func(s int64) {
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+	}(start)
+
 	//
 	// BITRISE_SOURCE_DIR
 
