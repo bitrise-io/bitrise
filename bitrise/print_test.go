@@ -18,9 +18,9 @@ const longStr = "This is a very long string, this is a very long string, " +
 	"this is a very long string, this is a very long string."
 
 func TestIsUpdateAvailable(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("simple compare versions - ture")
@@ -65,9 +65,9 @@ func TestIsUpdateAvailable(t *testing.T) {
 }
 
 func TestGetTrimmedStepName(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("successful step")
@@ -118,9 +118,9 @@ func TestGetTrimmedStepName(t *testing.T) {
 }
 
 func TestGetRunningStepHeaderMainSection(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepInfo := stepmanModels.StepInfoModel{
@@ -136,9 +136,9 @@ func TestGetRunningStepHeaderMainSection(t *testing.T) {
 }
 
 func TestGetRunningStepHeaderSubSection(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepInfo := stepmanModels.StepInfoModel{
@@ -154,9 +154,9 @@ func TestGetRunningStepHeaderSubSection(t *testing.T) {
 }
 
 func TestGetRunningStepFooterMainSection(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("failed step")
@@ -250,9 +250,9 @@ func TestGetRunningStepFooterMainSection(t *testing.T) {
 }
 
 func TestGetDeprecateNotesRows(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	notes := "Removal notes: " + longStr
@@ -264,9 +264,9 @@ func TestGetDeprecateNotesRows(t *testing.T) {
 }
 
 func TestGetRunningStepFooterSubSection(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("Update available, no support_url, no source_code_url")
@@ -464,18 +464,18 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 }
 
 func TestPrintRunningWorkflow(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	PrintRunningWorkflow(longStr)
 }
 
 func TestPrintRunningStepHeader(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepInfo := stepmanModels.StepInfoModel{
@@ -501,9 +501,9 @@ func TestPrintRunningStepHeader(t *testing.T) {
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepInfo := stepmanModels.StepInfoModel{
@@ -538,9 +538,9 @@ func TestPrintRunningStepFooter(t *testing.T) {
 }
 
 func TestPrintSummary(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	PrintSummary(models.BuildRunResultsModel{})

@@ -11,9 +11,9 @@ import (
 )
 
 func TestEnvListToMap(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	m, err := envListToMap([]string{"TEST=test"})
@@ -22,9 +22,9 @@ func TestEnvListToMap(t *testing.T) {
 }
 
 func TestExpandEnvItems(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("expands using the external environment")

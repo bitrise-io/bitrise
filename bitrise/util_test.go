@@ -30,9 +30,9 @@ func hourToDuration(hour float64) time.Duration {
 }
 
 func TestApplyOutputAliases(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("apply alias on signle env")
@@ -98,9 +98,9 @@ func TestApplyOutputAliases(t *testing.T) {
 }
 
 func TestTimeToFormattedSeconds(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("formatted print rounds")
@@ -154,9 +154,9 @@ func TestTimeToFormattedSeconds(t *testing.T) {
 }
 
 func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	// setup
@@ -238,9 +238,9 @@ func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
 }
 
 func TestSsStringSliceWithSameElements(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	s1 := []string{}
@@ -259,9 +259,9 @@ func TestSsStringSliceWithSameElements(t *testing.T) {
 }
 
 func TestIsDependecyEqual(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep"}
@@ -281,9 +281,9 @@ func TestIsDependecyEqual(t *testing.T) {
 }
 
 func TestContainsDependecy(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	d1 := stepmanModels.DependencyModel{Manager: "manager", Name: "dep1"}
@@ -301,9 +301,9 @@ func TestContainsDependecy(t *testing.T) {
 }
 
 func TestIsDependencySliceWithSameElements(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	s1 := []stepmanModels.DependencyModel{}
@@ -326,9 +326,9 @@ func TestIsDependencySliceWithSameElements(t *testing.T) {
 }
 
 func TestConfigModelFromYAMLBytes(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -373,9 +373,9 @@ workflows:
 }
 
 func TestConfigModelFromJSONBytes(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -458,9 +458,9 @@ func TestConfigModelFromJSONBytes(t *testing.T) {
 }
 
 func TestConfigModelFromYAMLBytesNormalize(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -497,9 +497,9 @@ workflows:
 }
 
 func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `

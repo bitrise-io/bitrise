@@ -25,9 +25,9 @@ func write(t *testing.T, content, toPth string) {
 }
 
 func TestParseAndValidatePluginFromYML(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
@@ -192,9 +192,9 @@ requirements:
 }
 
 func TestSortByName(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("single plugin")
@@ -223,9 +223,9 @@ func TestSortByName(t *testing.T) {
 }
 
 func TestNewPluginRoutingFromBytes(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("simple routing")
@@ -253,9 +253,9 @@ func TestNewPluginRoutingFromBytes(t *testing.T) {
 }
 
 func TestValidateRouting(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("simple routing")
@@ -311,9 +311,9 @@ func TestValidateRouting(t *testing.T) {
 }
 
 func TestAddRoute(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("simple add")
@@ -359,9 +359,9 @@ func TestAddRoute(t *testing.T) {
 }
 
 func DeleteRoute(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("simple delete")

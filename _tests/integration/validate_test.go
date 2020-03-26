@@ -29,9 +29,9 @@ const runtimeLimit = 1000 * time.Millisecond
 const runningTimeMsg = "test case too slow: %s is %s above limit"
 
 func Test_ValidateTest(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
@@ -102,9 +102,9 @@ func Test_ValidateTest(t *testing.T) {
 }
 
 func Test_ValidateTestJSON(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
@@ -192,9 +192,9 @@ func Test_ValidateTestJSON(t *testing.T) {
 }
 
 func Test_SecretValidateTest(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
@@ -252,9 +252,9 @@ func Test_SecretValidateTest(t *testing.T) {
 }
 
 func Test_SecretValidateTestJSON(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")

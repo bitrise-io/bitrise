@@ -18,9 +18,9 @@ import (
 )
 
 func TestMoveFile(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	srcPath := filepath.Join(os.TempDir(), "src.tmp")
@@ -38,9 +38,9 @@ func TestMoveFile(t *testing.T) {
 }
 
 func TestMoveFileDifferentDevices(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	require.True(t, runtime.GOOS == "linux" || runtime.GOOS == "darwin")
@@ -85,9 +85,9 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 }
 
 func TestStepmanJSONStepLibStepInfo(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	// setup
@@ -107,9 +107,9 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 }
 
 func TestEnvmanJSONPrint(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	// Initialized envstore -- Err should empty, output filled

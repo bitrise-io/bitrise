@@ -11,9 +11,9 @@ import (
 )
 
 func TestAllRanges(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	{
@@ -48,9 +48,9 @@ func TestAllRanges(t *testing.T) {
 }
 
 func TestMergeAllRanges(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	var testCases = []struct {
@@ -81,9 +81,9 @@ func TestMergeAllRanges(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			start := time.Now().UnixNano()
+			start := time.Now().Unix()
 			defer func(s int64) {
-				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 			}(start)
 
 			if got := mergeAllRanges(tc.ranges); !reflect.DeepEqual(got, tc.want) {

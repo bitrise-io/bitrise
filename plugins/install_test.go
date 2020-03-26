@@ -17,9 +17,9 @@ const examplePluginGitURL = "https://github.com/bitrise-io/bitrise-plugins-examp
 const analyticsPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
 
 func TestIsLocalURL(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("local url - absolute")
@@ -54,9 +54,9 @@ func TestIsLocalURL(t *testing.T) {
 }
 
 func TestValidateVersion(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("required min - pass")
@@ -145,9 +145,9 @@ func TestValidateVersion(t *testing.T) {
 }
 
 func TestValidateRequirements(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	bitriseVersion, err := ver.NewVersion("1.0.0")
@@ -215,9 +215,9 @@ func TestValidateRequirements(t *testing.T) {
 }
 
 func TestDownloadPluginBin(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("example plugin bin - ")
@@ -246,9 +246,9 @@ func TestDownloadPluginBin(t *testing.T) {
 }
 
 func Test_isSourceURIChanged(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	for _, tt := range []struct {
@@ -264,9 +264,9 @@ func Test_isSourceURIChanged(t *testing.T) {
 		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: true},
 	} {
 		t.Run("", func(t *testing.T) {
-			start := time.Now().UnixNano()
+			start := time.Now().Unix()
 			defer func(s int64) {
-				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+				debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 			}(start)
 
 			if got := isSourceURIChanged(tt.installed, tt.new); got != tt.want {

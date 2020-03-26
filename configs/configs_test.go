@@ -12,9 +12,9 @@ import (
 )
 
 func TestSetupForVersionChecks(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")

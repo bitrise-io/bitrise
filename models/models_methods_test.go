@@ -15,9 +15,9 @@ import (
 )
 
 func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("duplicated push - error")
@@ -119,9 +119,9 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 }
 
 func TestTriggerMapItemModelString(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("push event")
@@ -205,9 +205,9 @@ func TestTriggerMapItemModelString(t *testing.T) {
 }
 
 func TestTriggerEventType(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("it determins trigger event type")
@@ -308,9 +308,9 @@ func TestTriggerEventType(t *testing.T) {
 }
 
 func TestTriggerMapItemValidate(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("utility workflow triggered - Warning")
@@ -470,9 +470,9 @@ workflows:
 }
 
 func TestMatchWithParamsCodePushItem(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("The following patterns are all matches")
@@ -567,9 +567,9 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 }
 
 func TestMatchWithParamsPrTypeItem(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("pr against pr type item - MATCH")
@@ -723,9 +723,9 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 }
 
 func TestMatchWithParamsTagTypeItem(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("tag against tag type item - MATCH")
@@ -814,9 +814,9 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 
 // Config
 func TestValidateConfig(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("Valid bitriseData ID")
@@ -923,9 +923,9 @@ func TestValidateConfig(t *testing.T) {
 
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("before-after test")
@@ -1002,9 +1002,9 @@ workflows:
 // --- Merge
 
 func TestMergeEnvironmentWith(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	diffEnv := envmanModels.EnvironmentItemModel{
@@ -1061,9 +1061,9 @@ func TestMergeEnvironmentWith(t *testing.T) {
 }
 
 func TestMergeStepWith(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	desc := "desc 1"
@@ -1159,9 +1159,9 @@ func TestMergeStepWith(t *testing.T) {
 }
 
 func TestGetInputByKey(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepData := stepmanModels.StepModel{
@@ -1186,9 +1186,9 @@ func TestGetInputByKey(t *testing.T) {
 // --- StepIDData
 
 func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepIDDataWithIDAndVersionSpecified := StepIDData{IDorURI: "stepid", Version: "version"}
@@ -1232,9 +1232,9 @@ func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
 }
 
 func TestGetStepIDStepDataPair(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	stepData := stepmanModels.StepModel{}
@@ -1264,9 +1264,9 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 }
 
 func TestCreateStepIDDataFromString(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	type data struct {
@@ -1407,9 +1407,9 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 // --- RemoveRedundantFields
 
 func TestRemoveEnvironmentRedundantFields(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("Trivial remove - all fields should be default value")
@@ -1530,9 +1530,9 @@ func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel,
 }
 
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `format_version: 2

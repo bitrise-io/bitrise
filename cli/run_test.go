@@ -17,9 +17,9 @@ import (
 )
 
 func TestSkipIfEmpty(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("skip_if_empty=true && value=empty => should not add")
@@ -102,9 +102,9 @@ workflows:
 }
 
 func TestDeleteEnvironment(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -163,9 +163,9 @@ workflows:
 }
 
 func TestStepOutputsInTemplate(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	inventoryStr := `
@@ -232,9 +232,9 @@ workflows:
 }
 
 func TestFailedStepOutputs(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -279,9 +279,9 @@ workflows:
 }
 
 func TestBitriseSourceDir(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
@@ -474,9 +474,9 @@ workflows:
 }
 
 func TestEnvOrders(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	t.Log("Only secret env - secret env should be use")
@@ -655,9 +655,9 @@ workflows:
 // Test - Bitrise activateAndRunWorkflow
 // If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	workflow := models.WorkflowModel{}
@@ -700,9 +700,9 @@ func Test0Steps1Workflows(t *testing.T) {
 // Test - Bitrise activateAndRunWorkflow
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
@@ -755,9 +755,9 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 // Test - Bitrise Validate workflow
 // Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
@@ -797,9 +797,9 @@ func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
 // Test - Bitrise activateAndRunWorkflow
 // Trivial test with 1 workflow
 func Test1Workflows(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -864,9 +864,9 @@ workflows:
 // Test - Bitrise activateAndRunWorkflow
 // Trivial test with before, after workflows
 func Test3Workflows(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -950,9 +950,9 @@ workflows:
 // Test - Bitrise ConfigModelFromYAMLBytes
 // Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
 func TestRefeneceCycle(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -981,9 +981,9 @@ workflows:
 // Test - Bitrise BuildStatusEnv
 // Checks if BuildStatusEnv is set correctly
 func TestBuildStatusEnv(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1093,9 +1093,9 @@ workflows:
 // Test - Bitrise activateAndRunWorkflow
 // Trivial fail test
 func TestFail(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1154,9 +1154,9 @@ workflows:
 // Test - Bitrise activateAndRunWorkflow
 // Trivial success test
 func TestSuccess(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1193,9 +1193,9 @@ workflows:
 // Test - Bitrise BuildStatusEnv
 // Checks if BuildStatusEnv is set correctly
 func TestBuildFailedMode(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1256,9 +1256,9 @@ workflows:
 // Trivial test for workflow environment handling
 // Before workflows env should be visible in target and after workflow
 func TestWorkflowEnvironments(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1321,9 +1321,9 @@ workflows:
 // Test - Bitrise Environments
 // Test for same env in before and target workflow, actual workflow should overwrite environemnt and use own value
 func TestWorkflowEnvironmentOverWrite(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1386,9 +1386,9 @@ workflows:
 // Test - Bitrise Environments
 // Target workflows env should be visible in before and after workflow
 func TestTargetDefinedWorkflowEnvironment(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1439,9 +1439,9 @@ workflows:
 // Test - Bitrise Environments
 // Step input should visible only for actual step and invisible for other steps
 func TestStepInputEnvironment(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1499,9 +1499,9 @@ workflows:
 
 // Outputs exported with `envman add` should be accessible for subsequent Steps.
 func TestStepOutputEnvironment(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `
@@ -1566,9 +1566,9 @@ workflows:
 }
 
 func TestLastWorkflowIDInConfig(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configStr := `

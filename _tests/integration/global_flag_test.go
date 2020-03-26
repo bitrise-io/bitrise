@@ -13,9 +13,9 @@ import (
 )
 
 func Test_GlobalFlagPRRun(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configPth := "global_flag_test_bitrise.yml"
@@ -44,9 +44,9 @@ func Test_GlobalFlagPRRun(t *testing.T) {
 }
 
 func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configPth := "global_flag_test_bitrise.yml"
@@ -106,9 +106,9 @@ func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
 }
 
 func Test_GlobalFlagPRTrigger(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configPth := "global_flag_test_bitrise.yml"
@@ -142,9 +142,9 @@ func Test_GlobalFlagPRTrigger(t *testing.T) {
 }
 
 func Test_GlobalFlagCI(t *testing.T) {
-	start := time.Now().UnixNano()
+	start := time.Now().Unix()
 	defer func(s int64) {
-		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().UnixNano()))
+		debug.W(fmt.Sprintf("[ '%s', %d, %d ],\n", t.Name(), start, time.Now().Unix()))
 	}(start)
 
 	configPth := "global_flag_test_bitrise.yml"
