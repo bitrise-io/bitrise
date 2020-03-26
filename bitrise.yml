@@ -20,7 +20,7 @@ workflows:
     - script:
         title: Go test
         inputs:
-        - content: go test $BITRISE_GO_PACKAGES
+        - content: go test -p 1 $BITRISE_GO_PACKAGES
     - script:
         title: Run integration tests
         inputs:
