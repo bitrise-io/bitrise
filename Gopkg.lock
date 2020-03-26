@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  digest = "1:0599141a8403114d34f1e546604ad6c5361b70dfa80e80c635f438cdbf71b43a"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
-  version = "v1.4.2"
+  revision = "d417be0fe654de640a82370515129985b407c7e3"
+  version = "v1.5.0"
 
 [[projects]]
   branch = "master"
@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ac9d8de0645ece65742485477b6821ab69df05964c40a4650142baec06ae7b9d"
+  digest = "1:d239c3b68d11561a5db6a0eabde74ef11eb269b4c88a80c483ea25d8feee4917"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "15ac97d3ea158d6bf4ee951927de5df145c78ead"
+  revision = "76ebed585e7c588f61a0b47ec09397f6939034bb"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -151,18 +151,18 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "f7b00557c8c46a1ea4b035cae84f52028c2c0564"
+  revision = "0ec3e9974c59449edd84298612e9f16fa13368e8"
 
 [[projects]]
   branch = "master"
-  digest = "1:adfbfe0bbb10df3375281317f1f9ce041773f1394819c825f044a0477af57c44"
+  digest = "1:1fbab312c7e34ca131dd8431962292dbc808001f2d07eedcf4b4bdfae7b06372"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "a7d97aace0b03bedead413ec782269d62e032341"
+  revision = "85ca7c5b95cdf1e557abb38a283d1e61a5959c31"
 
 [[projects]]
   digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
