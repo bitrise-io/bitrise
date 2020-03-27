@@ -633,8 +633,9 @@ func activateAndRunSteps(
 
 		// Expand inputs
 		for _, environmentItem := range step.Inputs {
-			for inputName, inputValue := range environmentItem {
-				if inputName != "opts" {
+			options, err := environmentItem.GetOptions()
+			if err == nil && *options.IsSensitive == false {
+				if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
 					inputString := fmt.Sprintf("%v", inputValue)
 					stepInputs[inputName] = os.Expand(inputString, mappingFunc)
 				}
