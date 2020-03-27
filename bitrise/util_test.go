@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
@@ -136,80 +137,80 @@ func TestTimeToFormattedSeconds(t *testing.T) {
 	}
 }
 
-// func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
-// 	// setup
-// 	require.NoError(t, configs.InitPaths())
+func TestRemoveConfigRedundantFieldsAndFillStepOutputs(t *testing.T) {
+	// setup
+	require.NoError(t, configs.InitPaths())
 
-// 	configStr := `
-//   format_version: 1.3.0
-//   default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+	configStr := `
+  format_version: 1.3.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-//   workflows:
-//     remove_test:
-//       steps:
-//       - script:
-//           inputs:
-//           - content: |
-//               #!/bin/bash
-//               set -v
-//               exit 2
-//             opts:
-//               is_expand: true
-//       - timestamp:
-//           title: Generate timestamps
-//     `
+  workflows:
+    remove_test:
+      steps:
+      - script:
+          inputs:
+          - content: |
+              #!/bin/bash
+              set -v
+              exit 2
+            opts:
+              is_expand: true
+      - timestamp:
+          title: Generate timestamps
+    `
 
-// 	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
-// 	require.Equal(t, nil, err)
-// 	require.Equal(t, 0, len(warnings))
+	config, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Equal(t, nil, err)
+	require.Equal(t, 0, len(warnings))
 
-// 	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
+	require.Equal(t, nil, RemoveConfigRedundantFieldsAndFillStepOutputs(&config))
 
-// 	for workflowID, workflow := range config.Workflows {
-// 		if workflowID == "remove_test" {
-// 			for _, stepListItem := range workflow.Steps {
-// 				for stepID, step := range stepListItem {
-// 					if stepID == "script" {
-// 						for _, input := range step.Inputs {
-// 							key, _, err := input.GetKeyValuePair()
-// 							require.Equal(t, nil, err)
+	for workflowID, workflow := range config.Workflows {
+		if workflowID == "remove_test" {
+			for _, stepListItem := range workflow.Steps {
+				for stepID, step := range stepListItem {
+					if stepID == "script" {
+						for _, input := range step.Inputs {
+							key, _, err := input.GetKeyValuePair()
+							require.Equal(t, nil, err)
 
-// 							if key == "content" {
-// 								opts, err := input.GetOptions()
-// 								require.Equal(t, nil, err)
+							if key == "content" {
+								opts, err := input.GetOptions()
+								require.Equal(t, nil, err)
 
-// 								// script content should keep is_expand: true, because it's different from spec default
-// 								require.Equal(t, true, *opts.IsExpand)
-// 							}
-// 						}
-// 					} else if stepID == "timestamp" {
-// 						// timestamp title should be nil, because it's the same as spec value
-// 						require.Equal(t, (*string)(nil), step.Title)
+								// script content should keep is_expand: true, because it's different from spec default
+								require.Equal(t, true, *opts.IsExpand)
+							}
+						}
+					} else if stepID == "timestamp" {
+						// timestamp title should be nil, because it's the same as spec value
+						require.Equal(t, (*string)(nil), step.Title)
 
-// 						for _, output := range step.Outputs {
-// 							key, _, err := output.GetKeyValuePair()
-// 							require.Equal(t, nil, err)
+						for _, output := range step.Outputs {
+							key, _, err := output.GetKeyValuePair()
+							require.Equal(t, nil, err)
 
-// 							if key == "UNIX_TIMESTAMP" {
-// 								// timestamp outputs should filled with key-value & opts.Title
-// 								opts, err := output.GetOptions()
-// 								require.Equal(t, nil, err)
+							if key == "UNIX_TIMESTAMP" {
+								// timestamp outputs should filled with key-value & opts.Title
+								opts, err := output.GetOptions()
+								require.Equal(t, nil, err)
 
-// 								require.Equal(t, "unix style", *opts.Title)
-// 								require.Equal(t, (*bool)(nil), opts.IsExpand)
-// 								require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
-// 								require.Equal(t, (*bool)(nil), opts.IsRequired)
-// 							}
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
+								require.Equal(t, "unix style", *opts.Title)
+								require.Equal(t, (*bool)(nil), opts.IsExpand)
+								require.Equal(t, (*bool)(nil), opts.IsDontChangeValue)
+								require.Equal(t, (*bool)(nil), opts.IsRequired)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
-// 	// timestamp outputs should filled with key-value & opts.Title
+	// timestamp outputs should filled with key-value & opts.Title
 
-// }
+}
 
 func TestSsStringSliceWithSameElements(t *testing.T) {
 	s1 := []string{}
