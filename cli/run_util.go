@@ -580,6 +580,40 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	return info, didStepLibUpdate, nil
 }
 
+func expandInputs(
+	inputs []envmanModels.EnvironmentItemModel,
+	environments *[]envmanModels.EnvironmentItemModel,
+) map[string]string {
+	stepInputs := make(map[string]string)
+	var mappingFunc func(string) string
+	mappingFunc = func(key string) string {
+		for _, environmentItem := range *environments {
+			envValue := environmentItem[key]
+			if envValue != nil {
+				return os.Expand(fmt.Sprintf("%v", envValue), mappingFunc)
+			}
+		}
+
+		return os.Getenv(key)
+	}
+
+	for _, environmentItem := range inputs {
+		options, err := environmentItem.GetOptions()
+		if err == nil && *options.IsSensitive == false {
+			if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
+				inputString := fmt.Sprintf("%v", inputValue)
+				stepInputs[inputName] = os.Expand(inputString, mappingFunc)
+			} else {
+				log.Warnf("Failed to get input value, skipping input")
+			}
+		} else if err != nil {
+			log.Warnf("Failed to get input options, skipping input")
+		}
+	}
+
+	return stepInputs
+}
+
 func activateAndRunSteps(
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
@@ -617,34 +651,9 @@ func activateAndRunSteps(
 			errStr = err.Error()
 		}
 
-		stepInputs := make(map[string]string)
-
-		var mappingFunc func(string) string
-		mappingFunc = func(key string) string {
-			for _, environmentItem := range *environments {
-				envValue := environmentItem[key]
-				if envValue != nil {
-					return os.Expand(fmt.Sprintf("%v", envValue), mappingFunc)
-				}
-			}
-
-			return os.Getenv(key)
-		}
-
-		// Expand inputs
-		for _, environmentItem := range step.Inputs {
-			options, err := environmentItem.GetOptions()
-			if err == nil && *options.IsSensitive == false {
-				if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
-					inputString := fmt.Sprintf("%v", inputValue)
-					stepInputs[inputName] = os.Expand(inputString, mappingFunc)
-				}
-			}
-		}
-
 		stepResults := models.StepRunResultsModel{
 			StepInfo:   stepInfoCopy,
-			StepInputs: stepInputs,
+			StepInputs: expandInputs(step.Inputs, environments),
 			Status:     resultCode,
 			Idx:        buildRunResults.ResultsCount(),
 			RunTime:    time.Now().Sub(stepStartTime),
