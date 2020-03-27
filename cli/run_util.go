@@ -580,14 +580,14 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	return info, didStepLibUpdate, nil
 }
 
-func expandInputs(
+func expandStepInputs(
 	inputs []envmanModels.EnvironmentItemModel,
-	environments *[]envmanModels.EnvironmentItemModel,
+	environments []envmanModels.EnvironmentItemModel,
 ) map[string]string {
 	stepInputs := make(map[string]string)
 	var mappingFunc func(string) string
 	mappingFunc = func(key string) string {
-		for _, environmentItem := range *environments {
+		for _, environmentItem := range environments {
 			envValue := environmentItem[key]
 			if envValue != nil {
 				return os.Expand(fmt.Sprintf("%v", envValue), mappingFunc)
@@ -653,7 +653,7 @@ func activateAndRunSteps(
 
 		stepResults := models.StepRunResultsModel{
 			StepInfo:   stepInfoCopy,
-			StepInputs: expandInputs(step.Inputs, environments),
+			StepInputs: expandStepInputs(step.Inputs, *environments),
 			Status:     resultCode,
 			Idx:        buildRunResults.ResultsCount(),
 			RunTime:    time.Now().Sub(stepStartTime),
