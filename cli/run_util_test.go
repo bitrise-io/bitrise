@@ -783,7 +783,6 @@ func TestExpandStepInputsNeedExpansion(t *testing.T) {
 	testInputs := []envmanModels.EnvironmentItemModel{
 		envmanModels.EnvironmentItemModel{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"secret_input": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
 	}
 
 	testEnvironment := []envmanModels.EnvironmentItemModel{
@@ -795,7 +794,6 @@ func TestExpandStepInputsNeedExpansion(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, expandedInputs)
-	require.Empty(t, expandedInputs["secret_input"])
 	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
 }
 
@@ -804,7 +802,6 @@ func TestExpandStepInputsNeedExpansionWithinExpansion(t *testing.T) {
 	testInputs := []envmanModels.EnvironmentItemModel{
 		envmanModels.EnvironmentItemModel{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"secret_input": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
 	}
 
 	testEnvironment := []envmanModels.EnvironmentItemModel{

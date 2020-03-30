@@ -587,15 +587,15 @@ func expandStepInputs(
 	stepInputs := make(map[string]string)
 
 	// Retrieve all non-sensitive input values
-	for _, environmentItem := range inputs {
-		if err := environmentItem.FillMissingDefaults(); err != nil {
+	for _, input := range inputs {
+		if err := input.FillMissingDefaults(); err != nil {
 			log.Warnf("Failed to fill missing defaults, skipping input")
 			continue
 		}
 
-		options, err := environmentItem.GetOptions()
+		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
-			if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
+			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
 				inputString := fmt.Sprintf("%v", inputValue)
 				stepInputs[inputName] = inputString
 			} else {
@@ -610,14 +610,14 @@ func expandStepInputs(
 	mappingFunc = func(key string) string {
 		for inputName, inputValue := range stepInputs {
 			if inputName == key {
-				return os.Expand(fmt.Sprintf("%v", inputValue), mappingFunc)
+				return os.Expand(inputValue, mappingFunc)
 			}
 		}
 
 		for _, environmentItem := range environments {
 			envValue := environmentItem[key]
 			if envValue != nil {
-				return os.Expand(fmt.Sprintf("%v", envValue), mappingFunc)
+				return os.Expand(envValue.(string), mappingFunc)
 			}
 		}
 
