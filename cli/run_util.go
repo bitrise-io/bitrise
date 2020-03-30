@@ -589,7 +589,7 @@ func expandStepInputs(
 	// Retrieve all non-sensitive input values
 	for _, input := range inputs {
 		if err := input.FillMissingDefaults(); err != nil {
-			log.Warnf("Failed to fill missing defaults, skipping input")
+			log.Warnf("Failed to fill missing defaults, skipping input: %s", err)
 			continue
 		}
 
@@ -599,10 +599,10 @@ func expandStepInputs(
 				inputString := fmt.Sprintf("%v", inputValue)
 				stepInputs[inputName] = inputString
 			} else {
-				log.Warnf("Failed to get input value, skipping input")
+				log.Warnf("Failed to get input value for '%v', skipping input: %s", inputName, err)
 			}
 		} else if err != nil {
-			log.Warnf("Failed to get input options, skipping input")
+			log.Warnf("Failed to get input options, skipping input: %s", err)
 		}
 	}
 
