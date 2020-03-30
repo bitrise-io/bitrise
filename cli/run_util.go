@@ -596,8 +596,7 @@ func expandStepInputs(
 		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
 			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				inputString := fmt.Sprintf("%v", inputValue)
-				stepInputs[inputName] = inputString
+				stepInputs[inputName] = inputValue
 			} else {
 				log.Warnf("Failed to get input value for '%v', skipping input: %s", inputName, err)
 			}
