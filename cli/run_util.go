@@ -585,8 +585,35 @@ func expandStepInputs(
 	environments []envmanModels.EnvironmentItemModel,
 ) map[string]string {
 	stepInputs := make(map[string]string)
+
+	// Retrieve all non-sensitive input values
+	for _, environmentItem := range inputs {
+		if err := environmentItem.FillMissingDefaults(); err != nil {
+			log.Warnf("Failed to fill missing defaults, skipping input")
+			continue
+		}
+
+		options, err := environmentItem.GetOptions()
+		if err == nil && *options.IsSensitive == false {
+			if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
+				inputString := fmt.Sprintf("%v", inputValue)
+				stepInputs[inputName] = inputString
+			} else {
+				log.Warnf("Failed to get input value, skipping input")
+			}
+		} else if err != nil {
+			log.Warnf("Failed to get input options, skipping input")
+		}
+	}
+
 	var mappingFunc func(string) string
 	mappingFunc = func(key string) string {
+		for inputName, inputValue := range stepInputs {
+			if inputName == key {
+				return os.Expand(fmt.Sprintf("%v", inputValue), mappingFunc)
+			}
+		}
+
 		for _, environmentItem := range environments {
 			envValue := environmentItem[key]
 			if envValue != nil {
@@ -597,18 +624,8 @@ func expandStepInputs(
 		return os.Getenv(key)
 	}
 
-	for _, environmentItem := range inputs {
-		options, err := environmentItem.GetOptions()
-		if err == nil && *options.IsSensitive == false {
-			if inputName, inputValue, err := environmentItem.GetKeyValuePair(); err == nil {
-				inputString := fmt.Sprintf("%v", inputValue)
-				stepInputs[inputName] = os.Expand(inputString, mappingFunc)
-			} else {
-				log.Warnf("Failed to get input value, skipping input")
-			}
-		} else if err != nil {
-			log.Warnf("Failed to get input options, skipping input")
-		}
+	for inputName, inputValue := range stepInputs {
+		stepInputs[inputName] = os.Expand(inputValue, mappingFunc)
 	}
 
 	return stepInputs
