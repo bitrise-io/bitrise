@@ -580,6 +580,56 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	return info, didStepLibUpdate, nil
 }
 
+func expandStepInputs(
+	inputs []envmanModels.EnvironmentItemModel,
+	environments []envmanModels.EnvironmentItemModel,
+) map[string]string {
+	stepInputs := make(map[string]string)
+
+	// Retrieve all non-sensitive input values
+	for _, input := range inputs {
+		if err := input.FillMissingDefaults(); err != nil {
+			log.Warnf("Failed to fill missing defaults, skipping input: %s", err)
+			continue
+		}
+
+		options, err := input.GetOptions()
+		if err == nil && *options.IsSensitive == false {
+			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
+				stepInputs[inputName] = inputValue
+			} else {
+				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
+			}
+		} else if err != nil {
+			log.Warnf("Failed to get input options, skipping input: %s", err)
+		}
+	}
+
+	var mappingFunc func(string) string
+	mappingFunc = func(key string) string {
+		for inputName, inputValue := range stepInputs {
+			if inputName == key {
+				return os.Expand(inputValue, mappingFunc)
+			}
+		}
+
+		for _, environmentItem := range environments {
+			envValue := environmentItem[key]
+			if envValue != nil {
+				return os.Expand(envValue.(string), mappingFunc)
+			}
+		}
+
+		return os.Getenv(key)
+	}
+
+	for inputName, inputValue := range stepInputs {
+		stepInputs[inputName] = os.Expand(inputValue, mappingFunc)
+	}
+
+	return stepInputs
+}
+
 func activateAndRunSteps(
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
@@ -618,13 +668,14 @@ func activateAndRunSteps(
 		}
 
 		stepResults := models.StepRunResultsModel{
-			StepInfo:  stepInfoCopy,
-			Status:    resultCode,
-			Idx:       buildRunResults.ResultsCount(),
-			RunTime:   time.Now().Sub(stepStartTime),
-			ErrorStr:  errStr,
-			ExitCode:  exitCode,
-			StartTime: stepStartTime,
+			StepInfo:   stepInfoCopy,
+			StepInputs: expandStepInputs(step.Inputs, *environments),
+			Status:     resultCode,
+			Idx:        buildRunResults.ResultsCount(),
+			RunTime:    time.Now().Sub(stepStartTime),
+			ErrorStr:   errStr,
+			ExitCode:   exitCode,
+			StartTime:  stepStartTime,
 		}
 
 		isExitStatusError := true
