@@ -75,7 +75,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d239c3b68d11561a5db6a0eabde74ef11eb269b4c88a80c483ea25d8feee4917"
+  digest = "1:b2cc7f690f8afdd785076ae3e0a8966edbf76f55f4de8de5cd64aad64260d5ad"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -85,7 +85,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "76ebed585e7c588f61a0b47ec09397f6939034bb"
+  revision = "32658664414b6aee27ea23d6848026a2fb0b490e"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -155,14 +155,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1fbab312c7e34ca131dd8431962292dbc808001f2d07eedcf4b4bdfae7b06372"
+  digest = "1:444c6b6bf2d8aa38e4810ef1d5ac556f2c5038cd328ee5c0f5c348e77804864b"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "85ca7c5b95cdf1e557abb38a283d1e61a5959c31"
+  revision = "9dae0f8f577553e0f21298e18926efc9644c281d"
 
 [[projects]]
   digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
