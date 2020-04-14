@@ -18,8 +18,10 @@ import (
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
+	log2 "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"golang.org/x/sys/unix"
 )
@@ -381,6 +383,7 @@ func EnvmanRun(envstorePth,
 
 	inReader = os.Stdin
 	if stdInPayload != nil {
+		log2.Infof(colorstring.Red("Payload passed to EnvmanRun: %s"), string(stdInPayload))
 		inReader = bytes.NewReader(stdInPayload)
 	}
 
