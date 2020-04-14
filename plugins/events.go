@@ -3,6 +3,9 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/bitrise-io/go-utils/colorstring"
+	log2 "github.com/bitrise-io/go-utils/log"
 )
 
 // TriggerEventName ...
@@ -30,6 +33,8 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	log2.Infof(colorstring.Red("Payload passed to plugin: %s"), string(payloadBytes))
 
 	// Run plugins
 	for _, plugin := range plugins {
