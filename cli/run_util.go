@@ -609,7 +609,7 @@ func expandStepInputs(
 	mappingFunc = func(key string) string {
 		for inputName, inputValue := range stepInputs {
 			if inputName == key {
-				if inputValue != "$"+key {
+				if strings.Contains(inputValue, "$"+key) == false {
 					return os.Expand(inputValue, mappingFunc)
 				}
 				return inputValue
@@ -619,7 +619,7 @@ func expandStepInputs(
 		for _, environmentItem := range environments {
 			envValue := environmentItem[key]
 			if envValue != nil {
-				if envValue != "$"+key {
+				if strings.Contains(envValue.(string), "$"+key) == false {
 					return os.Expand(envValue.(string), mappingFunc)
 				}
 				return envValue.(string)
