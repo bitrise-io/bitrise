@@ -878,3 +878,21 @@ func TestExpandLoopWithLengthOneSkipped(t *testing.T) {
 	require.Equal(t, "Something: Something: $loop", expandedInputs["loop"])
 	require.Equal(t, "Something: $ENV_LOOP", expandedInputs["env_loop"])
 }
+
+func TestExpandPrefixNotSkipped(t *testing.T) {
+	// Arrange
+	testInputs := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"env": "Something: $similar", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"similar2": "anything", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"similar": "$similar2", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	testEnvironment := []envmanModels.EnvironmentItemModel{}
+
+	// Act
+	expandedInputs := expandStepInputs(testInputs, testEnvironment)
+
+	// Assert
+	require.NotNil(t, expandedInputs)
+	require.Equal(t, "Something: anything", expandedInputs["env"])
+}
