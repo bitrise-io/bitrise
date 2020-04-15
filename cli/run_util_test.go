@@ -838,3 +838,23 @@ func TestExpandStepInputsNeedCrossInputExpansion(t *testing.T) {
 	require.Empty(t, expandedInputs["secret_input"])
 	require.Equal(t, "iPhone 8 (13.3)", expandedInputs["simulator_device"])
 }
+
+func TestExpandSimpleLoopSkipped(t *testing.T) {
+	// Arrange
+	testInputs := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"loop": "$loop", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"env_loop": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	testEnvironment := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"ENV_LOOP": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	// Act
+	expandedInputs := expandStepInputs(testInputs, testEnvironment)
+
+	// Assert
+	require.NotNil(t, expandedInputs)
+	require.Equal(t, "$loop", expandedInputs["loop"])
+	require.Equal(t, "$ENV_LOOP", expandedInputs["env_loop"])
+}
