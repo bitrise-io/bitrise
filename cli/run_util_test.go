@@ -805,9 +805,9 @@ func TestExpandStepInputsNeedExpansionWithinExpansion(t *testing.T) {
 	}
 
 	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_VERSION": "$SIMULATOR_OS_MAJOR_VERSION.$SIMULATOR_OS_MINOR_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_MAJOR_VERSION": "13", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_MINOR_VERSION": "3", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_VERSION": "$SIMULATOR_OS_MAJOR_VERSION.$SIMULATOR_OS_MINOR_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
 	}
 
 	// Act
@@ -855,8 +855,8 @@ func TestExpandSimpleLoopSkipped(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, expandedInputs)
-	require.Equal(t, "$loop", expandedInputs["loop"])
-	require.Equal(t, "$ENV_LOOP", expandedInputs["env_loop"])
+	require.Equal(t, "", expandedInputs["loop"])
+	require.Equal(t, "", expandedInputs["env_loop"])
 }
 
 func TestExpandLoopWithLengthOneSkipped(t *testing.T) {
@@ -867,7 +867,7 @@ func TestExpandLoopWithLengthOneSkipped(t *testing.T) {
 	}
 
 	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"ENV_LOOP": "Something: $ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"ENV_LOOP": "Env Something: $ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
 	}
 
 	// Act
@@ -875,16 +875,16 @@ func TestExpandLoopWithLengthOneSkipped(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, expandedInputs)
-	require.Equal(t, "Something: Something: $loop", expandedInputs["loop"])
-	require.Equal(t, "Something: $ENV_LOOP", expandedInputs["env_loop"])
+	require.Equal(t, "Something: ", expandedInputs["loop"])
+	require.Equal(t, "Env Something: ", expandedInputs["env_loop"])
 }
 
 func TestExpandPrefixNotSkipped(t *testing.T) {
 	// Arrange
 	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"env": "Something: $similar", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"similar2": "anything", "opts": map[string]interface{}{"is_sensitive": false}},
 		envmanModels.EnvironmentItemModel{"similar": "$similar2", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"env": "Something: $similar", "opts": map[string]interface{}{"is_sensitive": false}},
 	}
 
 	testEnvironment := []envmanModels.EnvironmentItemModel{}
@@ -895,4 +895,29 @@ func TestExpandPrefixNotSkipped(t *testing.T) {
 	// Assert
 	require.NotNil(t, expandedInputs)
 	require.Equal(t, "Something: anything", expandedInputs["env"])
+}
+
+func TestExpandMultiLengthLoopsSkipped(t *testing.T) {
+	// Arrange
+	testInputs := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"a": "$b", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"b": "$c", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"c": "$a", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"env": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	testEnvironment := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"B": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"A": "$B", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	// Act
+	expandedInputs := expandStepInputs(testInputs, testEnvironment)
+
+	// Assert
+	require.NotNil(t, expandedInputs)
+	require.Equal(t, "", expandedInputs["a"])
+	require.Equal(t, "", expandedInputs["b"])
+	require.Equal(t, "", expandedInputs["c"])
+	require.Equal(t, "", expandedInputs["env"])
 }

@@ -586,6 +586,26 @@ func expandStepInputs(
 ) map[string]string {
 	stepInputs := make(map[string]string)
 
+	var mappingFuncFactory func(map[string]string, []envmanModels.EnvironmentItemModel) func(string) string
+	mappingFuncFactory = func(stepInputs map[string]string, environments []envmanModels.EnvironmentItemModel) func(key string) string {
+		return func(key string) string {
+			for inputName, inputValue := range stepInputs {
+				if inputName == key {
+					return os.Expand(inputValue, mappingFuncFactory(stepInputs, environments))
+				}
+			}
+
+			for index, environmentItem := range environments {
+				envValue := environmentItem[key]
+				if envValue != nil {
+					return os.Expand(envValue.(string), mappingFuncFactory(stepInputs, environments[:index]))
+				}
+			}
+
+			return os.Getenv(key)
+		}
+	}
+
 	// Retrieve all non-sensitive input values
 	for _, input := range inputs {
 		if err := input.FillMissingDefaults(); err != nil {
@@ -596,41 +616,13 @@ func expandStepInputs(
 		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
 			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				stepInputs[inputName] = inputValue
+				stepInputs[inputName] = os.Expand(inputValue, mappingFuncFactory(stepInputs, environments))
 			} else {
 				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
 			}
 		} else if err != nil {
 			log.Warnf("Failed to get input options, skipping input: %s", err)
 		}
-	}
-
-	var mappingFunc func(string) string
-	mappingFunc = func(key string) string {
-		for inputName, inputValue := range stepInputs {
-			if inputName == key {
-				if strings.Contains(inputValue, "$"+key) == false {
-					return os.Expand(inputValue, mappingFunc)
-				}
-				return inputValue
-			}
-		}
-
-		for _, environmentItem := range environments {
-			envValue := environmentItem[key]
-			if envValue != nil {
-				if strings.Contains(envValue.(string), "$"+key) == false {
-					return os.Expand(envValue.(string), mappingFunc)
-				}
-				return envValue.(string)
-			}
-		}
-
-		return os.Getenv(key)
-	}
-
-	for inputName, inputValue := range stepInputs {
-		stepInputs[inputName] = os.Expand(inputValue, mappingFunc)
 	}
 
 	return stepInputs
