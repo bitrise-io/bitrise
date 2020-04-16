@@ -586,19 +586,19 @@ func expandStepInputs(
 ) map[string]string {
 	stepInputs := make(map[string]string)
 
-	var mappingFuncFactory func(map[string]string, []envmanModels.EnvironmentItemModel) func(string) string
-	mappingFuncFactory = func(stepInputs map[string]string, environments []envmanModels.EnvironmentItemModel) func(key string) string {
+	var mappingFuncFactory func([]envmanModels.EnvironmentItemModel) func(string) string
+	mappingFuncFactory = func(environments []envmanModels.EnvironmentItemModel) func(key string) string {
 		return func(key string) string {
 			for inputName, inputValue := range stepInputs {
 				if inputName == key {
-					return os.Expand(inputValue, mappingFuncFactory(stepInputs, environments))
+					return os.Expand(inputValue, mappingFuncFactory(environments))
 				}
 			}
 
 			for index, environmentItem := range environments {
 				envValue := environmentItem[key]
 				if envValue != nil {
-					return os.Expand(envValue.(string), mappingFuncFactory(stepInputs, environments[:index]))
+					return os.Expand(envValue.(string), mappingFuncFactory(environments[:index]))
 				}
 			}
 
@@ -616,7 +616,7 @@ func expandStepInputs(
 		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
 			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				stepInputs[inputName] = os.Expand(inputValue, mappingFuncFactory(stepInputs, environments))
+				stepInputs[inputName] = os.Expand(inputValue, mappingFuncFactory(environments))
 			} else {
 				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
 			}
