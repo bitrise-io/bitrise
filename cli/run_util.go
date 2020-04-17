@@ -582,31 +582,32 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 
 func expandStepInputs(
 	inputs []envmanModels.EnvironmentItemModel,
-	environments []envmanModels.EnvironmentItemModel,
+	initialEnvironments []envmanModels.EnvironmentItemModel,
 ) map[string]string {
-	stepInputs := make(map[string]string)
-
-	var mappingFuncFactory func([]envmanModels.EnvironmentItemModel) func(string) string
-	mappingFuncFactory = func(environments []envmanModels.EnvironmentItemModel) func(key string) string {
+	var mappingFuncFactory func(map[string]string) func(string) string
+	mappingFuncFactory = func(envs map[string]string) func(string) string {
 		return func(key string) string {
-			for inputName, inputValue := range stepInputs {
-				if inputName == key {
-					return os.Expand(inputValue, mappingFuncFactory(environments))
-				}
+			val, ok := envs[key]
+			if !ok {
+				return ""
 			}
 
-			for index, environmentItem := range environments {
-				envValue := environmentItem[key]
-				if envValue != nil {
-					return os.Expand(envValue.(string), mappingFuncFactory(environments[:index]))
-				}
-			}
-
-			return os.Getenv(key)
+			return val
 		}
 	}
 
-	// Retrieve all non-sensitive input values
+	envs := make(map[string]string)
+	// Expand enviroment variables, ordering of initial enviroments matters
+	for _, env := range initialEnvironments {
+		if envName, envValue, err := env.GetKeyValuePair(); err == nil {
+			envs[envName] = os.Expand(envValue, mappingFuncFactory(envs))
+		} else {
+			log.Warnf("Failed to get env value for '%s', skipping env: %s", envName, err)
+		}
+	}
+
+	var inputNames []string
+	// Retrieve all non-sensitive input values and expand them, order of inputs matters
 	for _, input := range inputs {
 		if err := input.FillMissingDefaults(); err != nil {
 			log.Warnf("Failed to fill missing defaults, skipping input: %s", err)
@@ -616,7 +617,8 @@ func expandStepInputs(
 		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
 			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				stepInputs[inputName] = os.Expand(inputValue, mappingFuncFactory(environments))
+				inputNames = append(inputNames, inputName) // Save inputs, so we can filter envs later
+				envs[inputName] = os.Expand(inputValue, mappingFuncFactory(envs))
 			} else {
 				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
 			}
@@ -625,7 +627,13 @@ func expandStepInputs(
 		}
 	}
 
-	return stepInputs
+	// Filter innputs from enviroments
+	expandedInputs := make(map[string]string)
+	for _, inputName := range inputNames {
+		expandedInputs[inputName] = envs[inputName]
+	}
+
+	return expandedInputs
 }
 
 func activateAndRunSteps(
