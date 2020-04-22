@@ -587,12 +587,11 @@ func expandStepInputs(
 	var mappingFuncFactory func(map[string]string) func(string) string
 	mappingFuncFactory = func(envs map[string]string) func(string) string {
 		return func(key string) string {
-			val, ok := envs[key]
-			if !ok {
+			if _, ok := envs[key]; !ok {
 				return ""
 			}
 
-			return val
+			return envs[key]
 		}
 	}
 
