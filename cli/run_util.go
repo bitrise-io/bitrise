@@ -606,7 +606,7 @@ func expandStepInputs(
 		}
 	}
 
-	var inputNames []string
+	expandedInputs := make(map[string]string)
 	// Retrieve all non-sensitive input values and expand them, order of inputs matters
 	for _, input := range inputs {
 		if err := input.FillMissingDefaults(); err != nil {
@@ -617,7 +617,7 @@ func expandStepInputs(
 		options, err := input.GetOptions()
 		if err == nil && *options.IsSensitive == false {
 			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				inputNames = append(inputNames, inputName) // Save inputs, so we can filter envs later
+				expandedInputs[inputName] = "" // Save input names, so we can filter envs later
 				envs[inputName] = os.Expand(inputValue, mappingFuncFactory(envs))
 			} else {
 				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
@@ -627,9 +627,8 @@ func expandStepInputs(
 		}
 	}
 
-	// Filter innputs from enviroments
-	expandedInputs := make(map[string]string)
-	for _, inputName := range inputNames {
+	// Filter inputs from enviroments
+	for inputName := range expandedInputs {
 		expandedInputs[inputName] = envs[inputName]
 	}
 

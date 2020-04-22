@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -723,201 +724,204 @@ func Test_activateStepLibStep(t *testing.T) {
 	}
 }
 
-func TestExpandStepInputsMissingOptionsDoNotCauseCrash(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "13.3", "opts": map[string]interface{}{}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{}},
+func TestExpandStepInputsEnvDoesNotDependOnInput(t *testing.T) {
+	tests := []struct {
+		name   string
+		envs   []envmanModels.EnvironmentItemModel
+		inputs []envmanModels.EnvironmentItemModel
+		want   map[string]string
+	}{
+		{
+			name: "Env does not depend on input",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"simulator_device": "$simulator_major", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_major": "12", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_os_version": "$simulator_device", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_major":      "12",
+				"simulator_os_version": "",
+			},
+		},
+		{
+			name: "Env does not depend on input (input order switched)",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"simulator_device": "$simulator_major", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "$simulator_device", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_major": "12", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_major":      "12",
+				"simulator_os_version": "",
+			},
+		},
+		{
+			name: "Secrets are removed",
+			envs: []envmanModels.EnvironmentItemModel{},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"secret_input": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+				"simulator_device":     "iPhone 8 Plus",
+				// "secret_input":         "",
+			},
+		},
+		{
+			name: "No env expansion, missing options (sensive input).",
+			envs: []envmanModels.EnvironmentItemModel{},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "13.3", "opts": map[string]interface{}{}},
+				{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+				"simulator_device":     "iPhone 8 Plus",
+			},
+		},
+		{
+			name: "No env expansion, options specified",
+			envs: []envmanModels.EnvironmentItemModel{},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+				"simulator_device":     "iPhone 8 Plus",
+			},
+		},
+		{
+			name: "Env expansion, input contains env var.",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"SIMULATOR_OS_VERSION": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+			},
+		},
+		{
+			name: "Env var expansion, input expansion",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"SIMULATOR_OS_MAJOR_VERSION": "13", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"SIMULATOR_OS_MINOR_VERSION": "3", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"SIMULATOR_OS_VERSION": "$SIMULATOR_OS_MAJOR_VERSION.$SIMULATOR_OS_MINOR_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+			},
+		},
+		{
+			name: "Input expansion, input refers other input",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "12.1", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_device": "iPhone 8 ($simulator_os_version)", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+				"simulator_device":     "iPhone 8 (13.3)",
+			},
+		},
+		{
+			name: "Input expansion, input can not refer other input declared after it",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "12.1", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_device": "iPhone 8 ($simulator_os_version)", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "13.3",
+				"simulator_device":     "iPhone 8 (12.1)",
+			},
+		},
+		{
+			name: "Input refers itself, env refers itself",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"ENV_LOOP": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"loop": "$loop", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"env_loop": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"loop":     "",
+				"env_loop": "",
+			},
+		},
+		{
+			name: "Input refers itself, env refers itself; both have prefix included",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"ENV_LOOP": "Env Something: $ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"loop": "Something: $loop", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"env_loop": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"loop":     "Something: ",
+				"env_loop": "Env Something: ",
+			},
+		},
+		{
+			name: "Inputs refer inputs in a chain, with prefix included",
+			envs: []envmanModels.EnvironmentItemModel{},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"similar2": "anything", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"similar": "$similar2", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"env": "Something: $similar", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"similar2": "anything",
+				"similar":  "anything",
+				"env":      "Something: anything",
+			},
+		},
+		{
+			name: "References in a loop are not expanded",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"B": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"A": "$B", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"a": "$b", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"b": "$c", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"c": "$a", "opts": map[string]interface{}{"is_sensitive": false}},
+				{"env": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"a":   "",
+				"b":   "",
+				"c":   "",
+				"env": "",
+			},
+		},
 	}
 
-	testEnvironment := []envmanModels.EnvironmentItemModel{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := expandStepInputs(test.inputs, test.envs)
 
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
-	require.Equal(t, "iPhone 8 Plus", expandedInputs["simulator_device"])
-}
-
-func TestExpandStepInputsDoNotNeedExpansion(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
+			require.NotNil(t, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Fatalf("expandStepInputs() actual: %v expected: %v", got, test.want)
+			}
+		})
 	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
-	require.Equal(t, "iPhone 8 Plus", expandedInputs["simulator_device"])
-}
-
-func TestExpandStepInputsSecretRemoved(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"secret_input": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Empty(t, expandedInputs["secret_input"])
-	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
-}
-
-func TestExpandStepInputsNeedExpansion(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_VERSION": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
-}
-
-func TestExpandStepInputsNeedExpansionWithinExpansion(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_MAJOR_VERSION": "13", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_MINOR_VERSION": "3", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_VERSION": "$SIMULATOR_OS_MAJOR_VERSION.$SIMULATOR_OS_MINOR_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Empty(t, expandedInputs["secret_input"])
-	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
-}
-
-func TestExpandStepInputsNeedCrossInputExpansion(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 ($simulator_os_version)", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"simulator_os_version": "12.1", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Empty(t, expandedInputs["secret_input"])
-	require.Equal(t, "iPhone 8 (13.3)", expandedInputs["simulator_device"])
-}
-
-func TestExpandSimpleLoopSkipped(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"loop": "$loop", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"env_loop": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"ENV_LOOP": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "", expandedInputs["loop"])
-	require.Equal(t, "", expandedInputs["env_loop"])
-}
-
-func TestExpandLoopWithLengthOneSkipped(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"loop": "Something: $loop", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"env_loop": "$ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"ENV_LOOP": "Env Something: $ENV_LOOP", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "Something: ", expandedInputs["loop"])
-	require.Equal(t, "Env Something: ", expandedInputs["env_loop"])
-}
-
-func TestExpandPrefixNotSkipped(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"similar2": "anything", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"similar": "$similar2", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"env": "Something: $similar", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "Something: anything", expandedInputs["env"])
-}
-
-func TestExpandMultiLengthLoopsSkipped(t *testing.T) {
-	// Arrange
-	testInputs := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"a": "$b", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"b": "$c", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"c": "$a", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"env": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	testEnvironment := []envmanModels.EnvironmentItemModel{
-		envmanModels.EnvironmentItemModel{"B": "$A", "opts": map[string]interface{}{"is_sensitive": false}},
-		envmanModels.EnvironmentItemModel{"A": "$B", "opts": map[string]interface{}{"is_sensitive": false}},
-	}
-
-	// Act
-	expandedInputs := expandStepInputs(testInputs, testEnvironment)
-
-	// Assert
-	require.NotNil(t, expandedInputs)
-	require.Equal(t, "", expandedInputs["a"])
-	require.Equal(t, "", expandedInputs["b"])
-	require.Equal(t, "", expandedInputs["c"])
-	require.Equal(t, "", expandedInputs["env"])
 }
