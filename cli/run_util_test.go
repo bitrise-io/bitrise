@@ -724,7 +724,7 @@ func Test_activateStepLibStep(t *testing.T) {
 	}
 }
 
-func TestExpandStepInputsEnvDoesNotDependOnInput(t *testing.T) {
+func TestExpandStepInputs(t *testing.T) {
 	tests := []struct {
 		name   string
 		envs   []envmanModels.EnvironmentItemModel
