@@ -596,11 +596,8 @@ func expandStepInputs(
 			}
 
 			for index, environmentItem := range environments {
-				envValue := environmentItem[key]
-				if envString, ok := envValue.(string); ok {
-					return os.Expand(envString, mappingFuncFactory(environments[:index]))
-				} else if envValue != nil {
-					return fmt.Sprintf("%v", envValue)
+				if envKey, envValue, err := environmentItem.GetKeyValuePair(); err == nil && envKey == key {
+					return os.Expand(envValue, mappingFuncFactory(environments[:index]))
 				}
 			}
 
