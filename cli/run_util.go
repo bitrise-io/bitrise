@@ -597,8 +597,10 @@ func expandStepInputs(
 
 			for index, environmentItem := range environments {
 				envValue := environmentItem[key]
-				if envValue != nil {
-					return os.Expand(envValue.(string), mappingFuncFactory(environments[:index]))
+				if envString, ok := envValue.(string); ok {
+					return os.Expand(envString, mappingFuncFactory(environments[:index]))
+				} else if envValue != nil {
+					return fmt.Sprintf("%v", envValue)
 				}
 			}
 
