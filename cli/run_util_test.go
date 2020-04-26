@@ -760,17 +760,27 @@ func TestExpandStepInputs(t *testing.T) {
 			},
 		},
 		{
-			name: "Secrets are removed",
+			name: "Secrets inputs are removed",
 			envs: []envmanModels.EnvironmentItemModel{},
 			inputs: []envmanModels.EnvironmentItemModel{
 				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
-				{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
 				{"secret_input": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
 			},
 			want: map[string]string{
 				"simulator_os_version": "13.3",
-				"simulator_device":     "iPhone 8 Plus",
 				// "secret_input":         "",
+			},
+		},
+		{
+			name: "Secrets environments are redacted",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"secret_env": "top secret", "opts": map[string]interface{}{"is_sensitive": true}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_device": "iPhone $secret_env", "opts": map[string]interface{}{"is_sensitive": false}},
+			},
+			want: map[string]string{
+				"simulator_device": "iPhone [REDACTED]",
 			},
 		},
 		{
