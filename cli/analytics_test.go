@@ -68,7 +68,7 @@ func TestExpandStepInputs(t *testing.T) {
 			},
 		},
 		{
-			name: "No env expansion, missing options (sensive input).",
+			name: "Not referencing other envs, missing options (sensive input).",
 			envs: []envmanModels.EnvironmentItemModel{},
 			inputs: []envmanModels.EnvironmentItemModel{
 				{"simulator_os_version": "13.3", "opts": map[string]interface{}{}},
@@ -80,7 +80,7 @@ func TestExpandStepInputs(t *testing.T) {
 			},
 		},
 		{
-			name: "No env expansion, options specified",
+			name: "Not referencing other envs, options specified.",
 			envs: []envmanModels.EnvironmentItemModel{},
 			inputs: []envmanModels.EnvironmentItemModel{
 				{"simulator_os_version": "13.3", "opts": map[string]interface{}{"is_sensitive": false}},
@@ -89,6 +89,18 @@ func TestExpandStepInputs(t *testing.T) {
 			want: map[string]string{
 				"simulator_os_version": "13.3",
 				"simulator_device":     "iPhone 8 Plus",
+			},
+		},
+		{
+			name: "Input references env var, is_expand is false.",
+			envs: []envmanModels.EnvironmentItemModel{
+				{"SIMULATOR_OS_VERSION": "13.3", "opts": map[string]interface{}{}},
+			},
+			inputs: []envmanModels.EnvironmentItemModel{
+				{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_expand": false}},
+			},
+			want: map[string]string{
+				"simulator_os_version": "$SIMULATOR_OS_VERSION",
 			},
 		},
 		{
