@@ -210,7 +210,7 @@ func TestExpandStepInputs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := expandStepInputs(test.inputs, test.envs)
+			got := expandStepInputsForAnalytics(test.inputs, test.envs)
 
 			require.NotNil(t, got)
 			if !reflect.DeepEqual(test.want, got) {
