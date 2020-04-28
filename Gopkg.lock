@@ -151,7 +151,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "0848c9571904fcbcb24543358ca8b5a7dbfde875"
+  revision = "729f1e841bcca28c2cd9f4034d6f7672604dbeda"
 
 [[projects]]
   branch = "master"
@@ -162,7 +162,7 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "669c56c373c468cbe0f0c12b7939832b26088d33"
+  revision = "29b57079015a5bb5f6b6f0c01679754e4bd75916"
 
 [[projects]]
   digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
