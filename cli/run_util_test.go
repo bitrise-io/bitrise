@@ -797,6 +797,46 @@ func TestExpandStepInputsNeedExpansion(t *testing.T) {
 	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
 }
 
+func TestExpandStepInputsNeedsFloatExpansion(t *testing.T) {
+	// Arrange
+	testInputs := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"simulator_os_version": "$SIMULATOR_OS_VERSION", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 Plus", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	testEnvironment := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"SIMULATOR_OS_VERSION": 13.3, "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"SIMULATOR_DEVICE_BOOL": true, "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	// Act
+	expandedInputs := expandStepInputs(testInputs, testEnvironment)
+
+	// Assert
+	require.NotNil(t, expandedInputs)
+	require.Equal(t, "iPhone 8 Plus", expandedInputs["simulator_device"])
+	require.Equal(t, "13.3", expandedInputs["simulator_os_version"])
+}
+
+func TestExpandStepInputsNeedsBoolExpansion(t *testing.T) {
+	// Arrange
+	testInputs := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"random_bool": "BOOL: $RANDOM_BOOL", "opts": map[string]interface{}{"is_sensitive": false}},
+		envmanModels.EnvironmentItemModel{"simulator_device": "iPhone 8 $SIMULATOR_DEVICE_BOOL", "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	testEnvironment := []envmanModels.EnvironmentItemModel{
+		envmanModels.EnvironmentItemModel{"RANDOM_BOOL": true, "opts": map[string]interface{}{"is_sensitive": false}},
+	}
+
+	// Act
+	expandedInputs := expandStepInputs(testInputs, testEnvironment)
+
+	// Assert
+	require.NotNil(t, expandedInputs)
+	require.Equal(t, "BOOL: true", expandedInputs["random_bool"])
+}
+
 func TestExpandStepInputsNeedExpansionWithinExpansion(t *testing.T) {
 	// Arrange
 	testInputs := []envmanModels.EnvironmentItemModel{
