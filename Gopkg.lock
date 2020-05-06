@@ -18,19 +18,20 @@
   revision = "a8cd701151924e6beffb74a34a556b320e0cfcf7"
 
 [[projects]]
-  branch = "master"
-  digest = "1:45f93a7af77540da03239e89a5159b435efa4fcc1fbd49b90c30c88bf95e9513"
+  branch = "TOOL-2017-expansion-improvement"
+  digest = "1:ab774591a916eb5aa93c052d03b7794e0c921de4c1aff9e93ffe3087826d2dc6"
   name = "github.com/bitrise-io/envman"
   packages = [
     ".",
     "cli",
+    "env",
     "envman",
     "models",
     "output",
     "version",
   ]
   pruneopts = "UT"
-  revision = "24a8f72875981710a8b21e60d81c4126a3af3c67"
+  revision = "b90ac7de40019f4864b6be9b7649d7a492cbedea"
 
 [[projects]]
   branch = "master"
@@ -178,6 +179,7 @@
   input-imports = [
     "github.com/Sirupsen/logrus",
     "github.com/bitrise-io/envman",
+    "github.com/bitrise-io/envman/env",
     "github.com/bitrise-io/envman/models",
     "github.com/bitrise-io/go-utils/colorstring",
     "github.com/bitrise-io/go-utils/command",

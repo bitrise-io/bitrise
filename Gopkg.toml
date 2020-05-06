@@ -7,8 +7,8 @@ required = ["github.com/bitrise-io/go-utils/envutil",
   name = "github.com/sirupsen/logrus"
   version = "1.4.2"
 
-[[constraint]]
-  branch = "master"
+[[override]]
+  branch = "TOOL-2017-expansion-improvement"
   name = "github.com/bitrise-io/envman"
 
 [[constraint]]

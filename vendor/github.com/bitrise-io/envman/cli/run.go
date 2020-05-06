@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitrise-io/envman/env"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
@@ -22,40 +22,18 @@ func expandEnvsInString(inp string) string {
 	return os.ExpandEnv(inp)
 }
 
-func commandEnvs(envs []models.EnvironmentItemModel) ([]string, error) {
-	for _, env := range envs {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return []string{}, err
-		}
+func commandEnvs(newEnvs []models.EnvironmentItemModel) ([]string, error) {
+	result, err := env.GetDeclarationsSideEffects(newEnvs, &env.DefaultEnvironmentSource{})
+	if err != nil {
+		return nil, err
+	}
 
-		opts, err := env.GetOptions()
-		if err != nil {
-			return []string{}, err
-		}
-
-		if opts.Unset != nil && *opts.Unset {
-			if err := os.Unsetenv(key); err != nil {
-				return []string{}, fmt.Errorf("unset env (%s): %s", key, err)
-			}
-			continue
-		}
-
-		if *opts.SkipIfEmpty && value == "" {
-			continue
-		}
-
-		var valueStr string
-		if *opts.IsExpand {
-			valueStr = expandEnvsInString(value)
-		} else {
-			valueStr = value
-		}
-
-		if err := os.Setenv(key, valueStr); err != nil {
-			return []string{}, err
+	for _, command := range result.CommandHistory {
+		if err := env.ExecuteCommand(command); err != nil {
+			return nil, err
 		}
 	}
+
 	return os.Environ(), nil
 }
 
