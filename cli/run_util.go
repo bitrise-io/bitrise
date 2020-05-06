@@ -408,7 +408,7 @@ func executeStep(
 func runStep(
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
 	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
+	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, map[string]string, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -424,44 +424,49 @@ func runStep(
 
 		return checkAndInstallStepDependencies(step)
 	}); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to install Step dependency, error: %s", err)
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+			fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}
 
 	// Collect step inputs
 	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to init envman for the Step, error: %s", err)
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+			fmt.Errorf("Failed to init envman for the Step, error: %s", err)
 	}
 
 	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+			fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
 	}
 
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
 	for _, input := range step.Inputs {
 		key, value, err := input.GetKeyValuePair()
 		if err != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, err
+			return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 		}
 
 		options, err := input.GetOptions()
 		if err != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, err
+			return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
 			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
 			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
+				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+					fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
 
 			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, fmt.Errorf("CreateFromJSON failed, err: %s", err)
+				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+					fmt.Errorf("CreateFromJSON failed, err: %s", err)
 			}
 
 			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, err
+				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 			}
 
 			input[key] = evaluatedValue
@@ -472,17 +477,22 @@ func runStep(
 	environments = append(environments, evaluatedInputs...)
 
 	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 	}
 
 	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
+	}
+
+	expandedStepInputs, err := expandStepInputsForAnalytics(environments, evaluatedInputs, tools.GetSecretValues(secrets))
+	if err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 	}
 
 	// Run step
 	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
 	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, err
 	}
 	if bitriseSourceDir == "" {
 		bitriseSourceDir = configs.CurrentDir
@@ -491,30 +501,30 @@ func runStep(
 	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, envErr
+			return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, envErr
 		}
 
 		updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
 		if updateErr != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+			return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, updateErr
 		}
 
-		return exit, updatedStepOutputs, err
+		return exit, updatedStepOutputs, expandedStepInputs, err
 	}
 
 	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, err
 	}
 
 	updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
 	if updateErr != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, updateErr
 	}
 
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
-	return 0, updatedStepOutputs, nil
+	return 0, updatedStepOutputs, expandedStepInputs, nil
 }
 
 func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
@@ -580,53 +590,6 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	return info, didStepLibUpdate, nil
 }
 
-func expandStepInputs(
-	inputs []envmanModels.EnvironmentItemModel,
-	environments []envmanModels.EnvironmentItemModel,
-) map[string]string {
-	stepInputs := make(map[string]string)
-
-	var mappingFuncFactory func([]envmanModels.EnvironmentItemModel) func(string) string
-	mappingFuncFactory = func(environments []envmanModels.EnvironmentItemModel) func(key string) string {
-		return func(key string) string {
-			for inputName, inputValue := range stepInputs {
-				if inputName == key {
-					return os.Expand(inputValue, mappingFuncFactory(environments))
-				}
-			}
-
-			for index, environmentItem := range environments {
-				if envKey, envValue, err := environmentItem.GetKeyValuePair(); err == nil && envKey == key {
-					return os.Expand(envValue, mappingFuncFactory(environments[:index]))
-				}
-			}
-
-			return os.Getenv(key)
-		}
-	}
-
-	// Retrieve all non-sensitive input values
-	for _, input := range inputs {
-		if err := input.FillMissingDefaults(); err != nil {
-			log.Warnf("Failed to fill missing defaults, skipping input: %s", err)
-			continue
-		}
-
-		options, err := input.GetOptions()
-		if err == nil && *options.IsSensitive == false {
-			if inputName, inputValue, err := input.GetKeyValuePair(); err == nil {
-				stepInputs[inputName] = os.Expand(inputValue, mappingFuncFactory(environments))
-			} else {
-				log.Warnf("Failed to get input value for '%s', skipping input: %s", inputName, err)
-			}
-		} else if err != nil {
-			log.Warnf("Failed to get input options, skipping input: %s", err)
-		}
-	}
-
-	return stepInputs
-}
-
 func activateAndRunSteps(
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
@@ -642,7 +605,8 @@ func activateAndRunSteps(
 	// ------------------------------------------
 	// In function method - Registration methods, for register step run results.
 	registerStepRunResults := func(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel,
-		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool) {
+		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool,
+		expandedStepInputs map[string]string) {
 
 		if printStepHeader {
 			bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
@@ -666,7 +630,7 @@ func activateAndRunSteps(
 
 		stepResults := models.StepRunResultsModel{
 			StepInfo:   stepInfoCopy,
-			StepInputs: expandStepInputs(step.Inputs, *environments),
+			StepInputs: expandedStepInputs,
 			Status:     resultCode,
 			Idx:        buildRunResults.ResultsCount(),
 			RunTime:    time.Now().Sub(stepStartTime),
@@ -737,7 +701,7 @@ func activateAndRunSteps(
 
 		if err := bitrise.CleanupStepWorkDir(); err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			continue
 		}
 
@@ -745,13 +709,13 @@ func activateAndRunSteps(
 		// Preparing the step
 		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			continue
 		}
 
 		if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, *environments); err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			continue
 		}
 
@@ -759,7 +723,7 @@ func activateAndRunSteps(
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			continue
 		}
 		stepInfoPtr.ID = compositeStepIDStr
@@ -772,7 +736,7 @@ func activateAndRunSteps(
 		stepIDData, err := models.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			continue
 		}
 		stepInfoPtr.ID = stepIDData.IDorURI
@@ -793,7 +757,7 @@ func activateAndRunSteps(
 			stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 
@@ -802,13 +766,13 @@ func activateAndRunSteps(
 			origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
 			if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 
 			if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 		} else if stepIDData.SteplibSource == "git" {
@@ -816,7 +780,7 @@ func activateAndRunSteps(
 			repo, err := git.New(stepDir)
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			}
 			if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
 				if strings.HasPrefix(stepIDData.IDorURI, "git@") {
@@ -826,13 +790,13 @@ func activateAndRunSteps(
 					fmt.Println(colorstring.Yellow(`even if the repository is open source!`))
 				}
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 
 			if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 		} else if stepIDData.SteplibSource == "_" {
@@ -842,18 +806,18 @@ func activateAndRunSteps(
 			stepYMLPth = ""
 			if err := workflowStep.FillMissingDefaults(); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 
 			repo, err := git.New(stepDir)
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 			}
 			if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 		} else if stepIDData.SteplibSource != "" {
@@ -874,12 +838,13 @@ func activateAndRunSteps(
 
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 		} else {
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData), isLastStep, true)
+				"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData),
+				isLastStep, true, map[string]string{})
 			continue
 		}
 
@@ -896,14 +861,15 @@ func activateAndRunSteps(
 					ymlPth = origStepYMLPth
 				}
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err), isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err),
+					isLastStep, true, map[string]string{})
 				continue
 			}
 
 			mergedStep, err = models.MergeStepWith(specStep, workflowStep)
 			if err != nil {
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true)
+					"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
 				continue
 			}
 		}
@@ -922,26 +888,28 @@ func activateAndRunSteps(
 			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err), isLastStep, false)
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err),
+					isLastStep, false, map[string]string{})
 				continue
 			}
 
 			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err), isLastStep, false)
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err),
+					isLastStep, false, map[string]string{})
 				continue
 			}
 
 			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false)
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false, map[string]string{})
 				continue
 			}
 			if !isRun {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeSkippedWithRunIf, 0, err, isLastStep, false)
+					*mergedStep.RunIf, models.StepRunStatusCodeSkippedWithRunIf, 0, err, isLastStep, false, map[string]string{})
 				continue
 			}
 		}
@@ -955,7 +923,7 @@ func activateAndRunSteps(
 
 		if buildRunResults.IsBuildFailed() && !isAlwaysRun {
 			registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-				*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep, false)
+				*mergedStep.RunIf, models.StepRunStatusCodeSkipped, 0, err, isLastStep, false, map[string]string{})
 		} else {
 			// beside of the envs coming from the current parent process these will be added as an extra
 			var additionalEnvironments []envmanModels.EnvironmentItemModel
@@ -978,7 +946,7 @@ func activateAndRunSteps(
 				})
 			}
 
-			exit, outEnvironments, err := runStep(
+			exit, outEnvironments, expandedStepInputs, err := runStep(
 				mergedStep, stepIDData, stepDir,
 				append(*environments, additionalEnvironments...), secrets,
 				buildRunResults,
@@ -998,14 +966,14 @@ func activateAndRunSteps(
 			if err != nil {
 				if *mergedStep.IsSkippable {
 					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-						*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, exit, err, isLastStep, false)
+						*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, exit, err, isLastStep, false, expandedStepInputs)
 				} else {
 					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-						*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false)
+						*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false, expandedStepInputs)
 				}
 			} else {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeSuccess, 0, nil, isLastStep, false)
+					*mergedStep.RunIf, models.StepRunStatusCodeSuccess, 0, nil, isLastStep, false, expandedStepInputs)
 			}
 		}
 	}

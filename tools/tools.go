@@ -338,7 +338,7 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
-func getSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
+func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 	var secretValues []string
 	for _, secret := range secrets {
 		key, value, err := secret.GetKeyValuePair()
@@ -375,7 +375,7 @@ func EnvmanRun(envstorePth,
 		errWriter = os.Stderr
 	} else {
 
-		outWriter = filterwriter.New(getSecretValues(secrets), os.Stdout)
+		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
 		errWriter = outWriter
 	}
 
