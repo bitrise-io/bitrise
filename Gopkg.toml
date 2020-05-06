@@ -4,12 +4,12 @@ required = ["github.com/bitrise-io/go-utils/envutil",
   "github.com/bitrise-io/stepman"]
 
 [[constraint]]
-  name = "github.com/sirupsen/logrus"
   version = "1.4.2"
+  name = "github.com/Sirupsen/logrus"
 
 [[override]]
-  branch = "TOOL-2017-expansion-improvement"
   name = "github.com/bitrise-io/envman"
+  revision = "12078f7c01d109a32410915226323acd6d06f7f8"
 
 [[constraint]]
   branch = "master"

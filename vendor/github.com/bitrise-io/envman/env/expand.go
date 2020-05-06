@@ -165,7 +165,7 @@ func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]Vari
 		}
 	}
 
-	containsSensitiveInfo := *options.IsSensitive
+	containsSensitiveInfo := options.IsSensitive != nil && *options.IsSensitive
 	if options.IsExpand != nil && *options.IsExpand {
 		envValue = os.Expand(envValue, mappingFuncFactory(envs, &containsSensitiveInfo))
 	}

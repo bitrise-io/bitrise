@@ -18,8 +18,7 @@
   revision = "a8cd701151924e6beffb74a34a556b320e0cfcf7"
 
 [[projects]]
-  branch = "TOOL-2017-expansion-improvement"
-  digest = "1:ab774591a916eb5aa93c052d03b7794e0c921de4c1aff9e93ffe3087826d2dc6"
+  digest = "1:75b8c393e15c919d923e4a63834049dabed202089df7290e93005a3a636dbb34"
   name = "github.com/bitrise-io/envman"
   packages = [
     ".",
@@ -31,7 +30,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "b90ac7de40019f4864b6be9b7649d7a492cbedea"
+  revision = "12078f7c01d109a32410915226323acd6d06f7f8"
 
 [[projects]]
   branch = "master"
