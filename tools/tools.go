@@ -338,6 +338,7 @@ func EnvmanClear(envstorePth string) error {
 	return nil
 }
 
+// GetSecretValues filters out built in configuration parameters from the secret envs
 func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 	var secretValues []string
 	for _, secret := range secrets {
