@@ -24,12 +24,7 @@ func expandStepInputsForAnalytics(environment, inputs []models.EnvironmentItemMo
 			return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
 		}
 
-		if sideEffects.ResultEnvironment[inputKey].IsSensitive {
-			expandedInputs[inputKey] = filterwriter.RedactStr
-			continue
-		}
-
-		src := bytes.NewReader([]byte(sideEffects.ResultEnvironment[inputKey].Value))
+		src := bytes.NewReader([]byte(sideEffects.ResultEnvironment[inputKey]))
 		dstBuf := new(bytes.Buffer)
 		secretFilterDst := filterwriter.New(secrets, dstBuf)
 

@@ -9,7 +9,7 @@ required = ["github.com/bitrise-io/go-utils/envutil",
 
 [[override]]
   name = "github.com/bitrise-io/envman"
-  revision = "12078f7c01d109a32410915226323acd6d06f7f8"
+  revision = "0a45b94dee60708f019c4f0b5c27a1b890220597"
 
 [[constraint]]
   branch = "master"
