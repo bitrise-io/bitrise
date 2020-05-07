@@ -32,10 +32,6 @@ type Command struct {
 type Variable struct {
 	Key   string
 	Value string
-	// IsSensitive is true if variable is marked (optionally) sensitive initally (for example a sensitive input or a secret),
-	// or recursively references any variable marked as sensitive.
-	// The goal is to keep track of any references secrets, so these can be redacted easily.
-	IsSensitive bool
 }
 
 // DeclarationSideEffects is returned by GetDeclarationsSideEffects()
@@ -45,21 +41,21 @@ type DeclarationSideEffects struct {
 	CommandHistory []Command
 	// ResultEnvironment is returned for reference,
 	// it will equal the environment after performing the commands
-	ResultEnvironment map[string]Variable
+	ResultEnvironment map[string]string
 }
 
 // EnvironmentSource implementations can return an initial environment
 type EnvironmentSource interface {
-	GetEnvironment() map[string]Variable
+	GetEnvironment() map[string]string
 }
 
 // DefaultEnvironmentSource is a default implementation of EnvironmentSource, returns the current environment
 type DefaultEnvironmentSource struct{}
 
 // GetEnvironment returns the current process' environment
-func (*DefaultEnvironmentSource) GetEnvironment() map[string]Variable {
+func (*DefaultEnvironmentSource) GetEnvironment() map[string]string {
 	processEnvs := os.Environ()
-	envs := make(map[string]Variable)
+	envs := make(map[string]string)
 
 	for _, env := range processEnvs {
 		key, value := SplitEnv(env)
@@ -67,11 +63,7 @@ func (*DefaultEnvironmentSource) GetEnvironment() map[string]Variable {
 			continue
 		}
 
-		envs[key] = Variable{
-			Key:         key,
-			Value:       value,
-			IsSensitive: false,
-		}
+		envs[key] = value
 	}
 
 	return envs
@@ -97,7 +89,13 @@ func SplitEnv(env string) (key string, value string) {
 // Variable expansion is done also, every new variable can reference the previous and initial environments (via EnvironmentSource)
 // The new variables (models.EnvironmentItemModel) can be defined in the envman definition file, or filled in directly.
 // If the source of the variables (models.EnvironmentItemModel) is the bitrise.yml workflow,
-// they will be in this order: App secrets; App level envs; Workflow level envs; Additional Step info envs; Input envs.
+// they will be in this order:
+//  - Bitrise CLI configuration paramters (IS_CI, IS_DEBUG)
+//  - App secrets
+//  - App level envs
+//  - Workflow level envs
+//  - Additional Step inputs envs (BITRISE_STEP_SOURCE_DIR; BitriseTestDeployDirEnvKey ("BITRISE_TEST_DEPLOY_DIR"), PWD)
+//  - Input envs
 func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource EnvironmentSource) (DeclarationSideEffects, error) {
 	envs := envSource.GetEnvironment()
 	commandHistory := make([]Command, len(newEnvs))
@@ -112,7 +110,7 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 
 		switch command.Action {
 		case SetAction:
-			envs[command.Variable.Key] = command.Variable
+			envs[command.Variable.Key] = command.Variable.Value
 		case UnsetAction:
 			delete(envs, command.Variable.Key)
 		case SkipAction:
@@ -129,7 +127,7 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 
 // getDeclarationCommand maps a variable to be daclered (env) to an expanded env key and value.
 // The current process environment is not changed.
-func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]Variable) (Command, error) {
+func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]string) (Command, error) {
 	envKey, envValue, err := env.GetKeyValuePair()
 	if err != nil {
 		return Command{}, fmt.Errorf("failed to get new environment variable name and value: %s", err)
@@ -154,28 +152,25 @@ func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]Vari
 		}, nil
 	}
 
-	mappingFuncFactory := func(envs map[string]Variable, containsSensitiveInfo *bool) func(string) string {
+	mappingFuncFactory := func(envs map[string]string) func(string) string {
 		return func(key string) string {
 			if _, ok := envs[key]; !ok {
 				return ""
 			}
 
-			*containsSensitiveInfo = *containsSensitiveInfo || envs[key].IsSensitive
-			return envs[key].Value
+			return envs[key]
 		}
 	}
 
-	containsSensitiveInfo := options.IsSensitive != nil && *options.IsSensitive
 	if options.IsExpand != nil && *options.IsExpand {
-		envValue = os.Expand(envValue, mappingFuncFactory(envs, &containsSensitiveInfo))
+		envValue = os.Expand(envValue, mappingFuncFactory(envs))
 	}
 
 	return Command{
 		Action: SetAction,
 		Variable: Variable{
-			Key:         envKey,
-			Value:       envValue,
-			IsSensitive: containsSensitiveInfo,
+			Key:   envKey,
+			Value: envValue,
 		},
 	}, nil
 }

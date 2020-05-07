@@ -31,6 +31,10 @@ workflows:
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_envman"
+
+            # prevent the env var content (with the content of this script)
+            # being added to the test process environment
+            unset content
             go test -v ./_tests/integration/...
 
   create-binaries:
