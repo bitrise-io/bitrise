@@ -57,6 +57,11 @@ func (*DefaultEnvironmentSource) GetEnvironment() map[string]string {
 	processEnvs := os.Environ()
 	envs := make(map[string]string)
 
+	// String names can be duplicated (on Unix), and the Go libraries return the first instance of them:
+	// https://github.com/golang/go/blob/98d20fb23551a7ab900fcfe9d25fd9cb6a98a07f/src/syscall/env_unix.go#L45
+	// From https://pubs.opengroup.org/onlinepubs/9699919799/:
+	// > "There is no meaning associated with the order of strings in the environment.
+	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
 	for _, env := range processEnvs {
 		key, value := SplitEnv(env)
 		if key == "" {
