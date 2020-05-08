@@ -6,25 +6,20 @@ import (
 	"io"
 
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
-	"github.com/bitrise-io/envman/env"
 	"github.com/bitrise-io/envman/models"
 )
 
-func expandStepInputsForAnalytics(environment, inputs []models.EnvironmentItemModel, secrets []string) (map[string]string, error) {
-	sideEffects, err := env.GetDeclarationsSideEffects(environment, &env.DefaultEnvironmentSource{})
-	if err != nil {
-		return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
-	}
+func redactStepInputs(environment map[string]string, inputs []models.EnvironmentItemModel, secrets []string) (map[string]string, error) {
+	redactStepInputs := make(map[string]string)
 
 	// Filter inputs from enviroments
-	expandedInputs := make(map[string]string)
 	for _, input := range inputs {
 		inputKey, _, err := input.GetKeyValuePair()
 		if err != nil {
 			return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
 		}
 
-		src := bytes.NewReader([]byte(sideEffects.ResultEnvironment[inputKey]))
+		src := bytes.NewReader([]byte(environment[inputKey]))
 		dstBuf := new(bytes.Buffer)
 		secretFilterDst := filterwriter.New(secrets, dstBuf)
 
@@ -35,8 +30,8 @@ func expandStepInputsForAnalytics(environment, inputs []models.EnvironmentItemMo
 			return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
 		}
 
-		expandedInputs[inputKey] = dstBuf.String()
+		redactStepInputs[inputKey] = dstBuf.String()
 	}
 
-	return expandedInputs, nil
+	return redactStepInputs, nil
 }

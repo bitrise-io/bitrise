@@ -3,14 +3,14 @@ package cli
 import (
 	"testing"
 
-	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_expandStepInputsForAnalytics(t *testing.T) {
+func Test_redactStepInputs(t *testing.T) {
 	type args struct {
-		environments []envmanModels.EnvironmentItemModel
-		inputs       []envmanModels.EnvironmentItemModel
+		environments map[string]string
+		inputs       []models.EnvironmentItemModel
 		secretValues []string
 	}
 	tests := []struct {
@@ -21,11 +21,9 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 		{
 			name: "Secret filtering",
 			args: args{
-				environments: []envmanModels.EnvironmentItemModel{
-					{"secret_simulator_device": "secret_a_secret_b_secret_c", "opts": map[string]interface{}{"is_sensitive": false}},
-				},
-				inputs: []envmanModels.EnvironmentItemModel{
-					{"secret_simulator_device": ""},
+				environments: map[string]string{"secret_simulator_device": "secret_a_secret_b_secret_c"},
+				inputs: []models.EnvironmentItemModel{
+					{"secret_simulator_device": "---xxxx---"},
 				},
 				secretValues: []string{"secret_a_secret_b_secret_c"},
 			},
@@ -36,8 +34,8 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := expandStepInputsForAnalytics(tt.args.environments, tt.args.inputs, tt.args.secretValues)
-			require.NoError(t, err, "expandStepInputsForAnalytics")
+			got, err := redactStepInputs(tt.args.environments, tt.args.inputs, tt.args.secretValues)
+			require.NoError(t, err, "redactStepInputs()")
 			require.Equal(t, got, tt.want)
 		})
 	}

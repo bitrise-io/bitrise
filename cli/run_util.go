@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -379,8 +380,11 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 }
 
 func executeStep(
-	step stepmanModels.StepModel, sIDData models.StepIDData,
-	stepAbsDirPath, bitriseSourceDir string,
+	step stepmanModels.StepModel,
+	sIDData models.StepIDData,
+	stepAbsDirPath string,
+	stepInputs map[string]string,
+	bitriseSourceDir string,
 	secrets []envmanModels.EnvironmentItemModel) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
@@ -402,7 +406,7 @@ func executeStep(
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets, nil)
+	return tools.EnvmanRun(stepInputs, configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets, nil)
 }
 
 func runStep(
@@ -429,16 +433,6 @@ func runStep(
 	}
 
 	// Collect step inputs
-	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
-			fmt.Errorf("Failed to init envman for the Step, error: %s", err)
-	}
-
-	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
-			fmt.Errorf("Failed to export environment list for the Step, error: %s", err)
-	}
-
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
 	for _, input := range step.Inputs {
 		key, value, err := input.GetKeyValuePair()
@@ -480,11 +474,13 @@ func runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 	}
 
-	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
+	stepEnvs, err := env.GetDeclarationsSideEffects(environments, &env.DefaultEnvironmentSource{})
+	if err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
+			fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
 	}
 
-	expandedStepInputs, err := expandStepInputsForAnalytics(environments, evaluatedInputs, tools.GetSecretValues(secrets))
+	redactedStepInputs, err := redactStepInputs(stepEnvs.ResultEnvironment, step.Inputs, tools.GetSecretValues(secrets))
 	if err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 	}
@@ -492,39 +488,39 @@ func runStep(
 	// Run step
 	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
 	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, err
+		return 1, []envmanModels.EnvironmentItemModel{}, redactedStepInputs, err
 	}
 	if bitriseSourceDir == "" {
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	if exit, err := executeStep(step, stepIDData, stepDir, stepEnvs.ResultEnvironment, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, envErr
+			return 1, []envmanModels.EnvironmentItemModel{}, redactedStepInputs, envErr
 		}
 
 		updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
 		if updateErr != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, updateErr
+			return 1, []envmanModels.EnvironmentItemModel{}, redactedStepInputs, updateErr
 		}
 
-		return exit, updatedStepOutputs, expandedStepInputs, err
+		return exit, updatedStepOutputs, redactedStepInputs, err
 	}
 
 	stepOutputs, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, err
+		return 1, []envmanModels.EnvironmentItemModel{}, redactedStepInputs, err
 	}
 
 	updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
 	if updateErr != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, expandedStepInputs, updateErr
+		return 1, []envmanModels.EnvironmentItemModel{}, redactedStepInputs, updateErr
 	}
 
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
-	return 0, updatedStepOutputs, expandedStepInputs, nil
+	return 0, updatedStepOutputs, redactedStepInputs, nil
 }
 
 func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {

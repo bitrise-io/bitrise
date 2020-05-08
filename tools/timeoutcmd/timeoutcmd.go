@@ -41,6 +41,18 @@ func (c *Command) AppendEnv(env string) {
 	c.cmd.Env = append(os.Environ(), env)
 }
 
+// SetEnvironment sets the environment for the process
+func (c *Command) SetEnvironment(envs map[string]string) {
+	newEnvs := make([]string, len(envs))
+	i := 0
+	for envKey, envValue := range envs {
+		newEnvs[i] = envKey + "=" + envValue
+		i++
+	}
+
+	c.cmd.Env = newEnvs
+}
+
 // SetStandardIO sets the input and outputs of the command.
 func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 	c.cmd.Stdin, c.cmd.Stdout, c.cmd.Stderr = in, out, err

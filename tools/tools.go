@@ -356,7 +356,8 @@ func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 }
 
 // EnvmanRun runs a command through envman.
-func EnvmanRun(envstorePth,
+func EnvmanRun(stepInputs map[string]string,
+	envstorePth,
 	workDirPth string,
 	cmdArgs []string,
 	timeout time.Duration,
@@ -388,7 +389,9 @@ func EnvmanRun(envstorePth,
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
 	cmd.SetTimeout(timeout)
-	cmd.AppendEnv("PWD=" + workDirPth)
+
+	stepInputs["PWD"] = workDirPth
+	cmd.SetEnvironment(stepInputs)
 
 	err := cmd.Start()
 
