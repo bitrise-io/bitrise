@@ -128,9 +128,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		return err
 	}
 
-	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false); err != nil {
-		return err
-	}
+	envs[configs.EnvstorePathEnvKey] = pluginEnvstorePath
 
 	// Run plugin executable
 	pluginExecutable, isBin, err := GetPluginExecutablePath(plugin.Name)

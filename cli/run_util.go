@@ -446,19 +446,13 @@ func runStep(
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
+			envs, err := env.GetDeclarationsSideEffects(environments, &env.DefaultEnvironmentSource{})
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
-					fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
+					fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 			}
 
-			envList, err := envmanModels.NewEnvJSONList(outStr)
-			if err != nil {
-				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
-					fmt.Errorf("CreateFromJSON failed, err: %s", err)
-			}
-
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envs.ResultEnvironment)
 			if err != nil {
 				return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{}, err
 			}
@@ -477,7 +471,7 @@ func runStep(
 	stepEnvs, err := env.GetDeclarationsSideEffects(environments, &env.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, map[string]string{},
-			fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
+			fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 	}
 
 	redactedStepInputs, err := redactStepInputs(stepEnvs.ResultEnvironment, step.Inputs, tools.GetSecretValues(secrets))
@@ -701,20 +695,6 @@ func activateAndRunSteps(
 			continue
 		}
 
-		//
-		// Preparing the step
-		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
-			continue
-		}
-
-		if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, *environments); err != nil {
-			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				"", models.StepRunStatusCodeFailed, 1, err, isLastStep, true, map[string]string{})
-			continue
-		}
-
 		// Get step id & version data
 		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
 		if err != nil {
@@ -881,23 +861,15 @@ func activateAndRunSteps(
 		// Run step
 		bitrise.PrintRunningStepHeader(stepInfoPtr, mergedStep, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
+			expandedEnvs, err := env.GetDeclarationsSideEffects(*environments, &env.DefaultEnvironmentSource{})
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err),
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("GetDeclarationsSideEffects() failed: %s", err),
 					isLastStep, false, map[string]string{})
 				continue
 			}
 
-			envList, err := envmanModels.NewEnvJSONList(outStr)
-			if err != nil {
-				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err),
-					isLastStep, false, map[string]string{})
-				continue
-			}
-
-			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
+			isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, expandedEnvs.ResultEnvironment)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false, map[string]string{})

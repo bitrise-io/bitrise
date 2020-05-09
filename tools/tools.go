@@ -7,10 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -275,54 +273,6 @@ func EnvmanInitAtPath(envstorePth string) error {
 	return command.RunCommand("envman", args...)
 }
 
-// EnvmanAdd ...
-func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--append"}
-	if !expand {
-		args = append(args, "--no-expand")
-	}
-	if skipIfEmpty {
-		args = append(args, "--skip-if-empty")
-	}
-
-	envman := exec.Command("envman", args...)
-	envman.Stdin = strings.NewReader(value)
-	envman.Stdout = os.Stdout
-	envman.Stderr = os.Stderr
-	return envman.Run()
-}
-
-// ExportEnvironmentsList ...
-func ExportEnvironmentsList(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
-	for _, env := range envsList {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return err
-		}
-
-		opts, err := env.GetOptions()
-		if err != nil {
-			return err
-		}
-
-		isExpand := envmanModels.DefaultIsExpand
-		if opts.IsExpand != nil {
-			isExpand = *opts.IsExpand
-		}
-
-		skipIfEmpty := envmanModels.DefaultSkipIfEmpty
-		if opts.SkipIfEmpty != nil {
-			skipIfEmpty = *opts.SkipIfEmpty
-		}
-
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // EnvmanClear ...
 func EnvmanClear(envstorePth string) error {
 	logLevel := log.GetLevel().String()
@@ -404,21 +354,6 @@ func EnvmanRun(stepInputs map[string]string,
 	}
 
 	return timeoutcmd.ExitStatus(err), err
-}
-
-// EnvmanJSONPrint ...
-func EnvmanJSONPrint(envstorePth string) (string, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", envstorePth, "print", "--format", "json", "--expand"}
-
-	var outBuffer bytes.Buffer
-	var errBuffer bytes.Buffer
-
-	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "envman", args...); err != nil {
-		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
-	}
-
-	return outBuffer.String(), nil
 }
 
 // MoveFile ...

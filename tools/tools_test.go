@@ -10,7 +10,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,29 +84,5 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 	// Invalid params -- Err should empty, output filled
 	outStr, err = StepmanJSONStepLibStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "2.x")
 	require.Error(t, err)
-	require.Equal(t, "", outStr)
-}
-
-func TestEnvmanJSONPrint(t *testing.T) {
-	// Initialized envstore -- Err should empty, output filled
-	testDirPth, err := pathutil.NormalizedOSTempDirPath("test_env_store")
-	require.NoError(t, err)
-
-	envstorePth := filepath.Join(testDirPth, "envstore.yml")
-
-	require.Equal(t, nil, EnvmanInitAtPath(envstorePth))
-
-	outStr, err := EnvmanJSONPrint(envstorePth)
-	require.NoError(t, err)
-	require.NotEqual(t, "", outStr)
-
-	// Not initialized envstore -- Err should filled, output empty
-	testDirPth, err = pathutil.NormalizedOSTempDirPath("test_env_store")
-	require.NoError(t, err)
-
-	envstorePth = filepath.Join("test_env_store", "envstore.yml")
-
-	outStr, err = EnvmanJSONPrint(envstorePth)
-	require.NotEqual(t, nil, err)
 	require.Equal(t, "", outStr)
 }
