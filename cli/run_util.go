@@ -903,13 +903,16 @@ func activateAndRunSteps(
 			})
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false, map[string]string{})
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+					fmt.Errorf("failed to prepare step environment variables: %s", err),
+					isLastStep, false, map[string]string{})
 			}
 
 			expandedStepInputs, err := expandStepInputsForAnalytics(stepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false, map[string]string{})
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+					fmt.Errorf("failed to get step inputs for analytics plugin: %s", err), isLastStep, false, map[string]string{})
 			}
 
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepEnvironment, secrets, buildRunResults)

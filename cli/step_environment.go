@@ -33,30 +33,30 @@ func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.Envir
 	for _, input := range params.inputs {
 		key, value, err := input.GetKeyValuePair()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get input key: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get input key: %s", err)
 		}
 
 		options, err := input.GetOptions()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get options: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get options: %s", err)
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
 			outStr, err := tools.EnvmanJSONPrint(params.inputEnvstorePath)
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("prepareStepEnvironment() EnvmanJSONPrint failed, err: %s", err)
+					fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
 			}
 
 			envList, err := envmanModels.NewEnvJSONList(outStr)
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("prepareStepEnvironment() NewEnvJSONList failed, err: %s", err)
+					fmt.Errorf("NewEnvJSONList failed, err: %s", err)
 			}
 
 			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envList)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to evaluate template: %s", err)
+				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to evaluate template: %s", err)
 			}
 
 			input[key] = evaluatedValue
