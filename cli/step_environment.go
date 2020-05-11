@@ -5,7 +5,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
@@ -13,50 +13,32 @@ type prepareStepInputParams struct {
 	environment                 []envmanModels.EnvironmentItemModel
 	inputs                      []envmanModels.EnvironmentItemModel
 	buildRunResults             models.BuildRunResultsModel
-	inputEnvstorePath           string
 	isCIMode, isPullRequestMode bool
 }
 
-func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.EnvironmentItemModel, error) {
-	// Collect step inputs
-	if err := tools.EnvmanInitAtPath(params.inputEnvstorePath); err != nil {
-		return []envmanModels.EnvironmentItemModel{},
-			fmt.Errorf("failed to init envman for the Step, error: %s", err)
-	}
-
-	if err := tools.ExportEnvironmentsList(params.inputEnvstorePath, params.environment); err != nil {
-		return []envmanModels.EnvironmentItemModel{},
-			fmt.Errorf("failed to export environment list for the Step, error: %s", err)
-	}
-
+func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) (map[string]string, error) {
+	// Expand templates
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
 	for _, input := range params.inputs {
 		key, value, err := input.GetKeyValuePair()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get input key: %s", err)
+			return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to get input key: %s", err)
 		}
 
 		options, err := input.GetOptions()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get options: %s", err)
+			return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to get options: %s", err)
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			outStr, err := tools.EnvmanJSONPrint(params.inputEnvstorePath)
+			envs, err := env.GetDeclarationsSideEffects(params.environment, &env.DefaultEnvironmentSource{})
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("prepareStepEnvironment() EnvmanJSONPrint failed, err: %s", err)
+				return map[string]string{}, fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 			}
 
-			envList, err := envmanModels.NewEnvJSONList(outStr)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envs.ResultEnvironment)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("prepareStepEnvironment() NewEnvJSONList failed, err: %s", err)
-			}
-
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envList)
-			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to evaluate template: %s", err)
+				return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to evaluate template: %s", err)
 			}
 
 			input[key] = evaluatedValue
@@ -65,5 +47,20 @@ func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.Envir
 		evaluatedInputs = append(evaluatedInputs, input)
 	}
 
-	return append(params.environment, evaluatedInputs...), nil
+	stepEnvironment := append(params.environment, evaluatedInputs...)
+
+	for _, stepEnv := range stepEnvironment {
+		if err := stepEnv.FillMissingDefaults(); err != nil {
+			return map[string]string{},
+				fmt.Errorf("prepareStepEnvironment() failed to fill missing defaults: %s", err)
+		}
+	}
+
+	declarationSideEffects, err := env.GetDeclarationsSideEffects(stepEnvironment, envSource)
+	if err != nil {
+		return map[string]string{},
+			fmt.Errorf("prepareStepEnvironment() failed to activate step, failed to get env variable declaration side effects: %s", err)
+	}
+
+	return declarationSideEffects.ResultEnvironment, nil
 }
