@@ -13,7 +13,6 @@ type prepareStepInputParams struct {
 	environment                 []envmanModels.EnvironmentItemModel
 	inputs                      []envmanModels.EnvironmentItemModel
 	buildRunResults             models.BuildRunResultsModel
-	inputEnvstorePath           string
 	isCIMode, isPullRequestMode bool
 }
 
