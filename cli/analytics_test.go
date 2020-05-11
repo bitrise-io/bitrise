@@ -31,6 +31,18 @@ func Test_redactStepInputs(t *testing.T) {
 				"secret_simulator_device": "[REDACTED]",
 			},
 		},
+		{
+			name: "Input is empty, and skip_if_empty is true",
+			args: args{
+				environments: map[string]string{},
+				inputs: []models.EnvironmentItemModel{
+					{"myinput": ""},
+				},
+			},
+			want: map[string]string{
+				"myinput": "",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

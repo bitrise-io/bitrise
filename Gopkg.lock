@@ -18,7 +18,8 @@
   revision = "a8cd701151924e6beffb74a34a556b320e0cfcf7"
 
 [[projects]]
-  digest = "1:2a8e6088bb40f0d8b010065853a84d02de57cb41f4a6536743adc05b49598a8c"
+  branch = "master"
+  digest = "1:bef3c009b291d0bb9addd9de6a6df3c93bbdf8abc2b970354d0ce9c747c8c5d0"
   name = "github.com/bitrise-io/envman"
   packages = [
     ".",
@@ -30,7 +31,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "0a45b94dee60708f019c4f0b5c27a1b890220597"
+  revision = "335e05a8a8e3c3cdd22ab857f83a2bdad25d1e00"
 
 [[projects]]
   branch = "master"
