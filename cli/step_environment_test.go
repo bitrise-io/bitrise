@@ -24,7 +24,7 @@ func Test_prepareStepEnvironment(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "",
+			name: "Template expansion works",
 			params: prepareStepInputParams{
 				environment: []envmanModels.EnvironmentItemModel{
 					{"A": "B", "opts": map[string]interface{}{}},

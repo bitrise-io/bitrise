@@ -38,15 +38,30 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 			args: args{
 				environments: []envmanModels.EnvironmentItemModel{
 					{"A": "B", "opts": map[string]interface{}{}},
-					{"C": "$A", "opts": map[string]interface{}{}},
+					{"myinput": "$A", "opts": map[string]interface{}{}},
 				},
 				inputs: []envmanModels.EnvironmentItemModel{
-					{"C": "$A", "opts": map[string]interface{}{}},
+					{"myinput": "$A", "opts": map[string]interface{}{}},
 				},
 				secretValues: []string{},
 			},
 			want: map[string]string{
-				"C": "B",
+				"myinput": "B",
+			},
+		},
+		{
+			name: "Input is empty, and skip_if_empty is true",
+			args: args{
+				environments: []envmanModels.EnvironmentItemModel{
+					{"myinput": "", "opts": map[string]interface{}{"skip_if_empty": true}},
+				},
+				inputs: []envmanModels.EnvironmentItemModel{
+					{"myinput": "", "opts": map[string]interface{}{"skip_if_empty": true}},
+				},
+				secretValues: []string{},
+			},
+			want: map[string]string{
+				"myinput": "",
 			},
 		},
 	}
