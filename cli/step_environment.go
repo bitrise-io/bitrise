@@ -5,7 +5,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
@@ -17,46 +17,47 @@ type prepareStepInputParams struct {
 	isCIMode, isPullRequestMode bool
 }
 
-func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.EnvironmentItemModel, error) {
-	// Collect step inputs
-	if err := tools.EnvmanInitAtPath(params.inputEnvstorePath); err != nil {
-		return []envmanModels.EnvironmentItemModel{},
-			fmt.Errorf("failed to init envman for the Step, error: %s", err)
+func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) ([]envmanModels.EnvironmentItemModel, map[string]string, error) {
+	initialEnvs := params.environment
+
+	for _, envVar := range initialEnvs {
+		if err := envVar.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+				fmt.Errorf("failed to fill missing defaults: %s", err)
+		}
 	}
 
-	if err := tools.ExportEnvironmentsList(params.inputEnvstorePath, params.environment); err != nil {
-		return []envmanModels.EnvironmentItemModel{},
-			fmt.Errorf("failed to export environment list for the Step, error: %s", err)
-	}
-
+	// Expand templates
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
 	for _, input := range params.inputs {
+		if err := input.FillMissingDefaults(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+				fmt.Errorf("failed to fill input missing default properties: %s", err)
+		}
+
 		key, value, err := input.GetKeyValuePair()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get input key: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+				fmt.Errorf("failed to get input key: %s", err)
 		}
 
 		options, err := input.GetOptions()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get options: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+				fmt.Errorf("failed to get options: %s", err)
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			outStr, err := tools.EnvmanJSONPrint(params.inputEnvstorePath)
+			envs, err := env.GetDeclarationsSideEffects(initialEnvs, &env.DefaultEnvironmentSource{})
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("EnvmanJSONPrint failed, err: %s", err)
+				return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+					fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 			}
 
-			envList, err := envmanModels.NewEnvJSONList(outStr)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envs.ResultEnvironment)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{},
-					fmt.Errorf("NewEnvJSONList failed, err: %s", err)
-			}
-
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envList)
-			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to evaluate template: %s", err)
+				return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+					fmt.Errorf("failed to evaluate template: %s", err)
 			}
 
 			input[key] = evaluatedValue
@@ -65,5 +66,13 @@ func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.Envir
 		evaluatedInputs = append(evaluatedInputs, input)
 	}
 
-	return append(params.environment, evaluatedInputs...), nil
+	stepEnvironment := append(params.environment, evaluatedInputs...)
+
+	declarationSideEffects, err := env.GetDeclarationsSideEffects(stepEnvironment, envSource)
+	if err != nil {
+		return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+			fmt.Errorf("failed to get environment variable declaration results: %s", err)
+	}
+
+	return stepEnvironment, declarationSideEffects.ResultEnvironment, nil
 }

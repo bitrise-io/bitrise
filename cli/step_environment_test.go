@@ -1,58 +1,88 @@
 package cli
 
 import (
-	"fmt"
-	"io/ioutil"
-	"path"
 	"testing"
 
+	"github.com/bitrise-io/envman/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_prepareStepEnvironment(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("Prepare: failed to create temp dir: %s", err)
-	}
-	inputEnvStorePath := path.Join(tempDir, ".envstore")
+type EmptyEnvironment struct{}
 
+func (*EmptyEnvironment) GetEnvironment() map[string]string {
+	return map[string]string{}
+}
+
+func newBool(v bool) *bool {
+	b := v
+	return &b
+}
+
+func Test_prepareStepEnvironment(t *testing.T) {
 	tests := []struct {
 		name    string
 		params  prepareStepInputParams
-		want    []envmanModels.EnvironmentItemModel
+		want1   []envmanModels.EnvironmentItemModel
+		want2   map[string]string
 		wantErr bool
 	}{
 		{
 			name: "Template expansion works",
 			params: prepareStepInputParams{
+				environment: []envmanModels.EnvironmentItemModel{},
+				inputs: []envmanModels.EnvironmentItemModel{
+					{"D": "{{.IsCI}}", "opts": models.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
+				},
+				isCIMode: true,
+			},
+			want1: []envmanModels.EnvironmentItemModel{
+				{"D": "true", "opts": models.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
+			},
+			want2: map[string]string{
+				"D": "true",
+			},
+		},
+		{
+			name: "Default expansion flag is applied",
+			params: prepareStepInputParams{
 				environment: []envmanModels.EnvironmentItemModel{
 					{"A": "B", "opts": map[string]interface{}{}},
 				},
 				inputs: []envmanModels.EnvironmentItemModel{
-					{"C": "$A", "opts": map[string]interface{}{}},
-					{"D": "{{.IsCI}}", "opts": map[string]interface{}{"is_template": true}},
+					{"myinput": "$A", "opts": models.EnvironmentItemOptionsModel{IsExpand: nil}},
 				},
-				inputEnvstorePath: inputEnvStorePath,
-				isCIMode:          true,
 			},
-			want: []envmanModels.EnvironmentItemModel{
-				{"A": "B", "opts": map[string]interface{}{}},
-				{"C": "$A", "opts": map[string]interface{}{}},
-				{"D": "true", "opts": map[string]interface{}{"is_template": true}},
+			want1: []envmanModels.EnvironmentItemModel{
+				{"A": "B", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"myinput": "$A", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+			},
+			want2: map[string]string{
+				"A":       "B",
+				"myinput": "B",
 			},
 		},
 	}
+
+	for _, tt := range tests {
+		for _, envVar := range tt.want1 {
+			if err := envVar.FillMissingDefaults(); err != nil {
+				t.Fatalf("prepare: failed to set missing defaults: %s", err)
+			}
+		}
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := prepareStepEnvironment(tt.params)
+			got1, got2, err := prepareStepEnvironment(tt.params, &EmptyEnvironment{})
 			if tt.wantErr {
 				require.Error(t, err, "prepareStepEnvironment() expected to return error")
 			} else {
 				require.NoError(t, err, "prepareStepEnvironment()")
 			}
-			require.False(t, (err != nil) != tt.wantErr, fmt.Sprintf("prepareStepEnvironment() error = %v, wantErr %v", err, tt.wantErr))
-			require.Equal(t, tt.want, got, "prepareStepEnvironment() result mismatch")
+
+			require.Equal(t, tt.want1, got1, "prepareStepEnvironment() first return value")
+			require.Equal(t, tt.want2, got2, "prepareStepEnvironment() second return value")
 		})
 	}
 }

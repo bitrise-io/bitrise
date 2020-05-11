@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -893,14 +894,13 @@ func activateAndRunSteps(
 				})
 			}
 
-			stepEnvironment, err := prepareStepEnvironment(prepareStepInputParams{
+			stepDeclaredEnvironments, expandedStepEnvironment, err := prepareStepEnvironment(prepareStepInputParams{
 				environment:       append(*environments, additionalEnvironments...),
 				inputs:            mergedStep.Inputs,
 				buildRunResults:   buildRunResults,
-				inputEnvstorePath: configs.InputEnvstorePath,
 				isCIMode:          configs.IsCIMode,
 				isPullRequestMode: configs.IsPullRequestMode,
-			})
+			}, &env.DefaultEnvironmentSource{})
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
@@ -908,14 +908,15 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			expandedStepInputs, err := expandStepInputsForAnalytics(stepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
+			expandedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
-					fmt.Errorf("failed to get step inputs for analytics plugin: %s", err), isLastStep, false, map[string]string{})
+					fmt.Errorf("failed to redact step inputs: %s", err),
+					isLastStep, false, map[string]string{})
 			}
 
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepEnvironment, secrets, buildRunResults)
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, secrets, buildRunResults)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
