@@ -17,12 +17,15 @@ type prepareStepInputParams struct {
 }
 
 func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) ([]envmanModels.EnvironmentItemModel, map[string]string, error) {
-	initialEnvs := params.environment
+	for _, envVar := range params.environment {
+		if err := envVar.Normalize(); err != nil {
+			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
+				fmt.Errorf("failed to normalize declared environment variable: %s", err)
+		}
 
-	for _, envVar := range initialEnvs {
 		if err := envVar.FillMissingDefaults(); err != nil {
 			return []envmanModels.EnvironmentItemModel{}, map[string]string{},
-				fmt.Errorf("failed to fill missing defaults: %s", err)
+				fmt.Errorf("failed to fill missing declared environment variable defaults: %s", err)
 		}
 	}
 
@@ -47,7 +50,7 @@ func prepareStepEnvironment(params prepareStepInputParams, envSource env.Environ
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
-			envs, err := env.GetDeclarationsSideEffects(initialEnvs, &env.DefaultEnvironmentSource{})
+			envs, err := env.GetDeclarationsSideEffects(params.environment, &env.DefaultEnvironmentSource{})
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{}, map[string]string{},
 					fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)

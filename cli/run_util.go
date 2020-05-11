@@ -554,7 +554,7 @@ func activateAndRunSteps(
 	// In function method - Registration methods, for register step run results.
 	registerStepRunResults := func(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel,
 		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool,
-		expandedStepInputs map[string]string) {
+		redactedStepInputs map[string]string) {
 
 		if printStepHeader {
 			bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
@@ -578,7 +578,7 @@ func activateAndRunSteps(
 
 		stepResults := models.StepRunResultsModel{
 			StepInfo:   stepInfoCopy,
-			StepInputs: expandedStepInputs,
+			StepInputs: redactedStepInputs,
 			Status:     resultCode,
 			Idx:        buildRunResults.ResultsCount(),
 			RunTime:    time.Now().Sub(stepStartTime),
@@ -908,7 +908,7 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			expandedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
+			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
@@ -932,14 +932,14 @@ func activateAndRunSteps(
 			if err != nil {
 				if *mergedStep.IsSkippable {
 					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-						*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, exit, err, isLastStep, false, expandedStepInputs)
+						*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, exit, err, isLastStep, false, redactedStepInputs)
 				} else {
 					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-						*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false, expandedStepInputs)
+						*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false, redactedStepInputs)
 				}
 			} else {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeSuccess, 0, nil, isLastStep, false, expandedStepInputs)
+					*mergedStep.RunIf, models.StepRunStatusCodeSuccess, 0, nil, isLastStep, false, redactedStepInputs)
 			}
 		}
 	}
