@@ -30,9 +30,15 @@ func expandStepInputsForAnalytics(environment, inputs []models.EnvironmentItemMo
 			return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed to get input key: %s", err)
 		}
 
-		// If input key not found in the result environment, it will be an empty string.
+		// If input key may not be present in the result environment.
 		// This can happen if the input has the "skip_if_empty" property set to true, and it is empty.
-		src := bytes.NewReader([]byte(sideEffects.ResultEnvironment[inputKey]))
+		inputValue, ok := sideEffects.ResultEnvironment[inputKey]
+		if !ok {
+			expandedInputs[inputKey] = ""
+			continue
+		}
+
+		src := bytes.NewReader([]byte(inputValue))
 		dstBuf := new(bytes.Buffer)
 		secretFilterDst := filterwriter.New(secrets, dstBuf)
 
