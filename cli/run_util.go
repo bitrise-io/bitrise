@@ -288,23 +288,6 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 	return inventoryEnvironments, nil
 }
 
-func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
-	bitriseSourceDir := os.Getenv(configs.BitriseSourceDirEnvKey)
-	for i := len(envlist) - 1; i >= 0; i-- {
-		env := envlist[i]
-
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return bitriseSourceDir, err
-		}
-
-		if key == configs.BitriseSourceDirEnvKey && value != "" {
-			return value, nil
-		}
-	}
-	return bitriseSourceDir, nil
-}
-
 func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	if len(step.Dependencies) > 0 {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
@@ -411,8 +394,7 @@ func executeStep(
 
 func runStep(
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
-	expandedEnvs map[string]string,
-	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	expandedStepEnvironment map[string]string, secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -433,16 +415,18 @@ func runStep(
 			fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}
 
-	// Run step
-	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
-	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{},
+			fmt.Errorf("runStep() failed to init envman at path (%s): %s", configs.InputEnvstorePath, err)
 	}
-	if bitriseSourceDir == "" {
+
+	// Run step
+	bitriseSourceDir, ok := expandedStepEnvironment[configs.BitriseSourceDirEnvKey]
+	if !ok {
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(step, stepIDData, stepDir, expandedEnvs, bitriseSourceDir, secrets); err != nil {
+	if exit, err := executeStep(step, stepIDData, stepDir, expandedStepEnvironment, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -874,21 +858,13 @@ func activateAndRunSteps(
 				buildRunResults:   buildRunResults,
 				isCIMode:          configs.IsCIMode,
 				isPullRequestMode: configs.IsPullRequestMode,
-			})
+			}, &env.DefaultEnvironmentSource{})
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1, err, isLastStep, false, map[string]string{})
 			}
 
-			stepEnvs, err := env.GetDeclarationsSideEffects(stepEnvironment, &env.DefaultEnvironmentSource{})
-			if err != nil {
-				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
-					fmt.Errorf("failed to activate step, failed to get step envrionemnt, %s", err),
-					isLastStep, false, map[string]string{})
-			}
-
-			expandedStepInputs, err := redactStepInputs(stepEnvs.ResultEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
+			expandedStepInputs, err := redactStepInputs(stepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
@@ -896,7 +872,7 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepEnvs.ResultEnvironment, stepEnvironment, secrets, buildRunResults)
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepEnvironment, secrets, buildRunResults)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {

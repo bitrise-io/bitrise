@@ -16,29 +16,29 @@ type prepareStepInputParams struct {
 	isCIMode, isPullRequestMode bool
 }
 
-func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.EnvironmentItemModel, error) {
+func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) (map[string]string, error) {
 	// Expand templates
 	evaluatedInputs := []envmanModels.EnvironmentItemModel{}
 	for _, input := range params.inputs {
 		key, value, err := input.GetKeyValuePair()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get input key: %s", err)
+			return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to get input key: %s", err)
 		}
 
 		options, err := input.GetOptions()
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to get options: %s", err)
+			return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to get options: %s", err)
 		}
 
 		if options.IsTemplate != nil && *options.IsTemplate {
 			envs, err := env.GetDeclarationsSideEffects(params.environment, &env.DefaultEnvironmentSource{})
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
+				return map[string]string{}, fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 			}
 
 			evaluatedValue, err := bitrise.EvaluateTemplateToString(value, params.isCIMode, params.isPullRequestMode, params.buildRunResults, envs.ResultEnvironment)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("prepareStepEnvironment() failed to evaluate template: %s", err)
+				return map[string]string{}, fmt.Errorf("prepareStepEnvironment() failed to evaluate template: %s", err)
 			}
 
 			input[key] = evaluatedValue
@@ -51,10 +51,16 @@ func prepareStepEnvironment(params prepareStepInputParams) ([]envmanModels.Envir
 
 	for _, stepEnv := range stepEnvironment {
 		if err := stepEnv.FillMissingDefaults(); err != nil {
-			return []envmanModels.EnvironmentItemModel{},
+			return map[string]string{},
 				fmt.Errorf("prepareStepEnvironment() failed to fill missing defaults: %s", err)
 		}
 	}
 
-	return stepEnvironment, nil
+	declarationSideEffects, err := env.GetDeclarationsSideEffects(stepEnvironment, envSource)
+	if err != nil {
+		return map[string]string{},
+			fmt.Errorf("prepareStepEnvironment() failed to activate step, failed to get env variable declaration side effects: %s", err)
+	}
+
+	return declarationSideEffects.ResultEnvironment, nil
 }
