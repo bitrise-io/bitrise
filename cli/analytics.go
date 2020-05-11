@@ -11,6 +11,12 @@ import (
 )
 
 func expandStepInputsForAnalytics(environment, inputs []models.EnvironmentItemModel, secrets []string) (map[string]string, error) {
+	for _, newEnv := range environment {
+		if err := newEnv.FillMissingDefaults(); err != nil {
+			return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, could not fill env (%s) defaults: %s", newEnv, err)
+		}
+	}
+
 	sideEffects, err := env.GetDeclarationsSideEffects(environment, &env.DefaultEnvironmentSource{})
 	if err != nil {
 		return map[string]string{}, fmt.Errorf("expandStepInputsForAnalytics() failed, %s", err)
