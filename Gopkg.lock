@@ -19,18 +19,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:45f93a7af77540da03239e89a5159b435efa4fcc1fbd49b90c30c88bf95e9513"
+  digest = "1:bef3c009b291d0bb9addd9de6a6df3c93bbdf8abc2b970354d0ce9c747c8c5d0"
   name = "github.com/bitrise-io/envman"
   packages = [
     ".",
     "cli",
+    "env",
     "envman",
     "models",
     "output",
     "version",
   ]
   pruneopts = "UT"
-  revision = "24a8f72875981710a8b21e60d81c4126a3af3c67"
+  revision = "335e05a8a8e3c3cdd22ab857f83a2bdad25d1e00"
 
 [[projects]]
   branch = "master"
@@ -178,6 +179,7 @@
   input-imports = [
     "github.com/Sirupsen/logrus",
     "github.com/bitrise-io/envman",
+    "github.com/bitrise-io/envman/env",
     "github.com/bitrise-io/envman/models",
     "github.com/bitrise-io/go-utils/colorstring",
     "github.com/bitrise-io/go-utils/command",
