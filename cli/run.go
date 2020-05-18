@@ -224,7 +224,7 @@ func run(c *cli.Context) error {
 	if runParams.WorkflowToRunID == "" {
 		// no workflow specified
 		//  list all the available ones and then exit
-		log.Error("No workfow specified!")
+		log.Error("No workflow specified!")
 		fmt.Println()
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
