@@ -156,7 +156,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:75a66ef42ee59955b0a0aecb9121c4cf6ee71fca33e81fce2cd1de42f6b29b0b"
+  digest = "1:2f5a21f14e8b888ef4cb276a228d728084bb2404becc205cdd783b9e2cbee658"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -164,15 +164,15 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "7e40ca221e254089b05fb9efcd69844a57f6a367"
+  revision = "fe76b779f299728f3bd63f77ea2c815504229c3b"
 
 [[projects]]
-  digest = "1:55b110c99c5fdc4f14930747326acce56b52cfce60b24b1c03ef686ac0e46bb1"
+  digest = "1:d7f1bd887dc650737a421b872ca883059580e9f8314d601f88025df4f4802dce"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "53403b58ad1b561927d19068c655246f2db79d48"
-  version = "v2.2.8"
+  revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
+  version = "v2.3.0"
 
 [solve-meta]
   analyzer-name = "dep"
