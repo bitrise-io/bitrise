@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
+	"path/filepath"
 
 	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -184,5 +184,5 @@ func share(c *cli.Context) {
 }
 
 func getShareFilePath() string {
-	return path.Join(stepman.GetStepmanDirPath(), ShareFilename)
+	return filepath.Join(stepman.GetStepmanDirPath(), ShareFilename)
 }

@@ -1,6 +1,11 @@
 package cli
 
-import "testing"
+import (
+	"github.com/bitrise-io/stepman/models"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestValidateTag(t *testing.T) {
 	cases := []struct {
@@ -15,9 +20,19 @@ func TestValidateTag(t *testing.T) {
 	for _, tc := range cases {
 		got := validateTag(tc.tag)
 		valid := got == nil
-
-		if valid != tc.valid {
-			t.Errorf("validateTag(%s) == nil should be %t but got %s", tc.tag, tc.valid, got)
-		}
+		assert.Equal(t, tc.valid, valid, "validateTag(%s) == nil should be %t but got %s", tc.tag, tc.valid, got)
 	}
+}
+
+func TestGetDefaultStepGroupSpec(t *testing.T) {
+	// Given
+	expected := models.StepGroupInfoModel{
+		Maintainer: "community",
+	}
+
+	// When
+	actual := getDefaultStepGroupSpec()
+
+	// Then
+	assert.Equal(t, expected, actual)
 }

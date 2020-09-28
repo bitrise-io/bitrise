@@ -58,8 +58,8 @@ const (
 	GitKey      = "git"
 	gitKeyShort = "g"
 
-	// StepIDKEy ...
-	StepIDKEy      = "stepid"
+	// StepIDKey ...
+	StepIDKey      = "stepid"
 	stepIDKeyShort = "s"
 
 	// ShortKey ...
@@ -126,7 +126,7 @@ var (
 		Usage: "Git clone url of the step repository.",
 	}
 	flStepID = cli.StringFlag{
-		Name:  StepIDKEy + ", " + stepIDKeyShort,
+		Name:  StepIDKey + ", " + stepIDKeyShort,
 		Usage: "ID of the step.",
 	}
 	flFormat = cli.StringFlag{

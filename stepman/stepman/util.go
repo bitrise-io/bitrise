@@ -194,7 +194,7 @@ func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup 
 	return stepGroup, nil
 }
 
-func generateStepLib(route SteplibRoute, templateCollection models.StepCollectionModel) (models.StepCollectionModel, error) {
+func parseStepCollection(route SteplibRoute, templateCollection models.StepCollectionModel) (models.StepCollectionModel, error) {
 	collection := models.StepCollectionModel{
 		FormatVersion:         templateCollection.FormatVersion,
 		GeneratedAtTimeStamp:  time.Now().Unix(),
@@ -205,9 +205,9 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 
 	stepHash := models.StepHash{}
 
-	stepsSpecDirPth := GetLibraryBaseDirPath(route)
-	if err := filepath.Walk(stepsSpecDirPth, func(pth string, f os.FileInfo, err error) error {
-		truncatedPath := strings.Replace(pth, stepsSpecDirPth+"/", "", -1)
+	stepsCollectionDirPth := GetLibraryBaseDirPath(route)
+	if err := filepath.Walk(stepsCollectionDirPth, func(pth string, f os.FileInfo, err error) error {
+		truncatedPath := strings.Replace(pth, stepsCollectionDirPth+"/", "", -1)
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
 		if matchErr != nil {
 			return matchErr
@@ -228,7 +228,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 				stepGroupInfo := models.StepGroupInfoModel{}
 
 				// Check for step-info.yml - STEP_SPEC_DIR/steps/step-id/step-info.yml
-				stepGroupInfoPth := filepath.Join(stepsSpecDirPth, stepsDirName, stepID, "step-info.yml")
+				stepGroupInfoPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "step-info.yml")
 				if exist, err := pathutil.IsPathExists(stepGroupInfoPth); err != nil {
 					return err
 				} else if exist {
@@ -244,7 +244,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 
 				// Check for assets - STEP_SPEC_DIR/steps/step-id/assets
 				if collection.AssetsDownloadBaseURI != "" {
-					assetsFolderPth := path.Join(stepsSpecDirPth, stepsDirName, stepID, "assets")
+					assetsFolderPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "assets")
 					exist, err := pathutil.IsPathExists(assetsFolderPth)
 					if err != nil {
 						return err
@@ -301,7 +301,7 @@ func generateStepLib(route SteplibRoute, templateCollection models.StepCollectio
 	return collection, nil
 }
 
-func generateSlimStepLib(collection models.StepCollectionModel) models.StepCollectionModel {
+func generateSlimStepModel(collection models.StepCollectionModel) models.StepCollectionModel {
 
 	slimCollection := models.StepCollectionModel{
 		FormatVersion:         collection.FormatVersion,
@@ -343,7 +343,7 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 		}
 	}
 
-	collection, err := generateStepLib(route, templateCollection)
+	collection, err := parseStepCollection(route, templateCollection)
 	if err != nil {
 		return err
 	}
@@ -358,7 +358,7 @@ func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route St
 	}
 
 	pth = GetSlimStepSpecPath(route)
-	slimCollection := generateSlimStepLib(collection)
+	slimCollection := generateSlimStepModel(collection)
 	if err != nil {
 		return err
 	}
@@ -422,7 +422,7 @@ func ReGenerateLibrarySpec(route SteplibRoute) error {
 		return errors.New("Not initialized")
 	}
 
-	specPth := pth + "/steplib.yml"
+	specPth := GetStepCollectionSpecPath(route)
 	collection, err := ParseStepCollection(specPth)
 	if err != nil {
 		return err

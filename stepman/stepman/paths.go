@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -36,7 +36,7 @@ type SteplibRoutes []SteplibRoute
 func (routes SteplibRoutes) GetRoute(URI string) (route SteplibRoute, found bool) {
 	for _, route := range routes {
 		if route.SteplibURI == URI {
-			pth := path.Join(GetCollectionsDirPath(), route.FolderAlias)
+			pth := filepath.Join(GetCollectionsDirPath(), route.FolderAlias)
 			exist, err := pathutil.IsPathExists(pth)
 			if err != nil {
 				log.Warnf("Failed to read path %s", pth)
@@ -75,7 +75,7 @@ func (routes SteplibRoutes) writeToFile() error {
 
 // CleanupRoute ...
 func CleanupRoute(route SteplibRoute) error {
-	pth := path.Join(GetCollectionsDirPath(), route.FolderAlias)
+	pth := filepath.Join(GetCollectionsDirPath(), route.FolderAlias)
 	if err := command.RemoveDir(pth); err != nil {
 		return err
 	}
@@ -182,22 +182,27 @@ func CreateStepManDirIfNeeded() error {
 
 // GetStepSpecPath ...
 func GetStepSpecPath(route SteplibRoute) string {
-	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "spec.json")
+	return filepath.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "spec.json")
 }
 
 // GetSlimStepSpecPath ...
 func GetSlimStepSpecPath(route SteplibRoute) string {
-	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "slim-spec.json")
+	return filepath.Join(GetCollectionsDirPath(), route.FolderAlias, "spec", "slim-spec.json")
 }
 
 // GetCacheBaseDir ...
 func GetCacheBaseDir(route SteplibRoute) string {
-	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "cache")
+	return filepath.Join(GetCollectionsDirPath(), route.FolderAlias, "cache")
 }
 
 // GetLibraryBaseDirPath ...
 func GetLibraryBaseDirPath(route SteplibRoute) string {
-	return path.Join(GetCollectionsDirPath(), route.FolderAlias, "collection")
+	return filepath.Join(GetCollectionsDirPath(), route.FolderAlias, "collection")
+}
+
+// GetStepCollectionSpecPath Location of steplib.yml of the collection marked by this route
+func GetStepCollectionSpecPath(route SteplibRoute) string {
+	return filepath.Join(GetLibraryBaseDirPath(route), "steplib.yml")
 }
 
 // GetAllStepCollectionPath ...
@@ -219,30 +224,30 @@ func GetAllStepCollectionPath() []string {
 // GetStepCacheDirPath ...
 // Step's Cache dir path, where it's code lives.
 func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
-	return path.Join(GetCacheBaseDir(route), id, version)
+	return filepath.Join(GetCacheBaseDir(route), id, version)
 }
 
 // GetStepGlobalInfoPath ...
 func GetStepGlobalInfoPath(route SteplibRoute, id string) string {
-	return path.Join(GetLibraryBaseDirPath(route), "steps", id, "step-info.yml")
+	return filepath.Join(GetLibraryBaseDirPath(route), "steps", id, "step-info.yml")
 }
 
 // GetStepCollectionDirPath ...
 // Step's Collection dir path, where it's spec (step.yml) lives.
 func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
-	return path.Join(GetLibraryBaseDirPath(route), "steps", id, version)
+	return filepath.Join(GetLibraryBaseDirPath(route), "steps", id, version)
 }
 
 // GetStepmanDirPath ...
 func GetStepmanDirPath() string {
-	return path.Join(pathutil.UserHomeDir(), StepmanDirname)
+	return filepath.Join(pathutil.UserHomeDir(), StepmanDirname)
 }
 
 // GetCollectionsDirPath ...
 func GetCollectionsDirPath() string {
-	return path.Join(GetStepmanDirPath(), CollectionsDirname)
+	return filepath.Join(GetStepmanDirPath(), CollectionsDirname)
 }
 
 func getRoutingFilePath() string {
-	return path.Join(GetStepmanDirPath(), RoutingFilename)
+	return filepath.Join(GetStepmanDirPath(), RoutingFilename)
 }

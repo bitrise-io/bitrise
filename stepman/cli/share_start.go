@@ -95,7 +95,7 @@ func start(c *cli.Context) error {
 		fail("Failed to setup step spec (url: %s) version (%s), error: %s", collectionURI, pth, err)
 	}
 
-	specPth := pth + "/steplib.yml"
+	specPth := stepman.GetStepCollectionSpecPath(route)
 	collection, err := stepman.ParseStepCollection(specPth)
 	if err != nil {
 		fail("Failed to read step spec, error: %s", err)
