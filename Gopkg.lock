@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  digest = "1:05eebdd5727fea23083fce0d98d307d70c86baed644178e81608aaa9f09ea469"
+  digest = "1:1760ee71834b3d0c59ffb6e0f9444fb68aec64bd6630b99b349fb111f74022fa"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "60c74ad9be0d874af0ab0daef6ab07c5c5911f0d"
-  version = "v1.6.0"
+  revision = "6699a89a232f3db797f2e280639854bbc4b89725"
+  version = "v1.7.0"
 
 [[projects]]
   branch = "master"
@@ -56,7 +56,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "e212188d99b41373b4ff8b69e7b1f677bc427bde"
+  revision = "0c47c16813a4209321c9d0dba2e75867d6901ff2"
 
 [[projects]]
   branch = "master"
@@ -76,7 +76,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:723896a8a5e57c708078256f31abc009c40482d4ab76f2acf4c1fab6433daf1c"
+  digest = "1:fd82ab19f9eaea72f3b566944cd6a947b70d0ab2bfe047ae68e83442223e96d1"
   name = "github.com/bitrise-io/stepman"
   packages = [
     ".",
@@ -86,7 +86,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "83b3b9f433483b87e106bab9f479148092562cfa"
+  revision = "4d242ab03ef96430fc79b37201e519e1e5e5520d"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -97,20 +97,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:88e0b0baeb9072f0a4afbcf12dda615fc8be001d1802357538591155998da21b"
+  digest = "1:95732e0c27df672b3fdf5cdd8edd18cba5fc07263ef7cd25eaaad4afc4730313"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ac23dc3fea5d1a983c43f6a0f6e2c13f0195d8bd"
-  version = "v1.2.0"
-
-[[projects]]
-  digest = "1:09cb61dc19af93deae01587e2fdb1c081e0bf48f1a5ad5fa24f48750dc57dce8"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "edb144dfd453055e1e49a3d8b410a660b5a87613"
-  version = "v1.0.3"
+  revision = "59da58cfd357de719a4d16dac30481391a56c002"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
@@ -129,15 +121,15 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:49b1087f45b1e49687da2f8eb49d9e07919d4bad3813344251c722141dcb31d6"
+  digest = "1:729f65378817684798e53068862397c12daffa0757abbe073f6620a560fc6fb5"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
   ]
   pruneopts = "UT"
-  revision = "3ebf1ddaeb260c4b1ae502a01c7844fa8c1fa0e9"
-  version = "v1.5.1"
+  revision = "f654a9112bbeac49ca2cd45bfbe11533c4666cf8"
+  version = "v1.6.1"
 
 [[projects]]
   digest = "1:ca4df663ad76879ad38dbd736493679cbb1aa596c6d479fd9fc5e959e5ceb4fb"
@@ -152,11 +144,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "06a226fb4e3765ef3f48aa2852b401bc7b98e981"
+  revision = "5c72a883971a4325f8c62bf07b6d38c20ea47a6a"
 
 [[projects]]
   branch = "master"
-  digest = "1:2f5a21f14e8b888ef4cb276a228d728084bb2404becc205cdd783b9e2cbee658"
+  digest = "1:0563e43143b9c3b81a240f77ce281bcf2ff22436cbce89eddd376cf034eb17ad"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -164,7 +156,7 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "fe76b779f299728f3bd63f77ea2c815504229c3b"
+  revision = "9d91bd62050c7b3011b7df0d2a4daa0042684420"
 
 [[projects]]
   digest = "1:d7f1bd887dc650737a421b872ca883059580e9f8314d601f88025df4f4802dce"
@@ -173,6 +165,14 @@
   pruneopts = "UT"
   revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
   version = "v2.3.0"
+
+[[projects]]
+  branch = "v3"
+  digest = "1:229cb0f6192914f518cc1241ede6d6f1f458b31debfa18bf3a5c9e4f7b01e24b"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "eeeca48fe7764f320e4870d231902bf9c1be2c08"
 
 [solve-meta]
   analyzer-name = "dep"
