@@ -26,6 +26,16 @@ const (
 // StepListItemModel ...
 type StepListItemModel map[string]stepmanModels.StepModel
 
+// PipelineModel ...
+type PipelineModel struct {
+	Stages []StageModel `json:"stages,omitempty" yaml:"stages,omitempty"`
+}
+
+// StageModel ...
+type StageModel struct {
+	Workflows []WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+}
+
 // WorkflowModel ...
 type WorkflowModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -89,6 +99,8 @@ type BitriseDataModel struct {
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
+	Pipelines  map[string]PipelineModel `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
+	Stages     map[string]StageModel    `json:"stages,omitempty" yaml:"stages,omitempty"`
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 

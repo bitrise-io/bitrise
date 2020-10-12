@@ -781,6 +781,12 @@ func TestValidateConfig(t *testing.T) {
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"A-Za-z0-9-_.": PipelineModel{},
+			},
+			Stages: map[string]StageModel{
+				"A-Za-z0-9-_.": StageModel{},
+			},
 			Workflows: map[string]WorkflowModel{
 				"A-Za-z0-9-_.": WorkflowModel{},
 			},
@@ -791,7 +797,115 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData ID - empty")
+	t.Log("Invalid bitriseData pipeline ID")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"": PipelineModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "invalid pipeline ID (): empty")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	for _, specConfig := range []struct {
+		description          string
+		pipelineID           string
+		expectedErrorMessage string
+	}{
+		{
+			description:          "Invalid bitriseData pipeline ID - contains: `/`",
+			pipelineID:           "pi/id",
+			expectedErrorMessage: "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData pipeline ID - contains: `:`",
+			pipelineID:           "pi:id",
+			expectedErrorMessage: "invalid pipeline ID (pi:id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			pipelineID:           "pi id",
+			expectedErrorMessage: "invalid pipeline ID (pi id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			pipelineID:           " piid",
+			expectedErrorMessage: "invalid pipeline ID ( piid): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			pipelineID:           "piid ",
+			expectedErrorMessage: "invalid pipeline ID (piid ): doesn't conform to: [A-Za-z0-9-_.]",
+		},
+	} {
+		t.Log(specConfig.description)
+
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				specConfig.pipelineID: PipelineModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
+	}
+
+	t.Log("Invalid bitriseData stage ID")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"": StageModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "invalid stage ID (): empty")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	for _, specConfig := range []struct {
+		description          string
+		stageID              string
+		expectedErrorMessage string
+	}{
+		{
+			description:          "Invalid bitriseData stage ID - contains: `/`",
+			stageID:              "st/id",
+			expectedErrorMessage: "invalid stage ID (st/id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData stage ID - contains: `:`",
+			stageID:              "st:id",
+			expectedErrorMessage: "invalid stage ID (st:id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData stage ID - contains: ` `",
+			stageID:              "st id",
+			expectedErrorMessage: "invalid stage ID (st id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData stage ID - contains: ` `",
+			stageID:              " stid",
+			expectedErrorMessage: "invalid stage ID ( stid): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData stage ID - contains: ` `",
+			stageID:              "stid ",
+			expectedErrorMessage: "invalid stage ID (stid ): doesn't conform to: [A-Za-z0-9-_.]",
+		},
+	} {
+		t.Log(specConfig.description)
+
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				specConfig.stageID: StageModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
+	}
+
+	t.Log("Invalid bitriseData workflow ID")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -804,78 +918,45 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData ID - contains: `/`")
-	{
+	for _, specConfig := range []struct {
+		description          string
+		workflowID           string
+		expectedErrorMessage string
+	}{
+		{
+			description:          "Invalid bitriseData workflow ID - contains: `/`",
+			workflowID:           "wf/id",
+			expectedErrorMessage: "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData workflow ID - contains: `:`",
+			workflowID:           "wf:id",
+			expectedErrorMessage: "invalid workflow ID (wf:id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			workflowID:           "wf id",
+			expectedErrorMessage: "invalid workflow ID (wf id): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			workflowID:           " wfid",
+			expectedErrorMessage: "invalid workflow ID ( wfid): doesn't conform to: [A-Za-z0-9-_.]",
+		}, {
+			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			workflowID:           "wfid ",
+			expectedErrorMessage: "invalid workflow ID (wfid ): doesn't conform to: [A-Za-z0-9-_.]",
+		},
+	} {
+		t.Log(specConfig.description)
+
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
-				"wf/id": WorkflowModel{},
+				specConfig.workflowID: WorkflowModel{},
 			},
 		}
-
 		warnings, err := bitriseData.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: `:`")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wf:id": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (wf:id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wf id": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (wf id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				" wfid": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID ( wfid): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wfid ": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
+		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
 	}
 }
 

@@ -450,6 +450,32 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 	// ---
 
+	// pipelines
+	for ID := range config.Pipelines {
+		if ID == "" {
+			return warnings, fmt.Errorf("invalid pipeline ID (%s): empty", ID)
+		}
+
+		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
+		if find := r.FindString(ID); find != ID {
+			warnings = append(warnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		}
+	}
+	// ---
+
+	// stages
+	for ID := range config.Stages {
+		if ID == "" {
+			return warnings, fmt.Errorf("invalid stage ID (%s): empty", ID)
+		}
+
+		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
+		if find := r.FindString(ID); find != ID {
+			warnings = append(warnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		}
+	}
+	// ---
+
 	// workflows
 	for ID, workflow := range config.Workflows {
 		if ID == "" {
