@@ -777,18 +777,59 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 
 // Config
 func TestValidateConfig(t *testing.T) {
-	t.Log("Valid bitriseData ID")
+	t.Log("Valid bitriseData")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"A-Za-z0-9-_.": PipelineModel{},
+				"pipeline1": PipelineModel{
+					Stages: []string{
+						"stage1",
+						"stage2",
+					},
+				},
+				"pipeline2": PipelineModel{
+					Stages: []string{
+						"stage3",
+						"stage4",
+					},
+				},
 			},
 			Stages: map[string]StageModel{
-				"A-Za-z0-9-_.": StageModel{},
+				"stage1": StageModel{
+					Workflows: []string{
+						"workflow1",
+						"workflow2",
+					},
+				},
+				"stage2": StageModel{
+					Workflows: []string{
+						"workflow3",
+						"workflow4",
+					},
+				},
+				"stage3": StageModel{
+					Workflows: []string{
+						"workflow5",
+						"workflow6",
+					},
+				},
+				"stage4": StageModel{
+					Workflows: []string{
+						"workflow7",
+						"workflow8",
+					},
+				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"A-Za-z0-9-_.": WorkflowModel{},
+				"workflow1": WorkflowModel{},
+				"workflow2": WorkflowModel{},
+				"workflow3": WorkflowModel{},
+				"workflow4": WorkflowModel{},
+				"workflow5": WorkflowModel{},
+				"workflow6": WorkflowModel{},
+				"workflow7": WorkflowModel{},
+				"workflow8": WorkflowModel{},
 			},
 		}
 
@@ -797,7 +838,7 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData pipeline ID")
+	t.Log("Invalid bitriseData - pipeline ID empty")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -816,23 +857,23 @@ func TestValidateConfig(t *testing.T) {
 		expectedErrorMessage string
 	}{
 		{
-			description:          "Invalid bitriseData pipeline ID - contains: `/`",
+			description:          "Invalid bitriseData - pipeline ID contains: `/`",
 			pipelineID:           "pi/id",
 			expectedErrorMessage: "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData pipeline ID - contains: `:`",
+			description:          "Invalid bitriseData - pipeline ID contains: `:`",
 			pipelineID:           "pi:id",
 			expectedErrorMessage: "invalid pipeline ID (pi:id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			description:          "Invalid bitriseData - pipeline ID contains: ` `",
 			pipelineID:           "pi id",
 			expectedErrorMessage: "invalid pipeline ID (pi id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			description:          "Invalid bitriseData - pipeline ID contains: ` `",
 			pipelineID:           " piid",
 			expectedErrorMessage: "invalid pipeline ID ( piid): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData pipeline ID - contains: ` `",
+			description:          "Invalid bitriseData - pipeline ID contains: ` `",
 			pipelineID:           "piid ",
 			expectedErrorMessage: "invalid pipeline ID (piid ): doesn't conform to: [A-Za-z0-9-_.]",
 		},
@@ -851,7 +892,7 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
 	}
 
-	t.Log("Invalid bitriseData stage ID")
+	t.Log("Invalid bitriseData - stage ID empty")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -870,23 +911,23 @@ func TestValidateConfig(t *testing.T) {
 		expectedErrorMessage string
 	}{
 		{
-			description:          "Invalid bitriseData stage ID - contains: `/`",
+			description:          "Invalid bitriseData - stage ID contains: `/`",
 			stageID:              "st/id",
 			expectedErrorMessage: "invalid stage ID (st/id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData stage ID - contains: `:`",
+			description:          "Invalid bitriseData - stage ID contains: `:`",
 			stageID:              "st:id",
 			expectedErrorMessage: "invalid stage ID (st:id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData stage ID - contains: ` `",
+			description:          "Invalid bitriseData - stage ID contains: ` `",
 			stageID:              "st id",
 			expectedErrorMessage: "invalid stage ID (st id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData stage ID - contains: ` `",
+			description:          "Invalid bitriseData - stage ID contains: ` `",
 			stageID:              " stid",
 			expectedErrorMessage: "invalid stage ID ( stid): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData stage ID - contains: ` `",
+			description:          "Invalid bitriseData - stage ID contains: ` `",
 			stageID:              "stid ",
 			expectedErrorMessage: "invalid stage ID (stid ): doesn't conform to: [A-Za-z0-9-_.]",
 		},
@@ -905,7 +946,7 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
 	}
 
-	t.Log("Invalid bitriseData workflow ID")
+	t.Log("Invalid bitriseData - workflow ID empty")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -924,23 +965,23 @@ func TestValidateConfig(t *testing.T) {
 		expectedErrorMessage string
 	}{
 		{
-			description:          "Invalid bitriseData workflow ID - contains: `/`",
+			description:          "Invalid bitriseData - workflow ID contains: `/`",
 			workflowID:           "wf/id",
 			expectedErrorMessage: "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData workflow ID - contains: `:`",
+			description:          "Invalid bitriseData - workflow ID contains: `:`",
 			workflowID:           "wf:id",
 			expectedErrorMessage: "invalid workflow ID (wf:id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			description:          "Invalid bitriseData - workflow ID contains: ` `",
 			workflowID:           "wf id",
 			expectedErrorMessage: "invalid workflow ID (wf id): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			description:          "Invalid bitriseData - workflow ID contains: ` `",
 			workflowID:           " wfid",
 			expectedErrorMessage: "invalid workflow ID ( wfid): doesn't conform to: [A-Za-z0-9-_.]",
 		}, {
-			description:          "Invalid bitriseData workflow ID - contains: ` `",
+			description:          "Invalid bitriseData - workflow ID contains: ` `",
 			workflowID:           "wfid ",
 			expectedErrorMessage: "invalid workflow ID (wfid ): doesn't conform to: [A-Za-z0-9-_.]",
 		},
@@ -957,6 +998,66 @@ func TestValidateConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
+	}
+
+	t.Log("Invalid bitriseData - pipeline stage does not exist")
+	{
+		{
+			bitriseData := BitriseDataModel{
+				FormatVersion: "1.4.0",
+				Pipelines: map[string]PipelineModel{
+					"pipeline1": PipelineModel{
+						Stages: []string{
+							"stage2",
+						},
+					},
+				},
+				Stages: map[string]StageModel{
+					"stage1": StageModel{
+						Workflows: []string{
+							"workflow1",
+						},
+					},
+				},
+				Workflows: map[string]WorkflowModel{
+					"workflow1": WorkflowModel{},
+				},
+			}
+
+			warnings, err := bitriseData.Validate()
+			require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1), but does not exist")
+			require.Equal(t, 0, len(warnings))
+		}
+	}
+
+	t.Log("Invalid bitriseData - stage workflow does not exist")
+	{
+		{
+			bitriseData := BitriseDataModel{
+				FormatVersion: "1.4.0",
+				Pipelines: map[string]PipelineModel{
+					"pipeline1": PipelineModel{
+						Stages: []string{
+							"stage1",
+						},
+					},
+				},
+				Stages: map[string]StageModel{
+					"stage1": StageModel{
+						Workflows: []string{
+							"workflow2",
+						},
+					},
+				},
+				Workflows: map[string]WorkflowModel{
+					"workflow1": WorkflowModel{},
+				},
+			}
+
+			warnings, err := bitriseData.Validate()
+			require.EqualError(t, err, "workflow (workflow2) defined in stage (stage1), but does not exist")
+			require.Equal(t, 0, len(warnings))
+		}
 	}
 }
 

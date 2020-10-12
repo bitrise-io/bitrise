@@ -451,7 +451,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// ---
 
 	// pipelines
-	for ID := range config.Pipelines {
+	for ID, pipeline := range config.Pipelines {
 		if ID == "" {
 			return warnings, fmt.Errorf("invalid pipeline ID (%s): empty", ID)
 		}
@@ -460,11 +460,24 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		if find := r.FindString(ID); find != ID {
 			warnings = append(warnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
+
+		for _, pipelineStageID := range pipeline.Stages {
+			found := false
+			for stageID := range config.Stages {
+				if stageID == pipelineStageID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return warnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+			}
+		}
 	}
 	// ---
 
 	// stages
-	for ID := range config.Stages {
+	for ID, stage := range config.Stages {
 		if ID == "" {
 			return warnings, fmt.Errorf("invalid stage ID (%s): empty", ID)
 		}
@@ -472,6 +485,19 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
 			warnings = append(warnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		}
+
+		for _, stageWorkflowID := range stage.Workflows {
+			found := false
+			for workflowID := range config.Workflows {
+				if workflowID == stageWorkflowID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return warnings, fmt.Errorf("workflow (%s) defined in stage (%s), but does not exist", stageWorkflowID, ID)
+			}
 		}
 	}
 	// ---
