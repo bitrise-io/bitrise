@@ -461,6 +461,10 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 			warnings = append(warnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
+		if len(pipeline.Stages) == 0 {
+			return warnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+		}
+
 		for _, pipelineStageID := range pipeline.Stages {
 			found := false
 			for stageID := range config.Stages {
@@ -485,6 +489,10 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
 			warnings = append(warnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		}
+
+		if len(stage.Workflows) == 0 {
+			return warnings, fmt.Errorf("stage (%s) should have at least 1 workflow", ID)
 		}
 
 		for _, stageWorkflowID := range stage.Workflows {

@@ -883,7 +883,21 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				specConfig.pipelineID: PipelineModel{},
+				specConfig.pipelineID: PipelineModel{
+					Stages: []string{
+						"stage1",
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []string{
+						"workflow1",
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -937,7 +951,14 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				specConfig.stageID: StageModel{},
+				specConfig.stageID: StageModel{
+					Workflows: []string{
+						"workflow1",
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -1000,64 +1021,99 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, specConfig.expectedErrorMessage, warnings[0])
 	}
 
+	t.Log("Invalid bitriseData - pipeline does not have any stages")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []string{},
+				},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage")
+		require.Equal(t, 0, len(warnings))
+	}
+
 	t.Log("Invalid bitriseData - pipeline stage does not exist")
 	{
-		{
-			bitriseData := BitriseDataModel{
-				FormatVersion: "1.4.0",
-				Pipelines: map[string]PipelineModel{
-					"pipeline1": PipelineModel{
-						Stages: []string{
-							"stage2",
-						},
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []string{
+						"stage2",
 					},
 				},
-				Stages: map[string]StageModel{
-					"stage1": StageModel{
-						Workflows: []string{
-							"workflow1",
-						},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []string{
+						"workflow1",
 					},
 				},
-				Workflows: map[string]WorkflowModel{
-					"workflow1": WorkflowModel{},
-				},
-			}
-
-			warnings, err := bitriseData.Validate()
-			require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1), but does not exist")
-			require.Equal(t, 0, len(warnings))
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
 		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1), but does not exist")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - stage does not have any workflows")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []string{
+						"stage1",
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []string{},
+				},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "stage (stage1) should have at least 1 workflow")
+		require.Equal(t, 0, len(warnings))
 	}
 
 	t.Log("Invalid bitriseData - stage workflow does not exist")
 	{
-		{
-			bitriseData := BitriseDataModel{
-				FormatVersion: "1.4.0",
-				Pipelines: map[string]PipelineModel{
-					"pipeline1": PipelineModel{
-						Stages: []string{
-							"stage1",
-						},
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []string{
+						"stage1",
 					},
 				},
-				Stages: map[string]StageModel{
-					"stage1": StageModel{
-						Workflows: []string{
-							"workflow2",
-						},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []string{
+						"workflow2",
 					},
 				},
-				Workflows: map[string]WorkflowModel{
-					"workflow1": WorkflowModel{},
-				},
-			}
-
-			warnings, err := bitriseData.Validate()
-			require.EqualError(t, err, "workflow (workflow2) defined in stage (stage1), but does not exist")
-			require.Equal(t, 0, len(warnings))
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
 		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "workflow (workflow2) defined in stage (stage1), but does not exist")
+		require.Equal(t, 0, len(warnings))
 	}
 }
 
