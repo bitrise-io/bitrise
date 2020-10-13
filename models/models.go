@@ -28,13 +28,19 @@ type StepListItemModel map[string]stepmanModels.StepModel
 
 // PipelineModel ...
 type PipelineModel struct {
-	Stages []string `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Stages []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
 }
+
+// StageListItemModel ...
+type StageListItemModel map[string]StageModel
 
 // StageModel ...
 type StageModel struct {
-	Workflows []string `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	Workflows []WorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
+
+// WorkflowListItemModel ...
+type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
