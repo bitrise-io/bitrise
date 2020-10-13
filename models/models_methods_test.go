@@ -1319,6 +1319,15 @@ func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
+
+	t.Log("invalid workflowlist item - no workflow")
+	{
+		workflowListItem := WorkflowListItemModel{}
+
+		id, _, err := GetWorkflowIDWorkflowDataPair(workflowListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
 }
 
 // ----------------------------
@@ -1344,6 +1353,15 @@ func TestGetStageIDStageDataPair(t *testing.T) {
 			"stage1": stageData,
 			"stage2": stageData,
 		}
+
+		id, _, err := GetStageIDStageDataPair(stageListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+
+	t.Log("invalid stagelist item - no stage")
+	{
+		stageListItem := StageListItemModel{}
 
 		id, _, err := GetStageIDStageDataPair(stageListItem)
 		require.Error(t, err)
@@ -1415,6 +1433,15 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 			"step2": stepData,
 		}
+
+		id, _, err := GetStepIDStepDataPair(stepListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+
+	t.Log("invalid steplist item - no step")
+	{
+		stepListItem := StepListItemModel{}
 
 		id, _, err := GetStepIDStepDataPair(stepListItem)
 		require.Error(t, err)
