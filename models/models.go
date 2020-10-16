@@ -82,6 +82,7 @@ type TriggerMapItemModel struct {
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
 	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
 	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// deprecated

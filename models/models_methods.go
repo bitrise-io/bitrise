@@ -12,7 +12,7 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
+func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 	str := ""
 
 	if triggerItem.PushBranch != "" {
@@ -52,8 +52,12 @@ func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
 		str += fmt.Sprintf("pattern: %s && is_pull_request_allowed: %v", triggerItem.Pattern, triggerItem.IsPullRequestAllowed)
 	}
 
-	if printWorkflow {
-		str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
+	if printTarget {
+		if triggerItem.PipelineID != "" {
+			str += fmt.Sprintf(" -> pipeline: %s", triggerItem.PipelineID)
+		} else {
+			str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
+		}
 	}
 
 	return str
@@ -330,8 +334,8 @@ func (app *AppModel) Validate() error {
 
 // Validate ...
 func (triggerItem TriggerMapItemModel) Validate() error {
-	if triggerItem.WorkflowID == "" {
-		return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", triggerItem.Pattern, triggerItem.WorkflowID)
+	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
+		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow id", triggerItem.Pattern)
 	}
 
 	if triggerItem.Pattern == "" {
@@ -427,15 +431,28 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		}
 
 		found := false
-
-		for workflowID := range config.Workflows {
-			if workflowID == triggerMapItem.WorkflowID {
-				found = true
+		if triggerMapItem.PipelineID != "" {
+			for pipelineID := range config.Pipelines {
+				if pipelineID == triggerMapItem.PipelineID {
+					found = true
+					break
+				}
 			}
-		}
 
-		if !found {
-			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			if !found {
+				return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerMapItem.PipelineID, triggerMapItem.String(true))
+			}
+		} else {
+			for workflowID := range config.Workflows {
+				if workflowID == triggerMapItem.WorkflowID {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			}
 		}
 	}
 
