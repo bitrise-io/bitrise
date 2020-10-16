@@ -27,7 +27,7 @@ func Test_VersionOutput(t *testing.T) {
 format version: 11
 os: %s
 go: %s
-build number:
+build number: 
 commit:`, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
