@@ -393,6 +393,16 @@ workflows:
 		require.NoError(t, item.Validate())
 	}
 
+	t.Log("it fails for invalid deprecated trigger item - pipeline & workflow both defined")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			PipelineID: "pipeline-1",
+			WorkflowID: "workflow-1",
+		}
+		require.Error(t, item.Validate())
+	}
+
 	t.Log("it fails for invalid deprecated trigger item - missing pipeline & workflow")
 	{
 		item := TriggerMapItemModel{

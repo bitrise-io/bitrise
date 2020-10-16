@@ -334,8 +334,11 @@ func (app *AppModel) Validate() error {
 
 // Validate ...
 func (triggerItem TriggerMapItemModel) Validate() error {
+	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
+		return fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
+	}
 	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow id", triggerItem.Pattern)
+		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
 	}
 
 	if triggerItem.Pattern == "" {
