@@ -164,6 +164,6 @@ func Test_NewTrigger(t *testing.T) {
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"push-branch":"pipeline_code_push","pipeline":"pipeline_code_push"}`, out)
+		require.Equal(t, `{"pipeline":"pipeline_code_push","push-branch":"pipeline_code_push"}`, out)
 	}
 }
