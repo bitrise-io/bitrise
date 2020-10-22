@@ -38,6 +38,20 @@ func Test_NewTrigger(t *testing.T) {
 		require.Equal(t, `{"pattern":"deprecated_pr","workflow":"deprecated_pr"}`, out)
 	}
 
+	t.Log("deprecated trigger test - pipeline")
+	{
+		config := map[string]string{
+			"config":  configPth,
+			"pattern": "deprecated_pipeline",
+			"format":  "json",
+		}
+
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+		require.Equal(t, `{"pattern":"deprecated_pipeline","pipeline":"deprecated_pipeline"}`, out)
+	}
+
 	t.Log("new trigger test - code push")
 	{
 		config := map[string]string{
@@ -137,5 +151,19 @@ func Test_NewTrigger(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source_only","pr-target-branch":"pr_target","workflow":"pr_source"}`, out)
+	}
+
+	t.Log("new trigger test - pipeline")
+	{
+		config := map[string]string{
+			"config":      configPth,
+			"push-branch": "code_push_pipeline",
+			"format":      "json",
+		}
+
+		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+		require.Equal(t, `{"push-branch":"code_push_pipeline","pipeline":"code_push_pipeline"}`, out)
 	}
 }

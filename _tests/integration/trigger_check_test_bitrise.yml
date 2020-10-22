@@ -8,9 +8,22 @@ trigger_map:
 - pattern: "only_code_push"
   is_pull_request_allowed: false
   workflow: only_code_push
+- pattern: "only_code_push_pipeline"
+  is_pull_request_allowed: false
+  pipeline: only_code_push_pipeline
 - pattern: "*"
   is_pull_request_allowed: true
   workflow: fall_back
+
+pipelines:
+  only_code_push_pipeline:
+    stages:
+    - only_code_push_stage: {}
+
+stages:
+  only_code_push_stage:
+    workflows:
+    - only_code_push: {}
 
 workflows:
   # PR tests
