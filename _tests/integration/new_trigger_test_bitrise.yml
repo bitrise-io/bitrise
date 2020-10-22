@@ -33,7 +33,7 @@ pipelines:
 stages:
   deprecated_stage:
     workflows:
-    - deprecated: {}
+    - deprecated_code_push: {}
   code_push_stage:
     workflows:
     - code-push: {}

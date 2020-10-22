@@ -53,8 +53,8 @@ func Test_TriggerParams(t *testing.T) {
 	t.Log("deprecated pipeline trigger with pattern")
 	{
 		cmd := command.New(binPath(), "trigger", "--pattern", "deprecated_pipeline_trigger", "--config", "trigger_params_test_bitrise.yml")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
+		_, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.EqualError(t, err, "No workflow id specified")
 	}
 
 	t.Log("pipeline trigger with push-branch")

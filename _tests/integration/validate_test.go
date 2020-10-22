@@ -18,7 +18,7 @@ const invalidSecret = `- TEST: test`
 
 const emptyBitriseYML = ""
 const spaceBitriseYML = ` `
-const invalidPipelineIDBitriseYML = `format_version: 1.3.0
+const invalidPipelineIDBitriseYML = `format_version: 11
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 pipelines:
