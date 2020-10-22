@@ -61,6 +61,6 @@ func Test_TriggerParams(t *testing.T) {
 	{
 		cmd := command.New(binPath(), "trigger", "--push-branch", "pipeline_trigger", "--config", "trigger_params_test_bitrise.yml")
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
+		require.Error(t, err, out)
 	}
 }

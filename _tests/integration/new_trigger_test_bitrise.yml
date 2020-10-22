@@ -12,6 +12,8 @@ trigger_map:
   is_pull_request_allowed: true
   workflow: deprecated_pr
 
+- push_branch: pipeline_code_push*
+  pipeline: pipeline_code_push
 - push_branch: code_push*
   workflow: code_push
 - pull_request_source_branch: pr_source
@@ -26,15 +28,15 @@ pipelines:
   deprecated_pipeline:
     stages:
     - deprecated_stage: {}
-  code_push_pipeline:
+  pipeline_code_push:
     stages:
-    - code_push_stage: {}
+    - stage_code_push: {}
 
 stages:
   deprecated_stage:
     workflows:
     - deprecated_code_push: {}
-  code_push_stage:
+  stage_code_push:
     workflows:
     - code_push: {}
 

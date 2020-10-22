@@ -157,13 +157,13 @@ func Test_NewTrigger(t *testing.T) {
 	{
 		config := map[string]string{
 			"config":      configPth,
-			"push-branch": "code_push_pipeline",
+			"push-branch": "pipeline_code_push",
 			"format":      "json",
 		}
 
 		cmd := command.New(binPath(), "trigger-check", "--json-params", toJSON(t, config))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
-		require.Equal(t, `{"push-branch":"code_push_pipeline","pipeline":"code_push_pipeline"}`, out)
+		require.Equal(t, `{"push-branch":"pipeline_code_push","pipeline":"pipeline_code_push"}`, out)
 	}
 }

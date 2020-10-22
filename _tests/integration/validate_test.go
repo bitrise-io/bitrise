@@ -23,6 +23,16 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 pipelines:
   invalid:id:
+    stages:
+    - stage1: {}
+
+stages:
+  stage1:
+    workflows:
+    - workflow1: {}
+
+workflows:
+  workflow1:
 `
 const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
