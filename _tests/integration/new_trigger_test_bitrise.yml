@@ -36,7 +36,7 @@ stages:
     - deprecated_code_push: {}
   code_push_stage:
     workflows:
-    - code-push: {}
+    - code_push: {}
 
 workflows:
   deprecated_code_push:
