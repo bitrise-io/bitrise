@@ -471,24 +471,52 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// ---
 
 	// pipelines
+	pipelineWarnings, err := validatePipelines(config)
+	warnings = append(warnings, pipelineWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// stages
+	stageWarnings, err := validateStages(config)
+	warnings = append(warnings, stageWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// workflows
+	workflowWarnings, err := validateWorkflows(config)
+	warnings = append(warnings, workflowWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	return warnings, nil
+}
+
+func validatePipelines(config *BitriseDataModel) ([]string, error) {
+	pipelineWarnings := make([]string, 0)
 	for ID, pipeline := range config.Pipelines {
 		if ID == "" {
-			return warnings, fmt.Errorf("invalid pipeline ID (%s): empty", ID)
+			return pipelineWarnings, fmt.Errorf("invalid pipeline ID (%s): empty", ID)
 		}
 
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
-			warnings = append(warnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+			pipelineWarnings = append(pipelineWarnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
 		if len(pipeline.Stages) == 0 {
-			return warnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
 		}
 
 		for _, pipelineStage := range pipeline.Stages {
 			pipelineStageID, _, err := GetStageIDStageDataPair(pipelineStage)
 			if err != nil {
-				return warnings, err
+				return pipelineWarnings, err
 			}
 			found := false
 			for stageID := range config.Stages {
@@ -498,32 +526,35 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 				}
 			}
 			if !found {
-				return warnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+				return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
 			}
 		}
 	}
-	// ---
 
-	// stages
+	return pipelineWarnings, nil
+}
+
+func validateStages(config *BitriseDataModel) ([]string, error) {
+	stageWarnings := make([]string, 0)
 	for ID, stage := range config.Stages {
 		if ID == "" {
-			return warnings, fmt.Errorf("invalid stage ID (%s): empty", ID)
+			return stageWarnings, fmt.Errorf("invalid stage ID (%s): empty", ID)
 		}
 
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
-			warnings = append(warnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+			stageWarnings = append(stageWarnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
 		if len(stage.Workflows) == 0 {
-			return warnings, fmt.Errorf("stage (%s) should have at least 1 workflow", ID)
+			return stageWarnings, fmt.Errorf("stage (%s) should have at least 1 workflow", ID)
 		}
 
 		for _, stageWorkflow := range stage.Workflows {
 			found := false
 			stageWorkflowID, _, err := GetWorkflowIDWorkflowDataPair(stageWorkflow)
 			if err != nil {
-				return warnings, err
+				return stageWarnings, err
 			}
 			for workflowID := range config.Workflows {
 				if workflowID == stageWorkflowID {
@@ -532,36 +563,38 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 				}
 			}
 			if !found {
-				return warnings, fmt.Errorf("workflow (%s) defined in stage (%s), but does not exist", stageWorkflowID, ID)
+				return stageWarnings, fmt.Errorf("workflow (%s) defined in stage (%s), but does not exist", stageWorkflowID, ID)
 			}
 		}
 	}
-	// ---
 
-	// workflows
+	return stageWarnings, nil
+}
+
+func validateWorkflows(config *BitriseDataModel) ([]string, error) {
+	workflowWarnings := make([]string, 0)
 	for ID, workflow := range config.Workflows {
 		if ID == "" {
-			return warnings, fmt.Errorf("invalid workflow ID (%s): empty", ID)
+			return workflowWarnings, fmt.Errorf("invalid workflow ID (%s): empty", ID)
 		}
 
 		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
 		if find := r.FindString(ID); find != ID {
-			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+			workflowWarnings = append(workflowWarnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
 		}
 
 		warns, err := workflow.Validate()
-		warnings = append(warnings, warns...)
+		workflowWarnings = append(workflowWarnings, warns...)
 		if err != nil {
-			return warnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
+			return workflowWarnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
 		}
 
 		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
-			return warnings, err
+			return workflowWarnings, err
 		}
 	}
-	// ---
 
-	return warnings, nil
+	return workflowWarnings, nil
 }
 
 // ----------------------------
