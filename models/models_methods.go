@@ -513,7 +513,7 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		}
 
 		for _, pipelineStage := range pipeline.Stages {
-			pipelineStageID, _, err := GetStageIDStageDataPair(pipelineStage)
+			pipelineStageID, err := GetStageIDFromListItemModel(pipelineStage)
 			if err != nil {
 				return pipelineWarnings, err
 			}
@@ -550,7 +550,7 @@ func validateStages(config *BitriseDataModel) ([]string, error) {
 
 		for _, stageWorkflow := range stage.Workflows {
 			found := false
-			stageWorkflowID, _, err := GetWorkflowIDWorkflowDataPair(stageWorkflow)
+			stageWorkflowID, err := GetWorkflowIDFromListItemModel(stageWorkflow)
 			if err != nil {
 				return stageWarnings, err
 			}
@@ -998,29 +998,29 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 // ----------------------------
 // --- WorkflowIDData
 
-// GetWorkflowIDWorkflowDataPair ...
-func GetWorkflowIDWorkflowDataPair(workflowListItem WorkflowListItemModel) (string, WorkflowModel, error) {
+// GetWorkflowIDFromListItemModel ...
+func GetWorkflowIDFromListItemModel(workflowListItem WorkflowListItemModel) (string, error) {
 	if len(workflowListItem) > 1 {
-		return "", WorkflowModel{}, errors.New("WorkflowListItem contains more than 1 key-value pair")
+		return "", errors.New("WorkflowListItem contains more than 1 key-value pair")
 	}
-	for key, value := range workflowListItem {
-		return key, value, nil
+	for key := range workflowListItem {
+		return key, nil
 	}
-	return "", WorkflowModel{}, errors.New("WorkflowListItem does not contain a key-value pair")
+	return "", errors.New("WorkflowListItem does not contain a key-value pair")
 }
 
 // ----------------------------
 // --- StageIDData
 
-// GetStageIDStageDataPair ...
-func GetStageIDStageDataPair(stageListItem StageListItemModel) (string, StageModel, error) {
+// GetStageIDFromListItemModel ...
+func GetStageIDFromListItemModel(stageListItem StageListItemModel) (string, error) {
 	if len(stageListItem) > 1 {
-		return "", StageModel{}, errors.New("StageListItem contains more than 1 key-value pair")
+		return "", errors.New("StageListItem contains more than 1 key-value pair")
 	}
-	for key, value := range stageListItem {
-		return key, value, nil
+	for key := range stageListItem {
+		return key, nil
 	}
-	return "", StageModel{}, errors.New("StageListItem does not contain a key-value pair")
+	return "", errors.New("StageListItem does not contain a key-value pair")
 }
 
 // ----------------------------

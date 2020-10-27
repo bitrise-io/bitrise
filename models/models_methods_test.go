@@ -1377,7 +1377,7 @@ func TestGetInputByKey(t *testing.T) {
 // ----------------------------
 // --- WorkflowIDData
 
-func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
+func TestGetWorkflowIDFromListItemModel(t *testing.T) {
 	workflowData := WorkflowModel{}
 
 	t.Log("valid workflowlist item")
@@ -1386,7 +1386,7 @@ func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
 			"workflow1": workflowData,
 		}
 
-		id, _, err := GetWorkflowIDWorkflowDataPair(workflowListItem)
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
 		require.NoError(t, err)
 		require.Equal(t, "workflow1", id)
 	}
@@ -1398,7 +1398,7 @@ func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
 			"workflow2": workflowData,
 		}
 
-		id, _, err := GetWorkflowIDWorkflowDataPair(workflowListItem)
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1407,7 +1407,7 @@ func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
 	{
 		workflowListItem := WorkflowListItemModel{}
 
-		id, _, err := GetWorkflowIDWorkflowDataPair(workflowListItem)
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1416,7 +1416,7 @@ func TestGetWorkflowIDWorkflowDataPair(t *testing.T) {
 // ----------------------------
 // --- StageIDData
 
-func TestGetStageIDStageDataPair(t *testing.T) {
+func TestGetStageIDFromListItemModel(t *testing.T) {
 	stageData := StageModel{}
 
 	t.Log("valid stagelist item")
@@ -1425,7 +1425,7 @@ func TestGetStageIDStageDataPair(t *testing.T) {
 			"stage1": stageData,
 		}
 
-		id, _, err := GetStageIDStageDataPair(stageListItem)
+		id, err := GetStageIDFromListItemModel(stageListItem)
 		require.NoError(t, err)
 		require.Equal(t, "stage1", id)
 	}
@@ -1437,7 +1437,7 @@ func TestGetStageIDStageDataPair(t *testing.T) {
 			"stage2": stageData,
 		}
 
-		id, _, err := GetStageIDStageDataPair(stageListItem)
+		id, err := GetStageIDFromListItemModel(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1446,7 +1446,7 @@ func TestGetStageIDStageDataPair(t *testing.T) {
 	{
 		stageListItem := StageListItemModel{}
 
-		id, _, err := GetStageIDStageDataPair(stageListItem)
+		id, err := GetStageIDFromListItemModel(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
