@@ -500,13 +500,12 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 func validatePipelines(config *BitriseDataModel) ([]string, error) {
 	pipelineWarnings := make([]string, 0)
 	for ID, pipeline := range config.Pipelines {
-		if ID == "" {
-			return pipelineWarnings, fmt.Errorf("invalid pipeline ID (%s): empty", ID)
+		idWarning, err := validateID(ID, "pipeline")
+		if idWarning != "" {
+			pipelineWarnings = append(pipelineWarnings, idWarning)
 		}
-
-		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
-		if find := r.FindString(ID); find != ID {
-			pipelineWarnings = append(pipelineWarnings, fmt.Sprintf("invalid pipeline ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		if err != nil {
+			return pipelineWarnings, err
 		}
 
 		if len(pipeline.Stages) == 0 {
@@ -537,13 +536,12 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 func validateStages(config *BitriseDataModel) ([]string, error) {
 	stageWarnings := make([]string, 0)
 	for ID, stage := range config.Stages {
-		if ID == "" {
-			return stageWarnings, fmt.Errorf("invalid stage ID (%s): empty", ID)
+		idWarning, err := validateID(ID, "stage")
+		if idWarning != "" {
+			stageWarnings = append(stageWarnings, idWarning)
 		}
-
-		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
-		if find := r.FindString(ID); find != ID {
-			stageWarnings = append(stageWarnings, fmt.Sprintf("invalid stage ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		if err != nil {
+			return stageWarnings, err
 		}
 
 		if len(stage.Workflows) == 0 {
@@ -574,13 +572,12 @@ func validateStages(config *BitriseDataModel) ([]string, error) {
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 	workflowWarnings := make([]string, 0)
 	for ID, workflow := range config.Workflows {
-		if ID == "" {
-			return workflowWarnings, fmt.Errorf("invalid workflow ID (%s): empty", ID)
+		idWarning, err := validateID(ID, "workflow")
+		if idWarning != "" {
+			workflowWarnings = append(workflowWarnings, idWarning)
 		}
-
-		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
-		if find := r.FindString(ID); find != ID {
-			workflowWarnings = append(workflowWarnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
+		if err != nil {
+			return workflowWarnings, err
 		}
 
 		warns, err := workflow.Validate()
@@ -595,6 +592,19 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 	}
 
 	return workflowWarnings, nil
+}
+
+func validateID(id, modelType string) (string, error) {
+	if id == "" {
+		return "", fmt.Errorf("invalid %s ID (%s): empty", modelType, id)
+	}
+
+	r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
+	if find := r.FindString(id); find != id {
+		return fmt.Sprintf("invalid %s ID (%s): doesn't conform to: [A-Za-z0-9-_.]", modelType, id), nil
+	}
+
+	return "", nil
 }
 
 // ----------------------------
