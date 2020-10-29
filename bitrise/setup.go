@@ -40,7 +40,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"analytics": {
 		Source:     "https://github.com/bitrise-io/bitrise-plugins-analytics.git",
-		MinVersion: "0.12.2",
+		MinVersion: "0.12.3",
 	},
 }
 
