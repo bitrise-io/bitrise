@@ -9,12 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	expectedCLIVersion = "1.44.0"
+)
+
 func Test_VersionOutput(t *testing.T) {
 	t.Log("Version")
 	{
 		out, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err)
-		require.Equal(t, "1.43.0", out)
+		require.Equal(t, expectedCLIVersion, out)
 	}
 
 	t.Log("Version --full")
@@ -23,12 +27,12 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
-		expectedVersionOut := fmt.Sprintf(`version: 1.43.0
+		expectedVersionOut := fmt.Sprintf(`version: %s
 format version: 11
 os: %s
 go: %s
 build number: 
-commit:`, expectedOSVersion, runtime.Version())
+commit:`, expectedCLIVersion, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
 	}

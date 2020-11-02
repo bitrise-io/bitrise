@@ -26,6 +26,7 @@ package unix
 #include <mach/mach.h>
 #include <mach/message.h>
 #include <sys/event.h>
+#include <sys/kern_control.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/param.h>
@@ -145,6 +146,8 @@ type RawSockaddr C.struct_sockaddr
 
 type RawSockaddrAny C.struct_sockaddr_any
 
+type RawSockaddrCtl C.struct_sockaddr_ctl
+
 type _Socklen C.socklen_t
 
 type Linger C.struct_linger
@@ -173,6 +176,7 @@ const (
 	SizeofSockaddrAny      = C.sizeof_struct_sockaddr_any
 	SizeofSockaddrUnix     = C.sizeof_struct_sockaddr_un
 	SizeofSockaddrDatalink = C.sizeof_struct_sockaddr_dl
+	SizeofSockaddrCtl      = C.sizeof_struct_sockaddr_ctl
 	SizeofLinger           = C.sizeof_struct_linger
 	SizeofIPMreq           = C.sizeof_struct_ip_mreq
 	SizeofIPv6Mreq         = C.sizeof_struct_ipv6_mreq
@@ -287,3 +291,7 @@ type Utsname C.struct_utsname
 const SizeofClockinfo = C.sizeof_struct_clockinfo
 
 type Clockinfo C.struct_clockinfo
+
+// ctl_info
+
+type CtlInfo C.struct_ctl_info

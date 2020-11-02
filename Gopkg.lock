@@ -35,7 +35,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3b14453437372635a238af887d4dcedf3d381fc00208d22cd7bbf1d63f74c27b"
+  digest = "1:d4ee9791fe9cc2f9da08be39ce17ef80e37e8a8e8ff4bd7797824c6ade70bd71"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -56,7 +56,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "0c47c16813a4209321c9d0dba2e75867d6901ff2"
+  revision = "6cc2aa4d248adef509996ac484bffd38856ddf80"
 
 [[projects]]
   branch = "master"
@@ -144,11 +144,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "5c72a883971a4325f8c62bf07b6d38c20ea47a6a"
+  revision = "9e8e0b390897c84cad53ebe9ed2d1d331a5394d9"
 
 [[projects]]
   branch = "master"
-  digest = "1:0563e43143b9c3b81a240f77ce281bcf2ff22436cbce89eddd376cf034eb17ad"
+  digest = "1:fdd727a34d34afc6babb44f3e499f1b26574c96e05984e106986e2a3f1055c37"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -156,7 +156,7 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "9d91bd62050c7b3011b7df0d2a4daa0042684420"
+  revision = "da207088b7d1961c44ec61e9dc15a73745693ab6"
 
 [[projects]]
   digest = "1:d7f1bd887dc650737a421b872ca883059580e9f8314d601f88025df4f4802dce"
