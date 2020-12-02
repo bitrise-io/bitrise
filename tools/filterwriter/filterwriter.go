@@ -131,7 +131,6 @@ func (w *Writer) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMa
 			escapedLine := strings.ReplaceAll(string(line), "\n", `\n`)
 			escapedSecret = append(escapedSecret, []byte(escapedLine))
 		}
-
 		matchSecret(lines, escapedSecret, secretIdx, matchMap, partialMatchIndexes)
 	}
 
