@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -123,66 +124,79 @@ func (w *Writer) matchSecrets(lines [][]byte) (matchMap map[int][]int, partialMa
 	partialMatchIndexes = make(map[int]bool)
 
 	for secretIdx, secret := range w.secrets {
-		secretLine := secret[0] // every match should begin from the secret first line
-		var lineIndexes []int   // the indexes of lines which contains the secret's first line
+		matchSecret(lines, secret, secretIdx, matchMap, partialMatchIndexes)
 
-		for i, line := range lines {
-			if bytes.Contains(line, secretLine) {
-				lineIndexes = append(lineIndexes, i)
-			}
+		var escapedSecret [][]byte
+		for _, line := range secret {
+			escapedLine := strings.ReplaceAll(string(line), "\n", `\n`)
+			escapedSecret = append(escapedSecret, []byte(escapedLine))
 		}
 
-		if len(lineIndexes) == 0 {
-			// this secret can not be found in the lines
-			continue
-		}
-
-		for _, lineIdx := range lineIndexes {
-			if len(secret) == 1 {
-				// the single line secret found in the lines
-				indexes := matchMap[secretIdx]
-				matchMap[secretIdx] = append(indexes, lineIdx)
-				continue
-			}
-
-			// lineIdx. line matches to a multi line secret's first line
-			// if lines has more line, every subsequent line must match to the secret's subsequent lines
-			partialMatch := true
-			match := false
-
-			for i := lineIdx + 1; i < len(lines); i++ {
-				secretLineIdx := i - lineIdx
-
-				secretLine = secret[secretLineIdx]
-				line := lines[i]
-
-				if !bytes.Contains(line, secretLine) {
-					partialMatch = false
-					break
-				}
-
-				if secretLineIdx == len(secret)-1 {
-					// multi line secret found in the lines
-					match = true
-					break
-				}
-			}
-
-			if match {
-				// multi line secret found in the lines
-				indexes := matchMap[secretIdx]
-				matchMap[secretIdx] = append(indexes, lineIdx)
-				continue
-			}
-
-			if partialMatch {
-				// this secret partially can be found in the lines
-				partialMatchIndexes[lineIdx] = true
-			}
-		}
+		matchSecret(lines, escapedSecret, secretIdx, matchMap, partialMatchIndexes)
 	}
 
 	return
+}
+
+func matchSecret(lines [][]byte, secret [][]byte, secretIdx int, matchMap map[int][]int, partialMatchIndexes map[int]bool) {
+	secretLine := secret[0] // every match should begin from the secret first line
+	var lineIndexes []int   // the indexes of lines which contains the secret's first line
+
+	for i, line := range lines {
+		if bytes.Contains(line, secretLine) {
+			lineIndexes = append(lineIndexes, i)
+		}
+	}
+
+	if len(lineIndexes) == 0 {
+		// this secret can not be found in the lines
+		return
+	}
+
+	for _, lineIdx := range lineIndexes {
+		if len(secret) == 1 {
+			// the single line secret found in the lines
+			indexes := matchMap[secretIdx]
+			matchMap[secretIdx] = append(indexes, lineIdx)
+
+			continue
+		}
+
+		// lineIdx. line matches to a multi line secret's first line
+		// if lines has more line, every subsequent line must match to the secret's subsequent lines
+		partialMatch := true
+		match := false
+
+		for i := lineIdx + 1; i < len(lines); i++ {
+			secretLineIdx := i - lineIdx
+
+			secretLine = secret[secretLineIdx]
+			line := lines[i]
+
+			if !bytes.Contains(line, secretLine) {
+				partialMatch = false
+				break
+			}
+
+			if secretLineIdx == len(secret)-1 {
+				// multi line secret found in the lines
+				match = true
+				break
+			}
+		}
+
+		if match {
+			// multi line secret found in the lines
+			indexes := matchMap[secretIdx]
+			matchMap[secretIdx] = append(indexes, lineIdx)
+			continue
+		}
+
+		if partialMatch {
+			// this secret partially can be found in the lines
+			partialMatchIndexes[lineIdx] = true
+		}
+	}
 }
 
 // linesToKeepRange returns the first line index needs to be observed
