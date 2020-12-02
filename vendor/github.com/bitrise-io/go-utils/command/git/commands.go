@@ -86,8 +86,9 @@ func (g *Git) Add(pathspec string) *command.Model {
 }
 
 // Branch lists branches.
-func (g *Git) Branch() *command.Model {
-	return g.command("branch")
+func (g *Git) Branch(opts ...string) *command.Model {
+	args := append([]string{"branch"}, opts...)
+	return g.command(args...)
 }
 
 // NewBranch creates a new branch as if git-branch were called and then check it out.

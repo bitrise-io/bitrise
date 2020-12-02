@@ -12,7 +12,7 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
+func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 	str := ""
 
 	if triggerItem.PushBranch != "" {
@@ -52,8 +52,12 @@ func (triggerItem TriggerMapItemModel) String(printWorkflow bool) string {
 		str += fmt.Sprintf("pattern: %s && is_pull_request_allowed: %v", triggerItem.Pattern, triggerItem.IsPullRequestAllowed)
 	}
 
-	if printWorkflow {
-		str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
+	if printTarget {
+		if triggerItem.PipelineID != "" {
+			str += fmt.Sprintf(" -> pipeline: %s", triggerItem.PipelineID)
+		} else {
+			str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
+		}
 	}
 
 	return str
@@ -330,8 +334,11 @@ func (app *AppModel) Validate() error {
 
 // Validate ...
 func (triggerItem TriggerMapItemModel) Validate() error {
-	if triggerItem.WorkflowID == "" {
-		return fmt.Errorf("invalid trigger item: (%s) -> (%s), error: empty workflow id", triggerItem.Pattern, triggerItem.WorkflowID)
+	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
+		return fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
+	}
+	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
+		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
 	}
 
 	if triggerItem.Pattern == "" {
@@ -427,15 +434,28 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		}
 
 		found := false
-
-		for workflowID := range config.Workflows {
-			if workflowID == triggerMapItem.WorkflowID {
-				found = true
+		if triggerMapItem.PipelineID != "" {
+			for pipelineID := range config.Pipelines {
+				if pipelineID == triggerMapItem.PipelineID {
+					found = true
+					break
+				}
 			}
-		}
 
-		if !found {
-			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			if !found {
+				return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerMapItem.PipelineID, triggerMapItem.String(true))
+			}
+		} else {
+			for workflowID := range config.Workflows {
+				if workflowID == triggerMapItem.WorkflowID {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
+			}
 		}
 	}
 
@@ -450,30 +470,141 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 	// ---
 
+	// pipelines
+	pipelineWarnings, err := validatePipelines(config)
+	warnings = append(warnings, pipelineWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// stages
+	stageWarnings, err := validateStages(config)
+	warnings = append(warnings, stageWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
 	// workflows
-	for ID, workflow := range config.Workflows {
-		if ID == "" {
-			return warnings, fmt.Errorf("invalid workflow ID (%s): empty", ID)
-		}
-
-		r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
-		if find := r.FindString(ID); find != ID {
-			warnings = append(warnings, fmt.Sprintf("invalid workflow ID (%s): doesn't conform to: [A-Za-z0-9-_.]", ID))
-		}
-
-		warns, err := workflow.Validate()
-		warnings = append(warnings, warns...)
-		if err != nil {
-			return warnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
-		}
-
-		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
-			return warnings, err
-		}
+	workflowWarnings, err := validateWorkflows(config)
+	warnings = append(warnings, workflowWarnings...)
+	if err != nil {
+		return warnings, err
 	}
 	// ---
 
 	return warnings, nil
+}
+
+func validatePipelines(config *BitriseDataModel) ([]string, error) {
+	pipelineWarnings := make([]string, 0)
+	for ID, pipeline := range config.Pipelines {
+		idWarning, err := validateID(ID, "pipeline")
+		if idWarning != "" {
+			pipelineWarnings = append(pipelineWarnings, idWarning)
+		}
+		if err != nil {
+			return pipelineWarnings, err
+		}
+
+		if len(pipeline.Stages) == 0 {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+		}
+
+		for _, pipelineStage := range pipeline.Stages {
+			pipelineStageID, err := GetStageIDFromListItemModel(pipelineStage)
+			if err != nil {
+				return pipelineWarnings, err
+			}
+			found := false
+			for stageID := range config.Stages {
+				if stageID == pipelineStageID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+			}
+		}
+	}
+
+	return pipelineWarnings, nil
+}
+
+func validateStages(config *BitriseDataModel) ([]string, error) {
+	stageWarnings := make([]string, 0)
+	for ID, stage := range config.Stages {
+		idWarning, err := validateID(ID, "stage")
+		if idWarning != "" {
+			stageWarnings = append(stageWarnings, idWarning)
+		}
+		if err != nil {
+			return stageWarnings, err
+		}
+
+		if len(stage.Workflows) == 0 {
+			return stageWarnings, fmt.Errorf("stage (%s) should have at least 1 workflow", ID)
+		}
+
+		for _, stageWorkflow := range stage.Workflows {
+			found := false
+			stageWorkflowID, err := GetWorkflowIDFromListItemModel(stageWorkflow)
+			if err != nil {
+				return stageWarnings, err
+			}
+			for workflowID := range config.Workflows {
+				if workflowID == stageWorkflowID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return stageWarnings, fmt.Errorf("workflow (%s) defined in stage (%s), but does not exist", stageWorkflowID, ID)
+			}
+		}
+	}
+
+	return stageWarnings, nil
+}
+
+func validateWorkflows(config *BitriseDataModel) ([]string, error) {
+	workflowWarnings := make([]string, 0)
+	for ID, workflow := range config.Workflows {
+		idWarning, err := validateID(ID, "workflow")
+		if idWarning != "" {
+			workflowWarnings = append(workflowWarnings, idWarning)
+		}
+		if err != nil {
+			return workflowWarnings, err
+		}
+
+		warns, err := workflow.Validate()
+		workflowWarnings = append(workflowWarnings, warns...)
+		if err != nil {
+			return workflowWarnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
+		}
+
+		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
+			return workflowWarnings, err
+		}
+	}
+
+	return workflowWarnings, nil
+}
+
+func validateID(id, modelType string) (string, error) {
+	if id == "" {
+		return "", fmt.Errorf("invalid %s ID (%s): empty", modelType, id)
+	}
+
+	r := regexp.MustCompile(`[A-Za-z0-9-_.]+`)
+	if find := r.FindString(id); find != id {
+		return fmt.Sprintf("invalid %s ID (%s): doesn't conform to: [A-Za-z0-9-_.]", modelType, id), nil
+	}
+
+	return "", nil
 }
 
 // ----------------------------
@@ -862,6 +993,34 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	}
 
 	return step, nil
+}
+
+// ----------------------------
+// --- WorkflowIDData
+
+// GetWorkflowIDFromListItemModel ...
+func GetWorkflowIDFromListItemModel(workflowListItem WorkflowListItemModel) (string, error) {
+	if len(workflowListItem) > 1 {
+		return "", errors.New("WorkflowListItem contains more than 1 key-value pair")
+	}
+	for key := range workflowListItem {
+		return key, nil
+	}
+	return "", errors.New("WorkflowListItem does not contain a key-value pair")
+}
+
+// ----------------------------
+// --- StageIDData
+
+// GetStageIDFromListItemModel ...
+func GetStageIDFromListItemModel(stageListItem StageListItemModel) (string, error) {
+	if len(stageListItem) > 1 {
+		return "", errors.New("StageListItem contains more than 1 key-value pair")
+	}
+	for key := range stageListItem {
+		return key, nil
+	}
+	return "", errors.New("StageListItem does not contain a key-value pair")
 }
 
 // ----------------------------
