@@ -29,9 +29,17 @@ type Writer struct {
 
 // New ...
 func New(secrets []string, target io.Writer) *Writer {
+	extendedSecrets := secrets
+	// adding transformed secrets with escaped newline characters to ensure that these are also obscured if found in logs
+	for _, secret := range secrets {
+		if strings.Contains(secret, "\n") {
+			extendedSecrets = append(extendedSecrets, strings.ReplaceAll(secret, "\n", `\n`))
+		}
+	}
+
 	return &Writer{
 		writer:  target,
-		secrets: secretsByteList(secrets),
+		secrets: secretsByteList(extendedSecrets),
 	}
 }
 

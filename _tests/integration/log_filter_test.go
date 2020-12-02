@@ -83,6 +83,17 @@ starts in a new line`)
 		require.NotContains(t, out, sshKeyLogChunk)
 	}
 
+	t.Log("escaped newlines")
+	{
+		cmd := command.New(binPath(), "run", "escaped_newline_test", "--config", configPth, "--inventory", secretsPth)
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+		require.Contains(t, out, `SECRET_WITH_NEWLINES_IN_THE_MIDDLE: [REDACTED]
+SECRET_ENDING_WITH_NEWLINE: [REDACTED]
+starts in a new line`)
+		require.NotContains(t, out, sshKeyLogChunk)
+	}
+
 	t.Log("disable filtering test")
 	{
 		secretsPth = "log_filter_disabled_test_secrets.yml"
