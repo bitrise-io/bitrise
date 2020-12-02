@@ -112,6 +112,16 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 }
 
 func TestTriggerMapItemModelString(t *testing.T) {
+	t.Log("triggering pipeline")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "master",
+			PipelineID: "pipeline-1",
+		}
+		require.Equal(t, "push_branch: master -> pipeline: pipeline-1", item.String(true))
+		require.Equal(t, "push_branch: master", item.String(false))
+	}
+
 	t.Log("push event")
 	{
 		item := TriggerMapItemModel{
@@ -313,6 +323,37 @@ workflows:
 		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
 	}
 
+	t.Log("pipeline not exists")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  pipeline: release
+
+pipelines:
+  primary:
+    stages:
+    - ci-stage: {}
+
+stages:
+  ci-stage:
+    workflows:
+    - ci: {}
+
+workflows:
+  ci:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		_, err = config.Validate()
+		require.EqualError(t, err, "pipeline (release) defined in trigger item (push_branch: /release -> pipeline: release), but does not exist")
+	}
+
 	t.Log("workflow not exists")
 	{
 		configStr := `
@@ -334,7 +375,16 @@ workflows:
 		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but does not exist")
 	}
 
-	t.Log("it validates deprecated trigger item")
+	t.Log("it validates deprecated trigger item with triggered pipeline")
+	{
+		item := TriggerMapItemModel{
+			Pattern:    "*",
+			PipelineID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates deprecated trigger item with triggered workflow")
 	{
 		item := TriggerMapItemModel{
 			Pattern:    "*",
@@ -343,11 +393,20 @@ workflows:
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it fails for invalid deprecated trigger item - missing workflow")
+	t.Log("it fails for invalid deprecated trigger item - pipeline & workflow both defined")
 	{
 		item := TriggerMapItemModel{
 			Pattern:    "*",
-			WorkflowID: "",
+			PipelineID: "pipeline-1",
+			WorkflowID: "workflow-1",
+		}
+		require.Error(t, item.Validate())
+	}
+
+	t.Log("it fails for invalid deprecated trigger item - missing pipeline & workflow")
+	{
+		item := TriggerMapItemModel{
+			Pattern: "*",
 		}
 		require.Error(t, item.Validate())
 	}
@@ -361,7 +420,16 @@ workflows:
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it validates code-push trigger item")
+	t.Log("it validates code-push trigger item with triggered pipeline")
+	{
+		item := TriggerMapItemModel{
+			PushBranch: "*",
+			PipelineID: "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates code-push trigger item with triggered workflow")
 	{
 		item := TriggerMapItemModel{
 			PushBranch: "*",
@@ -379,16 +447,24 @@ workflows:
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it fails for invalid code-push trigger item - missing workflow")
+	t.Log("it fails for invalid code-push trigger item - missing pipeline & workflow")
 	{
 		item := TriggerMapItemModel{
 			PushBranch: "*",
-			WorkflowID: "",
 		}
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it validates pull-request trigger item")
+	t.Log("it validates pull-request trigger item with triggered pipeline")
+	{
+		item := TriggerMapItemModel{
+			PullRequestSourceBranch: "feature/",
+			PipelineID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item with triggered workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestSourceBranch: "feature/",
@@ -397,7 +473,16 @@ workflows:
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it validates pull-request trigger item")
+	t.Log("it validates pull-request trigger item with triggered pipeline")
+	{
+		item := TriggerMapItemModel{
+			PullRequestTargetBranch: "master",
+			PipelineID:              "primary",
+		}
+		require.NoError(t, item.Validate())
+	}
+
+	t.Log("it validates pull-request trigger item with triggered workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestTargetBranch: "master",
@@ -406,21 +491,19 @@ workflows:
 		require.NoError(t, item.Validate())
 	}
 
-	t.Log("it fails for invalid pull-request trigger item - missing workflow")
+	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestTargetBranch: "*",
-			WorkflowID:              "",
 		}
 		require.Error(t, item.Validate())
 	}
 
-	t.Log("it fails for invalid pull-request trigger item - missing workflow")
+	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
 	{
 		item := TriggerMapItemModel{
 			PullRequestSourceBranch: "",
 			PullRequestTargetBranch: "",
-			WorkflowID:              "primary",
 		}
 		require.Error(t, item.Validate())
 	}
@@ -777,12 +860,59 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 
 // Config
 func TestValidateConfig(t *testing.T) {
-	t.Log("Valid bitriseData ID")
+	t.Log("Valid bitriseData")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+						StageListItemModel{"stage2": StageModel{}},
+					},
+				},
+				"pipeline2": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage3": StageModel{}},
+						StageListItemModel{"stage4": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+						WorkflowListItemModel{"workflow2": WorkflowModel{}},
+					},
+				},
+				"stage2": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow3": WorkflowModel{}},
+						WorkflowListItemModel{"workflow4": WorkflowModel{}},
+					},
+				},
+				"stage3": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow5": WorkflowModel{}},
+						WorkflowListItemModel{"workflow6": WorkflowModel{}},
+					},
+				},
+				"stage4": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow7": WorkflowModel{}},
+						WorkflowListItemModel{"workflow8": WorkflowModel{}},
+					},
+				},
+			},
 			Workflows: map[string]WorkflowModel{
-				"A-Za-z0-9-_.": WorkflowModel{},
+				"workflow1": WorkflowModel{},
+				"workflow2": WorkflowModel{},
+				"workflow3": WorkflowModel{},
+				"workflow4": WorkflowModel{},
+				"workflow5": WorkflowModel{},
+				"workflow6": WorkflowModel{},
+				"workflow7": WorkflowModel{},
+				"workflow8": WorkflowModel{},
 			},
 		}
 
@@ -791,7 +921,191 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData ID - empty")
+	t.Log("Invalid bitriseData - pipeline ID empty")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"": PipelineModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "invalid pipeline ID (): empty")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - pipeline ID contains: `/`")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pi/id": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
+	}
+
+	t.Log("Invalid bitriseData - pipeline does not have any stages")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{},
+				},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - pipeline does not have stages key defined")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - pipeline stage does not exist")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage2": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1), but does not exist")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - stage ID empty")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"": StageModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "invalid stage ID (): empty")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - stage ID contains: `/`")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"st/id": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		warnings, err := bitriseData.Validate()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(warnings))
+		require.Equal(t, "invalid stage ID (st/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
+	}
+
+	t.Log("Invalid bitriseData - stage does not have any workflows")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{},
+				},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "stage (stage1) should have at least 1 workflow")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - stage does not have workflows key defined")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"stage1": StageModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "stage (stage1) should have at least 1 workflow")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - stage workflow does not exist")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"workflow2": WorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "workflow (workflow2) defined in stage (stage1), but does not exist")
+		require.Equal(t, 0, len(warnings))
+	}
+
+	t.Log("Invalid bitriseData - workflow ID empty")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -804,7 +1118,7 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
-	t.Log("Invalid bitriseData ID - contains: `/`")
+	t.Log("Invalid bitriseData - workflow ID contains: `/`")
 	{
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
@@ -812,70 +1126,10 @@ func TestValidateConfig(t *testing.T) {
 				"wf/id": WorkflowModel{},
 			},
 		}
-
 		warnings, err := bitriseData.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 		require.Equal(t, "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: `:`")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wf:id": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (wf:id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wf id": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID (wf id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				" wfid": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
-		require.Equal(t, "invalid workflow ID ( wfid): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData ID - contains: ` `")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Workflows: map[string]WorkflowModel{
-				"wfid ": WorkflowModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
 	}
 }
 
@@ -1121,6 +1375,84 @@ func TestGetInputByKey(t *testing.T) {
 }
 
 // ----------------------------
+// --- WorkflowIDData
+
+func TestGetWorkflowIDFromListItemModel(t *testing.T) {
+	workflowData := WorkflowModel{}
+
+	t.Log("valid workflowlist item")
+	{
+		workflowListItem := WorkflowListItemModel{
+			"workflow1": workflowData,
+		}
+
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		require.NoError(t, err)
+		require.Equal(t, "workflow1", id)
+	}
+
+	t.Log("invalid workflowlist item - more than 1 workflow")
+	{
+		workflowListItem := WorkflowListItemModel{
+			"workflow1": workflowData,
+			"workflow2": workflowData,
+		}
+
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+
+	t.Log("invalid workflowlist item - no workflow")
+	{
+		workflowListItem := WorkflowListItemModel{}
+
+		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+}
+
+// ----------------------------
+// --- StageIDData
+
+func TestGetStageIDFromListItemModel(t *testing.T) {
+	stageData := StageModel{}
+
+	t.Log("valid stagelist item")
+	{
+		stageListItem := StageListItemModel{
+			"stage1": stageData,
+		}
+
+		id, err := GetStageIDFromListItemModel(stageListItem)
+		require.NoError(t, err)
+		require.Equal(t, "stage1", id)
+	}
+
+	t.Log("invalid stagelist item - more than 1 stage")
+	{
+		stageListItem := StageListItemModel{
+			"stage1": stageData,
+			"stage2": stageData,
+		}
+
+		id, err := GetStageIDFromListItemModel(stageListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+
+	t.Log("invalid stagelist item - no stage")
+	{
+		stageListItem := StageListItemModel{}
+
+		id, err := GetStageIDFromListItemModel(stageListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+}
+
+// ----------------------------
 // --- StepIDData
 
 func Test_StepIDData_IsUniqueResourceID(t *testing.T) {
@@ -1184,6 +1516,15 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 			"step2": stepData,
 		}
+
+		id, _, err := GetStepIDStepDataPair(stepListItem)
+		require.Error(t, err)
+		require.Equal(t, "", id)
+	}
+
+	t.Log("invalid steplist item - no step")
+	{
+		stepListItem := StepListItemModel{}
 
 		id, _, err := GetStepIDStepDataPair(stepListItem)
 		require.Error(t, err)

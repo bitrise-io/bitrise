@@ -20,11 +20,27 @@ const (
 	StepRunStatusCodeSkippedWithRunIf = 4
 
 	// Version ...
-	Version = "10"
+	Version = "11"
 )
 
 // StepListItemModel ...
 type StepListItemModel map[string]stepmanModels.StepModel
+
+// PipelineModel ...
+type PipelineModel struct {
+	Stages []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
+}
+
+// StageListItemModel ...
+type StageListItemModel map[string]StageModel
+
+// StageModel ...
+type StageModel struct {
+	Workflows []WorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+}
+
+// WorkflowListItemModel ...
+type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
@@ -66,6 +82,7 @@ type TriggerMapItemModel struct {
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
 	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
 	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// deprecated
@@ -89,6 +106,8 @@ type BitriseDataModel struct {
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
+	Pipelines  map[string]PipelineModel `json:"pipelines,omitempty" yaml:"pipelines,omitempty"`
+	Stages     map[string]StageModel    `json:"stages,omitempty" yaml:"stages,omitempty"`
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 

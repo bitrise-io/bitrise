@@ -58,28 +58,28 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 	return params
 }
 
-func getWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, error) {
+func getPipelineAndWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, string, error) {
 	for _, item := range triggerMap {
 		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if match {
-			return item.WorkflowID, nil
+			return item.PipelineID, item.WorkflowID, nil
 		}
 	}
 
-	return "", fmt.Errorf("no matching workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
+	return "", "", fmt.Errorf("no matching pipeline & workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
 }
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
 // and returns the triggered workflow id
-func getWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, error) {
+func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, string, error) {
 	if params.TriggerPattern != "" {
 		params = migratePatternToParams(params, isPullRequestMode)
 	}
 
-	return getWorkflowIDByParams(triggerMap, params)
+	return getPipelineAndWorkflowIDByParams(triggerMap, params)
 }
 
 // --------------------
@@ -168,13 +168,17 @@ func triggerCheck(c *cli.Context) error {
 		registerFatal(fmt.Sprintf("Failed to check  PR mode, err: %s", err), warnings, triggerParams.Format)
 	}
 
-	workflowToRunID, err := getWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
+	pipelineToRunID, workflowToRunID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
 	if err != nil {
 		registerFatal(err.Error(), warnings, triggerParams.Format)
 	}
 
-	triggerModel := map[string]string{
-		"workflow": workflowToRunID,
+	triggerModel := map[string]string{}
+	if pipelineToRunID != "" {
+		triggerModel["pipeline"] = pipelineToRunID
+	}
+	if workflowToRunID != "" {
+		triggerModel["workflow"] = workflowToRunID
 	}
 
 	if triggerParams.TriggerPattern != "" {
@@ -198,7 +202,7 @@ func triggerCheck(c *cli.Context) error {
 	case output.FormatRaw:
 		msg := ""
 		for key, value := range triggerModel {
-			if key == "workflow" {
+			if key == "pipeline" || key == "workflow" {
 				msg = msg + fmt.Sprintf("-> %s", colorstring.Blue(value))
 			} else {
 				msg = fmt.Sprintf("%s: %s ", key, value) + msg

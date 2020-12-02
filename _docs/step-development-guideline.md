@@ -138,6 +138,22 @@ You should postfix the output ID with `_LIST` (e.g. `OUTPUT_PATH_LIST`), and pro
 
 You should use [semantic versioning](http://semver.org/) (MAJOR.MINOR.PATCH) for your step. For example: `1.2.3`.
 
+A workflow may be configured to lock a step on the latest and greatest, latest major, latest minor or a specific release.
+
+Locking on the latest releases means once the step has a new version released, the user's workflow shall be updated to
+use that. this includes automatic update to a new major version, potentially breaking the workflow.
+
+Locking on the latest major means the user will automatically receive new minor and patch versions, but will remain
+locked in the provided major version.
+
+Locking on the latest minor version means the user will automatically receive patch version updates for the given minor
+version only.
+
+Locking on a specific version will cause the step to be fixed, meaning there will be no automatic updates. Users will
+have to manually set a newer version, if they wish.
+
+As a consequence of the automatic update facilities, **it is critically important, that step developers do proper semantic
+versioning of their releases so that they do not**.
 
 ## Step Grouping convention
 

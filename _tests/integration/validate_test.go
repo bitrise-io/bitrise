@@ -2,9 +2,9 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
-	"os"
 	"time"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -18,6 +18,22 @@ const invalidSecret = `- TEST: test`
 
 const emptyBitriseYML = ""
 const spaceBitriseYML = ` `
+const invalidPipelineIDBitriseYML = `format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  invalid:id:
+    stages:
+    - stage1: {}
+
+stages:
+  stage1:
+    workflows:
+    - workflow1: {}
+
+workflows:
+  workflow1:
+`
 const invalidWorkflowIDBitriseYML = `format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
@@ -44,7 +60,7 @@ func Test_ValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
@@ -57,7 +73,24 @@ func Test_ValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
+	}
+
+	t.Log("valid - invalid pipeline id")
+	{
+		configPth := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(configPth, invalidPipelineIDBitriseYML))
+
+		var out string
+		var err error
+		elapsed := withRunningTimeCheck(func() {
+			cmd := command.New(binPath(), "validate", "-c", configPth)
+			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+		}, runtimeLimit)
+		require.NoError(t, err)
+		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid pipeline ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
+		require.Equal(t, expected, out)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("valid - invalid workflow id")
@@ -74,7 +107,7 @@ func Test_ValidateTest(t *testing.T) {
 		require.NoError(t, err)
 		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - empty bitrise.yml")
@@ -91,7 +124,7 @@ func Test_ValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 }
 
@@ -112,7 +145,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}}}", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("valid - warning test - `-p` flag is deprecated")
@@ -125,7 +158,24 @@ func Test_ValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}},\"warnings\":[\"'path' key is deprecated, use 'config' instead!\"]}", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
+	}
+
+	t.Log("valid - invalid pipeline id")
+	{
+		configPth := filepath.Join(tmpDir, "bitrise.yml")
+		require.NoError(t, fileutil.WriteStringToFile(configPth, invalidPipelineIDBitriseYML))
+
+		var out string
+		var err error
+		elapsed := withRunningTimeCheck(func() {
+			cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
+			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+		}, runtimeLimit)
+		require.NoError(t, err)
+		expected := "{\"data\":{\"config\":{\"is_valid\":true,\"warnings\":[\"invalid pipeline ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]\"]}}}"
+		require.Equal(t, expected, out)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("valid - invalid workflow id")
@@ -142,7 +192,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.NoError(t, err)
 		expected := "{\"data\":{\"config\":{\"is_valid\":true,\"warnings\":[\"invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]\"]}}}"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - empty bitrise.yml")
@@ -159,7 +209,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - only one space in bitrise.yml")
@@ -176,7 +226,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 }
 
@@ -197,7 +247,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "Secret is valid: \x1b[32;1mtrue\x1b[0m", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - empty secret")
@@ -214,7 +264,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mempty config\x1b[0m"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - invalid secret model")
@@ -231,7 +281,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid inventory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\x1b[0m"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 }
 
@@ -253,7 +303,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - empty config")
@@ -271,14 +321,14 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
 	t.Log("invalid - invalid secret model")
 	{
 		secretsPth := filepath.Join(tmpDir, "secrets.yml")
 		require.NoError(t, fileutil.WriteStringToFile(secretsPth, invalidSecret))
-		
+
 		var out string
 		var err error
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
@@ -288,6 +338,6 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed - runtimeLimit)
+		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 }

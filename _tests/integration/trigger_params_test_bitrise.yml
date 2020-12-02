@@ -16,6 +16,27 @@ trigger_map:
   workflow: pull_request
 - tag: tag
   workflow: tag
+- pattern: deprecated_pipeline_trigger
+  is_pull_request_allowed: false
+  pipeline: deprecated_pipeline
+- push_branch: pipeline_trigger
+  pipeline: code_push_pipeline
+
+pipelines:
+  deprecated_pipeline:
+    stages:
+    - deprecated_stage: {}
+  code_push_pipeline:
+    stages:
+    - code_push_stage: {}
+
+stages:
+  deprecated_stage:
+    workflows:
+    - deprecated_pr_allowed: {}
+  code_push_stage:
+    workflows:
+    - code-push: {}
 
 workflows:
   # PR tests

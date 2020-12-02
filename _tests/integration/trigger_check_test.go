@@ -50,6 +50,14 @@ func Test_TriggerCheck(t *testing.T) {
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pattern":"fall_back","workflow":"fall_back"}`, out)
 	}
+
+	t.Log("Pipeline targeted - Not PR mode - is_pull_request_allowed : false")
+	{
+		cmd := command.New(binPath(), "trigger-check", "only_code_push_pipeline", "--config", configPth, "--format", "json")
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+		require.Equal(t, `{"pattern":"only_code_push_pipeline","pipeline":"only_code_push_pipeline"}`, out, out)
+	}
 }
 
 func Test_InvalidTriggerCheck(t *testing.T) {
