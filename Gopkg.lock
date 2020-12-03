@@ -140,31 +140,40 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c381e2867d447cca3e74dbfb0c8ed371a4583c694b35838c5c642a2b79480fc6"
+  digest = "1:c9d0c7346c55bc13efdb3dbf13938e909d22a7a7bf115af69a79e25553513bd0"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "9e8e0b390897c84cad53ebe9ed2d1d331a5394d9"
+  revision = "c8d3bf9c5392d5f66747f112cd55055d7a530b19"
 
 [[projects]]
   branch = "master"
-  digest = "1:fdd727a34d34afc6babb44f3e499f1b26574c96e05984e106986e2a3f1055c37"
+  digest = "1:142b096e9ae7f42814b9109f5f3a56693be821e2134234baccb1d4442172e171"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
+    "plan9",
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "da207088b7d1961c44ec61e9dc15a73745693ab6"
+  revision = "69691e467435176bd304e7a1897a5b21b5719b0c"
 
 [[projects]]
-  digest = "1:d7f1bd887dc650737a421b872ca883059580e9f8314d601f88025df4f4802dce"
+  branch = "master"
+  digest = "1:b1905e86e8295a469ba82c378784ee15a7ac5edd2a4ff51be1c032a09d19d85d"
+  name = "golang.org/x/term"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7de9c90e9dd184706b838f536a1cbf40a296ddb7"
+
+[[projects]]
+  digest = "1:5054a1f394226de9e6ddc47b0ba77e35092a4112f4a1cd9cb94aba1f5bdc3ec6"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
-  version = "v2.3.0"
+  revision = "7649d4548cb53a614db133b2a8ac1f31859dda8c"
+  version = "v2.4.0"
 
 [[projects]]
   branch = "v3"
