@@ -194,6 +194,9 @@ func TestSecrets(t *testing.T) {
 		[][]byte{[]byte("c\n"), []byte("b")},
 		[][]byte{[]byte("x\n"), []byte("c\n"), []byte("b\n"), []byte("d")},
 		[][]byte{[]byte("f")},
+		[][]byte{[]byte(`a\nb\nc`)},
+		[][]byte{[]byte(`c\nb`)},
+		[][]byte{[]byte(`x\nc\nb\nd`)},
 	}, out.secrets)
 }
 

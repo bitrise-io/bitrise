@@ -36,3 +36,14 @@ workflows:
             set -e
             printf "SECRET_ENDING_WITH_NEWLINE: %s" "$SECRET_ENDING_WITH_NEWLINE"
             echo "starts in a new line"
+
+  escaped_newline_test:
+    steps:    
+    - script:
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -e
+            echo 'SECRET_WITH_NEWLINES_IN_THE_MIDDLE: empty line after this\n\nand before this'
+            echo 'SECRET_ENDING_WITH_NEWLINE: ending with newline\n'
+            echo "starts in a new line"
