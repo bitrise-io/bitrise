@@ -1569,7 +1569,7 @@ route_map:
 
 			// When
 			var err error
-			output := captureOutput(func() {
+			output := captureOutput(t, func() {
 				_, err = runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
 			})
 
@@ -1609,7 +1609,8 @@ func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) str
   echo "%s-called"
   `, pluginName)
 	write(t, pluginSHContent, pluginScriptPth)
-	os.Chmod(pluginScriptPth, 0777)
+	err = os.Chmod(pluginScriptPth, 0777)
+	require.NoError(t, err)
 
 	// Create bitrise-plugin.yml
 	pluginYMLContent := strings.ReplaceAll(pluginContent, "{executable_url}", "file://"+pluginScriptPth)
@@ -1624,15 +1625,19 @@ func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) str
 	return bitriseDir
 }
 
-func captureOutput(function func()) string {
+func captureOutput(t *testing.T, function func()) string {
 	old := os.Stdout // keep backup of the real stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+
 	os.Stdout = w
 
 	function()
 
-	w.Close()
-	out, _ := ioutil.ReadAll(r)
+	err = w.Close()
+	require.NoError(t, err)
+	out, err := ioutil.ReadAll(r)
+	require.NoError(t, err)
 	os.Stdout = old
 
 	return string(out)
