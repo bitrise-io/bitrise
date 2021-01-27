@@ -184,3 +184,9 @@ func InitPaths() error {
 
 	return nil
 }
+
+// ForceInitPaths ...
+func ForceInitPaths(bitriseDir string) {
+	pluginsDir = filepath.Join(bitriseDir, pluginsDirName)
+	pluginsRoutingPth = filepath.Join(pluginsDir, pluginSpecFileName)
+}

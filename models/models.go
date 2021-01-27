@@ -123,6 +123,12 @@ type StepIDData struct {
 	Version string
 }
 
+// BuildRunStartModel ...
+type BuildRunStartModel struct {
+	ProjectType string    `json:"project_type" yaml:"project_type"`
+	StartTime   time.Time `json:"start_time" yaml:"start_time"`
+}
+
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	ProjectType          string                `json:"project_type" yaml:"project_type"`
