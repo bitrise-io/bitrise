@@ -2,11 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"index/suffixarray"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -1533,10 +1531,10 @@ route_map:
 `
 
 	type testCase struct {
-		name                 string
-		pluginTrigger        string
-		specTrigger          string
-		expectedTriggerCount int
+		name                    string
+		pluginTrigger           string
+		specTrigger             string
+		expectedTriggeredEvents []string
 	}
 
 	testCases := []testCase{
@@ -1544,18 +1542,26 @@ route_map:
 			"GivenPluginRegisteredForTrigger_ThenPluginTriggeredOnce",
 			"trigger: DidFinishRun",
 			"trigger: DidFinishRun",
-			1,
+			[]string{"-event DidFinishRun"},
 		},
 		{
 			"GivenPluginRegisteredForSingleTriggers_ThenPluginTriggeredOnce",
 			"triggers:\n  - DidFinishRun",
 			"triggers:\n      - DidFinishRun",
-			1},
+			[]string{"-event DidFinishRun"},
+		},
 		{
 			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
 			"triggers:\n  - WillStartRun\n  - DidFinishRun",
 			"triggers:\n      - WillStartRun\n      - DidFinishRun",
-			2},
+			[]string{"-event WillStartRun", "-event DidFinishRun"},
+		},
+		{
+			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
+			"trigger: WillStartRun\ntriggers:\n  - DidFinishRun",
+			"trigger: WillStartRun\n    triggers:\n      - DidFinishRun",
+			[]string{"-event WillStartRun", "-event DidFinishRun"},
+		},
 	}
 
 	for _, test := range testCases {
@@ -1575,7 +1581,9 @@ route_map:
 
 			// Then
 			require.NoError(t, err)
-			assert.Equal(t, test.expectedTriggerCount, occurances("testplugin-called", output))
+			for _, expectedEvent := range test.expectedTriggeredEvents {
+				assert.True(t, strings.Contains(output, expectedEvent))
+			}
 		}
 	}
 }
@@ -1606,6 +1614,7 @@ func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) str
 	pluginScriptPth := filepath.Join(pluginSrcDir, "bitrise-plugin.sh")
 	pluginSHContent := fmt.Sprintf(`
   #!/bin/bash
+  echo "$1 $2"
   echo "%s-called"
   `, pluginName)
 	write(t, pluginSHContent, pluginScriptPth)
@@ -1651,10 +1660,4 @@ func write(t *testing.T, content, toPth string) {
 		require.NoError(t, os.MkdirAll(toDir, 0700))
 	}
 	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
-}
-
-func occurances(subString string, inString string) int {
-	regexp := regexp.MustCompile(subString)
-	index := suffixarray.New([]byte(inString))
-	return len(index.FindAllIndex(regexp, -1))
 }
