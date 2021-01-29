@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	eventArgument = "event"
+	eventArgument = "event:"
 )
 
 //=======================================
@@ -67,8 +67,7 @@ func RunPluginByEvent(eventName TriggerEventName, plugin Plugin, pluginConfig Pl
 	pluginConfig[PluginConfigPluginModeKey] = string(TriggerMode)
 
 	args := []string{
-		"-" + eventArgument,
-		string(eventName),
+		eventArgument + string(eventName),
 	}
 
 	return runPlugin(plugin, args, pluginConfig, input)

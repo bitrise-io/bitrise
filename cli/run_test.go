@@ -1542,25 +1542,25 @@ route_map:
 			"GivenPluginRegisteredForTrigger_ThenPluginTriggeredOnce",
 			"trigger: DidFinishRun",
 			"trigger: DidFinishRun",
-			[]string{"-event DidFinishRun"},
+			[]string{"event:DidFinishRun"},
 		},
 		{
 			"GivenPluginRegisteredForSingleTriggers_ThenPluginTriggeredOnce",
 			"triggers:\n  - DidFinishRun",
 			"triggers:\n      - DidFinishRun",
-			[]string{"-event DidFinishRun"},
+			[]string{"event:DidFinishRun"},
 		},
 		{
 			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
 			"triggers:\n  - WillStartRun\n  - DidFinishRun",
 			"triggers:\n      - WillStartRun\n      - DidFinishRun",
-			[]string{"-event WillStartRun", "-event DidFinishRun"},
+			[]string{"event:WillStartRun", "event:DidFinishRun"},
 		},
 		{
 			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
 			"trigger: WillStartRun\ntriggers:\n  - DidFinishRun",
 			"trigger: WillStartRun\n    triggers:\n      - DidFinishRun",
-			[]string{"-event WillStartRun", "-event DidFinishRun"},
+			[]string{"event:WillStartRun", "event:DidFinishRun"},
 		},
 	}
 
@@ -1614,7 +1614,7 @@ func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) str
 	pluginScriptPth := filepath.Join(pluginSrcDir, "bitrise-plugin.sh")
 	pluginSHContent := fmt.Sprintf(`
   #!/bin/bash
-  echo "$1 $2"
+  echo "$1"
   echo "%s-called"
   `, pluginName)
 	write(t, pluginSHContent, pluginScriptPth)
