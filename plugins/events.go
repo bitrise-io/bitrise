@@ -38,7 +38,7 @@ func TriggerEvent(name TriggerEventName, payload interface{}) error {
 
 	// Run plugins
 	for _, plugin := range plugins {
-		if err := RunPluginByEvent(name, plugin, pluginConfig, payloadBytes); err != nil {
+		if err := RunPluginByEvent(plugin, pluginConfig, payloadBytes); err != nil {
 			return err
 		}
 	}

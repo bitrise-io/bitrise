@@ -15,10 +15,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-const (
-	eventArgument = "event:"
-)
-
 //=======================================
 // Util
 //=======================================
@@ -63,14 +59,10 @@ func strip(str string) string {
 //=======================================
 
 // RunPluginByEvent ...
-func RunPluginByEvent(eventName TriggerEventName, plugin Plugin, pluginConfig PluginConfig, input []byte) error {
+func RunPluginByEvent(plugin Plugin, pluginConfig PluginConfig, input []byte) error {
 	pluginConfig[PluginConfigPluginModeKey] = string(TriggerMode)
 
-	args := []string{
-		eventArgument + string(eventName),
-	}
-
-	return runPlugin(plugin, args, pluginConfig, input)
+	return runPlugin(plugin, []string{}, pluginConfig, input)
 }
 
 // RunPluginByCommand ...

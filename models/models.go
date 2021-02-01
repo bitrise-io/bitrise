@@ -125,12 +125,14 @@ type StepIDData struct {
 
 // BuildRunStartModel ...
 type BuildRunStartModel struct {
+	EventName   string    `json:"event_name" yaml:"event_name"`
 	ProjectType string    `json:"project_type" yaml:"project_type"`
 	StartTime   time.Time `json:"start_time" yaml:"start_time"`
 }
 
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
+	EventName            string                `json:"event_name" yaml:"event_name"`
 	ProjectType          string                `json:"project_type" yaml:"project_type"`
 	StartTime            time.Time             `json:"start_time" yaml:"start_time"`
 	StepmanUpdates       map[string]int        `json:"stepman_updates" yaml:"stepman_updates"`
