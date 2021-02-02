@@ -35,7 +35,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d4ee9791fe9cc2f9da08be39ce17ef80e37e8a8e8ff4bd7797824c6ade70bd71"
+  digest = "1:6d6233799fbcde865cdc112e9bfd6eec44c846c40b5a60d82615bb20133ef680"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -56,7 +56,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "6cc2aa4d248adef509996ac484bffd38856ddf80"
+  revision = "859032e9adf02532a86a362ae5d1cfbc9292fcaf"
 
 [[projects]]
   branch = "master"
@@ -121,15 +121,15 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:729f65378817684798e53068862397c12daffa0757abbe073f6620a560fc6fb5"
+  digest = "1:5c7b4a9fefe5b7b160d2cf0ec8457de81db92038c45c88d7d59493568308cc5d"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
     "require",
   ]
   pruneopts = "UT"
-  revision = "f654a9112bbeac49ca2cd45bfbe11533c4666cf8"
-  version = "v1.6.1"
+  revision = "acba37e5db06f0093b465a7d47822bf13644b66c"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:ca4df663ad76879ad38dbd736493679cbb1aa596c6d479fd9fc5e959e5ceb4fb"
@@ -144,11 +144,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "c8d3bf9c5392d5f66747f112cd55055d7a530b19"
+  revision = "eec23a3978adcfd26c29f4153eaa3e3d9b2cc53a"
 
 [[projects]]
   branch = "master"
-  digest = "1:142b096e9ae7f42814b9109f5f3a56693be821e2134234baccb1d4442172e171"
+  digest = "1:ac04e573816a5de51145f9cd25cd5f1770568e931032d7dc7f7704d183844b0f"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -157,15 +157,15 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "69691e467435176bd304e7a1897a5b21b5719b0c"
+  revision = "22da62e12c0cd9c1da93581e1113ca4d82a5be14"
 
 [[projects]]
   branch = "master"
-  digest = "1:b1905e86e8295a469ba82c378784ee15a7ac5edd2a4ff51be1c032a09d19d85d"
+  digest = "1:aff3723b8ec6c06bb52b62cf492783ae041e137534714289acb6625c031d1b24"
   name = "golang.org/x/term"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7de9c90e9dd184706b838f536a1cbf40a296ddb7"
+  revision = "2321bbc49cbf8303ea9834c419750e793e31be73"
 
 [[projects]]
   digest = "1:5054a1f394226de9e6ddc47b0ba77e35092a4112f4a1cd9cb94aba1f5bdc3ec6"
@@ -177,11 +177,11 @@
 
 [[projects]]
   branch = "v3"
-  digest = "1:229cb0f6192914f518cc1241ede6d6f1f458b31debfa18bf3a5c9e4f7b01e24b"
+  digest = "1:107a619d3c3bcca214b2b7db810a5dffcd74b5d0262813cb2986e063fae2722f"
   name = "gopkg.in/yaml.v3"
   packages = ["."]
   pruneopts = "UT"
-  revision = "eeeca48fe7764f320e4870d231902bf9c1be2c08"
+  revision = "496545a6307b2a7d7a710fd516e5e16e8ab62dbc"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -213,6 +213,7 @@
     "github.com/bitrise-io/stepman/stepman",
     "github.com/hashicorp/go-version",
     "github.com/ryanuber/go-glob",
+    "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/urfave/cli",
     "golang.org/x/sys/unix",
