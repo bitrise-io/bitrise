@@ -100,9 +100,8 @@ func installedWithBrew() (bool, error) {
 		return false, nil
 	}
 
-	out, err := exec.Command("brew", "list").CombinedOutput()
+	out, err := exec.Command("brew", "list", "--formula").Output()
 	if err != nil {
-		log.Errorf("brew list failed, %s", string(out))
 		return false, err
 	}
 	formulas := strings.Split(string(out), "\n")
