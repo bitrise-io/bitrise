@@ -2,14 +2,11 @@ package command
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-
-	"github.com/bitrise-io/go-utils/errorutil"
 )
 
 // ----------
@@ -139,18 +136,10 @@ func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 }
 
 // RunCmdAndReturnExitCode ...
-func RunCmdAndReturnExitCode(cmd *exec.Cmd) (int, error) {
-	err := cmd.Run()
-	if err != nil {
-		exitCode, castErr := errorutil.CmdExitCodeFromError(err)
-		if castErr != nil {
-			return 1, fmt.Errorf("failed get exit code from error: %s, error: %s", err, castErr)
-		}
-
-		return exitCode, err
-	}
-
-	return 0, nil
+func RunCmdAndReturnExitCode(cmd *exec.Cmd) (exitCode int, err error) {
+	err = cmd.Run()
+	exitCode = cmd.ProcessState.ExitCode()
+	return
 }
 
 // RunCmdAndReturnTrimmedOutput ...
