@@ -1091,6 +1091,16 @@ func runWorkflowWithConfiguration(
 		}
 	}
 
+	// Trigger WillStartRun
+	buildRunStartModel := models.BuildRunStartModel{
+		EventName:   string(plugins.WillStartRun),
+		StartTime:   startTime,
+		ProjectType: bitriseConfig.ProjectType,
+	}
+	if err := plugins.TriggerEvent(plugins.WillStartRun, buildRunStartModel); err != nil {
+		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
+	}
+
 	//
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      startTime,
@@ -1111,6 +1121,7 @@ func runWorkflowWithConfiguration(
 	bitrise.PrintSummary(buildRunResults)
 
 	// Trigger WorkflowRunDidFinish
+	buildRunResults.EventName = string(plugins.DidFinishRun)
 	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
 		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
 	}

@@ -8,29 +8,18 @@ import (
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func write(t *testing.T, content, toPth string) {
-	toDir := filepath.Dir(toPth)
-	exist, err := pathutil.IsDirExists(toDir)
-	require.NoError(t, err)
-	if !exist {
-		require.NoError(t, os.MkdirAll(toDir, 0700))
-	}
-	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
-}
-
 func TestParseAndValidatePluginFromYML(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
-	require.NoError(t, err)
-
 	t.Log("simple plugin - with executables")
 	{
+		// Given
 		pluginStr := `name: step
 description: |-
   Manage Bitrise CLI steps
-trigger:
+trigger: DidFinishRun
 executable:
   osx: bin_url
   linux: bin_url
@@ -39,27 +28,79 @@ requirements:
   min_version: 1.3.0
   max_version: ""
 `
+		pth := givenPluginYMLWithContent(pluginStr, t)
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
 		require.NoError(t, err)
 
+		// Then
 		require.NoError(t, validatePlugin(plugin, pth))
 
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
-		require.Equal(t, 1, len(plugin.Requirements))
+		require.Equal(t, "DidFinishRun", plugin.TriggerEvent)
 
+		assert.Equal(t, 1, len(plugin.Requirements))
 		requirement := plugin.Requirements[0]
 		require.Equal(t, "bitrise", requirement.Tool)
 		require.Equal(t, "1.3.0", requirement.MinVersion)
 		require.Equal(t, "", requirement.MaxVersion)
 	}
 
+	t.Log("simple plugin - no trigger, triggers present")
+	{
+		// Given
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+triggers: 
+  - WillStartRun
+  - DidFinishRun
+executable:
+  osx: bin_url
+  linux: bin_url
+`
+		pth := givenPluginYMLWithContent(pluginStr, t)
+
+		// When
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+
+		// Then
+		require.Equal(t, "WillStartRun", plugin.TriggerEvents[0])
+		require.Equal(t, "DidFinishRun", plugin.TriggerEvents[1])
+	}
+
+	t.Log("simple plugin - both trigger and triggers present")
+	{
+		// Given
+		pluginStr := `name: step
+description: |-
+  Manage Bitrise CLI steps
+trigger: DidMagic
+triggers: 
+  - WillStartRun
+  - DidFinishRun
+executable:
+  osx: bin_url
+  linux: bin_url
+`
+		pth := givenPluginYMLWithContent(pluginStr, t)
+
+		// When
+		plugin, err := ParsePluginFromYML(pth)
+		require.NoError(t, err)
+
+		// Then
+		require.Equal(t, "DidMagic", plugin.TriggerEvent)
+		require.Equal(t, "WillStartRun", plugin.TriggerEvents[0])
+		require.Equal(t, "DidFinishRun", plugin.TriggerEvents[1])
+	}
+
 	t.Log("invalid plugin - no name")
 	{
+		// Given
 		pluginStr := `name: 
 description: |-
   Manage Bitrise CLI steps
@@ -72,17 +113,19 @@ requirements:
   min_version: 1.3.0
   max_version: ""
 `
+		pth := givenPluginYMLWithContent(pluginStr, t)
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
+
+		// Then
 		require.NoError(t, err)
 		require.EqualError(t, validatePlugin(plugin, pth), "missing name")
 	}
 
 	t.Log("invalid plugin - no linux executable")
 	{
+		// Given
 		pluginStr := `name: step
 description: |-
   Manage Bitrise CLI steps
@@ -95,17 +138,19 @@ requirements:
   min_version: 1.3.0
   max_version: ""
 `
+		pth := givenPluginYMLWithContent(pluginStr, t)
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
+
+		// Then
 		require.NoError(t, err)
 		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no osx executable")
 	{
+		// Given
 		pluginStr := `name: step
 description: |-
   Manage Bitrise CLI steps
@@ -118,17 +163,19 @@ requirements:
   min_version: 1.3.0
   max_version: ""
 `
+		pth := givenPluginYMLWithContent(pluginStr, t)
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
+
+		// Then
 		require.NoError(t, err)
 		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no executables, no bitrise-plugin.sh")
 	{
+		// Given
 		pluginStr := `name: step
 description: |-
   Manage Bitrise CLI steps
@@ -138,13 +185,13 @@ requirements:
   min_version: 1.3.0
   max_version: ""
 `
+		pth := givenPluginYMLWithContent(pluginStr, t)
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
-		require.NoError(t, err)
 
+		// Then
+		require.NoError(t, err)
 		err = validatePlugin(plugin, pth)
 		require.Error(t, err)
 		require.Equal(t, true, strings.Contains(err.Error(), "no executable defined, nor bitrise-plugin.sh exist at:"))
@@ -152,6 +199,7 @@ requirements:
 
 	t.Log("simple plugin - with bitrise-plugin.sh")
 	{
+		// Given
 		pluginStr := `name: step
 description: |-
   Manage Bitrise CLI steps
@@ -162,12 +210,13 @@ requirements:
   max_version: ""
 `
 
-		pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
-		write(t, pluginStr, pth)
+		pth := givenPluginYMLWithContent(pluginStr, t)
+		write(t, "test", filepath.Join(filepath.Dir(pth), "bitrise-plugin.sh"))
 
-		write(t, "test", filepath.Join(tmpDir, "bitrise-plugin.sh"))
-
+		// When
 		plugin, err := ParsePluginFromYML(pth)
+
+		// Then
 		require.NoError(t, err)
 
 		require.NoError(t, validatePlugin(plugin, pth))
@@ -365,4 +414,24 @@ func DeleteRoute(t *testing.T) {
 		route, found = routing.RouteMap["test2"]
 		require.Equal(t, false, found)
 	}
+}
+
+func givenPluginYMLWithContent(content string, t *testing.T) string {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
+	require.NoError(t, err)
+
+	pth := filepath.Join(tmpDir, "bitrise-plugin.yml")
+	write(t, content, pth)
+
+	return pth
+}
+
+func write(t *testing.T, content, toPth string) {
+	toDir := filepath.Dir(toPth)
+	exist, err := pathutil.IsDirExists(toDir)
+	require.NoError(t, err)
+	if !exist {
+		require.NoError(t, os.MkdirAll(toDir, 0700))
+	}
+	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
 }

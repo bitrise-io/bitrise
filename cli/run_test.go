@@ -2,16 +2,21 @@ package cli
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/plugins"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1487,4 +1492,174 @@ workflows:
 	last, err := lastWorkflowIDInConfig("target", config)
 	require.NoError(t, err)
 	require.Equal(t, "after2", last)
+}
+
+func TestPluginTriggered(t *testing.T) {
+	bitriseYML := `
+  format_version: 1.3.0
+  default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+  
+  workflows:
+    test:
+      steps:
+      - script:
+          inputs:
+          - content: |
+              #!/bin/bash
+              echo "test"
+  `
+
+	pluginYMFormat := `
+name: testplugin
+description: |-
+  Manage Bitrise CLI steps
+%s
+executable:
+  osx: {executable_url}
+  linux: {executable_url}
+`
+
+	pluginSpecYMLFormat := `
+route_map:
+  testplugin:
+    name: testplugin
+    source: https://whatever.com
+    version: 1.3.0
+    commit_hash: ""
+    %s
+    latest_available_version: ""
+`
+
+	type testCase struct {
+		name                    string
+		pluginTrigger           string
+		specTrigger             string
+		expectedTriggeredEvents []string
+	}
+
+	testCases := []testCase{
+		{
+			"GivenPluginRegisteredForTrigger_ThenPluginTriggeredOnce",
+			"trigger: DidFinishRun",
+			"trigger: DidFinishRun",
+			[]string{`"event_name":"DidFinishRun"`},
+		},
+		{
+			"GivenPluginRegisteredForSingleTriggers_ThenPluginTriggeredOnce",
+			"triggers:\n  - DidFinishRun",
+			"triggers:\n      - DidFinishRun",
+			[]string{`"event_name":"DidFinishRun"`},
+		},
+		{
+			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
+			"triggers:\n  - WillStartRun\n  - DidFinishRun",
+			"triggers:\n      - WillStartRun\n      - DidFinishRun",
+			[]string{`"event_name":"WillStartRun"`, `"event_name":"DidFinishRun"`},
+		},
+		{
+			"GivenPluginRegisteredForMultipleTriggers_ThenPluginTriggeredTwice",
+			"trigger: WillStartRun\ntriggers:\n  - DidFinishRun",
+			"trigger: WillStartRun\n    triggers:\n      - DidFinishRun",
+			[]string{`"event_name":"WillStartRun"`, `"event_name":"DidFinishRun"`},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Log(test.name)
+		{
+			// Given
+			config := givenWorkflowLoaded(t, bitriseYML)
+			pluginYML := fmt.Sprintf(pluginYMFormat, test.pluginTrigger)
+			pluginSpec := fmt.Sprintf(pluginSpecYMLFormat, test.specTrigger)
+			givenPluginInstalled(t, pluginYML, "testplugin", pluginSpec)
+
+			// When
+			var err error
+			output := captureOutput(t, func() {
+				_, err = runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+			})
+
+			// Then
+			require.NoError(t, err)
+			for _, expectedEvent := range test.expectedTriggeredEvents {
+				assert.True(t, strings.Contains(output, expectedEvent))
+			}
+		}
+	}
+}
+
+func givenWorkflowLoaded(t *testing.T, workflow string) models.BitriseDataModel {
+	require.NoError(t, configs.InitPaths())
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(workflow))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	return config
+}
+
+func givenPluginInstalled(t *testing.T, pluginContent, pluginName, pluginSpec string) {
+	bitrisePath := givenPlugin(t, pluginContent, pluginName, pluginSpec)
+	plugins.ForceInitPaths(bitrisePath)
+}
+
+func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) string {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
+	require.NoError(t, err)
+
+	bitriseDir := filepath.Join(tmpDir, ".bitrise")
+	pluginsDir := filepath.Join(bitriseDir, "plugins")
+	pluginSrcDir := filepath.Join(pluginsDir, pluginName, "src")
+
+	// Create bitrise-plugin.sh
+	pluginScriptPth := filepath.Join(pluginSrcDir, "bitrise-plugin.sh")
+	pluginSHContent := fmt.Sprintf(`
+  #!/bin/bash
+
+  cat /dev/stdin
+
+  echo "%s-called"
+  `, pluginName)
+	write(t, pluginSHContent, pluginScriptPth)
+	err = os.Chmod(pluginScriptPth, 0777)
+	require.NoError(t, err)
+
+	// Create bitrise-plugin.yml
+	pluginYMLContent := strings.ReplaceAll(pluginContent, "{executable_url}", "file://"+pluginScriptPth)
+	pluginYMLPth := filepath.Join(pluginSrcDir, "bitrise-plugin.yml")
+	write(t, pluginYMLContent, pluginYMLPth)
+
+	// Create spec.yml
+	specYMLContent := strings.ReplaceAll(pluginSpec, "{executable_url}", "file://"+pluginScriptPth)
+	specYMLPth := filepath.Join(pluginsDir, "spec.yml")
+	write(t, specYMLContent, specYMLPth)
+
+	return bitriseDir
+}
+
+func captureOutput(t *testing.T, function func()) string {
+	old := os.Stdout // keep backup of the real stdout
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+
+	os.Stdout = w
+
+	function()
+
+	err = w.Close()
+	require.NoError(t, err)
+	out, err := ioutil.ReadAll(r)
+	require.NoError(t, err)
+	os.Stdout = old
+
+	return string(out)
+}
+
+func write(t *testing.T, content, toPth string) {
+	toDir := filepath.Dir(toPth)
+	exist, err := pathutil.IsDirExists(toDir)
+	require.NoError(t, err)
+	if !exist {
+		require.NoError(t, os.MkdirAll(toDir, 0700))
+	}
+	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
 }
