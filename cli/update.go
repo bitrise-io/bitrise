@@ -100,7 +100,7 @@ func installedWithBrew() (bool, error) {
 		return false, nil
 	}
 
-	out, err := exec.Command("brew", "list").Output()
+	out, err := exec.Command("brew", "list", "--formula").Output()
 	if err != nil {
 		return false, err
 	}
