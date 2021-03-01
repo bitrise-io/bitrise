@@ -250,13 +250,14 @@ func (s *pluginSorter) Less(i, j int) bool {
 //=======================================
 
 // NewPluginRoute ...
-func NewPluginRoute(name, source, executable, version, triggerEvent string) (PluginRoute, error) {
+func NewPluginRoute(plugin Plugin, source, version string) (PluginRoute, error) {
 	route := PluginRoute{
-		Name:         name,
-		Source:       source,
-		Executable:   executable,
-		Version:      version,
-		TriggerEvent: triggerEvent,
+		Name:          plugin.Name,
+		Source:        source,
+		Executable:    plugin.ExecutableURL(),
+		Version:       version,
+		TriggerEvent:  plugin.TriggerEvent,
+		TriggerEvents: plugin.TriggerEvents,
 	}
 	if err := route.Validate(); err != nil {
 		return PluginRoute{}, err

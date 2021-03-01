@@ -32,7 +32,7 @@ var (
 
 // CreateAndAddPluginRoute ...
 func CreateAndAddPluginRoute(plugin Plugin, source, version string) error {
-	newRoute, err := NewPluginRoute(plugin.Name, source, plugin.ExecutableURL(), version, plugin.TriggerEvent)
+	newRoute, err := NewPluginRoute(plugin, source, version)
 	if err != nil {
 		return err
 	}

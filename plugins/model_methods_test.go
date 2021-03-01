@@ -416,6 +416,38 @@ func DeleteRoute(t *testing.T) {
 	}
 }
 
+func TestNewPluginRoute(t *testing.T) {
+	// Given
+	pluginStr := `name: Plugin
+description: |-
+  Manage Bitrise CLI steps
+trigger: DidFinishRun
+triggers: 
+  - Run1
+  - Run2
+executable:
+  osx: bin_url
+  linux: bin_url
+requirements:
+  - tool: bitrise
+    min_version: 1.3.0
+    max_version: ""
+`
+	source := "source"
+	version := "1.2.3"
+
+	pth := givenPluginYMLWithContent(pluginStr, t)
+
+	// When
+	plugin, err := ParsePluginFromYML(pth)
+	require.NoError(t, err)
+	route, err := NewPluginRoute(plugin, source, version)
+	require.NoError(t, err)
+
+	// Then
+	assertPluginRouteEqual(t, route, plugin, source, version)
+}
+
 func givenPluginYMLWithContent(content string, t *testing.T) string {
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__plugin_test__")
 	require.NoError(t, err)
@@ -434,4 +466,13 @@ func write(t *testing.T, content, toPth string) {
 		require.NoError(t, os.MkdirAll(toDir, 0700))
 	}
 	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
+}
+
+func assertPluginRouteEqual(t *testing.T, route PluginRoute, plugin Plugin, source, version string) {
+	assert.Equal(t, plugin.Name, route.Name)
+	assert.Equal(t, source, route.Source)
+	assert.Equal(t, version, route.Version)
+	assert.Equal(t, plugin.ExecutableURL(), route.Executable)
+	assert.Equal(t, plugin.TriggerEvent, route.TriggerEvent)
+	assert.Equal(t, plugin.TriggerEvents, route.TriggerEvents)
 }
