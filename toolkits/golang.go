@@ -283,19 +283,8 @@ func getGoEnv(goBinaryPath string, envKey string) (string, error) {
 	return goEnvs[envKey], nil
 }
 
-func isGoPathModeSupported(goBinaryPath, goVersion string) bool {
-	// Go 1.17 will ignore GO111MODULE (https://blog.golang.org/go116-module-changes)
-	if strings.HasPrefix(goVersion, "1.17") {
-		return false
-	}
-
-	mode, err := getGoEnv(goBinaryPath, "GO111MODULE")
-	if err != nil {
-		log.Warnf("Could not determine if GOPATH mode is supported: %v", err)
-		return true
-	}
-
-	if mode == "on" {
+func isGoPathModeSupported(mode string) bool {
+	if mode == "" || mode == "on" {
 		return false
 	}
 
@@ -303,7 +292,7 @@ func isGoPathModeSupported(goBinaryPath, goVersion string) bool {
 }
 
 func goBuildStep(packageName, stepAbsDirPath, outputBinPath string) error {
-	isInstallRequired, toolkit, goConfig, err := selectGoConfiguration()
+	isInstallRequired, _, goConfig, err := selectGoConfiguration()
 	if err != nil {
 		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
 	}
@@ -319,7 +308,15 @@ func goBuildStep(packageName, stepAbsDirPath, outputBinPath string) error {
 
 	if migrator.IsGoPathModeStep() {
 		log.Debugf("Step requires GOPATH mode")
-		if isGoPathModeSupported(goConfig.GoBinaryPath, toolkit.Version) {
+		// Go 1.17 will ignore GO111MODULE (https://blog.golang.org/go116-module-changes)
+		// GO111MODULE needs to be set to "on" when GOPATH is no longer supported.
+		// If GO111MODULE is not set, will be handled as it was "on".
+		mode, err := getGoEnv(goConfig.GoBinaryPath, "GO111MODULE")
+		if err != nil {
+			log.Warnf("Could not determine if GOPATH mode is supported: %v", err)
+		}
+
+		if isGoPathModeSupported(mode) {
 			return goBuildInGoPathMode(goConfig, packageName, stepAbsDirPath, outputBinPath)
 		}
 
