@@ -2,6 +2,7 @@ package toolkits
 
 import (
 	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/models"
@@ -80,19 +81,31 @@ func Test_parseGoVersionFromGoVersionOutput(t *testing.T) {
 }
 
 type mockRunner struct {
-	cmds []string
+	outputs map[string]string
+	cmds    []string
 }
 
-func (m mockRunner) Run(cmd *command.Model) (string, error) {
+func (m *mockRunner) run(cmd *command.Model) (string, error) {
 	m.cmds = append(m.cmds, cmd.PrintableCommandArgs())
+	if val, ok := m.outputs[cmd.PrintableCommandArgs()]; ok {
+		return val, nil
+	}
 
 	return "", nil
 }
 
 func Test_goBuildStep(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "")
+	goModStep, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("failed to create temp dir: %v", err)
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	if err := ioutil.WriteFile(filepath.Join(goModStep, "go.mod"), []byte{}, 0600); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	goPathStep, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
 	type args struct {
@@ -101,30 +114,84 @@ func Test_goBuildStep(t *testing.T) {
 		outputBinPath  string
 	}
 	tests := []struct {
-		name     string
-		args     args
-		wantErr  bool
-		wantCmds []string
+		name        string
+		args        args
+		mockOutputs map[string]string
+		wantErr     bool
+		wantCmds    []string
 	}{
 		{
-			name: "Go module step",
+			name: "Go module step -> Run in Go module mode",
 			args: args{
 				packageName:    "github.com/bitrise-steplib/my-step",
-				stepAbsDirPath: tmpDir,
-				outputBinPath:  "outputPath",
+				stepAbsDirPath: goModStep,
+				outputBinPath:  "/output",
 			},
-			wantCmds: []string{},
+			wantCmds: []string{
+				`go "build" "-o" "/output"`,
+			},
+		},
+		{
+			name: "GOPATH step, GO111MODULES=on -> should migrate",
+			args: args{
+				packageName:    "github.com/bitrise-steplib/my-step",
+				stepAbsDirPath: goPathStep,
+				outputBinPath:  "/output",
+			},
+			mockOutputs: map[string]string{
+				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "on"}`,
+			},
+			wantCmds: []string{
+				`go "env" "-json" "GO111MODULE"`,
+				`go "build" "-mod=vendor" "-o" "/output"`,
+			},
+		},
+		{
+			name: "GOPATH step, GO111MODULES='' -> should migrate",
+			args: args{
+				packageName:    "github.com/bitrise-steplib/my-step",
+				stepAbsDirPath: goPathStep,
+				outputBinPath:  "/output",
+			},
+			mockOutputs: map[string]string{
+				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": ""}`,
+			},
+			wantCmds: []string{
+				`go "env" "-json" "GO111MODULE"`,
+				`go "build" "-mod=vendor" "-o" "/output"`,
+			},
+		},
+		{
+			name: "GOPATH step, GO111MODULES=auto -> Run in GOPATH mode",
+			args: args{
+				packageName:    "github.com/bitrise-steplib/my-step",
+				stepAbsDirPath: goPathStep,
+				outputBinPath:  "/output",
+			},
+			mockOutputs: map[string]string{
+				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "auto"}`,
+			},
+			wantCmds: []string{
+				`go "env" "-json" "GO111MODULE"`,
+				`go "build" "-o" "/output" "github.com/bitrise-steplib/my-step"`,
+			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRunner := mockRunner{}
-			if err := goBuildStep(mockRunner, tt.args.packageName, tt.args.stepAbsDirPath, tt.args.outputBinPath); (err != nil) != tt.wantErr {
+			mockRunner := mockRunner{outputs: tt.mockOutputs}
+			goConfig := GoConfigurationModel{
+				GoBinaryPath: "go",
+				GOROOT:       "/goroot",
+			}
+
+			if err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, tt.args.stepAbsDirPath, tt.args.outputBinPath); (err != nil) != tt.wantErr {
 				t.Errorf("goBuildStep() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if len(tt.wantCmds) != len(mockRunner.cmds) {
-				t.Errorf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
+				t.Fatalf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
 			}
 			for i, cmd := range tt.wantCmds {
 				if cmd != mockRunner.cmds[i] {
