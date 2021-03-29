@@ -8,14 +8,18 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/errorutil"
 )
 
 type GoModMigrator struct {
 	projectDir string
+	cmdRunner  CommandRunner
 }
 
-func NewGoModMigrator(projectDir string) (*GoModMigrator, error) {
+func NewGoModMigrator(projectDir string, cmdRunner CommandRunner) (*GoModMigrator, error) {
+	if cmdRunner == nil {
+		return nil, fmt.Errorf("command runner not specified")
+	}
+
 	absPath, err := filepath.Abs(projectDir)
 	if err != nil {
 		return nil, err
@@ -29,7 +33,7 @@ func NewGoModMigrator(projectDir string) (*GoModMigrator, error) {
 		return nil, fmt.Errorf("not a directory (%s)", absPath)
 	}
 
-	return &GoModMigrator{projectDir: projectDir}, nil
+	return &GoModMigrator{projectDir: projectDir, cmdRunner: cmdRunner}, nil
 }
 
 func (m GoModMigrator) IsGoPathModeStep() bool {
@@ -70,13 +74,9 @@ func (m GoModMigrator) Migrate(goBinaryPath, goRoot, packageName string) error {
 		}
 
 		log.Debugf("$ %s", cmd.PrintableCommandArgs())
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		_, err := m.cmdRunner.Run(cmd)
 		if err != nil {
-			if errorutil.IsExitStatusError(err) {
-				return fmt.Errorf("command `%s` failed, output: %s", cmd.PrintableCommandArgs(), out)
-			}
-
-			return fmt.Errorf("failed to run command `%s`: %v", cmd.PrintableCommandArgs(), err)
+			return err
 		}
 	}
 

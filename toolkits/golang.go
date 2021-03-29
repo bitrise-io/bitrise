@@ -291,7 +291,19 @@ func isGoPathModeSupported(mode string) bool {
 	return true
 }
 
-func goBuildStep(packageName, stepAbsDirPath, outputBinPath string) error {
+func goCommandEnvs() []string {
+	cmdEnvs := os.Environ()
+	cmdEnvs = filteredEnvsList(cmdEnvs, "GOPATH")
+	cmdEnvs = filteredEnvsList(cmdEnvs, "PWD")
+	cmdEnvs = append(cmdEnvs,
+		fmt.Sprintf("GOPATH=%s", gopath),
+		fmt.Sprintf("PWD=%s", cmdWorkdir),
+	)
+
+	return cmdEnvs
+}
+
+func goBuildStep(cmdRunner depmigrate.CommandRunner, packageName, stepAbsDirPath, outputBinPath string) error {
 	isInstallRequired, _, goConfig, err := selectGoConfiguration()
 	if err != nil {
 		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
@@ -301,7 +313,7 @@ func goBuildStep(packageName, stepAbsDirPath, outputBinPath string) error {
 			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
 	}
 
-	migrator, err := depmigrate.NewGoModMigrator(stepAbsDirPath)
+	migrator, err := depmigrate.NewGoModMigrator(stepAbsDirPath, cmdRunner)
 	if err != nil {
 		return fmt.Errorf("failed to prepare go modules migration: %v", err)
 	}
@@ -326,24 +338,16 @@ func goBuildStep(packageName, stepAbsDirPath, outputBinPath string) error {
 		}
 	}
 
-	return goBuildWithModuleMode(goConfig, stepAbsDirPath, outputBinPath)
+	return goBuildWithModuleMode(cmdRunner, goConfig, stepAbsDirPath, outputBinPath)
 }
 
-func goBuildWithModuleMode(goConfig GoConfigurationModel, stepAbsDirPath, outputBinPath string) error {
+func goBuildWithModuleMode(cmdRunner depmigrate.CommandRunner, goConfig GoConfigurationModel, stepAbsDirPath, outputBinPath string) error {
 	buildCmd := command.New(goConfig.GoBinaryPath, "build", "-o", outputBinPath).SetDir(stepAbsDirPath)
 	buildCmd.AppendEnvs("GOROOT=" + goConfig.GOROOT)
 
-	out, err := buildCmd.RunAndReturnTrimmedCombinedOutput()
+	_, err := cmdRunner.Run(buildCmd)
 	if err != nil {
-		if errorutil.IsExitStatusError(err) {
-			return fmt.Errorf("failed to build Step using `%s` in directoy %s, output: %s",
-				buildCmd.PrintableCommandArgs(),
-				stepAbsDirPath,
-				out,
-			)
-		}
-
-		return fmt.Errorf("failed to run command `%s`: %v", buildCmd.PrintableCommandArgs(), err)
+		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
 	}
 
 	return nil
@@ -418,7 +422,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 	}
 	packageName := step.Toolkit.Go.PackageName
 
-	return goBuildStep(packageName, stepAbsDirPath, fullStepBinPath)
+	return goBuildStep(&depmigrate.DefaultRunner{}, packageName, stepAbsDirPath, fullStepBinPath)
 }
 
 // === Toolkit: Step Run ===

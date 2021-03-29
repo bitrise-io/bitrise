@@ -1,9 +1,11 @@
 package toolkits
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,5 +76,61 @@ func Test_parseGoVersionFromGoVersionOutput(t *testing.T) {
 		verStr, err := parseGoVersionFromGoVersionOutput("go version REMOVED darwin/amd64")
 		require.EqualError(t, err, "Failed to parse Go version, error: failed to find version in input: go version REMOVED darwin/amd64")
 		require.Equal(t, "", verStr)
+	}
+}
+
+type mockRunner struct {
+	cmds []string
+}
+
+func (m mockRunner) Run(cmd *command.Model) (string, error) {
+	m.cmds = append(m.cmds, cmd.PrintableCommandArgs())
+
+	return "", nil
+}
+
+func Test_goBuildStep(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Errorf("failed to create temp dir: %v", err)
+	}
+
+	type args struct {
+		packageName    string
+		stepAbsDirPath string
+		outputBinPath  string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantErr  bool
+		wantCmds []string
+	}{
+		{
+			name: "Go module step",
+			args: args{
+				packageName:    "github.com/bitrise-steplib/my-step",
+				stepAbsDirPath: tmpDir,
+				outputBinPath:  "outputPath",
+			},
+			wantCmds: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRunner := mockRunner{}
+			if err := goBuildStep(mockRunner, tt.args.packageName, tt.args.stepAbsDirPath, tt.args.outputBinPath); (err != nil) != tt.wantErr {
+				t.Errorf("goBuildStep() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if len(tt.wantCmds) != len(mockRunner.cmds) {
+				t.Errorf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
+			}
+			for i, cmd := range tt.wantCmds {
+				if cmd != mockRunner.cmds[i] {
+					t.Errorf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
+				}
+			}
+		})
 	}
 }
