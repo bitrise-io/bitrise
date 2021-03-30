@@ -95,37 +95,24 @@ func (m *mockRunner) run(cmd *command.Model) (string, error) {
 }
 
 func Test_goBuildStep(t *testing.T) {
-	goModStep, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	if err := ioutil.WriteFile(filepath.Join(goModStep, "go.mod"), []byte{}, 0600); err != nil {
-		t.Fatalf("failed to create file: %v", err)
-	}
-
-	goPathStep, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-
 	type args struct {
-		packageName    string
-		stepAbsDirPath string
-		outputBinPath  string
+		packageName   string
+		outputBinPath string
 	}
 	tests := []struct {
 		name        string
+		isGoModStep bool
 		args        args
 		mockOutputs map[string]string
 		wantErr     bool
 		wantCmds    []string
 	}{
 		{
-			name: "Go module step -> Run in Go module mode",
+			name:        "Go module step -> Run in Go module mode",
+			isGoModStep: true,
 			args: args{
-				packageName:    "github.com/bitrise-steplib/my-step",
-				stepAbsDirPath: goModStep,
-				outputBinPath:  "/output",
+				packageName:   "github.com/bitrise-steplib/my-step",
+				outputBinPath: "/output",
 			},
 			wantCmds: []string{
 				`go "build" "-o" "/output"`,
@@ -134,9 +121,8 @@ func Test_goBuildStep(t *testing.T) {
 		{
 			name: "GOPATH step, GO111MODULES=on -> should migrate",
 			args: args{
-				packageName:    "github.com/bitrise-steplib/my-step",
-				stepAbsDirPath: goPathStep,
-				outputBinPath:  "/output",
+				packageName:   "github.com/bitrise-steplib/my-step",
+				outputBinPath: "/output",
 			},
 			mockOutputs: map[string]string{
 				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "on"}`,
@@ -149,9 +135,8 @@ func Test_goBuildStep(t *testing.T) {
 		{
 			name: "GOPATH step, GO111MODULES='' -> should migrate",
 			args: args{
-				packageName:    "github.com/bitrise-steplib/my-step",
-				stepAbsDirPath: goPathStep,
-				outputBinPath:  "/output",
+				packageName:   "github.com/bitrise-steplib/my-step",
+				outputBinPath: "/output",
 			},
 			mockOutputs: map[string]string{
 				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": ""}`,
@@ -164,9 +149,8 @@ func Test_goBuildStep(t *testing.T) {
 		{
 			name: "GOPATH step, GO111MODULES=auto -> Run in GOPATH mode",
 			args: args{
-				packageName:    "github.com/bitrise-steplib/my-step",
-				stepAbsDirPath: goPathStep,
-				outputBinPath:  "/output",
+				packageName:   "github.com/bitrise-steplib/my-step",
+				outputBinPath: "/output",
 			},
 			mockOutputs: map[string]string{
 				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "auto"}`,
@@ -180,13 +164,23 @@ func Test_goBuildStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			stepDir, err := ioutil.TempDir("", "")
+			if err != nil {
+				t.Fatalf("failed to create temp dir: %v", err)
+			}
+			if tt.isGoModStep {
+				if err := ioutil.WriteFile(filepath.Join(stepDir, "go.mod"), []byte{}, 0600); err != nil {
+					t.Fatalf("failed to create file: %v", err)
+				}
+			}
+
 			mockRunner := mockRunner{outputs: tt.mockOutputs}
 			goConfig := GoConfigurationModel{
 				GoBinaryPath: "go",
 				GOROOT:       "/goroot",
 			}
 
-			if err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, tt.args.stepAbsDirPath, tt.args.outputBinPath); (err != nil) != tt.wantErr {
+			if err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath); (err != nil) != tt.wantErr {
 				t.Errorf("goBuildStep() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
