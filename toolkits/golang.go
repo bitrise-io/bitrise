@@ -308,10 +308,8 @@ func goBuildInGoPathMode(cmdRunner commandRunner, goConfig GoConfigurationModel,
 	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
 		goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
 	cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
-	// if err := cmd.Run(); err != nil {
-	// 	return fmt.Errorf("Failed to install package, error: %s", err)
-	// }
 	buildCmd := command.NewWithCmd(cmd)
+
 	if err := cmdRunner.run(buildCmd); err != nil {
 		return fmt.Errorf("Failed to install package, error: %s", err)
 	}
