@@ -34,13 +34,14 @@ workflows:
     steps:
     - script:
         inputs:
-        - content: rm -rf ./_tmp
+        - content: |-
+            #!/usr/bin/env bash
+            envman add --key TMP_DIR --value $(mktemp -d -t gomodmigrateXXXXXX)
     - change-workdir:
         title: Switch working dir to test/_tmp dir
         run_if: "true"
         inputs:
-        - path: ./_tmp
-        - is_create_path: true
+        - path: $TMP_DIR
     - script:
         inputs:
         - content: |-
@@ -52,11 +53,11 @@ workflows:
               lane :test_fastlane do
               end
             end
-            " > fastlane/Fastfile
+            " > $TMP_DIR/fastlane/Fastfile
     - fastlane@3.2.0:
         inputs:
         - lane: test_fastlane
-        - work_dir: ./
+        - work_dir: $TMP_DIR
         - update_fastlane: "false"
         - connection: "off"
 
