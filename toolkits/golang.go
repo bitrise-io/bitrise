@@ -259,20 +259,20 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 	cmdBuilder := goCmdBuilder{goConfig: goConfig}
 
 	if isGoPathModeStep(stepAbsDirPath) {
-		log.Debugf("Step requires GOPATH mode")
+		log.Debugf("[Go deps] Step requires GOPATH mode")
 		// Go 1.17 will ignore GO111MODULE (https://blog.golang.org/go116-module-changes)
 		// GO111MODULE needs to be set to "on" when GOPATH is no longer supported.
 		// If GO111MODULE is not set, will be handled as it was "on".
 		mode, err := getGoEnv(cmdRunner, goConfig.GoBinaryPath, "GO111MODULE")
 		if err != nil {
-			log.Warnf("Could not determine if GOPATH mode is supported: %v", err)
+			log.Warnf("[Go deps] Could not determine if GOPATH mode is supported: %v", err)
 		}
 
 		if isGoPathModeSupported(mode) {
 			return goBuildInGoPathMode(cmdRunner, goConfig, packageName, stepAbsDirPath, outputBinPath)
 		}
 
-		log.Debugf("Migrating Step to Go modules as Go installation does not support GOPATH mode")
+		log.Debugf("[Go deps] Migrating Step to Go modules as Go installation does not support GOPATH mode")
 		if err := migrateToGoModules(stepAbsDirPath, packageName); err != nil {
 			return fmt.Errorf("failed to migrate to go modules: %v", err)
 		}
@@ -285,7 +285,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 		return nil
 	}
 
-	log.Debugf("Step reqires Go modules mode")
+	log.Debugf("[Go deps] Step requires Go modules mode")
 	buildCmd := cmdBuilder.goBuildInModuleMode(stepAbsDirPath, outputBinPath)
 	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)

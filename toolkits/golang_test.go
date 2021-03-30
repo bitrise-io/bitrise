@@ -110,7 +110,6 @@ func Test_goBuildStep(t *testing.T) {
 		isGoModStep bool
 		args        args
 		mockOutputs map[string]string
-		wantErr     bool
 		wantCmds    []string
 	}{
 		{
@@ -171,13 +170,11 @@ func Test_goBuildStep(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stepDir, err := ioutil.TempDir("", "")
-			if err != nil {
-				t.Fatalf("failed to create temp dir: %v", err)
-			}
+			require.NoError(t, err, "failed to create temp dir")
+
 			if tt.isGoModStep {
-				if err := ioutil.WriteFile(filepath.Join(stepDir, "go.mod"), []byte{}, 0600); err != nil {
-					t.Fatalf("failed to create file: %v", err)
-				}
+				err := ioutil.WriteFile(filepath.Join(stepDir, "go.mod"), []byte{}, 0600)
+				require.NoError(t, err, "failed to create file")
 			}
 
 			mockRunner := mockRunner{outputs: tt.mockOutputs}
@@ -186,18 +183,10 @@ func Test_goBuildStep(t *testing.T) {
 				GOROOT:       "/goroot",
 			}
 
-			if err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath); (err != nil) != tt.wantErr {
-				t.Errorf("goBuildStep() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			err = goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath)
 
-			if len(tt.wantCmds) != len(mockRunner.cmds) {
-				t.Fatalf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
-			}
-			for i, cmd := range tt.wantCmds {
-				if cmd != mockRunner.cmds[i] {
-					t.Errorf("goBuildStep() wantCmds = %v gotCmds = %v", tt.wantCmds, mockRunner.cmds)
-				}
-			}
+			require.NoError(t, err, "goBuildStep()")
+			require.Equal(t, tt.wantCmds, mockRunner.cmds, "goBuildStep() run commands do not match")
 		})
 	}
 }

@@ -1,0 +1,62 @@
+format_version: 8
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test_gopath_disabled:
+    steps:
+      - script:
+          inputs:
+          - content: |-
+              #!/usr/bin/env bash
+              envman add --key GO111MODULE --value on
+    after_run:
+      - gopath
+      - gomod
+
+  test_gopath_enabled:
+    steps:
+      - script:
+          inputs:
+          - content: |-
+              #!/usr/bin/env bash
+              envman add --key GO111MODULE --value auto
+    after_run:
+      - gopath
+      - gomod
+
+  gopath:
+    steps:
+      - npm@1.1.4:
+          inputs:
+          - command: install
+
+  gomod:
+    steps:
+    - script:
+        inputs:
+        - content: rm -rf ./_tmp
+    - change-workdir:
+        title: Switch working dir to test/_tmp dir
+        run_if: "true"
+        inputs:
+        - path: ./_tmp
+        - is_create_path: true
+    - script:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            mkdir fastlane
+            echo "default_platform(:ios)
+
+            platform :ios do
+              lane :test_fastlane do
+              end
+            end
+            " > fastlane/Fastfile
+    - fastlane@3.2.0:
+        inputs:
+        - lane: test_fastlane
+        - work_dir: ./
+        - update_fastlane: "false"
+        - connection: "off"
+
