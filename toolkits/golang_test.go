@@ -85,7 +85,13 @@ type mockRunner struct {
 	cmds    []string
 }
 
-func (m *mockRunner) run(cmd *command.Model) (string, error) {
+func (m *mockRunner) run(cmd *command.Model) error {
+	m.cmds = append(m.cmds, cmd.PrintableCommandArgs())
+
+	return nil
+}
+
+func (m *mockRunner) runForOutput(cmd *command.Model) (string, error) {
 	m.cmds = append(m.cmds, cmd.PrintableCommandArgs())
 	if val, ok := m.outputs[cmd.PrintableCommandArgs()]; ok {
 		return val, nil

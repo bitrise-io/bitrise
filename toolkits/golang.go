@@ -278,7 +278,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 		}
 
 		buildCmd := cmdBuilder.goBuildMigratedModules(stepAbsDirPath, outputBinPath)
-		if _, err := cmdRunner.run(buildCmd); err != nil {
+		if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 			return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
 		}
 
@@ -287,7 +287,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 
 	log.Debugf("Step reqires Go modules mode")
 	buildCmd := cmdBuilder.goBuildInModuleMode(stepAbsDirPath, outputBinPath)
-	if _, err := cmdRunner.run(buildCmd); err != nil {
+	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
 	}
 
@@ -308,8 +308,11 @@ func goBuildInGoPathMode(cmdRunner commandRunner, goConfig GoConfigurationModel,
 	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
 		goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
 	cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
+	// if err := cmd.Run(); err != nil {
+	// 	return fmt.Errorf("Failed to install package, error: %s", err)
+	// }
 	buildCmd := command.NewWithCmd(cmd)
-	if _, err := cmdRunner.run(buildCmd); err != nil {
+	if err := cmdRunner.run(buildCmd); err != nil {
 		return fmt.Errorf("Failed to install package, error: %s", err)
 	}
 

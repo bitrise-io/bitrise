@@ -15,14 +15,14 @@ func getGoEnv(cmdRunner commandRunner, goBinaryPath string, envKey string) (stri
 	envCmd := command.New(goBinaryPath, "env", "-json", envKey)
 
 	log.Debugf("$ %s", envCmd.PrintableCommandArgs())
-	outputData, err := cmdRunner.run(envCmd)
+	outputData, err := cmdRunner.runForOutput(envCmd)
 	if err != nil {
 		return "", err
 	}
 
 	goEnvs := make(map[string]string)
 	if err := json.Unmarshal([]byte(outputData), &goEnvs); err != nil {
-		return "", fmt.Errorf("failed to unmarshall go env: %v", err)
+		return "", fmt.Errorf("failed to unmarshall go env output (%s): %v", outputData, err)
 	}
 
 	if _, ok := goEnvs[envKey]; !ok {
