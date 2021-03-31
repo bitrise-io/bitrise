@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	minGoVersionForToolkit = "1.12.7"
+	minGoVersionForToolkit = "1.15.2"
 )
 
 // === Base Toolkit struct ===
@@ -255,48 +255,68 @@ func (toolkit GoToolkit) Install() error {
 
 // === Toolkit: Prepare for Step Run ===
 
-func goBuildInIsolation(packageName, srcPath, outputBinPath string) error {
+func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, stepAbsDirPath, outputBinPath string) error {
+	cmdBuilder := goCmdBuilder{goConfig: goConfig}
+
+	if isGoPathModeStep(stepAbsDirPath) {
+		log.Debugf("[Go deps] Step requires GOPATH mode")
+		// Go 1.17 will ignore GO111MODULE (https://blog.golang.org/go116-module-changes)
+		// GO111MODULE needs to be set to "on" when GOPATH is no longer supported.
+		// If GO111MODULE is not set, will be handled as it was "on".
+		mode, err := getGoEnv(cmdRunner, goConfig.GoBinaryPath, "GO111MODULE")
+		if err != nil {
+			log.Warnf("[Go deps] Could not determine if GOPATH mode is supported: %v", err)
+		}
+
+		log.Debugf("[Go deps] GO111MODULE='%s'", mode)
+		if isGoPathModeSupported(mode) {
+			return goBuildInGoPathMode(cmdRunner, goConfig, packageName, stepAbsDirPath, outputBinPath)
+		}
+
+		log.Debugf("[Go deps] Migrating Step to Go modules as Go installation does not support GOPATH mode")
+		if err := migrateToGoModules(stepAbsDirPath, packageName); err != nil {
+			return fmt.Errorf("failed to migrate to go modules: %v", err)
+		}
+
+		buildCmd := cmdBuilder.goBuildMigratedModules(stepAbsDirPath, outputBinPath)
+		if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
+			return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
+		}
+
+		return nil
+	}
+
+	log.Debugf("[Go deps] Step requires Go modules mode")
+	buildCmd := cmdBuilder.goBuildInModuleMode(stepAbsDirPath, outputBinPath)
+	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
+		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
+	}
+
+	return nil
+}
+
+func goBuildInGoPathMode(cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, srcPath, outputBinPath string) error {
 	workspaceRootPath, err := pathutil.NormalizedOSTempDirPath("bitrise-go-toolkit")
 	if err != nil {
 		return fmt.Errorf("Failed to create root directory of isolated workspace, error: %s", err)
 	}
-
-	// origGOPATH := os.Getenv("GOPATH")
-	// if origGOPATH == "" {
-	// 	return fmt.Errorf("You don't have a GOPATH environment - please set it; GOPATH/bin will be symlinked")
-	// }
-
-	// if err := gows.CreateGopathBinSymlink(origGOPATH, workspaceRootPath); err != nil {
-	// 	return fmt.Errorf("Failed to create GOPATH/bin symlink, error: %s", err)
-	// }
 
 	fullPackageWorkspacePath := filepath.Join(workspaceRootPath, "src", packageName)
 	if err := gows.CreateOrUpdateSymlink(srcPath, fullPackageWorkspacePath); err != nil {
 		return fmt.Errorf("Failed to create Project->Workspace symlink, error: %s", err)
 	}
 
-	{
-		isInstallRequired, _, goConfig, err := selectGoConfiguration()
-		if err != nil {
-			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s", err)
-		}
-		if isInstallRequired {
-			return fmt.Errorf("Failed to select an appropriate Go installation for compiling the step, error: %s",
-				"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
-		}
+	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
+		goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
+	cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
+	buildCmd := command.NewWithCmd(cmd)
 
-		cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
-			goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
-		cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("Failed to install package, error: %s", err)
-		}
+	if err := cmdRunner.run(buildCmd); err != nil {
+		return fmt.Errorf("Failed to install package, error: %s", err)
 	}
 
-	{
-		if err := os.RemoveAll(workspaceRootPath); err != nil {
-			return fmt.Errorf("Failed to delete temporary isolated workspace, error: %s", err)
-		}
+	if err := os.RemoveAll(workspaceRootPath); err != nil {
+		return fmt.Errorf("Failed to delete temporary isolated workspace, error: %s", err)
 	}
 
 	return nil
@@ -337,16 +357,23 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 	}
 
 	// it's not cached, so compile it
-
 	if step.Toolkit == nil {
 		return errors.New("No Toolkit information specified in step")
 	}
 	if step.Toolkit.Go == nil {
 		return errors.New("No Toolkit.Go information specified in step")
 	}
-	packageName := step.Toolkit.Go.PackageName
 
-	return goBuildInIsolation(packageName, stepAbsDirPath, fullStepBinPath)
+	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	if err != nil {
+		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
+	}
+	if isInstallRequired {
+		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s",
+			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
+	}
+
+	return goBuildStep(&defaultRunner{}, goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
 }
 
 // === Toolkit: Step Run ===
