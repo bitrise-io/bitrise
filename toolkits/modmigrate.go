@@ -7,14 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 )
 
 func getGoEnv(cmdRunner commandRunner, goBinaryPath string, envKey string) (string, error) {
 	envCmd := command.New(goBinaryPath, "env", "-json", envKey)
 
-	log.Debugf("$ %s", envCmd.PrintableCommandArgs())
 	outputData, err := cmdRunner.runForOutput(envCmd)
 	if err != nil {
 		return "", err

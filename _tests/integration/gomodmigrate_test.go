@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,18 +16,17 @@ func Test_GoModMigration(t *testing.T) {
 	moduleModes := []string{"on", "auto"}
 
 	for _, mode := range moduleModes {
-		t.Logf("Test go modules and GOPATH modes, GO111MODULE=%s", mode)
+		t.Run(fmt.Sprintf("Go module modes, GO111MODULE='%s'", mode), func(t *testing.T) {
+			homeDir, err := os.UserHomeDir()
+			require.NoError(t, err, "failed to get HOME dir")
 
-		homeDir, err := os.UserHomeDir()
-		require.NoError(t, err, "failed to get HOME dir")
+			err = os.RemoveAll(filepath.Join(homeDir, ".bitrise", "toolkits", "go", "cache"))
+			require.NoError(t, err, "faield to clean Step binary cache")
 
-		err = os.RemoveAll(filepath.Join(homeDir, ".bitrise", "toolkits", "go", "cache"))
-		require.NoError(t, err, "faield to clean Step binary cache")
-
-		cmd := command.New(binPath(), "--debug", "run", workflow, "--config", configPth).
-			AppendEnvs("GO111MODULE=" + mode)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, "Bitrise CLI failed, output: %s", out)
-		t.Logf("Bitrise CLI ouptut: %s", out)
+			cmd := command.New(binPath(), "--debug", "run", workflow, "--config", configPth).
+				AppendEnvs("GO111MODULE=" + mode)
+			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+			require.NoError(t, err, "Bitrise CLI failed, output: %s", out)
+		})
 	}
 }

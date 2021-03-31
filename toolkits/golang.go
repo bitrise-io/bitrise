@@ -268,6 +268,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 			log.Warnf("[Go deps] Could not determine if GOPATH mode is supported: %v", err)
 		}
 
+		log.Debugf("[Go deps] GO111MODULE='%s'", mode)
 		if isGoPathModeSupported(mode) {
 			return goBuildInGoPathMode(cmdRunner, goConfig, packageName, stepAbsDirPath, outputBinPath)
 		}
