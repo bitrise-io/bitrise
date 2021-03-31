@@ -269,6 +269,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 		}
 
 		if isGoPathModeSupported(mode) {
+			os.Exit(2)
 			return goBuildInGoPathMode(cmdRunner, goConfig, packageName, stepAbsDirPath, outputBinPath)
 		}
 
@@ -281,6 +282,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 		if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 			return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
 		}
+		os.Exit(1)
 
 		return nil
 	}
