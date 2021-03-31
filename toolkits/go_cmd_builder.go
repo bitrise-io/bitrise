@@ -29,7 +29,7 @@ func (g goCmdBuilder) goBuildEnv(stepAbsDir string, shouldCheckGoSum bool) []str
 		"GOROOT=" + g.goConfig.GOROOT,
 		"GO111MODULE=on",
 	}
-	if shouldCheckGoSum {
+	if !shouldCheckGoSum {
 		envs = append(envs, "GOSUMDB=off")
 	}
 

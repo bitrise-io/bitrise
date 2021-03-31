@@ -2,6 +2,7 @@ package toolkits
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -111,6 +112,7 @@ func Test_goBuildStep(t *testing.T) {
 		args        args
 		mockOutputs map[string]string
 		wantCmds    []string
+		wantGoMod   bool
 	}{
 		{
 			name:        "Go module step -> Run in Go module mode",
@@ -136,6 +138,7 @@ func Test_goBuildStep(t *testing.T) {
 				`go "env" "-json" "GO111MODULE"`,
 				`go "build" "-mod=vendor" "-o" "/output"`,
 			},
+			wantGoMod: true,
 		},
 		{
 			name: "GOPATH step, GO111MODULES='' -> should migrate",
@@ -150,6 +153,7 @@ func Test_goBuildStep(t *testing.T) {
 				`go "env" "-json" "GO111MODULE"`,
 				`go "build" "-mod=vendor" "-o" "/output"`,
 			},
+			wantGoMod: true,
 		},
 		{
 			name: "GOPATH step, GO111MODULES=auto -> Run in GOPATH mode",
@@ -172,8 +176,9 @@ func Test_goBuildStep(t *testing.T) {
 			stepDir, err := ioutil.TempDir("", "")
 			require.NoError(t, err, "failed to create temp dir")
 
+			goModPath := filepath.Join(stepDir, "go.mod")
 			if tt.isGoModStep {
-				err := ioutil.WriteFile(filepath.Join(stepDir, "go.mod"), []byte{}, 0600)
+				err := ioutil.WriteFile(goModPath, []byte{}, 0600)
 				require.NoError(t, err, "failed to create file")
 			}
 
@@ -187,6 +192,11 @@ func Test_goBuildStep(t *testing.T) {
 
 			require.NoError(t, err, "goBuildStep()")
 			require.Equal(t, tt.wantCmds, mockRunner.cmds, "goBuildStep() run commands do not match")
+
+			if tt.wantGoMod {
+				_, err := os.Stat(goModPath)
+				require.NoError(t, err, "go.mod was not created")
+			}
 		})
 	}
 }
