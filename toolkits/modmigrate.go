@@ -52,6 +52,8 @@ func migrateToGoModules(stepAbsDirPath, packageName string) error {
 		return fmt.Errorf("package name not specified")
 	}
 
+	// The go directive (https://golang.org/ref/mod#go-mod-file-go) sets go CLI and language features
+	// Setting it to a fixed version so a future backward incompatible change does code
 	goModTemplate := `module %s
 go 1.16`
 	goModContents := fmt.Sprintf(goModTemplate, packageName)

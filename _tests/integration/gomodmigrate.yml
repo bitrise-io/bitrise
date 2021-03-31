@@ -2,24 +2,7 @@ format_version: 8
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
-  test_gopath_disabled:
-    steps:
-      - script:
-          inputs:
-          - content: |-
-              #!/usr/bin/env bash
-              envman add --key GO111MODULE --value on
-    after_run:
-      - gopath
-      - gomod
-
-  test_gopath_enabled:
-    steps:
-      - script:
-          inputs:
-          - content: |-
-              #!/usr/bin/env bash
-              envman add --key GO111MODULE --value auto
+  test:
     after_run:
       - gopath
       - gomod
@@ -37,16 +20,11 @@ workflows:
         - content: |-
             #!/usr/bin/env bash
             envman add --key TMP_DIR --value $(mktemp -d -t gomodmigrateXXXXXX)
-    - change-workdir:
-        title: Switch working dir to test/_tmp dir
-        run_if: "true"
-        inputs:
-        - path: $TMP_DIR
     - script:
         inputs:
         - content: |-
             #!/usr/bin/env bash
-            mkdir fastlane
+            mkdir ${TMP_DIR}/fastlane
             echo "default_platform(:ios)
 
             platform :ios do
