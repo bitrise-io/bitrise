@@ -2,12 +2,12 @@
 
 
 [[projects]]
-  digest = "1:1760ee71834b3d0c59ffb6e0f9444fb68aec64bd6630b99b349fb111f74022fa"
+  digest = "1:819b22a75ddd43c69965c9582dcab34a077f2d3f543bf8832126b275ea6953e6"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "6699a89a232f3db797f2e280639854bbc4b89725"
-  version = "v1.7.0"
+  revision = "bdc0db8ead3853c56b7cd1ac2ba4e11b47d7da6b"
+  version = "v1.8.1"
 
 [[projects]]
   branch = "master"
@@ -35,7 +35,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6d6233799fbcde865cdc112e9bfd6eec44c846c40b5a60d82615bb20133ef680"
+  digest = "1:77379fe37327212fbdfa7ad31049ea9aa3fe3127333f0387fb397de79eb36779"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -56,7 +56,7 @@
     "versions",
   ]
   pruneopts = "UT"
-  revision = "859032e9adf02532a86a362ae5d1cfbc9292fcaf"
+  revision = "00429d8e1e87cf5437fee9ff987173ab3a33c4bc"
 
 [[projects]]
   branch = "master"
@@ -144,11 +144,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "eec23a3978adcfd26c29f4153eaa3e3d9b2cc53a"
+  revision = "0c34fe9e7dc2486962ef9867e3edb3503537209f"
 
 [[projects]]
   branch = "master"
-  digest = "1:ac04e573816a5de51145f9cd25cd5f1770568e931032d7dc7f7704d183844b0f"
+  digest = "1:38374bad941d2cba2aac9a5a70de465e408b179c7aa7be9c3ffeb342c1c4f8d2"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
@@ -157,15 +157,15 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "22da62e12c0cd9c1da93581e1113ca4d82a5be14"
+  revision = "4fbd30eecc44bcbc3a049f16bad8703053ebab7c"
 
 [[projects]]
   branch = "master"
-  digest = "1:aff3723b8ec6c06bb52b62cf492783ae041e137534714289acb6625c031d1b24"
+  digest = "1:bc88168d601da654e2dd99fb8333dd53771e70ecf9854e7bd601c96604c6eeb7"
   name = "golang.org/x/term"
   packages = ["."]
   pruneopts = "UT"
-  revision = "2321bbc49cbf8303ea9834c419750e793e31be73"
+  revision = "de623e64d2a6562fa463152da80477d4aa07fca0"
 
 [[projects]]
   digest = "1:5054a1f394226de9e6ddc47b0ba77e35092a4112f4a1cd9cb94aba1f5bdc3ec6"

@@ -62,8 +62,13 @@ func (g *Git) Clean(options ...string) *command.Model {
 }
 
 // SubmoduleUpdate updates the registered submodules.
-func (g *Git) SubmoduleUpdate() *command.Model {
-	return g.command("submodule", "update", "--init", "--recursive")
+func (g *Git) SubmoduleUpdate(shallowCheckout bool, opts ...string) *command.Model {
+	args := []string{"submodule", "update", "--init", "--recursive"}
+	args = append(args, opts...)
+	if shallowCheckout {
+		args = append(args, "--depth=1")
+	}
+	return g.command(args...)
 }
 
 // SubmoduleForeach evaluates an arbitrary git command in each checked out
@@ -138,4 +143,20 @@ func (g *Git) Status(opts ...string) *command.Model {
 // Config sets a git config setting for the repository.
 func (g *Git) Config(key string, value string) *command.Model {
 	return g.command("config", key, value)
+}
+
+// SparseCheckoutInit initializes the sparse-checkout config file.
+func (g *Git) SparseCheckoutInit(cone bool) *command.Model {
+	args := []string{"sparse-checkout", "init"}
+	if cone {
+		args = append(args, "--cone")
+	}
+	return g.command(args...)
+}
+
+// SparseCheckoutSet writes the provided patterns to the sparse-checkout config file.
+func (g *Git) SparseCheckoutSet(opts ...string) *command.Model {
+	args := []string{"sparse-checkout", "set"}
+	args = append(args, opts...)
+	return g.command(args...)
 }
