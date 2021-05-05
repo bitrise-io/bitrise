@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
