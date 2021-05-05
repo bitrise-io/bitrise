@@ -1,0 +1,74 @@
+# github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
+github.com/bitrise-io/colorstring
+# github.com/bitrise-io/envman v0.0.0-20200512105748-919e33f391ee
+## explicit
+github.com/bitrise-io/envman/env
+github.com/bitrise-io/envman/models
+# github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e
+## explicit
+github.com/bitrise-io/go-utils/colorstring
+github.com/bitrise-io/go-utils/command
+github.com/bitrise-io/go-utils/command/git
+github.com/bitrise-io/go-utils/errorutil
+github.com/bitrise-io/go-utils/fileutil
+github.com/bitrise-io/go-utils/log
+github.com/bitrise-io/go-utils/parseutil
+github.com/bitrise-io/go-utils/pathutil
+github.com/bitrise-io/go-utils/pointers
+github.com/bitrise-io/go-utils/progress
+github.com/bitrise-io/go-utils/retry
+github.com/bitrise-io/go-utils/sliceutil
+github.com/bitrise-io/go-utils/stringutil
+github.com/bitrise-io/go-utils/urlutil
+github.com/bitrise-io/go-utils/versions
+# github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1
+## explicit
+github.com/bitrise-io/goinp/goinp
+# github.com/bitrise-io/gows v0.0.0-20210505125306-dd92ff463938
+## explicit
+github.com/bitrise-io/gows/gows
+# github.com/bitrise-io/stepman v0.0.0-20210505110307-5c2296bcc558
+## explicit
+github.com/bitrise-io/stepman/cli
+github.com/bitrise-io/stepman/models
+github.com/bitrise-io/stepman/stepman
+github.com/bitrise-io/stepman/version
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/hashicorp/go-version v1.3.0
+## explicit
+github.com/hashicorp/go-version
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/russross/blackfriday/v2 v2.1.0
+github.com/russross/blackfriday/v2
+# github.com/ryanuber/go-glob v1.0.0
+## explicit
+github.com/ryanuber/go-glob
+# github.com/sirupsen/logrus v1.8.1
+## explicit
+github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.7.0
+## explicit
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/urfave/cli v1.22.5
+## explicit
+github.com/urfave/cli
+# golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6
+## explicit
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/plan9
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/term v0.0.0-20210503060354-a79de5458b56
+golang.org/x/term
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+gopkg.in/yaml.v3

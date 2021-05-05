@@ -3,7 +3,7 @@ package version
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/hashicorp/go-version"
 )
