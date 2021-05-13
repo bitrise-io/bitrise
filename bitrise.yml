@@ -74,9 +74,9 @@ workflows:
             UNAME=$(uname)
 
             if [ "$UNAME" == "Linux" ] ; then
-              export GO_DL_CMD='curl -Ls https://golang.org/dl/go1.16.4.linux-amd64.tar.gz | tar -xzf -'
+              export GO_DL_CMD="curl -Ls https://golang.org/dl/go1.16.4.linux-amd64.tar.gz \| tar -xzf -"
             elif [ "$UNAME" == "Darwin" ] ; then
-              export GO_DL_CMD='curl -Ls https://golang.org/dl/go1.16.4.darwin-amd64.tar.gz | tar -xjf -'
+              export GO_DL_CMD="curl -Ls https://golang.org/dl/go1.16.4.darwin-amd64.tar.gz \| tar -xjf -"
             fi
 
             cd $GO_TMP && $GO_DL_CMD
