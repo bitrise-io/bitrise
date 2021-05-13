@@ -40,6 +40,8 @@ func UnameGOARCH() (string, error) {
 	switch runtime.GOARCH {
 	case "amd64":
 		return "x86_64", nil
+	case "arm64":
+		return "arm64", nil
 	}
 	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
 }
