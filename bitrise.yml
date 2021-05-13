@@ -71,7 +71,15 @@ workflows:
             export ORIG_DIR=`pwd`
             export GO_TMP=/tmp/go1.16.4 && mkdir -p $GO_TMP
               
-            cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.darwin-amd64.tar.gz | tar -xjf -
+            UNAME=$(uname)
+
+            if [ "$UNAME" == "Linux" ] ; then
+              export GO_DL_OS="linux"
+            elif [ "$UNAME" == "Darwin" ] ; then
+              export GO_DL_OS="darwin"
+            fi
+
+            cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.$GO_DL_OS-amd64.tar.gz | tar -xjf -
             cd $ORIG_DIR
 
             export GOARCH=arm64
