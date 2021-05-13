@@ -69,7 +69,7 @@ workflows:
 
             # Create M1 bin
             export ORIG_DIR=`pwd`
-            export GO_TMP=$TEMP/go1.16.4 && mkdir -p $GO_TMP
+            export GO_TMP=/tmp/go1.16.4 && mkdir -p $GO_TMP
               
             cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.darwin-amd64.tar.gz | tar -xjf -
             cd $ORIG_DIR
