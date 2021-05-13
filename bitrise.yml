@@ -68,6 +68,12 @@ workflows:
             echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
             # Create M1 bin
+            export ORIG_DIR=`pwd`
+            export GO_TMP=$(mktemp -udt go-arm-bootstrap) && mkdir -p $GO_TMP
+              
+            cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.darwin-amd64.tar.gz | tar -xjf -
+            cd $ORIG_DIR
+
             export GOARCH=arm64
             export ARCH=arm64
 
@@ -76,7 +82,7 @@ workflows:
 
             version_package="github.com/bitrise-io/bitrise/version"
 
-            go build \
+            $GO_TMP/go/bin/go build \
               -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
               -o "$DEPLOY_PATH"
 
