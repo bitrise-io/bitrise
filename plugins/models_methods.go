@@ -9,6 +9,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -188,19 +189,30 @@ func systemOsName() (string, error) {
 
 // ExecutableURL ...
 func (plugin Plugin) ExecutableURL() string {
-	systemOS, err := systemOsName()
+	systemOS, err := tools.UnameGOOS()
 	if err != nil {
 		return ""
 	}
 
-	switch systemOS {
-	case "Darwin":
-		return plugin.Executable.OSX
-	case "Linux":
+	if systemOS == "Linux" {
 		return plugin.Executable.Linux
-	default:
-		return ""
 	}
+
+	if systemOS == "Darwin" {
+		systemArch, err := tools.UnameGOARCH()
+		if err != nil {
+			return ""
+		}
+
+		if systemArch == "x86_64" {
+			return plugin.Executable.OSX
+		}
+
+		if systemArch == "arm64" {
+			return plugin.Executable.OSXArm64
+		}
+	}
+	return ""
 }
 
 //=======================================
