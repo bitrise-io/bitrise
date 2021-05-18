@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
@@ -22,10 +21,11 @@ import (
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/gows/gows"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	minGoVersionForToolkit = "1.15.2"
+	minGoVersionForToolkit = "1.16.4"
 )
 
 // === Base Toolkit struct ===
