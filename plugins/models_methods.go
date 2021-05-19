@@ -106,7 +106,7 @@ func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
 	return plugin, nil
 }
 
-func validatePlugin(plugin Plugin, pluginDefinitionPth string) error {
+func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
 	// Validate plugin
 	if plugin.Name == "" {
 		return errors.New("missing name")
@@ -138,7 +138,7 @@ func validatePlugin(plugin Plugin, pluginDefinitionPth string) error {
 	// ---
 
 	// Ensure dependencies
-	currentVersionMap, err := version.ToolVersionMap()
+	currentVersionMap, err := version.ToolVersionMap(binPath)
 	if err != nil {
 		return fmt.Errorf("failed to get current version map, error: %s", err)
 	}

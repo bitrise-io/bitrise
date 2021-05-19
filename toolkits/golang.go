@@ -24,10 +24,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	minGoVersionForToolkit = "1.16.4"
-)
-
 // === Base Toolkit struct ===
 
 // GoToolkit ...
