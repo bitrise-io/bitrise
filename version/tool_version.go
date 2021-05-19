@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
@@ -13,7 +14,7 @@ func StepmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"stepman", "--loglevel", logLevel, "--version"}
 
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(os.Args[0], args...)
 	if err != nil {
 		return version.Version{}, err
 	}
@@ -33,7 +34,7 @@ func StepmanVersion() (version.Version, error) {
 func EnvmanVersion() (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"envman", "--loglevel", logLevel, "--version"}
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(os.Args[0], args...)
 	if err != nil {
 		return version.Version{}, err
 	}
