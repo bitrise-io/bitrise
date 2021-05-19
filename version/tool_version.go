@@ -2,11 +2,10 @@ package version
 
 import (
 	"fmt"
-	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/hashicorp/go-version"
+	log "github.com/sirupsen/logrus"
 )
 
 // StepmanVersion ...
