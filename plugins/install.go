@@ -127,7 +127,7 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		return Plugin{}, fmt.Errorf("failed to parse bitrise-plugin.yml (%s), error: %s", tmpPluginYMLPath, err)
 	}
 
-	if err := validatePlugin(newPlugin, pluginSourceURI); err != nil {
+	if err := validatePlugin(newPlugin, pluginSourceURI, os.Args[0]); err != nil {
 		return Plugin{}, fmt.Errorf("plugin validation failed, error: %s", err)
 	}
 	// ---

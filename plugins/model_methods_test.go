@@ -35,7 +35,7 @@ requirements:
 		require.NoError(t, err)
 
 		// Then
-		require.NoError(t, validatePlugin(plugin, pth))
+		require.NoError(t, validatePlugin(plugin, pth, "bitrise"))
 
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
@@ -120,7 +120,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth), "missing name")
+		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "missing name")
 	}
 
 	t.Log("invalid plugin - no linux executable")
@@ -145,7 +145,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
+		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no osx executable")
@@ -170,7 +170,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
+		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no executables, no bitrise-plugin.sh")
@@ -192,7 +192,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		err = validatePlugin(plugin, pth)
+		err = validatePlugin(plugin, pth, "bitrise")
 		require.Error(t, err)
 		require.Equal(t, true, strings.Contains(err.Error(), "no executable defined, nor bitrise-plugin.sh exist at:"))
 	}
@@ -219,7 +219,7 @@ requirements:
 		// Then
 		require.NoError(t, err)
 
-		require.NoError(t, validatePlugin(plugin, pth))
+		require.NoError(t, validatePlugin(plugin, pth, "bitrise"))
 
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)

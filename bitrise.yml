@@ -48,12 +48,11 @@ workflows:
             echo "Create final binaries"
             echo "  Build number: $BITRISE_BUILD_NUMBER"
 
-            export ARCH=x86_64
-            export GOARCH=amd64
-
             # Create Darwin bin
             export OS=Darwin
             export GOOS=darwin
+            export ARCH=x86_64
+            export GOARCH=amd64
 
             DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Darwin binary at: $DEPLOY_PATH"
@@ -68,10 +67,44 @@ workflows:
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
             echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
+            # Create M1 bin
+            export ORIG_DIR=`pwd`
+            export GO_TMP=/tmp/go1.16.4 && mkdir -p $GO_TMP
+              
+            UNAME=$(uname)
+
+            if [ "$UNAME" == "Linux" ] ; then
+              export GO_DL_OS="linux"
+              export GO_DL_TAR_CMD="tar -xzf -"
+            elif [ "$UNAME" == "Darwin" ] ; then
+              export GO_DL_OS="darwin"
+              export GO_DL_TAR_CMD="tar -xjf -"
+            fi
+
+            cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.$GO_DL_OS-amd64.tar.gz | $GO_DL_TAR_CMD
+            cd $ORIG_DIR
+
+            export GOARCH=arm64
+            export ARCH=arm64
+
+            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
+            echo "  Create final M1 binary at: $DEPLOY_PATH"
+
+            version_package="github.com/bitrise-io/bitrise/version"
+
+            $GO_TMP/go/bin/go build \
+              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
+              -o "$DEPLOY_PATH"
+
+            envman add --key M1_DEPLOY_PATH --value $DEPLOY_PATH
+            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
+            echo "  Copy final M1 binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
             # Create Linux binary
             export OS=Linux
             export GOOS=linux
+            export ARCH=x86_64
+            export GOARCH=amd64
 
             DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
             echo "  Create final Linux binary at: $DEPLOY_PATH"
