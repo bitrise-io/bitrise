@@ -11,7 +11,7 @@ workflows:
     steps:
       - npm@1.1.4:
           inputs:
-          - command: install
+          - command: --version
 
   gomod:
     steps:
