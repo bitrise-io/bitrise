@@ -32,7 +32,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"step": {
 		Source:     "https://github.com/bitrise-io/bitrise-plugins-step.git",
-		MinVersion: "0.9.12",
+		MinVersion: "0.10.1",
 	},
 	"workflow-editor": {
 		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
