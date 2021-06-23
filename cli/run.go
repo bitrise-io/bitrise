@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	utilsLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -115,14 +116,33 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
+		logExit(1)
 		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
+		logExit(1)
 		os.Exit(1)
 	}
 	if err := checkUpdate(); err != nil {
 		log.Warnf("failed to check for update, error: %s", err)
 	}
+	logExit(0)
 	os.Exit(0)
+}
+
+func logExit(exitCode int) {
+	var message string
+	var colorMessage string
+	if exitCode == 0 {
+		message = "Bitrise build successful"
+		colorMessage = colorstring.Green(message)
+	} else {
+		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
+		colorMessage = colorstring.Red(message)
+	}
+	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
+	fmt.Println()
+	fmt.Print(colorMessage)
+	fmt.Println()
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
