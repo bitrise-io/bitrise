@@ -15,6 +15,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
-	golang.org/x/sys v0.0.0-20210608053332-aa57babbf139
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
