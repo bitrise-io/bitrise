@@ -133,10 +133,10 @@ func logExit(exitCode int) {
 	var message string
 	var colorMessage string
 	if exitCode == 0 {
-		message = "Bitrise Build Successful"
+		message = "Bitrise build successful"
 		colorMessage = colorstring.Green(message)
 	} else {
-		message = fmt.Sprintf("Bitrise Build Failed (exit code: %d)", exitCode)
+		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
 		colorMessage = colorstring.Red(message)
 	}
 	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
