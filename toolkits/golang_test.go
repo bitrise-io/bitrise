@@ -1,6 +1,7 @@
 package toolkits
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -196,6 +197,68 @@ func Test_goBuildStep(t *testing.T) {
 			if tt.wantGoMod {
 				_, err := os.Stat(goModPath)
 				require.NoError(t, err, "go.mod was not created")
+			}
+		})
+	}
+}
+
+func Benchmark_goBuildStep(b *testing.B) {
+	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	require.NoError(b, err, "Failed to select an appropriate Go installation for compiling the Step")
+
+	if isInstallRequired {
+		b.Fatalf("Failed to select an appropriate Go installation for compiling the Step")
+	}
+
+	stepDir, err := ioutil.TempDir("", "")
+	require.NoError(b, err)
+
+	defer func() {
+		err := os.RemoveAll(stepDir)
+		require.NoError(b, err)
+	}()
+
+	outputDir, err := ioutil.TempDir("", "")
+	require.NoError(b, err)
+
+	defer func() {
+		err := os.RemoveAll(outputDir)
+		require.NoError(b, err)
+	}()
+
+	stepmanCmd := command.New("stepman", "activate",
+		"--collection", "https://github.com/bitrise-io/bitrise-steplib",
+		"--id", "xcode-test",
+		"--version", "2.5.0", "--update",
+		"--path", stepDir)
+	err = stepmanCmd.Run()
+	require.NoError(b, err)
+
+	packageName := "github.com/bitrise-steplib/steps-xcode-test"
+
+	for _, mode := range []string{"on", "auto"} {
+		b.Run(fmt.Sprintf("Benchmarking GO111MODULE=%s", mode), func(b *testing.B) {
+			err := os.Setenv("GO111MODULE", mode)
+			require.NoError(b, err)
+
+			for i := 0; i < b.N; i++ {
+				stepPerTestDir, err := ioutil.TempDir("", "")
+				require.NoError(b, err)
+
+				defer func() {
+					err := os.RemoveAll(stepPerTestDir)
+					require.NoError(b, err)
+				}()
+
+				err = command.CopyDir(stepDir, stepPerTestDir, true)
+				require.NoError(b, err)
+
+				err = goBuildStep(&defaultRunner{},
+					goConfig,
+					packageName,
+					stepPerTestDir,
+					filepath.Join(outputDir, fmt.Sprintf("%s_%d", mode, i)))
+				require.NoError(b, err)
 			}
 		})
 	}
