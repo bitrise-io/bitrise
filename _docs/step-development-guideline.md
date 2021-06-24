@@ -38,7 +38,7 @@ deps:
   - name: xcode
 ```
 
-Currently, the only supported `check_only` dependency is `xcode`.
+Currently, the only supported `check_only` dependency is `xcode` and `gradle`.
 
 Other dependencies need to be installed and checked while the step is running or using other steps.
 
