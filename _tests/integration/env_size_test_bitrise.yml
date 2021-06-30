@@ -12,7 +12,7 @@ workflows:
             set -ex
 
             echo 'Set $TESTENV with 244KB of random stuff'
-            dd if=/dev/urandom of=/dev/stdout bs=250000 count=1 | envman add --key "TESTENV"
+            ruby -e 'puts "a"*25_000_0' | envman add --key "TESTENV"
     - script:
         title: "Check test env"
         inputs:
