@@ -16,7 +16,7 @@ workflows:
             echo ""
 
             echo 'Set $TESTENV with 256KB of random stuff'
-            dd if=/dev/urandom of=/dev/stdout bs=262143 count=1 | envman add --key "TESTENV"
+            dd if=/dev/urandom of=/dev/stdout bs=250000 count=1 | envman add --key "TESTENV"
     - script:
         title: "Check test env"
         inputs:
