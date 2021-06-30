@@ -8,7 +8,7 @@ workflows:
         title: "Set test env"
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/bin/sh
             set -ex
 
             echo 'Set $TESTENV with 244KB of random stuff'
@@ -17,7 +17,7 @@ workflows:
         title: "Check test env"
         inputs:
         - content: |-
-            #!/bin/bash
+            #!/bin/sh
             set -ex
             
             echo 'Write $TESTENV to test.file'
