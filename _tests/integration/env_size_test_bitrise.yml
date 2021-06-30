@@ -9,20 +9,20 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
+            set -ex
             
             echo 'Envman clear'
             envman clear
             echo ""
 
-            echo 'Set $TESTENV with 256KB of random stuff'
+            echo 'Set $TESTENV with 244KB of random stuff'
             dd if=/dev/urandom of=/dev/stdout bs=250000 count=1 | envman add --key "TESTENV"
     - script:
         title: "Check test env"
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
+            set -ex
             
             echo 'Write $TESTENV to test.file'
             echo "$TESTENV" > test.file
