@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_EnvstoreTest(t *testing.T) {
+func Test_EnvSizeTest(t *testing.T) {
 	configPth := "env_size_test_bitrise.yml"
 
 	t.Log("exit_code_test_fail")
