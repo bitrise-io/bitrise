@@ -26,6 +26,8 @@ workflows:
 
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             go build -o "$current_bitrise"
+            
+            $current_bitrise setup
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
