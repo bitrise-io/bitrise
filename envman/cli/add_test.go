@@ -30,29 +30,29 @@ func TestEnvListSizeInBytes(t *testing.T) {
 
 func TestValidateEnv(t *testing.T) {
 	// Valid - max allowed
-	str20KBytes := strings.Repeat("a", (20 * 1024))
+	str64KBytes := strings.Repeat("a", (64 * 1024))
 	env1 := models.EnvironmentItemModel{
-		"key": str20KBytes,
+		"key": str64KBytes,
 	}
 	envs := []models.EnvironmentItemModel{env1}
 
-	valValue, err := validateEnv("key", str20KBytes, envs)
+	valValue, err := validateEnv("key", str64KBytes, envs)
 	require.NoError(t, err)
-	require.Equal(t, str20KBytes, valValue)
+	require.Equal(t, str64KBytes, valValue)
 
 	// List oversize
 	//  first create a large, but valid env set
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		envs = append(envs, env1)
 	}
 
-	valValue, err = validateEnv("key", str20KBytes, envs)
+	valValue, err = validateEnv("key", str64KBytes, envs)
 	require.NoError(t, err)
-	require.Equal(t, str20KBytes, valValue)
+	require.Equal(t, str64KBytes, valValue)
 
 	// append one more -> too large
 	envs = append(envs, env1)
-	_, err = validateEnv("key", str20KBytes, envs)
+	_, err = validateEnv("key", str64KBytes, envs)
 	require.Equal(t, errors.New("environment list too large"), err)
 
 	// List oversize + too big value
@@ -68,9 +68,9 @@ func TestValidateEnv(t *testing.T) {
 		envs = append(envs, env)
 	}
 
-	str21Kbytes := strings.Repeat("a", (21 * 1024))
+	str257Kbytes := strings.Repeat("a", (257 * 1024))
 
-	valValue, err = validateEnv("key", str21Kbytes, envs)
+	valValue, err = validateEnv("key", str257Kbytes, envs)
 	require.NoError(t, err)
 	require.Equal(t, "environment var (key) value too large - rejected", valValue)
 }

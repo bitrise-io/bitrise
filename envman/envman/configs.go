@@ -11,8 +11,8 @@ import (
 
 const (
 	envmanConfigFileName         = "configs.json"
-	defaultEnvBytesLimitInKB     = 20
-	defaultEnvListBytesLimitInKB = 100
+	defaultEnvBytesLimitInKB     = 256
+	defaultEnvListBytesLimitInKB = 256
 )
 
 // ConfigsModel ...
