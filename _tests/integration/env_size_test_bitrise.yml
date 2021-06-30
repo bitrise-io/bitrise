@@ -11,8 +11,11 @@ workflows:
             #!/bin/bash
             set -e
             
-            echo 'Set $TESTENV with 256KB of random stuff'
+            echo 'Envman clear'
             envman clear
+            echo ""
+
+            echo 'Set $TESTENV with 256KB of random stuff'
             dd if=/dev/urandom of=/dev/stdout bs=262144 count=1 | envman add --key "TESTENV"
     - script:
         title: "Check test env"
@@ -27,3 +30,8 @@ workflows:
 
             echo 'Check test.file size'
             ls -alh test.file
+            echo ""
+
+            echo 'Envman clear'
+            envman clear
+            echo ""
