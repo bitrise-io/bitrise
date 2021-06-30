@@ -12,7 +12,7 @@ workflows:
             set -e
             
             echo 'Set $TESTENV with 256KB of "a"'
-            ruby -e 'puts "a"*26_214_3' | envman add --key "TESTENV"
+            dd if=/dev/urandom of=/dev/stdout bs=262144 count=1 | envman add --key "TESTENV"
     - script:
         title: "Check test env"
         inputs:
