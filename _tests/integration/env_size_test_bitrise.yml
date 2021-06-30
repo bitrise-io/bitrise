@@ -1,0 +1,28 @@
+format_version: "5"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  env-size-test:
+    steps:
+    - script:
+        title: "Set test env"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            
+            echo 'Set $TESTENV with 256KB of "a"'
+            ruby -e 'puts "a"*26_214_3' | envman add --key "TESTENV"
+    - script:
+        title: "Check test env"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            
+            echo 'Write $TESTENV to test.file'
+            echo "$TESTENV" > test.file
+            echo ""
+
+            echo 'Check test.file size'
+            ls -alh test.file
