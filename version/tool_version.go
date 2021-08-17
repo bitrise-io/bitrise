@@ -3,17 +3,17 @@ package version
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/hashicorp/go-version"
+	log "github.com/sirupsen/logrus"
 )
 
 // StepmanVersion ...
-func StepmanVersion() (version.Version, error) {
+func StepmanVersion(binPath string) (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"stepman", "--loglevel", logLevel, "--version"}
 
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, args...)
 	if err != nil {
 		return version.Version{}, err
 	}
@@ -30,10 +30,10 @@ func StepmanVersion() (version.Version, error) {
 }
 
 // EnvmanVersion ...
-func EnvmanVersion() (version.Version, error) {
+func EnvmanVersion(binPath string) (version.Version, error) {
 	logLevel := log.GetLevel().String()
 	args := []string{"envman", "--loglevel", logLevel, "--version"}
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("bitrise", args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, args...)
 	if err != nil {
 		return version.Version{}, err
 	}
@@ -63,13 +63,13 @@ func BitriseCliVersion() (version.Version, error) {
 }
 
 // ToolVersionMap ...
-func ToolVersionMap() (map[string]version.Version, error) {
-	envmanVersion, err := EnvmanVersion()
+func ToolVersionMap(binPath string) (map[string]version.Version, error) {
+	envmanVersion, err := EnvmanVersion(binPath)
 	if err != nil {
 		return map[string]version.Version{}, err
 	}
 
-	stepmanVersion, err := StepmanVersion()
+	stepmanVersion, err := StepmanVersion(binPath)
 	if err != nil {
 		return map[string]version.Version{}, err
 	}

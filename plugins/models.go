@@ -28,8 +28,9 @@ type PluginRouting struct {
 
 // ExecutableModel ...
 type ExecutableModel struct {
-	OSX   string `yaml:"osx,omitempty"`
-	Linux string `yaml:"linux,omitempty"`
+	OSX      string `yaml:"osx,omitempty"`
+	OSXArm64 string `yaml:"osx-arm64,omitempty"`
+	Linux    string `yaml:"linux,omitempty"`
 }
 
 // Requirement ...

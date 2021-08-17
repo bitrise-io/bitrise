@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
@@ -40,6 +40,8 @@ func UnameGOARCH() (string, error) {
 	switch runtime.GOARCH {
 	case "amd64":
 		return "x86_64", nil
+	case "arm64":
+		return "arm64", nil
 	}
 	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
 }
