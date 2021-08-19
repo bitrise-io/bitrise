@@ -13,14 +13,15 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
+	"github.com/bitrise-io/envman/envman"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
 
@@ -278,7 +279,7 @@ func EnvmanInitAtPath(envstorePth string) error {
 }
 
 // EnvmanAdd ...
-func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
+func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--append"}
 	if !expand {
@@ -286,6 +287,9 @@ func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
 	}
 	if skipIfEmpty {
 		args = append(args, "--skip-if-empty")
+	}
+	if sensitive {
+		args = append(args, "--sensitive")
 	}
 
 	envman := exec.Command("envman", args...)
@@ -318,7 +322,12 @@ func ExportEnvironmentsList(envstorePth string, envsList []envmanModels.Environm
 			skipIfEmpty = *opts.SkipIfEmpty
 		}
 
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty); err != nil {
+		sensitive := envmanModels.DefaultIsSensitive
+		if opts.IsSensitive != nil {
+			sensitive = *opts.IsSensitive
+		}
+
+		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty, sensitive); err != nil {
 			return err
 		}
 	}
@@ -377,8 +386,25 @@ func EnvmanRun(envstorePth,
 		outWriter = os.Stdout
 		errWriter = os.Stderr
 	} else {
+		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
+		if err != nil {
+			panic(err)
+		}
 
-		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
+		sensitiveOnly := []envmanModels.EnvironmentItemModel{}
+
+		for _, env := range envs {
+			opts, err := env.GetOptions()
+			if err != nil {
+				panic(err)
+			}
+			if opts.IsSensitive != nil && *opts.IsSensitive {
+				sensitiveOnly = append(sensitiveOnly, env)
+			}
+
+		}
+
+		outWriter = filterwriter.New(GetSecretValues(append(secrets, sensitiveOnly...)), os.Stdout)
 		errWriter = outWriter
 	}
 
