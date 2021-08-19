@@ -3,13 +3,13 @@ github.com/bitrise-io/colorstring
 # github.com/bitrise-io/envman v0.0.0-20210517135508-b2b4fe89eac5
 ## explicit
 github.com/bitrise-io/envman/env
+github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
 # github.com/bitrise-io/go-utils v0.0.0-20210520073355-367fa34178f5
 ## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
 github.com/bitrise-io/go-utils/command/git
-github.com/bitrise-io/go-utils/envutil
 github.com/bitrise-io/go-utils/errorutil
 github.com/bitrise-io/go-utils/fileutil
 github.com/bitrise-io/go-utils/log

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -34,6 +33,7 @@ import (
 	stepmanCLI "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
+	log "github.com/sirupsen/logrus"
 )
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -465,7 +465,12 @@ func runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+	updatedStepOutputs, updateErr := bitrise.ApplySensitiveOutputs(stepOutputs, step.Outputs)
+	if updateErr != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+	}
+
+	updatedStepOutputs, updateErr = bitrise.ApplyOutputAliases(updatedStepOutputs, step.Outputs)
 	if updateErr != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
 	}
