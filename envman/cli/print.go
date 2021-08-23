@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
