@@ -98,6 +98,9 @@ func removeDefaults(env *models.EnvironmentItemModel) error {
 	if opts.Description != nil && *opts.Description == "" {
 		opts.Description = nil
 	}
+	if opts.Category != nil && *opts.Category == "" {
+		opts.Category = nil
+	}
 	if opts.Summary != nil && *opts.Summary == "" {
 		opts.Summary = nil
 	}

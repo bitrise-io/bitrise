@@ -29,7 +29,7 @@ func printRawEnvs(envList models.EnvsJSONListModel) {
 	fmt.Println()
 }
 
-func convertToEnsJSONModel(envs []models.EnvironmentItemModel, expand bool) (models.EnvsJSONListModel, error) {
+func convertToEnvsJSONModel(envs []models.EnvironmentItemModel, expand, sensitiveOnly bool) (models.EnvsJSONListModel, error) {
 	JSONModels := models.EnvsJSONListModel{}
 	for _, env := range envs {
 		key, value, err := env.GetKeyValuePair()
@@ -40,6 +40,12 @@ func convertToEnsJSONModel(envs []models.EnvironmentItemModel, expand bool) (mod
 		opts, err := env.GetOptions()
 		if err != nil {
 			return models.EnvsJSONListModel{}, err
+		}
+
+		if sensitiveOnly {
+			if opts.IsSensitive == nil || !*opts.IsSensitive {
+				continue
+			}
 		}
 
 		if expand && (opts.IsExpand != nil && *opts.IsExpand) {
@@ -65,6 +71,7 @@ func print(c *cli.Context) error {
 	}
 
 	expand := c.Bool(ExpandKey)
+	sensitiveOnly := c.Bool(SensitiveOnlyKey)
 
 	// Read envs
 	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
@@ -72,7 +79,7 @@ func print(c *cli.Context) error {
 		log.Fatalf("Failed to read envs, error: %s", err)
 	}
 
-	envsJSONList, err := convertToEnsJSONModel(environments, expand)
+	envsJSONList, err := convertToEnvsJSONModel(environments, expand, sensitiveOnly)
 	if err != nil {
 		log.Fatalf("Failed to convert envs, error: %s", err)
 	}

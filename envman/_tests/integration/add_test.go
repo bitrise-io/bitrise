@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addCommand(key, value, envstore string) *command.Model {
-	return command.New(binPath(), "-l", "debug", "-p", envstore, "add", "--key", key, "--value", value)
+func addCommand(key, value, envstore string, arguments ...string) *command.Model {
+	return command.New(binPath(), append([]string{"-l", "debug", "-p", envstore, "add", "--key", key, "--value", value}, arguments...)...)
 }
 
 func addFileCommand(key, pth, envstore string) *command.Model {
@@ -45,6 +45,16 @@ func TestAdd(t *testing.T) {
 		cont, err := fileutil.ReadStringFromFile(envstore)
 		require.NoError(t, err, out)
 		require.Equal(t, "envs:\n- KEY: value\n", cont)
+	}
+
+	t.Log("add sensitive env")
+	{
+		out, err := addCommand("KEY", "value", envstore, "--sensitive").RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+
+		cont, err := fileutil.ReadStringFromFile(envstore)
+		require.NoError(t, err, out)
+		require.Equal(t, "envs:\n- KEY: value\n  opts:\n    is_sensitive: true\n", cont)
 	}
 
 	t.Log("add file flag value")
