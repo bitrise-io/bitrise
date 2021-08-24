@@ -32,6 +32,8 @@ workflows:
               end
             end
             " > $TMP_DIR/fastlane/Fastfile
+
+            echo $PATH
     - fastlane@3.2.0:
         inputs:
         - lane: test_fastlane
