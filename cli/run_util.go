@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/envman/env"
+	"github.com/bitrise-io/envman/envman"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -403,7 +404,26 @@ func executeStep(
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets, nil)
+	sensitiveOnly := []envmanModels.EnvironmentItemModel{}
+
+	if configs.IsSecretFiltering {
+		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, env := range envs {
+			opts, err := env.GetOptions()
+			if err != nil {
+				panic(err)
+			}
+			if opts.IsSensitive != nil && *opts.IsSensitive {
+				sensitiveOnly = append(sensitiveOnly, env)
+			}
+		}
+	}
+
+	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, append(secrets, sensitiveOnly...), nil)
 }
 
 func runStep(

@@ -16,7 +16,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
-	"github.com/bitrise-io/envman/envman"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
@@ -386,25 +385,7 @@ func EnvmanRun(envstorePth,
 		outWriter = os.Stdout
 		errWriter = os.Stderr
 	} else {
-		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
-		if err != nil {
-			panic(err)
-		}
-
-		sensitiveOnly := []envmanModels.EnvironmentItemModel{}
-
-		for _, env := range envs {
-			opts, err := env.GetOptions()
-			if err != nil {
-				panic(err)
-			}
-			if opts.IsSensitive != nil && *opts.IsSensitive {
-				sensitiveOnly = append(sensitiveOnly, env)
-			}
-
-		}
-
-		outWriter = filterwriter.New(GetSecretValues(append(secrets, sensitiveOnly...)), os.Stdout)
+		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
 		errWriter = outWriter
 	}
 
