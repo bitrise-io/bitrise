@@ -32,10 +32,6 @@ workflows:
               end
             end
             " > $TMP_DIR/fastlane/Fastfile
-
-            envman -v
-            which envman
-            echo $PATH
     - fastlane@3.2.0:
         inputs:
         - lane: test_fastlane
