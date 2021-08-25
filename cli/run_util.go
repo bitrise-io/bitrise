@@ -140,6 +140,37 @@ func registerSecretFiltering(filtering bool) error {
 	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
 }
 
+func isSecretEnvsFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if filteringFlag != nil {
+		return *filteringFlag, nil
+	}
+
+	expandedEnvs, err := tools.ExpandEnvItems(inventoryEnvironments, os.Environ())
+	if err != nil {
+		return false, err
+	}
+
+	value, ok := expandedEnvs[configs.IsSecretEnvsFilteringKey]
+	if ok {
+		if value == "true" {
+			return true, nil
+		} else if value == "false" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func registerSecretEnvsFiltering(filtering bool) error {
+	configs.IsSecretEnvsFiltering = filtering
+
+	if filtering {
+		log.Info(colorstring.Yellow("bitrise runs in Secret Envs Filtering mode"))
+	}
+	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
+}
+
 func isDirEmpty(path string) (bool, error) {
 	entries, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -447,9 +478,13 @@ func runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	sensitives, err := collectSensitiveInputsFromEnvman()
-	if err != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, err
+	var sensitives []envmanModels.EnvironmentItemModel
+
+	if configs.IsSecretEnvsFiltering {
+		sensitives, err = collectSensitiveInputsFromEnvman()
+		if err != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, err
+		}
 	}
 
 	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, append(secrets, sensitives...)); err != nil {
@@ -471,9 +506,13 @@ func runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	updatedStepOutputs, updateErr := bitrise.ApplySensitiveOutputs(stepOutputs, step.Outputs)
-	if updateErr != nil {
-		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+	updatedStepOutputs, updateErr := stepOutputs, error(nil)
+
+	if configs.IsSecretEnvsFiltering {
+		updatedStepOutputs, updateErr = bitrise.ApplySensitiveOutputs(updatedStepOutputs, step.Outputs)
+		if updateErr != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+		}
 	}
 
 	updatedStepOutputs, updateErr = bitrise.ApplyOutputAliases(updatedStepOutputs, step.Outputs)

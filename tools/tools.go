@@ -287,7 +287,8 @@ func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty, sensitive bo
 	if skipIfEmpty {
 		args = append(args, "--skip-if-empty")
 	}
-	if sensitive {
+
+	if configs.IsSecretEnvsFiltering && sensitive {
 		args = append(args, "--sensitive")
 	}
 
@@ -463,6 +464,7 @@ func MoveFile(oldpath, newpath string) error {
 func IsBuiltInFlagTypeKey(env string) bool {
 	switch string(env) {
 	case configs.IsSecretFilteringKey,
+		configs.IsSecretEnvsFilteringKey,
 		configs.CIModeEnvKey,
 		configs.PRModeEnvKey,
 		configs.DebugModeEnvKey,
