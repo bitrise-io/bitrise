@@ -385,6 +385,7 @@ func EnvmanRun(envstorePth,
 		outWriter = os.Stdout
 		errWriter = os.Stderr
 	} else {
+
 		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
 		errWriter = outWriter
 	}

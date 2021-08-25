@@ -404,26 +404,7 @@ func executeStep(
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	sensitiveOnly := []envmanModels.EnvironmentItemModel{}
-
-	if configs.IsSecretFiltering {
-		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, env := range envs {
-			opts, err := env.GetOptions()
-			if err != nil {
-				panic(err)
-			}
-			if opts.IsSensitive != nil && *opts.IsSensitive {
-				sensitiveOnly = append(sensitiveOnly, env)
-			}
-		}
-	}
-
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, append(secrets, sensitiveOnly...), nil)
+	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets, nil)
 }
 
 func runStep(
@@ -466,7 +447,12 @@ func runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	sensitives, err := collectSensitiveInputsFromEnvman()
+	if err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, err
+	}
+
+	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, append(secrets, sensitives...)); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -498,6 +484,29 @@ func runStep(
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return 0, updatedStepOutputs, nil
+}
+
+func collectSensitiveInputsFromEnvman() ([]envmanModels.EnvironmentItemModel, error) {
+	sensitiveOnly := []envmanModels.EnvironmentItemModel{}
+
+	if configs.IsSecretFiltering {
+		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, env := range envs {
+			opts, err := env.GetOptions()
+			if err != nil {
+				return nil, err
+			}
+			if opts.IsSensitive != nil && *opts.IsSensitive {
+				sensitiveOnly = append(sensitiveOnly, env)
+			}
+		}
+	}
+
+	return sensitiveOnly, nil
 }
 
 func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
