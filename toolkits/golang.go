@@ -136,7 +136,7 @@ func parseGoVersionFromGoVersionOutput(goVersionCallOutput string) (string, erro
 	}
 
 	// example goVersionCallOutput: go version go1.7 darwin/amd64
-	goVerExp := regexp.MustCompile(`go version go(?P<goVersionNumber>[0-9.]+) (?P<platform>[a-zA-Z0-9]+/[a-zA-Z0-9]+)`)
+	goVerExp := regexp.MustCompile(`go version go(?P<goVersionNumber>[0-9.]+)[a-zA-Z0-9]* (?P<platform>[a-zA-Z0-9]+/[a-zA-Z0-9]+)`)
 	expRes := goVerExp.FindStringSubmatch(goVersionCallOutput)
 	if expRes == nil {
 		return "", fmt.Errorf("Failed to parse Go version, error: failed to find version in input: %s", origGoVersionCallOutput)
