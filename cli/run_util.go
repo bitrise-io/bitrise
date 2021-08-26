@@ -478,16 +478,7 @@ func runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	var sensitives []envmanModels.EnvironmentItemModel
-
-	if configs.IsSecretEnvsFiltering {
-		sensitives, err = collectSensitiveInputsFromEnvman()
-		if err != nil {
-			return 1, []envmanModels.EnvironmentItemModel{}, err
-		}
-	}
-
-	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, append(secrets, sensitives...)); err != nil {
+	if exit, err := executeStep(step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -989,7 +980,15 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, secrets, buildRunResults)
+			sensitiveInputs, err := getSensitiveInputs(stepDeclaredEnvironments)
+			if err != nil {
+				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
+					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+					fmt.Errorf("failed to get sensitive inputs: %s", err),
+					isLastStep, false, map[string]string{})
+			}
+
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, append(secrets, sensitiveInputs...), buildRunResults)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -1018,6 +1017,24 @@ func activateAndRunSteps(
 	}
 
 	return buildRunResults
+}
+
+func getSensitiveInputs(envs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
+	var sensitiveInputs []envmanModels.EnvironmentItemModel
+
+	if configs.IsSecretFiltering {
+		for _, env := range envs {
+			opts, err := env.GetOptions()
+			if err != nil {
+				return nil, err
+			}
+			if opts.IsSensitive != nil && *opts.IsSensitive {
+				sensitiveInputs = append(sensitiveInputs, env)
+			}
+		}
+	}
+
+	return sensitiveInputs, nil
 }
 
 func runWorkflow(
