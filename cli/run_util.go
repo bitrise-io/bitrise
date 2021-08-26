@@ -413,7 +413,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 func executeStep(
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
-	secrets []envmanModels.EnvironmentItemModel) (int, error) {
+	secrets []string) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -439,7 +439,7 @@ func executeStep(
 
 func runStep(
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
-	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	environments []envmanModels.EnvironmentItemModel, secrets []string,
 	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -957,7 +957,20 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
+			stepSecrets := tools.GetSecretValues(secrets)
+			if configs.IsSecretEnvsFiltering {
+				sensitiveEnvs, err := getSensitiveEnvs(stepDeclaredEnvironments, expandedStepEnvironment)
+				if err != nil {
+					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
+						*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+						fmt.Errorf("failed to get sensitive inputs: %s", err),
+						isLastStep, false, map[string]string{})
+				}
+
+				stepSecrets = append(stepSecrets, tools.GetSecretValues(sensitiveEnvs)...)
+			}
+
+			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecrets)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
@@ -965,18 +978,7 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			var sensitiveInputs []envmanModels.EnvironmentItemModel
-			if configs.IsSecretFiltering {
-				sensitiveInputs, err = getSensitiveInputs(stepDeclaredEnvironments)
-				if err != nil {
-					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-						*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
-						fmt.Errorf("failed to get sensitive inputs: %s", err),
-						isLastStep, false, map[string]string{})
-				}
-			}
-
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, append(secrets, sensitiveInputs...), buildRunResults)
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets, buildRunResults)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -1005,22 +1007,6 @@ func activateAndRunSteps(
 	}
 
 	return buildRunResults
-}
-
-func getSensitiveInputs(envs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
-	var sensitiveInputs []envmanModels.EnvironmentItemModel
-
-	for _, env := range envs {
-		opts, err := env.GetOptions()
-		if err != nil {
-			return nil, err
-		}
-		if opts.IsSensitive != nil && *opts.IsSensitive {
-			sensitiveInputs = append(sensitiveInputs, env)
-		}
-	}
-
-	return sensitiveInputs, nil
 }
 
 func runWorkflow(

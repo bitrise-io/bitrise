@@ -371,7 +371,7 @@ func EnvmanRun(envstorePth,
 	workDirPth string,
 	cmdArgs []string,
 	timeout time.Duration,
-	secrets []envmanModels.EnvironmentItemModel,
+	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
 	logLevel := log.GetLevel().String()
@@ -387,7 +387,7 @@ func EnvmanRun(envstorePth,
 		errWriter = os.Stderr
 	} else {
 
-		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
+		outWriter = filterwriter.New(secrets, os.Stdout)
 		errWriter = outWriter
 	}
 
