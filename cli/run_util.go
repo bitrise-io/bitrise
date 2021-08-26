@@ -965,12 +965,15 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			sensitiveInputs, err := getSensitiveInputs(stepDeclaredEnvironments)
-			if err != nil {
-				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
-					fmt.Errorf("failed to get sensitive inputs: %s", err),
-					isLastStep, false, map[string]string{})
+			var sensitiveInputs []envmanModels.EnvironmentItemModel
+			if configs.IsSecretFiltering {
+				sensitiveInputs, err = getSensitiveInputs(stepDeclaredEnvironments)
+				if err != nil {
+					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
+						*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+						fmt.Errorf("failed to get sensitive inputs: %s", err),
+						isLastStep, false, map[string]string{})
+				}
 			}
 
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, append(secrets, sensitiveInputs...), buildRunResults)
@@ -1007,15 +1010,13 @@ func activateAndRunSteps(
 func getSensitiveInputs(envs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
 	var sensitiveInputs []envmanModels.EnvironmentItemModel
 
-	if configs.IsSecretFiltering {
-		for _, env := range envs {
-			opts, err := env.GetOptions()
-			if err != nil {
-				return nil, err
-			}
-			if opts.IsSensitive != nil && *opts.IsSensitive {
-				sensitiveInputs = append(sensitiveInputs, env)
-			}
+	for _, env := range envs {
+		opts, err := env.GetOptions()
+		if err != nil {
+			return nil, err
+		}
+		if opts.IsSensitive != nil && *opts.IsSensitive {
+			sensitiveInputs = append(sensitiveInputs, env)
 		}
 	}
 
