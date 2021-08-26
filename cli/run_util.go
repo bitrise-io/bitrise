@@ -20,7 +20,6 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/envman/env"
-	"github.com/bitrise-io/envman/envman"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -484,7 +483,16 @@ func runStep(
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
 		}
 
-		updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+		updatedStepOutputs, updateErr := stepOutputs, error(nil)
+
+		if configs.IsSecretEnvsFiltering {
+			updatedStepOutputs, updateErr = bitrise.ApplySensitiveOutputs(updatedStepOutputs, step.Outputs)
+			if updateErr != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+			}
+		}
+
+		updatedStepOutputs, updateErr = bitrise.ApplyOutputAliases(updatedStepOutputs, step.Outputs)
 		if updateErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
 		}
@@ -514,29 +522,6 @@ func runStep(
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return 0, updatedStepOutputs, nil
-}
-
-func collectSensitiveInputsFromEnvman() ([]envmanModels.EnvironmentItemModel, error) {
-	sensitiveOnly := []envmanModels.EnvironmentItemModel{}
-
-	if configs.IsSecretFiltering {
-		envs, err := envman.ReadEnvs(configs.InputEnvstorePath)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, env := range envs {
-			opts, err := env.GetOptions()
-			if err != nil {
-				return nil, err
-			}
-			if opts.IsSensitive != nil && *opts.IsSensitive {
-				sensitiveOnly = append(sensitiveOnly, env)
-			}
-		}
-	}
-
-	return sensitiveOnly, nil
 }
 
 func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
