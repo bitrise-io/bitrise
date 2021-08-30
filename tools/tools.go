@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
@@ -21,6 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
 
@@ -278,7 +278,7 @@ func EnvmanInitAtPath(envstorePth string) error {
 }
 
 // EnvmanAdd ...
-func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
+func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "add", "--key", key, "--append"}
 	if !expand {
@@ -286,6 +286,10 @@ func EnvmanAdd(envstorePth, key, value string, expand, skipIfEmpty bool) error {
 	}
 	if skipIfEmpty {
 		args = append(args, "--skip-if-empty")
+	}
+
+	if configs.IsSecretEnvsFiltering && sensitive {
+		args = append(args, "--sensitive")
 	}
 
 	envman := exec.Command("envman", args...)
@@ -318,7 +322,12 @@ func ExportEnvironmentsList(envstorePth string, envsList []envmanModels.Environm
 			skipIfEmpty = *opts.SkipIfEmpty
 		}
 
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty); err != nil {
+		sensitive := envmanModels.DefaultIsSensitive
+		if opts.IsSensitive != nil {
+			sensitive = *opts.IsSensitive
+		}
+
+		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty, sensitive); err != nil {
 			return err
 		}
 	}
@@ -362,7 +371,7 @@ func EnvmanRun(envstorePth,
 	workDirPth string,
 	cmdArgs []string,
 	timeout time.Duration,
-	secrets []envmanModels.EnvironmentItemModel,
+	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
 	logLevel := log.GetLevel().String()
@@ -378,7 +387,7 @@ func EnvmanRun(envstorePth,
 		errWriter = os.Stderr
 	} else {
 
-		outWriter = filterwriter.New(GetSecretValues(secrets), os.Stdout)
+		outWriter = filterwriter.New(secrets, os.Stdout)
 		errWriter = outWriter
 	}
 
@@ -455,6 +464,7 @@ func MoveFile(oldpath, newpath string) error {
 func IsBuiltInFlagTypeKey(env string) bool {
 	switch string(env) {
 	case configs.IsSecretFilteringKey,
+		configs.IsSecretEnvsFilteringKey,
 		configs.CIModeEnvKey,
 		configs.PRModeEnvKey,
 		configs.DebugModeEnvKey,

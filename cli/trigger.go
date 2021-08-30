@@ -5,11 +5,11 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -90,6 +90,13 @@ func trigger(c *cli.Context) error {
 		secretFiltering = pointers.NewBoolPtr(false)
 	}
 
+	var secretEnvsFiltering *bool
+	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
+		secretEnvsFiltering = pointers.NewBoolPtr(true)
+	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
+		secretEnvsFiltering = pointers.NewBoolPtr(false)
+	}
+
 	triggerPattern := c.String(PatternKey)
 	if triggerPattern == "" && len(c.Args()) > 0 {
 		triggerPattern = c.Args()[0]
@@ -156,6 +163,15 @@ func trigger(c *cli.Context) error {
 
 	if err := registerSecretFiltering(enabledFiltering); err != nil {
 		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+	}
+
+	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check Secret Envs Filtering mode, error: %s", err)
+	}
+
+	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
+		log.Fatalf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)

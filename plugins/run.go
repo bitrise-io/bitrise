@@ -128,13 +128,13 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		return err
 	}
 
-	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false); err != nil {
+	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false, false); err != nil {
 		return err
 	}
 
 	// Add plugin inputs
 	for key, value := range envs {
-		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false); err != nil {
+		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false, false); err != nil {
 			return err
 		}
 	}

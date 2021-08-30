@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -34,6 +33,7 @@ import (
 	stepmanCLI "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
+	log "github.com/sirupsen/logrus"
 )
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -137,6 +137,37 @@ func registerSecretFiltering(filtering bool) error {
 		log.Info(colorstring.Yellow("bitrise runs in Secret Filtering mode"))
 	}
 	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
+}
+
+func isSecretEnvsFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
+	if filteringFlag != nil {
+		return *filteringFlag, nil
+	}
+
+	expandedEnvs, err := tools.ExpandEnvItems(inventoryEnvironments, os.Environ())
+	if err != nil {
+		return false, err
+	}
+
+	value, ok := expandedEnvs[configs.IsSecretEnvsFilteringKey]
+	if ok {
+		if value == "true" {
+			return true, nil
+		} else if value == "false" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func registerSecretEnvsFiltering(filtering bool) error {
+	configs.IsSecretEnvsFiltering = filtering
+
+	if filtering {
+		log.Info(colorstring.Yellow("bitrise runs in Secret Envs Filtering mode"))
+	}
+	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
 }
 
 func isDirEmpty(path string) (bool, error) {
@@ -382,7 +413,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 func executeStep(
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
-	secrets []envmanModels.EnvironmentItemModel) (int, error) {
+	secrets []string) (int, error) {
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -408,7 +439,7 @@ func executeStep(
 
 func runStep(
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
-	environments []envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
+	environments []envmanModels.EnvironmentItemModel, secrets []string,
 	buildRunResults models.BuildRunResultsModel) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -452,7 +483,16 @@ func runStep(
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
 		}
 
-		updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+		updatedStepOutputs, updateErr := stepOutputs, error(nil)
+
+		if configs.IsSecretEnvsFiltering {
+			updatedStepOutputs, updateErr = bitrise.ApplySensitiveOutputs(updatedStepOutputs, step.Outputs)
+			if updateErr != nil {
+				return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+			}
+		}
+
+		updatedStepOutputs, updateErr = bitrise.ApplyOutputAliases(updatedStepOutputs, step.Outputs)
 		if updateErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
 		}
@@ -465,7 +505,16 @@ func runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	updatedStepOutputs, updateErr := bitrise.ApplyOutputAliases(stepOutputs, step.Outputs)
+	updatedStepOutputs, updateErr := stepOutputs, error(nil)
+
+	if configs.IsSecretEnvsFiltering {
+		updatedStepOutputs, updateErr = bitrise.ApplySensitiveOutputs(updatedStepOutputs, step.Outputs)
+		if updateErr != nil {
+			return 1, []envmanModels.EnvironmentItemModel{}, updateErr
+		}
+	}
+
+	updatedStepOutputs, updateErr = bitrise.ApplyOutputAliases(updatedStepOutputs, step.Outputs)
 	if updateErr != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, updateErr
 	}
@@ -908,7 +957,20 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, tools.GetSecretValues(secrets))
+			stepSecrets := tools.GetSecretValues(secrets)
+			if configs.IsSecretEnvsFiltering {
+				sensitiveEnvs, err := getSensitiveEnvs(stepDeclaredEnvironments, expandedStepEnvironment)
+				if err != nil {
+					registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
+						*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
+						fmt.Errorf("failed to get sensitive inputs: %s", err),
+						isLastStep, false, map[string]string{})
+				}
+
+				stepSecrets = append(stepSecrets, tools.GetSecretValues(sensitiveEnvs)...)
+			}
+
+			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecrets)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
@@ -916,7 +978,7 @@ func activateAndRunSteps(
 					isLastStep, false, map[string]string{})
 			}
 
-			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, secrets, buildRunResults)
+			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets, buildRunResults)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {

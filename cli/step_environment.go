@@ -78,3 +78,31 @@ func prepareStepEnvironment(params prepareStepInputParams, envSource env.Environ
 
 	return stepEnvironment, declarationSideEffects.ResultEnvironment, nil
 }
+
+func getSensitiveEnvs(envList []envmanModels.EnvironmentItemModel, expandedStepEnvironment map[string]string) ([]envmanModels.EnvironmentItemModel, error) {
+	var sensitiveKeys []string
+	for _, env := range envList {
+		opts, err := env.GetOptions()
+		if err != nil {
+			return nil, err
+		}
+		if opts.IsSensitive == nil || !*opts.IsSensitive {
+			continue
+		}
+		key, _, err := env.GetKeyValuePair()
+		if err != nil {
+			return nil, err
+		}
+
+		sensitiveKeys = append(sensitiveKeys, key)
+	}
+
+	var sensitiveValues []envmanModels.EnvironmentItemModel
+	for _, key := range sensitiveKeys {
+		if value, ok := expandedStepEnvironment[key]; ok {
+			sensitiveValues = append(sensitiveValues, envmanModels.EnvironmentItemModel{key: value})
+		}
+	}
+
+	return sensitiveValues, nil
+}

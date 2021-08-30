@@ -11,7 +11,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
@@ -20,7 +19,9 @@ import (
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // InventoryModelFromYAMLBytes ...
@@ -85,6 +86,52 @@ func ApplyOutputAliases(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel)
 			onEnvs[idx] = envmanModels.EnvironmentItemModel{
 				envKeyAlias:             origValue,
 				envmanModels.OptionsKey: origOptions,
+			}
+		}
+	}
+	return onEnvs, nil
+}
+
+// ApplySensitiveOutputs ...
+func ApplySensitiveOutputs(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
+	for _, basedOnEnv := range basedOnEnvs {
+		envKey, _, err := basedOnEnv.GetKeyValuePair()
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		opts, err := basedOnEnv.GetOptions()
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		if opts.IsSensitive == nil || !*opts.IsSensitive {
+			continue
+		}
+
+		envToAlias, idx, err := searchEnvInSlice(envKey, onEnvs)
+		if err != nil {
+			return []envmanModels.EnvironmentItemModel{}, err
+		}
+
+		if idx > -1 {
+			origKey, origValue, err := envToAlias.GetKeyValuePair()
+			if err != nil {
+				return []envmanModels.EnvironmentItemModel{}, err
+			}
+
+			origOptions, err := envToAlias.GetOptions()
+			if err != nil {
+				return []envmanModels.EnvironmentItemModel{}, err
+			}
+
+			if origKey == envKey {
+				origOptions.IsSensitive = pointers.NewBoolPtr(true)
+
+				onEnvs[idx] = envmanModels.EnvironmentItemModel{
+					origKey:                 origValue,
+					envmanModels.OptionsKey: origOptions,
+				}
 			}
 		}
 	}
