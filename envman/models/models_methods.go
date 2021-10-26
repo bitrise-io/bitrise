@@ -312,12 +312,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 
 // Validate ...
 func (env EnvironmentItemModel) Validate() error {
-	key, _, err := env.GetKeyValuePair()
+	_, _, err := env.GetKeyValuePair()
 	if err != nil {
 		return err
-	}
-	if key == "" {
-		return errors.New("no environment key found")
 	}
 	_, err = env.GetOptions()
 	if err != nil {
