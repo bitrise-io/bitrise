@@ -3,6 +3,7 @@ github.com/bitrise-io/colorstring
 # github.com/bitrise-io/envman v0.0.0-20210517135508-b2b4fe89eac5
 ## explicit
 github.com/bitrise-io/envman/env
+github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
 # github.com/bitrise-io/go-utils v0.0.0-20210520073355-367fa34178f5
 ## explicit
@@ -64,15 +65,17 @@ github.com/stretchr/testify/require
 # github.com/urfave/cli v1.22.5
 ## explicit
 github.com/urfave/cli
-# golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+# golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20210608053332-aa57babbf139
+# golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.0.0-20210503060354-a79de5458b56
+# golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
+## explicit
 golang.org/x/term
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit

@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	utilsLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -115,14 +116,33 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments); err != nil {
+		logExit(1)
 		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
+		logExit(1)
 		os.Exit(1)
 	}
 	if err := checkUpdate(); err != nil {
 		log.Warnf("failed to check for update, error: %s", err)
 	}
+	logExit(0)
 	os.Exit(0)
+}
+
+func logExit(exitCode int) {
+	var message string
+	var colorMessage string
+	if exitCode == 0 {
+		message = "Bitrise build successful"
+		colorMessage = colorstring.Green(message)
+	} else {
+		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
+		colorMessage = colorstring.Red(message)
+	}
+	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
+	fmt.Println()
+	fmt.Print(colorMessage)
+	fmt.Println()
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
@@ -174,6 +194,13 @@ func run(c *cli.Context) error {
 		secretFiltering = pointers.NewBoolPtr(true)
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
 		secretFiltering = pointers.NewBoolPtr(false)
+	}
+
+	var secretEnvsFiltering *bool
+	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
+		secretEnvsFiltering = pointers.NewBoolPtr(true)
+	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
+		secretEnvsFiltering = pointers.NewBoolPtr(false)
 	}
 
 	workflowToRunID := c.String(WorkflowKey)
@@ -248,6 +275,15 @@ func run(c *cli.Context) error {
 
 	if err := registerSecretFiltering(enabledFiltering); err != nil {
 		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+	}
+
+	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check Secret Envs Filtering mode, error: %s", err)
+	}
+
+	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
+		log.Fatalf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)

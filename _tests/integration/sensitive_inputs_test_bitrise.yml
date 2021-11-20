@@ -1,0 +1,50 @@
+format_version: 7
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test-sensitive-env-and-output:
+    steps:
+    - script:
+        title: Add a sensitive env
+        inputs:
+        - content: |-
+            set -ex
+
+            bitrise envman add --key MYTESTKEY --value "mysupersecret" --sensitive
+        outputs:
+        - TESTOUTPUT:
+          opts:
+            is_sensitive: true
+
+    - script:
+        title: Add a sensitive env (needs expansion)
+        inputs:
+        - content: |-
+            set -ex
+
+            bitrise envman add --key EXPANDED_SECRET --value "realvalue"
+            bitrise envman add --key MYTESTKEY2 --value '$EXPANDED_SECRET' --sensitive
+        outputs:
+        - TESTOUTPUT:
+          opts:
+            is_sensitive: true
+
+    - path::./test_step_with_sensitive_output:
+        title: Add a step with sensitive output
+        inputs: 
+        - content: |-
+            set -ex
+
+            bitrise envman add --key TESTOUTPUT --value "myotherverysecret"
+        outputs:
+        - TESTOUTPUT:
+          opts:
+            is_sensitive: true
+
+    - script:
+        title: Try to print sensitive env and sensitive output
+        inputs:
+        - content: |-
+            echo "mysupersecret"
+            echo "myotherverysecret"
+            echo "realvalue"
