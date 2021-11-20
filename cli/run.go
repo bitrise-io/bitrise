@@ -196,6 +196,13 @@ func run(c *cli.Context) error {
 		secretFiltering = pointers.NewBoolPtr(false)
 	}
 
+	var secretEnvsFiltering *bool
+	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
+		secretEnvsFiltering = pointers.NewBoolPtr(true)
+	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
+		secretEnvsFiltering = pointers.NewBoolPtr(false)
+	}
+
 	workflowToRunID := c.String(WorkflowKey)
 	if workflowToRunID == "" && len(c.Args()) > 0 {
 		workflowToRunID = c.Args()[0]
@@ -268,6 +275,15 @@ func run(c *cli.Context) error {
 
 	if err := registerSecretFiltering(enabledFiltering); err != nil {
 		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+	}
+
+	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
+	if err != nil {
+		log.Fatalf("Failed to check Secret Envs Filtering mode, error: %s", err)
+	}
+
+	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
+		log.Fatalf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)

@@ -7,3 +7,4 @@ _bin
 _FAKE_HOME/
 .gows.user.yml
 .DS_Store
+.vscode

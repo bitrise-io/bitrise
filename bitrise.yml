@@ -8,6 +8,8 @@ app:
 
 workflows:
   test:
+    after_run:
+    - integration-test
     title: Runs tests
     steps:
     - go-list:
@@ -17,6 +19,10 @@ workflows:
         title: Go test
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
+
+  integration-test:
+    title: Runs integration tests
+    steps:
     - script:
         title: Run integration tests
         inputs:
@@ -29,6 +35,9 @@ workflows:
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+
+            $current_bitrise setup
+
             go test -v ./_tests/integration/...
 
   create-binaries:

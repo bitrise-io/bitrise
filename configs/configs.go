@@ -31,6 +31,8 @@ var (
 
 	// IsSecretFiltering ...
 	IsSecretFiltering = false
+	// IsSecretEnvsFiltering ...
+	IsSecretEnvsFiltering = false
 )
 
 // ---------------------------
@@ -49,6 +51,8 @@ const (
 	LogLevelEnvKey = "LOGLEVEL"
 	// IsSecretFilteringKey ...
 	IsSecretFilteringKey = "BITRISE_SECRET_FILTERING"
+	// IsSecretEnvsFilteringKey ...
+	IsSecretEnvsFilteringKey = "BITRISE_SECRET_ENVS_FILTERING"
 
 	// --- Debug Options
 
