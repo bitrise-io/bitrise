@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	_ = http.ListenAndServe("localhost:8080", nil)
+	err := http.ListenAndServe("localhost:8080", nil)
+	if err != nil {
+		print(err.Error())
+	}
 
 	cli.Run()
 }
