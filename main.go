@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	http.ListenAndServe("localhost:8080", nil)
+	_ = http.ListenAndServe("localhost:8080", nil)
 
 	cli.Run()
 }
