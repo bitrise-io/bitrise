@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/retry"
+	"github.com/bitrise-io/go-utils/v2/analytics"
+	logv2 "github.com/bitrise-io/go-utils/v2/log"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -68,6 +72,10 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
+	httpClient := retry.NewHTTPClient().StandardClient()
+	httpClient.Timeout = time.Second * 30
+	worker := analytics.NewWorker(analytics.NewClient(httpClient, "http://127.0.0.1:7070/track", logv2.NewLogger()))
+	tracker := analytics.NewTracker(worker)
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	// Expand cli.Context
@@ -213,7 +221,7 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker, worker)
 	//
 
 	return nil

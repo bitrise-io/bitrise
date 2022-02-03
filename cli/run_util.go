@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -29,10 +30,12 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
+	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanCLI "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
+	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -925,6 +928,11 @@ func activateAndRunSteps(
 			// beside of the envs coming from the current parent process these will be added as an extra
 			var additionalEnvironments []envmanModels.EnvironmentItemModel
 
+			// add this flag so all child process (steps and their children) knows they run in CLI context
+			additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
+				"BITRISE_EXECUTION_CONTEXT": "true",
+			})
+
 			// add an extra env for the next step run to be able to access the step's source location
 			additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
 				"BITRISE_STEP_SOURCE_DIR": stepDir,
@@ -1014,18 +1022,68 @@ func runWorkflow(
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	isLastWorkflow bool) models.BuildRunResultsModel {
+	isLastWorkflow bool, tracker analytics.Tracker, baseProperties analytics.Properties) models.BuildRunResultsModel {
+	workflowIdProperties := analytics.Properties{"workflow_unique_id": uuid.Must(uuid.NewV4()).String()}
+	extendedProperties := baseProperties.Merge(workflowIdProperties)
 	bitrise.PrintRunningWorkflow(workflow.Title)
-
+	sendWorkflowStarted(tracker, workflow.Title, extendedProperties)
 	*environments = append(*environments, workflow.Environments...)
-	return activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow)
+	results := activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow)
+	sendWorkflowFinished(tracker, results.IsBuildFailed(), workflowIdProperties)
+	return results
+}
+
+func sendWorkflowStarted(tracker analytics.Tracker, workflowTitle string, baseProperties analytics.Properties) {
+	isEmbedded := os.Getenv("BITRISE_EXECUTION_CONTEXT") == "true"
+	isCI := os.Getenv(configs.CIModeEnvKey) == "true"
+	isPR := os.Getenv(configs.PRModeEnvKey) == "true"
+	isDebug := os.Getenv(configs.DebugModeEnvKey) == "true"
+	isSecretFiltering := os.Getenv(configs.IsSecretFilteringKey) == "true"
+	isSecretEnvsFiltering := os.Getenv(configs.IsSecretEnvsFilteringKey) == "true"
+	stateProperties := analytics.Properties{
+		"workflow_name":    workflowTitle,
+		"build_slug":       os.Getenv("BITRISE_BUILD_SLUG"),
+		"is_embedded":      isEmbedded,
+		"log_level":        os.Getenv(configs.LogLevelEnvKey),
+		"ci_mode":          isCI,
+		"pr_mode":          isPR,
+		"debug_mode":       isDebug,
+		"secret_filtering": isSecretFiltering,
+		"is_ci":            isSecretEnvsFiltering,
+	}
+	var versionProperties analytics.Properties
+	currentVersionMap, err := version.ToolVersionMap(os.Args[0])
+	if err == nil {
+		bitriseVersion := currentVersionMap["bitrise"]
+		envmanVersion := currentVersionMap["envman"]
+		stepmanVersion := currentVersionMap["stepman"]
+		versionProperties = analytics.Properties{
+			"cli_version":     bitriseVersion.String(),
+			"envman_version":  envmanVersion.String(),
+			"stepman_version": stepmanVersion.String(),
+		}
+	} else {
+		log.Debugf("Couldn't get tool versions: %s", err.Error())
+	}
+	tracker.Enqueue("workflow_started", baseProperties, stateProperties, versionProperties)
+}
+
+func sendWorkflowFinished(tracker analytics.Tracker, failed bool, baseProperties analytics.Properties) {
+	var statusMessage string
+	if failed {
+		statusMessage = "failed"
+	} else {
+		statusMessage = "successful"
+	}
+	tracker.Enqueue("workflow_finished", baseProperties, analytics.Properties{"status": statusMessage})
 }
 
 func activateAndRunWorkflow(
 	workflowID string, workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	lastWorkflowID string) (models.BuildRunResultsModel, error) {
+	lastWorkflowID string, tracker analytics.Tracker, baseProperties analytics.Properties) (models.BuildRunResultsModel, error) {
+
 	var err error
 	// Run these workflows before running the target workflow
 	for _, beforeWorkflowID := range workflow.BeforeRun {
@@ -1040,19 +1098,19 @@ func activateAndRunWorkflow(
 			beforeWorkflowID, beforeWorkflow, bitriseConfig,
 			buildRunResults,
 			environments, secrets,
-			lastWorkflowID)
+			lastWorkflowID, tracker, baseProperties)
 		if err != nil {
 			return buildRunResults, err
 		}
 	}
 
 	// Run the target workflow
-	isLastWorkflow := (workflowID == lastWorkflowID)
+	isLastWorkflow := workflowID == lastWorkflowID
 	buildRunResults = runWorkflow(
 		workflow, bitriseConfig.DefaultStepLibSource,
 		buildRunResults,
 		environments, secrets,
-		isLastWorkflow)
+		isLastWorkflow, tracker, baseProperties)
 
 	// Run these workflows after running the target workflow
 	for _, afterWorkflowID := range workflow.AfterRun {
@@ -1067,7 +1125,7 @@ func activateAndRunWorkflow(
 			afterWorkflowID, afterWorkflow, bitriseConfig,
 			buildRunResults,
 			environments, secrets,
-			lastWorkflowID)
+			lastWorkflowID, tracker, baseProperties)
 		if err != nil {
 			return buildRunResults, err
 		}
@@ -1098,7 +1156,8 @@ func runWorkflowWithConfiguration(
 	startTime time.Time,
 	workflowToRunID string,
 	bitriseConfig models.BitriseDataModel,
-	secretEnvironments []envmanModels.EnvironmentItemModel) (models.BuildRunResultsModel, error) {
+	secretEnvironments []envmanModels.EnvironmentItemModel,
+	tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 
 	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
 	if !exist {
@@ -1170,11 +1229,12 @@ func runWorkflowWithConfiguration(
 		ProjectType:    bitriseConfig.ProjectType,
 	}
 
+	baseProperties := analytics.Properties{"build_unique_id": uuid.Must(uuid.NewV4()).String()}
 	buildRunResults, err = activateAndRunWorkflow(
 		workflowToRunID, workflowToRun, bitriseConfig,
 		buildRunResults,
 		&environments, secretEnvironments,
-		lastWorkflowID)
+		lastWorkflowID, tracker, baseProperties)
 	if err != nil {
 		return buildRunResults, errors.New("[BITRISE_CLI] - Failed to activate and run workflow " + workflowToRunID)
 	}

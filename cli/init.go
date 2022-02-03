@@ -3,11 +3,11 @@ package cli
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

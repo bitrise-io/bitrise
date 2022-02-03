@@ -5,9 +5,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

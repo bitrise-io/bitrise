@@ -104,8 +104,11 @@ func (g *Git) Apply(patch string) *command.Model {
 }
 
 // Log shows the commit logs. The format parameter controls what is shown and how.
-func (g *Git) Log(format string) *command.Model {
-	return g.command("log", "-1", "--format="+format)
+// Revision range can be optionally specified using the opts parameter.
+func (g *Git) Log(format string, opts ...string) *command.Model {
+	args := []string{"log", "-1", "--format=" + format}
+	args = append(args, opts...)
+	return g.command(args...)
 }
 
 // RevList lists commit objects in reverse chronological order.
