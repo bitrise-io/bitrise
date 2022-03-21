@@ -2,12 +2,15 @@ package analytics
 
 import (
 	"bytes"
+	"sync"
+	"time"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const poolSize = 10
 const bufferSize = 100
+const timeout = 30 * time.Second
 
 // Properties ...
 type Properties map[string]interface{}
@@ -24,25 +27,36 @@ func (p Properties) Merge(properties Properties) Properties {
 	return r
 }
 
+// AppendIfNotEmpty ...
+func (p Properties) AppendIfNotEmpty(key string, value string) {
+	if value != "" {
+		p[key] = value
+	}
+}
+
 // Tracker ...
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)
-	Pin(properties ...Properties) Tracker
+	Wait()
 }
 
 type tracker struct {
-	worker     Worker
-	properties []Properties
+	jobs        chan *bytes.Buffer
+	waitGroup   *sync.WaitGroup
+	client      Client
+	properties  []Properties
+	waitTimeout time.Duration
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger) Tracker {
-	return NewTracker(NewWorker(NewDefaultClient(logger)))
+func NewDefaultTracker(properties ...Properties) Tracker {
+	return NewTracker(NewDefaultClient(log.NewLogger()), timeout, properties...)
 }
 
 // NewTracker ...
-func NewTracker(worker Worker, properties ...Properties) Tracker {
-	t := tracker{worker: worker, properties: properties}
+func NewTracker(client Client, waitTimeout time.Duration, properties ...Properties) Tracker {
+	t := tracker{client: client, jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, properties: properties, waitTimeout: waitTimeout}
+	t.init(poolSize)
 	return &t
 }
 
@@ -50,10 +64,33 @@ func NewTracker(worker Worker, properties ...Properties) Tracker {
 func (t tracker) Enqueue(eventName string, properties ...Properties) {
 	var b bytes.Buffer
 	newEvent(eventName, append(t.properties, properties...)).toJSON(&b)
-	t.worker.Run(&b)
+	t.jobs <- &b
+	t.waitGroup.Add(1)
 }
 
-// Fork ...
-func (t tracker) Pin(properties ...Properties) Tracker {
-	return NewTracker(t.worker, append(t.properties, properties...)...)
+// Wait ...
+func (t tracker) Wait() {
+	close(t.jobs)
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		t.waitGroup.Wait()
+	}()
+	select {
+	case <-c:
+	case <-time.After(t.waitTimeout):
+	}
+}
+
+func (t tracker) init(size int) {
+	for i := 0; i < size; i++ {
+		go t.worker()
+	}
+}
+
+func (t tracker) worker() {
+	for job := range t.jobs {
+		t.client.Send(job)
+		t.waitGroup.Done()
+	}
 }

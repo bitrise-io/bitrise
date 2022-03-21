@@ -20,7 +20,7 @@ func newEvent(name string, properties []Properties) event {
 	return event{
 		ID:         uuid.Must(uuid.NewV4()).String(),
 		EventName:  name,
-		Timestamp:  time.Now().UnixNano() / int64(time.Millisecond),
+		Timestamp:  time.Now().UnixNano() / int64(time.Microsecond),
 		Properties: merge(properties),
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -15,9 +16,6 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	utilsLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/go-utils/v2/analytics"
-	logv2 "github.com/bitrise-io/go-utils/v2/log"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -106,7 +104,7 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	}
 }
 
-func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string, tracker analytics.Tracker, worker analytics.Worker) {
+func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string, tracker analytics.Tracker) {
 	if workflowToRunID == "" {
 		log.Fatal("No workflow id specified")
 	}
@@ -119,18 +117,18 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 
 	// Run selected configuration
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments, tracker); err != nil {
-		worker.Wait()
+		tracker.Wait()
 		logExit(1)
 		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
-		worker.Wait()
+		tracker.Wait()
 		logExit(1)
 		os.Exit(1)
 	}
 	if err := checkUpdate(); err != nil {
 		log.Warnf("failed to check for update, error: %s", err)
 	}
-	worker.Wait()
+	tracker.Wait()
 	logExit(0)
 	os.Exit(0)
 }
@@ -179,10 +177,7 @@ func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowT
 }
 
 func run(c *cli.Context) error {
-	httpClient := retry.NewHTTPClient().StandardClient()
-	httpClient.Timeout = time.Second * 30
-	worker := analytics.NewWorker(analytics.NewClient(httpClient, "http://127.0.0.1:7070/track", logv2.NewLogger()))
-	tracker := analytics.NewTracker(worker)
+	tracker := analytics.NewTracker()
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	//
@@ -316,7 +311,7 @@ func run(c *cli.Context) error {
 
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
-	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID, tracker, worker)
+	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID, tracker)
 	//
 	return nil
 }

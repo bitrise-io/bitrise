@@ -10,7 +10,7 @@ import (
 )
 
 const trackEndpoint = "https://bitrise-step-analytics.herokuapp.com/track"
-const timeOut = time.Second * 30
+const timeOut = 30 * time.Second
 
 // Client ...
 type Client interface {

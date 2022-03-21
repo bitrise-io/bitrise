@@ -4,7 +4,7 @@ github.com/bitrise-io/colorstring
 ## explicit
 github.com/bitrise-io/envman/env
 github.com/bitrise-io/envman/models
-# github.com/bitrise-io/go-utils v1.0.1
+# github.com/bitrise-io/go-utils v1.0.2
 ## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
@@ -21,9 +21,10 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.2.0.20220202022127-447accdb3b82
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6
 ## explicit
 github.com/bitrise-io/go-utils/v2/analytics
+github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
 # github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 ## explicit
@@ -61,17 +62,17 @@ github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.7.0
+# github.com/stretchr/testify v1.7.1
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/urfave/cli v1.22.5
 ## explicit
 github.com/urfave/cli
-# golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8
+# golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+# golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
