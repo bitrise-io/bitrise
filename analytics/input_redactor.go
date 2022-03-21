@@ -89,9 +89,8 @@ func (i inputRedactor) growSlice(options models.EnvironmentItemOptionsModel, con
 	default:
 		if value.IsValid() && value.CanInterface() {
 			return append(container, value.Interface()), append(expandedContainer, value.Interface()), nil
-		} else {
-			return append(container, ""), append(expandedContainer, ""), nil
 		}
+		return append(container, ""), append(expandedContainer, ""), nil
 	}
 }
 
