@@ -4,7 +4,9 @@ import (
 	"io"
 )
 
-// ErrorFinder ...
+// ErrorFinder wraps one or multiple standard `io.Writer` instances with `errorFindingWriter` which parses the stream
+// coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence). `WrapError`
+// method wraps an error with the latest seen "red" error message if any is present.
 type ErrorFinder interface {
 	WrapWriter(writer io.Writer) io.Writer
 	WrapError(err error) error

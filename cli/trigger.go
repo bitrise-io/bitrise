@@ -69,7 +69,7 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
-	tracker := analytics.NewTracker()
+	tracker := analytics.NewDefaultTracker()
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	// Expand cli.Context

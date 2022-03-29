@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 
-	"github.com/bitrise-io/bitrise/analytics"
+	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/envman/models"
 )
 
@@ -25,12 +27,18 @@ func redactStepInputs(environment map[string]string, inputs []models.Environment
 			continue
 		}
 
-		redacted, err := analytics.RedactStringWithSecret(inputValue, secrets)
-		if err != nil {
-			return map[string]string{}, err
+		src := bytes.NewReader([]byte(inputValue))
+		dstBuf := new(bytes.Buffer)
+		secretFilterDst := filterwriter.New(secrets, dstBuf)
+
+		if _, err := io.Copy(secretFilterDst, src); err != nil {
+			return map[string]string{}, fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
+		}
+		if _, err := secretFilterDst.Flush(); err != nil {
+			return map[string]string{}, fmt.Errorf("failed to redact secrets, stream flush failed: %s", err)
 		}
 
-		redactedStepInputs[inputKey] = redacted
+		redactedStepInputs[inputKey] = dstBuf.String()
 	}
 
 	return redactedStepInputs, nil

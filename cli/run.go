@@ -177,7 +177,7 @@ func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowT
 }
 
 func run(c *cli.Context) error {
-	tracker := analytics.NewTracker()
+	tracker := analytics.NewDefaultTracker()
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	//

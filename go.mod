@@ -3,7 +3,7 @@ module github.com/bitrise-io/bitrise
 go 1.16
 
 require (
-	github.com/bitrise-io/envman v0.0.0-20211026063720-03283f9c3f32
+	github.com/bitrise-io/envman v0.0.0-20220328085545-4edf7e59ca86
 	github.com/bitrise-io/go-utils v1.0.2
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6
 	github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -388,7 +387,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, analytics.NoOpTracker{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -440,7 +439,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, analytics.NoOpTracker{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
@@ -517,7 +516,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, analytics.NoOpTracker{})
+	results, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
 }
 

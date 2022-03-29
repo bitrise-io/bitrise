@@ -597,7 +597,7 @@ func activateAndRunSteps(
 	secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool,
 	tracker analytics.Tracker,
-	workflowProperties coreanalytics.Properties) models.BuildRunResultsModel {
+	workflowIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
 	log.Debugln("[BITRISE_CLI] - Activating and running steps")
 
 	// ------------------------------------------
@@ -692,9 +692,9 @@ func activateAndRunSteps(
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepListItm := range workflow.Steps {
-		stepUniqueID := uuid.Must(uuid.NewV4()).String()
-		stepIDProperties := coreanalytics.Properties{"step_unique_id": stepUniqueID}
-		stepStartedProperties := workflowProperties.Merge(stepIDProperties)
+		stepExecutionID := uuid.Must(uuid.NewV4()).String()
+		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepExecutionID}
+		stepStartedProperties := workflowIDProperties.Merge(stepIDProperties)
 		// Per step variables
 		stepStartTime = time.Now()
 		isLastStep := isLastWorkflow && (idx == len(workflow.Steps)-1)
@@ -935,9 +935,9 @@ func activateAndRunSteps(
 			// beside of the envs coming from the current parent process these will be added as an extra
 			var additionalEnvironments []envmanModels.EnvironmentItemModel
 
-			// add this flag so all child processes can connect their events to their step lifecycle events
+			// add this environment variable so all child processes can connect their events to their step lifecycle events
 			additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
-				"BITRISE_STEP_UNIQUE_ID": stepUniqueID,
+				analytics.StepExecutionIDEnvKey: stepExecutionID,
 			})
 
 			// add an extra env for the next step run to be able to access the step's source location
@@ -960,7 +960,7 @@ func activateAndRunSteps(
 
 			environmentItemModels := append(*environments, additionalEnvironments...)
 			envSource := &env.DefaultEnvironmentSource{}
-			stepDeclaredEnvironments, expandedStepEnvironment, err := prepareStepEnvironment(prepareStepInputParams{
+			stepDeclaredEnvironments, expandedStepEnvironment, redactedInputsWithType, err := prepareStepEnvironment(prepareStepInputParams{
 				environment:       environmentItemModels,
 				inputs:            mergedStep.Inputs,
 				buildRunResults:   buildRunResults,
@@ -998,16 +998,13 @@ func activateAndRunSteps(
 				continue
 			}
 
-			redacted, err := analytics.NewInputRedactor(stepSecrets, environmentItemModels, buildRunResults, configs.IsCIMode, configs.IsPullRequestMode, envSource).Redact(mergedStep.Inputs)
-			if err != nil {
-				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodePreparationFailed, 1,
-					fmt.Errorf("failed to expand and redact step inputs for analytics: %s", err),
-					isLastStep, false, map[string]string{}, stepStartedProperties)
-				continue
+			for key, value := range redactedStepInputs {
+				if _, ok := redactedInputsWithType[key]; !ok {
+					redactedInputsWithType[key] = value
+				}
 			}
 
-			tracker.SendStepStartedEvent(stepStartedProperties, stepInfoPtr, redacted)
+			tracker.SendStepStartedEvent(stepStartedProperties, stepInfoPtr, redactedInputsWithType)
 
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets)
 
@@ -1045,13 +1042,13 @@ func runWorkflow(
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	isLastWorkflow bool, tracker analytics.Tracker, buildProperties coreanalytics.Properties) models.BuildRunResultsModel {
-	workflowProperties := coreanalytics.Properties{"workflow_unique_id": uuid.Must(uuid.NewV4()).String()}
+	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
+	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: uuid.Must(uuid.NewV4()).String()}
 	bitrise.PrintRunningWorkflow(workflow.Title)
-	tracker.SendWorkflowStarted(buildProperties.Merge(workflowProperties), workflow.Title)
+	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflow.Title)
 	*environments = append(*environments, workflow.Environments...)
-	results := activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowProperties)
-	tracker.SendWorkflowFinished(workflowProperties, results.IsBuildFailed())
+	results := activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	return results
 }
 
@@ -1059,7 +1056,7 @@ func activateAndRunWorkflow(
 	workflowID string, workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	lastWorkflowID string, tracker analytics.Tracker, buildProperties coreanalytics.Properties) (models.BuildRunResultsModel, error) {
+	lastWorkflowID string, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) (models.BuildRunResultsModel, error) {
 
 	var err error
 	// Run these workflows before running the target workflow
@@ -1075,7 +1072,7 @@ func activateAndRunWorkflow(
 			beforeWorkflowID, beforeWorkflow, bitriseConfig,
 			buildRunResults,
 			environments, secrets,
-			lastWorkflowID, tracker, buildProperties)
+			lastWorkflowID, tracker, buildIDProperties)
 		if err != nil {
 			return buildRunResults, err
 		}
@@ -1087,7 +1084,7 @@ func activateAndRunWorkflow(
 		workflow, bitriseConfig.DefaultStepLibSource,
 		buildRunResults,
 		environments, secrets,
-		isLastWorkflow, tracker, buildProperties)
+		isLastWorkflow, tracker, buildIDProperties)
 
 	// Run these workflows after running the target workflow
 	for _, afterWorkflowID := range workflow.AfterRun {
@@ -1102,7 +1099,7 @@ func activateAndRunWorkflow(
 			afterWorkflowID, afterWorkflow, bitriseConfig,
 			buildRunResults,
 			environments, secrets,
-			lastWorkflowID, tracker, buildProperties)
+			lastWorkflowID, tracker, buildIDProperties)
 		if err != nil {
 			return buildRunResults, err
 		}
@@ -1206,12 +1203,12 @@ func runWorkflowWithConfiguration(
 		ProjectType:    bitriseConfig.ProjectType,
 	}
 
-	buildProperties := coreanalytics.Properties{"build_unique_id": uuid.Must(uuid.NewV4()).String()}
+	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 	buildRunResults, err = activateAndRunWorkflow(
 		workflowToRunID, workflowToRun, bitriseConfig,
 		buildRunResults,
 		&environments, secretEnvironments,
-		lastWorkflowID, tracker, buildProperties)
+		lastWorkflowID, tracker, buildIDProperties)
 	if err != nil {
 		return buildRunResults, errors.New("[BITRISE_CLI] - Failed to activate and run workflow " + workflowToRunID)
 	}
