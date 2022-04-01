@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"encoding/json"
 
@@ -74,6 +74,72 @@ func TestGetKeyValuePair(t *testing.T) {
 	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
 
 	key, value, err = env.GetKeyValuePair()
+	require.EqualError(t, err, "no environment key found, keys: [opts]")
+}
+
+func TestGetKeyValuePairWithType(t *testing.T) {
+	// Filled env
+	env := EnvironmentItemModel{
+		"bool_key": false,
+		OptionsKey: EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			Category:          pointers.NewStringPtr("category"),
+			ValueOptions:      []string{"test_key2", "test_value2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsSensitive:       pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(false),
+			SkipIfEmpty:       pointers.NewBoolPtr(false),
+		},
+	}
+
+	key, value, err := env.GetKeyValuePairWithType()
+	require.NoError(t, err)
+
+	require.Equal(t, "bool_key", key)
+	require.Equal(t, false, value)
+
+	// More then 2 fields
+	env = EnvironmentItemModel{
+		"test_key":  "test_value",
+		"test_key1": "test_value1",
+		OptionsKey:  EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")},
+	}
+
+	key, value, err = env.GetKeyValuePairWithType()
+	require.EqualError(t, err, `more than 2 keys specified: [opts test_key test_key1]`)
+
+	// 2 key-value fields
+	env = EnvironmentItemModel{
+		"test_key":  "test_value",
+		"test_key1": "test_value1",
+	}
+
+	key, value, err = env.GetKeyValuePairWithType()
+	require.EqualError(t, err, `more than 1 environment key specified: [test_key test_key1]`)
+
+	// String value
+	env = EnvironmentItemModel{"test_key": "test_value"}
+
+	key, value, err = env.GetKeyValuePairWithType()
+	require.NoError(t, err)
+
+	require.Equal(t, "test_key", key)
+	require.Equal(t, "test_value", value)
+
+	// Empty key
+	env = EnvironmentItemModel{"": "test_value"}
+
+	key, value, err = env.GetKeyValuePairWithType()
+	require.EqualError(t, err, "no environment key found, keys: []")
+
+	// Missing key-value
+	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
+
+	key, value, err = env.GetKeyValuePairWithType()
 	require.EqualError(t, err, "no environment key found, keys: [opts]")
 }
 
