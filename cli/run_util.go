@@ -641,7 +641,11 @@ func activateAndRunSteps(
 			StartTime:  stepStartTime,
 		}
 
-		tracker.SendStepFinishedEvent(properties, stepResults)
+		tracker.SendStepFinishedEvent(properties, analytics.StepResult{
+			Info:         prepareAnalyticsStepInfo(step, stepInfoPtr),
+			Status:       resultCode,
+			ErrorMessage: errStr,
+		})
 
 		isExitStatusError := true
 		if err != nil {
@@ -989,7 +993,7 @@ func activateAndRunSteps(
 				stepSecrets = append(stepSecrets, tools.GetSecretValues(sensitiveEnvs)...)
 			}
 
-			redactedStepInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecrets)
+			redactedStepInputs, redactedOriginalInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecrets)
 			if err != nil {
 				registerStepRunResults(mergedStep, stepInfoPtr, stepIdxPtr,
 					*mergedStep.RunIf, models.StepRunStatusCodePreparationFailed, 1,
@@ -1004,7 +1008,7 @@ func activateAndRunSteps(
 				}
 			}
 
-			tracker.SendStepStartedEvent(stepStartedProperties, stepInfoPtr, redactedInputsWithType)
+			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets)
 
@@ -1035,6 +1039,16 @@ func activateAndRunSteps(
 	}
 
 	return buildRunResults
+}
+
+func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel) analytics.StepInfo {
+	return analytics.StepInfo{
+		StepID:      stepInfoPtr.ID,
+		StepTitle:   pointers.StringWithDefault(step.Title, ""),
+		StepVersion: stepInfoPtr.Version,
+		StepSource:  pointers.StringWithDefault(step.SourceCodeURL, ""),
+		Skippable:   pointers.BoolWithDefault(step.IsSkippable, false),
+	}
 }
 
 func runWorkflow(

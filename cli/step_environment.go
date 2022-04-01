@@ -17,7 +17,7 @@ type prepareStepInputParams struct {
 	isCIMode, isPullRequestMode bool
 }
 
-func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) ([]envmanModels.EnvironmentItemModel, map[string]string, map[string]interface{}, error) {
+func prepareStepEnvironment(params prepareStepInputParams, envSource env.EnvironmentSource) (stepEnvironment []envmanModels.EnvironmentItemModel, resultEnvironment map[string]string, nonStringInputs map[string]interface{}, err error) {
 	for _, envVar := range params.environment {
 		if err := envVar.Normalize(); err != nil {
 			return []envmanModels.EnvironmentItemModel{}, map[string]string{}, map[string]interface{}{},
@@ -32,7 +32,7 @@ func prepareStepEnvironment(params prepareStepInputParams, envSource env.Environ
 
 	// Expand templates
 	var evaluatedInputs []envmanModels.EnvironmentItemModel
-	nonStringInputs := map[string]interface{}{}
+	nonStringInputs = map[string]interface{}{}
 	for _, input := range params.inputs {
 		if err := input.FillMissingDefaults(); err != nil {
 			return []envmanModels.EnvironmentItemModel{}, map[string]string{}, map[string]interface{}{},
@@ -73,7 +73,7 @@ func prepareStepEnvironment(params prepareStepInputParams, envSource env.Environ
 		evaluatedInputs = append(evaluatedInputs, input)
 	}
 
-	stepEnvironment := append(params.environment, evaluatedInputs...)
+	stepEnvironment = append(params.environment, evaluatedInputs...)
 
 	declarationSideEffects, err := env.GetDeclarationsSideEffects(stepEnvironment, envSource)
 

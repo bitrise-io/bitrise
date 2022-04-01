@@ -8,10 +8,8 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 const (
@@ -66,12 +64,35 @@ const (
 	stepmanVersionKey = "stepman"
 )
 
+// Input ...
+type Input struct {
+	Value         interface{} `json:"value"`
+	OriginalValue string      `json:"original_value,omitempty"`
+}
+
+// StepInfo ...
+type StepInfo struct {
+	StepID      string
+	StepTitle   string
+	StepVersion string
+	StepSource  string
+	Skippable   bool
+}
+
+// StepResult ...
+type StepResult struct {
+	Info         StepInfo
+	Status       int
+	ErrorMessage string
+}
+
 // Tracker ...
 type Tracker interface {
 	SendWorkflowStarted(properties analytics.Properties, title string)
 	SendWorkflowFinished(properties analytics.Properties, failed bool)
-	SendStepStartedEvent(properties analytics.Properties, infoModel stepmanModels.StepInfoModel, inputs map[string]interface{})
-	SendStepFinishedEvent(properties analytics.Properties, results models.StepRunResultsModel)
+	SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string)
+	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
+	SendCLIWarning(message string)
 	Wait()
 }
 
@@ -159,14 +180,22 @@ func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bo
 }
 
 // SendStepStartedEvent ...
-func (t tracker) SendStepStartedEvent(properties analytics.Properties, infoModel stepmanModels.StepInfoModel, inputs map[string]interface{}) {
+func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string) {
 	if !t.stateChecker.Enabled() {
 		return
 	}
 
-	extraProperties := []analytics.Properties{properties, prepareStartProperties(infoModel)}
-	if len(inputs) > 0 {
-		inputBytes, err := json.Marshal(inputs)
+	extraProperties := []analytics.Properties{properties, prepareStartProperties(info)}
+	if len(expandedInputs) > 0 {
+		inputMap := map[string]Input{}
+		for k, v := range expandedInputs {
+			inputMap[k] = Input{
+				Value:         v,
+				OriginalValue: originalInputs[k],
+			}
+
+		}
+		inputBytes, err := json.Marshal(inputMap)
 		if err != nil {
 			t.SendCLIWarning(fmt.Sprintf("Failed to marshal inputs: %s", err.Error()))
 		} else {
@@ -178,7 +207,7 @@ func (t tracker) SendStepStartedEvent(properties analytics.Properties, infoModel
 }
 
 // SendStepFinishedEvent ...
-func (t tracker) SendStepFinishedEvent(properties analytics.Properties, results models.StepRunResultsModel) {
+func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result StepResult) {
 	if !t.stateChecker.Enabled() {
 		return
 	}
@@ -186,7 +215,7 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, results 
 	var eventName string
 	var extraProperties analytics.Properties
 
-	switch results.Status {
+	switch result.Status {
 	case models.StepRunStatusCodeSuccess:
 		eventName = stepFinishedEventName
 		extraProperties = analytics.Properties{statusProperty: successfulValue}
@@ -194,22 +223,22 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, results 
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
 		eventName = stepFinishedEventName
 		extraProperties = analytics.Properties{statusProperty: failedValue}
-		extraProperties.AppendIfNotEmpty(errorMessageProperty, results.ErrorStr)
+		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
 		break
 	case models.StepRunStatusCodePreparationFailed:
 		eventName = stepPreparationFailedEventName
-		extraProperties = prepareStartProperties(results.StepInfo)
-		extraProperties.AppendIfNotEmpty("error_message", results.ErrorStr)
+		extraProperties = prepareStartProperties(result.Info)
+		extraProperties.AppendIfNotEmpty("error_message", result.ErrorMessage)
 	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
 		eventName = stepSkippedEventName
-		extraProperties = prepareStartProperties(results.StepInfo)
-		if results.Status == models.StepRunStatusCodeSkipped {
+		extraProperties = prepareStartProperties(result.Info)
+		if result.Status == models.StepRunStatusCodeSkipped {
 			extraProperties[reasonProperty] = buildFailedValue
 		} else {
 			extraProperties[reasonProperty] = runIfValue
 		}
 	default:
-		panic(fmt.Sprintf("Unknown step status code: %d", results.Status))
+		t.SendCLIWarning(fmt.Sprintf("Unknown step status code: %d", result.Status))
 	}
 
 	t.tracker.Enqueue(eventName, properties, extraProperties)
@@ -226,18 +255,15 @@ func (t tracker) SendCLIWarning(message string) {
 
 // Wait ...
 func (t tracker) Wait() {
-	if !t.stateChecker.Enabled() {
-		return
-	}
 	t.tracker.Wait()
 }
 
-func prepareStartProperties(infoModel stepmanModels.StepInfoModel) analytics.Properties {
+func prepareStartProperties(info StepInfo) analytics.Properties {
 	properties := analytics.Properties{}
-	properties.AppendIfNotEmpty(stepIDProperty, infoModel.ID)
-	properties.AppendIfNotEmpty(stepTitleProperty, pointers.StringWithDefault(infoModel.Step.Title, ""))
-	properties.AppendIfNotEmpty(stepVersionProperty, infoModel.Version)
-	properties.AppendIfNotEmpty(stepSourceProperty, pointers.StringWithDefault(infoModel.Step.SourceCodeURL, ""))
-	properties[skippableProperty] = pointers.BoolWithDefault(infoModel.Step.IsSkippable, false)
+	properties.AppendIfNotEmpty(stepIDProperty, info.StepID)
+	properties.AppendIfNotEmpty(stepTitleProperty, info.StepTitle)
+	properties.AppendIfNotEmpty(stepVersionProperty, info.StepVersion)
+	properties.AppendIfNotEmpty(stepSourceProperty, info.StepSource)
+	properties[skippableProperty] = info.Skippable
 	return properties
 }

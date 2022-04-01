@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	cliAnalytics "github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -17,7 +18,6 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/analytics"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,25 +25,22 @@ import (
 type noOpTracker struct {
 }
 
-// SendWorkflowStarted ...
+func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, map[string]interface{}, map[string]string) {
+}
+
+func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.StepResult) {
+}
+
+func (n noOpTracker) SendCLIWarning(string) {
+}
+
 func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string) {
 }
 
-// SendWorkflowFinished ...
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool) {
 }
 
-// SendStepStartedEvent ...
-func (n noOpTracker) SendStepStartedEvent(analytics.Properties, stepmanModels.StepInfoModel, map[string]interface{}) {
-}
-
-// SendStepFinishedEvent ...
-func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, models.StepRunResultsModel) {
-}
-
-// Wait ...
 func (n noOpTracker) Wait() {
-
 }
 
 func TestSkipIfEmpty(t *testing.T) {

@@ -27,6 +27,15 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "Simple red string without modifier",
+			inputs: []string{
+				"\x1b[31mTest input\x1b[0m",
+			},
+			want: &ErrorMessage{
+				Message: "Test input",
+			},
+		},
+		{
 			name: "Simple red string",
 			inputs: []string{
 				"\x1b[31;1mTest input\x1b[0m",
@@ -145,6 +154,15 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 			name: "Endless repeated reds",
 			inputs: []string{
 				"Foo\n\n\n\x1b[31;1mTest \x1b[31;1mi\x1b[31;1mn", "put",
+			},
+			want: &ErrorMessage{
+				Message: "Test input",
+			},
+		},
+		{
+			name: "Multiple control expression",
+			inputs: []string{
+				"Foo\n\n\n\x1b[1;3;4;31mTest \x1b[31;1mi\x1b[31;1mn", "put",
 			},
 			want: &ErrorMessage{
 				Message: "Test input",

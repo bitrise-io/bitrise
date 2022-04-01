@@ -3,15 +3,13 @@ package errorfinder
 import (
 	"io"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 )
 
-const (
-	redControl = "\x1b[31;1m"
-)
+const maxLength = 20
 
+var redRegexp = regexp.MustCompile(`\x1b\[[^m]*31[^m]*m`)
 var controlRegexp = regexp.MustCompile(`\x1b\[[^m]*m`)
 
 // ErrorMessage ...
@@ -52,7 +50,7 @@ func (e *defaultErrorFindingWriter) findString(s string) {
 			if endIndex[0] != 0 {
 				e.errorMessage = &ErrorMessage{
 					Timestamp: time.Now().UnixNano(),
-					Message:   strings.ReplaceAll(haystack[0:endIndex[0]], redControl, ""),
+					Message:   redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""),
 				}
 			}
 			e.chunk = ""
@@ -64,18 +62,18 @@ func (e *defaultErrorFindingWriter) findString(s string) {
 			e.chunk = haystack
 		}
 	} else {
-		index := strings.Index(haystack, redControl)
-		if index != -1 {
+		indices := redRegexp.FindStringIndex(haystack)
+		if len(indices) > 0 {
 			e.chunk = ""
 			e.collecting = true
-			if len(haystack) > index+len(redControl) {
-				e.findString(haystack[index+len(redControl):])
+			if len(haystack) > indices[1] {
+				e.findString(haystack[indices[1]:])
 			}
 		} else {
-			if len(haystack) <= len(redControl) {
+			if len(haystack) <= maxLength {
 				e.chunk = haystack
 			} else {
-				e.chunk = haystack[len(haystack)-len(redControl):]
+				e.chunk = haystack[len(haystack)-maxLength:]
 			}
 		}
 	}
@@ -85,7 +83,7 @@ func (e *defaultErrorFindingWriter) getErrorMessage() *ErrorMessage {
 	if e.collecting && e.chunk != "" {
 		return &ErrorMessage{
 			Timestamp: time.Now().UnixNano(),
-			Message:   strings.ReplaceAll(e.chunk, redControl, ""),
+			Message:   redRegexp.ReplaceAllString(e.chunk, ""),
 		}
 	}
 	return e.errorMessage
@@ -96,11 +94,11 @@ func getEndColorIndex(haystack string) []int {
 	if len(colorIndex) == 0 {
 		return colorIndex
 	}
-	redIndex := strings.Index(haystack, redControl)
-	if redIndex == -1 || redIndex > colorIndex[0] {
+	redIndices := redRegexp.FindStringIndex(haystack)
+	if len(redIndices) == 0 || redIndices[0] > colorIndex[0] {
 		return colorIndex
 	}
-	offset := redIndex + len(redControl)
+	offset := redIndices[1]
 	index := getEndColorIndex(haystack[offset:])
 	if len(index) > 0 {
 		index[0] += offset
