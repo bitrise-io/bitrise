@@ -228,7 +228,7 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 	case models.StepRunStatusCodePreparationFailed:
 		eventName = stepPreparationFailedEventName
 		extraProperties = prepareStartProperties(result.Info)
-		extraProperties.AppendIfNotEmpty("error_message", result.ErrorMessage)
+		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
 	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
 		eventName = stepSkippedEventName
 		extraProperties = prepareStartProperties(result.Info)
