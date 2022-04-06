@@ -34,7 +34,7 @@ func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.St
 func (n noOpTracker) SendCLIWarning(string) {
 }
 
-func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string) {
+func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string) {
 }
 
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool) {
