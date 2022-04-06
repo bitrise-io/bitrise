@@ -1052,6 +1052,7 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 }
 
 func runWorkflow(
+	workflowID string,
 	workflow models.WorkflowModel,
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
@@ -1059,7 +1060,7 @@ func runWorkflow(
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: uuid.Must(uuid.NewV4()).String()}
 	bitrise.PrintRunningWorkflow(workflow.Title)
-	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflow.Title)
+	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflowID, workflow.Title)
 	*environments = append(*environments, workflow.Environments...)
 	results := activateAndRunSteps(workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
@@ -1095,6 +1096,7 @@ func activateAndRunWorkflow(
 	// Run the target workflow
 	isLastWorkflow := workflowID == lastWorkflowID
 	buildRunResults = runWorkflow(
+		workflowID,
 		workflow, bitriseConfig.DefaultStepLibSource,
 		buildRunResults,
 		environments, secrets,

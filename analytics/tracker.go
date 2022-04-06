@@ -29,6 +29,7 @@ const (
 	cliWarningEventName            = "cli_warning"
 
 	workflowNameProperty          = "workflow_name"
+	workflowTitleProperty         = "workflow_title"
 	ciModeProperty                = "ci_mode"
 	prModeProperty                = "pr_mode"
 	debugModeProperty             = "debug_mode"
@@ -88,7 +89,7 @@ type StepResult struct {
 
 // Tracker ...
 type Tracker interface {
-	SendWorkflowStarted(properties analytics.Properties, title string)
+	SendWorkflowStarted(properties analytics.Properties, name string, title string)
 	SendWorkflowFinished(properties analytics.Properties, failed bool)
 	SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string)
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
@@ -115,7 +116,7 @@ func NewDefaultTracker() Tracker {
 
 // SendWorkflowStarted sends `workflow_started` events. `parent_step_execution_id` can be used to filter those
 // Bitrise CLI events that were started as part of a step (like script).
-func (t tracker) SendWorkflowStarted(properties analytics.Properties, title string) {
+func (t tracker) SendWorkflowStarted(properties analytics.Properties, name string, title string) {
 	if !t.stateChecker.Enabled() {
 		return
 	}
@@ -147,12 +148,15 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, title stri
 	}
 
 	stateProperties := analytics.Properties{
-		workflowNameProperty:        title,
+		workflowNameProperty:        name,
 		ciModeProperty:              isCI,
 		prModeProperty:              isPR,
 		debugModeProperty:           isDebug,
 		secretFilteringProperty:     isSecretFiltering,
 		secretEnvsFilteringProperty: isSecretEnvsFiltering,
+	}
+	if name != title && title != "" {
+		stateProperties[workflowTitleProperty] = title
 	}
 	stateProperties.AppendIfNotEmpty(buildSlugProperty, buildSlug)
 	stateProperties.AppendIfNotEmpty(parentStepExecutionIDProperty, parentStepExecutionID)
