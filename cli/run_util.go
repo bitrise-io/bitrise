@@ -955,6 +955,7 @@ func activateAndRunSteps(
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
 					fmt.Errorf("failed to prepare step environment variables: %s", err),
 					isLastStep, false, map[string]string{})
+				continue
 			}
 
 			stepSecrets := tools.GetSecretValues(secrets)
@@ -965,6 +966,7 @@ func activateAndRunSteps(
 						*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
 						fmt.Errorf("failed to get sensitive inputs: %s", err),
 						isLastStep, false, map[string]string{})
+					continue
 				}
 
 				stepSecrets = append(stepSecrets, tools.GetSecretValues(sensitiveEnvs)...)
@@ -976,6 +978,7 @@ func activateAndRunSteps(
 					*mergedStep.RunIf, models.StepRunStatusCodeFailed, 1,
 					fmt.Errorf("failed to redact step inputs: %s", err),
 					isLastStep, false, map[string]string{})
+				continue
 			}
 
 			exit, outEnvironments, err := runStep(mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets, buildRunResults)

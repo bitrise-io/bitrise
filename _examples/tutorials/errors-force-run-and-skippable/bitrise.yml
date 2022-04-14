@@ -19,7 +19,7 @@ workflows:
           is_skippable: true
           inputs:
           - content: |
-              #/bin/bash
+              #!/bin/bash
               set -v
               exit 1
       - script:
@@ -27,20 +27,20 @@ workflows:
           is_skippable: false
           inputs:
           - content: |
-              #/bin/bash
+              #!/bin/bash
               set -v
               exit 1
       - script:
           title: "ok"
           inputs:
           - content: |
-              #/bin/bash
+              #!/bin/bash
               echo "-----> This should NOT be printed!!"
           is_always_run: false
       - script:
           title: "ok"
           inputs:
           - content: |
-              #/bin/bash
+              #!/bin/bash
               echo "-----> This should be printed!!"
           is_always_run: true
