@@ -9,14 +9,15 @@ import (
 	"github.com/bitrise-io/envman/models"
 )
 
-func redactStepInputs(environment map[string]string, inputs []models.EnvironmentItemModel, secrets []string) (map[string]string, error) {
+func redactStepInputs(environment map[string]string, inputs []models.EnvironmentItemModel, secrets []string) (map[string]string, map[string]string, error) {
 	redactedStepInputs := make(map[string]string)
+	redactedOriginalInputs := map[string]string{}
 
 	// Filter inputs from enviroments
 	for _, input := range inputs {
-		inputKey, _, err := input.GetKeyValuePair()
+		inputKey, originalValue, err := input.GetKeyValuePair()
 		if err != nil {
-			return map[string]string{}, fmt.Errorf("failed to get input key: %s", err)
+			return nil, nil, fmt.Errorf("failed to get input key: %s", err)
 		}
 
 		// If input key may not be present in the result environment.
@@ -27,19 +28,36 @@ func redactStepInputs(environment map[string]string, inputs []models.Environment
 			continue
 		}
 
-		src := bytes.NewReader([]byte(inputValue))
-		dstBuf := new(bytes.Buffer)
-		secretFilterDst := filterwriter.New(secrets, dstBuf)
-
-		if _, err := io.Copy(secretFilterDst, src); err != nil {
-			return map[string]string{}, fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
+		redactedValue, err := redactWithSecrets(inputValue, secrets)
+		if err != nil {
+			return nil, nil, err
 		}
-		if _, err := secretFilterDst.Flush(); err != nil {
-			return map[string]string{}, fmt.Errorf("failed to redact secrets, stream flush failed: %s", err)
-		}
+		redactedStepInputs[inputKey] = redactedValue
 
-		redactedStepInputs[inputKey] = dstBuf.String()
+		if originalValue != "" && originalValue != inputValue {
+			redactedOriginalValue, err := redactWithSecrets(originalValue, secrets)
+			if err != nil {
+				return nil, nil, err
+			}
+			redactedOriginalInputs[inputKey] = redactedOriginalValue
+		}
 	}
 
-	return redactedStepInputs, nil
+	return redactedStepInputs, redactedOriginalInputs, nil
+}
+
+func redactWithSecrets(inputValue string, secrets []string) (string, error) {
+	src := bytes.NewReader([]byte(inputValue))
+	dstBuf := new(bytes.Buffer)
+	secretFilterDst := filterwriter.New(secrets, dstBuf)
+
+	if _, err := io.Copy(secretFilterDst, src); err != nil {
+		return "", fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
+	}
+	if _, err := secretFilterDst.Flush(); err != nil {
+		return "", fmt.Errorf("failed to redact secrets, stream flush failed: %s", err)
+	}
+
+	redactedValue := dstBuf.String()
+	return redactedValue, nil
 }

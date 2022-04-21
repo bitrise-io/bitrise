@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
@@ -68,6 +69,7 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
+	tracker := analytics.NewDefaultTracker()
 	PrintBitriseHeaderASCIIArt(version.VERSION)
 
 	// Expand cli.Context
@@ -213,7 +215,7 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID)
+	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker)
 	//
 
 	return nil

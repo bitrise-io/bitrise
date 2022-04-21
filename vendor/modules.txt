@@ -1,10 +1,10 @@
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20211026063720-03283f9c3f32
+# github.com/bitrise-io/envman v0.0.0-20220401145857-d11e00a5dc55
 ## explicit
 github.com/bitrise-io/envman/env
 github.com/bitrise-io/envman/models
-# github.com/bitrise-io/go-utils v1.0.1
+# github.com/bitrise-io/go-utils v1.0.2
 ## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
@@ -22,6 +22,11 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6
+## explicit
+github.com/bitrise-io/go-utils/v2/analytics
+github.com/bitrise-io/go-utils/v2/env
+github.com/bitrise-io/go-utils/v2/log
 # github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 ## explicit
 github.com/bitrise-io/goinp/goinp
@@ -38,6 +43,9 @@ github.com/bitrise-io/stepman/version
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
+# github.com/gofrs/uuid v4.2.0+incompatible
+## explicit
+github.com/gofrs/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-retryablehttp v0.7.0
@@ -55,17 +63,17 @@ github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.7.0
+# github.com/stretchr/testify v1.7.1
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/urfave/cli v1.22.5
 ## explicit
 github.com/urfave/cli
-# golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+# golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20220209214540-3681064d5158
+# golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
