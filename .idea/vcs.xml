@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-init" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-plugins-init" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-android-build" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-android-build-for-ui-testing" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-android-lint" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-android-unit-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-build-router-start" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-flutter-analyze" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-flutter-build" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-flutter-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-manage-ios-code-signing" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../bitrise-step-set-java-version" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../codesigndoc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../envman" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../go-android" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../go-steputils" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../go-utils" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../go-xcode" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-activate-ssh-key" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-appcenter-deploy-android" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-avd-manager" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-certificate-and-profile-installer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-cocoapods-install" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-deploy-to-bitrise-io" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-deploy-to-itunesconnect-application-loader" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-deploy-to-itunesconnect-deliver" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-export-xcarchive" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-export-xcarchive-mac" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-git-clone" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-google-play-deploy" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-gradle-runner" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-install-missing-android-tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-project-scanner" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-readme-generator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-sign-apk" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-xcode-archive" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-xcode-archive-mac" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-xcode-build-for-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../steps-xcode-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../tooling-centralized-ci-pipeline-controller" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../tooling-steplib-controller" vcs="Git" />
+  </component>
+</project>

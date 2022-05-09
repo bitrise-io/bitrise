@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="Go" enabled="true" />
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="bitrise-add-new-project" />
+    <orderEntry type="module" module-name="bitrise-init" />
+    <orderEntry type="module" module-name="bitrise-plugins-init" />
+    <orderEntry type="module" module-name="bitrise-step-android-build" />
+    <orderEntry type="module" module-name="bitrise-step-android-build-for-ui-testing" />
+    <orderEntry type="module" module-name="bitrise-step-android-lint" />
+    <orderEntry type="module" module-name="bitrise-step-android-unit-test" />
+    <orderEntry type="module" module-name="bitrise-step-flutter-build" />
+    <orderEntry type="module" module-name="bitrise-step-flutter-test" />
+    <orderEntry type="module" module-name="bitrise-step-manage-ios-code-signing" />
+    <orderEntry type="module" module-name="bitrise-step-set-java-version" />
+    <orderEntry type="module" module-name="envman" />
+    <orderEntry type="module" module-name="go-android" />
+    <orderEntry type="module" module-name="go-steputils" />
+    <orderEntry type="module" module-name="go-utils" />
+    <orderEntry type="module" module-name="go-xcode" />
+    <orderEntry type="module" module-name="steps-activate-ssh-key" />
+    <orderEntry type="module" module-name="steps-avd-manager" />
+    <orderEntry type="module" module-name="steps-certificate-and-profile-installer" />
+    <orderEntry type="module" module-name="steps-cocoapods-install" />
+    <orderEntry type="module" module-name="steps-deploy-to-bitrise-io" />
+    <orderEntry type="module" module-name="steps-deploy-to-itunesconnect-application-loader" />
+    <orderEntry type="module" module-name="steps-deploy-to-itunesconnect-deliver" />
+    <orderEntry type="module" module-name="steps-export-xcarchive" />
+    <orderEntry type="module" module-name="steps-git-clone" />
+    <orderEntry type="module" module-name="steps-google-play-deploy" />
+    <orderEntry type="module" module-name="steps-gradle-runner" />
+    <orderEntry type="module" module-name="steps-install-missing-android-tools" />
+    <orderEntry type="module" module-name="steps-readme-generator" />
+    <orderEntry type="module" module-name="steps-sign-apk" />
+    <orderEntry type="module" module-name="steps-xcode-archive" />
+    <orderEntry type="module" module-name="steps-xcode-build-for-test" />
+    <orderEntry type="module" module-name="steps-xcode-test" />
+    <orderEntry type="module" module-name="tooling-centralized-ci-pipeline-controller" />
+    <orderEntry type="module" module-name="tooling-steplib-controller" />
+    <orderEntry type="module" module-name="bitrise-step-flutter-analyze" />
+    <orderEntry type="module" module-name="bitrise-step-build-router-start" />
+    <orderEntry type="module" module-name="steps-export-xcarchive-mac" />
+    <orderEntry type="module" module-name="steps-xcode-archive-mac" />
+    <orderEntry type="module" module-name="steps-project-scanner" />
+    <orderEntry type="module" module-name="codesigndoc" />
+    <orderEntry type="module" module-name="steps-appcenter-deploy-android" />
+  </component>
+</module>

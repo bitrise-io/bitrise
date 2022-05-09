@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/bitrise.iml" filepath="$PROJECT_DIR$/.idea/bitrise.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-add-new-project/.idea/bitrise-add-new-project.iml" filepath="$PROJECT_DIR$/../bitrise-add-new-project/.idea/bitrise-add-new-project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-init/.idea/bitrise-init.iml" filepath="$PROJECT_DIR$/../bitrise-init/.idea/bitrise-init.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-plugins-init/.idea/bitrise-plugins-init.iml" filepath="$PROJECT_DIR$/../bitrise-plugins-init/.idea/bitrise-plugins-init.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-android-build/.idea/bitrise-step-android-build.iml" filepath="$PROJECT_DIR$/../bitrise-step-android-build/.idea/bitrise-step-android-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-android-build-for-ui-testing/.idea/bitrise-step-android-build-for-ui-testing.iml" filepath="$PROJECT_DIR$/../bitrise-step-android-build-for-ui-testing/.idea/bitrise-step-android-build-for-ui-testing.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-android-lint/.idea/bitrise-step-android-lint.iml" filepath="$PROJECT_DIR$/../bitrise-step-android-lint/.idea/bitrise-step-android-lint.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-android-unit-test/.idea/bitrise-step-android-unit-test.iml" filepath="$PROJECT_DIR$/../bitrise-step-android-unit-test/.idea/bitrise-step-android-unit-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-build-router-start/.idea/bitrise-step-build-router-start.iml" filepath="$PROJECT_DIR$/../bitrise-step-build-router-start/.idea/bitrise-step-build-router-start.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-flutter-analyze/.idea/bitrise-step-flutter-analyze.iml" filepath="$PROJECT_DIR$/../bitrise-step-flutter-analyze/.idea/bitrise-step-flutter-analyze.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-flutter-build/.idea/bitrise-step-flutter-build.iml" filepath="$PROJECT_DIR$/../bitrise-step-flutter-build/.idea/bitrise-step-flutter-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-flutter-test/.idea/bitrise-step-flutter-test.iml" filepath="$PROJECT_DIR$/../bitrise-step-flutter-test/.idea/bitrise-step-flutter-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-manage-ios-code-signing/.idea/bitrise-step-manage-ios-code-signing.iml" filepath="$PROJECT_DIR$/../bitrise-step-manage-ios-code-signing/.idea/bitrise-step-manage-ios-code-signing.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../bitrise-step-set-java-version/.idea/bitrise-step-set-java-version.iml" filepath="$PROJECT_DIR$/../bitrise-step-set-java-version/.idea/bitrise-step-set-java-version.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../codesigndoc/.idea/codesigndoc.iml" filepath="$PROJECT_DIR$/../codesigndoc/.idea/codesigndoc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../envman/.idea/envman.iml" filepath="$PROJECT_DIR$/../envman/.idea/envman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../go-android/.idea/go-android.iml" filepath="$PROJECT_DIR$/../go-android/.idea/go-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../go-steputils/.idea/go-steputils.iml" filepath="$PROJECT_DIR$/../go-steputils/.idea/go-steputils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../go-utils/.idea/go-utils.iml" filepath="$PROJECT_DIR$/../go-utils/.idea/go-utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../go-xcode/.idea/go-xcode.iml" filepath="$PROJECT_DIR$/../go-xcode/.idea/go-xcode.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-activate-ssh-key/.idea/steps-activate-ssh-key.iml" filepath="$PROJECT_DIR$/../steps-activate-ssh-key/.idea/steps-activate-ssh-key.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-appcenter-deploy-android/.idea/steps-appcenter-deploy-android.iml" filepath="$PROJECT_DIR$/../steps-appcenter-deploy-android/.idea/steps-appcenter-deploy-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-avd-manager/.idea/steps-avd-manager.iml" filepath="$PROJECT_DIR$/../steps-avd-manager/.idea/steps-avd-manager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-certificate-and-profile-installer/.idea/steps-certificate-and-profile-installer.iml" filepath="$PROJECT_DIR$/../steps-certificate-and-profile-installer/.idea/steps-certificate-and-profile-installer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-cocoapods-install/.idea/steps-cocoapods-install.iml" filepath="$PROJECT_DIR$/../steps-cocoapods-install/.idea/steps-cocoapods-install.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-deploy-to-bitrise-io/.idea/steps-deploy-to-bitrise-io.iml" filepath="$PROJECT_DIR$/../steps-deploy-to-bitrise-io/.idea/steps-deploy-to-bitrise-io.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-deploy-to-itunesconnect-application-loader/.idea/steps-deploy-to-itunesconnect-application-loader.iml" filepath="$PROJECT_DIR$/../steps-deploy-to-itunesconnect-application-loader/.idea/steps-deploy-to-itunesconnect-application-loader.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-deploy-to-itunesconnect-deliver/.idea/steps-deploy-to-itunesconnect-deliver.iml" filepath="$PROJECT_DIR$/../steps-deploy-to-itunesconnect-deliver/.idea/steps-deploy-to-itunesconnect-deliver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-export-xcarchive/.idea/steps-export-xcarchive.iml" filepath="$PROJECT_DIR$/../steps-export-xcarchive/.idea/steps-export-xcarchive.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-export-xcarchive-mac/.idea/steps-export-xcarchive-mac.iml" filepath="$PROJECT_DIR$/../steps-export-xcarchive-mac/.idea/steps-export-xcarchive-mac.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-git-clone/.idea/steps-git-clone.iml" filepath="$PROJECT_DIR$/../steps-git-clone/.idea/steps-git-clone.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-google-play-deploy/.idea/steps-google-play-deploy.iml" filepath="$PROJECT_DIR$/../steps-google-play-deploy/.idea/steps-google-play-deploy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-gradle-runner/.idea/steps-gradle-runner.iml" filepath="$PROJECT_DIR$/../steps-gradle-runner/.idea/steps-gradle-runner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-install-missing-android-tools/.idea/steps-install-missing-android-tools.iml" filepath="$PROJECT_DIR$/../steps-install-missing-android-tools/.idea/steps-install-missing-android-tools.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-project-scanner/.idea/steps-project-scanner.iml" filepath="$PROJECT_DIR$/../steps-project-scanner/.idea/steps-project-scanner.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-readme-generator/.idea/steps-readme-generator.iml" filepath="$PROJECT_DIR$/../steps-readme-generator/.idea/steps-readme-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-sign-apk/.idea/steps-sign-apk.iml" filepath="$PROJECT_DIR$/../steps-sign-apk/.idea/steps-sign-apk.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-xcode-archive/.idea/steps-xcode-archive.iml" filepath="$PROJECT_DIR$/../steps-xcode-archive/.idea/steps-xcode-archive.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-xcode-archive-mac/.idea/steps-xcode-archive-mac.iml" filepath="$PROJECT_DIR$/../steps-xcode-archive-mac/.idea/steps-xcode-archive-mac.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-xcode-build-for-test/.idea/steps-xcode-build-for-test.iml" filepath="$PROJECT_DIR$/../steps-xcode-build-for-test/.idea/steps-xcode-build-for-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../steps-xcode-test/.idea/steps-xcode-test.iml" filepath="$PROJECT_DIR$/../steps-xcode-test/.idea/steps-xcode-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tooling-centralized-ci-pipeline-controller/.idea/tooling-centralized-ci-pipeline-controller.iml" filepath="$PROJECT_DIR$/../tooling-centralized-ci-pipeline-controller/.idea/tooling-centralized-ci-pipeline-controller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../tooling-steplib-controller/.idea/tooling-steplib-controller.iml" filepath="$PROJECT_DIR$/../tooling-steplib-controller/.idea/tooling-steplib-controller.iml" />
+    </modules>
+  </component>
+</project>
