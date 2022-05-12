@@ -64,7 +64,7 @@ func validateEnv(key, value string, envList []models.EnvironmentItemModel) (stri
 
 func addEnv(key string, value string, expand, replace, skipIfEmpty, sensitive bool) error {
 	// Load envs, or create if not exist
-	environments, err := envman.ReadEnvsOrCreateEmptyList()
+	environments, err := ReadEnvsOrCreateEmptyList()
 	if err != nil {
 		return err
 	}
@@ -89,12 +89,12 @@ func addEnv(key string, value string, expand, replace, skipIfEmpty, sensitive bo
 		return err
 	}
 
-	newEnvSlice, err := envman.UpdateOrAddToEnvlist(environments, newEnv, replace)
+	newEnvSlice, err := UpdateOrAddToEnvlist(environments, newEnv, replace)
 	if err != nil {
 		return err
 	}
 
-	return envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, newEnvSlice)
+	return WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvSlice)
 }
 
 func loadValueFromFile(pth string) (string, error) {
@@ -108,7 +108,7 @@ func loadValueFromFile(pth string) (string, error) {
 }
 
 func logEnvs() error {
-	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
+	environments, err := ReadEnvs(CurrentEnvStoreFilePath)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func logEnvs() error {
 }
 
 func add(c *cli.Context) error {
-	log.Debugln("[ENVMAN] Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debugln("[ENVMAN] Work path:", CurrentEnvStoreFilePath)
 
 	key := c.String(KeyKey)
 	expand := !c.Bool(NoExpandKey)
@@ -192,7 +192,7 @@ func add(c *cli.Context) error {
 			}
 
 			if configs.EnvListBytesLimitInKB > 0 {
-				envList, err := envman.ReadEnvsOrCreateEmptyList()
+				envList, err := ReadEnvsOrCreateEmptyList()
 				if err != nil {
 					log.Fatalf("[ENVMAN] failed to get env list, error: %s", err)
 				}

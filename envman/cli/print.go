@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -74,7 +73,7 @@ func print(c *cli.Context) error {
 	sensitiveOnly := c.Bool(SensitiveOnlyKey)
 
 	// Read envs
-	environments, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
+	environments, err := ReadEnvs(CurrentEnvStoreFilePath)
 	if err != nil {
 		log.Fatalf("Failed to read envs, error: %s", err)
 	}

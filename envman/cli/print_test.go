@@ -5,7 +5,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bitrise-io/envman/envman"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +14,7 @@ envs:
 - TEST_HOME1: $HOME
 - TEST_HOME2: $TEST_HOME1/test
 `
-	environments, err := envman.ParseEnvsYML([]byte(envsStr))
+	environments, err := ParseEnvsYML([]byte(envsStr))
 	require.Equal(t, nil, err)
 
 	envsJSONList, err := convertToEnvsJSONModel(environments, false, false)
@@ -39,7 +38,7 @@ envs:
   opts:
     is_sensitive: true
 `
-	environments, err := envman.ParseEnvsYML([]byte(envsStr))
+	environments, err := ParseEnvsYML([]byte(envsStr))
 	require.Equal(t, nil, err)
 
 	// print everything

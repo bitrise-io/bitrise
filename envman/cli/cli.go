@@ -48,17 +48,17 @@ func before(c *cli.Context) error {
 
 	// Befor parsing cli, and running command
 	// we need to decide wich path will be used by envman
-	envman.CurrentEnvStoreFilePath = c.String(PathKey)
-	if envman.CurrentEnvStoreFilePath == "" {
+	CurrentEnvStoreFilePath = c.String(PathKey)
+	if CurrentEnvStoreFilePath == "" {
 		if path, err := filepath.Abs(path.Join("./", defaultEnvStoreName)); err != nil {
 			log.Fatal("[ENVMAN] - Failed to set envman work path in current dir:", err)
 		} else {
-			envman.CurrentEnvStoreFilePath = path
+			CurrentEnvStoreFilePath = path
 		}
 	}
 
-	envman.ToolMode = c.Bool(ToolKey)
-	if envman.ToolMode {
+	ToolMode = c.Bool(ToolKey)
+	if ToolMode {
 		log.Info("[ENVMAN] - Tool mode on")
 	}
 

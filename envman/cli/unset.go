@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
@@ -10,7 +9,7 @@ import (
 func unset(c *cli.Context) error {
 	key := c.String(KeyKey)
 	// Load envs, or create if not exist
-	environments, err := envman.ReadEnvsOrCreateEmptyList()
+	environments, err := ReadEnvsOrCreateEmptyList()
 	if err != nil {
 		return err
 	}
@@ -27,10 +26,10 @@ func unset(c *cli.Context) error {
 		return err
 	}
 
-	newEnvSlice, err := envman.UpdateOrAddToEnvlist(environments, newEnv, true)
+	newEnvSlice, err := UpdateOrAddToEnvlist(environments, newEnv, true)
 	if err != nil {
 		return err
 	}
 
-	return envman.WriteEnvMapToFile(envman.CurrentEnvStoreFilePath, newEnvSlice)
+	return WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvSlice)
 }

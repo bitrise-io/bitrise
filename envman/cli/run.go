@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/bitrise-io/envman/env"
-	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	log "github.com/sirupsen/logrus"
@@ -47,10 +46,10 @@ func runCommandModel(cmdModel CommandModel) (int, error) {
 }
 
 func run(c *cli.Context) error {
-	log.Debug("[ENVMAN] - Work path:", envman.CurrentEnvStoreFilePath)
+	log.Debug("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
 
 	if len(c.Args()) > 0 {
-		doCmdEnvs, err := envman.ReadEnvs(envman.CurrentEnvStoreFilePath)
+		doCmdEnvs, err := ReadEnvs(CurrentEnvStoreFilePath)
 		if err != nil {
 			log.Fatal("[ENVMAN] - Failed to load EnvStore:", err)
 		}

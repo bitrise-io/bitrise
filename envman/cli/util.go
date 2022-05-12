@@ -1,4 +1,4 @@
-package envman
+package cli
 
 import (
 	"errors"
