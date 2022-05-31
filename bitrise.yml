@@ -137,9 +137,8 @@ workflows:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            go get -u -v github.com/golang/dep/cmd/dep
-            dep ensure -v
-            dep ensure -v -update
+                        
+            go get -t -u ./...   
 
   noop:
     title: Noop
