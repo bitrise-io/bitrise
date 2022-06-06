@@ -94,3 +94,21 @@ and/or with `docker-compose`:
 ```
 docker-compose build && docker-compose run --rm app go test ./...
 ```
+
+### Local Dev Workflow
+The following commands will work to get you started using a text editor such as VCSCode or similar. 
+
+All commands should be run from the root directory.
+
+* Setup:
+
+    ```mkdir -p ./_bin```
+
+* Build:
+
+    ```go build -o ./_bin```
+
+* Run:
+    
+    ```./_bin/bitrise COMMAND```
+
