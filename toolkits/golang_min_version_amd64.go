@@ -1,5 +1,5 @@
 package toolkits
 
 const (
-	minGoVersionForToolkit = "1.16.5"
+	minGoVersionForToolkit = "1.16.15"
 )

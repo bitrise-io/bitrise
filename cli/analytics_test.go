@@ -47,7 +47,7 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := redactStepInputs(tt.args.environments, tt.args.inputs, tt.args.secretValues)
+			got, _, err := redactStepInputs(tt.args.environments, tt.args.inputs, tt.args.secretValues)
 			require.NoError(t, err, "expandStepInputsForAnalytics")
 			require.Equal(t, tt.want, got)
 		})

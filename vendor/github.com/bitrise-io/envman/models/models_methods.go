@@ -23,7 +23,7 @@ const (
 	// DefaultSkipIfEmpty ...
 	DefaultSkipIfEmpty = false
 
-	//DefaultIsRequired ...
+	// DefaultIsRequired ...
 	DefaultIsRequired = false
 	// DefaultIsDontChangeValue ...
 	DefaultIsDontChangeValue = false
@@ -42,11 +42,11 @@ func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
 	return list, nil
 }
 
-// GetKeyValuePair ...
-func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
+// GetKeyValuePairWithType ...
+func (env EnvironmentItemModel) GetKeyValuePairWithType() (string, interface{}, error) {
 	// Collect keys and values
-	keys := []string{}
-	values := []interface{}{}
+	var keys []string
+	var values []interface{}
 
 	for key, value := range env {
 		keys = append(keys, key)
@@ -82,6 +82,16 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	if len(keys) > 1 && !optionsFound {
 		sort.Strings(keys)
 		return "", "", fmt.Errorf("more than 1 environment key specified: %v", keys)
+	}
+
+	return key, value, nil
+}
+
+// GetKeyValuePair ...
+func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
+	key, value, err := env.GetKeyValuePairWithType()
+	if err != nil {
+		return "", "", err
 	}
 
 	// Cast env value to string
@@ -312,12 +322,9 @@ func (env *EnvironmentItemModel) FillMissingDefaults() error {
 
 // Validate ...
 func (env EnvironmentItemModel) Validate() error {
-	key, _, err := env.GetKeyValuePair()
+	_, _, err := env.GetKeyValuePair()
 	if err != nil {
 		return err
-	}
-	if key == "" {
-		return errors.New("no environment key found")
 	}
 	_, err = env.GetOptions()
 	if err != nil {

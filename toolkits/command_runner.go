@@ -3,9 +3,9 @@ package toolkits
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
+	log "github.com/sirupsen/logrus"
 )
 
 // commandRunner ...

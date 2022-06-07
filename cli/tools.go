@@ -3,8 +3,8 @@ package cli
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

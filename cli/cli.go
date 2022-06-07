@@ -6,11 +6,11 @@ import (
 	"os"
 	"path"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

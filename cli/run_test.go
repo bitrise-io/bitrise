@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	cliAnalytics "github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -16,9 +17,31 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type noOpTracker struct {
+}
+
+func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, map[string]interface{}, map[string]string) {
+}
+
+func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.StepResult) {
+}
+
+func (n noOpTracker) SendCLIWarning(string) {
+}
+
+func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string) {
+}
+
+func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool) {
+}
+
+func (n noOpTracker) Wait() {
+}
 
 func TestSkipIfEmpty(t *testing.T) {
 	t.Log("skip_if_empty=true && value=empty => should not add")
@@ -52,7 +75,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 		require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -91,7 +114,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{})
+		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 		require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -148,7 +171,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 4, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -212,7 +235,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -254,7 +277,7 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -266,7 +289,7 @@ func TestBitriseSourceDir(t *testing.T) {
 	currPth, err := pathutil.NormalizedOSTempDirPath("bitrise_source_dir_test")
 	require.NoError(t, err)
 
-	testPths := []string{}
+	var testPths []string
 	for i := 0; i < 4; i++ {
 		testPth := filepath.Join(currPth, fmt.Sprintf("_test%d", i))
 		require.NoError(t, os.RemoveAll(testPth))
@@ -314,7 +337,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -355,7 +378,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -398,7 +421,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -447,7 +470,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 }
@@ -487,7 +510,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -530,7 +553,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -574,7 +597,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -621,7 +644,7 @@ workflows:
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs)
+		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
 		require.NoError(t, err)
 	}
 }
@@ -655,7 +678,7 @@ func Test0Steps1Workflows(t *testing.T) {
 
 	require.NoError(t, configs.InitPaths())
 
-	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -705,6 +728,8 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		"target", workflow, config, buildRunResults,
 		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
 		"",
+		noOpTracker{},
+		nil,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
@@ -804,6 +829,8 @@ workflows:
 		"trivial_fail", workflow, config, buildRunResults,
 		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
 		"",
+		noOpTracker{},
+		nil,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -885,7 +912,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 2, len(buildRunResults.FailedSteps))
@@ -1018,7 +1045,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1074,7 +1101,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1108,7 +1135,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1165,7 +1192,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1226,7 +1253,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1286,7 +1313,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1334,7 +1361,7 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1390,7 +1417,7 @@ workflows:
 		require.Equal(t, nil, os.Unsetenv("working_dir"))
 	}
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1449,7 +1476,7 @@ workflows:
 	_, err = config.Validate()
 	require.NoError(t, err)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{})
+	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1576,7 +1603,7 @@ route_map:
 			// When
 			var err error
 			output := captureOutput(t, func() {
-				_, err = runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{})
+				_, err = runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
 			})
 
 			// Then

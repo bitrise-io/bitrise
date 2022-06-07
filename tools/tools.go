@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/tools/errorfinder"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -381,13 +382,15 @@ func EnvmanRun(envstorePth,
 	var inReader io.Reader
 	var outWriter io.Writer
 	var errWriter io.Writer
+	errorFinder := errorfinder.NewErrorFinder()
+	var fw *filterwriter.Writer
 
 	if !configs.IsSecretFiltering {
-		outWriter = os.Stdout
-		errWriter = os.Stderr
+		outWriter = errorFinder.WrapWriter(os.Stdout)
+		errWriter = errorFinder.WrapWriter(os.Stderr)
 	} else {
-
-		outWriter = filterwriter.New(secrets, os.Stdout)
+		fw = filterwriter.New(secrets, os.Stdout)
+		outWriter = errorFinder.WrapWriter(fw)
 		errWriter = outWriter
 	}
 
@@ -405,13 +408,13 @@ func EnvmanRun(envstorePth,
 
 	// flush the writer anyway if the process is finished
 	if configs.IsSecretFiltering {
-		_, ferr := (outWriter.(*filterwriter.Writer)).Flush()
+		_, ferr := fw.Flush()
 		if ferr != nil {
-			return 1, ferr
+			return 1, errorFinder.WrapError(ferr)
 		}
 	}
 
-	return timeoutcmd.ExitStatus(err), err
+	return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
 }
 
 // EnvmanJSONPrint ...

@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/colorstring"
-	log "github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/stringutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -49,7 +49,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 			titleBox = fmt.Sprintf("%s", title)
 		}
 		break
-	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
+	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed, models.StepRunStatusCodeFailedSkippable:
 		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
 		if len(titleBox) > titleBoxWidth {
 			dif := len(titleBox) - titleBoxWidth
@@ -204,7 +204,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 		icon = "✓"
 		coloringFunc = colorstring.Green
 		break
-	case models.StepRunStatusCodeFailed:
+	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed:
 		icon = "x"
 		coloringFunc = colorstring.Red
 		break
