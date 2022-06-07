@@ -58,6 +58,13 @@ func Test_parseGoVersionFromGoVersionOutput(t *testing.T) {
 		require.Equal(t, "1.7.1", verStr)
 	}
 
+	t.Log("Beta OK")
+	{
+		verStr, err := parseGoVersionFromGoVersionOutput("go version go1.17beta1 darwin/amd64")
+		require.NoError(t, err)
+		require.Equal(t, "1.17", verStr)
+	}
+
 	t.Log("Empty")
 	{
 		verStr, err := parseGoVersionFromGoVersionOutput("")
