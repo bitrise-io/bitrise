@@ -62,18 +62,24 @@ type Toolkit interface {
 // === Utils ===
 
 // ToolkitForStep ...
-func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
-	if step.Toolkit != nil {
-		stepToolkit := step.Toolkit
-		if stepToolkit.Go != nil {
-			return GoToolkit{}
-		} else if stepToolkit.Bash != nil {
-			return BashToolkit{}
+func ToolkitForStep(step stepmanModels.StepModel) (toolkit Toolkit) {
+	defer func() {
+		if toolkit == nil {
+			toolkit = BashToolkit{}
 		}
+	}()
+
+	if step.Toolkit == nil {
+		return nil
 	}
 
-	// default
-	return BashToolkit{}
+	stepToolkit := step.Toolkit
+	if stepToolkit.Go != nil {
+		toolkit = GoToolkit{}
+	} else if stepToolkit.Bash != nil {
+		toolkit = BashToolkit{}
+	}
+	return toolkit
 }
 
 // AllSupportedToolkits ...
