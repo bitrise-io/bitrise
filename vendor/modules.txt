@@ -1,9 +1,3 @@
-# github.com/Masterminds/semver v1.5.0
-## explicit
-# github.com/Masterminds/vcs v1.13.3
-## explicit
-# github.com/armon/go-radix v1.0.0
-## explicit
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 github.com/bitrise-io/colorstring
 # github.com/bitrise-io/envman v0.0.0-20220401145857-d11e00a5dc55
@@ -38,14 +32,12 @@ github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit
 github.com/bitrise-io/gows/gows
-# github.com/bitrise-io/stepman v0.0.0-20220107162322-d37bb82e8983
+# github.com/bitrise-io/stepman v0.0.0-20220629145037-6a723228c5d0
 ## explicit
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/version
-# github.com/boltdb/bolt v1.3.1
-## explicit
 # github.com/cpuguy83/go-md2man/v2 v2.0.1
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
@@ -53,10 +45,6 @@ github.com/davecgh/go-spew/spew
 # github.com/gofrs/uuid v4.2.0+incompatible
 ## explicit
 github.com/gofrs/uuid
-# github.com/golang/dep v0.5.4
-## explicit
-# github.com/golang/protobuf v1.5.2
-## explicit
 # github.com/hashicorp/go-cleanhttp v0.5.2
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-retryablehttp v0.7.0
@@ -64,12 +52,6 @@ github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/jmank88/nuts v0.4.0
-## explicit
-# github.com/nightlyone/lockfile v1.0.0
-## explicit
-# github.com/pelletier/go-toml v1.9.5
-## explicit
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -77,8 +59,6 @@ github.com/russross/blackfriday/v2
 # github.com/ryanuber/go-glob v1.0.0
 ## explicit
 github.com/ryanuber/go-glob
-# github.com/sdboyer/constext v0.0.0-20170321163424-836a14457353
-## explicit
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
@@ -92,8 +72,6 @@ github.com/urfave/cli
 # golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
-## explicit
 # golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 ## explicit
 golang.org/x/sys/internal/unsafeheader
@@ -102,8 +80,6 @@ golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 golang.org/x/term
-# google.golang.org/protobuf v1.28.0
-## explicit
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit
 gopkg.in/yaml.v2

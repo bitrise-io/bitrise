@@ -40,16 +40,10 @@ type AptGetDepModel struct {
 	BinName string `json:"bin_name,omitempty" yaml:"bin_name,omitempty"`
 }
 
-// CheckOnlyDepModel ...
-type CheckOnlyDepModel struct {
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-}
-
 // DepsModel ...
 type DepsModel struct {
-	Brew      []BrewDepModel      `json:"brew,omitempty" yaml:"brew,omitempty"`
-	AptGet    []AptGetDepModel    `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
-	CheckOnly []CheckOnlyDepModel `json:"check_only,omitempty" yaml:"check_only,omitempty"`
+	Brew   []BrewDepModel   `json:"brew,omitempty" yaml:"brew,omitempty"`
+	AptGet []AptGetDepModel `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
 }
 
 // BashStepToolkitModel ...
