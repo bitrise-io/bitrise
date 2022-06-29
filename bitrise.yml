@@ -1,5 +1,5 @@
 format_version: 7
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+default_step_lib_source: https://github.com/matrangam/bitrise-steplib.git
 project_type: other
 
 app:
@@ -12,6 +12,7 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
+    - bitrise-swift-step-test:
     - go-list:
     - golint:
     - errcheck:

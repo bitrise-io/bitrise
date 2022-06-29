@@ -78,5 +78,5 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 
 // AllSupportedToolkits ...
 func AllSupportedToolkits() []Toolkit {
-	return []Toolkit{GoToolkit{}, BashToolkit{}}
+	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
 }

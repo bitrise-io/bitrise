@@ -63,10 +63,15 @@ type GoStepToolkitModel struct {
 	PackageName string `json:"package_name" yaml:"package_name"`
 }
 
+type SwiftStepToolkitModel struct {
+
+}
+
 // StepToolkitModel ...
 type StepToolkitModel struct {
 	Bash *BashStepToolkitModel `json:"bash,omitempty" yaml:"bash,omitempty"`
 	Go   *GoStepToolkitModel   `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift   *SwiftStepToolkitModel   `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
 // StepModel ...
