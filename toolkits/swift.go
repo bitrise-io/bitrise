@@ -30,6 +30,7 @@ func (toolkit SwiftToolkit) Check() (bool, ToolkitCheckResult, error) {
 	return false, ToolkitCheckResult{}, nil
 }
 
+// IsToolAvailableInPATH ...
 func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	binPath, err := utils.CheckProgramInstalledPath("swift")
 	if err != nil {
@@ -38,10 +39,12 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	return len(binPath) > 0
 }
 
+// PrepareForStepRun ...
 func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
 	return nil
 }
 
+// StepRunCommandArguments ...
 func (toolkit SwiftToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
-	return []string{}, nil
+	return []string{"swift", "run", "--package-path", stepAbsDirPath, "-c", "release"}, nil
 }

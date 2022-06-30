@@ -63,17 +63,16 @@ type Toolkit interface {
 
 // ToolkitForStep ...
 func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
+	var toolkit Toolkit = BashToolkit{}
 	if step.Toolkit != nil {
 		stepToolkit := step.Toolkit
 		if stepToolkit.Go != nil {
-			return GoToolkit{}
-		} else if stepToolkit.Bash != nil {
-			return BashToolkit{}
+			toolkit = GoToolkit{}
+		} else if stepToolkit.Swift != nil {
+			toolkit = SwiftToolkit{}
 		}
 	}
-
-	// default
-	return BashToolkit{}
+	return toolkit
 }
 
 // AllSupportedToolkits ...
