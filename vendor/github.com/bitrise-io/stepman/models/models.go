@@ -64,7 +64,8 @@ type GoStepToolkitModel struct {
 }
 
 type SwiftStepToolkitModel struct {
-
+	BinaryLocation string `json:"binary_location,omitempty" yaml:"binary_location,omitempty"`
+	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
 }
 
 // StepToolkitModel ...

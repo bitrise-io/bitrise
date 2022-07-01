@@ -12,7 +12,8 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-    - git::https://github.com/matrangam/bitrise-step-swift-test.git@main: { }
+    - git::https://github.com/matrangam/bitrise-step-swift-test.git@main: { } # Binary
+#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@0.0.1: { } #Non-Binary
     - go-list:
     - golint:
     - errcheck:
