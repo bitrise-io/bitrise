@@ -275,7 +275,10 @@ func EnvmanInit() error {
 func EnvmanInitAtPath(envstorePth string) error {
 	logLevel := log.GetLevel().String()
 	args := []string{"--loglevel", logLevel, "--path", envstorePth, "init", "--clear"}
-	return command.RunCommand("envman", args...)
+
+	timeoutCmd := timeoutcmd.New("", "envman", args...)
+	timeoutCmd.SetTimeout(time.Minute * 1)
+	return timeoutCmd.Start()
 }
 
 // EnvmanAdd ...
