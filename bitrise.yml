@@ -38,7 +38,7 @@ workflows:
 
             $current_bitrise setup
 
-            go test -v ./_tests/integration/...
+            go test -v ./_tests/integration
 
   create-binaries:
     title: Create binaries
