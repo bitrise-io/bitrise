@@ -463,7 +463,7 @@ func runStep(
 	}
 
 	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-		log.Errorf("envman hang: %w", err)
+		log.Errorf("envman hang: %s", err)
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
@@ -720,7 +720,7 @@ func activateAndRunSteps(
 		//
 		// Preparing the step
 		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-			log.Errorf("envman hang: %w", err)
+			log.Errorf("envman hang: %s", err)
 			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			continue
