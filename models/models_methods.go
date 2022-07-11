@@ -1126,6 +1126,9 @@ func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string
 	}
 
 	version := getStepVersion(compositeVersionStr)
+	if src == "git" && version == "" {
+		version = "master"
+	}
 
 	return StepIDData{
 		IDorURI:       id,
