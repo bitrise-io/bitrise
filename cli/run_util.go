@@ -793,7 +793,15 @@ func activateAndRunSteps(
 				registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			}
-			if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
+
+			var gitCommand *command.Model
+			if stepIDData.Version == "" {
+				gitCommand = repo.Clone(stepIDData.IDorURI)
+			} else {
+				gitCommand = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
+			}
+
+			if err := gitCommand.Run(); err != nil {
 				if strings.HasPrefix(stepIDData.IDorURI, "git@") {
 					fmt.Println(colorstring.Yellow(`Note: if the step's repository is an open source one,`))
 					fmt.Println(colorstring.Yellow(`you should probably use a "https://..." git clone URL,`))

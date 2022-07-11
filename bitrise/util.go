@@ -458,8 +458,14 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 			return err
 		}
 
-		if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
-			return err
+		if stepIDData.Version == "" {
+			if err := repo.Clone(stepIDData.IDorURI).Run(); err != nil {
+				return err
+			}
+		} else {
+			if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
+				return err
+			}
 		}
 		if err := command.CopyFile(filepath.Join(tempStepCloneDirPath, "step.yml"), tempStepYMLFilePath); err != nil {
 			return err

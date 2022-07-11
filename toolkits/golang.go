@@ -327,8 +327,10 @@ func stepBinaryFilename(sIDData models.StepIDData) string {
 		return ""
 	}
 
-	compositeStepID := fmt.Sprintf("%s-%s-%s",
-		sIDData.SteplibSource, sIDData.IDorURI, sIDData.Version)
+	compositeStepID := fmt.Sprintf("%s-%s", sIDData.SteplibSource, sIDData.IDorURI)
+	if sIDData.Version != "" {
+		compositeStepID += "-" + sIDData.Version
+	}
 
 	safeStepID := replaceRexp.ReplaceAllString(compositeStepID, "_")
 	//
