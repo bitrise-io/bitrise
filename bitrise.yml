@@ -12,11 +12,17 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@main: { } # Binary
-#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@0.0.1: { } #Non-Binary
-    - go-list:
-    - golint:
-    - errcheck:
+#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@mm/test: # Binary
+#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@0.0.1: # Non-Binary
+    - path::/Users/michaelmatranga/Documents/workspace/steps/bitrise-step-swift-test:
+        inputs:
+        - repository_url: "git@github.com:TelegramMessenger/Telegram-iOS.git"
+        - clone_destination: "my_test_directory"
+        - clone_depth: "1"
+        - checkout_branch: "beta"
+    - go-list: {}
+    - golint: {}
+    - errcheck: {}
     - script:
         title: Go test
         inputs:
