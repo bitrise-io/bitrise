@@ -12,9 +12,7 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@mm/test: # Binary
-#    - git::https://github.com/matrangam/bitrise-step-swift-test.git@0.0.1: # Non-Binary
-    - path::/Users/michaelmatranga/Documents/workspace/steps/bitrise-step-swift-test:
+    - git::https://github.com/matrangam/bitrise-step-swift-clone.git@main:
         inputs:
         - repository_url: "git@github.com:TelegramMessenger/Telegram-iOS.git"
         - clone_destination: "my_test_directory"
