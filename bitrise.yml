@@ -129,7 +129,7 @@ workflows:
   dep-update:
     title: Dep update
     description: |
-      Used for updating bitrise dependencies with dep
+      Used for updating bitrise dependencies with go modules
     steps:
     - script:
         title: Dependency update
@@ -137,8 +137,8 @@ workflows:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-                        
-            go get -t -u ./...   
+
+            go get -t -u ./...
 
   noop:
     title: Noop
