@@ -139,6 +139,8 @@ workflows:
             set -ex
 
             go get -t -u ./...
+            go mod tidy
+            go mod vendor
 
   noop:
     title: Noop
