@@ -12,12 +12,6 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-    - git::https://github.com/matrangam/bitrise-step-swift-clone.git@0.0.2:
-        inputs:
-        - repository_url: "git@github.com:TelegramMessenger/Telegram-iOS.git"
-        - clone_destination: "my_test_directory"
-        - clone_depth: "1"
-        - checkout_branch: "beta"
     - go-list: {}
     - golint: {}
     - errcheck: {}
