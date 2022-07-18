@@ -344,16 +344,9 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
 
-	if step.Deps != nil && (len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0) {
+	if step.Deps != nil && (len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0) {
 		//
 		// New dependency handling
-		for _, checkOnlyDep := range step.Deps.CheckOnly {
-			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
-				return err
-			}
-			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", checkOnlyDep.Name)
-		}
-
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
