@@ -12,9 +12,9 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-    - go-list:
-    - golint:
-    - errcheck:
+    - go-list: {}
+    - golint: {}
+    - errcheck: {}
     - script:
         title: Go test
         inputs:
