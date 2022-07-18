@@ -57,10 +57,17 @@ type GoStepToolkitModel struct {
 	PackageName string `json:"package_name" yaml:"package_name"`
 }
 
+// SwiftStepToolkitModel ...
+type SwiftStepToolkitModel struct {
+	BinaryLocation string `json:"binary_location,omitempty" yaml:"binary_location,omitempty"`
+	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
+}
+
 // StepToolkitModel ...
 type StepToolkitModel struct {
-	Bash *BashStepToolkitModel `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go   *GoStepToolkitModel   `json:"go,omitempty" yaml:"go,omitempty"`
+	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
 // StepModel ...
