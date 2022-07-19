@@ -16,14 +16,8 @@ github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4 h1:ytUxnO7iSGHlNp
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88 h1:HObzyO+BJrTSLqxSUHnik0FS1lOHPmtqXLP0doAsE1g=
 github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88/go.mod h1:3Cp9ceJ8wHl1Av6oEE2ff1iWaYLliQuD+oaNdyM0NWQ=
-github.com/bitrise-io/stepman v0.0.0-20220107162322-d37bb82e8983 h1:R/EuQifs+KrnMpjHupm0jcrMv/BjW/3A2KDD2JEgr5g=
-github.com/bitrise-io/stepman v0.0.0-20220107162322-d37bb82e8983/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
-github.com/bitrise-io/stepman v0.0.0-20220629145037-6a723228c5d0 h1:AAQdosZpZGSuHqxKU9E0pAOGssg9jQGKc6N45WIZ13s=
-github.com/bitrise-io/stepman v0.0.0-20220629145037-6a723228c5d0/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
-github.com/bitrise-io/stepman v0.0.0-20220630091154-7de307b92468 h1:5daczIHDno5QrQ+bi5+RMXkEi3XHhsrgSrynfbnRDws=
-github.com/bitrise-io/stepman v0.0.0-20220630091154-7de307b92468/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
-github.com/bitrise-io/stepman v0.0.0-20220630103204-26489729041a h1:SwR8OGYlTvE5Apm2NZW66g4b5HvzTz+isQzKPfwDV34=
-github.com/bitrise-io/stepman v0.0.0-20220630103204-26489729041a/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
+github.com/bitrise-io/stepman v0.0.0-20220718172049-e5ae0a09c2f2 h1:JOiFJlKNYKoK6a7d7GaSqOklBvQAogUvqZF8xvmGw90=
+github.com/bitrise-io/stepman v0.0.0-20220718172049-e5ae0a09c2f2/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1 h1:r/myEWzV9lfsM1tFLgDyu0atFtJ1fXn261LKYj/3DxU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
