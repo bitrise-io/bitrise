@@ -366,7 +366,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.GetBinaryName())
 			}
 		default:
-			return errors.New("Unsupported os")
+			return errors.New("unsupported os")
 		}
 	} else if len(step.Dependencies) > 0 {
 		log.Info("Deprecated dependencies found")
@@ -383,12 +383,6 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 					}
 				} else {
 					isSkippedBecauseOfPlatform = true
-				}
-				break
-			case depManagerTryCheck:
-				err := bitrise.DependencyTryCheckTool(dep.Name)
-				if err != nil {
-					return err
 				}
 				break
 			default:
