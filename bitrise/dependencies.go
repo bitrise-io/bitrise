@@ -272,39 +272,6 @@ func checkIfAptPackageInstalled(packageName string) bool {
 	return (err == nil)
 }
 
-// DependencyTryCheckTool ...
-func DependencyTryCheckTool(tool string) error {
-	var cmd *command.Model
-	errMsg := ""
-
-	switch tool {
-	case "xcode":
-		cmd = command.New("xcodebuild", "-version")
-		errMsg = "The full Xcode app is not installed, required for this step. You can install it from the App Store."
-		break
-	default:
-		cmdFields := strings.Fields(tool)
-		if len(cmdFields) >= 2 {
-			cmd = command.New(cmdFields[0], cmdFields[1:]...)
-		} else if len(cmdFields) == 1 {
-			cmd = command.New(cmdFields[0])
-		} else {
-			return fmt.Errorf("Invalid tool name (%s)", tool)
-		}
-	}
-
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		if errMsg != "" {
-			return errors.New(errMsg)
-		}
-		log.Infof("Output was: %s", out)
-		return fmt.Errorf("Dependency check failed for: %s", tool)
-	}
-
-	return nil
-}
-
 // InstallWithBrewIfNeeded ...
 func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) error {
 	isDepInstalled := false

@@ -30,16 +30,6 @@ deps:
   - name: cmake
 ```
 
-Steps can define dependencies which need to be available on the host machine but cannot be installed in an easy way (like using a single brew or apt-get command):
-
-```
-deps:
-  check_only:
-  - name: xcode
-```
-
-Currently, the only supported `check_only` dependency is `xcode`.
-
 Other dependencies need to be installed and checked while the step is running or using other steps.
 
 ## Never depend on Environment Variables in your Step

@@ -944,7 +944,7 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 		step.Toolkit = new(stepmanModels.StepToolkitModel)
 		*step.Toolkit = *otherStep.Toolkit
 	}
-	if otherStep.Deps != nil && (len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0 || len(otherStep.Deps.CheckOnly) > 0) {
+	if otherStep.Deps != nil && (len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0) {
 		step.Deps = otherStep.Deps
 	}
 	if otherStep.IsRequiresAdminUser != nil {
