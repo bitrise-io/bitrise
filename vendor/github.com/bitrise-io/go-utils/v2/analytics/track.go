@@ -12,28 +12,6 @@ const poolSize = 10
 const bufferSize = 100
 const timeout = 30 * time.Second
 
-// Properties ...
-type Properties map[string]interface{}
-
-// Merge ...
-func (p Properties) Merge(properties Properties) Properties {
-	r := Properties{}
-	for key, value := range p {
-		r[key] = value
-	}
-	for key, value := range properties {
-		r[key] = value
-	}
-	return r
-}
-
-// AppendIfNotEmpty ...
-func (p Properties) AppendIfNotEmpty(key string, value string) {
-	if value != "" {
-		p[key] = value
-	}
-}
-
 // Tracker ...
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)
@@ -49,8 +27,8 @@ type tracker struct {
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(properties ...Properties) Tracker {
-	return NewTracker(NewDefaultClient(log.NewLogger()), timeout, properties...)
+func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
+	return NewTracker(NewDefaultClient(logger), timeout, properties...)
 }
 
 // NewTracker ...
