@@ -15,8 +15,11 @@ builds:
   - goos: linux
     goarch: arm64
 
+# TODO: LDFLAGs
+
 archives:
 - format: binary
+  name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}" # Name format should match the curl install script
   replacements:
     darwin: Darwin
     linux: Linux
@@ -28,6 +31,23 @@ release:
     name: bitrise
   draft: true
   mode: replace
+  footer: |
+    ### Install or upgrade
+
+    To install this version, run the following command (in a bash shell):
+      
+      ```bash
+      curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
+      ```
+    ℹ️ M1 machine: Please note by default `/usr/local/bin` does not exist on M1 machines and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
+    
+    Then:
+      
+      ```
+      chmod +x /usr/local/bin/{{ .ProjectName }}
+      ```
+      
+      That's all, you're ready to call `{{ .ProjectName }}`!
 
 checksum:
   name_template: 'checksums.txt'
