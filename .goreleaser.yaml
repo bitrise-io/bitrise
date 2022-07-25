@@ -25,7 +25,7 @@ archives:
 release:
   github:
     owner: bitrise-io
-    repo: bitrise
+    name: bitrise
   draft: true
   mode: replace
 
