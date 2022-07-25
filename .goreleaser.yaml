@@ -12,14 +12,18 @@ builds:
   - amd64
   - arm64
   ignore:
+  # We don't want to publish a linux-arm64 binary
   - goos: linux
     goarch: arm64
-
-# TODO: LDFLAGs
+  ldflags:
+  - -w -s # Omit symbol tables and debug information
+  - "{{.Env.LD_FLAGS}}" # Additional flags passed from outside
 
 archives:
+  # GitHub release should contain the raw binaries (no zip or tar.gz)
 - format: binary
-  name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}" # Name format should match the curl install script
+  # Name format should match the curl install script
+  name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
   replacements:
     darwin: Darwin
     linux: Linux
@@ -52,6 +56,7 @@ release:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
+  # Run `goreleaser release --snapshot` locally to create binaries without publishing and checks
   name_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
