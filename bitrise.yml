@@ -45,13 +45,13 @@ workflows:
     steps:
     - script:
         title: Goreleaser (create binaries + publish to GH)
+        deps:
+          brew: [ goreleaser ]
         inputs:
         - content: |
             #!/usr/bin/env bash
             set -ex
             
-            go install github.com/goreleaser/goreleaser@v1.10.2
-          
             export GITHUB_TOKEN="$GIT_BOT_USER_ACCESS_TOKEN"
             goreleaser release
 
