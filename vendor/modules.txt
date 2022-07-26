@@ -1,12 +1,11 @@
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-## explicit
 github.com/bitrise-io/colorstring
 # github.com/bitrise-io/envman v0.0.0-20220512153504-166d59151b78
-## explicit; go 1.16
+## explicit
 github.com/bitrise-io/envman/env
 github.com/bitrise-io/envman/models
 # github.com/bitrise-io/go-utils v1.0.2
-## explicit; go 1.13
+## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
 github.com/bitrise-io/go-utils/command/git
@@ -23,77 +22,72 @@ github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
 # github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.7
-## explicit; go 1.16
+## explicit
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
 # github.com/bitrise-io/goinp v0.0.0-20220707085942-a2ad393014f6
-## explicit; go 1.16
+## explicit
 github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20220531144754-6f5657a0dd7c
-## explicit; go 1.16
+## explicit
 github.com/bitrise-io/gows/gows
 # github.com/bitrise-io/stepman v0.0.0-20220718172049-e5ae0a09c2f2
-## explicit; go 1.16
+## explicit
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/version
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
-## explicit; go 1.11
+## explicit
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
-## explicit
 github.com/davecgh/go-spew/spew
 # github.com/gofrs/uuid v4.2.0+incompatible
 ## explicit
 github.com/gofrs/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
-## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-retryablehttp v0.7.1
-## explicit; go 1.13
+## explicit
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.6.0
 ## explicit
 github.com/hashicorp/go-version
 # github.com/mitchellh/mapstructure v1.5.0
-## explicit; go 1.14
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/pmezard/go-difflib v1.0.0
-## explicit
 github.com/pmezard/go-difflib/difflib
 # github.com/russross/blackfriday/v2 v2.1.0
-## explicit
 github.com/russross/blackfriday/v2
 # github.com/ryanuber/go-glob v1.0.0
 ## explicit
 github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.9.0
-## explicit; go 1.13
+## explicit
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.8.0
-## explicit; go 1.13
+## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/urfave/cli v1.22.9
-## explicit; go 1.11
+## explicit
 github.com/urfave/cli
 # golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-## explicit; go 1.17
+## explicit
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8
-## explicit; go 1.17
+## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
-## explicit; go 1.17
+## explicit
 golang.org/x/term
 # gopkg.in/yaml.v2 v2.4.0
-## explicit; go 1.15
+## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
-## explicit
 gopkg.in/yaml.v3
