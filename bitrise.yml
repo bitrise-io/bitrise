@@ -126,22 +126,6 @@ workflows:
             cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
             echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
 
-  dep-update:
-    title: Dep update
-    description: |
-      Used for updating bitrise dependencies with go modules
-    steps:
-    - script:
-        title: Dependency update
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            go get -t -u ./...
-            go mod tidy
-            go mod vendor
-
   noop:
     title: Noop
     description: Empty workflow for quick testing
