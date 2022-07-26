@@ -116,13 +116,8 @@ func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 
 	// Adapter between logrus and go-utils log package
-	loglevel := logrus.GetLevel()
-	var enableDebugLog bool
-	if loglevel == logrus.DebugLevel {
-		enableDebugLog = true
-	}
 	logger := log.NewLogger()
-	logger.EnableDebugLog(enableDebugLog)
+	logger.EnableDebugLog(logrus.GetLevel() == logrus.DebugLevel)
 
 	return NewTracker(analytics.NewDefaultTracker(logger), envRepository, NewStateChecker(envRepository))
 }
