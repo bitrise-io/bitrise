@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const (
@@ -111,7 +114,12 @@ func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository
 // NewDefaultTracker ...
 func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
-	return NewTracker(analytics.NewDefaultTracker(), envRepository, NewStateChecker(envRepository))
+
+	// Adapter between logrus and go-utils log package
+	logger := log.NewLogger()
+	logger.EnableDebugLog(logrus.GetLevel() == logrus.DebugLevel)
+
+	return NewTracker(analytics.NewDefaultTracker(logger), envRepository, NewStateChecker(envRepository))
 }
 
 // SendWorkflowStarted sends `workflow_started` events. `parent_step_execution_id` can be used to filter those

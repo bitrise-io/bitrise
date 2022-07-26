@@ -4,8 +4,11 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 )
 
-// DisabledEnvKey ...
+// DisabledEnvKey controls both the old (analytics plugin) and new (v2) implementations
 const DisabledEnvKey = "BITRISE_ANALYTICS_DISABLED"
+
+// V2DisabledEnvKey controls only the new (v2) implementation
+const V2DisabledEnvKey = "BITRISE_ANALYTICS_V2_DISABLED"
 
 // StateChecker ...
 type StateChecker interface {
@@ -23,5 +26,9 @@ func NewStateChecker(repository env.Repository) StateChecker {
 
 // Enabled ...
 func (s stateChecker) Enabled() bool {
+	if s.envRepository.Get(V2DisabledEnvKey) == "true" {
+		return false
+	}
+
 	return s.envRepository.Get(DisabledEnvKey) != "true"
 }

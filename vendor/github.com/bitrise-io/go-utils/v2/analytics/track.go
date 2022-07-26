@@ -27,8 +27,8 @@ type tracker struct {
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(properties ...Properties) Tracker {
-	return NewTracker(NewDefaultClient(log.NewLogger()), timeout, properties...)
+func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
+	return NewTracker(NewDefaultClient(logger), timeout, properties...)
 }
 
 // NewTracker ...
