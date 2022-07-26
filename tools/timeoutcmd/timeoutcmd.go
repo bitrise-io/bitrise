@@ -9,21 +9,28 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bitrise-io/bitrise/tools/hangdetector"
 	"github.com/bitrise-io/go-utils/log"
 )
 
 // Command controls the command run.
 type Command struct {
-	cmd     *exec.Cmd
-	timeout time.Duration
+	cmd          *exec.Cmd
+	timeout      time.Duration
+	hangDetector hangdetector.HangDetector
 }
 
 // New creates a command model.
-func New(dir, name string, args ...string) Command {
+func New(hangTimeout time.Duration, dir, name string, args ...string) Command {
 	c := Command{
 		cmd: exec.Command(name, args...),
 	}
 	c.cmd.Dir = dir
+
+	if hangTimeout != 0 {
+		c.hangDetector = hangdetector.NewHangDetector(hangTimeout)
+	}
+
 	return c
 }
 
@@ -38,12 +45,20 @@ func (c *Command) AppendEnv(env string) {
 		c.cmd.Env = append(c.cmd.Env, env)
 		return
 	}
+
 	c.cmd.Env = append(os.Environ(), env)
 }
 
 // SetStandardIO sets the input and outputs of the command.
 func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
-	c.cmd.Stdin, c.cmd.Stdout, c.cmd.Stderr = in, out, err
+	if c.hangDetector == nil {
+		c.cmd.Stdin, c.cmd.Stdout, c.cmd.Stderr = in, out, err
+		return
+	}
+
+	c.cmd.Stdin = in
+	c.cmd.Stdout = c.hangDetector.WrapWriter(out)
+	c.cmd.Stderr = c.hangDetector.WrapWriter(err)
 }
 
 // Start starts the command run.
@@ -91,6 +106,11 @@ func (c *Command) Start() error {
 			log.Warnf("Failed to kill process: %s", err)
 		}
 		return fmt.Errorf("timed out")
+	case <-c.hangDetector.C():
+		if err := c.cmd.Process.Kill(); err != nil {
+			log.Warnf("Failed to kill process: %s", err)
+		}
+		return fmt.Errorf("hanged")
 	case err := <-done:
 		if interrupted {
 			os.Exit(ExitStatus(err))
