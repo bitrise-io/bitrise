@@ -40,8 +40,10 @@ workflows:
 
             go test -v ./_tests/integration/...
 
-  create-binaries:
+  create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
+    envs:
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
     steps:
     - script:
         title: Goreleaser (create binaries + publish to GH)
@@ -53,7 +55,6 @@ workflows:
             #!/usr/bin/env bash
             set -ex
             
-            export GITHUB_TOKEN="$GIT_BOT_USER_ACCESS_TOKEN"
             goreleaser release
 
   test-binary-build:

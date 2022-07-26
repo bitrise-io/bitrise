@@ -17,7 +17,8 @@ builds:
     goarch: arm64
   ldflags:
   - -w -s # Omit symbol tables and debug information
-  - '{{ index .Env "LD_FLAGS" }}' # Additional flags passed from outside
+  - -X github.com/bitrise-io/bitrise/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/bitrise/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
