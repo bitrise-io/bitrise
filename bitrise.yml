@@ -41,7 +41,7 @@ workflows:
             go test -v ./_tests/integration/...
 
   create-binaries:
-    description: Creates Linux and Darwin binaries, then publish a GitHub release
+    description: Creates Linux and Darwin binaries, then publishes a GitHub release
     steps:
     - script:
         title: Goreleaser (create binaries + publish to GH)
@@ -55,6 +55,21 @@ workflows:
             
             export GITHUB_TOKEN="$GIT_BOT_USER_ACCESS_TOKEN"
             goreleaser release
+
+  test-binary-build:
+    description: Tests the release build process by creating a snapshot release (without publishing)
+    steps:
+    - script:
+        title: Goreleaser (create snapshot binaries)
+        deps:
+          brew:
+          - name: goreleaser
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+            
+            goreleaser release --snapshot --rm-dist
 
   noop:
     title: Noop
