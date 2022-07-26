@@ -31,6 +31,7 @@ workflows:
             set -ex
 
             current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
             go build -o "$current_bitrise"
 
             export PR="" PULL_REQUEST_ID=""
