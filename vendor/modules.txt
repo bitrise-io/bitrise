@@ -21,7 +21,7 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.9
 ## explicit
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
@@ -52,6 +52,8 @@ github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
 github.com/hashicorp/go-version
+# github.com/mitchellh/mapstructure v1.4.3
+github.com/mitchellh/mapstructure
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -72,7 +74,7 @@ github.com/urfave/cli
 # golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
+# golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
