@@ -12,20 +12,24 @@ type HangDetector interface {
 }
 
 type hangDetector struct {
-	ticker        time.Ticker
-	intervalCount uint64
-	maxIntervals  uint64
-	notification  chan bool
+	ticker               Ticker
+	elapsedIntervalCount uint64
+	maxIntervals         uint64
+	notification         chan bool
 
-	writers []HangDetectorWriter
+	writers []io.Writer
 }
 
-func NewHangDetector(timeout time.Duration) HangDetector {
-	tickerInterval := time.Second * 30
+func NewDefaultHangDetector(timeout time.Duration) HangDetector {
+	const tickerInterval = time.Second * 30
 	maxIntervals := uint64(timeout / tickerInterval)
 
+	return newHangDetector(NewTicker(tickerInterval), maxIntervals)
+}
+
+func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 	detector := hangDetector{
-		ticker:       *time.NewTicker(tickerInterval),
+		ticker:       ticker,
 		maxIntervals: maxIntervals,
 		notification: make(chan bool),
 	}
@@ -35,7 +39,7 @@ func NewHangDetector(timeout time.Duration) HangDetector {
 }
 
 func (h *hangDetector) WrapWriter(writer io.Writer) io.Writer {
-	hangWriter := NewHangDetectorWriter(writer, &h.intervalCount)
+	hangWriter := newWriter(writer, &h.elapsedIntervalCount)
 	h.writers = append(h.writers, hangWriter)
 
 	return hangWriter
@@ -47,8 +51,8 @@ func (h *hangDetector) C() chan bool {
 
 func (h hangDetector) checkHang() {
 	go func() {
-		for range h.ticker.C {
-			count := atomic.AddUint64(&h.intervalCount, 1)
+		for range h.ticker.C() {
+			count := atomic.AddUint64(&h.elapsedIntervalCount, 1)
 			if count >= h.maxIntervals {
 				h.notification <- true
 			}

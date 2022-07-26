@@ -28,7 +28,7 @@ func New(hangTimeout time.Duration, dir, name string, args ...string) Command {
 	c.cmd.Dir = dir
 
 	if hangTimeout != 0 {
-		c.hangDetector = hangdetector.NewHangDetector(hangTimeout)
+		c.hangDetector = hangdetector.NewDefaultHangDetector(hangTimeout)
 	}
 
 	return c
