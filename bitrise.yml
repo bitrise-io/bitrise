@@ -1,4 +1,4 @@
-format_version: 7
+format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
@@ -12,9 +12,9 @@ workflows:
     - integration-test
     title: Runs tests
     steps:
-    - go-list: {}
-    - golint: {}
-    - errcheck: {}
+    - go-list: { }
+    - golint: { }
+    - errcheck: { }
     - script:
         title: Go test
         inputs:
@@ -31,6 +31,7 @@ workflows:
             set -ex
 
             current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
             go build -o "$current_bitrise"
 
             export PR="" PULL_REQUEST_ID=""
@@ -40,105 +41,37 @@ workflows:
 
             go test -v ./_tests/integration/...
 
-  create-binaries:
-    title: Create binaries
-    description: |
-        Creates Linux and Darwin binaries
+  create-release:
+    description: Creates Linux and Darwin binaries, then publishes a GitHub release
+    envs:
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
     steps:
     - script:
-        title: Create binaries
+        title: Goreleaser (create binaries + publish to GH)
+        deps:
+          brew:
+          - name: goreleaser
         inputs:
         - content: |
             #!/usr/bin/env bash
-            set -e
-            set -x
+            set -ex
+            
+            goreleaser release
 
-            echo
-            echo "Create final binaries"
-            echo "  Build number: $BITRISE_BUILD_NUMBER"
-
-            # Create Darwin bin
-            export OS=Darwin
-            export GOOS=darwin
-            export ARCH=x86_64
-            export GOARCH=amd64
-
-            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
-            echo "  Create final Darwin binary at: $DEPLOY_PATH"
-
-            version_package="github.com/bitrise-io/bitrise/version"
-
-            go build \
-              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
-              -o "$DEPLOY_PATH"
-
-            envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
-            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
-            echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
-
-            # Create M1 bin
-            export ORIG_DIR=`pwd`
-            export GO_TMP=/tmp/go1.16.4 && mkdir -p $GO_TMP
-              
-            UNAME=$(uname)
-
-            if [ "$UNAME" == "Linux" ] ; then
-              export GO_DL_OS="linux"
-              export GO_DL_TAR_CMD="tar -xzf -"
-            elif [ "$UNAME" == "Darwin" ] ; then
-              export GO_DL_OS="darwin"
-              export GO_DL_TAR_CMD="tar -xjf -"
-            fi
-
-            cd $GO_TMP && curl -Ls https://golang.org/dl/go1.16.4.$GO_DL_OS-amd64.tar.gz | $GO_DL_TAR_CMD
-            cd $ORIG_DIR
-
-            export GOARCH=arm64
-            export ARCH=arm64
-
-            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
-            echo "  Create final M1 binary at: $DEPLOY_PATH"
-
-            version_package="github.com/bitrise-io/bitrise/version"
-
-            $GO_TMP/go/bin/go build \
-              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
-              -o "$DEPLOY_PATH"
-
-            envman add --key M1_DEPLOY_PATH --value $DEPLOY_PATH
-            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
-            echo "  Copy final M1 binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
-
-            # Create Linux binary
-            export OS=Linux
-            export GOOS=linux
-            export ARCH=x86_64
-            export GOARCH=amd64
-
-            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
-            echo "  Create final Linux binary at: $DEPLOY_PATH"
-
-            go build \
-              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
-              -o "$DEPLOY_PATH"
-
-            envman add --key LINUX_DEPLOY_PATH --value $DEPLOY_PATH
-            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
-            echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
-
-  dep-update:
-    title: Dep update
-    description: |
-      Used for updating bitrise dependencies with dep
+  test-binary-build:
+    description: Tests the release build process by creating a snapshot release (without publishing)
     steps:
     - script:
-        title: Dependency update
+        title: Goreleaser (create snapshot binaries)
+        deps:
+          brew:
+          - name: goreleaser
         inputs:
-        - content: |-
+        - content: |
             #!/usr/bin/env bash
             set -ex
-                        
-            go get -t -u ./...   
+            
+            goreleaser release --snapshot --rm-dist
 
   noop:
     title: Noop
