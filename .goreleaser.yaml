@@ -17,7 +17,7 @@ builds:
     goarch: arm64
   ldflags:
   - -w -s # Omit symbol tables and debug information
-  - "{{.Env.LD_FLAGS}}" # Additional flags passed from outside
+  - '{{ index .Env "LD_FLAGS" }}' # Additional flags passed from outside
 
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
