@@ -46,7 +46,8 @@ workflows:
     - script:
         title: Goreleaser (create binaries + publish to GH)
         deps:
-          brew: [ goreleaser ]
+          brew:
+          - name: goreleaser
         inputs:
         - content: |
             #!/usr/bin/env bash
