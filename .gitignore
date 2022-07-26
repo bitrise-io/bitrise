@@ -9,3 +9,4 @@ _FAKE_HOME/
 .DS_Store
 .vscode
 .idea/
+dist/
