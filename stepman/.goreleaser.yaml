@@ -1,0 +1,66 @@
+before:
+  hooks:
+  - go mod tidy
+
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+  ignore:
+  # We don't want to publish a linux-arm64 binary
+  - goos: linux
+    goarch: arm64
+  ldflags:
+  - -X github.com/bitrise-io/stepman/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/stepman/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
+
+archives:
+# GitHub release should contain the raw binaries (no zip or tar.gz)
+- format: binary
+  # Name format should match the curl install script
+  name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    amd64: x86_64
+
+release:
+  github:
+    owner: bitrise-io
+    name: stepman
+  draft: true
+  mode: replace
+  footer: |
+    ### Install or upgrade
+
+    To install this version, run the following command (in a bash shell):
+    
+      ```bash
+      curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
+      ```
+    ℹ️ M1 machine: Please note by default `/usr/local/bin` does not exist on M1 machines and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
+    
+    Then:
+    
+      ```
+      chmod +x /usr/local/bin/{{ .ProjectName }}
+      ```
+    
+      That's all, you're ready to call `{{ .ProjectName }}`!
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  # Run `goreleaser release --snapshot` locally to create binaries without publishing and checks
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'

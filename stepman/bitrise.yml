@@ -1,4 +1,4 @@
-format_version: "7"
+format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
@@ -7,15 +7,13 @@ app:
   - BIN_NAME: stepman
 
 workflows:
-  # ----------------------------------------------------------------
-  # --- workflows for CI and testing
   test:
     title: Runs tests
     steps:
-    - go-list:
-    - golint:
-    - errcheck:
-    - go-test:
+    - go-list: { }
+    - golint: { }
+    - errcheck: { }
+    - go-test: { }
     - codecov:
         run_if: .IsCI
         inputs:
@@ -29,71 +27,39 @@ workflows:
             set -ex
 
             current_stepman="$(pwd)/_tmp/test_stepman"
+            export CGO_ENALBED=0
             go build -o "$current_stepman"
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_stepman"
             go test -v ./_tests/integration/...
 
-  create-binaries:
-    title: Create binaries
+  create-release:
+    description: Creates Linux and Darwin binaries, then publishes a GitHub release
+    envs:
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
     steps:
     - script:
-        title: Create binaries
+        title: Goreleaser (create binaries + publish to GH)
+        deps:
+          brew:
+          - name: goreleaser
         inputs:
         - content: |
-            #!/bin/bash
+            #!/usr/bin/env bash
             set -ex
+            goreleaser release
 
-            echo
-            echo "Create final binaries"
-            echo "  Build number: $BITRISE_BUILD_NUMBER"
-
-            export ARCH=x86_64
-            export GOARCH=amd64
-
-            # Create Darwin bin
-            export OS=Darwin
-            export GOOS=darwin
-
-            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
-            echo "  Create final Darwin binary at: $DEPLOY_PATH"
-
-            version_package="github.com/bitrise-io/stepman/version"
-
-            go build \
-              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
-              -o "$DEPLOY_PATH"
-
-            envman add --key OSX_DEPLOY_PATH --value $DEPLOY_PATH
-            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
-            echo "  Copy final Darwin binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
-
-
-            # Create Linux binary
-            export OS=Linux
-            export GOOS=linux
-
-            DEPLOY_PATH="_bin/$BIN_NAME-$OS-$ARCH"
-            echo "  Create final Linux binary at: $DEPLOY_PATH"
-
-            go build \
-              -ldflags "-X $version_package.BuildNumber=$BITRISE_BUILD_NUMBER -X $version_package.Commit=$GIT_CLONE_COMMIT_HASH" \
-              -o "$DEPLOY_PATH"
-
-            envman add --key LINUX_DEPLOY_PATH --value $DEPLOY_PATH
-            cp $DEPLOY_PATH $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH
-            echo "  Copy final Linux binary to: $BITRISE_DEPLOY_DIR/$BIN_NAME-$OS-$ARCH"
-
-  dep-update:
-    title: Dep update
+  test-binary-build:
+    description: Tests the release build process by creating a snapshot release (without publishing)
     steps:
     - script:
-        title: Dependency update
+        title: Goreleaser (create snapshot binaries)
+        deps:
+          brew:
+          - name: goreleaser
         inputs:
-        - content: |-
-            #!/bin/bash
+        - content: |
+            #!/usr/bin/env bash
             set -ex
-            go get -u -v github.com/golang/dep/cmd/dep
-            dep ensure -v
-            dep ensure -v -update
+            goreleaser release --snapshot --rm-dist
