@@ -9,7 +9,7 @@ const (
 	DisabledEnvKey = "BITRISE_ANALYTICS_DISABLED"
 	// V2DisabledEnvKey controls only the new (v2) implementation
 	V2DisabledEnvKey = "BITRISE_ANALYTICS_V2_DISABLED"
-	// V2AsyncEnvKey can be used to disable the default async queriess
+	// V2AsyncEnvKey can be used to disable the default async queries
 	V2AsyncEnvKey = "BITRISE_ANALYTICS_V2_ASYNC"
 
 	trueEnv = "true"
@@ -40,5 +40,5 @@ func (s stateChecker) Enabled() bool {
 }
 
 func (s stateChecker) UseAsync() bool {
-	return s.envRepository.Get(V2AsyncEnvKey) == "" || s.envRepository.Get(V2AsyncEnvKey) == trueEnv
+	return !(s.envRepository.Get(V2AsyncEnvKey) == "false")
 }
