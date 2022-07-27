@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 )
 
 const trackEndpoint = "https://bitrise-step-analytics.herokuapp.com/track"
-const timeOut = 30 * time.Second
 
 // Client ...
 type Client interface {
@@ -19,29 +19,47 @@ type Client interface {
 
 type client struct {
 	httpClient *http.Client
+	timeout    time.Duration
 	endpoint   string
 	logger     log.Logger
 }
 
 // NewDefaultClient ...
-func NewDefaultClient(logger log.Logger) Client {
+func NewDefaultClient(logger log.Logger, timeout time.Duration) Client {
 	httpClient := retry.NewHTTPClient().StandardClient()
-	httpClient.Timeout = timeOut
-	return NewClient(httpClient, trackEndpoint, logger)
+	httpClient.Timeout = timeout
+	return NewClient(httpClient, trackEndpoint, logger, timeout)
 }
 
 // NewClient ...
-func NewClient(httpClient *http.Client, endpoint string, logger log.Logger) Client {
-	return client{httpClient: httpClient, endpoint: endpoint, logger: logger}
+func NewClient(httpClient *http.Client, endpoint string, logger log.Logger, timeout time.Duration) Client {
+	return client{httpClient: httpClient, endpoint: endpoint, logger: logger, timeout: timeout}
 }
 
 // Send ...
 func (t client) Send(buffer *bytes.Buffer) {
-	res, err := t.httpClient.Post(t.endpoint, "application/json", buffer)
+	ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.endpoint, buffer)
 	if err != nil {
-		t.logger.Debugf("Couldn't send analytics event: %s", err.Error())
+		t.logger.Warnf("Couldn't create analytics request: %s", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := t.httpClient.Do(req)
+	if err != nil {
+		t.logger.Debugf("Couldn't send analytics event: %s", err)
 		return
 	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			t.logger.Debugf("Couldn't close anaytics body: %s", err)
+		}
+	}()
+
 	if statusOK := res.StatusCode >= 200 && res.StatusCode < 300; !statusOK {
 		t.logger.Debugf("Couldn't send analytics event, status code: %d", res.StatusCode)
 	}

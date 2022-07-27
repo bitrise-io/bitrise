@@ -21,15 +21,15 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.9
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10
 ## explicit
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
-# github.com/bitrise-io/goinp v0.0.0-20220707085942-a2ad393014f6
+# github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 ## explicit
 github.com/bitrise-io/goinp/goinp
-# github.com/bitrise-io/gows v0.0.0-20220531144754-6f5657a0dd7c
+# github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit
 github.com/bitrise-io/gows/gows
 # github.com/bitrise-io/stepman v0.0.0-20220718172049-e5ae0a09c2f2
