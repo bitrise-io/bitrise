@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,8 @@ import (
 )
 
 func TestParseAndValidatePluginFromYML(t *testing.T) {
+	version.VERSION = "1.49.3"
+
 	t.Log("simple plugin - with executables")
 	{
 		// Given
