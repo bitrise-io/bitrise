@@ -11,6 +11,7 @@ import (
 const poolSize = 10
 const bufferSize = 100
 const timeout = 30 * time.Second
+const asyncClientTimeout = 30 * time.Second
 
 // Tracker ...
 type Tracker interface {
@@ -28,7 +29,7 @@ type tracker struct {
 
 // NewDefaultTracker ...
 func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
-	return NewTracker(NewDefaultClient(logger), timeout, properties...)
+	return NewTracker(NewDefaultClient(logger, asyncClientTimeout), timeout, properties...)
 }
 
 // NewTracker ...
