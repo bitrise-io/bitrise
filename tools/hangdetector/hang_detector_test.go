@@ -39,6 +39,7 @@ func Test_GivenWriter_WhenNoTimeout_ThenNotHangs(t *testing.T) {
 
 	assertTimeout(t, func(t *testing.T) { // no hang detected
 		<-detector.C()
+		t.Fatalf("Expected no hang")
 	})
 }
 
@@ -65,7 +66,7 @@ func assertNoTimeout(t *testing.T, f func(t *testing.T)) {
 func assertTimeout(t *testing.T, f func(t *testing.T)) {
 	var (
 		doneCh = make(chan bool)
-		timer  = time.NewTimer(5 * time.Second)
+		timer  = time.NewTimer(10 * time.Second)
 	)
 	defer timer.Stop()
 
