@@ -40,6 +40,5 @@ func (s stateChecker) Enabled() bool {
 }
 
 func (s stateChecker) UseAsync() bool {
-	asyncDisabled := s.envRepository.Get(V2AsyncDisabledEnvKey)
-	return asyncDisabled == "" || asyncDisabled == trueEnv
+	return s.envRepository.Get(V2AsyncDisabledEnvKey) != trueEnv
 }
