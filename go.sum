@@ -9,10 +9,8 @@ github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e/go.mod h1:nhda
 github.com/bitrise-io/go-utils v1.0.1/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils v1.0.2 h1:w4Mz2IvrgDzrFJECuHdvsK1LHO30cdtuy9bBa7Lw2c0=
 github.com/bitrise-io/go-utils v1.0.2/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6 h1:hwxfNzeqqte0iMw558Z2n42WZwwuXAuuvluo766etQc=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.6/go.mod h1:mysJdafur1ytXda0TeRsV+GxYCJFDU0QcCmYBgQf2Fc=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.9 h1:IBExYm/rdlLWAL4qjFEOpEoUIUBi8ky9NbZtDZrPSIw=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.9/go.mod h1:Ta/ards3Ih/3Q6X8tBtcj6zTHcNf1hRSXv1E8lPgIYk=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10 h1:b3sG8BNhsktfYd8YXraVQsKunFKMs0bRELXdx/zhTKA=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10/go.mod h1:Ta/ards3Ih/3Q6X8tBtcj6zTHcNf1hRSXv1E8lPgIYk=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4 h1:ytUxnO7iSGHlNpbdjhDUefEM5WRy1kD2ElGfBA7r1PE=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
@@ -96,8 +94,6 @@ golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20211205182925-97ca703d548d/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a h1:dGzPydgVsqGcTRVwiLJ1jVbufYwmzD3LfVPLKsKg+0k=
-golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e h1:NHvCuwuS43lGnYhten69ZWqi2QOj/CiDNcKbVqwVoew=
 golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=

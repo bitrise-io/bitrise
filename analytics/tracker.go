@@ -114,12 +114,18 @@ func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository
 // NewDefaultTracker ...
 func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
+	stateChecker := NewStateChecker(envRepository)
 
 	// Adapter between logrus and go-utils log package
 	logger := log.NewLogger()
 	logger.EnableDebugLog(logrus.GetLevel() == logrus.DebugLevel)
 
-	return NewTracker(analytics.NewDefaultTracker(logger), envRepository, NewStateChecker(envRepository))
+	tracker := analytics.NewDefaultSyncTracker(logger)
+	if stateChecker.UseAsync() {
+		tracker = analytics.NewDefaultTracker(logger)
+	}
+
+	return NewTracker(tracker, envRepository, stateChecker)
 }
 
 // SendWorkflowStarted sends `workflow_started` events. `parent_step_execution_id` can be used to filter those

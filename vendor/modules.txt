@@ -21,7 +21,7 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.9
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10
 ## explicit
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
