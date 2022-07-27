@@ -31,7 +31,7 @@ func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 	detector := hangDetector{
 		ticker:       ticker,
 		maxIntervals: maxIntervals,
-		notification: make(chan bool),
+		notification: make(chan bool, 1),
 	}
 	detector.checkHang()
 
@@ -49,7 +49,7 @@ func (h *hangDetector) C() chan bool {
 	return h.notification
 }
 
-func (h hangDetector) checkHang() {
+func (h *hangDetector) checkHang() {
 	go func() {
 		for range h.ticker.C() {
 			count := atomic.AddUint64(&h.elapsedIntervalCount, 1)

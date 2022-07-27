@@ -105,7 +105,13 @@ workflows:
     title: hangs
     description: Workflow will hang
     steps:
-    - script:
+    - script@1:
         title: Hang
         inputs:
-        - content: sleep 3000
+        - content: |-
+            #!/usr/bin/env bash
+            for i in {1..100}
+            do
+              echo "a"  
+              sleep 5
+            done
