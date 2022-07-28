@@ -23,9 +23,6 @@ type hangDetector struct {
 	notification     chan bool
 	writerActivityFn func()
 	mutex            sync.Mutex
-
-	outWriter writer
-	errWriter writer
 }
 
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
@@ -63,15 +60,11 @@ func (h *hangDetector) Stop() {
 
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.writerActivityFn)
-	h.outWriter = hangWriter
-
 	return hangWriter
 }
 
 func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.writerActivityFn)
-	h.errWriter = hangWriter
-
 	return hangWriter
 }
 
