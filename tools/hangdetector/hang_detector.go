@@ -2,45 +2,75 @@ package hangdetector
 
 import (
 	"io"
-	"sync/atomic"
+	"sync"
 	"time"
+
+	"github.com/bitrise-io/go-utils/log"
 )
 
 type HangDetector interface {
-	WrapWriter(writer io.Writer) io.Writer
+	Start()
+	Stop()
 	C() chan bool
+	WrapOutWriter(writer io.Writer) io.Writer
+	WrapErrWriter(writer io.Writer) io.Writer
 }
 
 type hangDetector struct {
-	ticker               Ticker
-	elapsedIntervalCount uint64
-	maxIntervals         uint64
-	notification         chan bool
+	ticker           Ticker
+	ticks            uint64
+	tickLimit        uint64
+	notification     chan bool
+	writerActivityFn func()
+	mutex            sync.Mutex
 
-	writers []io.Writer
+	outWriter writer
+	errWriter writer
 }
 
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
-	const tickerInterval = time.Second * 30
-	maxIntervals := uint64(timeout / tickerInterval)
+	const tickerInterval = time.Second * 1
+	tickLimit := uint64(timeout / tickerInterval)
 
-	return newHangDetector(NewTicker(tickerInterval), maxIntervals)
+	return newHangDetector(NewTicker(tickerInterval), tickLimit)
 }
 
-func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
+func newHangDetector(ticker Ticker, tickLimit uint64) HangDetector {
+	log.Warnf("tick limit: %d", tickLimit)
 	detector := hangDetector{
 		ticker:       ticker,
-		maxIntervals: maxIntervals,
+		ticks:        0,
+		tickLimit:    tickLimit,
 		notification: make(chan bool, 1),
+		mutex:        sync.Mutex{},
 	}
-	detector.checkHang()
+	detector.writerActivityFn = func() {
+		detector.mutex.Lock()
+		defer detector.mutex.Unlock()
+		detector.ticks = 0
+	}
 
 	return &detector
 }
 
-func (h *hangDetector) WrapWriter(writer io.Writer) io.Writer {
-	hangWriter := newWriter(writer, &h.elapsedIntervalCount)
-	h.writers = append(h.writers, hangWriter)
+func (h *hangDetector) Start() {
+	h.checkHang()
+}
+
+func (h *hangDetector) Stop() {
+	h.ticker.Stop()
+}
+
+func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
+	hangWriter := newWriter(writer, h.writerActivityFn)
+	h.outWriter = hangWriter
+
+	return hangWriter
+}
+
+func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
+	hangWriter := newWriter(writer, h.writerActivityFn)
+	h.errWriter = hangWriter
 
 	return hangWriter
 }
@@ -52,9 +82,16 @@ func (h *hangDetector) C() chan bool {
 func (h *hangDetector) checkHang() {
 	go func() {
 		for range h.ticker.C() {
-			count := atomic.AddUint64(&h.elapsedIntervalCount, 1)
-			if count >= h.maxIntervals {
+			h.mutex.Lock()
+			h.ticks++
+			log.Warnf("tick #%d", h.ticks)
+			tickLimitReached := h.ticks >= h.tickLimit
+			h.mutex.Unlock()
+
+			if tickLimitReached {
+				log.Warnf("tick limit reached")
 				h.notification <- true
+				return
 			}
 		}
 	}()

@@ -399,7 +399,7 @@ func EnvmanRun(envstorePth,
 		inReader = bytes.NewReader(stdInPayload)
 	}
 
-	const hangTimeout = 1 * time.Minute
+	const hangTimeout = 6 * time.Second
 	cmd := timeoutcmd.New(hangTimeout, workDirPth, "envman", args...)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
 	cmd.SetTimeout(timeout)

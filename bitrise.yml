@@ -112,6 +112,6 @@ workflows:
             #!/usr/bin/env bash
             for i in {1..100}
             do
-              echo "a"  
-              sleep 5
+              echo "🏃‍step output"  
+              sleep $i
             done

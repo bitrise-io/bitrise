@@ -27,7 +27,8 @@ func New(hangTimeout time.Duration, dir, name string, args ...string) Command {
 	}
 	c.cmd.Dir = dir
 
-	if hangTimeout != 0 {
+	if hangTimeout > 0 {
+		// TODO
 		c.hangDetector = hangdetector.NewDefaultHangDetector(hangTimeout)
 	}
 
@@ -51,20 +52,25 @@ func (c *Command) AppendEnv(env string) {
 
 // SetStandardIO sets the input and outputs of the command.
 func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
+	// TODO
 	if c.hangDetector == nil {
 		c.cmd.Stdin, c.cmd.Stdout, c.cmd.Stderr = in, out, err
 		return
 	}
 
 	c.cmd.Stdin = in
-	c.cmd.Stdout = c.hangDetector.WrapWriter(out)
-	c.cmd.Stderr = c.hangDetector.WrapWriter(err)
+	c.cmd.Stdout = c.hangDetector.WrapOutWriter(out)
+	c.cmd.Stderr = c.hangDetector.WrapErrWriter(err)
 }
 
 // Start starts the command run.
 func (c *Command) Start() error {
-	// setting up notification for signals so we can have
-	// separated logic to end the process
+	if c.hangDetector != nil {
+		c.hangDetector.Start()
+		defer c.hangDetector.Stop()
+	}
+
+	// setting up notification for signals, so we can have separated logic to end the process
 	interruptChan := make(chan os.Signal)
 	signal.Notify(interruptChan, os.Interrupt, os.Kill)
 	var interrupted bool
@@ -107,6 +113,8 @@ func (c *Command) Start() error {
 		}
 		return fmt.Errorf("timed out")
 	case <-c.hangDetector.C():
+		log.Warnf("hangdetector signal received")
+		// TODO: this only kills envman, is it enough?
 		if err := c.cmd.Process.Kill(); err != nil {
 			log.Warnf("Failed to kill process: %s", err)
 		}

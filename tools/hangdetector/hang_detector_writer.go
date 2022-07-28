@@ -1,23 +1,20 @@
 package hangdetector
 
-import (
-	"io"
-	"sync/atomic"
-)
+import "io"
 
 type writer struct {
-	writer io.Writer
-	count  *uint64
+	writer           io.Writer
+	writerActivityFn func()
 }
 
-func newWriter(wrappedWriter io.Writer, count *uint64) io.Writer {
+func newWriter(wrappedWriter io.Writer, writerActivityFn func()) writer {
 	return writer{
-		writer: wrappedWriter,
-		count:  count,
+		writer:           wrappedWriter,
+		writerActivityFn: writerActivityFn,
 	}
 }
 
-func (h writer) Write(p []byte) (int, error) {
-	atomic.StoreUint64(h.count, 0)
-	return h.writer.Write(p)
+func (w writer) Write(p []byte) (int, error) {
+	w.writerActivityFn()
+	return w.writer.Write(p)
 }
