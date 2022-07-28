@@ -10,7 +10,7 @@ type writer struct {
 	count  *uint64
 }
 
-func newWriter(wrappedWriter io.Writer, count *uint64) io.Writer {
+func newWriter(wrappedWriter io.Writer, count *uint64) writer {
 	return writer{
 		writer: wrappedWriter,
 		count:  count,
