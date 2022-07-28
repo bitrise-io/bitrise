@@ -11,16 +11,17 @@ import (
 type HangDetector interface {
 	Start()
 	Stop()
-	C() chan bool
+	C() <-chan bool
 	WrapOutWriter(writer io.Writer) io.Writer
 	WrapErrWriter(writer io.Writer) io.Writer
 }
 
 type hangDetector struct {
-	ticker       Ticker
-	ticks        uint64
-	tickLimit    uint64
-	notification chan bool
+	ticker        Ticker
+	ticks         uint64
+	tickLimit     uint64
+	notificationC chan bool
+	stopC         chan bool
 
 	outWriter writer
 	errWriter writer
@@ -35,9 +36,10 @@ func NewDefaultHangDetector(timeout time.Duration) HangDetector {
 
 func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 	detector := hangDetector{
-		ticker:       ticker,
-		tickLimit:    maxIntervals,
-		notification: make(chan bool, 1),
+		ticker:        ticker,
+		tickLimit:     maxIntervals,
+		notificationC: make(chan bool, 1),
+		stopC:         make(chan bool, 1),
 	}
 
 	return &detector
@@ -45,22 +47,31 @@ func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 
 func (h *hangDetector) Start() {
 	go func() {
-		for range h.ticker.C() {
-			count := atomic.AddUint64(&h.ticks, 1)
-			if count >= h.tickLimit {
-				h.notification <- true
+		for {
+			select {
+			case <-h.ticker.C():
+				{
+					count := atomic.AddUint64(&h.ticks, 1)
+					if count >= h.tickLimit {
+						h.notificationC <- true
+						return
+					}
+				}
+			case <-h.stopC:
+				log.Infof("ticker exited")
+				return
 			}
 		}
-		log.Infof("ticker exited")
 	}()
 }
 
 func (h *hangDetector) Stop() {
 	h.ticker.Stop()
+	h.stopC <- true
 }
 
-func (h *hangDetector) C() chan bool {
-	return h.notification
+func (h *hangDetector) C() <-chan bool {
+	return h.notificationC
 }
 
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
