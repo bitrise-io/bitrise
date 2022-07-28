@@ -12,6 +12,8 @@ func Test_GivenNoWriter_WhenTimeout_ThenHangs(t *testing.T) {
 	// Given
 	ticker := NewMockTicker()
 	detector := newHangDetector(ticker, 5)
+	detector.Start()
+	defer detector.Stop()
 
 	// When
 	ticker.DoTicks(5)
@@ -26,8 +28,9 @@ func Test_GivenWriter_WhenNoTimeout_ThenNotHangs(t *testing.T) {
 	// Given
 	ticker := NewMockTicker()
 	detector := newHangDetector(ticker, 5)
-	buf := new(bytes.Buffer)
-	outWriter := detector.WrapWriter(buf)
+	outWriter := detector.WrapOutWriter(new(bytes.Buffer))
+	detector.Start()
+	defer detector.Stop()
 
 	// When
 	ticker.DoTicks(4)

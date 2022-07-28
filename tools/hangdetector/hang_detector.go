@@ -4,6 +4,8 @@ import (
 	"io"
 	"sync/atomic"
 	"time"
+
+	"github.com/bitrise-io/go-utils/log"
 )
 
 type HangDetector interface {
@@ -37,13 +39,20 @@ func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 		tickLimit:    maxIntervals,
 		notification: make(chan bool, 1),
 	}
-	detector.checkHang()
 
 	return &detector
 }
 
 func (h *hangDetector) Start() {
-	h.checkHang()
+	go func() {
+		for range h.ticker.C() {
+			count := atomic.AddUint64(&h.ticks, 1)
+			if count >= h.tickLimit {
+				h.notification <- true
+			}
+		}
+		log.Infof("ticker exited")
+	}()
 }
 
 func (h *hangDetector) Stop() {
@@ -55,26 +64,19 @@ func (h *hangDetector) C() chan bool {
 }
 
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
-	hangWriter := newWriter(writer, &h.ticks)
+	hangWriter := newWriter(writer, h.onWriterActivity)
 	h.outWriter = hangWriter
 
 	return hangWriter
 }
 
 func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
-	hangWriter := newWriter(writer, &h.ticks)
+	hangWriter := newWriter(writer, h.onWriterActivity)
 	h.errWriter = hangWriter
 
 	return hangWriter
 }
 
-func (h *hangDetector) checkHang() {
-	go func() {
-		for range h.ticker.C() {
-			count := atomic.AddUint64(&h.ticks, 1)
-			if count >= h.tickLimit {
-				h.notification <- true
-			}
-		}
-	}()
+func (h *hangDetector) onWriterActivity() {
+	atomic.StoreUint64(&h.ticks, 0)
 }
