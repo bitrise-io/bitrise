@@ -63,11 +63,6 @@ func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 
 // Start starts the command run.
 func (c *Command) Start() error {
-	if c.hangDetector != nil {
-		c.hangDetector.Start()
-		defer c.hangDetector.Stop()
-	}
-
 	// setting up notification for signals, so we can have separated logic to end the process
 	interruptChan := make(chan os.Signal)
 	signal.Notify(interruptChan, os.Interrupt, os.Kill)
@@ -77,8 +72,12 @@ func (c *Command) Start() error {
 		interrupted = true
 	}()
 
-	// start the process
-	if err := c.cmd.Start(); err != nil {
+	if c.hangDetector != nil {
+		c.hangDetector.Start()
+		defer c.hangDetector.Stop()
+	}
+
+	if err := c.cmd.Start(); err != nil { // start the process
 		return err
 	}
 

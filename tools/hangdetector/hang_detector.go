@@ -4,10 +4,9 @@ import (
 	"io"
 	"sync/atomic"
 	"time"
-
-	"github.com/bitrise-io/go-utils/log"
 )
 
+// HangDetector ...
 type HangDetector interface {
 	Start()
 	Stop()
@@ -27,6 +26,7 @@ type hangDetector struct {
 	errWriter writer
 }
 
+// NewDefaultHangDetector ...
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
 	const tickerInterval = time.Second * 30
 	maxIntervals := uint64(timeout / tickerInterval)
@@ -45,6 +45,7 @@ func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 	return &detector
 }
 
+// Start ...
 func (h *hangDetector) Start() {
 	go func() {
 		for {
@@ -58,22 +59,24 @@ func (h *hangDetector) Start() {
 					}
 				}
 			case <-h.stopC:
-				log.Infof("ticker exited")
 				return
 			}
 		}
 	}()
 }
 
+// Stop ...
 func (h *hangDetector) Stop() {
 	h.ticker.Stop()
 	h.stopC <- true
 }
 
+// C ...
 func (h *hangDetector) C() <-chan bool {
 	return h.notificationC
 }
 
+// WrapOutWriter ...
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.onWriterActivity)
 	h.outWriter = hangWriter
@@ -81,6 +84,7 @@ func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
 	return hangWriter
 }
 
+// WrapErrWriter ...
 func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.onWriterActivity)
 	h.errWriter = hangWriter
