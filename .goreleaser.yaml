@@ -16,6 +16,7 @@ builds:
   - goos: linux
     goarch: arm64
   ldflags:
+  - -X github.com/bitrise-io/bitrise/version.VERSION={{ .Version }}
   - -X github.com/bitrise-io/bitrise/version.Commit={{ .FullCommit }}
   - -X github.com/bitrise-io/bitrise/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
