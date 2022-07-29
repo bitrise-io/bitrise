@@ -100,18 +100,3 @@ workflows:
         is_always_run: false
         inputs:
         - content: exit 0
-
-  hang-test:
-    title: hangs
-    description: Workflow will hang
-    steps:
-    - script@1:
-        title: Hang
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            for i in {1..100}
-            do
-              echo "a"  
-              sleep 5
-            done

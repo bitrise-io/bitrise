@@ -23,12 +23,22 @@ type hangDetector struct {
 	stopC         chan bool
 }
 
+func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
+	interval = 30 * time.Second
+	if timeout < 5*time.Minute {
+		interval = time.Second
+	}
+
+	tickLimit = uint64(timeout / interval)
+
+	return
+}
+
 // NewDefaultHangDetector ...
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
-	const tickerInterval = time.Second * 30
-	maxIntervals := uint64(timeout / tickerInterval)
+	tickerInterval, tickLimit := tickerSettings(timeout)
 
-	return newHangDetector(NewTicker(tickerInterval), maxIntervals)
+	return newHangDetector(newTicker(tickerInterval), tickLimit)
 }
 
 func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {

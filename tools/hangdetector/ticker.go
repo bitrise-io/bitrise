@@ -2,25 +2,28 @@ package hangdetector
 
 import "time"
 
+// Ticker helps with mocking time.Ticker by hiding exported struct fields
 type Ticker interface {
 	C() <-chan time.Time
 	Stop()
 }
 
 type ticker struct {
-	ticker *time.Ticker
+	wrappedTicker *time.Ticker
 }
 
-func NewTicker(d time.Duration) Ticker {
+func newTicker(d time.Duration) Ticker {
 	return &ticker{
-		ticker: time.NewTicker(d),
+		wrappedTicker: time.NewTicker(d),
 	}
 }
 
+// C returns the underlying ticker channel
 func (t *ticker) C() <-chan time.Time {
-	return t.ticker.C
+	return t.wrappedTicker.C
 }
 
+// Stop stops the ticker (does not close channel)
 func (t *ticker) Stop() {
-	t.ticker.Stop()
+	t.wrappedTicker.Stop()
 }

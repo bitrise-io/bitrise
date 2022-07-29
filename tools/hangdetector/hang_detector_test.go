@@ -10,13 +10,13 @@ import (
 
 func Test_GivenNoWriter_WhenTimeout_ThenHangs(t *testing.T) {
 	// Given
-	ticker := NewMockTicker()
+	ticker := newMockTicker()
 	detector := newHangDetector(ticker, 5)
 	detector.Start()
 	defer detector.Stop()
 
 	// When
-	ticker.DoTicks(5)
+	ticker.doTicks(5)
 
 	// Then
 	assertNoTimeout(t, func(t *testing.T) { // hang detected
@@ -26,20 +26,20 @@ func Test_GivenNoWriter_WhenTimeout_ThenHangs(t *testing.T) {
 
 func Test_GivenWriter_WhenNoTimeout_ThenNotHangs(t *testing.T) {
 	// Given
-	ticker := NewMockTicker()
+	ticker := newMockTicker()
 	detector := newHangDetector(ticker, 5)
 	outWriter := detector.WrapOutWriter(new(bytes.Buffer))
 	detector.Start()
 	defer detector.Stop()
 
 	// When
-	ticker.DoTicks(4)
+	ticker.doTicks(4)
 	time.Sleep(1 * time.Second) // allow ticker channel to be drained
 
 	_, err := outWriter.Write([]byte{0})
 	require.NoError(t, err)
 
-	ticker.DoTicks(4)
+	ticker.doTicks(4)
 
 	// Then
 	assertTimeout(t, func(t *testing.T) { // no hang detected
@@ -85,5 +85,38 @@ func assertTimeout(t *testing.T, f func(t *testing.T)) {
 		return
 	case <-doneCh:
 		t.Fatalf("expected timeout")
+	}
+}
+
+func Test_tickerSettings(t *testing.T) {
+	tests := []struct {
+		name          string
+		timeout       time.Duration
+		wantInterval  time.Duration
+		wantTickLimit uint64
+	}{
+		{
+			name:          "Small timeout",
+			timeout:       10 * time.Second,
+			wantInterval:  1 * time.Second,
+			wantTickLimit: 10,
+		},
+		{
+			name:          "large timeout",
+			timeout:       600 * time.Second,
+			wantInterval:  30 * time.Second,
+			wantTickLimit: 20,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotInterval, gotTickLimit := tickerSettings(tt.timeout)
+			if gotInterval != tt.wantInterval {
+				t.Errorf("tickerSettings() gotInterval = %v, want %v", gotInterval, tt.wantInterval)
+			}
+			if gotTickLimit != tt.wantTickLimit {
+				t.Errorf("tickerSettings() gotTickLimit = %v, want %v", gotTickLimit, tt.wantTickLimit)
+			}
+		})
 	}
 }

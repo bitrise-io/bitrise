@@ -2,24 +2,26 @@ package hangdetector
 
 import "time"
 
-type MockTicker struct {
+type mockTicker struct {
 	Channel chan time.Time
 }
 
-func NewMockTicker() MockTicker {
-	return MockTicker{
+func newMockTicker() mockTicker {
+	return mockTicker{
 		Channel: make(chan time.Time),
 	}
 }
 
-func (t MockTicker) C() <-chan time.Time {
+// C ...
+func (t mockTicker) C() <-chan time.Time {
 	return t.Channel
 }
 
-func (t MockTicker) Stop() {
+// Stop ...
+func (t mockTicker) Stop() {
 }
 
-func (t MockTicker) DoTicks(n int) {
+func (t mockTicker) doTicks(n int) {
 	for i := 0; i < n; i++ {
 		t.Channel <- time.Now()
 	}
