@@ -400,9 +400,10 @@ func EnvmanRun(envstorePth,
 	}
 
 	const hangTimeout = 1 * time.Minute
-	cmd := timeoutcmd.New(hangTimeout, workDirPth, "envman", args...)
+	cmd := timeoutcmd.New(workDirPth, "envman", args...)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
 	cmd.SetTimeout(timeout)
+	cmd.SetHangTimeout(configs.NoOutputTimeout)
 	cmd.AppendEnv("PWD=" + workDirPth)
 
 	err := cmd.Start()

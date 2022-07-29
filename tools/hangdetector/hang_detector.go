@@ -21,9 +21,6 @@ type hangDetector struct {
 	tickLimit     uint64
 	notificationC chan bool
 	stopC         chan bool
-
-	outWriter writer
-	errWriter writer
 }
 
 // NewDefaultHangDetector ...
@@ -79,7 +76,6 @@ func (h *hangDetector) C() <-chan bool {
 // WrapOutWriter ...
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.onWriterActivity)
-	h.outWriter = hangWriter
 
 	return hangWriter
 }
@@ -87,7 +83,6 @@ func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
 // WrapErrWriter ...
 func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
 	hangWriter := newWriter(writer, h.onWriterActivity)
-	h.errWriter = hangWriter
 
 	return hangWriter
 }

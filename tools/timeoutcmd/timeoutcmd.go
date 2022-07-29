@@ -21,22 +21,25 @@ type Command struct {
 }
 
 // New creates a command model.
-func New(hangTimeout time.Duration, dir, name string, args ...string) Command {
+func New(dir, name string, args ...string) Command {
 	c := Command{
 		cmd: exec.Command(name, args...),
 	}
 	c.cmd.Dir = dir
 
-	if hangTimeout > 0 {
-		c.hangDetector = hangdetector.NewDefaultHangDetector(hangTimeout)
-	}
-
 	return c
 }
 
 // SetTimeout sets the max runtime of the command.
-func (c *Command) SetTimeout(t time.Duration) {
-	c.timeout = t
+func (c *Command) SetTimeout(timeout time.Duration) {
+	c.timeout = timeout
+}
+
+// SetHangTimeout sets the timeout after which the command is killed when no output is received.
+func (c *Command) SetHangTimeout(timeout time.Duration) {
+	if timeout > 0 {
+		c.hangDetector = hangdetector.NewDefaultHangDetector(timeout)
+	}
 }
 
 // AppendEnv appends and env to the command's env list.
