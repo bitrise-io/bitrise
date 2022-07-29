@@ -10,7 +10,7 @@ import (
 const configPath = "timeout_no_output.yml"
 
 func Test_GivenHangDetectionOn_WhenThereIsOutput_ThenDoesNotAbort(t *testing.T) {
-	cmd := command.NewWithStandardOuts("bitrise", "run", "output_consistent", "--config", configPath).
+	cmd := command.New(binPath(), "run", "output_consistent", "--config", configPath).
 		AppendEnvs("BITRISE_NO_OUTPUT_TIMEOUT=10")
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
