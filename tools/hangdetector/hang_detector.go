@@ -24,6 +24,7 @@ type hangDetector struct {
 }
 
 func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
+	// For longer timeouts using a longer ticker interval.
 	interval = 10 * time.Second
 	if timeout < 5*time.Minute {
 		interval = time.Second

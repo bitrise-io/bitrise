@@ -120,7 +120,7 @@ func (c *Command) Start() error {
 		if err := c.cmd.Process.Kill(); err != nil {
 			log.Warnf("Failed to kill process: %s", err)
 		}
-		return fmt.Errorf("aborting Step, as no output received for %s", c.hangTimeout)
+		return fmt.Errorf("timed out, as no output was received for %s", c.hangTimeout)
 	case err := <-done:
 		if interrupted {
 			os.Exit(ExitStatus(err))
