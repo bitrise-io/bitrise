@@ -24,12 +24,12 @@ type hangDetector struct {
 }
 
 func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
-	interval = 30 * time.Second
+	interval = 10 * time.Second
 	if timeout < 5*time.Minute {
 		interval = time.Second
 	}
 
-	tickLimit = uint64(timeout / interval)
+	tickLimit = uint64(timeout/interval) + 1
 
 	return
 }

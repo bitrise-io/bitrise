@@ -17,6 +17,7 @@ import (
 type Command struct {
 	cmd          *exec.Cmd
 	timeout      time.Duration
+	hangTimeout  time.Duration
 	hangDetector hangdetector.HangDetector
 }
 
@@ -37,6 +38,7 @@ func (c *Command) SetTimeout(timeout time.Duration) {
 
 // SetHangTimeout sets the timeout after which the command is killed when no output is received.
 func (c *Command) SetHangTimeout(timeout time.Duration) {
+	c.hangTimeout = timeout
 	if timeout > 0 {
 		c.hangDetector = hangdetector.NewDefaultHangDetector(timeout)
 	}
@@ -75,9 +77,11 @@ func (c *Command) Start() error {
 		interrupted = true
 	}()
 
+	var hanged <-chan bool
 	if c.hangDetector != nil {
 		c.hangDetector.Start()
 		defer c.hangDetector.Stop()
+		hanged = c.hangDetector.C()
 	}
 
 	if err := c.cmd.Start(); err != nil { // start the process
@@ -112,11 +116,11 @@ func (c *Command) Start() error {
 			log.Warnf("Failed to kill process: %s", err)
 		}
 		return fmt.Errorf("timed out")
-	case <-c.hangDetector.C():
+	case <-hanged:
 		if err := c.cmd.Process.Kill(); err != nil {
 			log.Warnf("Failed to kill process: %s", err)
 		}
-		return fmt.Errorf("hanged")
+		return fmt.Errorf("aborting Step, as no output received for %s", c.hangTimeout)
 	case err := <-done:
 		if interrupted {
 			os.Exit(ExitStatus(err))

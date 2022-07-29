@@ -35,6 +35,10 @@ func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.Enviro
 		return defaultTimeout
 	}
 
+	if envVal == "" {
+		return defaultTimeout
+	}
+
 	timeout, err := strconv.ParseUint(envVal, 10, 0)
 	if err != nil {
 		log.Errorf("Invalid configuration environment variable value $%s=%s: %s", configs.NoOutputTimeoutEnvKey, envVal, err)

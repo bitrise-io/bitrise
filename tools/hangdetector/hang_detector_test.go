@@ -99,13 +99,13 @@ func Test_tickerSettings(t *testing.T) {
 			name:          "Small timeout",
 			timeout:       10 * time.Second,
 			wantInterval:  1 * time.Second,
-			wantTickLimit: 10,
+			wantTickLimit: 11,
 		},
 		{
 			name:          "large timeout",
 			timeout:       600 * time.Second,
-			wantInterval:  30 * time.Second,
-			wantTickLimit: 20,
+			wantInterval:  10 * time.Second,
+			wantTickLimit: 61,
 		},
 	}
 	for _, tt := range tests {
