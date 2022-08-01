@@ -25,18 +25,6 @@ type hangDetector struct {
 	outWriter io.Writer
 }
 
-func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
-	// For longer timeouts using a longer ticker interval.
-	interval = 10 * time.Second
-	if timeout < 5*time.Minute {
-		interval = time.Second
-	}
-
-	tickLimit = uint64(timeout/interval) + 1
-
-	return
-}
-
 // NewDefaultHangDetector ...
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
 	tickerInterval, tickLimit := tickerSettings(timeout)
@@ -106,4 +94,16 @@ func (h *hangDetector) WrapErrWriter(writer io.Writer) io.Writer {
 
 func (h *hangDetector) onWriterActivity() {
 	atomic.StoreUint64(&h.ticks, 0)
+}
+
+func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
+	// For longer timeouts using a longer ticker interval.
+	interval = 10 * time.Second
+	if timeout < 5*time.Minute {
+		interval = time.Second
+	}
+
+	tickLimit = uint64(timeout/interval) + 1
+
+	return
 }
