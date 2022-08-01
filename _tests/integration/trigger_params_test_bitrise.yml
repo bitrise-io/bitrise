@@ -25,18 +25,18 @@ trigger_map:
 pipelines:
   deprecated_pipeline:
     stages:
-    - deprecated_stage: {}
+    - deprecated_stage: { }
   code_push_pipeline:
     stages:
-    - code_push_stage: {}
+    - code_push_stage: { }
 
 stages:
   deprecated_stage:
     workflows:
-    - deprecated_pr_allowed: {}
+    - deprecated_pr_allowed: { }
   code_push_stage:
     workflows:
-    - code-push: {}
+    - code-push: { }
 
 workflows:
   # PR tests
