@@ -36,10 +36,10 @@ func (c *Command) SetTimeout(timeout time.Duration) {
 	c.timeout = timeout
 }
 
-// SetHangTimeout sets the timeout after which the command is killed when no output is received.
+// SetHangTimeout sets the timeout after which the command is killed when no output is received on either stdout or stderr.
 func (c *Command) SetHangTimeout(timeout time.Duration) {
-	c.hangTimeout = timeout
 	if timeout > 0 {
+		c.hangTimeout = timeout
 		c.hangDetector = hangdetector.NewDefaultHangDetector(timeout)
 	}
 }

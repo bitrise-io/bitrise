@@ -28,7 +28,7 @@ func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItem
 }
 
 func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.EnvironmentItemModel) time.Duration {
-	const defaultTimeout = 0
+	const defaultTimeout = -1
 	envVal, err := getNoOutputTimoutValue(inventoryEnvironments)
 	if err != nil {
 		log.Errorf("Failed to read value of %s: %s", configs.NoOutputTimeoutEnvKey, err)
@@ -39,18 +39,22 @@ func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.Enviro
 		return defaultTimeout
 	}
 
-	timeout, err := strconv.ParseUint(envVal, 10, 0)
+	timeout, err := strconv.ParseInt(envVal, 10, 0)
 	if err != nil {
 		log.Errorf("Invalid configuration environment variable value $%s=%s: %s", configs.NoOutputTimeoutEnvKey, envVal, err)
 		return defaultTimeout
+	}
+
+	if timeout <= 0 {
+		timeout = -1
 	}
 
 	return time.Duration(timeout) * time.Second
 }
 
 func registerNoOutputTimeout(timeout time.Duration) {
-	if timeout != 0 {
-		msg := fmt.Sprintf("Steps are being aborted after not receiving output for %s.", timeout)
+	if timeout > 0 {
+		msg := fmt.Sprintf("Steps will time out if no output is received for %s.", timeout)
 		log.Info(colorstring.Yellow(msg))
 	}
 	configs.NoOutputTimeout = timeout
