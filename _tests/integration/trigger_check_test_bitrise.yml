@@ -2,13 +2,13 @@ format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
-- pattern: "pr_allowed"
+- pattern: pr_allowed
   is_pull_request_allowed: true
   workflow: pr_allowed
-- pattern: "only_code_push"
+- pattern: only_code_push
   is_pull_request_allowed: false
   workflow: only_code_push
-- pattern: "only_code_push_pipeline"
+- pattern: only_code_push_pipeline
   is_pull_request_allowed: false
   pipeline: only_code_push_pipeline
 - pattern: "*"
@@ -18,12 +18,12 @@ trigger_map:
 pipelines:
   only_code_push_pipeline:
     stages:
-    - only_code_push_stage: {}
+    - only_code_push_stage: { }
 
 stages:
   only_code_push_stage:
     workflows:
-    - only_code_push: {}
+    - only_code_push: { }
 
 workflows:
   # PR tests

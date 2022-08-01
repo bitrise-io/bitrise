@@ -27,18 +27,18 @@ trigger_map:
 pipelines:
   deprecated_pipeline:
     stages:
-    - deprecated_stage: {}
+    - deprecated_stage: { }
   pipeline_code_push:
     stages:
-    - stage_code_push: {}
+    - stage_code_push: { }
 
 stages:
   deprecated_stage:
     workflows:
-    - deprecated_code_push: {}
+    - deprecated_code_push: { }
   stage_code_push:
     workflows:
-    - code_push: {}
+    - code_push: { }
 
 workflows:
   deprecated_code_push:
