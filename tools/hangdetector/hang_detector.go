@@ -21,6 +21,8 @@ type hangDetector struct {
 	tickLimit     uint64
 	notificationC chan bool
 	stopC         chan bool
+
+	outWriter io.Writer
 }
 
 func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit uint64) {
@@ -55,6 +57,10 @@ func newHangDetector(ticker Ticker, maxIntervals uint64) HangDetector {
 
 // Start ...
 func (h *hangDetector) Start() {
+	if h.outWriter == nil {
+		panic("Output is not set")
+	}
+
 	go func() {
 		for {
 			select {
@@ -86,9 +92,9 @@ func (h *hangDetector) C() <-chan bool {
 
 // WrapOutWriter ...
 func (h *hangDetector) WrapOutWriter(writer io.Writer) io.Writer {
-	hangWriter := newWriter(writer, h.onWriterActivity)
+	h.outWriter = newWriter(writer, h.onWriterActivity)
 
-	return hangWriter
+	return h.outWriter
 }
 
 // WrapErrWriter ...

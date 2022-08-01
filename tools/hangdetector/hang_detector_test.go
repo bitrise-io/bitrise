@@ -8,10 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_GivenNoWriter_WhenTimeout_ThenHangs(t *testing.T) {
+func Test_GivenWriter_WhenTimeout_ThenHangs(t *testing.T) {
 	// Given
 	ticker := newMockTicker()
 	detector := newHangDetector(ticker, 5)
+	detector.WrapOutWriter(new(bytes.Buffer))
 	detector.Start()
 	defer detector.Stop()
 
