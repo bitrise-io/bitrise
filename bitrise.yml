@@ -23,7 +23,7 @@ workflows:
     title: Runs test on kotlin compatibility
     steps:
     - git::https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git@master:
-          inputs:
+        inputs:
           - repository_url: https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git
           - clone_destination: $HOME/Documents/tmp/clone_step/3
           - checkout_branch: master
