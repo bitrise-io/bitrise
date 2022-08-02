@@ -38,7 +38,7 @@ workflows:
             echo "starts in a new line"
 
   escaped_newline_test:
-    steps:    
+    steps:
     - script:
         inputs:
         - content: |

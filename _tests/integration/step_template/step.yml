@@ -1,4 +1,4 @@
-title: "STEP TEMPLATE"
+title: STEP TEMPLATE
 summary: A short summary of the step. Don't make it too long ;)
 description: |-
   This is a Step template.
@@ -17,40 +17,40 @@ website: https://github.com/...
 source_code_url: https://github.com/...
 support_url: https://github.com/.../issues
 host_os_tags:
-  - osx-10.10
+- osx-10.10
 project_type_tags:
-  - ios
+- ios
 type_tags:
-  - script
+- script
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
 dependencies:
-  - manager: brew
-    name: git
+- manager: brew
+  name: git
 run_if: ""
 inputs:
-  - example_step_input: Default Value - you can leave this empty if you want to
-    opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this input.
+- example_step_input: Default Value - you can leave this empty if you want to
+  opts:
+    title: Example Step Input
+    summary: Summary. No more than 2-3 sentences.
+    description: |
+      Description of this input.
 
-        Can be Markdown formatted text.
-      is_expand: false
-      is_required: true
-      is_dont_change_value: true
-      value_options: []
+      Can be Markdown formatted text.
+    is_expand: false
+    is_required: true
+    is_dont_change_value: true
+    value_options: []
 outputs:
-  - EXAMPLE_STEP_OUTPUT:
-    opts:
-      title: "Example Step Output"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this output.
+- EXAMPLE_STEP_OUTPUT:
+  opts:
+    title: Example Step Output
+    summary: Summary. No more than 2-3 sentences.
+    description: |
+      Description of this output.
 
-        Can be Markdown formatted text.
-      is_expand: false
-      is_required: true
-      is_dont_change_value: true
+      Can be Markdown formatted text.
+    is_expand: false
+    is_required: true
+    is_dont_change_value: true

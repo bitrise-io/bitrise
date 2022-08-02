@@ -2,16 +2,16 @@ format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 trigger_map:
-- pattern: "exit_code_test_fail"
+- pattern: exit_code_test_fail
   is_pull_request_allowed: true
   workflow: exit_code_test_fail
-- pattern: "exit_code_test_ok"
+- pattern: exit_code_test_ok
   is_pull_request_allowed: true
   workflow: exit_code_test_ok
-- pattern: "exit_code_test_sippable_fail"
+- pattern: exit_code_test_sippable_fail
   is_pull_request_allowed: true
   workflow: exit_code_test_sippable_fail
-- pattern: "exit_code_test_sippable_ok"
+- pattern: exit_code_test_sippable_ok
   is_pull_request_allowed: true
   workflow: exit_code_test_sippable_ok
 

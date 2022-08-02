@@ -4,14 +4,14 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   test:
     after_run:
-      - gopath
-      - gomod
+    - gopath
+    - gomod
 
   gopath:
     steps:
-      - npm@1.1.4:
-          inputs:
-          - command: --version
+    - npm@1.1.4:
+        inputs:
+        - command: --version
 
   gomod:
     steps:
@@ -38,4 +38,3 @@ workflows:
         - work_dir: $TMP_DIR
         - update_fastlane: "false"
         - connection: "off"
-
