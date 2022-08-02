@@ -19,6 +19,15 @@ workflows:
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
 
+  kotlin_test:
+    title: Runs test on kotlin compatibility
+    steps:
+    - git::https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git@master:
+        inputs:
+        - repository_url: https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git
+        - clone_destination: $HOME/Documents/tmp/clone_step/3
+        - checkout_branch: master
+
   test:
     title: Runs tests
     after_run:
