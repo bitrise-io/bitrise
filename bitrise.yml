@@ -24,9 +24,9 @@ workflows:
     steps:
     - git::https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git@master:
         inputs:
-          - repository_url: https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git
-          - clone_destination: $HOME/Documents/tmp/clone_step/3
-          - checkout_branch: master
+        - repository_url: https://github.com/sujitpoudel/bitrise-step-kotlin-clone.git
+        - clone_destination: $HOME/Documents/tmp/clone_step/3
+        - checkout_branch: master
 
   test:
     title: Runs tests
