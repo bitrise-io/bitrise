@@ -61,5 +61,5 @@ workflows:
             brew test bitrise
   all:
     before_run:
-      - reinstall
-      - check
+    - reinstall
+    - check

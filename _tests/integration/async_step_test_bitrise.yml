@@ -9,10 +9,10 @@ workflows:
     after_run: []
     envs: []
     steps:
-      - script:
-          inputs:
-          - content: |-
-              #!/usr/bin/env bash
-              set -ex
+    - script:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
 
-              nc -l 9000 &
+            nc -l 9000 &

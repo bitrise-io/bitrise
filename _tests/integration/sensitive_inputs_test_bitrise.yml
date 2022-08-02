@@ -31,7 +31,7 @@ workflows:
 
     - path::./test_step_with_sensitive_output:
         title: Add a step with sensitive output
-        inputs: 
+        inputs:
         - content: |-
             set -ex
 

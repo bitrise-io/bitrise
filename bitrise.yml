@@ -7,18 +7,23 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
-  test:
-    after_run:
-    - integration-test
-    title: Runs tests
+  check:
     steps:
+    - git::https://github.com/bitrise-steplib/steps-check.git:
+        inputs:
+        - workflow: lint
+        - skip_step_yml_validation: "yes"
     - go-list: { }
-    - golint: { }
-    - errcheck: { }
     - script:
         title: Go test
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
+
+  test:
+    title: Runs tests
+    after_run:
+    - check
+    - integration-test
 
   integration-test:
     title: Runs integration tests
@@ -44,7 +49,7 @@ workflows:
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:
-    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
     steps:
     - script:
         title: Goreleaser (create binaries + publish to GH)
@@ -55,7 +60,7 @@ workflows:
         - content: |
             #!/usr/bin/env bash
             set -ex
-            
+
             goreleaser release
 
   test-binary-build:
@@ -70,7 +75,7 @@ workflows:
         - content: |
             #!/usr/bin/env bash
             set -ex
-            
+
             goreleaser release --snapshot --rm-dist
 
   noop:

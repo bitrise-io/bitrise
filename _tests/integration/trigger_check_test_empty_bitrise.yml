@@ -4,8 +4,8 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 trigger_map:
 - pattern: ""
   is_pull_request_allowed: true
-  workflow: "triggered_by_empty_pattern"
-- pattern: "trigger_empty_workflow_id"
+  workflow: triggered_by_empty_pattern
+- pattern: trigger_empty_workflow_id
   is_pull_request_allowed: true
   workflow: ""
 

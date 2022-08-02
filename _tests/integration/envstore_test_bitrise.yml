@@ -12,7 +12,7 @@ workflows:
             if [ $output_envstore_json != "{}" ] ; then
                 echo "Should be: {}"
                 echo "But got: $output_envstore_json"
-                exit 1 
+                exit 1
             fi
 
             envman add --key OUTPUT1 --value output1
@@ -22,14 +22,14 @@ workflows:
             if [ $OUTPUT1 != "output1" ] ; then
                 echo "Should be: output1"
                 echo "But got: $OUTPUT1"
-                exit 1 
+                exit 1
             fi
 
             output_envstore_json=$(envman --path $ENVMAN_ENVSTORE_PATH print --format json)
             if [ $output_envstore_json != "{}" ] ; then
                 echo "Should be: {}"
                 echo "But got: $output_envstore_json"
-                exit 1 
+                exit 1
             fi
 
             envman add --key OUTPUT2 --value output2
@@ -39,18 +39,18 @@ workflows:
             if [ $OUTPUT1 != "output1" ] ; then
                 echo "Should be: output1"
                 echo "But got: $OUTPUT1"
-                exit 1 
+                exit 1
             fi
 
             if [ $OUTPUT2 != "output2" ] ; then
                 echo "Should be: output2"
                 echo "But got: $OUTPUT2"
-                exit 1 
+                exit 1
             fi
 
             output_envstore_json=$(envman --path $ENVMAN_ENVSTORE_PATH print --format json)
             if [ $output_envstore_json != "{}" ] ; then
                 echo "Should be: {}"
                 echo "But got: $output_envstore_json"
-                exit 1 
+                exit 1
             fi
