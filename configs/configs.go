@@ -33,6 +33,9 @@ var (
 	IsSecretFiltering = false
 	// IsSecretEnvsFiltering ...
 	IsSecretEnvsFiltering = false
+
+	// NoOutputTimeout is the timeout after Steps are aborted, when no output is received
+	NoOutputTimeout time.Duration
 )
 
 // ---------------------------
@@ -53,6 +56,8 @@ const (
 	IsSecretFilteringKey = "BITRISE_SECRET_FILTERING"
 	// IsSecretEnvsFilteringKey ...
 	IsSecretEnvsFilteringKey = "BITRISE_SECRET_ENVS_FILTERING"
+	// NoOutputTimeoutEnvKey ...
+	NoOutputTimeoutEnvKey = "BITRISE_NO_OUTPUT_TIMEOUT"
 
 	// --- Debug Options
 

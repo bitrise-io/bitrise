@@ -25,16 +25,15 @@ workflows:
         inputs:
         - example_step_input: Example Step Input's value
 
-
   # ----------------------------------------------------------------
   # --- workflows to Share this step into a Step Library
   share-this-step:
     envs:
-      # if you want to share this step into a StepLib
-      - MY_STEPLIB_REPO_FORK_GIT_URL:
-      - STEP_ID_IN_STEPLIB:
-      - STEP_GIT_VERION_TAG_TO_SHARE:
-      - STEP_GIT_CLONE_URL:
+    # if you want to share this step into a StepLib
+    - MY_STEPLIB_REPO_FORK_GIT_URL:
+    - STEP_ID_IN_STEPLIB:
+    - STEP_GIT_VERION_TAG_TO_SHARE:
+    - STEP_GIT_CLONE_URL:
     description: |-
       If this is the first time you try to share a Step you should
       first call: $ bitrise share

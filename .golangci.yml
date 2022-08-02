@@ -1,0 +1,101 @@
+linters:
+  enabled:
+  - revive
+  - unparam
+  disable: []
+
+issues:
+  exclude-rules:
+  - path: cli/update.go
+    linters:
+    - staticcheck
+  - path: tools/timeoutcmd/timeoutcmd.go
+    linters:
+    - staticcheck
+    - govet
+  - path: bitrise/print.go
+    linters:
+    - ineffassign
+    - gosimple
+  - path: tools/tools_test.go
+    linters:
+    - ineffassign
+  - path: bitrise/template_utils_test.go
+    linters:
+    - ineffassign
+  - path: cli/run_util.go
+    linters:
+    - ineffassign
+    - gosimple
+  - path: cli/run_util_test.go
+    linters:
+    - ineffassign
+  - path: cli/run.go
+    linters:
+    - deadcode
+    - varcheck
+  - path: cli/run_test.go
+    linters:
+    - ineffassign
+  - path: cli/flags.go
+    linters:
+    - deadcode
+    - unused
+    - varcheck
+  - path: cli/step_info.go
+    linters:
+    - gosimple
+  - path: cli/step_list.go
+    linters:
+    - gosimple
+  - path: cli/version.go
+    linters:
+    - gosimple
+  - path: cli/trigger_check.go
+    linters:
+    - gosimple
+  - path: cli/workflow_list.go
+    linters:
+    - gosimple
+  - path: bitrise/template_utils_test.go
+    linters:
+    - ineffassign
+  - path: bitrise/util.go
+    linters:
+    - gosimple
+  - path: bitrise/util_test.go
+    linters:
+    - ineffassign
+  - path: models/models_methods.go
+    linters:
+    - ineffassign
+  - path: plugins/run.go
+    linters:
+    - ineffassign
+    - deadcode
+  - path: toolkits/swift.go
+    linters:
+    - ineffassign
+  - path: configs/configs.go
+    linters:
+    - gosimple
+  - path: analytics/tracker.go
+    linters:
+    - gosimple
+  - path: tools/filterwriter/range.go
+    linters:
+    - gosimple
+  - path: plugins/git.go
+    linters:
+    - deadcode
+    - unused
+  - path: plugins/models_methods.go
+    linters:
+    - deadcode
+    - unused
+  - path: plugins/plugins.go
+    linters:
+    - gosimple
+  - linters:
+    - staticcheck
+    text: "SA4006:"  # this value of ... is never used
