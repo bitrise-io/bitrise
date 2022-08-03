@@ -1,7 +1,6 @@
 package timeoutcmd
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -115,16 +114,19 @@ func (c *Command) Start() error {
 		if err := c.cmd.Process.Kill(); err != nil {
 			log.Warnf("Failed to kill process: %s", err)
 		}
-		return fmt.Errorf("timed out")
+
+		return NewTimeoutError(c.timeout)
 	case <-hanged:
 		if err := c.cmd.Process.Kill(); err != nil {
 			log.Warnf("Failed to kill process: %s", err)
 		}
-		return fmt.Errorf("timed out, as no output was received for %s", c.hangTimeout)
+
+		return NewNoOutputTimeout(c.hangTimeout)
 	case err := <-done:
 		if interrupted {
 			os.Exit(ExitStatus(err))
 		}
+
 		return err
 	}
 }
