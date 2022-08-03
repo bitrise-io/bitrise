@@ -63,17 +63,11 @@ type SwiftStepToolkitModel struct {
 	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
 }
 
-// KotlinStepToolkitModel ...
-type KotlinStepToolkitModel struct {
-	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
-}
-
 // StepToolkitModel ...
 type StepToolkitModel struct {
-	Bash  *BashStepToolkitModel  	`json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go    *GoStepToolkitModel    	`json:"go,omitempty" yaml:"go,omitempty"`
-	Swift *SwiftStepToolkitModel 	`json:"swift,omitempty" yaml:"swift,omitempty"`
-	Kotlin *KotlinStepToolkitModel 	`json:"kotlin,omitempty" yaml:"kotlin,omitempty"`
+	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
 // StepModel ...
