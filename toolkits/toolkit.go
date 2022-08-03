@@ -70,8 +70,6 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 			toolkit = GoToolkit{}
 		} else if stepToolkit.Swift != nil {
 			toolkit = SwiftToolkit{}
-		} else if stepToolkit.Kotlin != nil {
-			toolkit = KotlinToolkit{}
 		}
 	}
 	return toolkit
@@ -79,5 +77,5 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 
 // AllSupportedToolkits ...
 func AllSupportedToolkits() []Toolkit {
-	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}, KotlinToolkit{}}
+	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
 }
