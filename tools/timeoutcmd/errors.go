@@ -9,8 +9,8 @@ type TimeoutError struct {
 	Timeout time.Duration
 }
 
-func NewTimeoutError(timeout time.Duration) *TimeoutError {
-	return &TimeoutError{
+func NewTimeoutError(timeout time.Duration) TimeoutError {
+	return TimeoutError{
 		Timeout: timeout,
 	}
 }
@@ -23,8 +23,8 @@ type NoOutputTimeoutError struct {
 	Timeout time.Duration
 }
 
-func NewNoOutputTimeout(timeout time.Duration) *NoOutputTimeoutError {
-	return &NoOutputTimeoutError{
+func NewNoOutputTimeout(timeout time.Duration) NoOutputTimeoutError {
+	return NoOutputTimeoutError{
 		Timeout: timeout,
 	}
 }

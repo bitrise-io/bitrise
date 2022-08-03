@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -92,7 +93,7 @@ type StepResult struct {
 	Info         StepInfo
 	Status       int
 	ErrorMessage string
-	Timeout      int64
+	Timeout      time.Duration
 }
 
 // Tracker ...
@@ -250,15 +251,17 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
 	case models.StepRunStatusAbortedTimeout:
 		eventName = stepAbortedEventName
-		extraProperties = analytics.Properties{
-			reasonProperty:  customTimeoutValue,
-			timeoutProperty: result.Timeout,
+		extraProperties = analytics.Properties{reasonProperty: customTimeoutValue}
+
+		if result.Timeout >= 0 {
+			extraProperties[timeoutProperty] = result.Timeout.Seconds()
 		}
 	case models.StepRunStatusAbortedNoOutputTimeout:
 		eventName = stepAbortedEventName
-		extraProperties = analytics.Properties{
-			reasonProperty:  noOutputTimeoutValue,
-			timeoutProperty: result.Timeout,
+		extraProperties = analytics.Properties{reasonProperty: noOutputTimeoutValue}
+
+		if result.Timeout >= 0 {
+			extraProperties[timeoutProperty] = result.Timeout.Seconds()
 		}
 	case models.StepRunStatusCodePreparationFailed:
 		eventName = stepPreparationFailedEventName

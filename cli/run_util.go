@@ -598,18 +598,18 @@ func activateAndRunSteps(
 		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool,
 		redactedStepInputs map[string]string, properties coreanalytics.Properties) {
 
-		timeout := int64(-1)
+		timeout := time.Duration(-1)
 		if resultCode == models.StepRunStatusCodeFailed {
 			var timeoutErr timeoutcmd.TimeoutError
 			if ok := errors.As(err, &timeoutErr); ok {
 				resultCode = models.StepRunStatusAbortedTimeout
-				timeout = int64(timeoutErr.Timeout)
+				timeout = timeoutErr.Timeout
 			}
 
 			var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
 			if ok := errors.As(err, &noOutputTimeoutErr); ok {
 				resultCode = models.StepRunStatusAbortedNoOutputTimeout
-				timeout = int64(noOutputTimeoutErr.Timeout)
+				timeout = timeoutErr.Timeout
 			}
 		}
 
@@ -659,17 +659,16 @@ func activateAndRunSteps(
 		switch resultCode {
 		case models.StepRunStatusCodeSuccess:
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
-		case models.StepRunStatusCodeFailed,
-			models.StepRunStatusCodePreparationFailed,
-			models.StepRunStatusAbortedTimeout,
-			models.StepRunStatusAbortedNoOutputTimeout:
-			{
-				if !isExitStatusError {
-					log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-				}
-
-				buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
+		case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed:
+			if !isExitStatusError {
+				log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 			}
+
+			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
+		case models.StepRunStatusAbortedTimeout, models.StepRunStatusAbortedNoOutputTimeout:
+			log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+
+			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 		case models.StepRunStatusCodeFailedSkippable:
 			if !isExitStatusError {
 				log.Warnf("Step (%s) failed, but was marked as skippable: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
