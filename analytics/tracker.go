@@ -236,47 +236,9 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 		return
 	}
 
-	var (
-		eventName       string
-		extraProperties analytics.Properties
-	)
-
-	switch result.Status {
-	case models.StepRunStatusCodeSuccess:
-		eventName = stepFinishedEventName
-		extraProperties = analytics.Properties{statusProperty: successfulValue}
-	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
-		eventName = stepFinishedEventName
-		extraProperties = analytics.Properties{statusProperty: failedValue}
-		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
-	case models.StepRunStatusAbortedTimeout:
-		eventName = stepAbortedEventName
-		extraProperties = analytics.Properties{reasonProperty: customTimeoutValue}
-
-		if result.Timeout >= 0 {
-			extraProperties[timeoutProperty] = result.Timeout.Seconds()
-		}
-	case models.StepRunStatusAbortedNoOutputTimeout:
-		eventName = stepAbortedEventName
-		extraProperties = analytics.Properties{reasonProperty: noOutputTimeoutValue}
-
-		if result.Timeout >= 0 {
-			extraProperties[timeoutProperty] = result.NoOutputTimeout.Seconds()
-		}
-	case models.StepRunStatusCodePreparationFailed:
-		eventName = stepPreparationFailedEventName
-		extraProperties = prepareStartProperties(result.Info)
-		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
-	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		eventName = stepSkippedEventName
-		extraProperties = prepareStartProperties(result.Info)
-		if result.Status == models.StepRunStatusCodeSkipped {
-			extraProperties[reasonProperty] = buildFailedValue
-		} else {
-			extraProperties[reasonProperty] = runIfValue
-		}
-	default:
-		t.SendCLIWarning(fmt.Sprintf("Unknown step status code: %d", result.Status))
+	eventName, extraProperties, err := mapStepResultToEvent(result)
+	if err != nil {
+		t.SendCLIWarning(err.Error())
 	}
 
 	t.tracker.Enqueue(eventName, properties, extraProperties)
@@ -303,5 +265,54 @@ func prepareStartProperties(info StepInfo) analytics.Properties {
 	properties.AppendIfNotEmpty(stepVersionProperty, info.StepVersion)
 	properties.AppendIfNotEmpty(stepSourceProperty, info.StepSource)
 	properties[skippableProperty] = info.Skippable
+
 	return properties
+}
+
+func mapStepResultToEvent(result StepResult) (string, analytics.Properties, error) {
+	var (
+		eventName       string
+		extraProperties analytics.Properties
+	)
+
+	switch result.Status {
+	case models.StepRunStatusCodeSuccess:
+		eventName = stepFinishedEventName
+		extraProperties = analytics.Properties{statusProperty: successfulValue}
+	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
+		eventName = stepFinishedEventName
+		extraProperties = analytics.Properties{statusProperty: failedValue}
+		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
+	case models.StepRunStatusAbortedTimeout:
+		eventName = stepAbortedEventName
+		extraProperties = analytics.Properties{reasonProperty: customTimeoutValue}
+
+		if result.Timeout >= 0 {
+			extraProperties[timeoutProperty] = int64(result.Timeout.Seconds())
+		}
+	case models.StepRunStatusAbortedNoOutputTimeout:
+		eventName = stepAbortedEventName
+		extraProperties = analytics.Properties{reasonProperty: noOutputTimeoutValue}
+
+		if result.NoOutputTimeout >= 0 {
+			extraProperties[timeoutProperty] = int64(result.NoOutputTimeout.Seconds())
+		}
+	case models.StepRunStatusCodePreparationFailed:
+		eventName = stepPreparationFailedEventName
+		extraProperties = prepareStartProperties(result.Info)
+		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
+	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
+		eventName = stepSkippedEventName
+		extraProperties = prepareStartProperties(result.Info)
+
+		if result.Status == models.StepRunStatusCodeSkipped {
+			extraProperties[reasonProperty] = buildFailedValue
+		} else {
+			extraProperties[reasonProperty] = runIfValue
+		}
+	default:
+		return "", analytics.Properties{}, fmt.Errorf("Unknown step status code: %d", result.Status)
+	}
+
+	return eventName, extraProperties, nil
 }
