@@ -17,7 +17,7 @@ with [bitrise](https://github.com/bitrise-io/bitrise) and [stepman](https://gith
 
 - connect tools with each other : one tool saves an ENV, the other uses it (input & output)
 - manage your environment-sets : use different ENVs for different projects
-- complex environment values : if you want to store a complex input as ENV (for example a change log text/summary), `envman` makes this easy, you don't have to encode the value so that when you call bash's `export KEY=value` it will store your value as you intended. You can just give `envman` the value as it is through a `--valuefile` option or as an input stream (or just edit the related `.envstore` file manually), no encoding required.
+- complex environment values : if you want to store a complex input as ENV (for example a change log text/summary), `envman` makes this easy, you don't have to encode the value so that when you call bash's `export KEY=value` it will store your value as you intended. You can just give `envman` the value as it is through a `--valuefile` option or as an input stream (or just edit the related `.envstore.yml` file manually), no encoding required.
 - switch between environment sets : if you work on multiple projects where each one requires different environments you can manage this with `envman`
 
 ## Install
@@ -48,10 +48,11 @@ docker run --rm -it -v `pwd`:/go/src/github.com/bitrise-io/envman --name envman-
 `envman` will run the command you specify
 with the environments found in its environment store.
 
-When you add a new key-value pair with `envman add` it stores
-the key and value in an `.envstore` file in the current
+First, run `envman init` to create an empty `.envstore.yml` file in the current directory.
+Now when you add a new key-value pair with `envman add` it stores
+the key and value in an `.envstore.yml` file in the current
 directory (this can be changed), and when you call `envman run`
-the next time the environments in the `.envstore` file will
+the next time the environments in the `.envstore.yml` file will
 be loaded for the command, and the command will be executed
 with an environment which includes the specified environment
 variables.
