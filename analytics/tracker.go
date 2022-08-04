@@ -90,10 +90,10 @@ type StepInfo struct {
 
 // StepResult ...
 type StepResult struct {
-	Info         StepInfo
-	Status       int
-	ErrorMessage string
-	Timeout      time.Duration
+	Info                     StepInfo
+	Status                   int
+	ErrorMessage             string
+	Timeout, NoOutputTimeout time.Duration
 }
 
 // Tracker ...
@@ -261,7 +261,7 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 		extraProperties = analytics.Properties{reasonProperty: noOutputTimeoutValue}
 
 		if result.Timeout >= 0 {
-			extraProperties[timeoutProperty] = result.Timeout.Seconds()
+			extraProperties[timeoutProperty] = result.NoOutputTimeout.Seconds()
 		}
 	case models.StepRunStatusCodePreparationFailed:
 		eventName = stepPreparationFailedEventName

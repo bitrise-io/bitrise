@@ -598,7 +598,7 @@ func activateAndRunSteps(
 		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool,
 		redactedStepInputs map[string]string, properties coreanalytics.Properties) {
 
-		timeout := time.Duration(-1)
+		timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
 		if resultCode == models.StepRunStatusCodeFailed {
 			var timeoutErr timeoutcmd.TimeoutError
 			if ok := errors.As(err, &timeoutErr); ok {
@@ -609,7 +609,7 @@ func activateAndRunSteps(
 			var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
 			if ok := errors.As(err, &noOutputTimeoutErr); ok {
 				resultCode = models.StepRunStatusAbortedNoOutputTimeout
-				timeout = noOutputTimeoutErr.Timeout
+				noOutputTimeout = noOutputTimeoutErr.Timeout
 			}
 		}
 
@@ -645,10 +645,11 @@ func activateAndRunSteps(
 		}
 
 		tracker.SendStepFinishedEvent(properties, analytics.StepResult{
-			Info:         prepareAnalyticsStepInfo(step, stepInfoPtr),
-			Status:       resultCode,
-			ErrorMessage: errStr,
-			Timeout:      timeout,
+			Info:            prepareAnalyticsStepInfo(step, stepInfoPtr),
+			Status:          resultCode,
+			ErrorMessage:    errStr,
+			Timeout:         timeout,
+			NoOutputTimeout: noOutputTimeout,
 		})
 
 		isExitStatusError := true
