@@ -9,16 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// StepRunStatusCodeSuccess           = 0
-// StepRunStatusCodeFailed            = 1
-// StepRunStatusCodeFailedSkippable   = 2
-// StepRunStatusCodeSkipped           = 3
-// StepRunStatusCodeSkippedWithRunIf  = 4
-// StepRunStatusCodePreparationFailed = 5
-// // StepRunStatusAbortedTimeout is used when a step times out due to a custom timeout
-// StepRunStatusAbortedTimeout = 7
-// // StepRunStatusAbortedNoOutputTimeout is used when a step times out due to no output received (hang)
-// StepRunStatusAbortedNoOutputTimeout = 8
 func Test_mapStepResultToEvent(t *testing.T) {
 	tests := []struct {
 		name               string
