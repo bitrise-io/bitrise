@@ -609,7 +609,7 @@ func activateAndRunSteps(
 			var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
 			if ok := errors.As(err, &noOutputTimeoutErr); ok {
 				resultCode = models.StepRunStatusAbortedNoOutputTimeout
-				timeout = timeoutErr.Timeout
+				timeout = noOutputTimeoutErr.Timeout
 			}
 		}
 
