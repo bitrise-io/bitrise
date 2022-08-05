@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -344,16 +345,9 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
 
-	if step.Deps != nil && (len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0 || len(step.Deps.CheckOnly) > 0) {
+	if step.Deps != nil && (len(step.Deps.Brew) > 0 || len(step.Deps.AptGet) > 0) {
 		//
 		// New dependency handling
-		for _, checkOnlyDep := range step.Deps.CheckOnly {
-			if err := bitrise.DependencyTryCheckTool(checkOnlyDep.Name); err != nil {
-				return err
-			}
-			log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", checkOnlyDep.Name)
-		}
-
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
@@ -373,7 +367,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 				log.Infof(" * "+colorstring.Green("[OK]")+" Step dependency (%s) installed, available.", aptGetDep.GetBinaryName())
 			}
 		default:
-			return errors.New("Unsupported os")
+			return errors.New("unsupported os")
 		}
 	} else if len(step.Dependencies) > 0 {
 		log.Info("Deprecated dependencies found")
@@ -390,12 +384,6 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 					}
 				} else {
 					isSkippedBecauseOfPlatform = true
-				}
-				break
-			case depManagerTryCheck:
-				err := bitrise.DependencyTryCheckTool(dep.Name)
-				if err != nil {
-					return err
 				}
 				break
 			default:
@@ -610,6 +598,21 @@ func activateAndRunSteps(
 		stepIdxPtr int, runIf string, resultCode, exitCode int, err error, isLastStep, printStepHeader bool,
 		redactedStepInputs map[string]string, properties coreanalytics.Properties) {
 
+		timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
+		if resultCode == models.StepRunStatusCodeFailed {
+			var timeoutErr timeoutcmd.TimeoutError
+			if ok := errors.As(err, &timeoutErr); ok {
+				resultCode = models.StepRunStatusAbortedTimeout
+				timeout = timeoutErr.Timeout
+			}
+
+			var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
+			if ok := errors.As(err, &noOutputTimeoutErr); ok {
+				resultCode = models.StepRunStatusAbortedNoOutputTimeout
+				noOutputTimeout = noOutputTimeoutErr.Timeout
+			}
+		}
+
 		if printStepHeader {
 			bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
 		}
@@ -635,16 +638,18 @@ func activateAndRunSteps(
 			StepInputs: redactedStepInputs,
 			Status:     resultCode,
 			Idx:        buildRunResults.ResultsCount(),
-			RunTime:    time.Now().Sub(stepStartTime),
+			RunTime:    time.Since(stepStartTime),
 			ErrorStr:   errStr,
 			ExitCode:   exitCode,
 			StartTime:  stepStartTime,
 		}
 
 		tracker.SendStepFinishedEvent(properties, analytics.StepResult{
-			Info:         prepareAnalyticsStepInfo(step, stepInfoPtr),
-			Status:       resultCode,
-			ErrorMessage: errStr,
+			Info:            prepareAnalyticsStepInfo(step, stepInfoPtr),
+			Status:          resultCode,
+			ErrorMessage:    errStr,
+			Timeout:         timeout,
+			NoOutputTimeout: noOutputTimeout,
 		})
 
 		isExitStatusError := true
@@ -655,14 +660,16 @@ func activateAndRunSteps(
 		switch resultCode {
 		case models.StepRunStatusCodeSuccess:
 			buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
-			break
 		case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed:
 			if !isExitStatusError {
 				log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 			}
 
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
-			break
+		case models.StepRunStatusAbortedTimeout, models.StepRunStatusAbortedNoOutputTimeout:
+			log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+
+			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 		case models.StepRunStatusCodeFailedSkippable:
 			if !isExitStatusError {
 				log.Warnf("Step (%s) failed, but was marked as skippable: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
@@ -671,12 +678,10 @@ func activateAndRunSteps(
 			}
 
 			buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
-			break
 		case models.StepRunStatusCodeSkipped:
 			log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
-			break
 		case models.StepRunStatusCodeSkippedWithRunIf:
 			log.Warn("The step's (" + pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title") + ") Run-If expression evaluated to false - skipping")
 			if runIf != "" {
@@ -684,7 +689,6 @@ func activateAndRunSteps(
 			}
 
 			buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
-			break
 		default:
 			log.Error("Unknown result code")
 			return

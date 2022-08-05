@@ -40,16 +40,10 @@ type AptGetDepModel struct {
 	BinName string `json:"bin_name,omitempty" yaml:"bin_name,omitempty"`
 }
 
-// CheckOnlyDepModel ...
-type CheckOnlyDepModel struct {
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-}
-
 // DepsModel ...
 type DepsModel struct {
-	Brew      []BrewDepModel      `json:"brew,omitempty" yaml:"brew,omitempty"`
-	AptGet    []AptGetDepModel    `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
-	CheckOnly []CheckOnlyDepModel `json:"check_only,omitempty" yaml:"check_only,omitempty"`
+	Brew   []BrewDepModel   `json:"brew,omitempty" yaml:"brew,omitempty"`
+	AptGet []AptGetDepModel `json:"apt_get,omitempty" yaml:"apt_get,omitempty"`
 }
 
 // BashStepToolkitModel ...
@@ -63,10 +57,17 @@ type GoStepToolkitModel struct {
 	PackageName string `json:"package_name" yaml:"package_name"`
 }
 
+// SwiftStepToolkitModel ...
+type SwiftStepToolkitModel struct {
+	BinaryLocation string `json:"binary_location,omitempty" yaml:"binary_location,omitempty"`
+	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
+}
+
 // StepToolkitModel ...
 type StepToolkitModel struct {
-	Bash *BashStepToolkitModel `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go   *GoStepToolkitModel   `json:"go,omitempty" yaml:"go,omitempty"`
+	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
 // StepModel ...

@@ -30,16 +30,6 @@ deps:
   - name: cmake
 ```
 
-Steps can define dependencies which need to be available on the host machine but cannot be installed in an easy way (like using a single brew or apt-get command):
-
-```
-deps:
-  check_only:
-  - name: xcode
-```
-
-Currently, the only supported `check_only` dependency is `xcode`.
-
 Other dependencies need to be installed and checked while the step is running or using other steps.
 
 ## Never depend on Environment Variables in your Step
@@ -189,3 +179,16 @@ Submit your step's icon by:
 
 - adding the svg file into your steplib fork repo at: STEPLIB_FORK_ROOT/steps/YOUR_STEP_ID/assets/icon.svg
 - creating a new pull request to the [steplib repo](https://github.com/bitrise-io/bitrise-steplib)
+
+## Provide input for additional command-line arguments
+For steps that are designed to run or wrap around a command-line tool, always provide an input for additional arguments. This is to ensure users can freely customize the execution of such a command-line tool as dedicated inputs for each argument do not necessarily exist.
+
+For example, Xcode Archive is a step that runs xcodebuild and has an input for additional xcodebuild_options:
+
+```yaml
+- xcodebuild_options:
+  opts:
+    category: xcodebuild configuration
+    title: Additional options for the xcodebuild command
+    summary: Additional options to be added to the executed xcodebuild command.
+```

@@ -309,6 +309,9 @@ func run(c *cli.Context) error {
 		log.Fatalf("Failed to register CI mode, error: %s", err)
 	}
 
+	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
+	registerNoOutputTimeout(noOutputTimeout)
+
 	printRunningWorkflow(bitriseConfig, runParams.WorkflowToRunID)
 
 	runAndExit(bitriseConfig, inventoryEnvironments, runParams.WorkflowToRunID, tracker)
