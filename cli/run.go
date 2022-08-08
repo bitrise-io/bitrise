@@ -122,15 +122,33 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		tracker.Wait()
-		logExit(1)
-		os.Exit(1)
+		exitCode := getExitCodeFromFailedBuild(buildRunResults)
+		logExit(exitCode)
+		os.Exit(exitCode)
 	}
 	if err := checkUpdate(); err != nil {
 		log.Warnf("failed to check for update, error: %s", err)
 	}
+
 	tracker.Wait()
 	logExit(0)
 	os.Exit(0)
+}
+
+func getExitCodeFromFailedBuild(buildRunResults models.BuildRunResultsModel) int {
+	if !buildRunResults.IsBuildFailed() {
+		return 0
+	}
+
+	if buildRunResults.IsBuildAbortedWithTimeout() {
+		return 11
+	}
+
+	if buildRunResults.IsBuildAbortedWithNoOutputTimeout() {
+		return 12
+	}
+
+	return 1
 }
 
 func logExit(exitCode int) {

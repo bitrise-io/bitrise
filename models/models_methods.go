@@ -1166,24 +1166,40 @@ func (sIDData StepIDData) IsUniqueResourceID() bool {
 // ----------------------------
 // --- BuildRunResults
 
-// IsStepLibUpdated ...
 func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
 	return (buildRes.StepmanUpdates[stepLib] > 0)
 }
 
-// IsBuildFailed ...
 func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 	return len(buildRes.FailedSteps) > 0
 }
 
-// HasFailedSkippableSteps ...
 func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
 	return len(buildRes.FailedSkippableSteps) > 0
 }
 
-// ResultsCount ...
 func (buildRes BuildRunResultsModel) ResultsCount() int {
 	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
+}
+
+func (buildRes BuildRunResultsModel) IsBuildAbortedWithTimeout() bool {
+	for _, stepResult := range buildRes.FailedSteps {
+		if stepResult.Status == StepRunStatusAbortedTimeout {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (buildRes BuildRunResultsModel) IsBuildAbortedWithNoOutputTimeout() bool {
+	for _, stepResult := range buildRes.FailedSteps {
+		if stepResult.Status == StepRunStatusAbortedNoOutputTimeout {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
@@ -1193,7 +1209,6 @@ func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
 	return append(results, buildRes.SkippedSteps...)
 }
 
-//OrderedResults ...
 func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
 	results := make([]StepRunResultsModel, buildRes.ResultsCount())
 	unorderedResults := buildRes.unorderedResults()
