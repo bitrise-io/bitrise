@@ -20,7 +20,7 @@ const (
 	StepRunStatusAbortedNoOutputTimeout = 8
 
 	// Version ...
-	Version = "11"
+	Version = "12"
 )
 
 // StepListItemModel ...
