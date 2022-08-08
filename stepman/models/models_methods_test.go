@@ -65,6 +65,10 @@ func TestValidate(t *testing.T) {
 	require.EqualError(t, step.Audit(), "Invalid step: missing or empty required 'source.commit' property")
 	step.Source.Commit = "1e1482141079fc12def64d88cb7825b8f1cb1dc3"
 
+	step.NoOutputTimeout = new(int)
+	*step.NoOutputTimeout = -1
+	require.EqualError(t, step.Audit(), "Invalid step: 'no_output_timeout' is less then 0")
+
 	step.Timeout = new(int)
 	*step.Timeout = -1
 	require.EqualError(t, step.Audit(), "Invalid step: timeout less then 0")
@@ -210,10 +214,8 @@ func TestValidateStepInputOutputModel(t *testing.T) {
 
 func TestFillMissingDefaults(t *testing.T) {
 	title := "name 1"
-	// "desc 1" := ""desc 1" 1"
 	website := "web/1"
 	git := "https://git.url"
-	// fork := "fork/1"
 
 	step := StepModel{
 		Title:   pointers.NewStringPtr(title),
@@ -251,6 +253,9 @@ func TestFillMissingDefaults(t *testing.T) {
 	}
 	if step.Timeout == nil || *step.Timeout != 0 {
 		t.Fatal("Timeout missing")
+	}
+	if step.NoOutputTimeout != nil {
+		t.Fatalf("No output timeout has a default value")
 	}
 }
 
