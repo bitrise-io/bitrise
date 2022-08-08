@@ -32,7 +32,7 @@ github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit
 github.com/bitrise-io/gows/gows
-# github.com/bitrise-io/stepman v0.0.0-20220718172049-e5ae0a09c2f2
+# github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30
 ## explicit
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models

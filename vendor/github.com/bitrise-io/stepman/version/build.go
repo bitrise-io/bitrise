@@ -1,7 +1,7 @@
 package version
 
-// BuildNumber ...
+// BuildNumber is the CI build number that creates the release. It's defined at build time using -ldflags
 var BuildNumber = ""
 
-// Commit ...
+// Commit is the git commit hash used for building the release. It's defined at build time using -ldflags
 var Commit = ""

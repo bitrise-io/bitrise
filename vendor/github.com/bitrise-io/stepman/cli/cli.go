@@ -5,9 +5,9 @@ import (
 	"os"
 	"path"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/bitrise-io/stepman/version"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -51,7 +51,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Step manager"
-	app.Version = version.VERSION
+	app.Version = version.Version
 
 	app.Author = ""
 	app.Email = ""

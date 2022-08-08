@@ -63,11 +63,17 @@ type SwiftStepToolkitModel struct {
 	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
 }
 
+// KotlinStepToolkitModel ...
+type KotlinStepToolkitModel struct {
+	ExecutableName string `json:"executable_name,omitempty" yaml:"executable_name,omitempty"`
+}
+
 // StepToolkitModel ...
 type StepToolkitModel struct {
-	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
-	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Bash   *BashStepToolkitModel   `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go     *GoStepToolkitModel     `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift  *SwiftStepToolkitModel  `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Kotlin *KotlinStepToolkitModel `json:"kotlin,omitempty" yaml:"kotlin,omitempty"`
 }
 
 // StepModel ...
@@ -99,9 +105,12 @@ type StepModel struct {
 	//  steps will run which are marked with IsAlwaysRun.
 	IsSkippable *bool `json:"is_skippable,omitempty" yaml:"is_skippable,omitempty"`
 	// RunIf : only run the step if the template example evaluates to true
-	RunIf   *string                `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Timeout *int                   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	Meta    map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
+	RunIf   *string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Timeout *int    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	// The timeout (in seconds) until a Step with no output (stdout/stderr) is aborted
+	// 0 means timeout is disabled.
+	NoOutputTimeout *int                   `json:"no_output_timeout,omitempty" yaml:"no_output_timeout,omitempty"`
+	Meta            map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
 	//
 	Inputs  []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`

@@ -425,7 +425,12 @@ func executeStep(
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, secrets, nil)
+	noOutputTimeout := configs.NoOutputTimeout
+	if step.NoOutputTimeout != nil {
+		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
+	}
+
+	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, noOutputTimeout, secrets, nil)
 }
 
 func runStep(
