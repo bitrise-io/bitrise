@@ -963,6 +963,9 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	if otherStep.Timeout != nil {
 		step.Timeout = pointers.NewIntPtr(*otherStep.Timeout)
 	}
+	if otherStep.NoOutputTimeout != nil {
+		step.NoOutputTimeout = pointers.NewIntPtr(*otherStep.NoOutputTimeout)
+	}
 
 	for _, input := range step.Inputs {
 		key, _, err := input.GetKeyValuePair()

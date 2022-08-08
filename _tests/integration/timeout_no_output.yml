@@ -6,6 +6,7 @@ workflows:
     steps:
     - script@1:
         title: Output is consistently received
+        no_output_timeout: 10
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -20,6 +21,7 @@ workflows:
     steps:
     - script@1:
         title: Output is slower and slower
+        no_output_timeout: 12
         inputs:
         - content: |-
             #!/usr/bin/env bash
