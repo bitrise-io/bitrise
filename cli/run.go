@@ -140,12 +140,12 @@ func getExitCodeFromFailedBuild(buildRunResults models.BuildRunResultsModel) int
 		return 0
 	}
 
-	if buildRunResults.IsBuildAbortedWithTimeout() {
-		return 11
-	}
-
 	if buildRunResults.IsBuildAbortedWithNoOutputTimeout() {
 		return 12
+	}
+
+	if buildRunResults.IsBuildAbortedWithTimeout() {
+		return 11
 	}
 
 	return 1
