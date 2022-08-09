@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/exitcode"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -141,14 +142,14 @@ func getExitCodeFromFailedBuild(buildRunResults models.BuildRunResultsModel) int
 	}
 
 	if buildRunResults.IsBuildAbortedWithNoOutputTimeout() {
-		return 12
+		return exitcode.CLIAbortedWithNoOutputTimeout
 	}
 
 	if buildRunResults.IsBuildAbortedWithTimeout() {
-		return 11
+		return exitcode.CLIAbortedWithCustomTimeout
 	}
 
-	return 1
+	return exitcode.CLIFailed
 }
 
 func logExit(exitCode int) {
