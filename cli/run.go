@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/exitcode"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -123,7 +122,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 		log.Fatalf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		tracker.Wait()
-		exitCode := getExitCodeFromFailedBuild(buildRunResults)
+		exitCode := buildRunResults.ExitCode()
 		logExit(exitCode)
 		os.Exit(exitCode)
 	}
@@ -134,22 +133,6 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	tracker.Wait()
 	logExit(0)
 	os.Exit(0)
-}
-
-func getExitCodeFromFailedBuild(buildRunResults models.BuildRunResultsModel) int {
-	if !buildRunResults.IsBuildFailed() {
-		return 0
-	}
-
-	if buildRunResults.IsBuildAbortedWithNoOutputTimeout() {
-		return exitcode.CLIAbortedWithNoOutputTimeout
-	}
-
-	if buildRunResults.IsBuildAbortedWithTimeout() {
-		return exitcode.CLIAbortedWithCustomTimeout
-	}
-
-	return exitcode.CLIFailed
 }
 
 func logExit(exitCode int) {

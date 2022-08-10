@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -1174,6 +1175,22 @@ func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 	return len(buildRes.FailedSteps) > 0
 }
 
+func (buildRes BuildRunResultsModel) ExitCode() int {
+	if !buildRes.IsBuildFailed() {
+		return 0
+	}
+
+	if buildRes.isBuildAbortedWithNoOutputTimeout() {
+		return exitcode.CLIAbortedWithNoOutputTimeout
+	}
+
+	if buildRes.isBuildAbortedWithTimeout() {
+		return exitcode.CLIAbortedWithCustomTimeout
+	}
+
+	return exitcode.CLIFailed
+}
+
 func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
 	return len(buildRes.FailedSkippableSteps) > 0
 }
@@ -1182,7 +1199,7 @@ func (buildRes BuildRunResultsModel) ResultsCount() int {
 	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
 }
 
-func (buildRes BuildRunResultsModel) IsBuildAbortedWithTimeout() bool {
+func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
 	for _, stepResult := range buildRes.FailedSteps {
 		if stepResult.Status == StepRunStatusAbortedTimeout {
 			return true
@@ -1192,7 +1209,7 @@ func (buildRes BuildRunResultsModel) IsBuildAbortedWithTimeout() bool {
 	return false
 }
 
-func (buildRes BuildRunResultsModel) IsBuildAbortedWithNoOutputTimeout() bool {
+func (buildRes BuildRunResultsModel) isBuildAbortedWithNoOutputTimeout() bool {
 	for _, stepResult := range buildRes.FailedSteps {
 		if stepResult.Status == StepRunStatusAbortedNoOutputTimeout {
 			return true
