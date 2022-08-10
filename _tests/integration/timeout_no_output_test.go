@@ -20,5 +20,5 @@ func Test_GivenHangDetectionOn_WhenOutputSlowsDown_ThenAborts(t *testing.T) {
 	cmd := command.New(binPath(), "run", "output_slows_down", "--config", configPath)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
-	require.Error(t, err, "Bitrise CLI did not abort hanged build, output: %s", out)
+	require.EqualError(t, err, "exit status 12", "Bitrise CLI did not abort hanged build, output: %s", out)
 }
