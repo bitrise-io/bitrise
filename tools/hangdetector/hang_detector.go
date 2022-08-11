@@ -18,28 +18,28 @@ type HangDetector interface {
 }
 
 type hangDetector struct {
-	ticker                      Ticker
-	ticks                       uint64
-	tickLimit, hearthbeatAtTick uint64
-	notificationC, stopC        chan bool
+	ticker                     Ticker
+	ticks                      uint64
+	tickLimit, heartbeatAtTick uint64
+	notificationC, stopC       chan bool
 
 	outWriter io.Writer
 }
 
 // NewDefaultHangDetector ...
 func NewDefaultHangDetector(timeout time.Duration) HangDetector {
-	tickerInterval, tickLimit, hearthbeatAtTick := tickerSettings(timeout)
+	tickerInterval, tickLimit, heartbeatAtTick := tickerSettings(timeout)
 
-	return newHangDetector(newTicker(tickerInterval), tickLimit, hearthbeatAtTick)
+	return newHangDetector(newTicker(tickerInterval), tickLimit, heartbeatAtTick)
 }
 
-func newHangDetector(ticker Ticker, tickLimit, hearthbeatAtTick uint64) HangDetector {
+func newHangDetector(ticker Ticker, tickLimit, heartbeatAtTick uint64) HangDetector {
 	detector := hangDetector{
-		ticker:           ticker,
-		tickLimit:        tickLimit,
-		hearthbeatAtTick: hearthbeatAtTick,
-		notificationC:    make(chan bool, 1),
-		stopC:            make(chan bool, 1),
+		ticker:          ticker,
+		tickLimit:       tickLimit,
+		heartbeatAtTick: heartbeatAtTick,
+		notificationC:   make(chan bool, 1),
+		stopC:           make(chan bool, 1),
 	}
 
 	return &detector
@@ -57,7 +57,7 @@ func (h *hangDetector) Start() {
 			case <-h.ticker.C():
 				{
 					count := atomic.AddUint64(&h.ticks, 1)
-					if count == h.hearthbeatAtTick {
+					if count == h.heartbeatAtTick {
 						log.TPrintf("No output received for a while. Bitrise CLI is still active.")
 					}
 					if count >= h.tickLimit {
@@ -101,7 +101,7 @@ func (h *hangDetector) onWriterActivity() {
 	atomic.StoreUint64(&h.ticks, 0)
 }
 
-func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit, hearthbeatLimit uint64) {
+func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit, heartbeatAtTick uint64) {
 	// For longer timeouts using a longer ticker interval.
 	interval = 10 * time.Second
 	if timeout < 5*time.Minute {
@@ -109,7 +109,7 @@ func tickerSettings(timeout time.Duration) (interval time.Duration, tickLimit, h
 	}
 
 	tickLimit = uint64(timeout/interval) + 1
-	hearthbeatLimit = tickLimit / 2
+	heartbeatAtTick = tickLimit / 2
 
 	return
 }

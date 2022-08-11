@@ -34,7 +34,7 @@ func Test_TimeoutTest(t *testing.T) {
 
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
-		require.EqualError(t, err, "exit status 11", out)
+		require.EqualError(t, err, "exit status 91", out)
 
 		t.Log("Should exist")
 		{

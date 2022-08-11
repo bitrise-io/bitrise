@@ -121,11 +121,11 @@ func Test_tickerSettings(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actualInterval, actualTickLimit, actualHearthbeatAtTick := tickerSettings(tt.timeout)
+			actualInterval, actualTickLimit, actualHeartbeatAtTick := tickerSettings(tt.timeout)
 
 			require.Equal(t, tt.expectedInterval, actualInterval)
 			require.Equal(t, tt.expectedTickLimit, actualTickLimit)
-			require.Equal(t, tt.expectedHeartbeatAtTick, actualHearthbeatAtTick)
+			require.Equal(t, tt.expectedHeartbeatAtTick, actualHeartbeatAtTick)
 		})
 	}
 }
