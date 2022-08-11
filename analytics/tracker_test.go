@@ -86,7 +86,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 		{
 			name: "Step timeout",
 			result: StepResult{
-				Status:  models.StepRunStatusAbortedTimeout,
+				Status:  models.StepRunStatusAbortedWithCustomTimeout,
 				Timeout: time.Second,
 			},
 			expectedEvent: "step_aborted",
@@ -98,7 +98,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 		{
 			name: "Step timeout",
 			result: StepResult{
-				Status:          models.StepRunStatusAbortedNoOutputTimeout,
+				Status:          models.StepRunStatusAbortedWithNoOutputTimeout,
 				NoOutputTimeout: time.Second,
 			},
 			expectedEvent: "step_aborted",

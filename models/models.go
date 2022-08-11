@@ -14,10 +14,10 @@ const (
 	StepRunStatusCodeSkipped           = 3
 	StepRunStatusCodeSkippedWithRunIf  = 4
 	StepRunStatusCodePreparationFailed = 5
-	// StepRunStatusAbortedTimeout is used when a step times out due to a custom timeout
-	StepRunStatusAbortedTimeout = 7
-	// StepRunStatusAbortedNoOutputTimeout is used when a step times out due to no output received (hang)
-	StepRunStatusAbortedNoOutputTimeout = 8
+	// StepRunStatusAbortedWithCustomTimeout is used when a step times out due to a custom timeout
+	StepRunStatusAbortedWithCustomTimeout = 7
+	// StepRunStatusAbortedWithNoOutputTimeout is used when a step times out due to no output received (hang)
+	StepRunStatusAbortedWithNoOutputTimeout = 8
 
 	// Version ...
 	Version = "12"

@@ -283,14 +283,14 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 		eventName = stepFinishedEventName
 		extraProperties = analytics.Properties{statusProperty: failedValue}
 		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
-	case models.StepRunStatusAbortedTimeout:
+	case models.StepRunStatusAbortedWithCustomTimeout:
 		eventName = stepAbortedEventName
 		extraProperties = analytics.Properties{reasonProperty: customTimeoutValue}
 
 		if result.Timeout >= 0 {
 			extraProperties[timeoutProperty] = int64(result.Timeout.Seconds())
 		}
-	case models.StepRunStatusAbortedNoOutputTimeout:
+	case models.StepRunStatusAbortedWithNoOutputTimeout:
 		eventName = stepAbortedEventName
 		extraProperties = analytics.Properties{reasonProperty: noOutputTimeoutValue}
 

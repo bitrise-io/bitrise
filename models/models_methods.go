@@ -1201,7 +1201,7 @@ func (buildRes BuildRunResultsModel) ResultsCount() int {
 
 func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
 	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedTimeout {
+		if stepResult.Status == StepRunStatusAbortedWithCustomTimeout {
 			return true
 		}
 	}
@@ -1211,7 +1211,7 @@ func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
 
 func (buildRes BuildRunResultsModel) isBuildAbortedWithNoOutputTimeout() bool {
 	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedNoOutputTimeout {
+		if stepResult.Status == StepRunStatusAbortedWithNoOutputTimeout {
 			return true
 		}
 	}

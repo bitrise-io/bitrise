@@ -16,6 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/exitcode"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
@@ -605,15 +606,23 @@ func activateAndRunSteps(
 
 		timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
 		if resultCode == models.StepRunStatusCodeFailed {
+			// Forward the status of a Step or a wrapped bitrise process.
+			switch exitCode {
+			case exitcode.CLIAbortedWithCustomTimeout:
+				resultCode = models.StepRunStatusAbortedWithCustomTimeout
+			case exitcode.CLIAbortedWithNoOutputTimeout:
+				resultCode = models.StepRunStatusAbortedWithNoOutputTimeout
+			}
+
 			var timeoutErr timeoutcmd.TimeoutError
 			if ok := errors.As(err, &timeoutErr); ok {
-				resultCode = models.StepRunStatusAbortedTimeout
+				resultCode = models.StepRunStatusAbortedWithCustomTimeout
 				timeout = timeoutErr.Timeout
 			}
 
 			var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
 			if ok := errors.As(err, &noOutputTimeoutErr); ok {
-				resultCode = models.StepRunStatusAbortedNoOutputTimeout
+				resultCode = models.StepRunStatusAbortedWithNoOutputTimeout
 				noOutputTimeout = noOutputTimeoutErr.Timeout
 			}
 		}
@@ -671,7 +680,7 @@ func activateAndRunSteps(
 			}
 
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
-		case models.StepRunStatusAbortedTimeout, models.StepRunStatusAbortedNoOutputTimeout:
+		case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
 			log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 
 			buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)

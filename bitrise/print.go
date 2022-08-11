@@ -63,9 +63,9 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		suffix = ""
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed, models.StepRunStatusCodeFailedSkippable:
 		suffix = fmt.Sprintf("(exit code: %d)", stepRunResult.ExitCode)
-	case models.StepRunStatusAbortedTimeout:
+	case models.StepRunStatusAbortedWithCustomTimeout:
 		suffix = "(timed out)"
-	case models.StepRunStatusAbortedNoOutputTimeout:
+	case models.StepRunStatusAbortedWithNoOutputTimeout:
 		suffix = "(timed out due to no output)"
 	default:
 		log.Errorf("Unknown result code")
@@ -216,7 +216,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed:
 		icon = "x"
 		coloringFunc = colorstring.Red
-	case models.StepRunStatusAbortedTimeout, models.StepRunStatusAbortedNoOutputTimeout:
+	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
 		icon = "/"
 		coloringFunc = colorstring.Red
 	case models.StepRunStatusCodeFailedSkippable:
