@@ -166,7 +166,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 			name: "aborted step due to no output",
 			result: models.StepRunResultsModel{
 				StepInfo: longTitleInfo,
-				Status:   models.StepRunStatusAbortedNoOutputTimeout,
+				Status:   models.StepRunStatusAbortedWithNoOutputTimeout,
 				Idx:      0,
 				RunTime:  10000000,
 				ErrorStr: longStr,
