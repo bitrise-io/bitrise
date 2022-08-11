@@ -11,7 +11,7 @@ import (
 func Test_GivenWriter_WhenTimeout_ThenHangs(t *testing.T) {
 	// Given
 	ticker := newMockTicker()
-	detector := newHangDetector(ticker, 5)
+	detector := newHangDetector(ticker, 5, 2)
 	detector.WrapOutWriter(new(bytes.Buffer))
 	detector.Start()
 	defer detector.Stop()
@@ -28,7 +28,7 @@ func Test_GivenWriter_WhenTimeout_ThenHangs(t *testing.T) {
 func Test_GivenWriter_WhenNoTimeout_ThenNotHangs(t *testing.T) {
 	// Given
 	ticker := newMockTicker()
-	detector := newHangDetector(ticker, 5)
+	detector := newHangDetector(ticker, 5, 2)
 	outWriter := detector.WrapOutWriter(new(bytes.Buffer))
 	detector.Start()
 	defer detector.Stop()
@@ -91,33 +91,41 @@ func assertTimeout(t *testing.T, f func(t *testing.T)) {
 
 func Test_tickerSettings(t *testing.T) {
 	tests := []struct {
-		name          string
-		timeout       time.Duration
-		wantInterval  time.Duration
-		wantTickLimit uint64
+		name                    string
+		timeout                 time.Duration
+		expectedInterval        time.Duration
+		expectedTickLimit       uint64
+		expectedHeartbeatAtTick uint64
 	}{
 		{
-			name:          "Small timeout",
-			timeout:       10 * time.Second,
-			wantInterval:  1 * time.Second,
-			wantTickLimit: 11,
+			name:                    "1 timeout",
+			timeout:                 1 * time.Second,
+			expectedInterval:        1 * time.Second,
+			expectedTickLimit:       2,
+			expectedHeartbeatAtTick: 1,
 		},
 		{
-			name:          "large timeout",
-			timeout:       600 * time.Second,
-			wantInterval:  10 * time.Second,
-			wantTickLimit: 61,
+			name:                    "Small timeout",
+			timeout:                 10 * time.Second,
+			expectedInterval:        1 * time.Second,
+			expectedTickLimit:       11,
+			expectedHeartbeatAtTick: 5,
+		},
+		{
+			name:                    "large timeout",
+			timeout:                 600 * time.Second,
+			expectedInterval:        10 * time.Second,
+			expectedTickLimit:       61,
+			expectedHeartbeatAtTick: 30,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotInterval, gotTickLimit := tickerSettings(tt.timeout)
-			if gotInterval != tt.wantInterval {
-				t.Errorf("tickerSettings() gotInterval = %v, want %v", gotInterval, tt.wantInterval)
-			}
-			if gotTickLimit != tt.wantTickLimit {
-				t.Errorf("tickerSettings() gotTickLimit = %v, want %v", gotTickLimit, tt.wantTickLimit)
-			}
+			actualInterval, actualTickLimit, actualHearthbeatAtTick := tickerSettings(tt.timeout)
+
+			require.Equal(t, tt.expectedInterval, actualInterval)
+			require.Equal(t, tt.expectedTickLimit, actualTickLimit)
+			require.Equal(t, tt.expectedHeartbeatAtTick, actualHearthbeatAtTick)
 		})
 	}
 }
