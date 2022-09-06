@@ -2,12 +2,11 @@ package cli
 
 import (
 	"fmt"
-
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/log"
-	"github.com/sirupsen/logrus"
+	utillog "github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
@@ -21,19 +20,19 @@ var initCmd = cli.Command{
 			// If the plugin is not installed yet run the bitrise setup first and try it again
 			perr, ok := err.(plugins.NotInstalledError)
 			if ok {
-				log.Warnf(perr.Error())
-				log.Printf("Runing setup to install the default plugins")
-				fmt.Println()
+				utillog.Warnf(perr.Error())
+				utillog.Printf("Runing setup to install the default plugins")
+				log.Println()
 
 				if err := bitrise.RunSetup(version.VERSION, false, false); err != nil {
 					return fmt.Errorf("Setup failed, error: %s", err)
 				}
 
 				if err := initConfig(c); err != nil {
-					logrus.Fatal(err)
+					log.Fatal(err)
 				}
 			} else {
-				logrus.Fatal(err)
+				log.Fatal(err)
 			}
 		}
 		return nil

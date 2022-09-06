@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +45,7 @@ var triggerCommand = cli.Command{
 }
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
-	log.Infoln("The following trigger filters are available:")
+	log.Info("The following trigger filters are available:")
 
 	for _, triggerItem := range triggerMap {
 		if triggerItem.Pattern != "" {

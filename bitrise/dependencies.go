@@ -12,9 +12,9 @@ import (
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -88,7 +88,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		}
 
 		if len(plugin.Description) > 0 {
-			fmt.Println(removeEmptyNewLines(plugin.Description))
+			log.Println(removeEmptyNewLines(plugin.Description))
 		}
 	}
 
@@ -106,12 +106,12 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 
 	progInstallPth, err := utils.CheckProgramInstalledPath("brew")
 	if err != nil {
-		fmt.Println()
+		log.Println()
 		log.Warnf("It seems that Homebrew is not installed on your system.")
 		log.Infof("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
 		log.Infof("You should be able to install brew by copying this command and running it in your Terminal:")
 		log.Infof(brewRubyInstallCmdString)
-		log.Infof("You can find more information about Homebrew on its official site at:", officialSiteURL)
+		log.Infof("You can find more information about Homebrew on its official site at: %s", officialSiteURL)
 		log.Warnf("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
 	}
@@ -129,7 +129,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		})
 		if err != nil {
-			fmt.Println("")
+			log.Println("")
 			log.Warnf("brew doctor returned an error:")
 			log.Warnf("%s", doctorOutput)
 			return errors.New("command failed: brew doctor")

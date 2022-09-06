@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/sliceutil"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	ver "github.com/hashicorp/go-version"
 )
 

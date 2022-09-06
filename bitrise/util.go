@@ -20,8 +20,8 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
 )
 
 // InventoryModelFromYAMLBytes ...
@@ -316,11 +316,11 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 	}
 
 	if strings.HasSuffix(pth, ".json") {
-		log.Debugln("=> Using JSON parser for: ", pth)
+		log.Debug("=> Using JSON parser for: ", pth)
 		return ConfigModelFromJSONBytes(bytes)
 	}
 
-	log.Debugln("=> Using YAML parser for: ", pth)
+	log.Debug("=> Using YAML parser for: ", pth)
 	return ConfigModelFromYAMLBytes(bytes)
 }
 

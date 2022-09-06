@@ -7,7 +7,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 

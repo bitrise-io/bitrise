@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
