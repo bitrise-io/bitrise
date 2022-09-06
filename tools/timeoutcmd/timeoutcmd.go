@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/tools/hangdetector"
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 // Command controls the command run.

@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	utilsLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
@@ -25,6 +25,7 @@ const (
 	DefaultBitriseConfigFileName = "bitrise.yml"
 	// DefaultSecretsFileName ...
 	DefaultSecretsFileName = ".bitrise.secrets.yml"
+	OutputFormatKey        = "output-format"
 
 	depManagerBrew      = "brew"
 	depManagerTryCheck  = "_"
@@ -46,6 +47,7 @@ var runCommand = cli.Command{
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+		cli.StringFlag{Name: OutputFormatKey, Usage: "test output"},
 
 		// deprecated
 		flPath,
@@ -57,10 +59,10 @@ var runCommand = cli.Command{
 }
 
 func printAboutUtilityWorkflowsText() {
-	fmt.Println("Note about utility workflows:")
-	fmt.Println(" Utility workflow names start with '_' (example: _my_utility_workflow).")
-	fmt.Println(" These workflows can't be triggered directly, but can be used by other workflows")
-	fmt.Println(" in the before_run and after_run lists.")
+	log.Println("Note about utility workflows:")
+	log.Println(" Utility workflow names start with '_' (example: _my_utility_workflow).")
+	log.Println(" These workflows can't be triggered directly, but can be used by other workflows")
+	log.Println(" in the before_run and after_run lists.")
 }
 
 func printAvailableWorkflows(config models.BitriseDataModel) {
@@ -78,29 +80,29 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	sort.Strings(utilityWorkflowNames)
 
 	if len(workflowNames) > 0 {
-		fmt.Println("The following workflows are available:")
+		log.Println("The following workflows are available:")
 		for _, wfName := range workflowNames {
-			fmt.Println(" * " + wfName)
+			log.Println(" * " + wfName)
 		}
 
-		fmt.Println()
-		fmt.Println("You can run a selected workflow with:")
-		fmt.Println("$ bitrise run WORKFLOW-ID")
-		fmt.Println()
+		log.Println()
+		log.Println("You can run a selected workflow with:")
+		log.Println("$ bitrise run WORKFLOW-ID")
+		log.Println()
 	} else {
-		fmt.Println("No workflows are available!")
+		log.Println("No workflows are available!")
 	}
 
 	if len(utilityWorkflowNames) > 0 {
-		fmt.Println()
-		fmt.Println("The following utility workflows are defined:")
+		log.Println()
+		log.Println("The following utility workflows are defined:")
 		for _, wfName := range utilityWorkflowNames {
-			fmt.Println(" * " + wfName)
+			log.Println(" * " + wfName)
 		}
 
-		fmt.Println()
+		log.Println()
 		printAboutUtilityWorkflowsText()
-		fmt.Println()
+		log.Println()
 	}
 }
 
@@ -146,9 +148,9 @@ func logExit(exitCode int) {
 		colorMessage = colorstring.Red(message)
 	}
 	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
-	fmt.Println()
-	fmt.Print(colorMessage)
-	fmt.Println()
+	log.Println()
+	log.Print(colorMessage)
+	log.Println()
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
@@ -259,7 +261,7 @@ func run(c *cli.Context) error {
 		// no workflow specified
 		//  list all the available ones and then exit
 		log.Error("No workflow specified!")
-		fmt.Println()
+		log.Println()
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
@@ -267,7 +269,7 @@ func run(c *cli.Context) error {
 		// util workflow specified
 		//  print about util workflows and then exit
 		log.Error("Utility workflows can't be triggered directly")
-		fmt.Println()
+		log.Println()
 		printAboutUtilityWorkflowsText()
 		os.Exit(1)
 	}

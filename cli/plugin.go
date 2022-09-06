@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 

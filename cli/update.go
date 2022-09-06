@@ -18,7 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	ver "github.com/hashicorp/go-version"
 	"github.com/urfave/cli"
 )
@@ -88,7 +88,7 @@ func checkUpdate() error {
 
 func printCLIUpdateInfos(newVersion string) {
 	log.Warnf("\nNew version (%s) of the Bitrise CLI available", newVersion)
-	log.Printf("Run command to update the Bitrise CLI:\n")
+	log.Printf("Run command to update the Bitrise CLI:")
 	log.Donef("$ bitrise update")
 }
 
@@ -271,7 +271,7 @@ func update(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Printf("Updating to version: %s\n", versionFlag)
+	fmt.Printf("Updating to version: %s", versionFlag)
 
 	fmt.Println("Downloading Bitrise CLI...")
 	if err := download(versionFlag); err != nil {

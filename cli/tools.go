@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 

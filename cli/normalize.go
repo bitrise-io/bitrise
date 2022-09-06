@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/bitrise-io/bitrise/bitrise"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 

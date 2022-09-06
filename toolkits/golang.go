@@ -18,10 +18,10 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/gows/gows"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
 )
 
 // === Base Toolkit struct ===
@@ -237,14 +237,14 @@ func (toolkit GoToolkit) Install() error {
 		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, downloadErr)
 	}
 
-	fmt.Println("=> Installing ...")
+	log.Println("=> Installing ...")
 	if err := installGoTar(goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("Failed to install Go toolkit, error: %s", err)
 	}
 	if err := os.Remove(goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("Failed to remove the downloaded Go archive (path: %s), error: %s", goArchiveDownloadPath, err)
 	}
-	fmt.Println("=> Installing [DONE]")
+	log.Println("=> Installing [DONE]")
 
 	return nil
 }

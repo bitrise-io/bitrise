@@ -6,11 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
+	internallogger "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
@@ -122,9 +121,10 @@ func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 	stateChecker := NewStateChecker(envRepository)
 
-	// Adapter between logrus and go-utils log package
+	//logger := log.DefaultLogger
+
 	logger := log.NewLogger()
-	logger.EnableDebugLog(logrus.GetLevel() == logrus.DebugLevel)
+	logger.EnableDebugLog(internallogger.IsDebugLogEnabled())
 
 	tracker := analytics.NewDefaultSyncTracker(logger)
 	if stateChecker.UseAsync() {

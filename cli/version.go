@@ -50,10 +50,10 @@ go: %s
 build number: %s
 commit: %s
 `, versionOutput.Version, versionOutput.FormatVersion, versionOutput.OS, versionOutput.GO, versionOutput.BuildNumber, versionOutput.Commit)
-			fmt.Println(versionStr)
+			log.Println(versionStr)
 		} else {
 			versionStr := fmt.Sprintf("%s", versionOutput.Version)
-			fmt.Println(versionStr)
+			log.Println(versionStr)
 		}
 	} else {
 		output.Print(versionOutput, output.Format)

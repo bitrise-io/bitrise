@@ -93,6 +93,10 @@ var (
 		Usage:  "If true it indicates that we're used by another tool so don't require any user input!",
 		EnvVar: configs.CIModeEnvKey,
 	}
+	//flInternalOutputFormat = cli.StringFlag{
+	//	Name:  log.OutputFormatKey,
+	//	Usage: "test output",
+	//}
 	flPRMode = cli.BoolFlag{
 		Name:  PRKey,
 		Usage: "If true bitrise runs in pull request mode.",
@@ -102,6 +106,7 @@ var (
 		flDebugMode,
 		flTool,
 		flPRMode,
+		//flInternalOutputFormat,
 	}
 	// Command flags
 	flOutputFormat = cli.StringFlag{

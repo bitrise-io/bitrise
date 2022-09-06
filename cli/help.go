@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -52,8 +51,4 @@ func getPluginsList() string {
 	}
 
 	return pluginListString
-}
-
-func initAppHelpTemplate() {
-	cli.AppHelpTemplate = fmt.Sprintf(helpTemplate, getPluginsList())
 }

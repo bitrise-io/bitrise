@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 const (
@@ -96,7 +96,7 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
 	}
 
-	fmt.Println()
+	log.Println()
 	log.Donef("All the required tools are installed! We're ready to rock!!")
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
@@ -107,7 +107,7 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 }
 
 func doSetupToolkits() error {
-	fmt.Println()
+	log.Println()
 	log.Infof("Checking Bitrise Toolkits...")
 
 	coreToolkits := toolkits.AllSupportedToolkits()
@@ -141,7 +141,7 @@ func doSetupToolkits() error {
 }
 
 func doSetupPlugins() error {
-	fmt.Println()
+	log.Println()
 	log.Infof("Checking Bitrise Plugins...")
 
 	for pluginName, pluginDependency := range PluginDependencyMap {
@@ -154,7 +154,7 @@ func doSetupPlugins() error {
 }
 
 func doSetupBitriseCoreTools() error {
-	fmt.Println()
+	log.Println()
 	log.Infof("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
@@ -169,7 +169,7 @@ func doSetupBitriseCoreTools() error {
 }
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
-	fmt.Println()
+	log.Println()
 	log.Infof("Doing OS X specific setup")
 	log.Printf("Checking required tools...")
 

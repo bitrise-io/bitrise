@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 // HangDetector ...
@@ -58,7 +58,7 @@ func (h *hangDetector) Start() {
 				{
 					count := atomic.AddUint64(&h.ticks, 1)
 					if count == h.heartbeatAtTick {
-						log.TPrintf("No output received for a while. Bitrise CLI is still active.")
+						log.Printf("No output received for a while. Bitrise CLI is still active.")
 					}
 					if count >= h.tickLimit {
 						h.notificationC <- true

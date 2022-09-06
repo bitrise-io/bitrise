@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/sirupsen/logrus"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
@@ -35,7 +35,7 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 			log.Fatalf("Failed to parse error model, error: %s", err)
 		}
 
-		fmt.Println(string(bytes))
+		log.Println(string(bytes))
 		os.Exit(1)
 	}
 }
@@ -208,7 +208,7 @@ func triggerCheck(c *cli.Context) error {
 				msg = fmt.Sprintf("%s: %s ", key, value) + msg
 			}
 		}
-		fmt.Println(msg)
+		log.Println(msg)
 		break
 	case output.FormatJSON:
 		bytes, err := json.Marshal(triggerModel)
@@ -216,7 +216,7 @@ func triggerCheck(c *cli.Context) error {
 			registerFatal(fmt.Sprintf("Failed to parse trigger model, err: %s", err), warnings, triggerParams.Format)
 		}
 
-		fmt.Println(string(bytes))
+		log.Println(string(bytes))
 		break
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", triggerParams.Format), warnings, output.FormatJSON)

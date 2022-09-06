@@ -5,24 +5,26 @@ import (
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/tools"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
 func printStepLibStep(collectionURI, id, version, format string) error {
-	stepInfo, err := tools.StepmanStepInfo(collectionURI, id, version)
-
 	switch format {
 	case output.FormatRaw:
-		if err != nil {
-			return err
+		out, err := tools.StepmanRawStepLibStepInfo(collectionURI, id, version)
+		if out != "" {
+			log.Println("Step info:")
+			log.Printf("%s", out)
 		}
-		fmt.Println("Step info:")
-		fmt.Println(stepInfo.String())
+		return err
 	case output.FormatJSON:
+		outStr, err := tools.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
-		fmt.Println(stepInfo.JSON())
+		log.Println(outStr)
+		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
@@ -30,20 +32,21 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 }
 
 func printLocalStepInfo(pth, format string) error {
-	stepInfo, err := tools.StepmanStepInfo("path", pth, "")
-
 	switch format {
 	case output.FormatRaw:
-		if err != nil {
-			return err
+		out, err := tools.StepmanRawLocalStepInfo(pth)
+		if out != "" {
+			log.Println("Step info:")
+			log.Printf("%s", out)
 		}
-		fmt.Println("Step info:")
-		fmt.Println(stepInfo.String())
+		return err
 	case output.FormatJSON:
+		outStr, err := tools.StepmanJSONLocalStepInfo(pth)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
 		}
-		fmt.Println(stepInfo.JSON())
+		log.Println(outStr)
+		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
