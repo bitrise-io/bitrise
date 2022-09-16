@@ -12,7 +12,6 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/hashicorp/go-version v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
-	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1
 	github.com/urfave/cli v1.22.5
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
