@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 
-	flog "github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	ver "github.com/bitrise-io/stepman/version"
 	"github.com/urfave/cli"
 )
@@ -58,13 +58,12 @@ func printVersionCmd(c *cli.Context) error {
 		format = "raw"
 	}
 
-	var log flog.Logger
-	if format == "raw" {
-		log = flog.NewDefaultRawLogger()
-	} else if format == "json" {
-		log = flog.NewDefaultJSONLoger()
-	} else {
-		flog.Errorf("Invalid format: %s\n", format)
+	jsonOutput := false
+
+	if format == "json" {
+		jsonOutput = true
+	} else if format != "raw" {
+		log.Errorf("Invalid format: %s\n", format)
 		os.Exit(1)
 	}
 
@@ -76,7 +75,14 @@ func printVersionCmd(c *cli.Context) error {
 	versionOutput.Commit = ver.Commit
 	versionOutput.FullVersion = fullVersion
 
-	log.Print(versionOutput)
+	var message string
+	if jsonOutput {
+		message = versionOutput.JSON()
+	} else {
+		message = versionOutput.String()
+	}
+
+	log.Print(message)
 
 	return nil
 }

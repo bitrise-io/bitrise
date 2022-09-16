@@ -2,15 +2,14 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/command/git"
-	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -53,7 +52,7 @@ var stepInfoCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if err := stepInfo(c); err != nil {
-			log.Fatalf("Command failed: %s", err)
+			failf("Command failed: %s", err)
 		}
 		return nil
 	},
@@ -93,10 +92,10 @@ func stepInfo(c *cli.Context) error {
 		return fmt.Errorf("step info: invalid format value: %s, valid values: [%s, %s]", format, OutputFormatRaw, OutputFormatJSON)
 	}
 
-	var log flog.Logger
-	log = flog.NewDefaultRawLogger()
-	if format == OutputFormatJSON {
-		log = flog.NewDefaultJSONLoger()
+	jsonOutput := false
+
+	if format == "json" {
+		jsonOutput = true
 	}
 
 	stepInfo, err := QueryStepInfo(library, id, version)
@@ -104,7 +103,14 @@ func stepInfo(c *cli.Context) error {
 		return err
 	}
 
-	log.Print(stepInfo)
+	var message string
+	if jsonOutput {
+		message = stepInfo.JSON()
+	} else {
+		message = stepInfo.String()
+	}
+
+	log.Print(message)
 	return nil
 }
 

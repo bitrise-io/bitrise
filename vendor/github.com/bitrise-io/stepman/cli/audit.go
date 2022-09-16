@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -129,34 +129,34 @@ func audit(c *cli.Context) error {
 	collectionURI := c.String("collection")
 	if collectionURI != "" {
 		if beforePR {
-			log.Warnln("before-pr flag is used only for Step audit")
+			log.Warn("before-pr flag is used only for Step audit")
 		}
 
 		if err := auditStepLibBeforeSharePullRequest(collectionURI); err != nil {
-			log.Fatalf("Audit Step Collection failed, err: %s", err)
+			failf("Audit Step Collection failed, err: %s", err)
 		}
 	} else {
 		stepYMLPath := c.String("step-yml")
 		if stepYMLPath != "" {
 			if exist, err := pathutil.IsPathExists(stepYMLPath); err != nil {
-				log.Fatalf("Failed to check path (%s), err: %s", stepYMLPath, err)
+				failf("Failed to check path (%s), err: %s", stepYMLPath, err)
 			} else if !exist {
-				log.Fatalf("step.yml doesn't exist at: %s", stepYMLPath)
+				failf("step.yml doesn't exist at: %s", stepYMLPath)
 			}
 
 			if beforePR {
 				if err := auditStepBeforeSharePullRequest(stepYMLPath); err != nil {
-					log.Fatalf("Step audit failed, err: %s", err)
+					failf("Step audit failed, err: %s", err)
 				}
 			} else {
 				if err := auditStepBeforeShare(stepYMLPath); err != nil {
-					log.Fatalf("Step audit failed, err: %s", err)
+					failf("Step audit failed, err: %s", err)
 				}
 			}
 
 			log.Infof(" * "+colorstring.Greenf("[OK] ")+"Success audit (%s)", stepYMLPath)
 		} else {
-			log.Fatalln("'stepman audit' command needs --collection or --step-yml flag")
+			failln("'stepman audit' command needs --collection or --step-yml flag")
 		}
 	}
 

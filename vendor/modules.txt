@@ -21,18 +21,21 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20220922223148-5dbd62f51190
 ## explicit
+github.com/bitrise-io/go-utils/v2/advancedlog
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
+github.com/bitrise-io/go-utils/v2/log/colorstring
+github.com/bitrise-io/go-utils/v2/retryhttp
 # github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 ## explicit
 github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit
 github.com/bitrise-io/gows/gows
-# github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30
+# github.com/bitrise-io/stepman v0.0.0-20220923124813-1c53488fe0ac
 ## explicit
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models
@@ -47,7 +50,7 @@ github.com/davecgh/go-spew/spew
 github.com/gofrs/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-retryablehttp v0.7.0
+# github.com/hashicorp/go-retryablehttp v0.7.1
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
@@ -62,7 +65,6 @@ github.com/russross/blackfriday/v2
 ## explicit
 github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.8.1
-## explicit
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.7.1
 ## explicit

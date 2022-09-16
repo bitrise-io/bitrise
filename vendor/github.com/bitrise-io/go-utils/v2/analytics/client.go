@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/retryhttp"
 )
 
 const trackEndpoint = "https://bitrise-step-analytics.herokuapp.com/track"
@@ -26,7 +26,7 @@ type client struct {
 
 // NewDefaultClient ...
 func NewDefaultClient(logger log.Logger, timeout time.Duration) Client {
-	httpClient := retry.NewHTTPClient().StandardClient()
+	httpClient := retryhttp.NewClient(logger).StandardClient()
 	httpClient.Timeout = timeout
 	return NewClient(httpClient, trackEndpoint, logger, timeout)
 }

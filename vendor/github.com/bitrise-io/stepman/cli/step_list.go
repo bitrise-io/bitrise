@@ -4,22 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/stringutil"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
 
 func printRawStepList(stepLibURI string, stepLib models.StepCollectionModel, isShort bool) {
-	fmt.Println(colorstring.Bluef("Steps in StepLib (%s):", stepLibURI))
-	fmt.Println()
+	log.Println(colorstring.Bluef("Steps in StepLib (%s):", stepLibURI))
+	log.Println()
 	for stepID, stepGroupInfo := range stepLib.Steps {
 		if isShort {
 			// print only step IDs
-			fmt.Printf("%s\n", stepID)
+			log.Printf("%s\n", stepID)
 			continue
 		}
 
@@ -28,19 +28,19 @@ func printRawStepList(stepLibURI string, stepLib models.StepCollectionModel, isS
 			log.Errorf("No version found for step: %s", stepID)
 			continue
 		}
-		fmt.Printf(" * %s\n", pointers.String(latestStepVerInfos.Title))
-		fmt.Printf("   ID: %s\n", stepID)
-		fmt.Printf("   Latest Version: %s\n", stepGroupInfo.LatestVersionNumber)
+		log.Printf(" * %s\n", pointers.String(latestStepVerInfos.Title))
+		log.Printf("   ID: %s\n", stepID)
+		log.Printf("   Latest Version: %s\n", stepGroupInfo.LatestVersionNumber)
 		summaryText := "no summary specified"
 		if latestStepVerInfos.Summary != nil {
 			stepSumText := *latestStepVerInfos.Summary
 			// stepSumText = strings.Replace(stepSumText, "\n", " ", -1)
 			summaryText = stringutil.IndentTextWithMaxLength(stepSumText, "            ", 130, false)
 		}
-		fmt.Printf("   Summary: %s\n", summaryText)
-		fmt.Println()
+		log.Printf("   Summary: %s\n", summaryText)
+		log.Println()
 	}
-	fmt.Println()
+	log.Println()
 }
 
 func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, isShort bool) error {
@@ -56,7 +56,7 @@ func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, is
 		return err
 	}
 
-	fmt.Println(string(bytes))
+	log.Println(string(bytes))
 	return nil
 }
 
@@ -66,7 +66,7 @@ func listSteps(stepLibURI, format string) error {
 		return err
 	} else if !exist {
 		if err := stepman.SetupLibrary(stepLibURI); err != nil {
-			log.Fatal("Failed to setup steplib")
+			fail("Failed to setup steplib")
 		}
 	}
 
@@ -104,7 +104,7 @@ func stepList(c *cli.Context) error {
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("Invalid format: %s", format)
+		failf("Invalid format: %s", format)
 	}
 
 	for _, URI := range stepLibURIs {

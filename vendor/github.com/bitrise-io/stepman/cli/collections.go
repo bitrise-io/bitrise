@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/colorstring"
-	flog "github.com/bitrise-io/go-utils/log"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -74,13 +74,12 @@ func collections(c *cli.Context) error {
 		format = OutputFormatRaw
 	}
 
-	var log flog.Logger
-	if format == OutputFormatRaw {
-		log = flog.NewDefaultRawLogger()
-	} else if format == OutputFormatJSON {
-		log = flog.NewDefaultJSONLoger()
-	} else {
-		fmt.Printf("%s: invalid format: %s\n", colorstring.Red("Error"), format)
+	jsonOutput := false
+
+	if format == "json" {
+		jsonOutput = true
+	} else if format != "raw" && format != "json" {
+		log.Printf("%s: invalid format: %s\n", colorstring.Red("Error"), format)
 		os.Exit(1)
 	}
 
@@ -89,7 +88,16 @@ func collections(c *cli.Context) error {
 	for _, steplibURI := range stepLibURIs {
 		route, found := stepman.ReadRoute(steplibURI)
 		if !found {
-			log.Print(NewErrorOutput("No routing found for steplib: %s", steplibURI))
+			errorOutput := NewErrorOutput("No routing found for steplib: %s", steplibURI)
+
+			var message string
+			if jsonOutput {
+				message = errorOutput.JSON()
+			} else {
+				message = errorOutput.String()
+			}
+
+			log.Print(message)
 			os.Exit(1)
 		}
 
@@ -101,7 +109,16 @@ func collections(c *cli.Context) error {
 		})
 	}
 
-	log.Print(NewOutput(steplibInfos))
+	output := NewOutput(steplibInfos)
+
+	var message string
+	if jsonOutput {
+		message = output.JSON()
+	} else {
+		message = output.String()
+	}
+
+	log.Print(message)
 
 	return nil
 }

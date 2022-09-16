@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -109,7 +109,7 @@ func export(c *cli.Context) error {
 	// Prepare spec
 	stepLibSpec, err := stepman.ReadStepSpec(steplibURI)
 	if err != nil {
-		log.Fatalf("Failed to read StepLib spec, error: %s", err)
+		failf("Failed to read StepLib spec, error: %s", err)
 	}
 
 	switch exportType {

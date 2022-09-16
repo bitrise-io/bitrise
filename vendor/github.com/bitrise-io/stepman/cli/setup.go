@@ -1,11 +1,10 @@
 package cli
 
 import (
-	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -14,7 +13,7 @@ func setup(c *cli.Context) error {
 	// Input validation
 	steplibURI := c.String(CollectionKey)
 	if steplibURI == "" {
-		log.Fatal("No step collection specified")
+		fail("No step collection specified")
 	}
 
 	copySpecJSONPath := c.String(CopySpecJSONKey)
@@ -22,7 +21,7 @@ func setup(c *cli.Context) error {
 	if c.IsSet(LocalCollectionKey) {
 		log.Warn("'local' flag is deprecated")
 		log.Warn("use 'file://' prefix in steplib path instead")
-		fmt.Println()
+		log.Println()
 	}
 
 	if c.Bool(LocalCollectionKey) {
@@ -36,21 +35,21 @@ func setup(c *cli.Context) error {
 
 	// Setup
 	if err := stepman.SetupLibrary(steplibURI); err != nil {
-		log.Fatalf("Setup failed, error: %s", err)
+		failf("Setup failed, error: %s", err)
 	}
 
 	// Copy spec.json
 	if copySpecJSONPath != "" {
-		log.Infof("Copying spec YML to path: %s", copySpecJSONPath)
+		failf("Copying spec YML to path: %s", copySpecJSONPath)
 
 		route, found := stepman.ReadRoute(steplibURI)
 		if !found {
-			log.Fatalf("No route found for steplib (%s)", steplibURI)
+			failf("No route found for steplib (%s)", steplibURI)
 		}
 
 		sourceSpecJSONPth := stepman.GetStepSpecPath(route)
 		if err := command.CopyFile(sourceSpecJSONPth, copySpecJSONPath); err != nil {
-			log.Fatalf("Failed to copy spec.json from (%s) to (%s), error: %s", sourceSpecJSONPth, copySpecJSONPath, err)
+			failf("Failed to copy spec.json from (%s) to (%s), error: %s", sourceSpecJSONPth, copySpecJSONPath, err)
 		}
 	}
 

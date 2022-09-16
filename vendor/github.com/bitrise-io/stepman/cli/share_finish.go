@@ -8,8 +8,8 @@ import (
 
 	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -20,7 +20,7 @@ func printFinishShare() {
 	b.NewLine()
 	b.Plain("On GitHub you can find a ").Blue("Compare & pull request").Plain(" button, in the section called ").Blue("Your recently pushed branches:").Plain(",").NewLine()
 	b.Plain("which will bring you to the page to ").Blue("Open a pull request").Plain(", where you can review and create your Pull Request.")
-	fmt.Println(b.String())
+	log.Println(b.String())
 }
 
 func addStepGroupSpecIfExists(route stepman.SteplibRoute, stepID, gitstatus string, repo git.Git) error {
@@ -50,13 +50,13 @@ func finish(c *cli.Context) error {
 
 	route, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		failf("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	collectionDir := stepman.GetLibraryBaseDirPath(route)
 	log.Donef("all inputs are valid")
 
-	fmt.Println()
+	log.Println()
 	log.Infof("Checking StepLib changes...")
 	repo, err := git.New(collectionDir)
 	if err != nil {
@@ -69,7 +69,7 @@ func finish(c *cli.Context) error {
 	}
 	if gitstatus == "" {
 		log.Warnf("No git changes, it seems you already called this command")
-		fmt.Println()
+		log.Println()
 		printFinishShare()
 		return nil
 	}
@@ -85,7 +85,7 @@ func finish(c *cli.Context) error {
 		fail(err.Error())
 	}
 
-	fmt.Println()
+	log.Println()
 	log.Infof("Submitting the changes...")
 	msg := share.StepID + " " + share.StepTag
 	if err := repo.Commit(msg).Run(); err != nil {
@@ -97,9 +97,9 @@ func finish(c *cli.Context) error {
 		fail(out)
 	}
 
-	fmt.Println()
+	log.Println()
 	printFinishShare()
-	fmt.Println()
+	log.Println()
 
 	return nil
 }
