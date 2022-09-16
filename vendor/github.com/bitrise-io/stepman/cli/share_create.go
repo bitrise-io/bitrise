@@ -15,10 +15,10 @@ import (
 
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/goinp/goinp"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -138,7 +138,7 @@ func create(c *cli.Context) error {
 	log.Donef("all inputs are valid")
 
 	// Clone Step to tmp dir
-	fmt.Println()
+	log.Println()
 	log.Infof("Validating the Step...")
 
 	tmp, err := pathutil.NormalizedOSTempDirPath("")
@@ -211,7 +211,7 @@ func create(c *cli.Context) error {
 	log.Donef("step is valid")
 
 	// Copy step.yml to steplib
-	fmt.Println()
+	log.Println()
 	log.Infof("Integrating the Step into the Steplib...")
 
 	isStepNew, err := isStepNew(route, stepID)
@@ -268,9 +268,9 @@ func create(c *cli.Context) error {
 
 	log.Donef("the StepLib changes are now prepared on branch: %s", share.ShareBranchName())
 
-	fmt.Println()
+	log.Println()
 	log.Printf(GuideTextForShareFinish(toolMode))
-	fmt.Println()
+	log.Println()
 
 	return nil
 }

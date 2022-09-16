@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 const (
