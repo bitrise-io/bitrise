@@ -25,7 +25,7 @@ func NewBuildRunResultRegisterer(tracker analytics.Tracker) BuildRunResultRegist
 }
 
 func (r BuildRunResultRegisterer) RegisterStepRunResults(
-	buildRunResults models.BuildRunResultsModel,
+	buildRunResults *models.BuildRunResultsModel,
 	stepStartTime time.Time,
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
