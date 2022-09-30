@@ -23,38 +23,38 @@ func NewStepActivator() StepActivator {
 	return StepActivator{}
 }
 
-func (a StepActivator) activateStep(
+func (a StepActivator) ActivateStep(
 	stepIDData models.StepIDData,
 	buildRunResults models.BuildRunResultsModel,
 	stepDir string,
-	stepYMLPth string,
+	workDir string,
 	workflowStep stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
-) (string, error) {
-	var origStepYMLPth string
+) (stepYMLPth string, origStepYMLPth string, err error) {
+	stepYMLPth = filepath.Join(workDir, "current_step.yml")
 
 	if stepIDData.SteplibSource == "path" {
 		log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 		stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 
 		origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
 		if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
-			return "", err
+			return "", "", err
 		}
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 		repo, err := git.New(stepDir)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		cloneCmd := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
 		out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput()
@@ -67,13 +67,13 @@ even if the repository is open source!`)
 			}
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				return "", fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
+				return "", "", fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
 			}
-			return "", err
+			return "", "", err
 		}
 
 		if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
-			return "", err
+			return "", "", err
 		}
 	} else if stepIDData.SteplibSource == "_" {
 		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -81,15 +81,15 @@ even if the repository is open source!`)
 		// Steplib independent steps are completly defined in workflow
 		stepYMLPth = ""
 		if err := workflowStep.FillMissingDefaults(); err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		repo, err := git.New(stepDir)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
-			return "", err
+			return "", "", err
 		}
 	} else if stepIDData.SteplibSource != "" {
 		isUpdated := buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
@@ -108,11 +108,11 @@ even if the repository is open source!`)
 		stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 	} else {
-		return "", fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData)
+		return "", "", fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 
-	return origStepYMLPth, nil
+	return stepYMLPth, origStepYMLPth, nil
 }

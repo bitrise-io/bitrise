@@ -24,7 +24,7 @@ func NewBuildRunResultRegisterer(tracker analytics.Tracker) BuildRunResultRegist
 	return BuildRunResultRegisterer{tracker: tracker}
 }
 
-func (r BuildRunResultRegisterer) registerStepRunResults(
+func (r BuildRunResultRegisterer) RegisterStepRunResults(
 	buildRunResults models.BuildRunResultsModel,
 	stepStartTime time.Time,
 	step stepmanModels.StepModel,
