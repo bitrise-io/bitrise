@@ -16,15 +16,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type BuildRunResultRegisterer struct {
+type buildRunResultCollector struct {
 	tracker analytics.Tracker
 }
 
-func NewBuildRunResultRegisterer(tracker analytics.Tracker) BuildRunResultRegisterer {
-	return BuildRunResultRegisterer{tracker: tracker}
+func newBuildRunResultCollector(tracker analytics.Tracker) buildRunResultCollector {
+	return buildRunResultCollector{tracker: tracker}
 }
 
-func (r BuildRunResultRegisterer) RegisterStepRunResults(
+func (r buildRunResultCollector) registerStepRunResults(
 	buildRunResults *models.BuildRunResultsModel,
 	stepStartTime time.Time,
 	step stepmanModels.StepModel,

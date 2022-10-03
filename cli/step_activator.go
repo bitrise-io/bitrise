@@ -16,14 +16,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type StepActivator struct {
+type stepActivator struct {
 }
 
-func NewStepActivator() StepActivator {
-	return StepActivator{}
+func newStepActivator() stepActivator {
+	return stepActivator{}
 }
 
-func (a StepActivator) ActivateStep(
+func (a stepActivator) activateStep(
 	stepIDData models.StepIDData,
 	buildRunResults models.BuildRunResultsModel,
 	stepDir string,
