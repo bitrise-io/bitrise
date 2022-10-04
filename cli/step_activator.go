@@ -25,11 +25,11 @@ func newStepActivator() stepActivator {
 
 func (a stepActivator) activateStep(
 	stepIDData models.StepIDData,
-	buildRunResults models.BuildRunResultsModel,
+	buildRunResults *models.BuildRunResultsModel,
 	stepDir string,
 	workDir string,
-	workflowStep stepmanModels.StepModel,
-	stepInfoPtr stepmanModels.StepInfoModel,
+	workflowStep *stepmanModels.StepModel,
+	stepInfoPtr *stepmanModels.StepInfoModel,
 ) (stepYMLPth string, origStepYMLPth string, err error) {
 	stepYMLPth = filepath.Join(workDir, "current_step.yml")
 
@@ -111,7 +111,7 @@ even if the repository is open source!`)
 			return "", "", err
 		}
 	} else {
-		return "", "", fmt.Errorf("Invalid stepIDData: No SteplibSource or LocalPath defined (%v)", stepIDData)
+		return "", "", fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 
 	return stepYMLPth, origStepYMLPth, nil

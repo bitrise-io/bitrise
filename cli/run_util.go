@@ -662,7 +662,7 @@ func activateAndRunSteps(
 		stepDir := configs.BitriseWorkStepsDirPath
 
 		activator := newStepActivator()
-		stepYMLPth, origStepYMLPth, err := activator.activateStep(stepIDData, buildRunResults, stepDir, configs.BitriseWorkDirPath, workflowStep, stepInfoPtr)
+		stepYMLPth, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr)
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, map[string]string{}, stepStartedProperties)
