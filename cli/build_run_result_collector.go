@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"github.com/bitrise-io/go-utils/errorutil"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -73,10 +74,17 @@ func (r buildRunResultCollector) registerStepRunResults(
 		DefinitionPth:   stepInfoPtr.DefinitionPth,
 	}
 
+	isExitStatusError := true
+	if err != nil {
+		isExitStatusError = errorutil.IsExitStatusError(err)
+	}
+
 	// Print step preparation errors before the step header box,
 	// other errors are printed within the step box.
 	if resultCode == models.StepRunStatusCodePreparationFailed && err != nil {
-		log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+		if !isExitStatusError {
+			log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+		}
 	}
 	if printStepHeader {
 		bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
@@ -112,18 +120,20 @@ func (r buildRunResultCollector) registerStepRunResults(
 	case models.StepRunStatusCodePreparationFailed:
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailed:
-		log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
-	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
-		log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+		if !isExitStatusError {
+			log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+		}
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailedSkippable:
-		if err != nil {
+		if !isExitStatusError {
 			log.Warnf("Step (%s) failed, but was marked as skippable: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 		} else {
 			log.Warnf("Step (%s) failed, but was marked as skippable", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 		}
 		buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
+	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
+		log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
+		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeSkipped:
 		log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 		buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
