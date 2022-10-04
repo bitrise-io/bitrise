@@ -35,6 +35,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 	exitCode int,
 	err error,
 	isLastStep bool,
+	printStepHeader bool,
 	redactedStepInputs map[string]string,
 	properties coreanalytics.Properties) {
 
@@ -77,7 +78,9 @@ func (r buildRunResultCollector) registerStepRunResults(
 	if resultCode == models.StepRunStatusCodePreparationFailed && err != nil {
 		log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 	}
-	bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
+	if printStepHeader {
+		bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
+	}
 
 	errStr := ""
 	if err != nil {
