@@ -2,9 +2,10 @@ package cli
 
 import (
 	"fmt"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"io"
 	"os"
+
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 // Logger ...

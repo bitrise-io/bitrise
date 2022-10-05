@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"net/http"
 	"time"
+
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 var (

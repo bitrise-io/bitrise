@@ -71,29 +71,6 @@ func printVersion(c *cli.Context) {
 	log.Print(c.App.Version)
 }
 
-//func parseParams(arguments []string) (bool, string, bool) {
-//	var isRunCommand bool
-//	var runCommandIndex int
-//
-//	for i, argument := range arguments {
-//		if argument == "run" {
-//			isRunCommand = true
-//			runCommandIndex = i
-//		}
-//	}
-//
-//	if isRunCommand == false {
-//		return false, "", false
-//	}
-//
-//	fs := flag.NewFlagSet("run", flag.ContinueOnError)
-//	outputFormat := fs.String(log.OutputFormatKey, "", "test output")
-//	isDebug := fs.Bool(DebugModeKey, false, "If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug.")
-//	fs.Parse(arguments[runCommandIndex:])
-//
-//	return true, *outputFormat, *isDebug
-//}
-
 func loggerParameters(arguments []string) (bool, string, bool) {
 	isRunCommand := false
 	outputFormat := ""
