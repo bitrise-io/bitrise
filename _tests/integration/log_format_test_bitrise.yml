@@ -1,0 +1,37 @@
+format_version: "11"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+
+workflows:
+  fail_test:
+    title: Fails
+    description: Workflow will fail
+    steps:
+    - script:
+        title: Success
+        inputs:
+        - content: |-
+            set -ex
+            exit 0
+    - script@1.1:
+        title: Fail wit exit code 2
+        inputs:
+        - content: |-
+            set -ex
+            exit 2
+    - git::https://github.com/bitrise-steplib/steps-script.git@master:
+        title: Skippable fail with exit code 2
+        is_always_run: true
+        is_skippable: true
+        inputs:
+        - content: |-
+            set -ex
+            exit 2
+    - script:
+        title: Skipping success
+        is_always_run: false
+        inputs:
+        - content: |-
+            set -ex
+            exit 0
