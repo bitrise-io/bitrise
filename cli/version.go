@@ -2,13 +2,13 @@ package cli
 
 import (
 	"fmt"
-	"log"
 
 	"runtime"
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/version"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
