@@ -33,16 +33,16 @@ var setupCommand = cli.Command{
 // PrintBitriseHeaderASCIIArt ...
 func PrintBitriseHeaderASCIIArt(appVersion string) {
 	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
-	log.Println(`
+	log.Print(`
   ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
   ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
   ██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
   ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
   ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
   ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	log.Println()
+	log.Print()
 	log.Donef("  version: %s", appVersion)
-	log.Println()
+	log.Print()
 }
 
 func setup(c *cli.Context) error {
@@ -55,12 +55,12 @@ func setup(c *cli.Context) error {
 		return err
 	}
 
-	log.Println()
+	log.Print()
 	log.Infof("To start using bitrise:")
 	log.Printf("* cd into your project's directory (if you're not there already)")
 	log.Printf("* call: bitrise init")
 	log.Printf("* follow the guide")
-	log.Println()
+	log.Print()
 	log.Donef("That's all :)")
 
 	return nil

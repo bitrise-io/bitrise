@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"log"
 	"strings"
 
 	"fmt"
@@ -38,7 +37,7 @@ func getPluginsList() string {
 
 	pluginList, err := plugins.InstalledPluginList()
 	if err != nil {
-		log.Fatalf("Failed to list plugins, error: %s", err)
+		failf("Failed to list plugins, error: %s", err)
 	}
 
 	if len(pluginList) > 0 {

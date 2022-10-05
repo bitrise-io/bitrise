@@ -7,6 +7,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
@@ -15,6 +16,11 @@ import (
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
+
+func failf(format string, args ...interface{}) {
+	log.Errorf(format, args...)
+	os.Exit(1)
+}
 
 func before(c *cli.Context) error {
 	/*
@@ -25,36 +31,30 @@ func before(c *cli.Context) error {
 
 	initHelpAndVersionFlags()
 
-	// Debug mode?
-	if c.Bool(DebugModeKey) {
-		// set for other tools, as an ENV
-		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set DEBUG env, error: %s", err)
-		}
-		configs.IsDebugMode = true
-		log.Warn("=> Started in DEBUG mode")
-	}
-
 	// Log level
 	// If log level defined - use it
-	if c.String(LogLevelKey) == "" && configs.IsDebugMode {
-		// if no Log Level defined and we're in Debug Mode - set loglevel to debug
-		log.Warn("=> LogLevel set to debug")
-		log.SetEnableDebugLog(true)
-	}
+	// todo: remove log level flag
+	//if c.String(LogLevelKey) == "" && configs.IsDebugMode {
+	//	// if no Log Level defined and we're in Debug Mode - set loglevel to debug
+	//	log.Warn("=> LogLevel set to debug")
+	//	log.SetEnableDebugLog(true)
+	//	// todo: set config.IsdebugLogEnbled
+	//	configs.IsDebugMode = true
+	//	log.InitGlobalLogger()
+	//}
 
 	// CI Mode check
 	if c.Bool(CIKey) {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set CI env, error: %s", err)
+			failf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths, error: %s", err)
+		failf("Failed to initialize required paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
@@ -62,7 +62,7 @@ func before(c *cli.Context) error {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set PR env, error: %s", err)
+			failf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
@@ -81,7 +81,7 @@ func before(c *cli.Context) error {
 }
 
 func printVersion(c *cli.Context) {
-	log.Println(c.App.Version)
+	log.Print(c.App.Version)
 }
 
 //func parseParams(arguments []string) (bool, string, bool) {
@@ -150,14 +150,32 @@ func loggerParameters(arguments []string) (bool, string, bool) {
 func Run() {
 	isRunCommand, format, isDebug := loggerParameters(os.Args[1:])
 	//isRunCommand, format, isDebug := parseParams(os.Args[1:])
-	if isRunCommand && format != "" {
-		log.SetOutputFormat(format)
+	if isDebug == false {
+		isDebug = os.Getenv(configs.DebugModeEnvKey) == "true"
 	}
 
-	log.SetEnableDebugLog(isDebug)
+	loggerType := log.ConsoleLogger
+	if isRunCommand && format != "" {
+		loggerType = log.JSONLogger
+	}
+
+	// Global logger needs to be initialised before using any log function
+	log.InitGlobalLogger(loggerType, log.BitriseCLI, os.Stdout, isDebug, time.Now)
+
+	// Debug mode?
+	if isDebug {
+		// set for other tools, as an ENV
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
+			failf("Failed to set DEBUG env, error: %s", err)
+
+		}
+
+		configs.IsDebugMode = true
+		log.Warn("=> Started in DEBUG mode")
+	}
 
 	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize plugin path, error: %s", err)
+		failf("Failed to initialize plugin path, error: %s", err)
 	}
 
 	cli.VersionPrinter = printVersion
@@ -188,7 +206,7 @@ func Run() {
 			}
 
 			if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
-				log.Fatalf("Setup failed, error: %s", err)
+				failf("Setup failed, error: %s", err)
 			}
 
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
@@ -205,6 +223,6 @@ func Run() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		failf(err.Error())
 	}
 }

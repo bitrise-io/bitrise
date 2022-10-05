@@ -58,12 +58,12 @@ func pluginInstall(c *cli.Context) error {
 	}
 
 	if len(plugin.Description) > 0 {
-		log.Println()
+		log.Print()
 		log.Infof("Description:")
-		log.Println(plugin.Description)
+		log.Print(plugin.Description)
 	}
 
-	log.Println()
+	log.Print()
 	if version == "" {
 		log.Donef("Local plugin (%s) installed ", plugin.Name)
 	} else {

@@ -22,17 +22,17 @@ var initCmd = cli.Command{
 			if ok {
 				utillog.Warnf(perr.Error())
 				utillog.Printf("Runing setup to install the default plugins")
-				log.Println()
+				log.Print()
 
 				if err := bitrise.RunSetup(version.VERSION, false, false); err != nil {
 					return fmt.Errorf("Setup failed, error: %s", err)
 				}
 
 				if err := initConfig(c); err != nil {
-					log.Fatal(err)
+					failf(err.Error())
 				}
 			} else {
-				log.Fatal(err)
+				failf(err.Error())
 			}
 		}
 		return nil

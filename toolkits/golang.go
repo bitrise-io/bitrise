@@ -237,14 +237,14 @@ func (toolkit GoToolkit) Install() error {
 		return fmt.Errorf("Failed to download toolkit (%s), error: %s", downloadURL, downloadErr)
 	}
 
-	log.Println("=> Installing ...")
+	log.Print("=> Installing ...")
 	if err := installGoTar(goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("Failed to install Go toolkit, error: %s", err)
 	}
 	if err := os.Remove(goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("Failed to remove the downloaded Go archive (path: %s), error: %s", goArchiveDownloadPath, err)
 	}
-	log.Println("=> Installing [DONE]")
+	log.Print("=> Installing [DONE]")
 
 	return nil
 }

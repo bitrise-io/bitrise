@@ -14,7 +14,7 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 	case output.FormatRaw:
 		out, err := tools.StepmanRawStepLibStepInfo(collectionURI, id, version)
 		if out != "" {
-			log.Println("Step info:")
+			log.Print("Step info:")
 			log.Printf("%s", out)
 		}
 		return err
@@ -23,7 +23,7 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
-		log.Println(outStr)
+		log.Print(outStr)
 		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
@@ -36,7 +36,7 @@ func printLocalStepInfo(pth, format string) error {
 	case output.FormatRaw:
 		out, err := tools.StepmanRawLocalStepInfo(pth)
 		if out != "" {
-			log.Println("Step info:")
+			log.Print("Step info:")
 			log.Printf("%s", out)
 		}
 		return err
@@ -45,7 +45,7 @@ func printLocalStepInfo(pth, format string) error {
 		if err != nil {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
 		}
-		log.Println(outStr)
+		log.Print(outStr)
 		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)

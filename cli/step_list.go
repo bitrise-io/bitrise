@@ -52,7 +52,7 @@ func stepList(c *cli.Context) error {
 	case output.FormatRaw:
 		out, err := tools.StepmanRawStepList(collectionURI)
 		if out != "" {
-			log.Println("Step list:")
+			log.Print("Step list:")
 			log.Printf("%s", out)
 		}
 		if err != nil {
@@ -64,7 +64,7 @@ func stepList(c *cli.Context) error {
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
-		log.Println(outStr)
+		log.Print(outStr)
 		break
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)

@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
-	internallogger "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
@@ -124,7 +123,7 @@ func NewDefaultTracker() Tracker {
 	//logger := log.DefaultLogger
 
 	logger := log.NewLogger()
-	logger.EnableDebugLog(internallogger.IsDebugLogEnabled())
+	logger.EnableDebugLog(configs.IsDebugMode)
 
 	tracker := analytics.NewDefaultSyncTracker(logger)
 	if stateChecker.UseAsync() {

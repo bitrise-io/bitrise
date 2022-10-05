@@ -3,13 +3,14 @@ package cli
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 
 	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -179,7 +180,7 @@ func share(c *cli.Context) {
 	b.NewLine()
 	b.Plain("6. ").Plain(GuideTextForFinish()).NewLine()
 	b.NewLine()
-	log.Printf(b.String())
+	fmt.Printf(b.String())
 }
 
 func getShareFilePath() string {

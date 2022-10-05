@@ -1,83 +1,73 @@
 package logger
 
-import "fmt"
+import (
+	"io"
+	"time"
+)
 
-// Debug ...
-func Debug(args ...interface{}) {
-	DefaultLogger.Debug(args...)
-}
+var globalLogger Logger
 
-// Debugf ...
-func Debugf(format string, args ...interface{}) {
-	DefaultLogger.Debugf(format, args...)
-}
-
-// Info ...
-func Info(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, InfoLevel, fmt.Sprint(args...))
-}
-
-// Infof ...
-func Infof(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, InfoLevel, fmt.Sprintf(format, args...))
-}
-
-// Done ...
-func Done(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, DoneLevel, fmt.Sprint(args...))
-}
-
-// Donef ...
-func Donef(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, DoneLevel, fmt.Sprintf(format, args...))
-}
-
-// Warn ...
-func Warn(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, WarnLevel, fmt.Sprint(args...))
-}
-
-// Warnf ...
-func Warnf(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, WarnLevel, fmt.Sprintf(format, args...))
+// InitGlobalLogger ...
+func InitGlobalLogger(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
+	globalLogger = NewLogger(t, producer, out, debugLogEnabled, timeProvider)
 }
 
 // Error ...
 func Error(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, ErrorLevel, fmt.Sprint(args...))
+	globalLogger.Error(args...)
 }
 
 // Errorf ...
 func Errorf(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, ErrorLevel, fmt.Sprintf(format, args...))
+	globalLogger.Errorf(format, args...)
 }
 
-// Fatal ...
-func Fatal(args ...interface{}) {
-	Error(args...)
+// Warn ...
+func Warn(args ...interface{}) {
+	globalLogger.Warn(args...)
 }
 
-// Fatalf ...
-func Fatalf(format string, args ...interface{}) {
-	Errorf(format, args...)
+// Warnf ...
+func Warnf(format string, args ...interface{}) {
+	globalLogger.Warnf(format, args...)
+}
+
+// Info ...
+func Info(args ...interface{}) {
+	globalLogger.Info(args...)
+}
+
+// Infof ...
+func Infof(format string, args ...interface{}) {
+	globalLogger.Infof(format, args...)
+}
+
+// Done ...
+func Done(args ...interface{}) {
+	globalLogger.Done(args...)
+}
+
+// Donef ...
+func Donef(format string, args ...interface{}) {
+	globalLogger.Donef(format, args...)
 }
 
 // Print ...
 func Print(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprint(args...))
+	globalLogger.Print(args...)
 }
 
 // Printf ...
 func Printf(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprintf(format, args...))
+	globalLogger.Printf(format, args...)
 }
 
-// Println ...
-func Println(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprint(args...))
+// Debug ...
+func Debug(args ...interface{}) {
+	globalLogger.Debug(args...)
 }
 
-// IsDebugLogEnabled ...
-func IsDebugLogEnabled() bool {
-	return DefaultLogger.IsDebugLogEnabled()
+// Debugf ...
+func Debugf(format string, args ...interface{}) {
+	globalLogger.Debugf(format, args...)
 }

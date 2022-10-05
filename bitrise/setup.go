@@ -96,7 +96,7 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
 	}
 
-	log.Println()
+	log.Print()
 	log.Donef("All the required tools are installed! We're ready to rock!!")
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
@@ -107,7 +107,7 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 }
 
 func doSetupToolkits() error {
-	log.Println()
+	log.Print()
 	log.Infof("Checking Bitrise Toolkits...")
 
 	coreToolkits := toolkits.AllSupportedToolkits()
@@ -141,7 +141,7 @@ func doSetupToolkits() error {
 }
 
 func doSetupPlugins() error {
-	log.Println()
+	log.Print()
 	log.Infof("Checking Bitrise Plugins...")
 
 	for pluginName, pluginDependency := range PluginDependencyMap {
@@ -154,7 +154,7 @@ func doSetupPlugins() error {
 }
 
 func doSetupBitriseCoreTools() error {
-	log.Println()
+	log.Print()
 	log.Infof("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
@@ -169,7 +169,7 @@ func doSetupBitriseCoreTools() error {
 }
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
-	log.Println()
+	log.Print()
 	log.Infof("Doing OS X specific setup")
 	log.Printf("Checking required tools...")
 

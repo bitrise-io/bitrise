@@ -88,7 +88,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 		}
 
 		if len(plugin.Description) > 0 {
-			log.Println(removeEmptyNewLines(plugin.Description))
+			log.Print(removeEmptyNewLines(plugin.Description))
 		}
 	}
 
@@ -106,7 +106,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 
 	progInstallPth, err := utils.CheckProgramInstalledPath("brew")
 	if err != nil {
-		log.Println()
+		log.Print()
 		log.Warnf("It seems that Homebrew is not installed on your system.")
 		log.Infof("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
 		log.Infof("You should be able to install brew by copying this command and running it in your Terminal:")
@@ -129,7 +129,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		})
 		if err != nil {
-			log.Println("")
+			log.Print("")
 			log.Warnf("brew doctor returned an error:")
 			log.Warnf("%s", doctorOutput)
 			return errors.New("command failed: brew doctor")

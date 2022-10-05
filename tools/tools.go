@@ -433,7 +433,7 @@ func IsBuiltInFlagTypeKey(env string) bool {
 }
 
 func logLevel() string {
-	if log.IsDebugLogEnabled() {
+	if configs.IsDebugMode {
 		return "debug"
 	}
 	return "info"

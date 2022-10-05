@@ -59,10 +59,10 @@ var runCommand = cli.Command{
 }
 
 func printAboutUtilityWorkflowsText() {
-	log.Println("Note about utility workflows:")
-	log.Println(" Utility workflow names start with '_' (example: _my_utility_workflow).")
-	log.Println(" These workflows can't be triggered directly, but can be used by other workflows")
-	log.Println(" in the before_run and after_run lists.")
+	log.Print("Note about utility workflows:")
+	log.Print(" Utility workflow names start with '_' (example: _my_utility_workflow).")
+	log.Print(" These workflows can't be triggered directly, but can be used by other workflows")
+	log.Print(" in the before_run and after_run lists.")
 }
 
 func printAvailableWorkflows(config models.BitriseDataModel) {
@@ -80,39 +80,39 @@ func printAvailableWorkflows(config models.BitriseDataModel) {
 	sort.Strings(utilityWorkflowNames)
 
 	if len(workflowNames) > 0 {
-		log.Println("The following workflows are available:")
+		log.Print("The following workflows are available:")
 		for _, wfName := range workflowNames {
-			log.Println(" * " + wfName)
+			log.Print(" * " + wfName)
 		}
 
-		log.Println()
-		log.Println("You can run a selected workflow with:")
-		log.Println("$ bitrise run WORKFLOW-ID")
-		log.Println()
+		log.Print()
+		log.Print("You can run a selected workflow with:")
+		log.Print("$ bitrise run WORKFLOW-ID")
+		log.Print()
 	} else {
-		log.Println("No workflows are available!")
+		log.Print("No workflows are available!")
 	}
 
 	if len(utilityWorkflowNames) > 0 {
-		log.Println()
-		log.Println("The following utility workflows are defined:")
+		log.Print()
+		log.Print("The following utility workflows are defined:")
 		for _, wfName := range utilityWorkflowNames {
-			log.Println(" * " + wfName)
+			log.Print(" * " + wfName)
 		}
 
-		log.Println()
+		log.Print()
 		printAboutUtilityWorkflowsText()
-		log.Println()
+		log.Print()
 	}
 }
 
 func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string, tracker analytics.Tracker) {
 	if workflowToRunID == "" {
-		log.Fatal("No workflow id specified")
+		failf("No workflow id specified")
 	}
 
 	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
-		log.Fatalf("Setup failed, error: %s", err)
+		failf("Setup failed, error: %s", err)
 	}
 
 	startTime := time.Now()
@@ -121,7 +121,7 @@ func runAndExit(bitriseConfig models.BitriseDataModel, inventoryEnvironments []e
 	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments, tracker); err != nil {
 		tracker.Wait()
 		logExit(1)
-		log.Fatalf("Failed to run workflow, error: %s", err)
+		failf("Failed to run workflow, error: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		tracker.Wait()
 		exitCode := buildRunResults.ExitCode()
@@ -148,9 +148,9 @@ func logExit(exitCode int) {
 		colorMessage = colorstring.Red(message)
 	}
 	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
-	log.Println()
+	log.Print()
 	log.Print(colorMessage)
-	log.Println()
+	log.Print()
 }
 
 func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
@@ -244,7 +244,7 @@ func run(c *cli.Context) error {
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.InventoryBase64Data, runParams.InventoryPath)
 	if err != nil {
-		log.Fatalf("Failed to create inventory, error: %s", err)
+		failf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
@@ -253,7 +253,7 @@ func run(c *cli.Context) error {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, error: %s", err)
+		failf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Workflow id validation
@@ -261,7 +261,7 @@ func run(c *cli.Context) error {
 		// no workflow specified
 		//  list all the available ones and then exit
 		log.Error("No workflow specified!")
-		log.Println()
+		log.Print()
 		printAvailableWorkflows(bitriseConfig)
 		os.Exit(1)
 	}
@@ -269,7 +269,7 @@ func run(c *cli.Context) error {
 		// util workflow specified
 		//  print about util workflows and then exit
 		log.Error("Utility workflows can't be triggered directly")
-		log.Println()
+		log.Print()
 		printAboutUtilityWorkflowsText()
 		os.Exit(1)
 	}
@@ -279,38 +279,38 @@ func run(c *cli.Context) error {
 	// Main
 	enabledFiltering, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check Secret Filtering mode, error: %s", err)
+		failf("Failed to check Secret Filtering mode, error: %s", err)
 	}
 
 	if err := registerSecretFiltering(enabledFiltering); err != nil {
-		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+		failf("Failed to register Secret Filtering mode, error: %s", err)
 	}
 
 	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check Secret Envs Filtering mode, error: %s", err)
+		failf("Failed to check Secret Envs Filtering mode, error: %s", err)
 	}
 
 	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
-		log.Fatalf("Failed to register Secret Envs Filtering mode, error: %s", err)
+		failf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check PR mode, error: %s", err)
+		failf("Failed to check PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register PR mode, error: %s", err)
+		failf("Failed to register PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check CI mode, error: %s", err)
+		failf("Failed to check CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register CI mode, error: %s", err)
+		failf("Failed to register CI mode, error: %s", err)
 	}
 
 	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)

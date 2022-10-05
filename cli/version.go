@@ -26,7 +26,7 @@ func printVersionCmd(c *cli.Context) error {
 	fullVersion := c.Bool("full")
 
 	if err := output.ConfigureOutputFormat(c); err != nil {
-		log.Fatalf("Failed to configure output format, error: %s", err)
+		failf("Failed to configure output format, error: %s", err)
 	}
 
 	versionOutput := VersionOutputModel{
@@ -50,10 +50,10 @@ go: %s
 build number: %s
 commit: %s
 `, versionOutput.Version, versionOutput.FormatVersion, versionOutput.OS, versionOutput.GO, versionOutput.BuildNumber, versionOutput.Commit)
-			log.Println(versionStr)
+			log.Print(versionStr)
 		} else {
 			versionStr := fmt.Sprintf("%s", versionOutput.Version)
-			log.Println(versionStr)
+			log.Print(versionStr)
 		}
 	} else {
 		output.Print(versionOutput, output.Format)

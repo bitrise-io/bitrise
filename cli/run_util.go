@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
+	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -423,8 +425,10 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	logWriter := log.NewLogWriter(log.Step, func(producer log.Producer, level log.Level, message string) {
-		log.DefaultLogger.LogMessage(producer, level, message)
+	// todo: handle output format + debug level
+	logger := corelog.NewLogger(corelog.JSONLogger, os.Stdout, time.Now)
+	logWriter := logwriter.NewLogWriter(corelog.BitriseCLI, func(producer corelog.Producer, level corelog.Level, message string) {
+		logger.LogMessage(producer, level, message)
 	})
 
 	return tools.EnvmanRun(
@@ -451,7 +455,7 @@ func runStep(
 	// with a Toolkit+Deps
 	if err := retry.Times(2).Try(func(attempt uint) error {
 		if attempt > 0 {
-			log.Println()
+			log.Print()
 			log.Warn("Installing Step dependency failed, retrying ...")
 		}
 

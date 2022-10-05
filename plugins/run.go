@@ -1,9 +1,11 @@
 package plugins
 
 import (
+	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
@@ -11,6 +13,7 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pathutil"
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
+	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 )
 
 //=======================================
@@ -77,7 +80,7 @@ func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	log.Warnf("")
 	log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
 	log.Printf("Run command to update plugin:")
-	log.Println()
+	log.Print()
 	log.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
@@ -97,7 +100,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 			return err
 		}
 
-		log.Println()
+		log.Print()
 	}
 
 	// Append common data to plugin iputs
@@ -151,8 +154,10 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	logWriter := log.NewLogWriter(log.CLI, func(producer log.Producer, level log.Level, message string) {
-		log.DefaultLogger.LogMessage(producer, level, message)
+	// todo: handle output format + debug level
+	logger := corelog.NewLogger(corelog.JSONLogger, os.Stdout, time.Now)
+	logWriter := logwriter.NewLogWriter(corelog.BitriseCLI, func(producer corelog.Producer, level corelog.Level, message string) {
+		logger.LogMessage(producer, level, message)
 	})
 
 	_, err = tools.EnvmanRun(

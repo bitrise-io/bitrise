@@ -541,12 +541,12 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 func PrintRunningStepHeader(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int) {
 	sep := fmt.Sprintf("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
-	log.Println(sep)
-	log.Println(getRunningStepHeaderMainSection(stepInfo, idx))
-	log.Println(sep)
-	log.Println(getRunningStepHeaderSubSection(step, stepInfo))
-	log.Println(sep)
-	log.Println("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
+	log.Print(sep)
+	log.Print(getRunningStepHeaderMainSection(stepInfo, idx))
+	log.Print(sep)
+	log.Print(getRunningStepHeaderSubSection(step, stepInfo))
+	log.Print(sep)
+	log.Print("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
 }
 
 // PrintRunningStepFooter ..
@@ -556,31 +556,31 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
 	sep := fmt.Sprintf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
-	log.Println("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
+	log.Print("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
 
-	log.Println(sep)
-	log.Println(getRunningStepFooterMainSection(stepRunResult))
-	log.Println(sep)
+	log.Print(sep)
+	log.Print(getRunningStepFooterMainSection(stepRunResult))
+	log.Print(sep)
 	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 		if footerSubSection != "" {
-			log.Println(footerSubSection)
-			log.Println(sep)
+			log.Print(footerSubSection)
+			log.Print(sep)
 		}
 	}
 
 	if !isLastStepInWorkflow {
-		log.Println()
-		log.Println(strings.Repeat(" ", 42) + "▼")
-		log.Println()
+		log.Print()
+		log.Print(strings.Repeat(" ", 42) + "▼")
+		log.Print()
 	}
 }
 
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
-	log.Println()
+	log.Print()
 	log.Printf("%s %s", colorstring.Blue("Switching to workflow:"), title)
-	log.Println()
+	log.Print()
 }
 
 // PrintSummary ...
@@ -589,8 +589,8 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	timeBoxWidth := len(" time (s) ")
 	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
 
-	log.Println()
-	log.Println()
+	log.Print()
+	log.Print()
 	log.Printf("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 	whitespaceWidth := (stepRunSummaryBoxWidthInChars - 2 - len("bitrise summary ")) / 2
 	log.Printf("|%sbitrise summary %s|", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
@@ -604,12 +604,12 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	tmpTime := time.Time{}
 	for _, stepRunResult := range orderedResults {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
-		log.Println(getRunningStepFooterMainSection(stepRunResult))
+		log.Print(getRunningStepFooterMainSection(stepRunResult))
 		log.Printf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 		if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
 			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 			if footerSubSection != "" {
-				log.Println(footerSubSection)
+				log.Print(footerSubSection)
 				log.Printf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 			}
 		}
@@ -631,5 +631,5 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	log.Printf("| Total runtime: %s%s|", runTimeStr, strings.Repeat(" ", whitespaceWidth))
 	log.Printf("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
 
-	log.Println()
+	log.Print()
 }

@@ -1,4 +1,4 @@
-package logger
+package corelog
 
 type logMessage struct {
 	Timestamp   string `json:"timestamp"`
