@@ -424,7 +424,7 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
+	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.Step, os.Stdout, configs.IsDebugMode, time.Now)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,

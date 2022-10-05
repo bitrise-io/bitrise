@@ -14,7 +14,6 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	utilsLog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
@@ -147,7 +146,7 @@ func logExit(exitCode int) {
 		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
 		colorMessage = colorstring.Red(message)
 	}
-	utilsLog.RInfof("bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
+	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, message)
 	log.Print()
 	log.Print(colorMessage)
 	log.Print()
