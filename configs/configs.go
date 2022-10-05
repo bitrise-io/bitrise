@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"os"
 	"time"
 
