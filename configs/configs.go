@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"os"
 	"time"
 
@@ -36,6 +37,8 @@ var (
 
 	// NoOutputTimeout is the timeout after Steps are aborted, when no output is received
 	NoOutputTimeout time.Duration
+
+	LoggerType = log.ConsoleLogger
 )
 
 // ---------------------------

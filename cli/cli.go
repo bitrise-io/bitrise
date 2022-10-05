@@ -31,18 +31,6 @@ func before(c *cli.Context) error {
 
 	initHelpAndVersionFlags()
 
-	// Log level
-	// If log level defined - use it
-	// todo: remove log level flag
-	//if c.String(LogLevelKey) == "" && configs.IsDebugMode {
-	//	// if no Log Level defined and we're in Debug Mode - set loglevel to debug
-	//	log.Warn("=> LogLevel set to debug")
-	//	log.SetEnableDebugLog(true)
-	//	// todo: set config.IsdebugLogEnbled
-	//	configs.IsDebugMode = true
-	//	log.InitGlobalLogger()
-	//}
-
 	// CI Mode check
 	if c.Bool(CIKey) {
 		// if CI mode indicated make sure we set the related env
@@ -150,7 +138,7 @@ func loggerParameters(arguments []string) (bool, string, bool) {
 func Run() {
 	isRunCommand, format, isDebug := loggerParameters(os.Args[1:])
 	//isRunCommand, format, isDebug := parseParams(os.Args[1:])
-	if isDebug == false {
+	if !isDebug {
 		isDebug = os.Getenv(configs.DebugModeEnvKey) == "true"
 	}
 
@@ -158,6 +146,7 @@ func Run() {
 	if isRunCommand && format != "" {
 		loggerType = log.JSONLogger
 	}
+	configs.LoggerType = loggerType
 
 	// Global logger needs to be initialised before using any log function
 	log.InitGlobalLogger(loggerType, log.BitriseCLI, os.Stdout, isDebug, time.Now)

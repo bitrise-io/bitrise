@@ -15,10 +15,6 @@ const (
 	// DebugModeKey ...
 	DebugModeKey = "debug"
 
-	// LogLevelKey ...
-	LogLevelKey      = "loglevel"
-	logLevelKeyShort = "l"
-
 	// VersionKey ...
 	VersionKey      = "version"
 	versionKeyShort = "v"
@@ -78,11 +74,6 @@ const (
 
 var (
 	// App flags
-	flLogLevel = cli.StringFlag{
-		Name:   LogLevelKey + ", " + logLevelKeyShort,
-		Usage:  "Log level (options: debug, info, warn, error, fatal, panic).",
-		EnvVar: configs.LogLevelEnvKey,
-	}
 	flDebugMode = cli.BoolFlag{
 		Name:   DebugModeKey,
 		Usage:  "If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug.",
@@ -102,7 +93,6 @@ var (
 		Usage: "If true bitrise runs in pull request mode.",
 	}
 	flags = []cli.Flag{
-		flLogLevel,
 		flDebugMode,
 		flTool,
 		flPRMode,

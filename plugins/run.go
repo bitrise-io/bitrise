@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -154,11 +153,8 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	// todo: handle output format + debug level
-	logger := corelog.NewLogger(corelog.JSONLogger, os.Stdout, time.Now)
-	logWriter := logwriter.NewLogWriter(corelog.BitriseCLI, func(producer corelog.Producer, level corelog.Level, message string) {
-		logger.LogMessage(producer, level, message)
-	})
+	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
+	errWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
 
 	_, err = tools.EnvmanRun(
 		pluginEnvstorePath,
@@ -168,8 +164,8 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		-1,
 		nil,
 		input,
-		logWriter.Stdout,
-		logWriter.Stderr)
+		&logWriter,
+		&errWriter)
 
 	if err != nil {
 		return err

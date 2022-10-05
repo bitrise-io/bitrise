@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 	"io/ioutil"
 	"os"
@@ -425,11 +424,8 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	// todo: handle output format + debug level
-	logger := corelog.NewLogger(corelog.JSONLogger, os.Stdout, time.Now)
-	logWriter := logwriter.NewLogWriter(corelog.BitriseCLI, func(producer corelog.Producer, level corelog.Level, message string) {
-		logger.LogMessage(producer, level, message)
-	})
+	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
+	errWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,
@@ -439,8 +435,8 @@ func executeStep(
 		noOutputTimeout,
 		secrets,
 		nil,
-		logWriter.Stdout,
-		logWriter.Stderr)
+		&logWriter,
+		&errWriter)
 }
 
 func runStep(

@@ -2,41 +2,48 @@ package logwriter
 
 import (
 	"io"
+	"time"
 
 	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 )
 
-type outputInterceptor struct {
-	callback func(text string)
-}
+type LoggerType corelog.LoggerType
 
-func newOutputInterceptor(callback func(text string)) outputInterceptor {
-	return outputInterceptor{
-		callback: callback,
-	}
-}
+const (
+	JSONLogger    LoggerType = LoggerType(corelog.JSONLogger)
+	ConsoleLogger LoggerType = LoggerType(corelog.ConsoleLogger)
+)
 
-func (o outputInterceptor) Write(p []byte) (n int, err error) {
-	o.callback(string(p))
+type Producer corelog.Producer
 
-	return len(p), nil
-}
+const (
+	BitriseCLI Producer = Producer(corelog.BitriseCLI)
+	Step       Producer = Producer(corelog.Step)
+)
 
 // LogWriter ...
 type LogWriter struct {
-	Stdout io.Writer
-	Stderr io.Writer
+	logger          corelog.Logger
+	producer        corelog.Producer
+	debugLogEnabled bool
 }
 
 // NewLogWriter ...
-func NewLogWriter(producer corelog.Producer, callback func(producer corelog.Producer, level corelog.Level, message string)) LogWriter {
+func NewLogWriter(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) LogWriter {
+	logger := corelog.NewLogger(corelog.LoggerType(t), out, timeProvider)
 	return LogWriter{
-		Stdout: newOutputInterceptor(func(text string) {
-			level, message := convertColoredString(text)
-			callback(producer, level, message)
-		}),
-		Stderr: newOutputInterceptor(func(text string) {
-			callback(producer, corelog.ErrorLevel, text)
-		}),
+		logger:          logger,
+		producer:        corelog.Producer(producer),
+		debugLogEnabled: debugLogEnabled,
 	}
+}
+
+func (w LogWriter) Write(p []byte) (n int, err error) {
+	level, message := convertColoredString(string(p))
+	if !w.debugLogEnabled && level == corelog.DebugLevel {
+		return len(p), nil
+	}
+
+	w.logger.LogMessage(w.producer, level, message)
+	return len(p), nil
 }
