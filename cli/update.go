@@ -219,7 +219,7 @@ func update(c *cli.Context) error {
 	log.Infof("Updating Bitrise CLI...")
 
 	versionFlag := c.String("version")
-	fmt.Printf("Current version: %s\n", version.VERSION)
+	log.Printf("Current version: %s\n", version.VERSION)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
@@ -271,9 +271,9 @@ func update(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Printf("Updating to version: %s", versionFlag)
+	log.Printf("Updating to version: %s", versionFlag)
 
-	fmt.Println("Downloading Bitrise CLI...")
+	log.Print("Downloading Bitrise CLI...")
 	if err := download(versionFlag); err != nil {
 		return err
 	}

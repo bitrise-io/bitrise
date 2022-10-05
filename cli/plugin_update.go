@@ -83,12 +83,12 @@ func pluginUpdate(c *cli.Context) error {
 			}
 
 			if len(plugin.Description) > 0 {
-				fmt.Println()
+				log.Print()
 				log.Infof("Description:")
-				fmt.Println(plugin.Description)
+				log.Print(plugin.Description)
 			}
 
-			fmt.Println()
+			log.Print()
 			log.Donef("Plugin (%s) with version (%s) installed ", plugin.Name, version)
 		} else {
 			log.Donef("No new version available")

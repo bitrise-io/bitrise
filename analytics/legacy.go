@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"net/http"
 	"time"
 )
@@ -34,10 +35,10 @@ func LogMessage(logLevel string, stepID string, tag string, data map[string]inte
 	}
 
 	if v, ok := e.Data["step_id"]; ok {
-		fmt.Printf("internal logger: data.step_id (%s) will be overriden with (%s) ", v, stepID)
+		log.Printf("internal logger: data.step_id (%s) will be overriden with (%s) ", v, stepID)
 	}
 	if v, ok := e.Data["tag"]; ok {
-		fmt.Printf("internal logger: data.tag (%s) will be overriden with (%s) ", v, tag)
+		log.Printf("internal logger: data.tag (%s) will be overriden with (%s) ", v, tag)
 	}
 
 	e.Data["step_id"] = stepID

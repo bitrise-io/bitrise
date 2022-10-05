@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"io"
 	"os"
 )
@@ -39,7 +40,7 @@ func NewDefaultRawLogger() RawLogger {
 // Print ...
 func (l RawLogger) Print(f Formatable) {
 	if _, err := fmt.Fprintln(l.writer, f.String()); err != nil {
-		fmt.Printf("failed to print message: %s, error: %s\n", f.String(), err)
+		log.Printf("failed to print message: %s, error: %s\n", f.String(), err)
 	}
 }
 
@@ -65,6 +66,6 @@ func NewDefaultJSONLoger() JSONLoger {
 // Print ...
 func (l JSONLoger) Print(f Formatable) {
 	if _, err := fmt.Fprint(l.writer, f.JSON()); err != nil {
-		fmt.Printf("failed to print message: %s, error: %s\n", f.JSON(), err)
+		log.Printf("failed to print message: %s, error: %s\n", f.JSON(), err)
 	}
 }
