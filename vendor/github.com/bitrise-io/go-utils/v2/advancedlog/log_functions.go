@@ -2,10 +2,18 @@ package logger
 
 import (
 	"io"
+	"os"
 	"time"
 )
 
 var globalLogger Logger
+
+func getGlobalLogger() Logger {
+	if globalLogger == nil {
+		globalLogger = NewLogger(ConsoleLogger, BitriseCLI, os.Stdout, false, time.Now)
+	}
+	return globalLogger
+}
 
 // InitGlobalLogger ...
 func InitGlobalLogger(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
@@ -14,60 +22,60 @@ func InitGlobalLogger(t LoggerType, producer Producer, out io.Writer, debugLogEn
 
 // Error ...
 func Error(args ...interface{}) {
-	globalLogger.Error(args...)
+	getGlobalLogger().Error(args...)
 }
 
 // Errorf ...
 func Errorf(format string, args ...interface{}) {
-	globalLogger.Errorf(format, args...)
+	getGlobalLogger().Errorf(format, args...)
 }
 
 // Warn ...
 func Warn(args ...interface{}) {
-	globalLogger.Warn(args...)
+	getGlobalLogger().Warn(args...)
 }
 
 // Warnf ...
 func Warnf(format string, args ...interface{}) {
-	globalLogger.Warnf(format, args...)
+	getGlobalLogger().Warnf(format, args...)
 }
 
 // Info ...
 func Info(args ...interface{}) {
-	globalLogger.Info(args...)
+	getGlobalLogger().Info(args...)
 }
 
 // Infof ...
 func Infof(format string, args ...interface{}) {
-	globalLogger.Infof(format, args...)
+	getGlobalLogger().Infof(format, args...)
 }
 
 // Done ...
 func Done(args ...interface{}) {
-	globalLogger.Done(args...)
+	getGlobalLogger().Done(args...)
 }
 
 // Donef ...
 func Donef(format string, args ...interface{}) {
-	globalLogger.Donef(format, args...)
+	getGlobalLogger().Donef(format, args...)
 }
 
 // Print ...
 func Print(args ...interface{}) {
-	globalLogger.Print(args...)
+	getGlobalLogger().Print(args...)
 }
 
 // Printf ...
 func Printf(format string, args ...interface{}) {
-	globalLogger.Printf(format, args...)
+	getGlobalLogger().Printf(format, args...)
 }
 
 // Debug ...
 func Debug(args ...interface{}) {
-	globalLogger.Debug(args...)
+	getGlobalLogger().Debug(args...)
 }
 
 // Debugf ...
 func Debugf(format string, args ...interface{}) {
-	globalLogger.Debugf(format, args...)
+	getGlobalLogger().Debugf(format, args...)
 }

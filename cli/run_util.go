@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,6 +27,7 @@ import (
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
+	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -425,7 +425,6 @@ func executeStep(
 	}
 
 	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
-	errWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,
@@ -436,7 +435,7 @@ func executeStep(
 		secrets,
 		nil,
 		&logWriter,
-		&errWriter)
+		&logWriter)
 }
 
 func runStep(

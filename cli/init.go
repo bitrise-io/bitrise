@@ -5,7 +5,6 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
-	utillog "github.com/bitrise-io/go-utils/log"
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
@@ -20,8 +19,8 @@ var initCmd = cli.Command{
 			// If the plugin is not installed yet run the bitrise setup first and try it again
 			perr, ok := err.(plugins.NotInstalledError)
 			if ok {
-				utillog.Warnf(perr.Error())
-				utillog.Printf("Runing setup to install the default plugins")
+				log.Warn(perr)
+				log.Print("Running setup to install the default plugins")
 				log.Print()
 
 				if err := bitrise.RunSetup(version.VERSION, false, false); err != nil {

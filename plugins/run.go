@@ -154,7 +154,6 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 	}
 
 	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
-	errWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
 
 	_, err = tools.EnvmanRun(
 		pluginEnvstorePath,
@@ -165,7 +164,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		nil,
 		input,
 		&logWriter,
-		&errWriter)
+		&logWriter)
 
 	if err != nil {
 		return err

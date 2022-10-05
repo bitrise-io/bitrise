@@ -58,6 +58,7 @@ func (h *hangDetector) Start() {
 				{
 					count := atomic.AddUint64(&h.ticks, 1)
 					if count == h.heartbeatAtTick {
+						// todo: should we keep adding the timestamp prefix here?
 						log.Printf("No output received for a while. Bitrise CLI is still active.")
 					}
 					if count >= h.tickLimit {

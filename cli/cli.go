@@ -27,7 +27,6 @@ func before(c *cli.Context) error {
 		return err will print app's help also,
 		use log.Fatal to avoid print help.
 	*/
-	//log.SetupLogger(c.String(log.OutputFormatKey), c.Bool(DebugModeKey))
 
 	initHelpAndVersionFlags()
 

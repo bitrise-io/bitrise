@@ -129,7 +129,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		})
 		if err != nil {
-			log.Print("")
+			log.Print()
 			log.Warnf("brew doctor returned an error:")
 			log.Warnf("%s", doctorOutput)
 			return errors.New("command failed: brew doctor")
