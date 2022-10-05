@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/bitrise-io/colorstring"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -12,7 +14,7 @@ func printFinishAudit(share ShareModel, toolMode bool) {
 	b.Green("your step (%s@%s) is valid", share.StepID, share.StepTag).NewLine()
 	b.NewLine()
 	b.Plain(GuideTextForShareFinish(toolMode))
-	log.Println(b.String())
+	fmt.Println(b.String())
 }
 
 func shareAudit(c *cli.Context) error {
@@ -26,19 +28,19 @@ func shareAudit(c *cli.Context) error {
 	}
 	log.Donef("all inputs are valid")
 
-	log.Println()
+	fmt.Println()
 	log.Infof("Auditing the StepLib...")
 	_, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		failf("No route found for collectionURI (%s)", share.Collection)
+		fail("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	if err := auditStepLibBeforeSharePullRequest(share.Collection); err != nil {
-		failf("Audit Step Collection failed, err: %s", err)
+		fail("Audit Step Collection failed, err: %s", err)
 	}
 
 	printFinishAudit(share, toolMode)
-	log.Println()
+	fmt.Println()
 
 	return nil
 }
