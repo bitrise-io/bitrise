@@ -263,8 +263,8 @@ func StepmanShareStart(collection string) error {
 // --- Envman
 
 // EnvmanInitAtPath ...
-func EnvmanInitAtPath(envStorePth string) error {
-	return envman.InitAtPath(envStorePth)
+func EnvmanInitAtPath(envStorePth string, clear bool) error {
+	return envman.InitEnvStore(envStorePth, clear)
 }
 
 // EnvmanAdd ...

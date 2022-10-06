@@ -618,8 +618,8 @@ func activateAndRunSteps(
 
 		//
 		// Preparing the step
-		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-			runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
+		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath, true); err != nil {
+			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			continue
 		}
@@ -969,7 +969,7 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
 	}
 
-	if err := tools.EnvmanInitAtPath(configs.OutputEnvstorePath); err != nil {
+	if err := tools.EnvmanInitAtPath(configs.OutputEnvstorePath, false); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to run envman init: %s", err)
 	}
 

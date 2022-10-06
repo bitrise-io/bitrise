@@ -11,13 +11,13 @@ import (
 func initEnvStore(c *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
 	clear := c.Bool(ClearKey)
-	err := Init(CurrentEnvStoreFilePath, clear)
+	err := InitEnvStore(CurrentEnvStoreFilePath, clear)
 	log.Debugln("[ENVMAN] - Initialized")
 	return err
 }
 
-// Init ...
-func Init(envStorePth string, clear bool) error {
+// InitEnvStore ...
+func InitEnvStore(envStorePth string, clear bool) error {
 	if clear {
 		if err := command.RemoveFile(envStorePth); err != nil {
 			return fmt.Errorf("failed to clear path: %s", err)
