@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -11,10 +10,11 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
 )
 
 type buildRunResultCollector struct {

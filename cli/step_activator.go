@@ -12,8 +12,8 @@ import (
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
 )
 
 type stepActivator struct {
@@ -40,7 +40,7 @@ func (a stepActivator) activateStep(
 			return "", "", err
 		}
 
-		log.Debugln("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
+		log.Debug("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 
 		origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
 		if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
