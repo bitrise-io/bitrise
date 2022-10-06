@@ -619,7 +619,7 @@ func activateAndRunSteps(
 		//
 		// Preparing the step
 		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath, true); err != nil {
-			registerStepRunResults(stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
+			runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			continue
 		}
