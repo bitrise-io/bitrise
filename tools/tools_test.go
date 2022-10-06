@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/bitrise-io/envman/models"
+
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -97,17 +99,17 @@ func TestEnvmanJSONPrint(t *testing.T) {
 
 	require.Equal(t, nil, EnvmanInitAtPath(envstorePth, true))
 
-	outStr, err := EnvmanJSONPrint(envstorePth)
+	out, err := EnvmanJSONPrint(envstorePth)
 	require.NoError(t, err)
-	require.NotEqual(t, "", outStr)
+	require.Equal(t, models.EnvsJSONListModel{}, out)
 
 	// Not initialized envstore -- Err should filled, output empty
 	testDirPth, err = pathutil.NormalizedOSTempDirPath("test_env_store")
 	require.NoError(t, err)
 
-	envstorePth = filepath.Join("test_env_store", "envstore.yml")
+	envstorePth = filepath.Join(testDirPth, "envstore.yml")
 
-	outStr, err = EnvmanJSONPrint(envstorePth)
+	out, err = EnvmanJSONPrint(envstorePth)
 	require.NotEqual(t, nil, err)
-	require.Equal(t, "", outStr)
+	require.Nil(t, out)
 }

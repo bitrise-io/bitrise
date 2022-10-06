@@ -450,9 +450,9 @@ func runStep(
 			fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}
 
-	//if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
-	//	return 1, []envmanModels.EnvironmentItemModel{}, err
-	//}
+	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath, true); err != nil {
+		return 1, []envmanModels.EnvironmentItemModel{}, err
+	}
 
 	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
