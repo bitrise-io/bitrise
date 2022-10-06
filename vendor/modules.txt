@@ -1,9 +1,13 @@
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20220401145857-d11e00a5dc55
+# github.com/bitrise-io/envman v0.0.0-20221006071308-ff576505bd7b
 ## explicit
+github.com/bitrise-io/envman/cli
 github.com/bitrise-io/envman/env
+github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
+github.com/bitrise-io/envman/output
+github.com/bitrise-io/envman/version
 # github.com/bitrise-io/go-utils v1.0.2
 ## explicit
 github.com/bitrise-io/go-utils/colorstring

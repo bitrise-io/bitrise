@@ -43,6 +43,11 @@ func (c *Command) SetHangTimeout(timeout time.Duration) {
 	}
 }
 
+// SetEnv sets the command's env list.
+func (c *Command) SetEnv(env []string) {
+	c.cmd.Env = env
+}
+
 // AppendEnv appends and env to the command's env list.
 func (c *Command) AppendEnv(env string) {
 	if c.cmd.Env != nil {
