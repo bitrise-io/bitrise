@@ -95,7 +95,7 @@ func TestEnvmanJSONPrint(t *testing.T) {
 
 	envstorePth := filepath.Join(testDirPth, "envstore.yml")
 
-	require.Equal(t, nil, EnvmanInitAtPath(envstorePth))
+	require.Equal(t, nil, EnvmanInitAtPath(envstorePth, true))
 
 	outStr, err := EnvmanJSONPrint(envstorePth)
 	require.NoError(t, err)
