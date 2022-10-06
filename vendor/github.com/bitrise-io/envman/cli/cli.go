@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/version"
@@ -12,6 +13,8 @@ import (
 )
 
 const (
+	defaultEnvStoreName = ".envstore.yml"
+
 	helpTemplate = `
 NAME: {{.Name}} - {{.Usage}}
 
@@ -48,7 +51,7 @@ func before(c *cli.Context) error {
 	// we need to decide which path will be used by envman
 	CurrentEnvStoreFilePath = c.String(PathKey)
 	if CurrentEnvStoreFilePath == "" {
-		pth, err := DefaultEnvStorePath()
+		pth, err := filepath.Abs(path.Join("./", defaultEnvStoreName))
 		if err != nil {
 			log.Fatal("[ENVMAN] - Failed to set envman work path in current dir:", err)
 		}

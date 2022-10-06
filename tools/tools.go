@@ -339,18 +339,9 @@ func EnvmanRun(envStorePth,
 	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
-	envmanEnvs, err := envman.ReadEnvs(envStorePth)
+	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &env.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, err
-	}
-
-	result, err := env.GetDeclarationsSideEffects(envmanEnvs, &env.DefaultEnvironmentSource{})
-	if err != nil {
-		return 1, err
-	}
-	var expandedEnvs []string
-	for key, value := range result.ResultEnvironment {
-		expandedEnvs = append(expandedEnvs, key+"="+value)
 	}
 
 	var inReader io.Reader
@@ -383,7 +374,7 @@ func EnvmanRun(envStorePth,
 	cmd.SetTimeout(timeout)
 	cmd.SetHangTimeout(noOutputTimeout)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
-	cmd.SetEnv(append(expandedEnvs, "PWD="+workDirPth))
+	cmd.SetEnv(append(envs, "PWD="+workDirPth))
 
 	err = cmd.Start()
 

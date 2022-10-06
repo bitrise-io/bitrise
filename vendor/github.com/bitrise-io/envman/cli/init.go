@@ -24,7 +24,7 @@ func InitEnvStore(envStorePth string, clear bool) error {
 		}
 	}
 
-	if err := InitAtPath(envStorePth); err != nil {
+	if err := initAtPath(envStorePth); err != nil {
 		return fmt.Errorf("failed to init at path: %s", err)
 	}
 

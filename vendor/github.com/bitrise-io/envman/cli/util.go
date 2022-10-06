@@ -2,9 +2,6 @@ package cli
 
 import (
 	"errors"
-	"os"
-	"path"
-	"path/filepath"
 
 	"github.com/bitrise-io/envman/env"
 	"github.com/bitrise-io/envman/models"
@@ -20,8 +17,6 @@ var (
 
 	// ToolMode ...
 	ToolMode bool
-
-	defaultEnvStoreName = ".envstore.yml"
 )
 
 // -------------------
@@ -216,8 +211,7 @@ func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
 	return fileutil.WriteBytesToFile(pth, bytes)
 }
 
-// InitAtPath ...
-func InitAtPath(pth string) error {
+func initAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exist {
@@ -254,28 +248,25 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 	return ParseEnvsYML(bytes)
 }
 
-func osEnviron(newEnvs []models.EnvironmentItemModel) ([]string, error) {
-	result, err := env.GetDeclarationsSideEffects(newEnvs, &env.DefaultEnvironmentSource{})
+func evaluateEnvs(newEnvs []models.EnvironmentItemModel, envSource env.EnvironmentSource) ([]string, error) {
+	result, err := env.GetDeclarationsSideEffects(newEnvs, envSource)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, command := range result.CommandHistory {
-		if err := env.ExecuteCommand(command); err != nil {
-			return nil, err
-		}
+	var envs []string
+	for key, value := range result.ResultEnvironment {
+		envs = append(envs, key+"="+value)
 	}
-
-	return os.Environ(), nil
+	return envs, nil
 }
 
-// ReadOSEnv ...
-func ReadOSEnv(pth string) ([]string, error) {
-	envs, err := ReadEnvs(pth)
+// ReadAndEvaluateEnvs ...
+func ReadAndEvaluateEnvs(envStorePth string, envSource env.EnvironmentSource) ([]string, error) {
+	envs, err := ReadEnvs(envStorePth)
 	if err != nil {
 		return nil, err
 	}
-	return osEnviron(envs)
+	return evaluateEnvs(envs, envSource)
 }
 
 // ReadEnvsOrCreateEmptyList ...
@@ -283,15 +274,10 @@ func ReadEnvsOrCreateEmptyList(envStorePth string) ([]models.EnvironmentItemMode
 	envModels, err := ReadEnvs(envStorePth)
 	if err != nil {
 		if err.Error() == "No environment variable list found" {
-			err = InitAtPath(envStorePth)
+			err = initAtPath(envStorePth)
 			return []models.EnvironmentItemModel{}, err
 		}
 		return []models.EnvironmentItemModel{}, err
 	}
 	return envModels, nil
-}
-
-// DefaultEnvStorePath ...
-func DefaultEnvStorePath() (string, error) {
-	return filepath.Abs(path.Join("./", defaultEnvStoreName))
 }
