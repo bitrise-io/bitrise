@@ -16,6 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
+	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -338,9 +339,18 @@ func EnvmanRun(envStorePth,
 	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
-	envmanEnvs, err := envman.ReadOSEnv(envStorePth)
+	envmanEnvs, err := envman.ReadEnvs(envStorePth)
 	if err != nil {
 		return 1, err
+	}
+
+	result, err := env.GetDeclarationsSideEffects(envmanEnvs, &env.DefaultEnvironmentSource{})
+	if err != nil {
+		return 1, err
+	}
+	var expandedEnvs []string
+	for key, value := range result.ResultEnvironment {
+		expandedEnvs = append(expandedEnvs, key+"="+value)
 	}
 
 	var inReader io.Reader
@@ -373,7 +383,7 @@ func EnvmanRun(envStorePth,
 	cmd.SetTimeout(timeout)
 	cmd.SetHangTimeout(noOutputTimeout)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
-	cmd.SetEnv(append(envmanEnvs, "PWD="+workDirPth))
+	cmd.SetEnv(append(expandedEnvs, "PWD="+workDirPth))
 
 	err = cmd.Start()
 
