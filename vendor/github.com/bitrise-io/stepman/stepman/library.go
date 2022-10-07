@@ -8,7 +8,6 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
@@ -16,8 +15,13 @@ import (
 
 const filePathPrefix = "file://"
 
+// Logger ...
+type Logger interface {
+	Warnf(format string, v ...interface{})
+}
+
 // SetupLibrary ...
-func SetupLibrary(libraryURI string) error {
+func SetupLibrary(libraryURI string, log Logger) error {
 	if exist, err := RootExistForLibrary(libraryURI); err != nil {
 		return fmt.Errorf("failed to check if routing exist for library (%s), error: %s", libraryURI, err)
 	} else if exist {
@@ -35,7 +39,7 @@ func SetupLibrary(libraryURI string) error {
 	defer func() {
 		if !isSuccess {
 			if err := CleanupRoute(route); err != nil {
-				log.Errorf("Failed to cleanup routing for library (%s), error: %s", libraryURI, err)
+				log.Warnf("Failed to cleanup routing for library (%s), error: %s", libraryURI, err)
 			}
 		}
 	}()
@@ -84,11 +88,11 @@ func SetupLibrary(libraryURI string) error {
 }
 
 // UpdateLibrary ...
-func UpdateLibrary(libraryURI string) (models.StepCollectionModel, error) {
+func UpdateLibrary(libraryURI string, log Logger) (models.StepCollectionModel, error) {
 	route, found := ReadRoute(libraryURI)
 	if !found {
 		if err := CleanupDanglingLibrary(libraryURI); err != nil {
-			log.Errorf("Failed to cleaning up library (%s), error: %s", libraryURI, err)
+			log.Warnf("Failed to cleaning up library (%s), error: %s", libraryURI, err)
 		}
 		return models.StepCollectionModel{}, fmt.Errorf("no route found for library: %s", libraryURI)
 	}
@@ -100,7 +104,7 @@ func UpdateLibrary(libraryURI string) (models.StepCollectionModel, error) {
 			return models.StepCollectionModel{}, fmt.Errorf("failed to cleanup route for library (%s), error: %s", libraryURI, err)
 		}
 
-		if err := SetupLibrary(libraryURI); err != nil {
+		if err := SetupLibrary(libraryURI, log); err != nil {
 			return models.StepCollectionModel{}, fmt.Errorf("failed to setup library (%s), error: %s", libraryURI, err)
 		}
 	} else {

@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +45,8 @@ var activateCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if err := activate(c); err != nil {
-			log.Fatalf("Command failed: %s", err)
+			log.Errorf("Command failed: %s", err)
+			os.Exit(1)
 		}
 		return nil
 	},
@@ -71,22 +72,22 @@ func activate(c *cli.Context) error {
 	copyYML := c.String(CopyYMLKey)
 	update := c.Bool(UpdateKey)
 
-	return Activate(stepLibURI, id, version, path, copyYML, update)
+	return Activate(stepLibURI, id, version, path, copyYML, update, log.NewDefaultLogger(false))
 }
 
 // Activate ...
-func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool) error {
+func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger) error {
 	stepLib, err := stepman.ReadStepSpec(stepLibURI)
 	if err != nil {
 		return fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
 	}
 
-	step, version, err := queryStep(stepLib, stepLibURI, id, version, updateLibrary)
+	step, version, err := queryStep(stepLib, stepLibURI, id, version, updateLibrary, log)
 	if err != nil {
 		return fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, err := downloadStep(stepLib, stepLibURI, id, version, step)
+	srcFolder, err := downloadStep(stepLib, stepLibURI, id, version, step, log)
 	if err != nil {
 		return fmt.Errorf("failed to download step: %s", err)
 	}
@@ -104,13 +105,11 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 	return nil
 }
 
-func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string, updateLibrary bool) (models.StepModel, string, error) {
+func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string, updateLibrary bool, log stepman.Logger) (models.StepModel, string, error) {
 	step, stepFound, versionFound := stepLib.GetStep(id, version)
 	if (!stepFound || !versionFound) && updateLibrary {
-		log.Infof("StepLib doesn't contain step (%s) with version: %s -- Updating StepLib", id, version)
-
 		var err error
-		stepLib, err = stepman.UpdateLibrary(stepLibURI)
+		stepLib, err = stepman.UpdateLibrary(stepLibURI, log)
 		if err != nil {
 			return models.StepModel{}, "", fmt.Errorf("failed to update %s steplib: %s", stepLibURI, err)
 		}
@@ -135,7 +134,7 @@ func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, versio
 	return step, version, nil
 }
 
-func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel) (string, error) {
+func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -145,7 +144,7 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		return "", fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
 	} else if !exist {
-		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit); err != nil {
+		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
 			return "", fmt.Errorf("download failed: %s", err)
 		}
 	}

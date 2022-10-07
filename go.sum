@@ -7,8 +7,8 @@ github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316/go.mod h1:L4WQyg
 github.com/bitrise-io/go-utils v0.0.0-20200224122728-e212188d99b4/go.mod h1:tTEsKvbz1LbzuN/KpVFHXnLtcAPdEgIdM41s0lL407s=
 github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e/go.mod h1:nhdaDQFvaMny1CugVV6KjK92/q97ENo0RuKSW5I4fbA=
 github.com/bitrise-io/go-utils v1.0.1/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
-github.com/bitrise-io/go-utils v1.0.2 h1:w4Mz2IvrgDzrFJECuHdvsK1LHO30cdtuy9bBa7Lw2c0=
-github.com/bitrise-io/go-utils v1.0.2/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
+github.com/bitrise-io/go-utils v1.0.3 h1:xKy0WyiJtRPqeKl/HrwQJ0QdjNOOUhiVHs81RMDwD94=
+github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10 h1:b3sG8BNhsktfYd8YXraVQsKunFKMs0bRELXdx/zhTKA=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10/go.mod h1:Ta/ards3Ih/3Q6X8tBtcj6zTHcNf1hRSXv1E8lPgIYk=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
@@ -16,8 +16,8 @@ github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4 h1:ytUxnO7iSGHlNp
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88 h1:HObzyO+BJrTSLqxSUHnik0FS1lOHPmtqXLP0doAsE1g=
 github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88/go.mod h1:3Cp9ceJ8wHl1Av6oEE2ff1iWaYLliQuD+oaNdyM0NWQ=
-github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30 h1:6Ra9CW9GMBRpT1FfRabM77breQTEZ9AzD/WQiW330RM=
-github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30/go.mod h1:25vk5IaQiOpXLMcjyJjY6RmZe6JEOqMe8TJoTvKgyuw=
+github.com/bitrise-io/stepman v0.0.0-20221007133439-b50a78a98b4c h1:0lN1oQV57qdBl8rGmN85it9b3DHJiZdN1DJooUY+E2Q=
+github.com/bitrise-io/stepman v0.0.0-20221007133439-b50a78a98b4c/go.mod h1:Lwt05EyClntmh83XkXkK2QWfqHj5mdm5RQ+A68kwHA4=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1 h1:r/myEWzV9lfsM1tFLgDyu0atFtJ1fXn261LKYj/3DxU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=

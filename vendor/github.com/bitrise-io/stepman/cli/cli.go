@@ -5,34 +5,23 @@ import (
 	"os"
 	"path"
 
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/bitrise-io/stepman/version"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
-func initLogFormatter() {
-	log.SetFormatter(&log.TextFormatter{
-		ForceColors:     true,
-		FullTimestamp:   true,
-		TimestampFormat: "15:04:05",
-	})
-}
-
 func before(c *cli.Context) error {
-	initLogFormatter()
 	initHelpAndVersionFlags()
 	initAppHelpTemplate()
 
 	// Log level
-	logLevel, err := log.ParseLevel(c.String(LogLevelKey))
-	if err != nil {
-		return fmt.Errorf("Failed to parse log level, error: %s", err)
+	if c.String(LogLevelKey) == "debug" {
+		log.SetEnableDebugLog(true)
 	}
-	log.SetLevel(logLevel)
 
 	// Setup
-	err = stepman.CreateStepManDirIfNeeded()
+	err := stepman.CreateStepManDirIfNeeded()
 	if err != nil {
 		return err
 	}
@@ -62,6 +51,11 @@ func Run() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		failf(err.Error())
 	}
+}
+
+func failf(format string, v ...interface{}) {
+	log.Errorf(format, v...)
+	os.Exit(1)
 }
