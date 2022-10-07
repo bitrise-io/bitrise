@@ -372,6 +372,7 @@ func EnvmanRun(envstorePth,
 	workDirPth string,
 	cmdArgs []string,
 	timeout time.Duration,
+	noOutputTimeout time.Duration,
 	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
@@ -401,7 +402,7 @@ func EnvmanRun(envstorePth,
 
 	cmd := timeoutcmd.New(workDirPth, "envman", args...)
 	cmd.SetTimeout(timeout)
-	cmd.SetHangTimeout(configs.NoOutputTimeout)
+	cmd.SetHangTimeout(noOutputTimeout)
 	cmd.SetStandardIO(inReader, outWriter, errWriter)
 	cmd.AppendEnv("PWD=" + workDirPth)
 
