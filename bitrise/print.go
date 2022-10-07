@@ -23,6 +23,24 @@ const (
 // Util methods
 //------------------------------
 
+func trimTitle(title string, titleSuffix string, titleBoxWidth int) string {
+	length := len(title)
+	if titleSuffix != "" {
+		length += 1 + len(titleSuffix)
+	}
+
+	if length > titleBoxWidth {
+		diff := length - titleBoxWidth
+		title = stringutil.MaxFirstCharsWithDots(title, len(title)-diff)
+	}
+
+	if titleSuffix == "" {
+		return title
+	}
+
+	return fmt.Sprintf("%s %s", title, titleSuffix)
+}
+
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	iconBoxWidth := len("   ")
 	timeBoxWidth := len(" time (s) ")
@@ -39,30 +57,22 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 		title = fmt.Sprintf("[Deprecated] %s", title)
 	}
 
-	titleBox := ""
+	suffix := ""
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		titleBox = fmt.Sprintf("%s", title)
-		if len(titleBox) > titleBoxWidth {
-			dif := len(titleBox) - titleBoxWidth
-			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s", title)
-		}
-		break
+		suffix = ""
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed, models.StepRunStatusCodeFailedSkippable:
-		titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		if len(titleBox) > titleBoxWidth {
-			dif := len(titleBox) - titleBoxWidth
-			title = stringutil.MaxFirstCharsWithDots(title, len(title)-dif)
-			titleBox = fmt.Sprintf("%s (exit code: %d)", title, stepRunResult.ExitCode)
-		}
-		break
+		suffix = fmt.Sprintf("(exit code: %d)", stepRunResult.ExitCode)
+	case models.StepRunStatusAbortedWithCustomTimeout:
+		suffix = "(timed out)"
+	case models.StepRunStatusAbortedWithNoOutputTimeout:
+		suffix = "(timed out due to no output)"
 	default:
 		log.Errorf("Unknown result code")
 		return ""
 	}
 
-	return titleBox
+	return trimTitle(title, suffix, titleBoxWidth)
 }
 
 func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
@@ -203,19 +213,18 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 	case models.StepRunStatusCodeSuccess:
 		icon = "✓"
 		coloringFunc = colorstring.Green
-		break
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed:
 		icon = "x"
 		coloringFunc = colorstring.Red
-		break
+	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
+		icon = "/"
+		coloringFunc = colorstring.Red
 	case models.StepRunStatusCodeFailedSkippable:
 		icon = "!"
 		coloringFunc = colorstring.Yellow
-		break
 	case models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
 		icon = "-"
 		coloringFunc = colorstring.Blue
-		break
 	default:
 		log.Errorf("Unknown result code")
 		return ""

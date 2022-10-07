@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -963,6 +964,9 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 	if otherStep.Timeout != nil {
 		step.Timeout = pointers.NewIntPtr(*otherStep.Timeout)
 	}
+	if otherStep.NoOutputTimeout != nil {
+		step.NoOutputTimeout = pointers.NewIntPtr(*otherStep.NoOutputTimeout)
+	}
 
 	for _, input := range step.Inputs {
 		key, _, err := input.GetKeyValuePair()
@@ -1160,24 +1164,56 @@ func (sIDData StepIDData) IsUniqueResourceID() bool {
 // ----------------------------
 // --- BuildRunResults
 
-// IsStepLibUpdated ...
 func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
 	return (buildRes.StepmanUpdates[stepLib] > 0)
 }
 
-// IsBuildFailed ...
 func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 	return len(buildRes.FailedSteps) > 0
 }
 
-// HasFailedSkippableSteps ...
+func (buildRes BuildRunResultsModel) ExitCode() int {
+	if !buildRes.IsBuildFailed() {
+		return 0
+	}
+
+	if buildRes.isBuildAbortedWithNoOutputTimeout() {
+		return exitcode.CLIAbortedWithNoOutputTimeout
+	}
+
+	if buildRes.isBuildAbortedWithTimeout() {
+		return exitcode.CLIAbortedWithCustomTimeout
+	}
+
+	return exitcode.CLIFailed
+}
+
 func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
 	return len(buildRes.FailedSkippableSteps) > 0
 }
 
-// ResultsCount ...
 func (buildRes BuildRunResultsModel) ResultsCount() int {
 	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
+}
+
+func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
+	for _, stepResult := range buildRes.FailedSteps {
+		if stepResult.Status == StepRunStatusAbortedWithCustomTimeout {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (buildRes BuildRunResultsModel) isBuildAbortedWithNoOutputTimeout() bool {
+	for _, stepResult := range buildRes.FailedSteps {
+		if stepResult.Status == StepRunStatusAbortedWithNoOutputTimeout {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
@@ -1187,7 +1223,6 @@ func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
 	return append(results, buildRes.SkippedSteps...)
 }
 
-//OrderedResults ...
 func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
 	results := make([]StepRunResultsModel, buildRes.ResultsCount())
 	unorderedResults := buildRes.unorderedResults()

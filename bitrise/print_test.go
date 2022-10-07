@@ -131,94 +131,82 @@ func TestGetRunningStepHeaderSubSection(t *testing.T) {
 	require.NotEqual(t, "", actual)
 }
 
-func TestGetRunningStepFooterMainSection(t *testing.T) {
-	t.Log("failed step")
-	{
-		stepInfo := stepmanModels.StepInfoModel{
-			Step: stepmanModels.StepModel{
-				Title: pointers.NewStringPtr(longStr),
-			},
-			Version: longStr,
-		}
-
-		result := models.StepRunResultsModel{
-			StepInfo: stepInfo,
-			Status:   models.StepRunStatusCodeFailed,
-			Idx:      0,
-			RunTime:  10000000,
-			ErrorStr: longStr,
-			ExitCode: 1,
-		}
-
-		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very l... (exit code: 1)\x1b[0m| 0.01 sec |"
-		require.Equal(t, expected, actual)
+func Test_getRunningStepFooterMainSection(t *testing.T) {
+	noTitleInfo := stepmanModels.StepInfoModel{
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(""),
+		},
+		Version: longStr,
+	}
+	longTitleInfo := stepmanModels.StepInfoModel{
+		Step: stepmanModels.StepModel{
+			Title: pointers.NewStringPtr(longStr),
+		},
+		Version: longStr,
 	}
 
-	t.Log("successful step")
-	{
-		stepInfo := stepmanModels.StepInfoModel{
-			Step: stepmanModels.StepModel{
-				Title: pointers.NewStringPtr(""),
+	tests := []struct {
+		name     string
+		result   models.StepRunResultsModel
+		expected string
+	}{
+		{
+			name: "failed step",
+			result: models.StepRunResultsModel{
+				StepInfo: longTitleInfo,
+				Status:   models.StepRunStatusCodeFailed,
+				Idx:      0,
+				RunTime:  10000000,
+				ErrorStr: longStr,
+				ExitCode: 1,
 			},
-			Version: longStr,
-		}
-		result := models.StepRunResultsModel{
-			StepInfo: stepInfo,
-			Status:   models.StepRunStatusCodeSuccess,
-			Idx:      0,
-			RunTime:  0,
-			ErrorStr: "",
-			ExitCode: 0,
-		}
-
-		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 0.00 sec |"
-		require.Equal(t, expected, actual)
+			expected: "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very l... (exit code: 1)\x1b[0m| 0.01 sec |",
+		},
+		{
+			name: "aborted step due to no output",
+			result: models.StepRunResultsModel{
+				StepInfo: longTitleInfo,
+				Status:   models.StepRunStatusAbortedWithNoOutputTimeout,
+				Idx:      0,
+				RunTime:  10000000,
+				ErrorStr: longStr,
+				ExitCode: 1,
+			},
+			expected: "| \x1b[31;1m/\x1b[0m | \x1b[31;1mThis is a very long string, th... (timed out due to no output)\x1b[0m| 0.01 sec |",
+		},
+		{
+			name: "successful step",
+			result: models.StepRunResultsModel{
+				StepInfo: noTitleInfo,
+				Status:   models.StepRunStatusCodeSuccess,
+			},
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 0.00 sec |",
+		},
+		{
+			name: "long runtime",
+			result: models.StepRunResultsModel{
+				StepInfo: noTitleInfo,
+				Status:   models.StepRunStatusCodeSuccess,
+				RunTime:  100 * 1000 * 1e9, // 100 * 1000 * 10^9 nanosec = 100 000 sec
+			},
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 28 hour  |",
+		},
+		{
+			name: "very long runtime",
+			result: models.StepRunResultsModel{
+				StepInfo: noTitleInfo,
+				Status:   models.StepRunStatusCodeSuccess,
+				RunTime:  hourToDuration(1000),
+			},
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := getRunningStepFooterMainSection(tt.result)
 
-	t.Log("long Runtime")
-	{
-		stepInfo := stepmanModels.StepInfoModel{
-			Step: stepmanModels.StepModel{
-				Title: pointers.NewStringPtr(""),
-			},
-			Version: longStr,
-		}
-		result := models.StepRunResultsModel{
-			StepInfo: stepInfo,
-			Status:   models.StepRunStatusCodeSuccess,
-			Idx:      0,
-			RunTime:  100 * 1000 * 1e9, // 100 * 1000 * 10^9 nanosec = 100 000 sec
-			ErrorStr: "",
-			ExitCode: 0,
-		}
-
-		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 28 hour  |"
-		require.Equal(t, expected, actual)
-	}
-
-	t.Log("long Runtime")
-	{
-		stepInfo := stepmanModels.StepInfoModel{
-			Step: stepmanModels.StepModel{
-				Title: pointers.NewStringPtr(""),
-			},
-			Version: longStr,
-		}
-		result := models.StepRunResultsModel{
-			StepInfo: stepInfo,
-			Status:   models.StepRunStatusCodeSuccess,
-			Idx:      0,
-			RunTime:  hourToDuration(1000),
-			ErrorStr: "",
-			ExitCode: 0,
-		}
-
-		actual := getRunningStepFooterMainSection(result)
-		expected := "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|"
-		require.Equal(t, expected, actual)
+			require.Equal(t, tt.expected, actual)
+		})
 	}
 }
 

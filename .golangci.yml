@@ -79,9 +79,6 @@ issues:
   - path: configs/configs.go
     linters:
     - gosimple
-  - path: analytics/tracker.go
-    linters:
-    - gosimple
   - path: tools/filterwriter/range.go
     linters:
     - gosimple

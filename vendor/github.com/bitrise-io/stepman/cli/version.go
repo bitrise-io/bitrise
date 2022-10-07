@@ -69,7 +69,7 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	versionOutput := VersionOutputModel{}
-	versionOutput.Version = ver.VERSION
+	versionOutput.Version = ver.Version
 	versionOutput.OS = fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
 	versionOutput.GO = runtime.Version()
 	versionOutput.BuildNumber = ver.BuildNumber

@@ -8,21 +8,19 @@ import (
 )
 
 const (
-	// StepRunStatusCodeSuccess ...
-	StepRunStatusCodeSuccess = 0
-	// StepRunStatusCodeFailed ...
-	StepRunStatusCodeFailed = 1
-	// StepRunStatusCodeFailedSkippable ...
-	StepRunStatusCodeFailedSkippable = 2
-	// StepRunStatusCodeSkipped ...
-	StepRunStatusCodeSkipped = 3
-	// StepRunStatusCodeSkippedWithRunIf ...
-	StepRunStatusCodeSkippedWithRunIf = 4
-	// StepRunStatusCodePreparationFailed ...
+	StepRunStatusCodeSuccess           = 0
+	StepRunStatusCodeFailed            = 1
+	StepRunStatusCodeFailedSkippable   = 2
+	StepRunStatusCodeSkipped           = 3
+	StepRunStatusCodeSkippedWithRunIf  = 4
 	StepRunStatusCodePreparationFailed = 5
+	// StepRunStatusAbortedWithCustomTimeout is used when a step times out due to a custom timeout
+	StepRunStatusAbortedWithCustomTimeout = 7
+	// StepRunStatusAbortedWithNoOutputTimeout is used when a step times out due to no output received (hang)
+	StepRunStatusAbortedWithNoOutputTimeout = 8
 
 	// Version ...
-	Version = "11"
+	Version = "12"
 )
 
 // StepListItemModel ...
