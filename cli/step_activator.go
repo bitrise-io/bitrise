@@ -56,9 +56,13 @@ func (a stepActivator) activateStep(
 		if err != nil {
 			return "", "", err
 		}
-		cloneCmd := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
-		out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
+		var cloneCmd *command.Model
+		if stepIDData.Version == "" {
+			cloneCmd = repo.Clone(stepIDData.IDorURI)
+		} else {
+			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
+		}
+		if out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 			if strings.HasPrefix(stepIDData.IDorURI, "git@") {
 				log.Warnf(`Note: if the step's repository is an open source one,
 you should probably use a "https://..." git clone URL,

@@ -1637,13 +1637,13 @@ func TestCreateStepIDDataFromString(t *testing.T) {
 		{
 			name:      "direct git uri, https, no branch",
 			composite: "git::https://github.com/bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
-			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantStepSrc: "git", wantStepID: "https://github.com/bitrise-io/steps-timestamp.git", wantVersion: "",
 			wantErr: false,
 		},
 		{
 			name:      "direct git uri, ssh, no branch",
 			composite: "git::git@github.com:bitrise-io/steps-timestamp.git", defaultSteplibSource: "default-steplib-src",
-			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "master",
+			wantStepSrc: "git", wantStepID: "git@github.com:bitrise-io/steps-timestamp.git", wantVersion: "",
 			wantErr: false,
 		},
 	}
