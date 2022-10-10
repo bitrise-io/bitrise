@@ -9,25 +9,25 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clearEnvs() error {
-	if isExists, err := pathutil.IsPathExists(CurrentEnvStoreFilePath); err != nil {
-		return err
-	} else if !isExists {
-		errMsg := "EnvStore not found in path:" + CurrentEnvStoreFilePath
-		return errors.New(errMsg)
-	}
-
-	return WriteEnvMapToFile(CurrentEnvStoreFilePath, []models.EnvironmentItemModel{})
-}
-
 func clear(c *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
 
-	if err := clearEnvs(); err != nil {
+	if err := ClearEnvs(CurrentEnvStoreFilePath); err != nil {
 		log.Fatal("[ENVMAN] - Failed to clear EnvStore:", err)
 	}
 
 	log.Info("[ENVMAN] - EnvStore cleared")
 
 	return nil
+}
+
+// ClearEnvs ...
+func ClearEnvs(envStorePth string) error {
+	if isExists, err := pathutil.IsPathExists(envStorePth); err != nil {
+		return err
+	} else if !isExists {
+		return errors.New("EnvStore not found in path:" + envStorePth)
+	}
+
+	return WriteEnvMapToFile(envStorePth, []models.EnvironmentItemModel{})
 }

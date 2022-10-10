@@ -14,7 +14,8 @@ import (
 
 const (
 	defaultEnvStoreName = ".envstore.yml"
-	helpTemplate        = `
+
+	helpTemplate = `
 NAME: {{.Name}} - {{.Usage}}
 
 USAGE: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
@@ -46,15 +47,15 @@ func before(c *cli.Context) error {
 		log.SetLevel(logLevel)
 	}
 
-	// Befor parsing cli, and running command
-	// we need to decide wich path will be used by envman
+	// Before parsing cli, and running command
+	// we need to decide which path will be used by envman
 	CurrentEnvStoreFilePath = c.String(PathKey)
 	if CurrentEnvStoreFilePath == "" {
-		if path, err := filepath.Abs(path.Join("./", defaultEnvStoreName)); err != nil {
+		pth, err := filepath.Abs(path.Join("./", defaultEnvStoreName))
+		if err != nil {
 			log.Fatal("[ENVMAN] - Failed to set envman work path in current dir:", err)
-		} else {
-			CurrentEnvStoreFilePath = path
 		}
+		CurrentEnvStoreFilePath = pth
 	}
 
 	ToolMode = c.Bool(ToolKey)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +26,36 @@ func restoreEnviron(environ []string) error {
 	}
 
 	return nil
+}
+
+type TestEnvSource map[string]string
+
+func (s TestEnvSource) GetEnvironment() map[string]string {
+	return s
+}
+
+func TestGetDeclarationsSideEffectsEvaluatedNewEnvs(t *testing.T) {
+	// Given
+	environ := TestEnvSource{
+		"key1": "value1",
+		"key2": "value2",
+	}
+	newEnv := models.EnvironmentItemModel(map[string]interface{}{"key3": "$key1"})
+	err := newEnv.FillMissingDefaults()
+	require.NoError(t, err)
+	newEnvs := []models.EnvironmentItemModel{newEnv}
+
+	// When
+	result, err := GetDeclarationsSideEffects(newEnvs, environ)
+	require.NoError(t, err)
+
+	// Then
+	require.Equal(t, map[string]string{"key3": "value1"}, result.EvaluatedNewEnvs)
+	require.Equal(t, map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "value1",
+	}, result.ResultEnvironment)
 }
 
 func TestGetDeclarationsSideEffects(t *testing.T) {

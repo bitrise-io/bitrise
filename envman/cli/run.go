@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bitrise-io/envman/env"
@@ -13,75 +14,50 @@ import (
 // CommandModel ...
 type CommandModel struct {
 	Command      string
-	Argumentums  []string
+	Arguments    []string
 	Environments []models.EnvironmentItemModel
 }
 
-func expandEnvsInString(inp string) string {
-	return os.ExpandEnv(inp)
-}
-
-func commandEnvs(newEnvs []models.EnvironmentItemModel) ([]string, error) {
-	result, err := env.GetDeclarationsSideEffects(newEnvs, &env.DefaultEnvironmentSource{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, command := range result.CommandHistory {
-		if err := env.ExecuteCommand(command); err != nil {
-			return nil, err
-		}
-	}
-
-	return os.Environ(), nil
-}
-
-func runCommandModel(cmdModel CommandModel) (int, error) {
-	cmdEnvs, err := commandEnvs(cmdModel.Environments)
-	if err != nil {
-		return 1, err
-	}
-
-	return command.RunCommandWithEnvsAndReturnExitCode(cmdEnvs, cmdModel.Command, cmdModel.Argumentums...)
-}
-
 func run(c *cli.Context) error {
-	log.Debug("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
-
-	if len(c.Args()) > 0 {
-		doCmdEnvs, err := ReadEnvs(CurrentEnvStoreFilePath)
-		if err != nil {
-			log.Fatal("[ENVMAN] - Failed to load EnvStore:", err)
-		}
-
-		doCommand := c.Args()[0]
-
-		doArgs := []string{}
-		if len(c.Args()) > 1 {
-			doArgs = c.Args()[1:]
-		}
-
-		cmdToExecute := CommandModel{
-			Command:      doCommand,
-			Environments: doCmdEnvs,
-			Argumentums:  doArgs,
-		}
-
-		log.Debug("[ENVMAN] - Executing command:", cmdToExecute)
-
-		if exit, err := runCommandModel(cmdToExecute); err != nil {
-			log.Debug("[ENVMAN] - Failed to execute command:", err)
-			if exit == 0 {
-				log.Error("[ENVMAN] - Failed to execute command:", err)
-				exit = 1
-			}
-			os.Exit(exit)
-		}
-
-		log.Debug("[ENVMAN] - Command executed")
-	} else {
+	if len(c.Args()) == 0 {
 		log.Fatal("[ENVMAN] - No command specified")
 	}
 
+	cmd, err := createCommand(CurrentEnvStoreFilePath, c.Args())
+	if err != nil {
+		log.Errorf("command failed: %s", err)
+	}
+	cmd.SetStdin(os.Stdin)
+	cmd.SetStdout(os.Stdout)
+	cmd.SetStderr(os.Stderr)
+	exitCode, err := cmd.RunAndReturnExitCode()
+	if err != nil {
+		log.Errorf("command failed: %s", err)
+	}
+	if err != nil && exitCode == 0 {
+		exitCode = 1
+	}
+	os.Exit(exitCode)
 	return nil
+}
+
+func createCommand(envStorePth string, args []string) (*command.Model, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("no command specified")
+	}
+
+	cmdEnvs, err := ReadAndEvaluateEnvs(envStorePth, &env.DefaultEnvironmentSource{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to load EnvStore: %s", err)
+	}
+
+	cmdName := args[0]
+	var cmdArgs []string
+	if len(args) > 1 {
+		cmdArgs = args[1:]
+	}
+
+	cmd := command.New(cmdName, cmdArgs...)
+	cmd.SetEnvs(cmdEnvs...)
+	return cmd, nil
 }

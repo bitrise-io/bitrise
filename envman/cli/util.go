@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 
+	"github.com/bitrise-io/envman/env"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -210,8 +211,7 @@ func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
 	return fileutil.WriteBytesToFile(pth, bytes)
 }
 
-// InitAtPath ...
-func InitAtPath(pth string) error {
+func initAtPath(pth string) error {
 	if exist, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exist {
@@ -219,8 +219,7 @@ func InitAtPath(pth string) error {
 			return err
 		}
 	} else {
-		errorMsg := "Path already exist: " + pth
-		return errors.New(errorMsg)
+		return errors.New("Path already exist: " + pth)
 	}
 	return nil
 }
@@ -249,12 +248,33 @@ func ReadEnvs(pth string) ([]models.EnvironmentItemModel, error) {
 	return ParseEnvsYML(bytes)
 }
 
+func evaluateEnvs(newEnvs []models.EnvironmentItemModel, envSource env.EnvironmentSource) ([]string, error) {
+	result, err := env.GetDeclarationsSideEffects(newEnvs, envSource)
+	if err != nil {
+		return nil, err
+	}
+	var envs []string
+	for key, value := range result.ResultEnvironment {
+		envs = append(envs, key+"="+value)
+	}
+	return envs, nil
+}
+
+// ReadAndEvaluateEnvs ...
+func ReadAndEvaluateEnvs(envStorePth string, envSource env.EnvironmentSource) ([]string, error) {
+	envs, err := ReadEnvs(envStorePth)
+	if err != nil {
+		return nil, err
+	}
+	return evaluateEnvs(envs, envSource)
+}
+
 // ReadEnvsOrCreateEmptyList ...
-func ReadEnvsOrCreateEmptyList() ([]models.EnvironmentItemModel, error) {
-	envModels, err := ReadEnvs(CurrentEnvStoreFilePath)
+func ReadEnvsOrCreateEmptyList(envStorePth string) ([]models.EnvironmentItemModel, error) {
+	envModels, err := ReadEnvs(envStorePth)
 	if err != nil {
 		if err.Error() == "No environment variable list found" {
-			err = InitAtPath(CurrentEnvStoreFilePath)
+			err = initAtPath(envStorePth)
 			return []models.EnvironmentItemModel{}, err
 		}
 		return []models.EnvironmentItemModel{}, err

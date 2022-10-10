@@ -13,132 +13,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-var errTimeout = errors.New("timeout")
-
-func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
-	valueSizeInBytes := 0
-	for _, env := range envs {
-		_, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return 0, err
-		}
-		valueSizeInBytes += len([]byte(value))
-	}
-	return valueSizeInBytes, nil
-}
-
-func validateEnv(key, value string, envList []models.EnvironmentItemModel) (string, error) {
-	if key == "" {
-		return "", errors.New("Key is not specified, required")
-	}
-
-	configs, err := envman.GetConfigs()
-	if err != nil {
-		return "", err
-	}
-
-	valueSizeInBytes := len([]byte(value))
-	if configs.EnvBytesLimitInKB > 0 {
-		if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
-			valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
-			log.Warnf("environment var (%s) value (%s...) too large", key, value[0:100])
-			log.Warnf("environment value size (%#v KB) - max allowed size: %#v KB", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
-			return fmt.Sprintf("environment var (%s) value too large - rejected", key), nil
-		}
-	}
-
-	if configs.EnvListBytesLimitInKB > 0 {
-		envListSizeInBytes, err := envListSizeInBytes(envList)
-		if err != nil {
-			return "", err
-		}
-		if envListSizeInBytes+valueSizeInBytes > configs.EnvListBytesLimitInKB*1024 {
-			listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(valueSizeInBytes)/1024
-			log.Warn("environment list too large")
-			log.Warnf("environment list size (%#v KB) - max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
-			return "", errors.New("environment list too large")
-		}
-	}
-	return value, nil
-}
-
-func addEnv(key string, value string, expand, replace, skipIfEmpty, sensitive bool) error {
-	// Load envs, or create if not exist
-	environments, err := ReadEnvsOrCreateEmptyList()
-	if err != nil {
-		return err
-	}
-
-	// Validate input
-	validatedValue, err := validateEnv(key, value, environments)
-	if err != nil {
-		return err
-	}
-	value = validatedValue
-
-	// Add or update envlist
-	newEnv := models.EnvironmentItemModel{
-		key: value,
-		models.OptionsKey: models.EnvironmentItemOptionsModel{
-			IsExpand:    pointers.NewBoolPtr(expand),
-			SkipIfEmpty: pointers.NewBoolPtr(skipIfEmpty),
-			IsSensitive: pointers.NewBoolPtr(sensitive),
-		},
-	}
-	if err := newEnv.NormalizeValidateFillDefaults(); err != nil {
-		return err
-	}
-
-	newEnvSlice, err := UpdateOrAddToEnvlist(environments, newEnv, replace)
-	if err != nil {
-		return err
-	}
-
-	return WriteEnvMapToFile(CurrentEnvStoreFilePath, newEnvSlice)
-}
-
-func loadValueFromFile(pth string) (string, error) {
-	buf, err := ioutil.ReadFile(pth)
-	if err != nil {
-		return "", err
-	}
-
-	str := string(buf)
-	return str, nil
-}
-
-func logEnvs() error {
-	environments, err := ReadEnvs(CurrentEnvStoreFilePath)
-	if err != nil {
-		return err
-	}
-
-	if len(environments) == 0 {
-		log.Info("[ENVMAN] Empty envstore")
-	} else {
-		for _, env := range environments {
-			key, value, err := env.GetKeyValuePair()
-			if err != nil {
-				return err
-			}
-
-			opts, err := env.GetOptions()
-			if err != nil {
-				return err
-			}
-
-			envString := "- " + key + ": " + value
-			log.Debugln(envString)
-			if !*opts.IsExpand {
-				expandString := "  " + "isExpand" + ": " + "false"
-				log.Debugln(expandString)
-			}
-		}
-	}
-
-	return nil
-}
-
 func add(c *cli.Context) error {
 	log.Debugln("[ENVMAN] Work path:", CurrentEnvStoreFilePath)
 
@@ -192,7 +66,7 @@ func add(c *cli.Context) error {
 			}
 
 			if configs.EnvListBytesLimitInKB > 0 {
-				envList, err := ReadEnvsOrCreateEmptyList()
+				envList, err := ReadEnvsOrCreateEmptyList(CurrentEnvStoreFilePath)
 				if err != nil {
 					log.Fatalf("[ENVMAN] failed to get env list, error: %s", err)
 				}
@@ -214,14 +88,135 @@ func add(c *cli.Context) error {
 		}
 	}
 
-	if err := addEnv(key, value, expand, replace, skipIfEmpty, sensitive); err != nil {
+	if err := AddEnv(CurrentEnvStoreFilePath, key, value, expand, replace, skipIfEmpty, sensitive); err != nil {
 		log.Fatal("[ENVMAN] Failed to add env:", err)
 	}
 
 	log.Debugln("[ENVMAN] Env added")
 
-	if err := logEnvs(); err != nil {
+	if err := logEnvs(CurrentEnvStoreFilePath); err != nil {
 		log.Fatal("[ENVMAN] Failed to print:", err)
+	}
+
+	return nil
+}
+
+// AddEnv ...
+func AddEnv(envStorePth string, key string, value string, expand, replace, skipIfEmpty, sensitive bool) error {
+	// Load envs, or create if not exist
+	environments, err := ReadEnvsOrCreateEmptyList(envStorePth)
+	if err != nil {
+		return err
+	}
+
+	// Validate input
+	validatedValue, err := validateEnv(key, value, environments)
+	if err != nil {
+		return err
+	}
+	value = validatedValue
+
+	// Add or update envlist
+	newEnv := models.EnvironmentItemModel{
+		key: value,
+		models.OptionsKey: models.EnvironmentItemOptionsModel{
+			IsExpand:    pointers.NewBoolPtr(expand),
+			SkipIfEmpty: pointers.NewBoolPtr(skipIfEmpty),
+			IsSensitive: pointers.NewBoolPtr(sensitive),
+		},
+	}
+	if err := newEnv.NormalizeValidateFillDefaults(); err != nil {
+		return err
+	}
+
+	newEnvSlice, err := UpdateOrAddToEnvlist(environments, newEnv, replace)
+	if err != nil {
+		return err
+	}
+
+	return WriteEnvMapToFile(envStorePth, newEnvSlice)
+}
+
+func envListSizeInBytes(envs []models.EnvironmentItemModel) (int, error) {
+	valueSizeInBytes := 0
+	for _, env := range envs {
+		_, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return 0, err
+		}
+		valueSizeInBytes += len([]byte(value))
+	}
+	return valueSizeInBytes, nil
+}
+
+func validateEnv(key, value string, envList []models.EnvironmentItemModel) (string, error) {
+	if key == "" {
+		return "", errors.New("key is not specified, required")
+	}
+
+	configs, err := envman.GetConfigs()
+	if err != nil {
+		return "", err
+	}
+
+	valueSizeInBytes := len([]byte(value))
+	if configs.EnvBytesLimitInKB > 0 {
+		if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
+			valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
+			return fmt.Sprintf("environment var (%s) value is too large (%#v KB), max allowed size: %#v KB", key, valueSizeInKB, (float64)(configs.EnvBytesLimitInKB)), nil
+		}
+	}
+
+	if configs.EnvListBytesLimitInKB > 0 {
+		envListSizeInBytes, err := envListSizeInBytes(envList)
+		if err != nil {
+			return "", err
+		}
+		if envListSizeInBytes+valueSizeInBytes > configs.EnvListBytesLimitInKB*1024 {
+			listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(valueSizeInBytes)/1024
+			return "", fmt.Errorf("environment list is too large (%#v KB), max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
+		}
+	}
+	return value, nil
+}
+
+func loadValueFromFile(pth string) (string, error) {
+	buf, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return "", err
+	}
+
+	str := string(buf)
+	return str, nil
+}
+
+func logEnvs(envStorePth string) error {
+	environments, err := ReadEnvs(envStorePth)
+	if err != nil {
+		return err
+	}
+
+	if len(environments) == 0 {
+		log.Info("[ENVMAN] Empty envstore")
+	} else {
+		for _, env := range environments {
+			key, value, err := env.GetKeyValuePair()
+			if err != nil {
+				return err
+			}
+
+			opts, err := env.GetOptions()
+			if err != nil {
+				return err
+			}
+
+			envString := "- " + key + ": " + value
+			log.Debugln(envString)
+			if !*opts.IsExpand {
+				expandString := "  " + "isExpand" + ": " + "false"
+				log.Debugln(expandString)
+			}
+		}
 	}
 
 	return nil

@@ -9,7 +9,7 @@ import (
 func unset(c *cli.Context) error {
 	key := c.String(KeyKey)
 	// Load envs, or create if not exist
-	environments, err := ReadEnvsOrCreateEmptyList()
+	environments, err := ReadEnvsOrCreateEmptyList(CurrentEnvStoreFilePath)
 	if err != nil {
 		return err
 	}

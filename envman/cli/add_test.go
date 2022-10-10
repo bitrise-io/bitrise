@@ -53,7 +53,7 @@ func TestValidateEnv(t *testing.T) {
 	// append one more -> too large
 	envs = append(envs, env1)
 	_, err = validateEnv("key", str64KBytes, envs)
-	require.Equal(t, errors.New("environment list too large"), err)
+	require.Equal(t, errors.New("environment list is too large (320 KB), max allowed size: 256 KB"), err)
 
 	// List oversize + too big value
 	str10Kbytes := strings.Repeat("a", (10 * 1024))
@@ -72,5 +72,5 @@ func TestValidateEnv(t *testing.T) {
 
 	valValue, err = validateEnv("key", str257Kbytes, envs)
 	require.NoError(t, err)
-	require.Equal(t, "environment var (key) value too large - rejected", valValue)
+	require.Equal(t, "environment var (key) value is too large (257 KB), max allowed size: 256 KB", valValue)
 }
