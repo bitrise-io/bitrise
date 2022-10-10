@@ -153,7 +153,8 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now)
+	opts := logwriter.LogWriterOpts{Producer: logwriter.BitriseCLI}
+	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), opts, os.Stdout, configs.IsDebugMode, time.Now)
 
 	_, err = tools.EnvmanRun(
 		pluginEnvstorePath,

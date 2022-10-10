@@ -25,68 +25,81 @@ const (
 // defaultLogger ...
 type defaultLogger struct {
 	logger          corelog.Logger
-	producer        corelog.Producer
+	opts            LoggerOpts
 	debugLogEnabled bool
 }
 
+type LoggerOpts struct {
+	Producer   Producer
+	ProducerID string
+}
+
 // NewLogger ...
-func NewLogger(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) Logger {
+func NewLogger(t LoggerType, opts LoggerOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) Logger {
 	coreLogger := corelog.NewLogger(corelog.LoggerType(t), out, timeProvider)
 	return &defaultLogger{
 		logger:          coreLogger,
-		producer:        corelog.Producer(producer),
+		opts:            opts,
 		debugLogEnabled: debugLogEnabled,
 	}
 }
 
+func (m *defaultLogger) logMessage(message string, level corelog.Level, opts LoggerOpts) {
+	m.logger.LogMessage(message, corelog.MessageFields{
+		Level:      level,
+		Producer:   corelog.Producer(opts.Producer),
+		ProducerID: opts.ProducerID,
+	})
+}
+
 // Error ...
 func (m *defaultLogger) Error(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.ErrorLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.ErrorLevel, m.opts)
 }
 
 // Errorf ...
 func (m *defaultLogger) Errorf(format string, args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.ErrorLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.ErrorLevel, m.opts)
 }
 
 // Warn ...
 func (m *defaultLogger) Warn(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.WarnLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.WarnLevel, m.opts)
 }
 
 // Warnf ...
 func (m *defaultLogger) Warnf(format string, args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.WarnLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.WarnLevel, m.opts)
 }
 
 // Info ...
 func (m *defaultLogger) Info(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.InfoLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.InfoLevel, m.opts)
 }
 
 // Infof ...
 func (m *defaultLogger) Infof(format string, args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.InfoLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.InfoLevel, m.opts)
 }
 
 // Done ...
 func (m *defaultLogger) Done(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.DoneLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.DoneLevel, m.opts)
 }
 
 // Donef ...
 func (m *defaultLogger) Donef(format string, args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.DoneLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.DoneLevel, m.opts)
 }
 
 // Print ...
 func (m *defaultLogger) Print(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.NormalLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.NormalLevel, m.opts)
 }
 
 // Printf ...
 func (m *defaultLogger) Printf(format string, args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.NormalLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.NormalLevel, m.opts)
 }
 
 // Debug ...
@@ -94,7 +107,7 @@ func (m *defaultLogger) Debug(args ...interface{}) {
 	if !m.debugLogEnabled {
 		return
 	}
-	m.logger.LogMessage(m.producer, corelog.DebugLevel, fmt.Sprint(args...)+"\n")
+	m.logMessage(fmt.Sprint(args...)+"\n", corelog.DebugLevel, m.opts)
 }
 
 // Debugf ...
@@ -102,5 +115,5 @@ func (m *defaultLogger) Debugf(format string, args ...interface{}) {
 	if !m.debugLogEnabled {
 		return
 	}
-	m.logger.LogMessage(m.producer, corelog.DebugLevel, fmt.Sprintf(format, args...)+"\n")
+	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.DebugLevel, m.opts)
 }

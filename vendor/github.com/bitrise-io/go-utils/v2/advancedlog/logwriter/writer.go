@@ -10,30 +10,35 @@ import (
 type LoggerType corelog.LoggerType
 
 const (
-	JSONLogger    LoggerType = LoggerType(corelog.JSONLogger)
-	ConsoleLogger LoggerType = LoggerType(corelog.ConsoleLogger)
+	JSONLogger    = LoggerType(corelog.JSONLogger)
+	ConsoleLogger = LoggerType(corelog.ConsoleLogger)
 )
 
 type Producer corelog.Producer
 
 const (
-	BitriseCLI Producer = Producer(corelog.BitriseCLI)
-	Step       Producer = Producer(corelog.Step)
+	BitriseCLI = Producer(corelog.BitriseCLI)
+	Step       = Producer(corelog.Step)
 )
+
+type LogWriterOpts struct {
+	Producer   Producer
+	ProducerID string
+}
 
 // LogWriter ...
 type LogWriter struct {
 	logger          corelog.Logger
-	producer        corelog.Producer
+	opts            LogWriterOpts
 	debugLogEnabled bool
 }
 
 // NewLogWriter ...
-func NewLogWriter(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) LogWriter {
+func NewLogWriter(t LoggerType, opts LogWriterOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) LogWriter {
 	logger := corelog.NewLogger(corelog.LoggerType(t), out, timeProvider)
 	return LogWriter{
 		logger:          logger,
-		producer:        corelog.Producer(producer),
+		opts:            opts,
 		debugLogEnabled: debugLogEnabled,
 	}
 }
@@ -44,6 +49,10 @@ func (w LogWriter) Write(p []byte) (n int, err error) {
 		return len(p), nil
 	}
 
-	w.logger.LogMessage(w.producer, level, message)
+	w.logger.LogMessage(message, corelog.MessageFields{
+		Level:      level,
+		Producer:   corelog.Producer(w.opts.Producer),
+		ProducerID: w.opts.ProducerID,
+	})
 	return len(p), nil
 }

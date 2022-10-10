@@ -424,7 +424,12 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), logwriter.Step, os.Stdout, configs.IsDebugMode, time.Now)
+	opts := logwriter.LogWriterOpts{
+		Producer: logwriter.Step,
+		// todo: fill producer id
+		ProducerID: "",
+	}
+	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), opts, os.Stdout, configs.IsDebugMode, time.Now)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,

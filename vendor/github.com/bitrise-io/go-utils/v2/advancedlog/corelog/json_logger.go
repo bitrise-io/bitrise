@@ -25,12 +25,13 @@ func newJSONLogger(output io.Writer, timeProvider func() time.Time) *jsonLogger 
 }
 
 // LogMessage ...
-func (j *jsonLogger) LogMessage(producer Producer, level Level, message string) {
+func (j *jsonLogger) LogMessage(message string, fields MessageFields) {
 	logMessage := logMessage{
 		Timestamp:   j.timeProvider().Format(RFC3339Micro),
-		MessageType: "log",
-		Producer:    string(producer),
-		Level:       string(level),
+		MessageType: string(logMessageType),
+		Producer:    string(fields.Producer),
+		ProducerID:  fields.ProducerID,
+		Level:       string(fields.Level),
 		Message:     message,
 	}
 
@@ -38,17 +39,22 @@ func (j *jsonLogger) LogMessage(producer Producer, level Level, message string) 
 	if err != nil {
 		// Encountered an error during writing the json message to the output. Manually construct a json message for
 		// the error and print it to the output
-		fmt.Println(j.logMessageForError(err))
+		fmt.Println(j.logMessageForError(err, fields.Producer, fields.ProducerID))
 	}
 }
 
-func (j *jsonLogger) logMessageForError(err error) string {
+func (j *jsonLogger) logMessageForError(err error, producer Producer, producerID string) string {
 	message := "{"
-	message += fmt.Sprintf("\"timestamp\":\"%s\",", j.timeProvider().Format(RFC3339Micro))
-	message += "\"type\":\"log\","
-	message += fmt.Sprintf("\"producer\":\"%s\",", string(BitriseCLI))
-	message += fmt.Sprintf("\"level\":\"%s\",", string(ErrorLevel))
-	message += fmt.Sprintf("\"message\":\"log message serialization failed: %s\"", err)
+	message += fmt.Sprintf(`"timestamp":"%s",`, j.timeProvider().Format(RFC3339Micro))
+	message += fmt.Sprintf(`"type":"%s",`, string(logMessageType))
+	if producer != "" {
+		message += fmt.Sprintf(`"producer":"%s",`, producer)
+	}
+	if producerID != "" {
+		message += fmt.Sprintf(`"producer_id":"%s",`, producerID)
+	}
+	message += fmt.Sprintf(`"level":"%s",`, string(ErrorLevel))
+	message += fmt.Sprintf(`"message":"log message serialization failed: %s"`, err)
 	message += "}"
 
 	return message

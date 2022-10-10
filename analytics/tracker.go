@@ -120,8 +120,9 @@ func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 	stateChecker := NewStateChecker(envRepository)
 
+	opts := log.LoggerOpts{Producer: log.BitriseCLI}
 	logger := legacyLogger{
-		Logger: log.NewLogger(configs.LoggerType, log.BitriseCLI, os.Stdout, configs.IsDebugMode, time.Now),
+		Logger: log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now),
 		debug:  configs.IsDebugMode,
 	}
 

@@ -10,14 +10,18 @@ var globalLogger Logger
 
 func getGlobalLogger() Logger {
 	if globalLogger == nil {
-		globalLogger = NewLogger(ConsoleLogger, BitriseCLI, os.Stdout, false, time.Now)
+		opts := LoggerOpts{
+			Producer:   BitriseCLI,
+			ProducerID: "",
+		}
+		globalLogger = NewLogger(ConsoleLogger, opts, os.Stdout, false, time.Now)
 	}
 	return globalLogger
 }
 
 // InitGlobalLogger ...
-func InitGlobalLogger(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
-	globalLogger = NewLogger(t, producer, out, debugLogEnabled, timeProvider)
+func InitGlobalLogger(t LoggerType, opts LoggerOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
+	globalLogger = NewLogger(t, opts, out, debugLogEnabled, timeProvider)
 }
 
 // Error ...

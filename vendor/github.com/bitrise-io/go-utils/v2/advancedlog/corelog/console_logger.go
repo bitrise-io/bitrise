@@ -13,35 +13,35 @@ var levelToANSIColorCode = map[Level]ANSIColorCode{
 	DebugLevel: MagentaCode,
 }
 
-type legacyLogger struct {
+type consoleLogger struct {
 	output io.Writer
 }
 
-func newLegacyLogger(output io.Writer) *legacyLogger {
-	return &legacyLogger{
+func newConsoleLogger(output io.Writer) *consoleLogger {
+	return &consoleLogger{
 		output: output,
 	}
 }
 
 // LogMessage ...
-func (l *legacyLogger) LogMessage(producer Producer, level Level, message string) {
-	switch level {
+func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
+	switch fields.Level {
 	case ErrorLevel:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	case WarnLevel:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	case InfoLevel:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	case DoneLevel:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	case DebugLevel:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	default:
-		l.print(level, message)
+		l.print(fields.Level, message)
 	}
 }
 
-func (l *legacyLogger) print(level Level, message string) {
+func (l *consoleLogger) print(level Level, message string) {
 	message = createLogMsg(level, message)
 	if _, err := fmt.Fprint(l.output, message); err != nil {
 		// Encountered an error during writing the message to the output. Manually construct a message for
