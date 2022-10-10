@@ -124,7 +124,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 
 	pluginEnvstorePath := filepath.Join(pluginWorkDir, "envstore.yml")
 
-	if err := tools.EnvmanInitAtPath(pluginEnvstorePath); err != nil {
+	if err := tools.EnvmanInit(pluginEnvstorePath, true); err != nil {
 		return err
 	}
 

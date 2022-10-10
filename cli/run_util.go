@@ -450,11 +450,11 @@ func runStep(
 			fmt.Errorf("Failed to install Step dependency, error: %s", err)
 	}
 
-	if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
+	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
-	if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, environments); err != nil {
+	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, environments); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
@@ -618,13 +618,13 @@ func activateAndRunSteps(
 
 		//
 		// Preparing the step
-		if err := tools.EnvmanInitAtPath(configs.InputEnvstorePath); err != nil {
+		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			continue
 		}
 
-		if err := tools.ExportEnvironmentsList(configs.InputEnvstorePath, *environments); err != nil {
+		if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				"", models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
 			continue
@@ -706,18 +706,10 @@ func activateAndRunSteps(
 		// Run step
 		bitrise.PrintRunningStepHeader(stepInfoPtr, mergedStep, idx)
 		if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-			outStr, err := tools.EnvmanJSONPrint(configs.InputEnvstorePath)
+			envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
 			if err != nil {
 				runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodePreparationFailed, 1, fmt.Errorf("EnvmanJSONPrint failed, err: %s", err),
-					isLastStep, false, map[string]string{}, stepStartedProperties)
-				continue
-			}
-
-			envList, err := envmanModels.NewEnvJSONList(outStr)
-			if err != nil {
-				runResultCollector.registerStepRunResults(&buildRunResults, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-					*mergedStep.RunIf, models.StepRunStatusCodePreparationFailed, 1, fmt.Errorf("CreateFromJSON failed, err: %s", err),
+					*mergedStep.RunIf, models.StepRunStatusCodePreparationFailed, 1, fmt.Errorf("EnvmanReadEnvList failed, err: %s", err),
 					isLastStep, false, map[string]string{}, stepStartedProperties)
 				continue
 			}
@@ -977,8 +969,8 @@ func runWorkflowWithConfiguration(
 		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
 	}
 
-	if err := tools.EnvmanInit(); err != nil {
-		return models.BuildRunResultsModel{}, errors.New("Failed to run envman init")
+	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to run envman init: %s", err)
 	}
 
 	// App level environment
