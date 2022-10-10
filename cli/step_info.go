@@ -23,7 +23,6 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
 		fmt.Println(stepInfo.JSON())
-		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
@@ -45,7 +44,6 @@ func printLocalStepInfo(pth, format string) error {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
 		}
 		fmt.Println(stepInfo.JSON())
-		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
