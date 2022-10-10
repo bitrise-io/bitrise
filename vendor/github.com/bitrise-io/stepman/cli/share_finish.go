@@ -50,7 +50,7 @@ func finish(c *cli.Context) error {
 
 	route, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		failf("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	collectionDir := stepman.GetLibraryBaseDirPath(route)

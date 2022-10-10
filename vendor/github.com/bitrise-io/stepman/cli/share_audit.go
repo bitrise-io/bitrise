@@ -32,11 +32,11 @@ func shareAudit(c *cli.Context) error {
 	log.Infof("Auditing the StepLib...")
 	_, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		failf("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	if err := auditStepLibBeforeSharePullRequest(share.Collection); err != nil {
-		fail("Audit Step Collection failed, err: %s", err)
+		failf("Audit Step Collection failed, err: %s", err)
 	}
 
 	printFinishAudit(share, toolMode)

@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -46,7 +45,7 @@ var activateCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if err := activate(c); err != nil {
-			log.Fatalf("Command failed: %s", err)
+			failf("Command failed: %s", err)
 		}
 		return nil
 	},
