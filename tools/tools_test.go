@@ -97,9 +97,9 @@ func TestEnvmanJSONPrint(t *testing.T) {
 
 	envstorePth := filepath.Join(testDirPth, "envstore.yml")
 
-	require.Equal(t, nil, EnvmanInitAtPath(envstorePth, true))
+	require.Equal(t, nil, EnvmanInit(envstorePth, true))
 
-	out, err := EnvmanJSONPrint(envstorePth)
+	out, err := EnvmanReadEnvList(envstorePth)
 	require.NoError(t, err)
 	require.Equal(t, models.EnvsJSONListModel{}, out)
 
@@ -109,7 +109,7 @@ func TestEnvmanJSONPrint(t *testing.T) {
 
 	envstorePth = filepath.Join(testDirPth, "envstore.yml")
 
-	out, err = EnvmanJSONPrint(envstorePth)
+	out, err = EnvmanReadEnvList(envstorePth)
 	require.NotEqual(t, nil, err)
 	require.Nil(t, out)
 }

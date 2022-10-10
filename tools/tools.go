@@ -263,8 +263,8 @@ func StepmanShareStart(collection string) error {
 // ------------------
 // --- Envman
 
-// EnvmanInitAtPath ...
-func EnvmanInitAtPath(envStorePth string, clear bool) error {
+// EnvmanInit ...
+func EnvmanInit(envStorePth string, clear bool) error {
 	return envman.InitEnvStore(envStorePth, clear)
 }
 
@@ -273,8 +273,8 @@ func EnvmanAdd(envStorePth, key, value string, expand, skipIfEmpty, sensitive bo
 	return envman.AddEnv(envStorePth, key, value, expand, false, skipIfEmpty, sensitive)
 }
 
-// ExportEnvironmentsList ...
-func ExportEnvironmentsList(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
+// EnvmanAddEnvs ...
+func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
 	for _, env := range envsList {
 		key, value, err := env.GetKeyValuePair()
 		if err != nil {
@@ -308,26 +308,14 @@ func ExportEnvironmentsList(envstorePth string, envsList []envmanModels.Environm
 	return nil
 }
 
+// EnvmanReadEnvList ...
+func EnvmanReadEnvList(envStorePth string) (envmanModels.EnvsJSONListModel, error) {
+	return envman.ReadEnvsJSONList(envStorePth, true, false, &envmanEnv.DefaultEnvironmentSource{})
+}
+
 // EnvmanClear ...
 func EnvmanClear(envStorePth string) error {
 	return envman.ClearEnvs(envStorePth)
-}
-
-// GetSecretValues filters out built in configuration parameters from the secret envs
-func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
-	var secretValues []string
-	for _, secret := range secrets {
-		key, value, err := secret.GetKeyValuePair()
-		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
-			if err != nil {
-				log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
-			}
-			continue
-		}
-		secretValues = append(secretValues, value)
-	}
-
-	return secretValues
 }
 
 // EnvmanRun runs a command through envman.
@@ -389,9 +377,24 @@ func EnvmanRun(envStorePth,
 	return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
 }
 
-// EnvmanJSONPrint ...
-func EnvmanJSONPrint(envStorePth string) (envmanModels.EnvsJSONListModel, error) {
-	return envman.ReadEnvsJSONList(envStorePth, true, false, &envmanEnv.DefaultEnvironmentSource{})
+// ------------------
+// --- Utility
+
+// GetSecretValues filters out built in configuration parameters from the secret envs
+func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
+	var secretValues []string
+	for _, secret := range secrets {
+		key, value, err := secret.GetKeyValuePair()
+		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
+			if err != nil {
+				log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
+			}
+			continue
+		}
+		secretValues = append(secretValues, value)
+	}
+
+	return secretValues
 }
 
 // MoveFile ...
