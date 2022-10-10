@@ -45,8 +45,7 @@ var activateCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if err := activate(c); err != nil {
-			log.Errorf("Command failed: %s", err)
-			os.Exit(1)
+			failf("Command failed: %s", err)
 		}
 		return nil
 	},

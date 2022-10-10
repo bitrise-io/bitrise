@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/bitrise-io/go-utils/command/git"
@@ -27,9 +26,8 @@ func start(c *cli.Context) error {
 
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		log.Errorf("No step collection specified\n")
 		showSubcommandHelp(c)
-		os.Exit(1)
+		failf("No step collection specified")
 	}
 
 	log.Donef("all inputs are valid")

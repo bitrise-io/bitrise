@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -15,8 +14,7 @@ func setup(c *cli.Context) error {
 	// Input validation
 	steplibURI := c.String(CollectionKey)
 	if steplibURI == "" {
-		log.Errorf("No step collection specified")
-		os.Exit(1)
+		failf("No step collection specified")
 	}
 
 	copySpecJSONPath := c.String(CopySpecJSONKey)
