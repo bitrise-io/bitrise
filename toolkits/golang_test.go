@@ -15,12 +15,17 @@ import (
 func Test_stepBinaryFilename(t *testing.T) {
 	{
 		sIDData := models.StepIDData{SteplibSource: "path", IDorURI: "./", Version: ""}
-		require.Equal(t, "path-._-", stepBinaryFilename(sIDData))
+		require.Equal(t, "path-._", stepBinaryFilename(sIDData))
 	}
 
 	{
 		sIDData := models.StepIDData{SteplibSource: "git", IDorURI: "https://github.com/bitrise-steplib/steps-go-toolkit-hello-world.git", Version: "master"}
 		require.Equal(t, "git-https___github.com_bitrise-steplib_steps-go-toolkit-hello-world.git-master", stepBinaryFilename(sIDData))
+	}
+
+	{
+		sIDData := models.StepIDData{SteplibSource: "git", IDorURI: "https://github.com/bitrise-steplib/steps-go-toolkit-hello-world.git", Version: ""}
+		require.Equal(t, "git-https___github.com_bitrise-steplib_steps-go-toolkit-hello-world.git", stepBinaryFilename(sIDData))
 	}
 
 	{
