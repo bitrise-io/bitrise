@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -14,22 +14,28 @@ func update(c *cli.Context) error {
 	// StepSpec collection path
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {
-		log.Info("No StepLib specified, update all...")
+		log.Infof("No StepLib specified, update all...")
 		collectionURIs = stepman.GetAllStepCollectionPath()
 	} else {
 		collectionURIs = []string{collectionURI}
 	}
 
 	if len(collectionURIs) == 0 {
-		log.Info("No local StepLib found, nothing to update...")
+		log.Infof("No local StepLib found, nothing to update...")
 	}
 
 	for _, URI := range collectionURIs {
 		log.Infof("Update StepLib (%s)...", URI)
-		if _, err := stepman.UpdateLibrary(URI); err != nil {
+		if err := UpdateLibrary(URI, log.NewDefaultLogger(false)); err != nil {
 			return fmt.Errorf("Failed to update StepLib (%s), error: %s", URI, err)
 		}
 	}
 
 	return nil
+}
+
+// UpdateLibrary ...
+func UpdateLibrary(uri string, log stepman.Logger) error {
+	_, err := stepman.UpdateLibrary(uri, log)
+	return err
 }

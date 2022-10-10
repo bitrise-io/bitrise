@@ -8,7 +8,7 @@ github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
 github.com/bitrise-io/envman/output
 github.com/bitrise-io/envman/version
-# github.com/bitrise-io/go-utils v1.0.2
+# github.com/bitrise-io/go-utils v1.0.3
 ## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
@@ -36,7 +36,7 @@ github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit
 github.com/bitrise-io/gows/gows
-# github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30
+# github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
 ## explicit
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models

@@ -45,12 +45,12 @@ func finish(c *cli.Context) error {
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Errorf(err.Error())
-		fail("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
+		failf("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
 	}
 
 	route, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		failf("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	collectionDir := stepman.GetLibraryBaseDirPath(route)
@@ -60,12 +60,12 @@ func finish(c *cli.Context) error {
 	log.Infof("Checking StepLib changes...")
 	repo, err := git.New(collectionDir)
 	if err != nil {
-		fail(err.Error())
+		failf(err.Error())
 	}
 
 	gitstatus, err := repo.Status("-u", "--porcelain").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		fail(err.Error())
+		failf(err.Error())
 	}
 	if gitstatus == "" {
 		log.Warnf("No git changes, it seems you already called this command")
@@ -78,23 +78,23 @@ func finish(c *cli.Context) error {
 	stepYMLPathInSteplib := filepath.Join(stepDirInSteplib, "step.yml")
 	log.Printf("new step.yml: %s", stepYMLPathInSteplib)
 	if err := repo.Add(stepYMLPathInSteplib).Run(); err != nil {
-		fail(err.Error())
+		failf(err.Error())
 	}
 	// add auto generated step-info.yml for new steps
 	if err := addStepGroupSpecIfExists(route, share.StepID, gitstatus, repo); err != nil {
-		fail(err.Error())
+		failf(err.Error())
 	}
 
 	fmt.Println()
 	log.Infof("Submitting the changes...")
 	msg := share.StepID + " " + share.StepTag
 	if err := repo.Commit(msg).Run(); err != nil {
-		fail(err.Error())
+		failf(err.Error())
 	}
 
 	log.Printf("pushing to your fork: %s", share.Collection)
 	if out, err := repo.Push(share.ShareBranchName()).RunAndReturnTrimmedCombinedOutput(); err != nil {
-		fail(out)
+		failf(out)
 	}
 
 	fmt.Println()

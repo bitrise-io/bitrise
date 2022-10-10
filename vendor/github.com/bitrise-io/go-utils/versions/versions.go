@@ -1,7 +1,7 @@
 package versions
 
 import (
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -36,14 +36,12 @@ func CompareVersions(version1, version2 string) (int, error) {
 	for i, num := range version1Slice {
 		num1, err := strconv.ParseInt(num, 0, 64)
 		if err != nil {
-			log.Println("Failed to parse int:", err)
-			return -2, err
+			return -2, fmt.Errorf("failed to parse int (%s): %s", num, err)
 		}
 
 		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
 		if err2 != nil {
-			log.Println("Failed to parse int:", err2)
-			return -2, err
+			return -2, fmt.Errorf("failed to parse int (%s): %s", version2Slice[i], err2)
 		}
 
 		if num2 > num1 {

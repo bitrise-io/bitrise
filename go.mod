@@ -4,11 +4,11 @@ go 1.16
 
 require (
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
-	github.com/bitrise-io/go-utils v1.0.2
+	github.com/bitrise-io/go-utils v1.0.3
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10
 	github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 	github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
-	github.com/bitrise-io/stepman v0.0.0-20220808095634-6e12d2726f30
+	github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/hashicorp/go-version v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
