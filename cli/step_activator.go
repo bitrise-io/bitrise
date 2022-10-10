@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 

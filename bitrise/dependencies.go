@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
@@ -14,7 +15,6 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
 	stepmanModels "github.com/bitrise-io/stepman/models"

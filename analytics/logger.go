@@ -1,6 +1,6 @@
 package analytics
 
-import log "github.com/bitrise-io/go-utils/v2/advancedlog"
+import log "github.com/bitrise-io/bitrise/advancedlog"
 
 type legacyLogger struct {
 	debug bool

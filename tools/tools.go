@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"time"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/tools/errorfinder"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
@@ -20,7 +21,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	stepman "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"golang.org/x/sys/unix"

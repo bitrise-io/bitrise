@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/advancedlog/logwriter"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pathutil"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
-	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 )
 
 //=======================================

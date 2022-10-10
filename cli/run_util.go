@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/advancedlog/logwriter"
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
@@ -26,8 +28,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
-	"github.com/bitrise-io/go-utils/v2/advancedlog/logwriter"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"

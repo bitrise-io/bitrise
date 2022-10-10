@@ -3,9 +3,9 @@ package toolkits
 import (
 	"fmt"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 // commandRunner ...

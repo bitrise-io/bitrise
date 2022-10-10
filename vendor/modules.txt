@@ -27,9 +27,6 @@ github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
 # github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded
 ## explicit
-github.com/bitrise-io/go-utils/v2/advancedlog
-github.com/bitrise-io/go-utils/v2/advancedlog/corelog
-github.com/bitrise-io/go-utils/v2/advancedlog/logwriter
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
+	log "github.com/bitrise-io/bitrise/advancedlog"
 )
 
 // RedactStr ...

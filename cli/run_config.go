@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/configs"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 )
 
 func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {

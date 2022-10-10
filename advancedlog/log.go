@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
+	"github.com/bitrise-io/bitrise/advancedlog/corelog"
 )
 
 type LoggerType corelog.LoggerType

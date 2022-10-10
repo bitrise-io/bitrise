@@ -11,6 +11,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
@@ -20,7 +21,6 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 

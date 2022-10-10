@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/plugins"
-	log "github.com/bitrise-io/go-utils/v2/advancedlog"
 	"github.com/urfave/cli"
 )
 
