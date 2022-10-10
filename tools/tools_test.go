@@ -80,14 +80,13 @@ func TestStepmanJSONStepLibStepInfo(t *testing.T) {
 	// Valid params -- Err should empty, output filled
 	require.Equal(t, nil, StepmanSetup("https://github.com/bitrise-io/bitrise-steplib"))
 
-	outStr, err := StepmanJSONStepLibStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "0.9.0")
+	info, err := StepmanStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "0.9.0")
 	require.NoError(t, err)
-	require.NotEqual(t, "", outStr)
+	require.NotEqual(t, "", info.JSON())
 
-	// Invalid params -- Err should empty, output filled
-	outStr, err = StepmanJSONStepLibStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "2.x")
+	// Invalid params -- Err returned, output is invalid
+	info, err = StepmanStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "2.x")
 	require.Error(t, err)
-	require.Equal(t, "", outStr)
 }
 
 func TestEnvmanJSONPrint(t *testing.T) {

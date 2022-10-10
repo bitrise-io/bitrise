@@ -17,7 +17,7 @@ func printStepLibStep(collectionURI, id, version, format string) error {
 			return err
 		}
 		fmt.Println("Step info:")
-		fmt.Printf(stepInfo.String())
+		fmt.Println(stepInfo.String())
 	case output.FormatJSON:
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
@@ -39,7 +39,7 @@ func printLocalStepInfo(pth, format string) error {
 			return err
 		}
 		fmt.Println("Step info:")
-		fmt.Printf(stepInfo.String())
+		fmt.Println(stepInfo.String())
 	case output.FormatJSON:
 		if err != nil {
 			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
