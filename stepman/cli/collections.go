@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/bitrise-io/go-utils/colorstring"
 	flog "github.com/bitrise-io/go-utils/log"
@@ -80,8 +79,7 @@ func collections(c *cli.Context) error {
 	} else if format == OutputFormatJSON {
 		log = flog.NewDefaultJSONLoger()
 	} else {
-		fmt.Printf("%s: invalid format: %s\n", colorstring.Red("Error"), format)
-		os.Exit(1)
+		failf("invalid format: %s", format)
 	}
 
 	steplibInfos := []models.SteplibInfoModel{}
@@ -89,8 +87,11 @@ func collections(c *cli.Context) error {
 	for _, steplibURI := range stepLibURIs {
 		route, found := stepman.ReadRoute(steplibURI)
 		if !found {
-			log.Print(NewErrorOutput("No routing found for steplib: %s", steplibURI))
-			os.Exit(1)
+			out := NewErrorOutput("No routing found for steplib: %s", steplibURI)
+			if format == OutputFormatJSON {
+				failf(out.JSON())
+			}
+			failf(out.String())
 		}
 
 		specPth := stepman.GetStepSpecPath(route)

@@ -14,7 +14,6 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/urlutil"
@@ -107,7 +106,7 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string) error {
+func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string, log Logger) error {
 	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
 		return err

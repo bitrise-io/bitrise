@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -101,7 +101,7 @@ func export(c *cli.Context) error {
 		return fmt.Errorf("Failed to check if setup was done for StepLib, error: %s", err)
 	} else if !exist {
 		log.Infof("StepLib does not exist, setup...")
-		if err := stepman.SetupLibrary(steplibURI); err != nil {
+		if err := stepman.SetupLibrary(steplibURI, log.NewDefaultLogger(false)); err != nil {
 			return fmt.Errorf("Failed to setup StepLib, error: %s", err)
 		}
 	}
@@ -109,7 +109,7 @@ func export(c *cli.Context) error {
 	// Prepare spec
 	stepLibSpec, err := stepman.ReadStepSpec(steplibURI)
 	if err != nil {
-		log.Fatalf("Failed to read StepLib spec, error: %s", err)
+		failf("Failed to read StepLib spec, error: %s", err)
 	}
 
 	switch exportType {

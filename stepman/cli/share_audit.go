@@ -24,7 +24,7 @@ func shareAudit(c *cli.Context) error {
 	share, err := ReadShareSteplibFromFile()
 	if err != nil {
 		log.Errorf(err.Error())
-		fail("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
+		failf("You have to start sharing with `stepman share start`, or you can read instructions with `stepman share`")
 	}
 	log.Donef("all inputs are valid")
 
@@ -32,11 +32,11 @@ func shareAudit(c *cli.Context) error {
 	log.Infof("Auditing the StepLib...")
 	_, found := stepman.ReadRoute(share.Collection)
 	if !found {
-		fail("No route found for collectionURI (%s)", share.Collection)
+		failf("No route found for collectionURI (%s)", share.Collection)
 	}
 
 	if err := auditStepLibBeforeSharePullRequest(share.Collection); err != nil {
-		fail("Audit Step Collection failed, err: %s", err)
+		failf("Audit Step Collection failed, err: %s", err)
 	}
 
 	printFinishAudit(share, toolMode)

@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"runtime"
 
 	flog "github.com/bitrise-io/go-utils/log"
@@ -64,8 +63,7 @@ func printVersionCmd(c *cli.Context) error {
 	} else if format == "json" {
 		log = flog.NewDefaultJSONLoger()
 	} else {
-		flog.Errorf("Invalid format: %s\n", format)
-		os.Exit(1)
+		failf("Invalid format: %s", format)
 	}
 
 	versionOutput := VersionOutputModel{}

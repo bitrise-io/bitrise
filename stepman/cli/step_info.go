@@ -2,13 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"log"
+	"path/filepath"
 	"time"
 
-	"path/filepath"
-
 	"github.com/bitrise-io/go-utils/command/git"
-	flog "github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
@@ -53,7 +51,7 @@ var stepInfoCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if err := stepInfo(c); err != nil {
-			log.Fatalf("Command failed: %s", err)
+			failf("Command failed: %s", err)
 		}
 		return nil
 	},
@@ -93,31 +91,31 @@ func stepInfo(c *cli.Context) error {
 		return fmt.Errorf("step info: invalid format value: %s, valid values: [%s, %s]", format, OutputFormatRaw, OutputFormatJSON)
 	}
 
-	var log flog.Logger
-	log = flog.NewDefaultRawLogger()
+	var logger log.Logger
+	logger = log.NewDefaultRawLogger()
 	if format == OutputFormatJSON {
-		log = flog.NewDefaultJSONLoger()
+		logger = log.NewDefaultJSONLoger()
 	}
 
-	stepInfo, err := QueryStepInfo(library, id, version)
+	stepInfo, err := QueryStepInfo(library, id, version, log.NewDefaultLogger(false))
 	if err != nil {
 		return err
 	}
 
-	log.Print(stepInfo)
+	logger.Print(stepInfo)
 	return nil
 }
 
 // QueryStepInfo returns a matching step info.
 // In cases of git and path sources the step.yml is read, otherwise the step is looked up in a step library.
-func QueryStepInfo(library, id, version string) (models.StepInfoModel, error) {
+func QueryStepInfo(library, id, version string, log stepman.Logger) (models.StepInfoModel, error) {
 	switch library {
 	case "git":
 		return QueryStepInfoFromGit(id, version)
 	case "path":
 		return QueryStepInfoFromPath(id)
 	default: // library step
-		return QueryStepInfoFromLibrary(library, id, version)
+		return QueryStepInfoFromLibrary(library, id, version, log)
 	}
 }
 
@@ -187,12 +185,12 @@ func QueryStepInfoFromPath(dir string) (models.StepInfoModel, error) {
 }
 
 // QueryStepInfoFromLibrary returns a step version based on the version string, which can be latest or locked to major or minor versions
-func QueryStepInfoFromLibrary(library, id, version string) (models.StepInfoModel, error) {
+func QueryStepInfoFromLibrary(library, id, version string, log stepman.Logger) (models.StepInfoModel, error) {
 	// Check if setup was done for collection
 	if exist, err := stepman.RootExistForLibrary(library); err != nil {
 		return models.StepInfoModel{}, fmt.Errorf("query steplib step info: check if setup was done for %s: %s", library, err)
 	} else if !exist {
-		if err := stepman.SetupLibrary(library); err != nil {
+		if err := stepman.SetupLibrary(library, log); err != nil {
 			return models.StepInfoModel{}, fmt.Errorf("query steplib step info: setup %s: %s", library, err)
 		}
 	}

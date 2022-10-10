@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )

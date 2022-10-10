@@ -1,13 +1,14 @@
 package integration
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/stretchr/testify/require"
@@ -51,7 +52,8 @@ func cloneDeafultStepLib() (string, error) {
 
 	cloneCmd := repo.Clone(defaultLibraryURI)
 	if out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
-		if errorutil.IsExitStatusError(err) {
+		var exerr *exec.ExitError
+		if errors.As(err, &exerr) {
 			return "", fmt.Errorf("%s failed: %s", cloneCmd.PrintableCommandArgs(), out)
 		}
 		return "", fmt.Errorf("%s failed: %s", cloneCmd.PrintableCommandArgs(), err)

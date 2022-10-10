@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/stepman/models"
@@ -60,13 +60,13 @@ func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, is
 	return nil
 }
 
-func listSteps(stepLibURI, format string) error {
+func listSteps(stepLibURI, format string, log stepman.Logger) error {
 	// Check if setup was done for collection
 	if exist, err := stepman.RootExistForLibrary(stepLibURI); err != nil {
 		return err
 	} else if !exist {
-		if err := stepman.SetupLibrary(stepLibURI); err != nil {
-			log.Fatal("Failed to setup steplib")
+		if err := stepman.SetupLibrary(stepLibURI, log); err != nil {
+			failf("Failed to setup steplib")
 		}
 	}
 
@@ -104,11 +104,11 @@ func stepList(c *cli.Context) error {
 	if format == "" {
 		format = OutputFormatRaw
 	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
-		log.Fatalf("Invalid format: %s", format)
+		failf("Invalid format: %s", format)
 	}
 
 	for _, URI := range stepLibURIs {
-		if err := listSteps(URI, format); err != nil {
+		if err := listSteps(URI, format, log.NewDefaultLogger(false)); err != nil {
 			log.Errorf("Failed to list steps in StepLib (%s), err: %s", URI, err)
 		}
 	}

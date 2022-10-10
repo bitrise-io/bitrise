@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -39,10 +39,8 @@ func (routes SteplibRoutes) GetRoute(URI string) (route SteplibRoute, found bool
 			pth := filepath.Join(GetCollectionsDirPath(), route.FolderAlias)
 			exist, err := pathutil.IsPathExists(pth)
 			if err != nil {
-				log.Warnf("Failed to read path %s", pth)
 				return SteplibRoute{}, false
 			} else if !exist {
-				log.Warnf("Failed to read path %s", pth)
 				return SteplibRoute{}, false
 			}
 			return route, true
