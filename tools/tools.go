@@ -21,6 +21,8 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
+	stepman "github.com/bitrise-io/stepman/cli"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"golang.org/x/sys/unix"
 )
 
@@ -134,63 +136,26 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
-	args := []string{"--loglevel", logLevel(), "setup", "--collection", collection}
-	return command.RunCommand("stepman", args...)
-}
-
-// StepmanActivate ...
-func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
-	args := []string{"--loglevel", logLevel(), "activate", "--collection", collection,
-		"--id", stepID, "--version", stepVersion, "--path", dir, "--copyyml", ymlPth}
-	return command.RunCommand("stepman", args...)
+	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	return stepman.Setup(collection, "", log)
 }
 
 // StepmanUpdate ...
 func StepmanUpdate(collection string) error {
-	args := []string{"--loglevel", logLevel(), "update", "--collection", collection}
-	return command.RunCommand("stepman", args...)
+	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	return stepman.UpdateLibrary(collection, log)
 }
 
-// StepmanRawStepLibStepInfo ...
-func StepmanRawStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-info", "--collection", collection,
-		"--id", stepID, "--version", stepVersion, "--format", "raw"}
-	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
+// StepmanActivate ...
+func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
+	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log)
 }
 
-// StepmanRawLocalStepInfo ...
-func StepmanRawLocalStepInfo(pth string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-info", "--step-yml", pth, "--format", "raw"}
-	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-}
-
-// StepmanJSONStepLibStepInfo ...
-func StepmanJSONStepLibStepInfo(collection, stepID, stepVersion string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-info", "--collection", collection,
-		"--id", stepID, "--version", stepVersion, "--format", "json"}
-
-	var outBuffer bytes.Buffer
-	var errBuffer bytes.Buffer
-
-	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
-		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
-	}
-
-	return outBuffer.String(), nil
-}
-
-// StepmanJSONLocalStepInfo ...
-func StepmanJSONLocalStepInfo(pth string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-info", "--step-yml", pth, "--format", "json"}
-
-	var outBuffer bytes.Buffer
-	var errBuffer bytes.Buffer
-
-	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
-		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
-	}
-
-	return outBuffer.String(), nil
+// StepmanStepInfo ...
+func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
+	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
 }
 
 // StepmanRawStepList ...

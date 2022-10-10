@@ -9,44 +9,21 @@ import (
 	"github.com/urfave/cli"
 )
 
-func printStepLibStep(collectionURI, id, version, format string) error {
+func printStep(collectionURI, id, version, format string) error {
+	stepInfo, err := tools.StepmanStepInfo(collectionURI, id, version)
+
 	switch format {
 	case output.FormatRaw:
-		out, err := tools.StepmanRawStepLibStepInfo(collectionURI, id, version)
-		if out != "" {
-			log.Print("Step info:")
-			log.Printf("%s", out)
+		if err != nil {
+			return err
 		}
-		return err
+		log.Print("Step info:")
+		log.Print(stepInfo.String())
 	case output.FormatJSON:
-		outStr, err := tools.StepmanJSONStepLibStepInfo(collectionURI, id, version)
 		if err != nil {
 			return fmt.Errorf("StepmanJSONStepLibStepInfo failed, err: %s", err)
 		}
-		log.Print(outStr)
-		break
-	default:
-		return fmt.Errorf("Invalid format: %s", format)
-	}
-	return nil
-}
-
-func printLocalStepInfo(pth, format string) error {
-	switch format {
-	case output.FormatRaw:
-		out, err := tools.StepmanRawLocalStepInfo(pth)
-		if out != "" {
-			log.Print("Step info:")
-			log.Printf("%s", out)
-		}
-		return err
-	case output.FormatJSON:
-		outStr, err := tools.StepmanJSONLocalStepInfo(pth)
-		if err != nil {
-			return fmt.Errorf("StepmanJSONLocalStepInfo failed, err: %s", err)
-		}
-		log.Print(outStr)
-		break
+		log.Print(stepInfo.JSON())
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
@@ -88,14 +65,10 @@ func stepInfo(c *cli.Context) error {
 	}
 
 	if YMLPath != "" {
-		//
-		// Local step info
-		if err := printLocalStepInfo(YMLPath, format); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print step info (yml path: %s), err: %s", YMLPath, err), warnings, format)
-		}
+		collectionURI = "path"
+		id = YMLPath
+		version = ""
 	} else {
-
-		//
 		// Steplib step info
 		if collectionURI == "" {
 			bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
@@ -110,10 +83,10 @@ func stepInfo(c *cli.Context) error {
 
 			collectionURI = bitriseConfig.DefaultStepLibSource
 		}
+	}
 
-		if err := printStepLibStep(collectionURI, id, version, format); err != nil {
-			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
-		}
+	if err := printStep(collectionURI, id, version, format); err != nil {
+		registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 	}
 
 	return nil
