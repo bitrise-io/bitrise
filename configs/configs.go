@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 )

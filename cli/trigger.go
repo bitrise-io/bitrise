@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"

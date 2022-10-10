@@ -1,8 +1,8 @@
 package cli
 
 import (
-	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/urfave/cli"
 )
 

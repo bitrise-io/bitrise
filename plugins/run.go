@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
-	"github.com/bitrise-io/bitrise/advancedlog/logwriter"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 

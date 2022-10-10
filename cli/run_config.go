@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 )

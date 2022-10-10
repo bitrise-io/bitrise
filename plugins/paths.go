@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"

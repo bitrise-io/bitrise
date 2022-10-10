@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/colorstring"

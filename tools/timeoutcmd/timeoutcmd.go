@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/tools/hangdetector"
 )
 

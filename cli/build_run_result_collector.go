@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/exitcode"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/go-utils/colorstring"

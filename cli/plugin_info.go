@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/urfave/cli"

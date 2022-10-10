@@ -1,10 +1,10 @@
-package logger_test
+package log_test
 
 import (
 	"os"
 	"time"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 )
 
 func referenceTime() time.Time {

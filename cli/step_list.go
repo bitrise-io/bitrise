@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/urfave/cli"

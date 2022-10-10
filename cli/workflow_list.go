@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	log "github.com/bitrise-io/bitrise/advancedlog"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/urfave/cli"

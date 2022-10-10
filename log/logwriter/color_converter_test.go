@@ -3,7 +3,7 @@ package logwriter
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/advancedlog/corelog"
+	"github.com/bitrise-io/bitrise/log/corelog"
 
 	"github.com/stretchr/testify/assert"
 )

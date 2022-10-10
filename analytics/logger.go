@@ -1,6 +1,6 @@
 package analytics
 
-import log "github.com/bitrise-io/bitrise/advancedlog"
+import "github.com/bitrise-io/bitrise/log"
 
 type legacyLogger struct {
 	debug bool

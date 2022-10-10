@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/bitrise-io/bitrise/advancedlog/corelog"
+	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
 type LoggerType corelog.LoggerType
