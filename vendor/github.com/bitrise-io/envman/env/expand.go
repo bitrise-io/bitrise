@@ -42,6 +42,8 @@ type DeclarationSideEffects struct {
 	// ResultEnvironment is returned for reference,
 	// it will equal the environment after performing the commands
 	ResultEnvironment map[string]string
+	// EvaluatedNewEnvs is the set of envs resulted after evaluating newEnvs with envSource
+	EvaluatedNewEnvs map[string]string
 }
 
 // EnvironmentSource implementations can return an initial environment
@@ -88,14 +90,14 @@ func SplitEnv(env string) (key string, value string) {
 	return
 }
 
-// GetDeclarationsSideEffects iterates over the list of ordered new declared variables sequentally and returns the needed
+// GetDeclarationsSideEffects iterates over the list of ordered new declared variables sequentially and returns the needed
 // commands (like os.Setenv) to add the variables to the current environment.
 // The current process environment is not changed.
 // Variable expansion is done also, every new variable can reference the previous and initial environments (via EnvironmentSource)
 // The new variables (models.EnvironmentItemModel) can be defined in the envman definition file, or filled in directly.
 // If the source of the variables (models.EnvironmentItemModel) is the bitrise.yml workflow,
 // they will be in this order:
-//  - Bitrise CLI configuration paramters (IS_CI, IS_DEBUG)
+//  - Bitrise CLI configuration parameters (IS_CI, IS_DEBUG)
 //  - App secrets
 //  - App level envs
 //  - Workflow level envs
@@ -104,6 +106,7 @@ func SplitEnv(env string) (key string, value string) {
 func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource EnvironmentSource) (DeclarationSideEffects, error) {
 	envs := envSource.GetEnvironment()
 	commandHistory := make([]Command, len(newEnvs))
+	evaluatedNewEnvs := make(map[string]string, len(newEnvs))
 
 	for i, env := range newEnvs {
 		command, err := getDeclarationCommand(env, envs)
@@ -116,8 +119,10 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 		switch command.Action {
 		case SetAction:
 			envs[command.Variable.Key] = command.Variable.Value
+			evaluatedNewEnvs[command.Variable.Key] = command.Variable.Value
 		case UnsetAction:
 			delete(envs, command.Variable.Key)
+			delete(evaluatedNewEnvs, command.Variable.Key)
 		case SkipAction:
 		default:
 			return DeclarationSideEffects{}, fmt.Errorf("invalid case for environement declaration action: %#v", command)
@@ -127,6 +132,7 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 	return DeclarationSideEffects{
 		CommandHistory:    commandHistory,
 		ResultEnvironment: envs,
+		EvaluatedNewEnvs:  evaluatedNewEnvs,
 	}, nil
 }
 
@@ -178,18 +184,4 @@ func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]stri
 			Value: envValue,
 		},
 	}, nil
-}
-
-// ExecuteCommand sets the current process's envrionment
-func ExecuteCommand(command Command) error {
-	switch command.Action {
-	case SetAction:
-		return os.Setenv(command.Variable.Key, command.Variable.Value)
-	case UnsetAction:
-		return os.Unsetenv(command.Variable.Key)
-	case SkipAction:
-		return nil
-	default:
-		return fmt.Errorf("invalid case for environement declaration action: %#v", command)
-	}
 }

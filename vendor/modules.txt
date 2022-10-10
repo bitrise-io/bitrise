@@ -1,6 +1,6 @@
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20221006125932-ee94f68f8d4a
+# github.com/bitrise-io/envman v0.0.0-20221006200158-4c65af410b1c
 ## explicit
 github.com/bitrise-io/envman/cli
 github.com/bitrise-io/envman/env

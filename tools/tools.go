@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
-	"github.com/bitrise-io/envman/env"
+	envmanEnv "github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -339,7 +339,7 @@ func EnvmanRun(envStorePth,
 	secrets []string,
 	stdInPayload []byte,
 ) (int, error) {
-	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &env.DefaultEnvironmentSource{})
+	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, err
 	}
@@ -391,7 +391,7 @@ func EnvmanRun(envStorePth,
 
 // EnvmanJSONPrint ...
 func EnvmanJSONPrint(envStorePth string) (envmanModels.EnvsJSONListModel, error) {
-	return envman.ReadEnvsJSONList(envStorePth, true, false)
+	return envman.ReadEnvsJSONList(envStorePth, true, false, &envmanEnv.DefaultEnvironmentSource{})
 }
 
 // MoveFile ...

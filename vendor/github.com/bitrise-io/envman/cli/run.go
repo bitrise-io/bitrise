@@ -14,7 +14,7 @@ import (
 // CommandModel ...
 type CommandModel struct {
 	Command      string
-	Argumentums  []string
+	Arguments    []string
 	Environments []models.EnvironmentItemModel
 }
 
