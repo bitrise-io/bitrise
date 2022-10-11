@@ -2,9 +2,11 @@ package hangdetector
 
 import (
 	"io"
+	"os"
 	"sync/atomic"
 	"time"
 
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 )
 
@@ -47,6 +49,9 @@ func newHangDetector(ticker Ticker, tickLimit, heartbeatAtTick uint64) HangDetec
 
 // Start ...
 func (h *hangDetector) Start() {
+	opts := log.LoggerOpts{Producer: log.BitriseCLI, ConsoleLoggerOpts: log.ConsoleLoggerOpts{Timestamp: true}}
+	log := log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now)
+
 	if h.outWriter == nil {
 		panic("Output is not set")
 	}
@@ -58,7 +63,6 @@ func (h *hangDetector) Start() {
 				{
 					count := atomic.AddUint64(&h.ticks, 1)
 					if count == h.heartbeatAtTick {
-						// todo: should we keep adding the timestamp prefix here?
 						log.Printf("No output received for a while. Bitrise CLI is still active.")
 					}
 					if count >= h.tickLimit {

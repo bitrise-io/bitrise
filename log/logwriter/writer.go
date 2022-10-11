@@ -28,18 +28,22 @@ type LogWriterOpts struct {
 
 // LogWriter ...
 type LogWriter struct {
+	t               LoggerType
 	logger          corelog.Logger
 	opts            LogWriterOpts
 	debugLogEnabled bool
+	timeProvider    func() time.Time
 }
 
 // NewLogWriter ...
 func NewLogWriter(t LoggerType, opts LogWriterOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) LogWriter {
-	logger := corelog.NewLogger(corelog.LoggerType(t), out, timeProvider)
+	logger := corelog.NewLogger(corelog.LoggerType(t), out)
 	return LogWriter{
+		t:               t,
 		logger:          logger,
 		opts:            opts,
 		debugLogEnabled: debugLogEnabled,
+		timeProvider:    timeProvider,
 	}
 }
 
@@ -49,10 +53,13 @@ func (w LogWriter) Write(p []byte) (n int, err error) {
 		return len(p), nil
 	}
 
-	w.logger.LogMessage(message, corelog.MessageFields{
-		Level:      level,
-		Producer:   corelog.Producer(w.opts.Producer),
-		ProducerID: w.opts.ProducerID,
-	})
+	var fields corelog.MessageFields
+	if w.t == JSONLogger {
+		fields = corelog.CreateJSONLogMessageFields(corelog.Producer(w.opts.Producer), w.opts.ProducerID, level, w.timeProvider)
+	} else {
+		fields = corelog.CreateConsoleLogMessageFields(level, nil)
+	}
+
+	w.logger.LogMessage(message, fields)
 	return len(p), nil
 }

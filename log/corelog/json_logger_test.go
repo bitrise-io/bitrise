@@ -27,7 +27,7 @@ type testLogParameters struct {
 
 func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageFormat(t *testing.T) {
 	currentTime := time.Now()
-	currentTimeString := currentTime.Format(RFC3339Micro)
+	currentTimeString := currentTime.Format(RFC3339MicroTimeLayout)
 
 	tests := []struct {
 		name            string
@@ -89,12 +89,11 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
 
-			logger := newJSONLogger(&buf, func() time.Time {
-				return currentTime
-			})
+			logger := newJSONLogger(&buf)
 			logger.LogMessage(tt.parameters.message, MessageFields{
-				Level:    tt.parameters.level,
-				Producer: tt.parameters.producer,
+				Timestamp: currentTimeString,
+				Level:     tt.parameters.level,
+				Producer:  tt.parameters.producer,
 			})
 
 			if tt.hasOutput {
@@ -113,26 +112,24 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessageFormat(t *testing.T) {
 	err := fmt.Errorf("this is an error")
 	currentTime := time.Now()
-	currentTimeString := currentTime.Format(RFC3339Micro)
+	currentTimeString := currentTime.Format(RFC3339MicroTimeLayout)
 
 	logger := jsonLogger{
 		encoder: json.NewEncoder(os.Stdout),
-		timeProvider: func() time.Time {
-			return currentTime
-		},
 	}
 
 	message := logMessage{
-		Timestamp:   currentTimeString,
 		MessageType: "log",
-		Producer:    string(BitriseCLI),
-		Level:       string(ErrorLevel),
-		Message:     fmt.Sprintf("log message serialization failed: %s", err),
+		Message:     fmt.Sprintf("log message (invalid message) serialization failed: %s", err),
+		Timestamp:   currentTimeString,
+		Producer:    BitriseCLI,
+		ProducerID:  "",
+		Level:       ErrorLevel,
 	}
 	expected, jsonErr := json.Marshal(message)
 	assert.NoError(t, jsonErr)
 
-	received := logger.logMessageForError(err, BitriseCLI, "")
+	received := logger.logMessageForError(err, message.Timestamp, "invalid message")
 
 	assert.Equal(t, string(expected), received)
 }

@@ -24,32 +24,33 @@ const (
 
 // defaultLogger ...
 type defaultLogger struct {
+	t               LoggerType
 	logger          corelog.Logger
 	opts            LoggerOpts
 	debugLogEnabled bool
+	timeProvider    func() time.Time
+}
+
+type ConsoleLoggerOpts struct {
+	Timestamp bool
 }
 
 type LoggerOpts struct {
-	Producer   Producer
-	ProducerID string
+	Producer          Producer
+	ProducerID        string
+	ConsoleLoggerOpts ConsoleLoggerOpts
 }
 
 // NewLogger ...
 func NewLogger(t LoggerType, opts LoggerOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) Logger {
-	coreLogger := corelog.NewLogger(corelog.LoggerType(t), out, timeProvider)
+	coreLogger := corelog.NewLogger(corelog.LoggerType(t), out)
 	return &defaultLogger{
+		t:               t,
 		logger:          coreLogger,
 		opts:            opts,
 		debugLogEnabled: debugLogEnabled,
+		timeProvider:    timeProvider,
 	}
-}
-
-func (m *defaultLogger) logMessage(message string, level corelog.Level, opts LoggerOpts) {
-	m.logger.LogMessage(message, corelog.MessageFields{
-		Level:      level,
-		Producer:   corelog.Producer(opts.Producer),
-		ProducerID: opts.ProducerID,
-	})
 }
 
 // Error ...
@@ -116,4 +117,19 @@ func (m *defaultLogger) Debugf(format string, args ...interface{}) {
 		return
 	}
 	m.logMessage(fmt.Sprintf(format, args...)+"\n", corelog.DebugLevel, m.opts)
+}
+
+func (m *defaultLogger) logMessage(message string, level corelog.Level, opts LoggerOpts) {
+	var fields corelog.MessageFields
+	if m.t == JSONLogger {
+		fields = corelog.CreateJSONLogMessageFields(corelog.Producer(opts.Producer), opts.ProducerID, level, m.timeProvider)
+	} else {
+		var timeProvider func() time.Time
+		if opts.ConsoleLoggerOpts.Timestamp {
+			timeProvider = m.timeProvider
+		}
+		fields = corelog.CreateConsoleLogMessageFields(level, timeProvider)
+	}
+
+	m.logger.LogMessage(message, fields)
 }
