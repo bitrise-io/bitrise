@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/log/corelog"
-
 	"github.com/stretchr/testify/assert"
 )
 

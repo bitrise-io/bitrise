@@ -113,7 +113,6 @@ func loggerParameters(arguments []string) (bool, string, bool) {
 // Run ...
 func Run() {
 	isRunCommand, format, isDebug := loggerParameters(os.Args[1:])
-	//isRunCommand, format, isDebug := parseParams(os.Args[1:])
 	if !isDebug {
 		isDebug = os.Getenv(configs.DebugModeEnvKey) == "true"
 	}
