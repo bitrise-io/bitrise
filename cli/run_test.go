@@ -1,8 +1,9 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	cliAnalytics "github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -1601,15 +1603,20 @@ route_map:
 			givenPluginInstalled(t, pluginYML, "testplugin", pluginSpec)
 
 			// When
-			var err error
-			output := captureOutput(t, func() {
-				_, err = runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
-			})
+			var origWiter io.Writer
+			var buf bytes.Buffer
+			opts := log.GetGlobalLoggerOpts()
+			origWiter = opts.Writer
+			opts.Writer = &buf
+			log.InitGlobalLogger(opts)
+			_, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+			opts.Writer = origWiter
 
 			// Then
 			require.NoError(t, err)
 			for _, expectedEvent := range test.expectedTriggeredEvents {
-				assert.True(t, strings.Contains(output, expectedEvent))
+				output := buf.String()
+				assert.True(t, strings.Contains(output, expectedEvent), output)
 			}
 		}
 	}
@@ -1661,24 +1668,6 @@ func givenPlugin(t *testing.T, pluginContent, pluginName, pluginSpec string) str
 	write(t, specYMLContent, specYMLPth)
 
 	return bitriseDir
-}
-
-func captureOutput(t *testing.T, function func()) string {
-	old := os.Stdout // keep backup of the real stdout
-	r, w, err := os.Pipe()
-	require.NoError(t, err)
-
-	os.Stdout = w
-
-	function()
-
-	err = w.Close()
-	require.NoError(t, err)
-	out, err := ioutil.ReadAll(r)
-	require.NoError(t, err)
-	os.Stdout = old
-
-	return string(out)
 }
 
 func write(t *testing.T, content, toPth string) {
