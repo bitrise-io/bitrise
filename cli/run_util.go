@@ -425,9 +425,8 @@ func executeStep(
 	}
 
 	opts := logwriter.LogWriterOpts{
-		Producer: logwriter.Step,
-		// todo: fill producer id
-		ProducerID: "",
+		Producer:   logwriter.Step,
+		ProducerID: uuid.Must(uuid.NewV4()).String(),
 	}
 	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), opts, os.Stdout, configs.IsDebugMode, time.Now)
 
