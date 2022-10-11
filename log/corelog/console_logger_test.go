@@ -1,117 +1,107 @@
 package corelog
 
-//func Test_GivenLEgacyLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testing.T) {
-//	tests := []struct {
-//		name                string
-//		hasOutput           bool
-//		parameters          testLogParameters
-//		expectedLogFunction string
-//		expectedMessage     string
-//	}{
-//		{
-//			name:      "Error log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: Step,
-//				level:    ErrorLevel,
-//				message:  "Error",
-//			},
-//			expectedLogFunction: "Errorf",
-//			expectedMessage:     "Error",
-//		},
-//		{
-//			name:      "Warning log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: Step,
-//				level:    WarnLevel,
-//				message:  "Warning",
-//			},
-//			expectedLogFunction: "Warnf",
-//			expectedMessage:     "Warning",
-//		},
-//		{
-//			name:      "Info log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: BitriseCLI,
-//				level:    InfoLevel,
-//				message:  "Info",
-//			},
-//			expectedLogFunction: "Infof",
-//			expectedMessage:     "Info",
-//		},
-//		{
-//			name:      "Done log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: BitriseCLI,
-//				level:    DoneLevel,
-//				message:  "Done",
-//			},
-//			expectedLogFunction: "Donef",
-//			expectedMessage:     "Done",
-//		},
-//		{
-//			name:      "Normal log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: Step,
-//				level:    NormalLevel,
-//				message:  "Normal",
-//			},
-//			expectedLogFunction: "Printf",
-//			expectedMessage:     "Normal",
-//		},
-//		{
-//			name:      "Debug log",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: Step,
-//				level:    DebugLevel,
-//				message:  "Debug",
-//			},
-//			expectedLogFunction: "Debugf",
-//			expectedMessage:     "Debug",
-//		},
-//		{
-//			name:      "Debug log is not logged when disabled",
-//			hasOutput: false,
-//			parameters: testLogParameters{
-//				producer: Step,
-//				level:    DebugLevel,
-//				message:  "Debug",
-//			},
-//			expectedLogFunction: "Debugf",
-//			expectedMessage:     "Debug",
-//		},
-//		{
-//			name:      "Empty message is logged",
-//			hasOutput: true,
-//			parameters: testLogParameters{
-//				producer: BitriseCLI,
-//				level:    InfoLevel,
-//				message:  "\n",
-//			},
-//			expectedLogFunction: "Infof",
-//			expectedMessage:     "\n",
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			mockLogger := &mocks.Logger{}
-//			mockLogger.On(tt.expectedLogFunction, mock.Anything).Return()
-//			mockLogger.On("EnableDebugLog", mock.Anything).Return()
-//
-//			logger := newConsoleLogger(mockLogger)
-//			logger.LogMessage(tt.parameters.producer, tt.parameters.level, tt.parameters.message)
-//
-//			if tt.hasOutput {
-//				mockLogger.AssertCalled(t, tt.expectedLogFunction, tt.expectedMessage)
-//			} else {
-//				mockLogger.AssertNotCalled(t, tt.expectedLogFunction, tt.expectedMessage)
-//			}
-//		})
-//	}
-//}
+import (
+	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testing.T) {
+	tests := []struct {
+		name            string
+		messageFields   MessageFields
+		message         string
+		expectedMessage string
+	}{
+		{
+			name: "Info message with fields",
+			messageFields: MessageFields{
+				Timestamp:  "2022.01.01",
+				Producer:   "step",
+				ProducerID: "step--unique-id",
+				Level:      InfoLevel,
+			},
+			message:         "Info message",
+			expectedMessage: "[2022.01.01] step step--unique-id \u001B[34;1mInfo message\u001B[0m",
+		},
+		{
+			name: "Empty message with fields",
+			messageFields: MessageFields{
+				Timestamp:  "2022.01.01",
+				Producer:   "step",
+				ProducerID: "step--unique-id",
+				Level:      InfoLevel,
+			},
+			message:         "",
+			expectedMessage: "[2022.01.01] step step--unique-id",
+		},
+		{
+			name: "Error log",
+			messageFields: MessageFields{
+				Level: ErrorLevel,
+			},
+			message:         "Error",
+			expectedMessage: "\u001B[31;1mError\u001B[0m",
+		},
+		{
+			name: "Warning log",
+			messageFields: MessageFields{
+				Level: WarnLevel,
+			},
+			message:         "Warning",
+			expectedMessage: "\u001B[33;1mWarning\u001B[0m",
+		},
+		{
+			name: "Info log",
+			messageFields: MessageFields{
+				Level: InfoLevel,
+			},
+			message:         "Info",
+			expectedMessage: "\u001B[34;1mInfo\u001B[0m",
+		},
+		{
+			name: "Done log",
+			messageFields: MessageFields{
+				Level: DoneLevel,
+			},
+			message:         "Done",
+			expectedMessage: "\u001B[32;1mDone\u001B[0m",
+		},
+		{
+			name: "Normal log",
+			messageFields: MessageFields{
+				Level: NormalLevel,
+			},
+			message:         "Normal",
+			expectedMessage: "Normal",
+		},
+		{
+			name: "Debug log",
+			messageFields: MessageFields{
+				Level: DebugLevel,
+			},
+			message:         "Debug",
+			expectedMessage: "\u001B[35;1mDebug\u001B[0m",
+		},
+		{
+			name: "Empty message is logged",
+			messageFields: MessageFields{
+				Level: InfoLevel,
+			},
+			message:         "",
+			expectedMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buff bytes.Buffer
+
+			logger := newConsoleLogger(&buff)
+			logger.LogMessage(tt.message, tt.messageFields)
+
+			require.Equal(t, tt.expectedMessage, buff.String())
+		})
+	}
+}

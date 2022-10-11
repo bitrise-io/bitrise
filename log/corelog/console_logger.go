@@ -55,7 +55,7 @@ func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
 		prefixes = append(prefixes, fields.ProducerID)
 	}
 	prefix := strings.Join(prefixes, " ")
-	if prefix != "" {
+	if prefix != "" && message != "" {
 		prefix += " "
 	}
 
@@ -78,6 +78,10 @@ func CreateConsoleLogMessageFields(level Level, timeProvider func() time.Time) M
 }
 
 func addColor(level Level, message string) string {
+	if message == "" {
+		return message
+	}
+
 	color := levelToANSIColorCode[level]
 	if color != "" {
 		return string(color) + message + string(ResetCode)
