@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/v2/analytics"
@@ -120,12 +119,7 @@ func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 	stateChecker := NewStateChecker(envRepository)
 
-	opts := log.LoggerOpts{Producer: log.BitriseCLI}
-	logger := legacyLogger{
-		Logger: log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now),
-		debug:  configs.IsDebugMode,
-	}
-
+	logger := newUtilsLogAdapter()
 	tracker := analytics.NewDefaultSyncTracker(&logger)
 	if stateChecker.UseAsync() {
 		tracker = analytics.NewDefaultTracker(&logger)

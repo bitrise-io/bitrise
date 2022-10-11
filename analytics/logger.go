@@ -1,36 +1,51 @@
 package analytics
 
-import "github.com/bitrise-io/bitrise/log"
+import (
+	"os"
+	"time"
 
-type legacyLogger struct {
+	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
+)
+
+// utilsLogAdapter extends the bitrise/log.Logger to meet the go-utils/v2/log.Logger interface.
+type utilsLogAdapter struct {
 	debug bool
 	log.Logger
 }
 
-func (l *legacyLogger) TInfof(format string, v ...interface{}) {
+func newUtilsLogAdapter() utilsLogAdapter {
+	opts := log.LoggerOpts{Producer: log.BitriseCLI}
+	return utilsLogAdapter{
+		Logger: log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now),
+		debug:  configs.IsDebugMode,
+	}
+}
+
+func (l *utilsLogAdapter) TInfof(format string, v ...interface{}) {
 	log.Infof(format, v...)
 }
-func (l *legacyLogger) TWarnf(format string, v ...interface{}) {
+func (l *utilsLogAdapter) TWarnf(format string, v ...interface{}) {
 	log.Warnf(format, v...)
 }
-func (l *legacyLogger) TPrintf(format string, v ...interface{}) {
+func (l *utilsLogAdapter) TPrintf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
-func (l *legacyLogger) TDonef(format string, v ...interface{}) {
+func (l *utilsLogAdapter) TDonef(format string, v ...interface{}) {
 	log.Donef(format, v...)
 }
-func (l *legacyLogger) TDebugf(format string, v ...interface{}) {
+func (l *utilsLogAdapter) TDebugf(format string, v ...interface{}) {
 	if !l.debug {
 		return
 	}
 	log.Debugf(format, v...)
 }
-func (l *legacyLogger) TErrorf(format string, v ...interface{}) {
+func (l *utilsLogAdapter) TErrorf(format string, v ...interface{}) {
 	log.Errorf(format, v...)
 }
-func (l *legacyLogger) Println() {
+func (l *utilsLogAdapter) Println() {
 	log.Print()
 }
-func (l *legacyLogger) EnableDebugLog(enable bool) {
+func (l *utilsLogAdapter) EnableDebugLog(enable bool) {
 	l.debug = enable
 }
