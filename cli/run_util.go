@@ -424,11 +424,10 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	opts := logwriter.LogWriterOpts{
-		Producer:   logwriter.Step,
-		ProducerID: uuid.Must(uuid.NewV4()).String(),
-	}
-	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), opts, os.Stdout, configs.IsDebugMode, time.Now)
+	opts := log.GetGlobalLoggerOpts()
+	opts.Producer = log.Step
+	opts.ProducerID = uuid.Must(uuid.NewV4()).String()
+	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,

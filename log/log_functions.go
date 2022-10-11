@@ -1,27 +1,36 @@
 package log
 
 import (
-	"io"
 	"os"
 	"time"
+
+	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
-var globalLogger Logger
+var globalLogger *defaultLogger
 
 func getGlobalLogger() Logger {
 	if globalLogger == nil {
 		opts := LoggerOpts{
-			Producer:   BitriseCLI,
-			ProducerID: "",
+			LoggerType:   ConsoleLogger,
+			Producer:     BitriseCLI,
+			Writer:       os.Stdout,
+			TimeProvider: time.Now,
 		}
-		globalLogger = NewLogger(ConsoleLogger, opts, os.Stdout, false, time.Now)
+		globalLogger = newLogger(opts)
 	}
 	return globalLogger
 }
 
+// GetGlobalLoggerOpts ...
+func GetGlobalLoggerOpts() LoggerOpts {
+	getGlobalLogger()
+	return globalLogger.opts
+}
+
 // InitGlobalLogger ...
-func InitGlobalLogger(t LoggerType, opts LoggerOpts, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
-	globalLogger = NewLogger(t, opts, out, debugLogEnabled, timeProvider)
+func InitGlobalLogger(opts LoggerOpts) {
+	globalLogger = newLogger(opts)
 }
 
 // Error ...
@@ -82,4 +91,9 @@ func Debug(args ...interface{}) {
 // Debugf ...
 func Debugf(format string, args ...interface{}) {
 	getGlobalLogger().Debugf(format, args...)
+}
+
+// LogMessage ...
+func LogMessage(message string, level corelog.Level) {
+	getGlobalLogger().LogMessage(message, level)
 }

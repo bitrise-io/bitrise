@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
+
 type testJSONLogMessage struct {
 	Timestamp   string `json:"timestamp"`
 	MessageType string `json:"type"`
@@ -27,7 +29,7 @@ type testLogParameters struct {
 
 func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageFormat(t *testing.T) {
 	currentTime := time.Now()
-	currentTimeString := currentTime.Format(RFC3339MicroTimeLayout)
+	currentTimeString := currentTime.Format(rfc3339MicroTimeLayout)
 
 	tests := []struct {
 		name            string
@@ -112,7 +114,7 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessageFormat(t *testing.T) {
 	err := fmt.Errorf("this is an error")
 	currentTime := time.Now()
-	currentTimeString := currentTime.Format(RFC3339MicroTimeLayout)
+	currentTimeString := currentTime.Format(rfc3339MicroTimeLayout)
 
 	logger := jsonLogger{
 		encoder: json.NewEncoder(os.Stdout),

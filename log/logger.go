@@ -1,5 +1,9 @@
 package log
 
+import "github.com/bitrise-io/bitrise/log/corelog"
+
+type MessageFields corelog.MessageFields
+
 // Logger ...
 type Logger interface {
 	Error(args ...interface{})
@@ -14,4 +18,5 @@ type Logger interface {
 	Printf(format string, args ...interface{})
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
+	LogMessage(message string, level corelog.Level)
 }

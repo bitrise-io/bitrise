@@ -136,25 +136,25 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
-	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.Setup(collection, "", log)
 }
 
 // StepmanUpdate ...
 func StepmanUpdate(collection string) error {
-	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.UpdateLibrary(collection, log)
 }
 
 // StepmanActivate ...
 func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
-	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log)
 }
 
 // StepmanStepInfo ...
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
-	log := log.NewLogger(configs.LoggerType, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, configs.IsDebugMode, time.Now)
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
 }
 

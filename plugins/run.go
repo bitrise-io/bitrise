@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
@@ -153,8 +152,8 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	opts := logwriter.LogWriterOpts{Producer: logwriter.BitriseCLI}
-	logWriter := logwriter.NewLogWriter(logwriter.LoggerType(configs.LoggerType), opts, os.Stdout, configs.IsDebugMode, time.Now)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	logWriter := logwriter.NewLogWriter(logger)
 
 	_, err = tools.EnvmanRun(
 		pluginEnvstorePath,

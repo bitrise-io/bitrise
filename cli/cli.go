@@ -124,8 +124,14 @@ func Run() {
 	configs.LoggerType = loggerType
 
 	// Global logger needs to be initialised before using any log function
-	opts := log.LoggerOpts{Producer: log.BitriseCLI}
-	log.InitGlobalLogger(loggerType, opts, os.Stdout, isDebug, time.Now)
+	opts := log.LoggerOpts{
+		LoggerType:      loggerType,
+		Producer:        log.BitriseCLI,
+		DebugLogEnabled: isDebug,
+		Writer:          os.Stdout,
+		TimeProvider:    time.Now,
+	}
+	log.InitGlobalLogger(opts)
 
 	// Debug mode?
 	if isDebug {

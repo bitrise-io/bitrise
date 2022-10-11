@@ -4,11 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 )
-
-// RFC3339MicroTimeLayout ...
-const RFC3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
 
 type messageType string
 
@@ -52,15 +48,6 @@ func (l *jsonLogger) LogMessage(message string, fields MessageFields) {
 		// Encountered an error during writing the json message to the output. Manually construct a json message for
 		// the error and print it to the output
 		fmt.Println(l.logMessageForError(err, fields.Timestamp, fmt.Sprintf("%#v", msg)))
-	}
-}
-
-func CreateJSONLogMessageFields(producer Producer, producerID string, level Level, timeProvider func() time.Time) MessageFields {
-	return MessageFields{
-		Timestamp:  timeProvider().Format(RFC3339MicroTimeLayout),
-		Producer:   producer,
-		ProducerID: producerID,
-		Level:      level,
 	}
 }
 

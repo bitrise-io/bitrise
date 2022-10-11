@@ -1,10 +1,6 @@
 package analytics
 
 import (
-	"os"
-	"time"
-
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 )
 
@@ -15,10 +11,10 @@ type utilsLogAdapter struct {
 }
 
 func newUtilsLogAdapter() utilsLogAdapter {
-	opts := log.LoggerOpts{Producer: log.BitriseCLI}
+	opts := log.GetGlobalLoggerOpts()
 	return utilsLogAdapter{
-		Logger: log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now),
-		debug:  configs.IsDebugMode,
+		Logger: log.NewLogger(opts),
+		debug:  opts.DebugLogEnabled,
 	}
 }
 

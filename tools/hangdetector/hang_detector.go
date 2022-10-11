@@ -2,11 +2,9 @@ package hangdetector
 
 import (
 	"io"
-	"os"
 	"sync/atomic"
 	"time"
 
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 )
 
@@ -49,8 +47,9 @@ func newHangDetector(ticker Ticker, tickLimit, heartbeatAtTick uint64) HangDetec
 
 // Start ...
 func (h *hangDetector) Start() {
-	opts := log.LoggerOpts{Producer: log.BitriseCLI, ConsoleLoggerOpts: log.ConsoleLoggerOpts{Timestamp: true}}
-	log := log.NewLogger(configs.LoggerType, opts, os.Stdout, configs.IsDebugMode, time.Now)
+	opts := log.GetGlobalLoggerOpts()
+	opts.ConsoleLoggerOpts.Timestamp = true
+	log := log.NewLogger(opts)
 
 	if h.outWriter == nil {
 		panic("Output is not set")

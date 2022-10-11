@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 )
-
-// ConsoleTimeLayout ...
-const ConsoleTimeLayout = "15:04:05"
 
 var levelToANSIColorCode = map[Level]ANSIColorCode{
 	ErrorLevel: RedCode,
@@ -65,16 +61,6 @@ func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
 		// the error and print it to the stdout.
 		fmt.Printf("writing log message failed: %s", err)
 	}
-}
-
-func CreateConsoleLogMessageFields(level Level, timeProvider func() time.Time) MessageFields {
-	fields := MessageFields{
-		Level: level,
-	}
-	if timeProvider != nil {
-		fields.Timestamp = timeProvider().Format(ConsoleTimeLayout)
-	}
-	return fields
 }
 
 func addColor(level Level, message string) string {
