@@ -40,7 +40,6 @@ func createJSONleLog(t *testing.T) []byte {
 }
 
 func restoreConsoleLog(t *testing.T, log []byte) string {
-	// {"timestamp":"2022-10-05T17:15:51.443237+02:00","type":"log","producer":"bitrise_cli","level":"normal","message":"\n"}
 	type Log struct {
 		Message string `json:"message"`
 		Level   string `json:"level"`

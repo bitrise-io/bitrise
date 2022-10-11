@@ -118,7 +118,7 @@ func Run() {
 	}
 
 	loggerType := log.ConsoleLogger
-	if isRunCommand && format != "" {
+	if isRunCommand && format == "json" {
 		loggerType = log.JSONLogger
 	}
 	configs.LoggerType = loggerType

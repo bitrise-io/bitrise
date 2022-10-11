@@ -46,7 +46,7 @@ var runCommand = cli.Command{
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-		cli.StringFlag{Name: OutputFormatKey, Usage: "test output"},
+		cli.StringFlag{Name: OutputFormatKey, Usage: "Log format. Available values: json, console"},
 
 		// deprecated
 		flPath,

@@ -24,13 +24,6 @@ type RawLogger struct {
 	writer io.Writer
 }
 
-// NewRawLogger ...
-func NewRawLogger(writer io.Writer) *RawLogger {
-	return &RawLogger{
-		writer: writer,
-	}
-}
-
 // NewDefaultRawLogger ...
 func NewDefaultRawLogger() RawLogger {
 	return RawLogger{
@@ -48,13 +41,6 @@ func (l RawLogger) Print(f Formatable) {
 // JSONLoger ...
 type JSONLoger struct {
 	writer io.Writer
-}
-
-// NewJSONLoger ...
-func NewJSONLoger(writer io.Writer) *JSONLoger {
-	return &JSONLoger{
-		writer: writer,
-	}
 }
 
 // NewDefaultJSONLoger ...

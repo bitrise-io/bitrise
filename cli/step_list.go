@@ -58,14 +58,12 @@ func stepList(c *cli.Context) error {
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
-		break
 	case output.FormatJSON:
 		outStr, err := tools.StepmanJSONStepList(collectionURI)
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
 		log.Print(outStr)
-		break
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}
