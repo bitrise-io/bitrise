@@ -726,13 +726,9 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow(
-		"target", workflow, config, buildRunResults,
-		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
-		"",
-		noOpTracker{},
-		nil,
-	)
+	require.NoError(t, configs.InitPaths())
+	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -819,21 +815,14 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	workflow, found := config.Workflows["trivial_fail"]
-	require.Equal(t, true, found)
-
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow(
-		"trivial_fail", workflow, config, buildRunResults,
-		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
-		"",
-		noOpTracker{},
-		nil,
-	)
+	require.NoError(t, configs.InitPaths())
+	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "trivial_fail", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1491,36 +1480,6 @@ workflows:
 	// standard, Build Status ENV test
 	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
-}
-
-func TestLastWorkflowIDInConfig(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-workflows:
-  before:
-
-  target:
-    title: target
-    before_run:
-    - before
-    after_run:
-    - after1
-
-  after1:
-    after_run:
-    - after2
-
-  after2:
-  `
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(warnings))
-
-	last, err := lastWorkflowIDInConfig("target", config)
-	require.NoError(t, err)
-	require.Equal(t, "after2", last)
 }
 
 func TestPluginTriggered(t *testing.T) {

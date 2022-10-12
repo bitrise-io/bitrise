@@ -215,8 +215,22 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker)
-	//
+	exitCode, err := runWorkflows(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker)
+	if err != nil {
+		if err == workflowRunFailedErr {
+			msg := createWorkflowRunStatusMessage(exitCode)
+			printWorkflowRunStatusMessage(msg)
+			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
+			os.Exit(exitCode)
+		}
+
+		failf(err.Error())
+	}
+
+	msg := createWorkflowRunStatusMessage(0)
+	printWorkflowRunStatusMessage(msg)
+	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
+	os.Exit(0)
 
 	return nil
 }
