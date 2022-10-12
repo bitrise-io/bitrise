@@ -30,7 +30,6 @@ import (
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/gofrs/uuid"
 )
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -877,7 +876,7 @@ func runWorkflow(
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
-	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: uuid.Must(uuid.NewV4()).String()}
+	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	bitrise.PrintRunningWorkflow(workflow.Title)
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflowID, workflow.Title)
 	*environments = append(*environments, workflow.Environments...)
