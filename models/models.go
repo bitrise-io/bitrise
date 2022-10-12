@@ -133,6 +133,7 @@ type BuildRunStartModel struct {
 // BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	WorkflowID           string                `json:"workflow_id" yaml:"workflow_id"`
+	EventName            string                `json:"event_name" yaml:"event_name"`
 	StepmanUpdates       map[string]int        `json:"stepman_updates" yaml:"stepman_updates"`
 	SuccessSteps         []StepRunResultsModel `json:"success_steps" yaml:"success_steps"`
 	FailedSteps          []StepRunResultsModel `json:"failed_steps" yaml:"failed_steps"`
