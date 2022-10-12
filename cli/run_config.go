@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	log "github.com/sirupsen/logrus"
 )
 
 func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {

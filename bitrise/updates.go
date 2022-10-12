@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/bitrise/log"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	ver "github.com/hashicorp/go-version"
 )

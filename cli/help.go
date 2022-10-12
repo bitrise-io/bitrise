@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"log"
 	"strings"
 
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -39,7 +37,7 @@ func getPluginsList() string {
 
 	pluginList, err := plugins.InstalledPluginList()
 	if err != nil {
-		log.Fatalf("Failed to list plugins, error: %s", err)
+		failf("Failed to list plugins, error: %s", err)
 	}
 
 	if len(pluginList) > 0 {
@@ -52,8 +50,4 @@ func getPluginsList() string {
 	}
 
 	return pluginListString
-}
-
-func initAppHelpTemplate() {
-	cli.AppHelpTemplate = fmt.Sprintf(helpTemplate, getPluginsList())
 }

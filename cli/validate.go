@@ -3,14 +3,11 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-
 	"os"
-
 	"strings"
 
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -239,12 +236,12 @@ func validate(c *cli.Context) error {
 		format = output.FormatRaw
 	}
 
-	var log flog.Logger
-	log = flog.NewDefaultRawLogger()
+	var log Logger
+	log = NewDefaultRawLogger()
 	if format == output.FormatRaw {
-		log = flog.NewDefaultRawLogger()
+		log = NewDefaultRawLogger()
 	} else if format == output.FormatJSON {
-		log = flog.NewDefaultJSONLoger()
+		log = NewDefaultJSONLoger()
 	} else {
 		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
 		os.Exit(1)

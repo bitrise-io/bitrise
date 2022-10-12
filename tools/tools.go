@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/tools/errorfinder"
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
@@ -19,11 +20,9 @@ import (
 	envmanEnv "github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
-	utilslog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepman "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
 
@@ -137,35 +136,37 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 
 // StepmanSetup ...
 func StepmanSetup(collection string) error {
-	return stepman.Setup(collection, "", utilslog.NewDefaultLogger(false))
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.Setup(collection, "", log)
 }
 
 // StepmanUpdate ...
 func StepmanUpdate(collection string) error {
-	return stepman.UpdateLibrary(collection, utilslog.NewDefaultLogger(false))
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.UpdateLibrary(collection, log)
 }
 
 // StepmanActivate ...
 func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, utilslog.NewDefaultLogger(false))
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log)
 }
 
 // StepmanStepInfo ...
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
-	return stepman.QueryStepInfo(collection, stepID, stepVersion, utilslog.NewDefaultLogger(false))
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
 }
 
 // StepmanRawStepList ...
 func StepmanRawStepList(collection string) (string, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "step-list", "--collection", collection, "--format", "raw"}
+	args := []string{"--loglevel", logLevel(), "step-list", "--collection", collection, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...
 func StepmanJSONStepList(collection string) (string, error) {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "step-list", "--collection", collection, "--format", "json"}
+	args := []string{"--loglevel", logLevel(), "step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -182,36 +183,31 @@ func StepmanJSONStepList(collection string) (string, error) {
 
 // StepmanShare ...
 func StepmanShare() error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "--toolmode"}
+	args := []string{"--loglevel", logLevel(), "share", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareAudit ...
 func StepmanShareAudit() error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "audit", "--toolmode"}
+	args := []string{"--loglevel", logLevel(), "share", "audit", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
+	args := []string{"--loglevel", logLevel(), "share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareFinish ...
 func StepmanShareFinish() error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "finish", "--toolmode"}
+	args := []string{"--loglevel", logLevel(), "share", "finish", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareStart ...
 func StepmanShareStart(collection string) error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "share", "start", "--collection", collection, "--toolmode"}
+	args := []string{"--loglevel", logLevel(), "share", "start", "--collection", collection, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
@@ -281,6 +277,8 @@ func EnvmanRun(envStorePth,
 	noOutputTimeout time.Duration,
 	secrets []string,
 	stdInPayload []byte,
+	stdout io.Writer,
+	stderr io.Writer,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
@@ -294,10 +292,10 @@ func EnvmanRun(envStorePth,
 	var fw *filterwriter.Writer
 
 	if !configs.IsSecretFiltering {
-		outWriter = errorFinder.WrapWriter(os.Stdout)
-		errWriter = errorFinder.WrapWriter(os.Stderr)
+		outWriter = errorFinder.WrapWriter(stdout)
+		errWriter = errorFinder.WrapWriter(stderr)
 	} else {
-		fw = filterwriter.New(secrets, os.Stdout)
+		fw = filterwriter.New(secrets, stdout)
 		outWriter = errorFinder.WrapWriter(fw)
 		errWriter = outWriter
 	}
@@ -397,4 +395,11 @@ func IsBuiltInFlagTypeKey(env string) bool {
 	default:
 		return false
 	}
+}
+
+func logLevel() string {
+	if configs.IsDebugMode {
+		return "debug"
+	}
+	return "info"
 }

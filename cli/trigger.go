@@ -7,10 +7,10 @@ import (
 
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +45,7 @@ var triggerCommand = cli.Command{
 }
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
-	log.Infoln("The following trigger filters are available:")
+	log.Info("The following trigger filters are available:")
 
 	for _, triggerItem := range triggerMap {
 		if triggerItem.Pattern != "" {
@@ -136,7 +136,7 @@ func trigger(c *cli.Context) error {
 	// Inventory validation
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(triggerParams.InventoryBase64Data, triggerParams.InventoryPath)
 	if err != nil {
-		log.Fatalf("Failed to create inventory, error: %s", err)
+		failf("Failed to create inventory, error: %s", err)
 	}
 
 	// Config validation
@@ -145,7 +145,7 @@ func trigger(c *cli.Context) error {
 		log.Warnf("warning: %s", warning)
 	}
 	if err != nil {
-		log.Fatalf("Failed to create bitrise config, error: %s", err)
+		failf("Failed to create bitrise config, error: %s", err)
 	}
 
 	// Trigger filter validation
@@ -160,38 +160,38 @@ func trigger(c *cli.Context) error {
 	// Main
 	enabledFiltering, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check Secret Filtering mode, error: %s", err)
+		failf("Failed to check Secret Filtering mode, error: %s", err)
 	}
 
 	if err := registerSecretFiltering(enabledFiltering); err != nil {
-		log.Fatalf("Failed to register Secret Filtering mode, error: %s", err)
+		failf("Failed to register Secret Filtering mode, error: %s", err)
 	}
 
 	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check Secret Envs Filtering mode, error: %s", err)
+		failf("Failed to check Secret Envs Filtering mode, error: %s", err)
 	}
 
 	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
-		log.Fatalf("Failed to register Secret Envs Filtering mode, error: %s", err)
+		failf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  PR mode, error: %s", err)
+		failf("Failed to check  PR mode, error: %s", err)
 	}
 
 	if err := registerPrMode(isPRMode); err != nil {
-		log.Fatalf("Failed to register  PR mode, error: %s", err)
+		failf("Failed to register  PR mode, error: %s", err)
 	}
 
 	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
-		log.Fatalf("Failed to check  CI mode, error: %s", err)
+		failf("Failed to check  CI mode, error: %s", err)
 	}
 
 	if err := registerCIMode(isCIMode); err != nil {
-		log.Fatalf("Failed to register  CI mode, error: %s", err)
+		failf("Failed to register  CI mode, error: %s", err)
 	}
 
 	_, workflowToRunID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)

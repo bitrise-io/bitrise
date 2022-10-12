@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 

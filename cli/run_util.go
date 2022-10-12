@@ -15,6 +15,8 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/toolkits"
@@ -30,7 +32,6 @@ import (
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/gofrs/uuid"
-	log "github.com/sirupsen/logrus"
 )
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -266,7 +267,7 @@ func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.Envir
 // GetInventoryFilePath ...
 func GetInventoryFilePath(inventoryPath string) (string, error) {
 	if inventoryPath == "" {
-		log.Debugln("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
+		log.Debug("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
 		inventoryPath = filepath.Join(configs.CurrentDir, DefaultSecretsFileName)
 
 		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
@@ -423,7 +424,21 @@ func executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	return tools.EnvmanRun(configs.InputEnvstorePath, bitriseSourceDir, cmd, timeout, noOutputTimeout, secrets, nil)
+	opts := log.GetGlobalLoggerOpts()
+	opts.Producer = log.Step
+	opts.ProducerID = uuid.Must(uuid.NewV4()).String()
+	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
+
+	return tools.EnvmanRun(
+		configs.InputEnvstorePath,
+		bitriseSourceDir,
+		cmd,
+		timeout,
+		noOutputTimeout,
+		secrets,
+		nil,
+		&logWriter,
+		&logWriter)
 }
 
 func runStep(
@@ -438,7 +453,7 @@ func runStep(
 	// with a Toolkit+Deps
 	if err := retry.Times(2).Try(func(attempt uint) error {
 		if attempt > 0 {
-			fmt.Println()
+			log.Print()
 			log.Warn("Installing Step dependency failed, retrying ...")
 		}
 
@@ -584,7 +599,7 @@ func activateAndRunSteps(
 	isLastWorkflow bool,
 	tracker analytics.Tracker,
 	workflowIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
-	log.Debugln("[BITRISE_CLI] - Activating and running steps")
+	log.Debug("[BITRISE_CLI] - Activating and running steps")
 
 	// ------------------------------------------
 	// In function global variables - These are global for easy use in local register step run result methods.
@@ -671,7 +686,7 @@ func activateAndRunSteps(
 		mergedStep := workflowStep
 		if stepYMLPth != "" {
 			specStep, err := bitrise.ReadSpecStep(stepYMLPth)
-			log.Debugf("Spec read from YML: %#v\n", specStep)
+			log.Debugf("Spec read from YML: %#v", specStep)
 			if err != nil {
 				ymlPth := stepYMLPth
 				if origStepYMLPth != "" {

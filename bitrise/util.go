@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -21,7 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 // InventoryModelFromYAMLBytes ...
@@ -316,11 +315,11 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 	}
 
 	if strings.HasSuffix(pth, ".json") {
-		log.Debugln("=> Using JSON parser for: ", pth)
+		log.Debug("=> Using JSON parser for: ", pth)
 		return ConfigModelFromJSONBytes(bytes)
 	}
 
-	log.Debugln("=> Using YAML parser for: ", pth)
+	log.Debug("=> Using YAML parser for: ", pth)
 	return ConfigModelFromYAMLBytes(bytes)
 }
 

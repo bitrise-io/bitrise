@@ -1,11 +1,10 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/urfave/cli"
 )
 
@@ -34,16 +33,16 @@ var setupCommand = cli.Command{
 // PrintBitriseHeaderASCIIArt ...
 func PrintBitriseHeaderASCIIArt(appVersion string) {
 	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
-	fmt.Println(`
+	log.Print(`
   ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
   ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
   ██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
   ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
   ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
   ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	fmt.Println()
+	log.Print()
 	log.Donef("  version: %s", appVersion)
-	fmt.Println()
+	log.Print()
 }
 
 func setup(c *cli.Context) error {
@@ -56,12 +55,12 @@ func setup(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Println()
+	log.Print()
 	log.Infof("To start using bitrise:")
 	log.Printf("* cd into your project's directory (if you're not there already)")
 	log.Printf("* call: bitrise init")
 	log.Printf("* follow the guide")
-	fmt.Println()
+	log.Print()
 	log.Donef("That's all :)")
 
 	return nil

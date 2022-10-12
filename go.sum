@@ -5,11 +5,10 @@ github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316 h1:gRQReCvmNxUVv
 github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316/go.mod h1:L4WQyg88d87Z4dxNwrYEa0Cwd9/W0gSfXsibw30r8Vw=
 github.com/bitrise-io/go-utils v0.0.0-20200224122728-e212188d99b4/go.mod h1:tTEsKvbz1LbzuN/KpVFHXnLtcAPdEgIdM41s0lL407s=
 github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e/go.mod h1:nhdaDQFvaMny1CugVV6KjK92/q97ENo0RuKSW5I4fbA=
-github.com/bitrise-io/go-utils v1.0.1/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils v1.0.3 h1:xKy0WyiJtRPqeKl/HrwQJ0QdjNOOUhiVHs81RMDwD94=
 github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10 h1:b3sG8BNhsktfYd8YXraVQsKunFKMs0bRELXdx/zhTKA=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.10/go.mod h1:Ta/ards3Ih/3Q6X8tBtcj6zTHcNf1hRSXv1E8lPgIYk=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded h1:KOnT1jCD1hMMFsEd4Ll0Njd/PU7HcdAX2I+jNxypFqU=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded/go.mod h1:gZWtM7PLn1VOroa4gN1La/24aRVc0jg5R701jTsPaO8=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4 h1:ytUxnO7iSGHlNpbdjhDUefEM5WRy1kD2ElGfBA7r1PE=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
@@ -32,8 +31,9 @@ github.com/hashicorp/go-cleanhttp v0.5.2 h1:035FKYIWjmULyFRBKPs8TBQoi0x6d9G4xc9n
 github.com/hashicorp/go-cleanhttp v0.5.2/go.mod h1:kO/YDlP8L1346E6Sodw+PrpBSV4/SoxCXGY6BqNFT48=
 github.com/hashicorp/go-hclog v0.9.2 h1:CG6TE5H9/JXsFWJCfoIVpKFIkFe6ysEuHirp4DxCsHI=
 github.com/hashicorp/go-hclog v0.9.2/go.mod h1:5CU+agLiy3J7N7QjHK5d05KxGsuXiQLrjA0H7acj2lQ=
-github.com/hashicorp/go-retryablehttp v0.7.0 h1:eu1EI/mbirUgP5C8hVsTNaGZreBDlYiwC1FZWkvQPQ4=
 github.com/hashicorp/go-retryablehttp v0.7.0/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
+github.com/hashicorp/go-retryablehttp v0.7.1 h1:sUiuQAnLlbvmExtFQs72iFW/HXeUn8Z1aJLQ4LJJbTQ=
+github.com/hashicorp/go-retryablehttp v0.7.1/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-version v1.4.0 h1:aAQzgqIrRKRa7w75CKpbBxYsmUoPjzVm1W59ca1L0J4=
 github.com/hashicorp/go-version v1.4.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/urfave/cli"
@@ -51,8 +52,8 @@ func stepList(c *cli.Context) error {
 	case output.FormatRaw:
 		out, err := tools.StepmanRawStepList(collectionURI)
 		if out != "" {
-			fmt.Println("Step list:")
-			fmt.Printf("%s", out)
+			log.Print("Step list:")
+			log.Printf("%s", out)
 		}
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
@@ -62,7 +63,7 @@ func stepList(c *cli.Context) error {
 		if err != nil {
 			registerFatal(fmt.Sprintf("Failed to print step info, err: %s", err), warnings, format)
 		}
-		fmt.Println(outStr)
+		log.Print(outStr)
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", format), warnings, output.FormatJSON)
 	}

@@ -1,17 +1,16 @@
 package plugins
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/log"
-	flog "github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -76,11 +75,11 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 
 // PrintPluginUpdateInfos ...
 func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
-	flog.Warnf("")
-	flog.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
-	flog.Printf("Run command to update plugin:")
-	fmt.Println()
-	flog.Donef("$ bitrise plugin update %s", plugin.Name)
+	log.Warnf("")
+	log.Warnf("New version (%s) of plugin (%s) available", newVersion, plugin.Name)
+	log.Printf("Run command to update plugin:")
+	log.Print()
+	log.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
 func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) error {
@@ -99,7 +98,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 			return err
 		}
 
-		fmt.Println()
+		log.Print()
 	}
 
 	// Append common data to plugin iputs
@@ -153,7 +152,21 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd = append([]string{"bash", pluginExecutable}, args...)
 	}
 
-	if _, err := tools.EnvmanRun(pluginEnvstorePath, "", cmd, -1, -1, nil, input); err != nil {
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	logWriter := logwriter.NewLogWriter(logger)
+
+	_, err = tools.EnvmanRun(
+		pluginEnvstorePath,
+		"",
+		cmd,
+		-1,
+		-1,
+		nil,
+		input,
+		&logWriter,
+		&logWriter)
+
+	if err != nil {
 		return err
 	}
 

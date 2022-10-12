@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/urfave/cli"
 )
 
@@ -50,14 +50,14 @@ func Print(outModel interface{}, format string) {
 			log.Errorf("[.print] ERROR: %s", err)
 			return
 		}
-		fmt.Printf("%s\n", serBytes)
+		log.Printf("%s", serBytes)
 	case FormatYML:
 		serBytes, err := yaml.Marshal(outModel)
 		if err != nil {
 			log.Errorf("[output.print] ERROR: %s", err)
 			return
 		}
-		fmt.Printf("%s\n", serBytes)
+		log.Printf("%s", serBytes)
 	default:
 		log.Errorf("[output.print] Invalid output format: %s", format)
 	}

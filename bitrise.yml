@@ -89,19 +89,27 @@ workflows:
     - script:
         title: Success
         inputs:
-        - content: exit 0
+        - content: |-
+            set -ex
+            exit 0
     - script:
         title: Fail wit exit code 2
         inputs:
-        - content: exit 2
+        - content: |-
+            set -ex
+            exit 2
     - script:
         title: Skippable fail with exit code 2
         is_always_run: true
         is_skippable: true
         inputs:
-        - content: exit 2
+        - content: |-
+            set -ex
+            exit 2
     - script:
         title: Skipping success
         is_always_run: false
         inputs:
-        - content: exit 0
+        - content: |-
+            set -ex
+            exit 0

@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
-func initLogFormatter() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp:   true,
-		ForceColors:     true,
-		TimestampFormat: "15:04:05",
-	})
+func failf(format string, args ...interface{}) {
+	log.Errorf(format, args...)
+	os.Exit(1)
 }
 
 func before(c *cli.Context) error {
@@ -28,54 +28,20 @@ func before(c *cli.Context) error {
 		use log.Fatal to avoid print help.
 	*/
 
-	initLogFormatter()
 	initHelpAndVersionFlags()
-
-	// Debug mode?
-	if c.Bool(DebugModeKey) {
-		// set for other tools, as an ENV
-		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set DEBUG env, error: %s", err)
-		}
-		configs.IsDebugMode = true
-		log.Warn("=> Started in DEBUG mode")
-	}
-
-	// Log level
-	// If log level defined - use it
-	logLevelStr := c.String(LogLevelKey)
-	if logLevelStr == "" && configs.IsDebugMode {
-		// if no Log Level defined and we're in Debug Mode - set loglevel to debug
-		logLevelStr = "debug"
-		log.Warn("=> LogLevel set to debug")
-	}
-	if logLevelStr == "" {
-		// if still empty: set the default
-		logLevelStr = "info"
-	}
-
-	level, err := log.ParseLevel(logLevelStr)
-	if err != nil {
-		log.Fatalf("Failed parse log level, error: %s", err)
-	}
-
-	if err := os.Setenv(configs.LogLevelEnvKey, level.String()); err != nil {
-		log.Fatalf("Failed to set LOGLEVEL env, error: %s", err)
-	}
-	log.SetLevel(level)
 
 	// CI Mode check
 	if c.Bool(CIKey) {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set CI env, error: %s", err)
+			failf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize required paths, error: %s", err)
+		failf("Failed to initialize required paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
@@ -83,7 +49,7 @@ func before(c *cli.Context) error {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			log.Fatalf("Failed to set PR env, error: %s", err)
+			failf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
@@ -102,19 +68,88 @@ func before(c *cli.Context) error {
 }
 
 func printVersion(c *cli.Context) {
-	fmt.Println(c.App.Version)
+	log.Print(c.App.Version)
+}
+
+func loggerParameters(arguments []string) (bool, string, bool) {
+	isRunCommand := false
+	outputFormat := ""
+	isDebug := false
+
+	for i, argument := range arguments {
+		if argument == "run" {
+			isRunCommand = true
+		}
+
+		if argument == "--"+OutputFormatKey {
+			if i+1 <= len(arguments) {
+				value := arguments[i+1]
+
+				if !strings.HasPrefix(value, "--") {
+					outputFormat = value
+				}
+			}
+		}
+
+		if argument == "--"+DebugModeKey {
+			if i+1 <= len(arguments) {
+				value := arguments[i+1]
+
+				if strings.HasPrefix(value, "--") {
+					isDebug = true
+				} else {
+					value, err := strconv.ParseBool(value)
+					if err == nil {
+						isDebug = value
+					}
+				}
+			}
+		}
+	}
+
+	return isRunCommand, outputFormat, isDebug
 }
 
 // Run ...
 func Run() {
-	if err := plugins.InitPaths(); err != nil {
-		log.Fatalf("Failed to initialize plugin path, error: %s", err)
+	isRunCommand, format, isDebug := loggerParameters(os.Args[1:])
+	if !isDebug {
+		isDebug = os.Getenv(configs.DebugModeEnvKey) == "true"
 	}
 
-	initAppHelpTemplate()
+	loggerType := log.ConsoleLogger
+	if isRunCommand && format == "json" {
+		loggerType = log.JSONLogger
+	}
 
-	// Parse cl
+	// Global logger needs to be initialised before using any log function
+	opts := log.LoggerOpts{
+		LoggerType:      loggerType,
+		Producer:        log.BitriseCLI,
+		DebugLogEnabled: isDebug,
+		Writer:          os.Stdout,
+		TimeProvider:    time.Now,
+	}
+	log.InitGlobalLogger(opts)
+
+	// Debug mode?
+	if isDebug {
+		// set for other tools, as an ENV
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
+			failf("Failed to set DEBUG env, error: %s", err)
+
+		}
+
+		configs.IsDebugMode = true
+		log.Warn("=> Started in DEBUG mode")
+	}
+
+	if err := plugins.InitPaths(); err != nil {
+		failf("Failed to initialize plugin path, error: %s", err)
+	}
+
 	cli.VersionPrinter = printVersion
+	cli.AppHelpTemplate = fmt.Sprintf(helpTemplate, getPluginsList())
 
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
@@ -141,7 +176,7 @@ func Run() {
 			}
 
 			if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
-				log.Fatalf("Setup failed, error: %s", err)
+				failf("Setup failed, error: %s", err)
 			}
 
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
@@ -158,6 +193,6 @@ func Run() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		failf(err.Error())
 	}
 }

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -40,10 +40,10 @@ func pluginList(c *cli.Context) error {
 		return fmt.Errorf("invalid format: %s", format)
 	}
 
-	var logger log.Logger
-	logger = log.NewDefaultRawLogger()
+	var logger Logger
+	logger = NewDefaultRawLogger()
 	if format == output.FormatJSON {
-		logger = log.NewDefaultJSONLoger()
+		logger = NewDefaultJSONLoger()
 	}
 	// ---
 

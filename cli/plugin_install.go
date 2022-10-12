@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/urfave/cli"
 )
 
@@ -58,12 +58,12 @@ func pluginInstall(c *cli.Context) error {
 	}
 
 	if len(plugin.Description) > 0 {
-		fmt.Println()
+		log.Print()
 		log.Infof("Description:")
-		fmt.Println(plugin.Description)
+		log.Print(plugin.Description)
 	}
 
-	fmt.Println()
+	log.Print()
 	if version == "" {
 		log.Donef("Local plugin (%s) installed ", plugin.Name)
 	} else {

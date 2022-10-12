@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -14,7 +13,7 @@ var stepmanCommand = cli.Command{
 	SkipFlagParsing: true,
 	Action: func(c *cli.Context) error {
 		if err := runCommandWith("stepman", c); err != nil {
-			log.Fatalf("Command failed, error: %s", err)
+			failf("Command failed, error: %s", err)
 		}
 		return nil
 	},
@@ -26,7 +25,7 @@ var envmanCommand = cli.Command{
 	SkipFlagParsing: true,
 	Action: func(c *cli.Context) error {
 		if err := runCommandWith("envman", c); err != nil {
-			log.Fatalf("Command failed, error: %s", err)
+			failf("Command failed, error: %s", err)
 		}
 		return nil
 	},

@@ -15,10 +15,10 @@ import (
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	ver "github.com/hashicorp/go-version"
 	"github.com/urfave/cli"
 )
@@ -88,7 +88,7 @@ func checkUpdate() error {
 
 func printCLIUpdateInfos(newVersion string) {
 	log.Warnf("\nNew version (%s) of the Bitrise CLI available", newVersion)
-	log.Printf("Run command to update the Bitrise CLI:\n")
+	log.Printf("Run command to update the Bitrise CLI:")
 	log.Donef("$ bitrise update")
 }
 
@@ -219,7 +219,7 @@ func update(c *cli.Context) error {
 	log.Infof("Updating Bitrise CLI...")
 
 	versionFlag := c.String("version")
-	fmt.Printf("Current version: %s\n", version.VERSION)
+	log.Printf("Current version: %s", version.VERSION)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
@@ -271,9 +271,9 @@ func update(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Printf("Updating to version: %s\n", versionFlag)
+	log.Printf("Updating to version: %s", versionFlag)
 
-	fmt.Println("Downloading Bitrise CLI...")
+	log.Print("Downloading Bitrise CLI...")
 	if err := download(versionFlag); err != nil {
 		return err
 	}
