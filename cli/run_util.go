@@ -1027,11 +1027,9 @@ func runWorkflowWithConfiguration(
 		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
 	}
 
-	//
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      startTime,
+		WorkflowID:     workflowToRunID,
 		StepmanUpdates: map[string]int{},
-		ProjectType:    bitriseConfig.ProjectType,
 	}
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
@@ -1048,7 +1046,6 @@ func runWorkflowWithConfiguration(
 	bitrise.PrintSummary(buildRunResults)
 
 	// Trigger WorkflowRunDidFinish
-	buildRunResults.EventName = string(plugins.DidFinishRun)
 	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
 		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
 	}

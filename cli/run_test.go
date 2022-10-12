@@ -674,7 +674,6 @@ func Test0Steps1Workflows(t *testing.T) {
 	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
 
@@ -722,7 +721,6 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	require.NoError(t, err)
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
 
@@ -823,7 +821,6 @@ workflows:
 	require.Equal(t, true, found)
 
 	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
 
