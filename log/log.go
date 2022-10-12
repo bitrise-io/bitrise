@@ -8,24 +8,22 @@ import (
 	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
-// RFC3339MicroTimeLayout ...
-const RFC3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
+const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
 
-// ConsoleTimeLayout ...
-const ConsoleTimeLayout = "15:04:05"
+const consoleTimeLayout = "15:04:05"
 
 type LoggerType corelog.LoggerType
 
 const (
-	JSONLogger    LoggerType = LoggerType(corelog.JSONLogger)
-	ConsoleLogger LoggerType = LoggerType(corelog.ConsoleLogger)
+	JSONLogger    = LoggerType(corelog.JSONLogger)
+	ConsoleLogger = LoggerType(corelog.ConsoleLogger)
 )
 
 type Producer corelog.Producer
 
 const (
-	BitriseCLI Producer = Producer(corelog.BitriseCLI)
-	Step       Producer = Producer(corelog.Step)
+	BitriseCLI = Producer(corelog.BitriseCLI)
+	Step       = Producer(corelog.Step)
 )
 
 // defaultLogger ...
@@ -155,7 +153,7 @@ func (m *defaultLogger) createMessageFields(level corelog.Level) MessageFields {
 
 func createJSONLogMessageFields(producer Producer, producerID string, level corelog.Level, timeProvider func() time.Time) MessageFields {
 	return MessageFields{
-		Timestamp:  timeProvider().Format(RFC3339MicroTimeLayout),
+		Timestamp:  timeProvider().Format(rfc3339MicroTimeLayout),
 		Producer:   corelog.Producer(producer),
 		ProducerID: producerID,
 		Level:      level,
@@ -167,7 +165,7 @@ func createConsoleLogMessageFields(level corelog.Level, timeProvider func() time
 		Level: level,
 	}
 	if timeProvider != nil {
-		fields.Timestamp = timeProvider().Format(ConsoleTimeLayout)
+		fields.Timestamp = timeProvider().Format(consoleTimeLayout)
 	}
 	return fields
 }
