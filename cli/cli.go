@@ -121,7 +121,6 @@ func Run() {
 	if isRunCommand && format == "json" {
 		loggerType = log.JSONLogger
 	}
-	configs.LoggerType = loggerType
 
 	// Global logger needs to be initialised before using any log function
 	opts := log.LoggerOpts{

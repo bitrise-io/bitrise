@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -37,8 +36,6 @@ var (
 
 	// NoOutputTimeout is the timeout after Steps are aborted, when no output is received
 	NoOutputTimeout time.Duration
-
-	LoggerType = log.ConsoleLogger
 )
 
 // ---------------------------
