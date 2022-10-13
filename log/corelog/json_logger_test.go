@@ -120,7 +120,7 @@ func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessag
 		encoder: json.NewEncoder(os.Stdout),
 	}
 
-	message := logMessage{
+	message := messageLog{
 		MessageType: "log",
 		Message:     fmt.Sprintf("log message (invalid message) serialization failed: %s", err),
 		Timestamp:   currentTimeString,

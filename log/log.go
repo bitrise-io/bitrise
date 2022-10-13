@@ -146,22 +146,22 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		Print(`
+		m.Print(`
 ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
 ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
 ██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
 ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
 ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
 ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-		Infof("version: %s", colorstring.Green(version.VERSION))
-		Print()
-		Warnf("CI mode: %v", plan.CIMode)
-		Warnf("PR mode: %v", plan.PRMode)
-		Warnf("Debug mode: %v", plan.DebugMode)
-		Warnf("Secret filtering mode: %v", plan.SecretFilteringMode)
-		Warnf("Secret Envs filtering mode: %v", plan.SecretEnvsFilteringMode)
-		Warnf("No output timeout mode: %v", plan.NoOutputTimeoutMode)
-		Print()
+		m.Infof("version: %s", colorstring.Green(version.VERSION))
+		m.Print()
+		m.Warnf("CI mode: %v", plan.CIMode)
+		m.Warnf("PR mode: %v", plan.PRMode)
+		m.Warnf("Debug mode: %v", plan.DebugMode)
+		m.Warnf("Secret filtering mode: %v", plan.SecretFilteringMode)
+		m.Warnf("Secret Envs filtering mode: %v", plan.SecretEnvsFilteringMode)
+		m.Warnf("No output timeout mode: %v", plan.NoOutputTimeoutMode)
+		m.Print()
 		var workflowIDs []string
 		for _, workflowPlan := range plan.ExecutionPlan {
 			workflowID := workflowPlan.WorkflowID
@@ -177,7 +177,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			prefix = colorstring.Blue("Running workflows")
 		}
 
-		Printf("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
+		m.Printf("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
 	}
 }
 

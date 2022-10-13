@@ -3,10 +3,13 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,23 +43,68 @@ func createJSONleLog(t *testing.T) []byte {
 }
 
 func restoreConsoleLog(t *testing.T, log []byte) string {
-	type Log struct {
-		Message string `json:"message"`
-		Level   string `json:"level"`
-	}
-
 	var consoleLog string
 	lines := bytes.Split(log, []byte("\n"))
 	for _, line := range lines {
 		if string(line) == "" {
 			continue
 		}
-		var log Log
-		err := json.Unmarshal(line, &log)
-		require.NoError(t, err, string(line))
-		consoleLog += createLogMsg(log.Level, log.Message)
+
+		msg, err := convertMessageLog(line)
+		if err != nil {
+			msg, err = convertEventLog(line)
+			if err != nil {
+				t.Fatalf("log can't be parsed as message log nor as event log: %s", string(line))
+			}
+		}
+
+		consoleLog += msg
 	}
 	return consoleLog
+}
+
+func convertEventLog(line []byte) (string, error) {
+	type EventLog struct {
+		Timestamp   string                 `json:"timestamp"`
+		MessageType string                 `json:"type"`
+		EventType   string                 `json:"event_type"`
+		Content     models.WorkflowRunPlan `json:"content"`
+	}
+
+	var eventLog EventLog
+	err := json.Unmarshal(line, &eventLog)
+	if err != nil {
+		return "", err
+	}
+
+	if eventLog.Content.LogFormatVersion == "" {
+		return "", fmt.Errorf("invalid message log")
+	}
+
+	var buf bytes.Buffer
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
+	logger.PrintBitriseStartedEvent(eventLog.Content)
+
+	return buf.String(), nil
+}
+
+func convertMessageLog(line []byte) (string, error) {
+	type MessageLog struct {
+		Message string `json:"message"`
+		Level   string `json:"level"`
+	}
+
+	var messageLog MessageLog
+	err := json.Unmarshal(line, &messageLog)
+	if err != nil {
+		return "", err
+	}
+
+	if messageLog.Level == "" {
+		return "", fmt.Errorf("invalid message log")
+	}
+
+	return createLogMsg(messageLog.Level, messageLog.Message), nil
 }
 
 var levelToANSIColorCode = map[level]ansiColorCode{

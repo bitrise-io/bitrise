@@ -13,7 +13,7 @@ const (
 	eventMessageType messageType = "event"
 )
 
-type logMessage struct {
+type messageLog struct {
 	Timestamp   string      `json:"timestamp"`
 	MessageType messageType `json:"type"`
 	Producer    Producer    `json:"producer"`
@@ -22,7 +22,7 @@ type logMessage struct {
 	Message     string      `json:"message"`
 }
 
-type eventMessage struct {
+type eventLog struct {
 	Timestamp   string      `json:"timestamp"`
 	MessageType messageType `json:"type"`
 	EventType   string      `json:"event_type"`
@@ -43,7 +43,7 @@ func newJSONLogger(output io.Writer) *jsonLogger {
 
 // LogMessage ...
 func (l *jsonLogger) LogMessage(message string, fields MessageLogFields) {
-	msg := logMessage{
+	msg := messageLog{
 		MessageType: logMessageType,
 		Message:     message,
 		Timestamp:   fields.Timestamp,
@@ -61,7 +61,7 @@ func (l *jsonLogger) LogMessage(message string, fields MessageLogFields) {
 
 // LogEvent ...
 func (l *jsonLogger) LogEvent(content interface{}, fields EventLogFields) {
-	msg := eventMessage{
+	msg := eventLog{
 		MessageType: eventMessageType,
 		Content:     content,
 		Timestamp:   fields.Timestamp,
