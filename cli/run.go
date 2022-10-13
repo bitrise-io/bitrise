@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise/toolkits"
+
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -110,6 +111,10 @@ func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
 	if config.Workflow == "" {
 		return 1, workflowNotSpecifiedErr
 	}
+	_, exist := config.Config.Workflows[config.Workflow]
+	if !exist {
+		return 1, fmt.Errorf("specified Workflow (%s) does not exist", config.Workflow)
+	}
 
 	tracker := analytics.NewDefaultTracker()
 	defer func() {
@@ -134,11 +139,6 @@ func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
 }
 
 func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
-	workflowToRun, exist := config.Config.Workflows[config.Workflow]
-	if !exist {
-		return models.BuildRunResultsModel{}, fmt.Errorf("specified Workflow (%s) does not exist", config.Workflow)
-	}
-
 	startTime := time.Now()
 
 	// Register run modes
@@ -146,8 +146,9 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %s", err)
 	}
 
-	if workflowToRun.Title == "" {
-		workflowToRun.Title = config.Workflow
+	targetWorkflow := config.Config.Workflows[config.Workflow]
+	if targetWorkflow.Title == "" {
+		targetWorkflow.Title = config.Workflow
 	}
 
 	// Envman setup
@@ -169,11 +170,11 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
 	}
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", workflowToRun.Title); err != nil {
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
 	}
 
-	environments = append(environments, workflowToRun.Environments...)
+	environments = append(environments, targetWorkflow.Environments...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits() {
@@ -218,6 +219,7 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
+		workflowToRun := config.Config.Workflows[workflowRunPlan.WorkflowID]
 		buildRunResults = runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, config.Config.DefaultStepLibSource, buildRunResults, &environments, config.Secrets, isLastWorkflow, tracker, buildIDProperties)
 	}
 
