@@ -162,14 +162,22 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		Warnf("Secret Envs filtering mode: %v", plan.SecretEnvsFilteringMode)
 		Warnf("No output timeout mode: %v", plan.NoOutputTimeoutMode)
 		Print()
-		Infof("Running workflow %s", colorstring.Green(plan.TargetWorkflowID))
-		if len(plan.ExecutionPlan) > 1 {
-			workflowIDs := make([]string, len(plan.ExecutionPlan))
-			for _, workflowPlan := range plan.ExecutionPlan {
-				workflowIDs = append(workflowIDs, workflowPlan.WorkflowID)
+		var workflowIDs []string
+		for _, workflowPlan := range plan.ExecutionPlan {
+			workflowID := workflowPlan.WorkflowID
+			if workflowPlan.WorkflowID == plan.TargetWorkflowID {
+				workflowID = colorstring.Green(workflowPlan.WorkflowID)
 			}
-			Printf(strings.Join(workflowIDs, " -->  "))
+			workflowIDs = append(workflowIDs, workflowID)
 		}
+		var prefix string
+		if len(workflowIDs) == 1 {
+			prefix = colorstring.Blue("Running workflow")
+		} else {
+			prefix = colorstring.Blue("Running workflows")
+		}
+
+		Printf("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
 	}
 }
 

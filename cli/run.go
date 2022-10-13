@@ -220,6 +220,9 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
 		workflowToRun := config.Config.Workflows[workflowRunPlan.WorkflowID]
+		if workflowToRun.Title == "" {
+			workflowToRun.Title = workflowRunPlan.WorkflowID
+		}
 		buildRunResults = runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, config.Config.DefaultStepLibSource, buildRunResults, &environments, config.Secrets, isLastWorkflow, tracker, buildIDProperties)
 	}
 
