@@ -92,7 +92,7 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			var buf bytes.Buffer
 
 			logger := newJSONLogger(&buf)
-			logger.LogMessage(tt.parameters.message, MessageFields{
+			logger.LogMessage(tt.parameters.message, MessageLogFields{
 				Timestamp: currentTimeString,
 				Level:     tt.parameters.level,
 				Producer:  tt.parameters.producer,

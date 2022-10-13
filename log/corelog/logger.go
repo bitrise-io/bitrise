@@ -39,18 +39,24 @@ const (
 	DebugLevel Level = "debug"
 )
 
-// MessageFields ...
-type MessageFields struct {
+// MessageLogFields ...
+type MessageLogFields struct {
 	Timestamp  string   `json:"timestamp"`
 	Producer   Producer `json:"producer"`
 	ProducerID string   `json:"producer_id,omitempty"`
 	Level      Level    `json:"level"`
 }
 
+// EventLogFields ...
+type EventLogFields struct {
+	Timestamp string `json:"timestamp"`
+	EventType string `json:"event_type"`
+}
+
 // Logger ...
 type Logger interface {
-	LogMessage(message string, fields MessageFields)
-	LogEvent(content interface{}, fields EventMessageFields)
+	LogMessage(message string, fields MessageLogFields)
+	LogEvent(content interface{}, fields EventLogFields)
 }
 
 func NewLogger(t LoggerType, output io.Writer) Logger {

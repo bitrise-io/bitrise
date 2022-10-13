@@ -29,11 +29,6 @@ type eventMessage struct {
 	Content     interface{} `json:"content"`
 }
 
-type EventMessageFields struct {
-	Timestamp string `json:"timestamp"`
-	EventType string `json:"event_type"`
-}
-
 type jsonLogger struct {
 	encoder *json.Encoder
 }
@@ -47,7 +42,7 @@ func newJSONLogger(output io.Writer) *jsonLogger {
 }
 
 // LogMessage ...
-func (l *jsonLogger) LogMessage(message string, fields MessageFields) {
+func (l *jsonLogger) LogMessage(message string, fields MessageLogFields) {
 	msg := logMessage{
 		MessageType: logMessageType,
 		Message:     message,
@@ -65,7 +60,7 @@ func (l *jsonLogger) LogMessage(message string, fields MessageFields) {
 }
 
 // LogEvent ...
-func (l *jsonLogger) LogEvent(content interface{}, fields EventMessageFields) {
+func (l *jsonLogger) LogEvent(content interface{}, fields EventLogFields) {
 	msg := eventMessage{
 		MessageType: eventMessageType,
 		Content:     content,

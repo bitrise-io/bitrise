@@ -141,7 +141,6 @@ func Run() {
 		}
 
 		configs.IsDebugMode = true
-		log.Warn("=> Started in DEBUG mode")
 	}
 
 	if err := plugins.InitPaths(); err != nil {

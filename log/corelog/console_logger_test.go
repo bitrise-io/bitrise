@@ -10,13 +10,13 @@ import (
 func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testing.T) {
 	tests := []struct {
 		name            string
-		messageFields   MessageFields
+		messageFields   MessageLogFields
 		message         string
 		expectedMessage string
 	}{
 		{
 			name: "Info message with fields",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Timestamp:  "2022.01.01",
 				Producer:   "step",
 				ProducerID: "step--unique-id",
@@ -27,7 +27,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Empty message with fields",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Timestamp:  "2022.01.01",
 				Producer:   "step",
 				ProducerID: "step--unique-id",
@@ -38,7 +38,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Error log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: ErrorLevel,
 			},
 			message:         "Error",
@@ -46,7 +46,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Warning log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: WarnLevel,
 			},
 			message:         "Warning",
@@ -54,7 +54,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Info log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: InfoLevel,
 			},
 			message:         "Info",
@@ -62,7 +62,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Done log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: DoneLevel,
 			},
 			message:         "Done",
@@ -70,7 +70,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Normal log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: NormalLevel,
 			},
 			message:         "Normal",
@@ -78,7 +78,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Debug log",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: DebugLevel,
 			},
 			message:         "Debug",
@@ -86,7 +86,7 @@ func Test_GivenConsoleLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testin
 		},
 		{
 			name: "Empty message is logged",
-			messageFields: MessageFields{
+			messageFields: MessageLogFields{
 				Level: InfoLevel,
 			},
 			message:         "",

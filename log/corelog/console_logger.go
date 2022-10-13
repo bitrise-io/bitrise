@@ -37,7 +37,7 @@ func newConsoleLogger(output io.Writer) *consoleLogger {
 }
 
 // LogMessage ...
-func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
+func (l *consoleLogger) LogMessage(message string, fields MessageLogFields) {
 	message = addColor(fields.Level, message)
 
 	var prefixes []string
@@ -63,7 +63,7 @@ func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
 	}
 }
 
-func (l consoleLogger) LogEvent(interface{}, EventMessageFields) {
+func (l consoleLogger) LogEvent(interface{}, EventLogFields) {
 
 }
 

@@ -5,7 +5,7 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 )
 
-type MessageFields corelog.MessageFields
+type MessageFields corelog.MessageLogFields
 
 // Logger ...
 type Logger interface {

@@ -141,7 +141,7 @@ func (m *defaultLogger) LogMessage(message string, level corelog.Level) {
 
 func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 	if m.opts.LoggerType == JSONLogger {
-		m.logger.LogEvent(plan, corelog.EventMessageFields{
+		m.logger.LogEvent(plan, corelog.EventLogFields{
 			Timestamp: m.opts.TimeProvider().Format(rfc3339MicroTimeLayout),
 			EventType: "bitrise_started",
 		})
@@ -183,7 +183,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 
 func (m *defaultLogger) logMessage(message string, level corelog.Level) {
 	fields := m.createMessageFields(level)
-	m.logger.LogMessage(message, corelog.MessageFields(fields))
+	m.logger.LogMessage(message, corelog.MessageLogFields(fields))
 }
 
 func (m *defaultLogger) createMessageFields(level corelog.Level) MessageFields {
