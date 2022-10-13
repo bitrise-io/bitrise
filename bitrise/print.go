@@ -2,6 +2,7 @@ package bitrise
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -280,7 +281,7 @@ func getDeprecateNotesRows(notes string) string {
 	line := ""
 
 	for i, word := range words {
-		isLastLine := (i == len(words)-1)
+		isLastLine := i == len(words)-1
 
 		expectedLine := ""
 		if line == "" {
@@ -592,11 +593,18 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	log.Print()
 	log.Print()
 	log.Printf("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
-	whitespaceWidth := (stepRunSummaryBoxWidthInChars - 2 - len("bitrise summary ")) / 2
-	log.Printf("|%sbitrise summary %s|", strings.Repeat(" ", whitespaceWidth), strings.Repeat(" ", whitespaceWidth))
+
+	title := fmt.Sprintf("bitrise summary: %s", buildRunResults.WorkflowID)
+	whitespace := float64(stepRunSummaryBoxWidthInChars - 2 - len(title))
+	if whitespace < 0 {
+		whitespace = 0
+	}
+	leftPadding := int(math.Floor(whitespace / 2.0))
+	rightPadding := int(math.Ceil(whitespace / 2.0))
+	log.Printf("|%s%s%s|", strings.Repeat(" ", leftPadding), title, strings.Repeat(" ", rightPadding))
 	log.Printf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 
-	whitespaceWidth = stepRunSummaryBoxWidthInChars - len("|   | title") - len("| time (s) |")
+	whitespaceWidth := stepRunSummaryBoxWidthInChars - len("|   | title") - len("| time (s) |")
 	log.Printf("|   | title%s| time (s) |", strings.Repeat(" ", whitespaceWidth))
 	log.Printf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
 

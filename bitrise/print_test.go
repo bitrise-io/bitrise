@@ -503,6 +503,7 @@ func TestPrintSummary(t *testing.T) {
 	}
 
 	buildResults := models.BuildRunResultsModel{
+		WorkflowID:     "my_workflow",
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 		SuccessSteps:   []models.StepRunResultsModel{result1, result2},

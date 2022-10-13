@@ -1027,8 +1027,8 @@ func runWorkflowWithConfiguration(
 		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
 	}
 
-	//
 	buildRunResults := models.BuildRunResultsModel{
+		WorkflowID:     workflowToRunID,
 		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},
 		ProjectType:    bitriseConfig.ProjectType,
