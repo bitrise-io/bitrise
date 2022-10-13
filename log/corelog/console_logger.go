@@ -63,6 +63,10 @@ func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
 	}
 }
 
+func (l consoleLogger) LogEvent(interface{}, EventMessageFields) {
+
+}
+
 func addColor(level Level, message string) string {
 	if message == "" {
 		return message

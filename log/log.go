@@ -3,9 +3,14 @@ package log
 import (
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
+	"github.com/bitrise-io/go-utils/colorstring"
+
 	"github.com/bitrise-io/bitrise/log/corelog"
+	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/version"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
@@ -132,6 +137,40 @@ func (m *defaultLogger) LogMessage(message string, level corelog.Level) {
 	}
 
 	m.logMessage(message, level)
+}
+
+func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
+	if m.opts.LoggerType == JSONLogger {
+		m.logger.LogEvent(plan, corelog.EventMessageFields{
+			Timestamp: m.opts.TimeProvider().Format(rfc3339MicroTimeLayout),
+			EventType: "bitrise_started",
+		})
+	} else {
+		Print(`
+██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
+██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
+██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
+██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
+██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
+╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
+		Infof("version: %s", colorstring.Green(version.VERSION))
+		Print()
+		Warnf("CI mode: %v", plan.CIMode)
+		Warnf("PR mode: %v", plan.PRMode)
+		Warnf("Debug mode: %v", plan.DebugMode)
+		Warnf("Secret filtering mode: %v", plan.SecretFilteringMode)
+		Warnf("Secret Envs filtering mode: %v", plan.SecretEnvsFilteringMode)
+		Warnf("No output timeout mode: %v", plan.NoOutputTimeoutMode)
+		Print()
+		Infof("Running workflow %s", colorstring.Green(plan.TargetWorkflowID))
+		if len(plan.ExecutionPlan) > 1 {
+			workflowIDs := make([]string, len(plan.ExecutionPlan))
+			for _, workflowPlan := range plan.ExecutionPlan {
+				workflowIDs = append(workflowIDs, workflowPlan.WorkflowID)
+			}
+			Printf(strings.Join(workflowIDs, " -->  "))
+		}
+	}
 }
 
 func (m *defaultLogger) logMessage(message string, level corelog.Level) {

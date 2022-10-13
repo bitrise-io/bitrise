@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
@@ -69,9 +68,6 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
-	tracker := analytics.NewDefaultTracker()
-	PrintBitriseHeaderASCIIArt(version.VERSION)
-
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
 	if c.GlobalIsSet(PRKey) {
@@ -158,21 +154,21 @@ func trigger(c *cli.Context) error {
 	//
 
 	// Main
-	enabledFiltering, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
+	isSecretFilteringMode, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check Secret Filtering mode, error: %s", err)
 	}
 
-	if err := registerSecretFiltering(enabledFiltering); err != nil {
+	if err := registerSecretFiltering(isSecretFilteringMode); err != nil {
 		failf("Failed to register Secret Filtering mode, error: %s", err)
 	}
 
-	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
+	isSecretEnvsFilteringMode, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check Secret Envs Filtering mode, error: %s", err)
 	}
 
-	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
+	if err := registerSecretEnvsFiltering(isSecretEnvsFilteringMode); err != nil {
 		failf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
@@ -215,7 +211,21 @@ func trigger(c *cli.Context) error {
 		}
 	}
 
-	exitCode, err := runWorkflows(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker)
+	runConfig := RunConfig{
+		Modes: models.WorkflowRunModes{
+			CIMode:                  isCIMode,
+			PRMode:                  isPRMode,
+			DebugMode:               configs.IsDebugMode,
+			SecretFilteringMode:     isSecretFilteringMode,
+			SecretEnvsFilteringMode: isSecretEnvsFilteringMode,
+			NoOutputTimeout:         0,
+		},
+		Config:   bitriseConfig,
+		Workflow: workflowToRunID,
+		Secrets:  inventoryEnvironments,
+	}
+
+	exitCode, err := runWorkflowsWithSetupAndCheckForUpdate(runConfig)
 	if err != nil {
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)

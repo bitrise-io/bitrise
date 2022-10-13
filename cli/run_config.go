@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	envmanModels "github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {
@@ -53,9 +51,5 @@ func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.Enviro
 }
 
 func registerNoOutputTimeout(timeout time.Duration) {
-	if timeout > 0 {
-		msg := fmt.Sprintf("Steps will time out if no output is received for %s.", timeout)
-		log.Info(colorstring.Yellow(msg))
-	}
 	configs.NoOutputTimeout = timeout
 }

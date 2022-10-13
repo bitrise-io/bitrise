@@ -3,6 +3,7 @@ module github.com/bitrise-io/bitrise
 go 1.16
 
 require (
+	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
 	github.com/bitrise-io/go-utils v1.0.3
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded

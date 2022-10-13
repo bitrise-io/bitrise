@@ -33,7 +33,6 @@ const (
 	OutputFormatKey        = "output-format"
 
 	depManagerBrew      = "brew"
-	depManagerTryCheck  = "_"
 	secretFilteringFlag = "secret-filtering"
 )
 
@@ -41,45 +40,11 @@ var workflowNotSpecifiedErr = errors.New("workflow not specified")
 var utilityWorkflowSpecifiedErr = errors.New("utility workflow specified")
 var workflowRunFailedErr = errors.New("workflow run failed")
 
-type WorkflowRunModes struct {
-	CIMode                  bool
-	PRMode                  bool
-	DebugMode               bool
-	SecretFilteringMode     bool
-	SecretEnvsFilteringMode bool
-	NoOutputTimeout         time.Duration
-}
-
 type RunConfig struct {
-	Modes    WorkflowRunModes
+	Modes    models.WorkflowRunModes
 	Config   models.BitriseDataModel
 	Workflow string
 	Secrets  []envmanModels.EnvironmentItemModel
-}
-
-type StepExecutionPlan struct {
-	UUID   string `json:"uuid"`
-	StepID string `json:"step_id"`
-}
-
-type WorkflowExecutionPlan struct {
-	UUID       string              `json:"uuid"`
-	WorkflowID string              `json:"workflow_id"`
-	Steps      []StepExecutionPlan `json:"steps"`
-}
-
-type WorkflowRunDescriptor struct {
-	Version          string `json:"version"`
-	LogFormatVersion string `json:"log_format_version"`
-
-	CIMode                  bool `json:"ci_mode"`
-	PRMode                  bool `json:"pr_mode"`
-	DebugMode               bool `json:"debug_mode"`
-	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
-	SecretFilteringMode     bool `json:"secret_filtering_mode"`
-	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
-
-	ExecutionPlan []WorkflowExecutionPlan `json:"execution_plan"`
 }
 
 var runCommand = cli.Command{
@@ -121,13 +86,7 @@ func run(c *cli.Context) error {
 		failf("Failed to process arguments: %s", err)
 	}
 
-	tracker := analytics.NewDefaultTracker()
-	defer func() {
-		tracker.Wait()
-	}()
-
-	runner := newWorkflowRunner(tracker)
-	exitCode, err := runner.RunWorkflow(*config)
+	exitCode, err := runWorkflowsWithSetupAndCheckForUpdate(*config)
 	if err != nil {
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)
@@ -147,24 +106,131 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-type workflowRunner struct {
-	tracker analytics.Tracker
-}
-
-func newWorkflowRunner(tracker analytics.Tracker) *workflowRunner {
-	return &workflowRunner{tracker: tracker}
-}
-
-func (r *workflowRunner) RunWorkflow(config RunConfig) (int, error) {
-	PrintBitriseHeaderASCIIArt(version.VERSION)
-
-	if err := registerRunModes(config.Modes); err != nil {
-		return 1, fmt.Errorf("failed to register workflow run modes: %s", err)
+func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
+	if config.Workflow == "" {
+		return 1, workflowNotSpecifiedErr
 	}
 
-	printRunningWorkflow(config.Config, config.Workflow)
+	tracker := analytics.NewDefaultTracker()
+	defer func() {
+		tracker.Wait()
+	}()
 
-	return runWorkflows(config.Config, config.Secrets, config.Workflow, r.tracker)
+	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+		return 1, fmt.Errorf("setup failed: %s", err)
+	}
+
+	if buildRunResults, err := runWorkflows(config, tracker); err != nil {
+		return 1, fmt.Errorf("failed to run workflow: %s", err)
+	} else if buildRunResults.IsBuildFailed() {
+		return buildRunResults.ExitCode(), workflowRunFailedErr
+	}
+
+	if err := checkUpdate(); err != nil {
+		log.Warnf("failed to check for update, error: %s", err)
+	}
+
+	return 0, nil
+}
+
+func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
+	workflowToRun, exist := config.Config.Workflows[config.Workflow]
+	if !exist {
+		return models.BuildRunResultsModel{}, fmt.Errorf("specified Workflow (%s) does not exist", config.Workflow)
+	}
+
+	startTime := time.Now()
+
+	// Register run modes
+	if err := registerRunModes(config.Modes); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %s", err)
+	}
+
+	if workflowToRun.Title == "" {
+		workflowToRun.Title = config.Workflow
+	}
+
+	// Envman setup
+	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to add env, err: %s", err)
+	}
+
+	if err := os.Setenv(configs.FormattedOutputPathEnvKey, configs.FormattedOutputPath); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to add env, err: %s", err)
+	}
+
+	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %s", err)
+	}
+
+	// App level environment
+	environments := append(config.Secrets, config.Config.App.Environments...)
+
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", config.Workflow); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
+	}
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", workflowToRun.Title); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
+	}
+
+	environments = append(environments, workflowToRun.Environments...)
+
+	// Bootstrap Toolkits
+	for _, aToolkit := range toolkits.AllSupportedToolkits() {
+		toolkitName := aToolkit.ToolkitName()
+		if !aToolkit.IsToolAvailableInPATH() {
+			// don't bootstrap if any preinstalled version is available,
+			// the toolkit's `PrepareForStepRun` can bootstrap for itself later if required
+			// or if the system installed version is not sufficient
+			if err := aToolkit.Bootstrap(); err != nil {
+				return models.BuildRunResultsModel{}, fmt.Errorf("failed to bootstrap the required toolkit for the step (%s), error: %s",
+					toolkitName, err)
+			}
+		}
+	}
+
+	// Trigger WillStartRun
+	buildRunStartModel := models.BuildRunStartModel{
+		EventName:   string(plugins.WillStartRun),
+		StartTime:   startTime,
+		ProjectType: config.Config.ProjectType,
+	}
+	if err := plugins.TriggerEvent(plugins.WillStartRun, buildRunStartModel); err != nil {
+		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
+	}
+
+	// Prepare workflow run parameters
+	buildRunResults := models.BuildRunResultsModel{
+		StartTime:      startTime,
+		StepmanUpdates: map[string]int{},
+		ProjectType:    config.Config.ProjectType,
+	}
+
+	plan := createWorkflowRunPlan(config.Workflow, config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
+	if len(plan.ExecutionPlan) < 1 {
+		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
+	}
+
+	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
+
+	log.PrintBitriseStartedEvent(plan)
+
+	// Run workflows
+	for i, workflowRunPlan := range plan.ExecutionPlan {
+		isLastWorkflow := i == len(plan.ExecutionPlan)-1
+		buildRunResults = runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, config.Config.DefaultStepLibSource, buildRunResults, &environments, config.Secrets, isLastWorkflow, tracker, buildIDProperties)
+	}
+
+	// Build finished
+	bitrise.PrintSummary(buildRunResults)
+
+	// Trigger WorkflowRunDidFinish
+	buildRunResults.EventName = string(plugins.DidFinishRun)
+	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
+		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
+	}
+
+	return buildRunResults, nil
 }
 
 func processArgs(c *cli.Context) (*RunConfig, error) {
@@ -265,7 +331,7 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
 
 	return &RunConfig{
-		Modes: WorkflowRunModes{
+		Modes: models.WorkflowRunModes{
 			CIMode:                  isCIMode,
 			PRMode:                  isPRMode,
 			DebugMode:               configs.IsDebugMode,
@@ -277,6 +343,95 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		Workflow: workflowToRunID,
 		Secrets:  inventoryEnvironments,
 	}, nil
+}
+
+func registerRunModes(modes models.WorkflowRunModes) error {
+	if err := registerCIMode(modes.CIMode); err != nil {
+		return fmt.Errorf("failed to register CI mode: %s", err)
+	}
+
+	if err := registerPrMode(modes.PRMode); err != nil {
+		return fmt.Errorf("failed to register PR mode: %s", err)
+	}
+
+	if err := registerSecretFiltering(modes.SecretFilteringMode); err != nil {
+		return fmt.Errorf("failed to register Secret Filtering mode: %s", err)
+	}
+
+	if err := registerSecretEnvsFiltering(modes.SecretEnvsFilteringMode); err != nil {
+		return fmt.Errorf("failed to register Secret Envs Filtering mode: %s", err)
+	}
+
+	registerNoOutputTimeout(modes.NoOutputTimeout)
+	return nil
+}
+
+func createWorkflowRunPlan(targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) models.WorkflowRunPlan {
+	var executionPlan []models.WorkflowExecutionPlan
+	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
+	for _, workflowID := range workflowList {
+		workflow := workflows[workflowID]
+
+		var stepPlan []models.StepExecutionPlan
+		for _, stepItem := range workflow.Steps {
+			var stepID string
+			for id := range stepItem {
+				stepID = id
+			}
+
+			stepPlan = append(stepPlan, models.StepExecutionPlan{
+				UUID:   uuidProvider(),
+				StepID: stepID,
+			})
+		}
+
+		executionPlan = append(executionPlan, models.WorkflowExecutionPlan{
+			UUID:       uuidProvider(),
+			WorkflowID: workflowID,
+			Steps:      stepPlan,
+		})
+	}
+
+	return models.WorkflowRunPlan{
+		Version:                 version.VERSION,
+		LogFormatVersion:        "1",
+		CIMode:                  configs.IsCIMode,
+		PRMode:                  configs.IsPullRequestMode,
+		DebugMode:               configs.IsDebugMode,
+		NoOutputTimeoutMode:     configs.NoOutputTimeout > 0,
+		SecretFilteringMode:     configs.IsSecretFiltering,
+		SecretEnvsFilteringMode: configs.IsSecretEnvsFiltering,
+		TargetWorkflowID:        targetWorkflow,
+		ExecutionPlan:           executionPlan,
+	}
+}
+
+func createWorkflowRunStatusMessage(exitCode int) string {
+	var message string
+	var colorMessage string
+	if exitCode == 0 {
+		message = "Bitrise build successful"
+		colorMessage = colorstring.Green(message)
+	} else {
+		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
+		colorMessage = colorstring.Red(message)
+	}
+	return colorMessage
+}
+
+func walkWorkflows(workflowID string, workflows map[string]models.WorkflowModel, workflowStack []string) []string {
+	workflow := workflows[workflowID]
+	for _, before := range workflow.BeforeRun {
+		workflowStack = walkWorkflows(before, workflows, workflowStack)
+	}
+
+	workflowStack = append(workflowStack, workflowID)
+
+	for _, after := range workflow.AfterRun {
+		workflowStack = walkWorkflows(after, workflows, workflowStack)
+	}
+
+	return workflowStack
 }
 
 func printAvailableWorkflows(config models.BitriseDataModel) {
@@ -327,263 +482,8 @@ func printAboutUtilityWorkflowsText() {
 	log.Print(" in the before_run and after_run lists.")
 }
 
-func printRunningWorkflow(bitriseConfig models.BitriseDataModel, targetWorkflowToRunID string) {
-	beforeWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].BeforeRun
-	afterWorkflowIDs := bitriseConfig.Workflows[targetWorkflowToRunID].AfterRun
-	workflowsString := ""
-	if len(beforeWorkflowIDs) == 0 && len(afterWorkflowIDs) == 0 {
-		workflowsString = "Running workflow: "
-	} else {
-		workflowsString = "Running workflows: "
-	}
-
-	if len(beforeWorkflowIDs) != 0 {
-		for _, workflowName := range beforeWorkflowIDs {
-			workflowsString = workflowsString + workflowName + " --> "
-		}
-	}
-
-	workflowsString = workflowsString + colorstring.Green(targetWorkflowToRunID)
-
-	if len(afterWorkflowIDs) != 0 {
-		for _, workflowName := range afterWorkflowIDs {
-			workflowsString = workflowsString + " --> " + workflowName
-		}
-	}
-
-	log.Infof(workflowsString)
-}
-
-func registerRunModes(modes WorkflowRunModes) error {
-	if err := registerSecretFiltering(modes.SecretFilteringMode); err != nil {
-		return fmt.Errorf("failed to register Secret Filtering mode: %s", err)
-	}
-
-	if err := registerSecretEnvsFiltering(modes.SecretEnvsFilteringMode); err != nil {
-		return fmt.Errorf("failed to register Secret Envs Filtering mode: %s", err)
-	}
-
-	if err := registerPrMode(modes.PRMode); err != nil {
-		return fmt.Errorf("failed to register PR mode: %s", err)
-	}
-
-	if err := registerCIMode(modes.CIMode); err != nil {
-		return fmt.Errorf("failed to register CI mode: %s", err)
-	}
-
-	registerNoOutputTimeout(modes.NoOutputTimeout)
-	return nil
-}
-
-func createWorkflowRunDescriptor(targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) WorkflowRunDescriptor {
-	var executionPlan []WorkflowExecutionPlan
-	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
-	for _, workflowID := range workflowList {
-		workflow := workflows[workflowID]
-
-		var stepPlan []StepExecutionPlan
-		for _, stepItem := range workflow.Steps {
-			var stepID string
-			for id := range stepItem {
-				stepID = id
-			}
-
-			stepPlan = append(stepPlan, StepExecutionPlan{
-				UUID:   uuidProvider(),
-				StepID: stepID,
-			})
-		}
-
-		executionPlan = append(executionPlan, WorkflowExecutionPlan{
-			UUID:       uuidProvider(),
-			WorkflowID: workflowID,
-			Steps:      stepPlan,
-		})
-	}
-
-	return WorkflowRunDescriptor{
-		Version:                 version.VERSION,
-		LogFormatVersion:        "1",
-		CIMode:                  configs.IsCIMode,
-		PRMode:                  configs.IsPullRequestMode,
-		DebugMode:               configs.IsDebugMode,
-		NoOutputTimeoutMode:     configs.NoOutputTimeout > 0,
-		SecretFilteringMode:     configs.IsSecretFiltering,
-		SecretEnvsFilteringMode: configs.IsSecretEnvsFiltering,
-		ExecutionPlan:           executionPlan,
-	}
-}
-
-func runWorkflows(bitriseConfig models.BitriseDataModel, inventoryEnvironments []envmanModels.EnvironmentItemModel, workflowToRunID string, tracker analytics.Tracker) (int, error) {
-	if workflowToRunID == "" {
-		return 1, workflowNotSpecifiedErr
-	}
-
-	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
-		return 1, fmt.Errorf("setup failed: %s", err)
-	}
-
-	startTime := time.Now()
-
-	// Run selected configuration
-	if buildRunResults, err := runWorkflowWithConfiguration(startTime, workflowToRunID, bitriseConfig, inventoryEnvironments, tracker); err != nil {
-		return 1, fmt.Errorf("failed to run workflow: %s", err)
-	} else if buildRunResults.IsBuildFailed() {
-		return buildRunResults.ExitCode(), workflowRunFailedErr
-	}
-	if err := checkUpdate(); err != nil {
-		log.Warnf("failed to check for update, error: %s", err)
-	}
-
-	return 0, nil
-}
-
-// RunWorkflowWithConfiguration ...
-func runWorkflowWithConfiguration(
-	startTime time.Time,
-	workflowToRunID string,
-	bitriseConfig models.BitriseDataModel,
-	secretEnvironments []envmanModels.EnvironmentItemModel,
-	tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
-
-	workflowToRun, exist := bitriseConfig.Workflows[workflowToRunID]
-	if !exist {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Specified Workflow (%s) does not exist", workflowToRunID)
-	}
-
-	if workflowToRun.Title == "" {
-		workflowToRun.Title = workflowToRunID
-	}
-
-	// Envman setup
-	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
-	}
-
-	if err := os.Setenv(configs.FormattedOutputPathEnvKey, configs.FormattedOutputPath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to add env, err: %s", err)
-	}
-
-	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to run envman init: %s", err)
-	}
-
-	// App level environment
-	environments := append(secretEnvironments, bitriseConfig.App.Environments...)
-
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", workflowToRunID); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
-	}
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", workflowToRun.Title); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("Failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
-	}
-
-	environments = append(environments, workflowToRun.Environments...)
-
-	// Bootstrap Toolkits
-	for _, aToolkit := range toolkits.AllSupportedToolkits() {
-		toolkitName := aToolkit.ToolkitName()
-		if !aToolkit.IsToolAvailableInPATH() {
-			// don't bootstrap if any preinstalled version is available,
-			// the toolkit's `PrepareForStepRun` can bootstrap for itself later if required
-			// or if the system installed version is not sufficient
-			if err := aToolkit.Bootstrap(); err != nil {
-				return models.BuildRunResultsModel{}, fmt.Errorf("Failed to bootstrap the required toolkit for the step (%s), error: %s",
-					toolkitName, err)
-			}
-		}
-	}
-
-	// Trigger WillStartRun
-	buildRunStartModel := models.BuildRunStartModel{
-		EventName:   string(plugins.WillStartRun),
-		StartTime:   startTime,
-		ProjectType: bitriseConfig.ProjectType,
-	}
-	if err := plugins.TriggerEvent(plugins.WillStartRun, buildRunStartModel); err != nil {
-		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
-	}
-
-	//
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      startTime,
-		StepmanUpdates: map[string]int{},
-		ProjectType:    bitriseConfig.ProjectType,
-	}
-
-	descriptor := createWorkflowRunDescriptor(workflowToRunID, bitriseConfig.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
-	if len(descriptor.ExecutionPlan) < 1 {
-		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
-	}
-	lastWorkflowID := descriptor.ExecutionPlan[len(descriptor.ExecutionPlan)-1].WorkflowID
-
-	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
-	buildRunResults, err := activateAndRunWorkflow(
-		descriptor,
-		workflowToRunID, workflowToRun, bitriseConfig,
-		buildRunResults,
-		&environments, secretEnvironments,
-		lastWorkflowID, tracker, buildIDProperties)
-	if err != nil {
-		return buildRunResults, errors.New("[BITRISE_CLI] - Failed to activate and run workflow " + workflowToRunID)
-	}
-
-	// Build finished
-	bitrise.PrintSummary(buildRunResults)
-
-	// Trigger WorkflowRunDidFinish
-	buildRunResults.EventName = string(plugins.DidFinishRun)
-	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
-		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
-	}
-
-	return buildRunResults, nil
-}
-
-func activateAndRunWorkflow(
-	descriptor WorkflowRunDescriptor,
-	workflowID string, workflow models.WorkflowModel, bitriseConfig models.BitriseDataModel,
-	buildRunResults models.BuildRunResultsModel,
-	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	lastWorkflowID string, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) (models.BuildRunResultsModel, error) {
-
-	for _, workflowRunPlan := range descriptor.ExecutionPlan {
-		buildRunResults = runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflow, bitriseConfig.DefaultStepLibSource, buildRunResults, environments, secrets, workflowID == lastWorkflowID, tracker, buildIDProperties)
-	}
-
-	return buildRunResults, nil
-}
-
-func createWorkflowRunStatusMessage(exitCode int) string {
-	var message string
-	var colorMessage string
-	if exitCode == 0 {
-		message = "Bitrise build successful"
-		colorMessage = colorstring.Green(message)
-	} else {
-		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
-		colorMessage = colorstring.Red(message)
-	}
-	return colorMessage
-}
-
 func printWorkflowRunStatusMessage(msg string) {
 	log.Print()
 	log.Print(msg)
 	log.Print()
-}
-
-func walkWorkflows(workflowID string, workflows map[string]models.WorkflowModel, workflowStack []string) []string {
-	workflow := workflows[workflowID]
-	for _, before := range workflow.BeforeRun {
-		workflowStack = walkWorkflows(before, workflows, workflowStack)
-	}
-
-	workflowStack = append(workflowStack, workflowID)
-
-	for _, after := range workflow.AfterRun {
-		workflowStack = walkWorkflows(after, workflows, workflowStack)
-	}
-
-	return workflowStack
 }

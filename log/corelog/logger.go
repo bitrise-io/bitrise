@@ -50,6 +50,7 @@ type MessageFields struct {
 // Logger ...
 type Logger interface {
 	LogMessage(message string, fields MessageFields)
+	LogEvent(content interface{}, fields EventMessageFields)
 }
 
 func NewLogger(t LoggerType, output io.Writer) Logger {

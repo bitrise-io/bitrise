@@ -63,10 +63,6 @@ func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.Enviro
 
 func registerPrMode(isPRMode bool) error {
 	configs.IsPullRequestMode = isPRMode
-
-	if isPRMode {
-		log.Info(colorstring.Yellow("bitrise runs in PR mode"))
-	}
 	return os.Setenv(configs.PRModeEnvKey, strconv.FormatBool(isPRMode))
 }
 
@@ -97,10 +93,6 @@ func isCIMode(ciGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.Enviro
 
 func registerCIMode(isCIMode bool) error {
 	configs.IsCIMode = isCIMode
-
-	if isCIMode {
-		log.Info(colorstring.Yellow("bitrise runs in CI mode"))
-	}
 	return os.Setenv(configs.CIModeEnvKey, strconv.FormatBool(isCIMode))
 }
 
@@ -128,10 +120,6 @@ func isSecretFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels
 
 func registerSecretFiltering(filtering bool) error {
 	configs.IsSecretFiltering = filtering
-
-	if filtering {
-		log.Info(colorstring.Yellow("bitrise runs in Secret Filtering mode"))
-	}
 	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
 }
 
@@ -159,10 +147,6 @@ func isSecretEnvsFiltering(filteringFlag *bool, inventoryEnvironments []envmanMo
 
 func registerSecretEnvsFiltering(filtering bool) error {
 	configs.IsSecretEnvsFiltering = filtering
-
-	if filtering {
-		log.Info(colorstring.Yellow("bitrise runs in Secret Envs Filtering mode"))
-	}
 	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
 }
 
@@ -591,7 +575,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 }
 
 func activateAndRunSteps(
-	plan WorkflowExecutionPlan,
+	plan models.WorkflowExecutionPlan,
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
 	buildRunResults models.BuildRunResultsModel,
@@ -869,7 +853,7 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 }
 
 func runWorkflow(
-	plan WorkflowExecutionPlan,
+	plan models.WorkflowExecutionPlan,
 	workflowID string,
 	workflow models.WorkflowModel,
 	steplibSource string,

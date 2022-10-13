@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/bitrise-io/bitrise/models"
+
 	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
@@ -96,4 +98,8 @@ func Debugf(format string, args ...interface{}) {
 // LogMessage ...
 func LogMessage(message string, level corelog.Level) {
 	getGlobalLogger().LogMessage(message, level)
+}
+
+func PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
+	getGlobalLogger().PrintBitriseStartedEvent(plan)
 }
