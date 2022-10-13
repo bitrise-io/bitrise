@@ -102,3 +102,7 @@ func LogMessage(message string, level corelog.Level) {
 func PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 	getGlobalLogger().PrintBitriseStartedEvent(plan)
 }
+
+func PrintBitriseASCIIArt() {
+	getGlobalLogger().PrintBitriseASCIIArt()
+}

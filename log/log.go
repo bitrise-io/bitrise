@@ -145,15 +145,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		m.Print(`
-██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
-██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
-██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
-██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
-██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
-╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-		m.Infof("version: %s", colorstring.Green(version.VERSION))
-		m.Print()
+		m.PrintBitriseASCIIArt()
 		m.Warnf("CI mode: %v", plan.CIMode)
 		m.Warnf("PR mode: %v", plan.PRMode)
 		m.Warnf("Debug mode: %v", plan.DebugMode)
@@ -178,6 +170,19 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 
 		m.Printf("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
 	}
+}
+
+// PrintBitriseASCIIArt ...
+func (m *defaultLogger) PrintBitriseASCIIArt() {
+	m.Print(`
+██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
+██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
+██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
+██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
+██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
+╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
+	m.Infof("version: %s", colorstring.Green(version.VERSION))
+	m.Print()
 }
 
 func (m *defaultLogger) logMessage(message string, level corelog.Level) {

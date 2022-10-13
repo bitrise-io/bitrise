@@ -23,4 +23,5 @@ type Logger interface {
 	Debugf(format string, args ...interface{})
 	LogMessage(message string, level corelog.Level)
 	PrintBitriseStartedEvent(plan models.WorkflowRunPlan)
+	PrintBitriseASCIIArt()
 }

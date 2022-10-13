@@ -30,23 +30,8 @@ var setupCommand = cli.Command{
 	},
 }
 
-// PrintBitriseHeaderASCIIArt ...
-func PrintBitriseHeaderASCIIArt(appVersion string) {
-	// generated here: http://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Bitrise
-	log.Print(`
-  ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
-  ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
-  ██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
-  ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
-  ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
-  ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	log.Print()
-	log.Donef("  version: %s", appVersion)
-	log.Print()
-}
-
 func setup(c *cli.Context) error {
-	PrintBitriseHeaderASCIIArt(c.App.Version)
+	log.PrintBitriseASCIIArt()
 
 	fullMode := c.Bool("full")
 	cleanMode := c.Bool("clean")
