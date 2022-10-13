@@ -406,19 +406,6 @@ func createWorkflowRunPlan(targetWorkflow string, workflows map[string]models.Wo
 	}
 }
 
-func createWorkflowRunStatusMessage(exitCode int) string {
-	var message string
-	var colorMessage string
-	if exitCode == 0 {
-		message = "Bitrise build successful"
-		colorMessage = colorstring.Green(message)
-	} else {
-		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
-		colorMessage = colorstring.Red(message)
-	}
-	return colorMessage
-}
-
 func walkWorkflows(workflowID string, workflows map[string]models.WorkflowModel, workflowStack []string) []string {
 	workflow := workflows[workflowID]
 	for _, before := range workflow.BeforeRun {
@@ -486,4 +473,17 @@ func printWorkflowRunStatusMessage(msg string) {
 	log.Print()
 	log.Print(msg)
 	log.Print()
+}
+
+func createWorkflowRunStatusMessage(exitCode int) string {
+	var message string
+	var colorMessage string
+	if exitCode == 0 {
+		message = "Bitrise build successful"
+		colorMessage = colorstring.Green(message)
+	} else {
+		message = fmt.Sprintf("Bitrise build failed (exit code: %d)", exitCode)
+		colorMessage = colorstring.Red(message)
+	}
+	return colorMessage
 }

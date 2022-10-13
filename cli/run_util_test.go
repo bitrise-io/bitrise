@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
@@ -354,99 +353,6 @@ envs:
 	}
 }
 
-func TestExpandEnvs(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-workflows:
-  test:
-    envs:
-    - ENV0: "Hello"
-    - ENV1: "$ENV0 world"
-    steps:
-    - script:
-        inputs:
-        - content: |
-            #!/bin/bash
-            envman add --key ENV2 --value "$ENV1 !"
-    - script:
-        inputs:
-        - content: |
-            #!/bin/bash
-            echo "ENV2: $ENV2"
-            if [ "$ENV2" != "Hello world !" ] ; then
-              echo "Actual ($ENV2), excpected (Hello world !)"
-              exit 1
-            fi
-`
-
-	require.NoError(t, configs.InitPaths())
-
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(warnings))
-
-	buildRunResults, err := runWorkflows(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
-	require.NoError(t, err)
-	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-}
-
-func TestEvaluateInputs(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-workflows:
-  test:
-    envs:
-    - TEST_KEY: "test value"
-    steps:
-    - script:
-        title: "Template test"
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            {{if .IsCI}}
-            exit 1
-            {{else}}
-            exit 0
-            {{end}}
-          opts:
-            is_template: true
-    - script:
-        title: "Template test"
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -v
-            {{if enveq "TEST_KEY" "test value"}}
-            exit 0
-            {{else}}
-            exit 1
-            {{end}}
-          opts:
-            is_template: true
-`
-
-	require.NoError(t, configs.InitPaths())
-
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(warnings))
-
-	buildRunResults, err := runWorkflows(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
-	require.Equal(t, nil, err)
-	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSteps))
-	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
-}
-
 func TestGetBitriseConfigFromBase64Data(t *testing.T) {
 	configStr := `
 format_version: 0.9.10
@@ -494,30 +400,6 @@ envs:
 	opts, err := env.GetOptions()
 	require.NoError(t, err)
 	require.Equal(t, true, *opts.IsExpand)
-}
-
-func TestInvalidStepID(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-workflows:
-  target:
-    title: Invalid step id
-    steps:
-    - invalid-step:
-    - invalid-step:
-    - invalid-step:
-`
-
-	require.NoError(t, configs.InitPaths())
-
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(warnings))
-
-	results, err := runWorkflows(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
-	require.Equal(t, 1, len(results.StepmanUpdates))
 }
 
 func TestAddTestMetadata(t *testing.T) {

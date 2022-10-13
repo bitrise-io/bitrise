@@ -489,3 +489,28 @@ func TestConfigModelFromJSONBytesNormalize(t *testing.T) {
 	_, err = json.MarshalIndent(config, "", "\t")
 	require.NoError(t, err)
 }
+
+// Workflow contains before and after workflow, and no one contains steps, but circular workflow dependency exist, which should fail
+func TestConfigModelFromYAMLBytesReferenceCycle(t *testing.T) {
+	configStr := `
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  before1:
+    before_run:
+    - before2
+
+  before2:
+    before_run:
+    - before1
+
+  target:
+    before_run:
+    - before1
+    - before2
+  `
+	_, warnings, err := ConfigModelFromYAMLBytes([]byte(configStr))
+	require.Error(t, err)
+	require.Equal(t, 0, len(warnings))
+}
