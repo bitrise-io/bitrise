@@ -1029,7 +1029,9 @@ func runWorkflowWithConfiguration(
 
 	buildRunResults := models.BuildRunResultsModel{
 		WorkflowID:     workflowToRunID,
+		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},
+		ProjectType:    bitriseConfig.ProjectType,
 	}
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
