@@ -159,17 +159,9 @@ func trigger(c *cli.Context) error {
 		failf("Failed to check Secret Filtering mode, error: %s", err)
 	}
 
-	if err := registerSecretFiltering(isSecretFilteringMode); err != nil {
-		failf("Failed to register Secret Filtering mode, error: %s", err)
-	}
-
 	isSecretEnvsFilteringMode, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check Secret Envs Filtering mode, error: %s", err)
-	}
-
-	if err := registerSecretEnvsFiltering(isSecretEnvsFilteringMode); err != nil {
-		failf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
@@ -177,17 +169,9 @@ func trigger(c *cli.Context) error {
 		failf("Failed to check  PR mode, error: %s", err)
 	}
 
-	if err := registerPrMode(isPRMode); err != nil {
-		failf("Failed to register  PR mode, error: %s", err)
-	}
-
 	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check  CI mode, error: %s", err)
-	}
-
-	if err := registerCIMode(isCIMode); err != nil {
-		failf("Failed to register  CI mode, error: %s", err)
 	}
 
 	_, workflowToRunID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
@@ -197,18 +181,6 @@ func trigger(c *cli.Context) error {
 			printAvailableTriggerFilters(bitriseConfig.TriggerMap)
 		}
 		os.Exit(1)
-	}
-
-	if triggerParams.TriggerPattern != "" {
-		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
-	} else {
-		if triggerParams.PushBranch != "" {
-			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
-		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
-			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
-		} else if triggerParams.Tag != "" {
-			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
-		}
 	}
 
 	runConfig := RunConfig{
