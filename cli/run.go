@@ -245,13 +245,6 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		workflowToRunID = c.Args()[0]
 	}
 
-	if workflowToRunID == "" {
-		return nil, workflowNotSpecifiedErr
-	}
-	if strings.HasPrefix(workflowToRunID, "_") {
-		return nil, utilityWorkflowSpecifiedErr
-	}
-
 	var prGlobalFlagPtr *bool
 	if c.GlobalIsSet(PRKey) {
 		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
@@ -299,6 +292,13 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		jsonParams, jsonParamsBase64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse command params: %s", err)
+	}
+
+	if runParams.WorkflowToRunID == "" {
+		return nil, workflowNotSpecifiedErr
+	}
+	if strings.HasPrefix(runParams.WorkflowToRunID, "_") {
+		return nil, utilityWorkflowSpecifiedErr
 	}
 
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.InventoryBase64Data, runParams.InventoryPath)
