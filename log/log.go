@@ -6,11 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/go-utils/colorstring"
-
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
