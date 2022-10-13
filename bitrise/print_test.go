@@ -3,6 +3,7 @@ package bitrise
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -503,6 +504,7 @@ func TestPrintSummary(t *testing.T) {
 
 	buildResults := models.BuildRunResultsModel{
 		WorkflowID:     "my_workflow",
+		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 		SuccessSteps:   []models.StepRunResultsModel{result1, result2},
 	}
