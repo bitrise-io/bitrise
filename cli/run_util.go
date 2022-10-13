@@ -586,6 +586,11 @@ func activateAndRunSteps(
 	workflowIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
 	log.Debug("[BITRISE_CLI] - Activating and running steps")
 
+	if len(workflow.Steps) == 0 {
+		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", workflow.Title)
+		return buildRunResults
+	}
+
 	// ------------------------------------------
 	// In function global variables - These are global for easy use in local register step run result methods.
 	var stepStartTime time.Time
