@@ -77,7 +77,9 @@ func run(c *cli.Context) error {
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
-			printAvailableWorkflows(config.Config)
+			if config != nil {
+				printAvailableWorkflows(config.Config)
+			}
 			failf("No workflow specified")
 		} else if err == utilityWorkflowSpecifiedErr {
 			printAboutUtilityWorkflowsText()
@@ -344,7 +346,7 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 			SecretEnvsFilteringMode: enabledEnvsFiltering,
 		},
 		Config:   bitriseConfig,
-		Workflow: workflowToRunID,
+		Workflow: runParams.WorkflowToRunID,
 		Secrets:  inventoryEnvironments,
 	}, nil
 }
