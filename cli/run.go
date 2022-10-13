@@ -203,6 +203,7 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 
 	// Prepare workflow run parameters
 	buildRunResults := models.BuildRunResultsModel{
+		WorkflowID:     config.Workflow,
 		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},
 		ProjectType:    config.Config.ProjectType,
