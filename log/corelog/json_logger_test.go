@@ -92,7 +92,7 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			var buf bytes.Buffer
 
 			logger := newJSONLogger(&buf)
-			logger.LogMessage(tt.parameters.message, MessageFields{
+			logger.LogMessage(tt.parameters.message, MessageLogFields{
 				Timestamp: currentTimeString,
 				Level:     tt.parameters.level,
 				Producer:  tt.parameters.producer,
@@ -120,7 +120,7 @@ func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessag
 		encoder: json.NewEncoder(os.Stdout),
 	}
 
-	message := logMessage{
+	message := messageLog{
 		MessageType: "log",
 		Message:     fmt.Sprintf("log message (invalid message) serialization failed: %s", err),
 		Timestamp:   currentTimeString,

@@ -1,8 +1,11 @@
 package log
 
-import "github.com/bitrise-io/bitrise/log/corelog"
+import (
+	"github.com/bitrise-io/bitrise/log/corelog"
+	"github.com/bitrise-io/bitrise/models"
+)
 
-type MessageFields corelog.MessageFields
+type MessageFields corelog.MessageLogFields
 
 // Logger ...
 type Logger interface {
@@ -19,4 +22,6 @@ type Logger interface {
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
 	LogMessage(message string, level corelog.Level)
+	PrintBitriseStartedEvent(plan models.WorkflowRunPlan)
+	PrintBitriseASCIIArt()
 }

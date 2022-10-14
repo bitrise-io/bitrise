@@ -9,16 +9,24 @@ import (
 type messageType string
 
 const (
-	logMessageType messageType = "log"
+	logMessageType   messageType = "log"
+	eventMessageType messageType = "event"
 )
 
-type logMessage struct {
+type messageLog struct {
 	Timestamp   string      `json:"timestamp"`
 	MessageType messageType `json:"type"`
 	Producer    Producer    `json:"producer"`
 	ProducerID  string      `json:"producer_id,omitempty"`
 	Level       Level       `json:"level"`
 	Message     string      `json:"message"`
+}
+
+type eventLog struct {
+	Timestamp   string      `json:"timestamp"`
+	MessageType messageType `json:"type"`
+	EventType   string      `json:"event_type"`
+	Content     interface{} `json:"content"`
 }
 
 type jsonLogger struct {
@@ -34,14 +42,30 @@ func newJSONLogger(output io.Writer) *jsonLogger {
 }
 
 // LogMessage ...
-func (l *jsonLogger) LogMessage(message string, fields MessageFields) {
-	msg := logMessage{
+func (l *jsonLogger) LogMessage(message string, fields MessageLogFields) {
+	msg := messageLog{
 		MessageType: logMessageType,
 		Message:     message,
 		Timestamp:   fields.Timestamp,
 		Producer:    fields.Producer,
 		ProducerID:  fields.ProducerID,
 		Level:       fields.Level,
+	}
+	err := l.encoder.Encode(msg)
+	if err != nil {
+		// Encountered an error during writing the json message to the output. Manually construct a json message for
+		// the error and print it to the output
+		fmt.Println(l.logMessageForError(err, fields.Timestamp, fmt.Sprintf("%#v", msg)))
+	}
+}
+
+// LogEvent ...
+func (l *jsonLogger) LogEvent(content interface{}, fields EventLogFields) {
+	msg := eventLog{
+		MessageType: eventMessageType,
+		Content:     content,
+		Timestamp:   fields.Timestamp,
+		EventType:   fields.EventType,
 	}
 	err := l.encoder.Encode(msg)
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 func ExampleLogger() {
 	var logger corelog.Logger
 
-	fields := corelog.MessageFields{
+	fields := corelog.MessageLogFields{
 		Timestamp: "2022-01-01T01:01:01Z",
 		Producer:  corelog.BitriseCLI,
 		Level:     corelog.InfoLevel,

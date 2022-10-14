@@ -16,34 +16,12 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
-	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type noOpTracker struct {
-}
-
-func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, map[string]interface{}, map[string]string) {
-}
-
-func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.StepResult) {
-}
-
-func (n noOpTracker) SendCLIWarning(string) {
-}
-
-func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string) {
-}
-
-func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool) {
-}
-
-func (n noOpTracker) Wait() {
-}
 
 func TestSkipIfEmpty(t *testing.T) {
 	t.Log("skip_if_empty=true && value=empty => should not add")
@@ -71,13 +49,15 @@ workflows:
               exit 1
             fi
 `
-		require.NoError(t, configs.InitPaths())
 
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "skip_if_empty"}
+		buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 		require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -110,13 +90,14 @@ workflows:
               exit 1
             fi
 `
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "skip_if_empty", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "skip_if_empty"}
+		buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 		require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -167,13 +148,15 @@ workflows:
               exit 1
             fi
 `
-	require.NoError(t, configs.InitPaths())
 
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 4, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -231,13 +214,14 @@ workflows:
           {{enveq "TEMPLATE_TEST_NO_VALUE" "true"}}
 `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -273,13 +257,15 @@ workflows:
               exit 1
             fi
 `
-	require.NoError(t, configs.InitPaths())
 
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -333,13 +319,15 @@ workflows:
               exit 1
             fi
 `
-		require.NoError(t, configs.InitPaths())
 
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -374,13 +362,14 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -417,13 +406,14 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -466,13 +456,14 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 }
@@ -506,13 +497,14 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -549,13 +541,14 @@ workflows:
 
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -593,13 +586,14 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 
@@ -640,18 +634,18 @@ workflows:
             fi
 `
 
-		require.NoError(t, configs.InitPaths())
-
 		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 		require.NoError(t, err)
 		require.Equal(t, 0, len(warnings))
 
-		_, err = runWorkflowWithConfiguration(time.Now(), "test", config, inventory.Envs, noOpTracker{})
+		require.NoError(t, configs.InitPaths())
+
+		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+		_, err = runWorkflows(runConfig, noOpTracker{})
 		require.NoError(t, err)
 	}
 }
 
-// Test - Bitrise activateAndRunWorkflow
 // If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
 	workflow := models.WorkflowModel{}
@@ -680,7 +674,8 @@ func Test0Steps1Workflows(t *testing.T) {
 
 	require.NoError(t, configs.InitPaths())
 
-	buildRunResults, err = runWorkflowWithConfiguration(time.Now(), "zero_steps", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	runConfig := RunConfig{Config: config, Workflow: "zero_steps"}
+	buildRunResults, err = runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -691,7 +686,6 @@ func Test0Steps1Workflows(t *testing.T) {
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise activateAndRunWorkflow
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
@@ -726,13 +720,11 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow(
-		"target", workflow, config, buildRunResults,
-		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
-		"",
-		noOpTracker{},
-		nil,
-	)
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err = runWorkflows(runConfig, noOpTracker{})
+
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -743,44 +735,6 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise Validate workflow
-// Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
-func Test0Steps3WorkflowsCircularDependency(t *testing.T) {
-	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
-
-	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
-
-	beforeWorkflow := models.WorkflowModel{
-		BeforeRun: []string{"target"},
-	}
-
-	afterWorkflow := models.WorkflowModel{}
-
-	workflow := models.WorkflowModel{
-		BeforeRun: []string{"before"},
-		AfterRun:  []string{"after"},
-	}
-
-	config := models.BitriseDataModel{
-		FormatVersion:        "1.0.0",
-		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
-			"target": workflow,
-			"before": beforeWorkflow,
-			"after":  afterWorkflow,
-		},
-	}
-
-	_, err := config.Validate()
-	require.Error(t, err)
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
-}
-
-// Test - Bitrise activateAndRunWorkflow
 // Trivial test with 1 workflow
 func Test1Workflows(t *testing.T) {
 	configStr := `
@@ -819,21 +773,16 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	workflow, found := config.Workflows["trivial_fail"]
-	require.Equal(t, true, found)
-
 	buildRunResults := models.BuildRunResultsModel{
 		StartTime:      time.Now(),
 		StepmanUpdates: map[string]int{},
 	}
 
-	buildRunResults, err = activateAndRunWorkflow(
-		"trivial_fail", workflow, config, buildRunResults,
-		&[]envmanModels.EnvironmentItemModel{}, []envmanModels.EnvironmentItemModel{},
-		"",
-		noOpTracker{},
-		nil,
-	)
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "trivial_fail"}
+	buildRunResults, err = runWorkflows(runConfig, noOpTracker{})
+
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -844,7 +793,6 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise activateAndRunWorkflow
 // Trivial test with before, after workflows
 func Test3Workflows(t *testing.T) {
 	configStr := `
@@ -905,8 +853,6 @@ workflows:
         title: Should be skipped
   `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -914,7 +860,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 2, len(buildRunResults.FailedSteps))
@@ -925,33 +874,6 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise ConfigModelFromYAMLBytes
-// Workflow contains before and after workflow, and no one contains steps, but circular wofklow dependecy exist, which should fail
-func TestRefeneceCycle(t *testing.T) {
-	configStr := `
-format_version: 1.3.0
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-workflows:
-  before1:
-    before_run:
-    - before2
-
-  before2:
-    before_run:
-    - before1
-
-  target:
-    before_run:
-    - before1
-    - before2
-  `
-	_, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-	require.Error(t, err)
-	require.Equal(t, 0, len(warnings))
-}
-
-// Test - Bitrise BuildStatusEnv
 // Checks if BuildStatusEnv is set correctly
 func TestBuildStatusEnv(t *testing.T) {
 	configStr := `
@@ -1038,8 +960,6 @@ workflows:
         title: Should skipped
   `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1047,7 +967,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1058,7 +981,6 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise activateAndRunWorkflow
 // Trivial fail test
 func TestFail(t *testing.T) {
 	configStr := `
@@ -1094,8 +1016,6 @@ workflows:
         is_always_run: true
     `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1103,7 +1023,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1114,7 +1037,6 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise activateAndRunWorkflow
 // Trivial success test
 func TestSuccess(t *testing.T) {
 	configStr := `
@@ -1128,8 +1050,6 @@ workflows:
         title: Should success
     `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1137,7 +1057,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1148,7 +1071,6 @@ workflows:
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise BuildStatusEnv
 // Checks if BuildStatusEnv is set correctly
 func TestBuildFailedMode(t *testing.T) {
 	configStr := `
@@ -1185,8 +1107,6 @@ workflows:
         title: Should skipped
     `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1194,7 +1114,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1205,9 +1128,7 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise Environments
-// Trivial test for workflow environment handling
-// Before workflows env should be visible in target and after workflow
+// Trivial test for workflow environment handling, before workflows env should be visible in target and after workflow
 func TestWorkflowEnvironments(t *testing.T) {
 	configStr := `
 format_version: 1.3.0
@@ -1246,8 +1167,6 @@ workflows:
             fi
     `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1255,7 +1174,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1266,7 +1188,6 @@ workflows:
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise Environments
 // Test for same env in before and target workflow, actual workflow should overwrite environemnt and use own value
 func TestWorkflowEnvironmentOverWrite(t *testing.T) {
 	configStr := `
@@ -1306,8 +1227,6 @@ workflows:
             fi
 `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1315,7 +1234,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1326,7 +1248,6 @@ workflows:
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise Environments
 // Target workflows env should be visible in before and after workflow
 func TestTargetDefinedWorkflowEnvironment(t *testing.T) {
 	configStr := `
@@ -1354,8 +1275,6 @@ workflows:
     - before
 `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1363,7 +1282,10 @@ workflows:
 	_, found := config.Workflows["target"]
 	require.Equal(t, true, found)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1374,7 +1296,6 @@ workflows:
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-// Test - Bitrise Environments
 // Step input should visible only for actual step and invisible for other steps
 func TestStepInputEnvironment(t *testing.T) {
 	configStr := `
@@ -1406,8 +1327,6 @@ workflows:
             fi
 `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1419,7 +1338,10 @@ workflows:
 		require.Equal(t, nil, os.Unsetenv("working_dir"))
 	}
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "target", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1466,8 +1388,6 @@ workflows:
             fi
 `
 
-	require.NoError(t, configs.InitPaths())
-
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
@@ -1478,7 +1398,10 @@ workflows:
 	_, err = config.Validate()
 	require.NoError(t, err)
 
-	buildRunResults, err := runWorkflowWithConfiguration(time.Now(), "out-test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "out-test"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1493,34 +1416,124 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
-func TestLastWorkflowIDInConfig(t *testing.T) {
+func TestExpandEnvs(t *testing.T) {
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 workflows:
-  before:
+  test:
+    envs:
+    - ENV0: "Hello"
+    - ENV1: "$ENV0 world"
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            envman add --key ENV2 --value "$ENV1 !"
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "ENV2: $ENV2"
+            if [ "$ENV2" != "Hello world !" ] ; then
+              echo "Actual ($ENV2), excpected (Hello world !)"
+              exit 1
+            fi
+`
 
-  target:
-    title: target
-    before_run:
-    - before
-    after_run:
-    - after1
-
-  after1:
-    after_run:
-    - after2
-
-  after2:
-  `
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	last, err := lastWorkflowIDInConfig("target", config)
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
 	require.NoError(t, err)
-	require.Equal(t, "after2", last)
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
+func TestEvaluateInputs(t *testing.T) {
+	configStr := `
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    envs:
+    - TEST_KEY: "test value"
+    steps:
+    - script:
+        title: "Template test"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            {{if .IsCI}}
+            exit 1
+            {{else}}
+            exit 0
+            {{end}}
+          opts:
+            is_template: true
+    - script:
+        title: "Template test"
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            {{if enveq "TEST_KEY" "test value"}}
+            exit 0
+            {{else}}
+            exit 1
+            {{end}}
+          opts:
+            is_template: true
+`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test"}
+	buildRunResults, err := runWorkflows(runConfig, noOpTracker{})
+	require.Equal(t, nil, err)
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+}
+
+func TestInvalidStepID(t *testing.T) {
+	configStr := `
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    title: Invalid step id
+    steps:
+    - invalid-step:
+    - invalid-step:
+    - invalid-step:
+`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "target"}
+	results, err := runWorkflows(runConfig, noOpTracker{})
+	require.Equal(t, 1, len(results.StepmanUpdates))
 }
 
 func TestPluginTriggered(t *testing.T) {
@@ -1609,7 +1622,9 @@ route_map:
 			origWiter = opts.Writer
 			opts.Writer = &buf
 			log.InitGlobalLogger(opts)
-			_, err := runWorkflowWithConfiguration(time.Now(), "test", config, []envmanModels.EnvironmentItemModel{}, noOpTracker{})
+
+			runConfig := RunConfig{Config: config, Workflow: "test"}
+			_, err := runWorkflows(runConfig, noOpTracker{})
 			opts.Writer = origWiter
 
 			// Then
@@ -1679,3 +1694,13 @@ func write(t *testing.T, content, toPth string) {
 	}
 	require.NoError(t, fileutil.WriteStringToFile(toPth, content))
 }
+
+type noOpTracker struct{}
+
+func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, map[string]interface{}, map[string]string) {
+}
+func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.StepResult) {}
+func (n noOpTracker) SendCLIWarning(string)                                               {}
+func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string)            {}
+func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool)                     {}
+func (n noOpTracker) Wait()                                                               {}

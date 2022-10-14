@@ -37,7 +37,7 @@ func newConsoleLogger(output io.Writer) *consoleLogger {
 }
 
 // LogMessage ...
-func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
+func (l *consoleLogger) LogMessage(message string, fields MessageLogFields) {
 	message = addColor(fields.Level, message)
 
 	var prefixes []string
@@ -61,6 +61,10 @@ func (l *consoleLogger) LogMessage(message string, fields MessageFields) {
 		// the error and print it to the stdout.
 		fmt.Printf("writing log message failed: %s", err)
 	}
+}
+
+func (l consoleLogger) LogEvent(interface{}, EventLogFields) {
+
 }
 
 func addColor(level Level, message string) string {

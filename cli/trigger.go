@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
@@ -69,9 +68,6 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
-	tracker := analytics.NewDefaultTracker()
-	PrintBitriseHeaderASCIIArt(version.VERSION)
-
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
 	if c.GlobalIsSet(PRKey) {
@@ -158,22 +154,14 @@ func trigger(c *cli.Context) error {
 	//
 
 	// Main
-	enabledFiltering, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
+	isSecretFilteringMode, err := isSecretFiltering(secretFiltering, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check Secret Filtering mode, error: %s", err)
 	}
 
-	if err := registerSecretFiltering(enabledFiltering); err != nil {
-		failf("Failed to register Secret Filtering mode, error: %s", err)
-	}
-
-	enabledEnvsFiltering, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
+	isSecretEnvsFilteringMode, err := isSecretEnvsFiltering(secretEnvsFiltering, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check Secret Envs Filtering mode, error: %s", err)
-	}
-
-	if err := registerSecretEnvsFiltering(enabledEnvsFiltering); err != nil {
-		failf("Failed to register Secret Envs Filtering mode, error: %s", err)
 	}
 
 	isPRMode, err := isPRMode(prGlobalFlagPtr, inventoryEnvironments)
@@ -181,17 +169,9 @@ func trigger(c *cli.Context) error {
 		failf("Failed to check  PR mode, error: %s", err)
 	}
 
-	if err := registerPrMode(isPRMode); err != nil {
-		failf("Failed to register  PR mode, error: %s", err)
-	}
-
 	isCIMode, err := isCIMode(ciGlobalFlagPtr, inventoryEnvironments)
 	if err != nil {
 		failf("Failed to check  CI mode, error: %s", err)
-	}
-
-	if err := registerCIMode(isCIMode); err != nil {
-		failf("Failed to register  CI mode, error: %s", err)
 	}
 
 	_, workflowToRunID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(bitriseConfig.TriggerMap, triggerParams, isPRMode)
@@ -203,20 +183,36 @@ func trigger(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	if triggerParams.TriggerPattern != "" {
-		log.Infof("pattern (%s) triggered workflow (%s)", triggerParams.TriggerPattern, workflowToRunID)
-	} else {
-		if triggerParams.PushBranch != "" {
-			log.Infof("push-branch (%s) triggered workflow (%s)", triggerParams.PushBranch, workflowToRunID)
-		} else if triggerParams.PRSourceBranch != "" || triggerParams.PRTargetBranch != "" {
-			log.Infof("pr-source-branch (%s) and pr-target-branch (%s) triggered workflow (%s)", triggerParams.PRSourceBranch, triggerParams.PRTargetBranch, workflowToRunID)
-		} else if triggerParams.Tag != "" {
-			log.Infof("tag (%s) triggered workflow (%s)", triggerParams.Tag, workflowToRunID)
-		}
+	runConfig := RunConfig{
+		Modes: models.WorkflowRunModes{
+			CIMode:                  isCIMode,
+			PRMode:                  isPRMode,
+			DebugMode:               configs.IsDebugMode,
+			SecretFilteringMode:     isSecretFilteringMode,
+			SecretEnvsFilteringMode: isSecretEnvsFilteringMode,
+			NoOutputTimeout:         0,
+		},
+		Config:   bitriseConfig,
+		Workflow: workflowToRunID,
+		Secrets:  inventoryEnvironments,
 	}
 
-	runAndExit(bitriseConfig, inventoryEnvironments, workflowToRunID, tracker)
-	//
+	exitCode, err := runWorkflowsWithSetupAndCheckForUpdate(runConfig)
+	if err != nil {
+		if err == workflowRunFailedErr {
+			msg := createWorkflowRunStatusMessage(exitCode)
+			printWorkflowRunStatusMessage(msg)
+			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
+			os.Exit(exitCode)
+		}
+
+		failf(err.Error())
+	}
+
+	msg := createWorkflowRunStatusMessage(0)
+	printWorkflowRunStatusMessage(msg)
+	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
+	os.Exit(0)
 
 	return nil
 }

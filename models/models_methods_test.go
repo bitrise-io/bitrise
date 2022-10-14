@@ -1,6 +1,7 @@
 package models
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -1881,4 +1882,40 @@ workflows:
 			require.Equal(t, 0, len(step.Outputs))
 		}
 	}
+}
+
+// Workflow contains before and after workflow, and no one contains steps, but circular workflow dependency exist, which should fail
+func TestBitriseDataModelValidateWorkflowsCircularDependency(t *testing.T) {
+	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
+
+	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
+	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
+
+	beforeWorkflow := WorkflowModel{
+		BeforeRun: []string{"target"},
+	}
+
+	afterWorkflow := WorkflowModel{}
+
+	workflow := WorkflowModel{
+		BeforeRun: []string{"before"},
+		AfterRun:  []string{"after"},
+	}
+
+	config := BitriseDataModel{
+		FormatVersion:        "1.0.0",
+		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+		Workflows: map[string]WorkflowModel{
+			"target": workflow,
+			"before": beforeWorkflow,
+			"after":  afterWorkflow,
+		},
+	}
+
+	_, err := config.Validate()
+	require.Error(t, err)
+
+	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
