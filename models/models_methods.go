@@ -1030,15 +1030,26 @@ func GetStageIDFromListItemModel(stageListItem StageListItemModel) (string, erro
 // ----------------------------
 // --- StepIDData
 
+// GetStepIDAndStep returns the Step ID and Step model described by the stepListItem.
+// Use this on validated BitriseDataModels.
+func (stepListItem StepListItemModel) GetStepIDAndStep() (string, stepmanModels.StepModel) {
+	for key, value := range stepListItem {
+		return key, value
+	}
+	return "", stepmanModels.StepModel{}
+}
+
 // GetStepIDStepDataPair ...
 func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, stepmanModels.StepModel, error) {
+	if len(stepListItem) == 0 {
+		return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
+	}
+
 	if len(stepListItem) > 1 {
 		return "", stepmanModels.StepModel{}, errors.New("StepListItem contains more than 1 key-value pair")
 	}
-	for key, value := range stepListItem {
-		return key, value, nil
-	}
-	return "", stepmanModels.StepModel{}, errors.New("StepListItem does not contain a key-value pair")
+	stepID, step := stepListItem.GetStepIDAndStep()
+	return stepID, step, nil
 }
 
 // detaches source from the step node
