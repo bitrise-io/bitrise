@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/colorstring"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
@@ -156,19 +155,16 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		var workflowIDs []string
 		for _, workflowPlan := range plan.ExecutionPlan {
 			workflowID := workflowPlan.WorkflowID
-			if workflowPlan.WorkflowID == plan.TargetWorkflowID {
-				workflowID = colorstring.Green(workflowPlan.WorkflowID)
-			}
 			workflowIDs = append(workflowIDs, workflowID)
 		}
 		var prefix string
 		if len(workflowIDs) == 1 {
-			prefix = colorstring.Blue("Running workflow")
+			prefix = "Running workflow"
 		} else {
-			prefix = colorstring.Blue("Running workflows")
+			prefix = "Running workflows"
 		}
 
-		m.Printf("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
+		m.Infof("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
 	}
 }
 
@@ -181,7 +177,7 @@ func (m *defaultLogger) PrintBitriseASCIIArt() {
 ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
 ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
 ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	m.Infof("version: %s", colorstring.Green(version.VERSION))
+	m.Printf("version: %s", version.VERSION)
 	m.Print()
 }
 

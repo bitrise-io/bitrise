@@ -533,7 +533,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 		(versionConstraint.VersionLockType == stepmanModels.MinorLocked) ||
 		(versionConstraint.VersionLockType == stepmanModels.MajorLocked)
 	if !isStepLibUpdated && isStepLibUpdateNeeded {
-		log.Infof("Step uses latest version -- Updating StepLib ...")
+		log.Print("Step uses latest version, updating StepLib...")
 		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
 			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
 		} else {
