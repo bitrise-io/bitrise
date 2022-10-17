@@ -33,6 +33,5 @@ type WorkflowRunPlan struct {
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
 
-	TargetWorkflowID string                  `json:"target_workflow_id"`
-	ExecutionPlan    []WorkflowExecutionPlan `json:"execution_plan"`
+	ExecutionPlan []WorkflowExecutionPlan `json:"execution_plan"`
 }

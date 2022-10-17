@@ -404,7 +404,6 @@ func createWorkflowRunPlan(targetWorkflow string, workflows map[string]models.Wo
 		NoOutputTimeoutMode:     configs.NoOutputTimeout > 0,
 		SecretFilteringMode:     configs.IsSecretFiltering,
 		SecretEnvsFilteringMode: configs.IsSecretEnvsFiltering,
-		TargetWorkflowID:        targetWorkflow,
 		ExecutionPlan:           executionPlan,
 	}
 }
