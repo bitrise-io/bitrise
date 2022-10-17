@@ -160,13 +160,13 @@ func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.Step
 
 // StepmanRawStepList ...
 func StepmanRawStepList(collection string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-list", "--collection", collection, "--format", "raw"}
+	args := []string{"step-list", "--collection", collection, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...
 func StepmanJSONStepList(collection string) (string, error) {
-	args := []string{"--loglevel", logLevel(), "step-list", "--collection", collection, "--format", "json"}
+	args := []string{"step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -183,31 +183,31 @@ func StepmanJSONStepList(collection string) (string, error) {
 
 // StepmanShare ...
 func StepmanShare() error {
-	args := []string{"--loglevel", logLevel(), "share", "--toolmode"}
+	args := []string{"share", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareAudit ...
 func StepmanShareAudit() error {
-	args := []string{"--loglevel", logLevel(), "share", "audit", "--toolmode"}
+	args := []string{"share", "audit", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
-	args := []string{"--loglevel", logLevel(), "share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
+	args := []string{"share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareFinish ...
 func StepmanShareFinish() error {
-	args := []string{"--loglevel", logLevel(), "share", "finish", "--toolmode"}
+	args := []string{"share", "finish", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareStart ...
 func StepmanShareStart(collection string) error {
-	args := []string{"--loglevel", logLevel(), "share", "start", "--collection", collection, "--toolmode"}
+	args := []string{"share", "start", "--collection", collection, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
@@ -389,17 +389,9 @@ func IsBuiltInFlagTypeKey(env string) bool {
 		configs.CIModeEnvKey,
 		configs.PRModeEnvKey,
 		configs.DebugModeEnvKey,
-		configs.LogLevelEnvKey,
 		configs.PullRequestIDEnvKey:
 		return true
 	default:
 		return false
 	}
-}
-
-func logLevel() string {
-	if configs.IsDebugMode {
-		return "debug"
-	}
-	return "info"
 }
