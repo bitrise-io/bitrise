@@ -105,32 +105,6 @@ func TestGetTrimmedStepName(t *testing.T) {
 	}
 }
 
-func TestGetRunningStepHeaderMainSection(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Step: stepmanModels.StepModel{
-			Title: pointers.NewStringPtr(longStr),
-		},
-		Version: longStr,
-	}
-
-	actual := getRunningStepHeaderMainSection(stepInfo, 0)
-	expected := "| (0) This is a very long string, this is a very long string, this is a ver... |"
-	require.Equal(t, expected, actual)
-}
-
-func TestGetRunningStepHeaderSubSection(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		ID: longStr,
-		Step: stepmanModels.StepModel{
-			Title: pointers.NewStringPtr(longStr),
-		},
-		Version: longStr,
-	}
-
-	actual := getRunningStepHeaderSubSection(stepmanModels.StepModel{}, stepInfo)
-	require.NotEqual(t, "", actual)
-}
-
 func Test_getRunningStepFooterMainSection(t *testing.T) {
 	noTitleInfo := stepmanModels.StepInfoModel{
 		Step: stepmanModels.StepModel{
@@ -416,29 +390,6 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 func TestPrintRunningWorkflow(t *testing.T) {
 	PrintRunningWorkflow(longStr)
-}
-
-func TestPrintRunningStepHeader(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Step: stepmanModels.StepModel{
-			Title: pointers.NewStringPtr(""),
-		},
-		Version: "",
-	}
-	step := stepmanModels.StepModel{}
-	PrintRunningStepHeader(stepInfo, step, 0)
-
-	stepInfo.Step.Title = pointers.NewStringPtr(longStr)
-	stepInfo.Version = ""
-	PrintRunningStepHeader(stepInfo, step, 0)
-
-	stepInfo.Step.Title = pointers.NewStringPtr("")
-	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, step, 0)
-
-	stepInfo.Step.Title = pointers.NewStringPtr(longStr)
-	stepInfo.Version = longStr
-	PrintRunningStepHeader(stepInfo, step, 0)
 }
 
 func TestPrintRunningStepFooter(t *testing.T) {
