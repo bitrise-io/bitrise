@@ -13,7 +13,7 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 		expectedOutput string
 	}{
 		{
-			name: "Only the required json output fields are serialised",
+			name: "Every field is serialised",
 			params: StepStartedParams{
 				ExecutionId: "ExecutionId",
 				Position:    0,
@@ -22,9 +22,9 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				Version:     "Version",
 				Collection:  "Collection",
 				Toolkit:     "Toolkit",
-				StartTime:   "This is not needed",
+				StartTime:   "StartTime",
 			},
-			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"Version\",\"collection\":\"Collection\",\"toolkit\":\"Toolkit\"}",
+			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"Version\",\"collection\":\"Collection\",\"toolkit\":\"Toolkit\",\"start_time\":\"StartTime\"}",
 		},
 		{
 			name: "Empty fields are kept",
@@ -36,9 +36,9 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				Version:     "",
 				Collection:  "Collection",
 				Toolkit:     "",
-				StartTime:   "",
+				StartTime:   "StartTime",
 			},
-			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"\",\"collection\":\"Collection\",\"toolkit\":\"\"}",
+			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"\",\"collection\":\"Collection\",\"toolkit\":\"\",\"start_time\":\"StartTime\"}",
 		},
 	}
 

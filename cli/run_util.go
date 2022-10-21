@@ -707,6 +707,19 @@ func activateAndRunSteps(
 			stepInfoPtr.Step.SourceCodeURL = pointers.NewStringPtr(*mergedStep.SourceCodeURL)
 		}
 
+		// At this point we have a filled up step info model and also have a step model which is contains the merged step
+		// data from the bitrise.yml and the steps step.yml.
+		// If the step title contains the step id or the step library as a prefix then we will take the original steps
+		// title instead.
+		// Here are a couple of before and after examples:
+		// git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git -> Simple Git Clone
+		// certificate-and-profile-installer@1 -> Certificate and profile installer
+		if stepInfoPtr.Step.Title != nil && strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.ID) || strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.Library) {
+			if mergedStep.Title != nil && *mergedStep.Title != "" {
+				*stepInfoPtr.Step.Title = *mergedStep.Title
+			}
+		}
+
 		//
 		// Run step
 		logStepStarted(stepInfoPtr, mergedStep, idx, stepExecutionID, stepStartTime)
@@ -850,10 +863,15 @@ func activateAndRunSteps(
 }
 
 func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionId string, stepStartTime time.Time) {
+	title := ""
+	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
+		title = *stepInfo.Step.Title
+	}
+
 	params := log.StepStartedParams{
 		ExecutionId: stepExcutionId,
 		Position:    idx,
-		Title:       stepTitle(stepInfo, step),
+		Title:       title,
 		Id:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
@@ -861,21 +879,6 @@ func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.Ste
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)
-}
-
-func stepTitle(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel) string {
-	title := ""
-	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
-		// At this point the title is either the overridden title from the bitrise.yml file or the composite step id.
-		title = *stepInfo.Step.Title
-	}
-
-	// The composite step id is not useful for the user. So let's replace it with the original step title defined in the step.yml file.
-	if strings.HasPrefix(title, stepInfo.ID) && step.Title != nil && *step.Title != "" {
-		title = *step.Title
-	}
-
-	return title
 }
 
 func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel) analytics.StepInfo {

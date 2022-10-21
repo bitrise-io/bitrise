@@ -9,5 +9,5 @@ type StepStartedParams struct {
 	Version     string `json:"version"`
 	Collection  string `json:"collection"`
 	Toolkit     string `json:"toolkit"`
-	StartTime   string `json:"-"` // This value is only needed for the console logging.
+	StartTime   string `json:"start_time"`
 }
