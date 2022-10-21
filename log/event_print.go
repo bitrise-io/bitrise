@@ -18,7 +18,7 @@ func generateStepStartedHeaderLines(params StepStartedParams) []string {
 
 	var lines []string
 	lines = append(lines, separator)
-	lines = append(lines, getHeaderTitle(params.Position, params.IdVersion))
+	lines = append(lines, getHeaderTitle(params.Position, params.Title))
 	lines = append(lines, separator)
 	lines = append(lines, getHeaderSubsection("id", params.Id))
 	lines = append(lines, getHeaderSubsection("version", params.Version))

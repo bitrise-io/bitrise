@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -849,28 +850,32 @@ func activateAndRunSteps(
 }
 
 func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionId string, stepStartTime time.Time) {
-	idVersion := ""
-	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
-		idVersion = *stepInfo.Step.Title
-	}
-
-	title := ""
-	if step.Title != nil {
-		title = *step.Title
-	}
-
 	params := log.StepStartedParams{
 		ExecutionId: stepExcutionId,
 		Position:    idx,
-		IdVersion:   idVersion,
+		Title:       stepTitle(stepInfo, step),
 		Id:          stepInfo.ID,
 		Version:     stepInfo.Version,
-		Title:       title,
 		Collection:  stepInfo.Library,
 		Toolkit:     toolkits.ToolkitForStep(step).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)
+}
+
+func stepTitle(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel) string {
+	title := ""
+	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
+		// At this point the title is either the overridden title from the bitrise.yml file or the composite step id.
+		title = *stepInfo.Step.Title
+	}
+
+	// The composite step id is not useful for the user. So let's replace it with the original step title defined in the step.yml file.
+	if strings.HasPrefix(title, stepInfo.ID) && step.Title != nil && *step.Title != "" {
+		title = *step.Title
+	}
+
+	return title
 }
 
 func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel) analytics.StepInfo {
