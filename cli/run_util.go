@@ -714,7 +714,7 @@ func activateAndRunSteps(
 		// Here are a couple of before and after examples:
 		// git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git -> Simple Git Clone
 		// certificate-and-profile-installer@1 -> Certificate and profile installer
-		if stepInfoPtr.Step.Title != nil && strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.ID) || strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.Library) {
+		if stepInfoPtr.Step.Title != nil && (strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.ID) || strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.Library)) {
 			if mergedStep.Title != nil && *mergedStep.Title != "" {
 				*stepInfoPtr.Step.Title = *mergedStep.Title
 			}
