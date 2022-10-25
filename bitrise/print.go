@@ -9,7 +9,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -74,131 +73,6 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	}
 
 	return trimTitle(title, suffix, titleBoxWidth)
-}
-
-func getRunningStepHeaderMainSection(stepInfo stepmanModels.StepInfoModel, idx int) string {
-	title := ""
-	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
-		title = *stepInfo.Step.Title
-	}
-
-	content := fmt.Sprintf("| (%d) %s |", idx, title)
-	charDiff := len(content) - stepRunSummaryBoxWidthInChars
-
-	if charDiff < 0 {
-		// shorter than desired - fill with space
-		content = fmt.Sprintf("| (%d) %s%s |", idx, title, strings.Repeat(" ", -charDiff))
-	} else if charDiff > 0 {
-		// longer than desired - trim title
-		trimmedTitleWidth := len(title) - charDiff
-		if trimmedTitleWidth < 4 {
-			log.Errorf("Step title too long, can't present title at all! : %s", title)
-		} else {
-			content = fmt.Sprintf("| (%d) %s |", idx, stringutil.MaxFirstCharsWithDots(title, trimmedTitleWidth))
-		}
-	}
-	return content
-}
-
-func getRunningStepHeaderSubSection(step stepmanModels.StepModel, stepInfo stepmanModels.StepInfoModel) string {
-
-	idRow := ""
-	{
-		id := stepInfo.ID
-		idRow = fmt.Sprintf("| id: %s |", id)
-		charDiff := len(idRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			idRow = fmt.Sprintf("| id: %s%s |", id, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(id) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Step id too long, can't present id at all! : %s", id)
-			} else {
-				idRow = fmt.Sprintf("| id: %s |", stringutil.MaxFirstCharsWithDots(id, trimmedWidth))
-			}
-		}
-	}
-
-	versionRow := ""
-	{
-		version := stepInfo.Version
-		versionRow = fmt.Sprintf("| version: %s |", version)
-		charDiff := len(versionRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			versionRow = fmt.Sprintf("| version: %s%s |", version, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(version) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Step version too long, can't present version at all! : %s", version)
-			} else {
-				versionRow = fmt.Sprintf("| id: %s |", stringutil.MaxFirstCharsWithDots(version, trimmedWidth))
-			}
-		}
-	}
-
-	collectionRow := ""
-	{
-		collection := stepInfo.Library
-		collectionRow = fmt.Sprintf("| collection: %s |", collection)
-		charDiff := len(collectionRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			collectionRow = fmt.Sprintf("| collection: %s%s |", collection, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(collection) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Step collection too long, can't present collection at all! : %s", collection)
-			} else {
-				collectionRow = fmt.Sprintf("| collection: %s |", stringutil.MaxLastCharsWithDots(collection, trimmedWidth))
-			}
-		}
-	}
-
-	toolkitRow := ""
-	{
-		toolkitForStep := toolkits.ToolkitForStep(step)
-		toolkitName := toolkitForStep.ToolkitName()
-		toolkitRow = fmt.Sprintf("| toolkit: %s |", toolkitName)
-		charDiff := len(toolkitRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			toolkitRow = fmt.Sprintf("| toolkit: %s%s |", toolkitName, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(toolkitName) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Step toolkitName too long, can't present toolkitName at all! : %s", toolkitName)
-			} else {
-				toolkitRow = fmt.Sprintf("| toolkit: %s |", stringutil.MaxLastCharsWithDots(toolkitName, trimmedWidth))
-			}
-		}
-	}
-
-	timeRow := ""
-	{
-		logTime := time.Now().Format(time.RFC3339)
-		timeRow = fmt.Sprintf("| time: %s |", logTime)
-		charDiff := len(timeRow) - stepRunSummaryBoxWidthInChars
-		if charDiff < 0 {
-			// shorter than desired - fill with space
-			timeRow = fmt.Sprintf("| time: %s%s |", logTime, strings.Repeat(" ", -charDiff))
-		} else if charDiff > 0 {
-			// longer than desired - trim title
-			trimmedWidth := len(logTime) - charDiff
-			if trimmedWidth < 4 {
-				log.Errorf("Time too long, can't present time at all! : %s", logTime)
-			} else {
-				timeRow = fmt.Sprintf("| time: %s |", stringutil.MaxFirstCharsWithDots(logTime, trimmedWidth))
-			}
-		}
-	}
-
-	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s", idRow, versionRow, collectionRow, toolkitRow, timeRow)
 }
 
 func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) string {
@@ -536,18 +410,6 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	}
 
 	return content
-}
-
-// PrintRunningStepHeader ...
-func PrintRunningStepHeader(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int) {
-	sep := fmt.Sprintf("+%s+", strings.Repeat("-", stepRunSummaryBoxWidthInChars-2))
-
-	log.Print(sep)
-	log.Print(getRunningStepHeaderMainSection(stepInfo, idx))
-	log.Print(sep)
-	log.Print(getRunningStepHeaderSubSection(step, stepInfo))
-	log.Print(sep)
-	log.Print("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
 }
 
 // PrintRunningStepFooter ..

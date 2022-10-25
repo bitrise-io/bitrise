@@ -27,6 +27,7 @@ func newBuildRunResultCollector(tracker analytics.Tracker) buildRunResultCollect
 
 func (r buildRunResultCollector) registerStepRunResults(
 	buildRunResults *models.BuildRunResultsModel,
+	stepExecutionId string,
 	stepStartTime time.Time,
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
@@ -87,7 +88,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 		}
 	}
 	if printStepHeader {
-		bitrise.PrintRunningStepHeader(stepInfoPtr, step, stepIdxPtr)
+		logStepStarted(stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
 	}
 
 	errStr := ""
