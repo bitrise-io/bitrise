@@ -59,18 +59,9 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	}
 
 	suffix := ""
-	switch stepRunResult.Status {
-	case models.StepRunStatusCodeSuccess, models.StepRunStatusCodeSkipped, models.StepRunStatusCodeSkippedWithRunIf:
-		suffix = ""
-	case models.StepRunStatusCodeFailed, models.StepRunStatusCodePreparationFailed, models.StepRunStatusCodeFailedSkippable:
-		suffix = fmt.Sprintf("(exit code: %d)", stepRunResult.ExitCode)
-	case models.StepRunStatusAbortedWithCustomTimeout:
-		suffix = "(timed out)"
-	case models.StepRunStatusAbortedWithNoOutputTimeout:
-		suffix = "(timed out due to no output)"
-	default:
-		log.Errorf("Unknown result code")
-		return ""
+	reason := StatusReason(stepRunResult.Status, stepRunResult.ExitCode)
+	if reason != "" {
+		suffix = fmt.Sprintf("(%s)", reason)
 	}
 
 	return trimTitle(title, suffix, titleBoxWidth)

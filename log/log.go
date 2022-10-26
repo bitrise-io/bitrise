@@ -203,7 +203,10 @@ func (m *defaultLogger) PrintStepFinishedEvent(params StepFinishedParams) {
 			EventType: "step_finished",
 		})
 	} else {
-
+		lines := generateStepFinishedFooterLines(params)
+		for _, line := range lines {
+			m.Print(line)
+		}
 	}
 }
 
