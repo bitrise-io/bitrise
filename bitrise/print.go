@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -118,7 +119,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	titleBox := fmt.Sprintf(" %s%s", coloredTitle, strings.Repeat(" ", titleWhiteSpaceWidth))
 
-	runTimeStr, err := FormattedSecondsToMax8Chars(stepRunResult.RunTime)
+	runTimeStr, err := utils.FormattedSecondsToMax8Chars(stepRunResult.RunTime)
 	if err != nil {
 		log.Errorf("Failed to format time, error: %s", err)
 		runTimeStr = "999+ hour"
@@ -284,7 +285,11 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		}
 	}
 
-	isUpdateAvailable := isUpdateAvailable(stepRunResult.StepInfo)
+	isUpdateAvailable, err := utils.IsUpdateAvailable(stepRunResult.StepInfo.Version, stepRunResult.StepInfo.LatestVersion)
+	if err != nil {
+		log.Warn(err)
+	}
+
 	updateRow := ""
 	if isUpdateAvailable {
 		updateRow = getUpdateRow(stepInfo, stepRunSummaryBoxWidthInChars)
@@ -368,7 +373,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		content = updateRow
 		if stepInfo.Step.SourceCodeURL != nil && *stepInfo.Step.SourceCodeURL != "" {
 			content += "\n" + getRow("")
-			releasesURL := repoReleasesURL(*stepInfo.Step.SourceCodeURL)
+			releasesURL := utils.RepoReleasesURL(*stepInfo.Step.SourceCodeURL)
 			content += "\n" + getRow("Release notes are available below")
 			content += "\n" + getRow(releasesURL)
 		}
@@ -424,7 +429,10 @@ func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStep
 	log.Print(sep)
 	log.Print(getRunningStepFooterMainSection(stepRunResult))
 	log.Print(sep)
-	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+
+	updateAvailable, _ := utils.IsUpdateAvailable(stepRunResult.StepInfo.Version, stepRunResult.StepInfo.LatestVersion)
+
+	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || updateAvailable {
 		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 		if footerSubSection != "" {
 			log.Print(footerSubSection)
@@ -475,7 +483,10 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 		tmpTime = tmpTime.Add(stepRunResult.RunTime)
 		log.Print(getRunningStepFooterMainSection(stepRunResult))
 		log.Printf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
-		if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || isUpdateAvailable(stepRunResult.StepInfo) {
+
+		updateAvailable, _ := utils.IsUpdateAvailable(stepRunResult.StepInfo.Version, stepRunResult.StepInfo.LatestVersion)
+
+		if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || updateAvailable {
 			footerSubSection := getRunningStepFooterSubSection(stepRunResult)
 			if footerSubSection != "" {
 				log.Print(footerSubSection)
@@ -485,7 +496,7 @@ func PrintSummary(buildRunResults models.BuildRunResultsModel) {
 	}
 	runtime := tmpTime.Sub(time.Time{})
 
-	runTimeStr, err := FormattedSecondsToMax8Chars(runtime)
+	runTimeStr, err := utils.FormattedSecondsToMax8Chars(runtime)
 	if err != nil {
 		log.Errorf("Failed to format time, error: %s", err)
 		runTimeStr = "999+ hour"

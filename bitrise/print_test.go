@@ -15,48 +15,6 @@ const longStr = "This is a very long string, this is a very long string, " +
 	"this is a very long string, this is a very long string," +
 	"this is a very long string, this is a very long string."
 
-func TestIsUpdateAvailable(t *testing.T) {
-	t.Log("simple compare versions - ture")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "1.1.0",
-		}
-
-		require.Equal(t, true, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("simple compare versions - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "1.0.0",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("issue - no latest - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("issue - no current - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "",
-			LatestVersion: "1.0.0",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-}
-
 func TestGetTrimmedStepName(t *testing.T) {
 	t.Log("successful step")
 	{
@@ -461,4 +419,16 @@ func TestPrintSummary(t *testing.T) {
 	}
 
 	PrintSummary(buildResults)
+}
+
+func secToDuration(sec float64) time.Duration {
+	return time.Duration(sec * 1e9)
+}
+
+func minToDuration(min float64) time.Duration {
+	return secToDuration(min * 60)
+}
+
+func hourToDuration(hour float64) time.Duration {
+	return minToDuration(hour * 60)
 }
