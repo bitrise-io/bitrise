@@ -24,5 +24,6 @@ type Logger interface {
 	LogMessage(message string, level corelog.Level)
 	PrintBitriseStartedEvent(plan models.WorkflowRunPlan)
 	PrintStepStartedEvent(params StepStartedParams)
+	PrintStepFinishedEvent(params StepFinishedParams)
 	PrintBitriseASCIIArt()
 }

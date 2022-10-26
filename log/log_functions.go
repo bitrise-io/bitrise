@@ -110,3 +110,7 @@ func PrintBitriseASCIIArt() {
 func PrintStepStartedEvent(params StepStartedParams) {
 	getGlobalLogger().PrintStepStartedEvent(params)
 }
+
+func PrintStepFinishedEvent(params StepFinishedParams) {
+	getGlobalLogger().PrintStepFinishedEvent(params)
+}
