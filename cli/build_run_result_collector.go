@@ -2,10 +2,11 @@ package cli
 
 import (
 	"errors"
+	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/utils"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/exitcode"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -149,5 +150,69 @@ func (r buildRunResultCollector) registerStepRunResults(
 		return
 	}
 
-	bitrise.PrintRunningStepFooter(stepResults, isLastStep)
+	logStepFinished(stepResults, stepExecutionId, isLastStep)
+}
+
+func logStepFinished(stepResults models.StepRunResultsModel, stepExecutionId string, isLastStep bool) {
+	params := stepFinishedParamsFromResults(stepResults, stepExecutionId, isLastStep)
+	log.PrintStepFinishedEvent(params)
+}
+
+func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecutionId string, isLastStep bool) log.StepFinishedParams {
+	title := ""
+	if results.StepInfo.Step.Title != nil {
+		title = *results.StepInfo.Step.Title
+	}
+
+	supportURL := ""
+	if results.StepInfo.Step.SupportURL != nil {
+		supportURL = *results.StepInfo.Step.SupportURL
+	}
+
+	sourceURL := ""
+	if results.StepInfo.Step.SourceCodeURL != nil {
+		sourceURL = *results.StepInfo.Step.SourceCodeURL
+	}
+
+	var errors []log.StepError
+	if results.ErrorStr != "" {
+		errors = append(errors, log.StepError{
+			Code:    results.ExitCode,
+			Message: results.ErrorStr,
+		})
+	}
+
+	var stepUpdate *log.StepUpdate
+	updateAvailable, _ := utils.IsUpdateAvailable(results.StepInfo.Version, results.StepInfo.LatestVersion)
+	if updateAvailable {
+		stepUpdate = &log.StepUpdate{
+			OriginalVersion: results.StepInfo.OriginalVersion,
+			ResolvedVersion: results.StepInfo.Version,
+			LatestVersion:   results.StepInfo.LatestVersion,
+			ReleasesURL:     utils.RepoReleasesURL(sourceURL),
+		}
+	}
+
+	var stepDeprecation *log.StepDeprecation
+	if results.StepInfo.GroupInfo.RemovalDate != "" || results.StepInfo.GroupInfo.DeprecateNotes != "" {
+		stepDeprecation = &log.StepDeprecation{
+			RemovalDate: results.StepInfo.GroupInfo.RemovalDate,
+			Note:        results.StepInfo.GroupInfo.DeprecateNotes,
+		}
+	}
+
+	return log.StepFinishedParams{
+		ExecutionId:    stepExecutionId,
+		InternalStatus: results.Status,
+		Status:         bitrise.HumanReadableStatus(results.Status),
+		StatusReason:   bitrise.StatusReason(results.Status, results.ExitCode),
+		Title:          title,
+		RunTime:        results.RunTime.Milliseconds(),
+		SupportURL:     supportURL,
+		SourceCodeURL:  sourceURL,
+		Errors:         errors,
+		Update:         stepUpdate,
+		Deprecation:    stepDeprecation,
+		LastStep:       isLastStep,
+	}
 }
