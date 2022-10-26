@@ -408,36 +408,6 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 	return content
 }
 
-// PrintRunningStepFooter ..
-func PrintRunningStepFooter(stepRunResult models.StepRunResultsModel, isLastStepInWorkflow bool) {
-	iconBoxWidth := len("   ")
-	timeBoxWidth := len(" time (s) ")
-	titleBoxWidth := stepRunSummaryBoxWidthInChars - 4 - iconBoxWidth - timeBoxWidth
-	sep := fmt.Sprintf("+%s+%s+%s+", strings.Repeat("-", iconBoxWidth), strings.Repeat("-", titleBoxWidth), strings.Repeat("-", timeBoxWidth))
-
-	log.Print("|" + strings.Repeat(" ", stepRunSummaryBoxWidthInChars-2) + "|")
-
-	log.Print(sep)
-	log.Print(getRunningStepFooterMainSection(stepRunResult))
-	log.Print(sep)
-
-	updateAvailable, _ := utils.IsUpdateAvailable(stepRunResult.StepInfo.Version, stepRunResult.StepInfo.LatestVersion)
-
-	if stepRunResult.ErrorStr != "" || stepRunResult.StepInfo.GroupInfo.RemovalDate != "" || updateAvailable {
-		footerSubSection := getRunningStepFooterSubSection(stepRunResult)
-		if footerSubSection != "" {
-			log.Print(footerSubSection)
-			log.Print(sep)
-		}
-	}
-
-	if !isLastStepInWorkflow {
-		log.Print()
-		log.Print(strings.Repeat(" ", 42) + "▼")
-		log.Print()
-	}
-}
-
 // PrintRunningWorkflow ...
 func PrintRunningWorkflow(title string) {
 	log.Print()

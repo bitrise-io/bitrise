@@ -350,38 +350,6 @@ func TestPrintRunningWorkflow(t *testing.T) {
 	PrintRunningWorkflow(longStr)
 }
 
-func TestPrintRunningStepFooter(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Step: stepmanModels.StepModel{
-			Title: pointers.NewStringPtr(longStr),
-		},
-		Version: longStr,
-	}
-
-	result := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  10000000,
-		ErrorStr: longStr,
-		ExitCode: 1,
-	}
-	PrintRunningStepFooter(result, true)
-	PrintRunningStepFooter(result, false)
-
-	stepInfo.Step.Title = pointers.NewStringPtr("")
-	result = models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  0,
-		ErrorStr: "",
-		ExitCode: 0,
-	}
-	PrintRunningStepFooter(result, true)
-	PrintRunningStepFooter(result, false)
-}
-
 func TestPrintSummary(t *testing.T) {
 	PrintSummary(models.BuildRunResultsModel{})
 
