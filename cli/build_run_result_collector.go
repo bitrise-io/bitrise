@@ -174,7 +174,7 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 	}
 
 	var errors []log.StepError
-	if results.ErrorStr != "" {
+	if results.ErrorStr != "" && results.Status.IsFailure() {
 		errors = append(errors, log.StepError{
 			Code:    results.ExitCode,
 			Message: results.ErrorStr,
@@ -201,16 +201,17 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 	}
 
 	return log.StepFinishedParams{
-		ExecutionId:   stepExecutionId,
-		Status:        string(results.Status),
-		StatusReason:  results.Status.Reason(results.ExitCode),
-		Title:         title,
-		RunTime:       results.RunTime.Milliseconds(),
-		SupportURL:    supportURL,
-		SourceCodeURL: sourceURL,
-		Errors:        errors,
-		Update:        stepUpdate,
-		Deprecation:   stepDeprecation,
-		LastStep:      isLastStep,
+		ExecutionId:    stepExecutionId,
+		InternalStatus: int(results.Status),
+		Status:         results.Status.HumanReadableStatus(),
+		StatusReason:   results.Status.Reason(results.ExitCode),
+		Title:          title,
+		RunTime:        results.RunTime.Milliseconds(),
+		SupportURL:     supportURL,
+		SourceCodeURL:  sourceURL,
+		Errors:         errors,
+		Update:         stepUpdate,
+		Deprecation:    stepDeprecation,
+		LastStep:       isLastStep,
 	}
 }

@@ -9,16 +9,16 @@ import (
 )
 
 const (
-	StepRunStatusCodeSuccess           = "success"
-	StepRunStatusCodeFailed            = "failed"
-	StepRunStatusCodeFailedSkippable   = "failed_skippable"
-	StepRunStatusCodeSkipped           = "skipped"
-	StepRunStatusCodeSkippedWithRunIf  = "skipped_with_run_if"
-	StepRunStatusCodePreparationFailed = "preparation_failed"
+	StepRunStatusCodeSuccess           = 0
+	StepRunStatusCodeFailed            = 1
+	StepRunStatusCodeFailedSkippable   = 2
+	StepRunStatusCodeSkipped           = 3
+	StepRunStatusCodeSkippedWithRunIf  = 4
+	StepRunStatusCodePreparationFailed = 5
 	// StepRunStatusAbortedWithCustomTimeout is used when a step times out due to a custom timeout
-	StepRunStatusAbortedWithCustomTimeout = "aborted_with_custom_timeout"
+	StepRunStatusAbortedWithCustomTimeout = 7
 	// StepRunStatusAbortedWithNoOutputTimeout is used when a step times out due to no output received (hang)
-	StepRunStatusAbortedWithNoOutputTimeout = "aborted_with_no_output"
+	StepRunStatusAbortedWithNoOutputTimeout = 8
 
 	// Version ...
 	Version = "12"
@@ -165,7 +165,7 @@ type TestResultStepInfo struct {
 }
 
 // StepRunStatus ...
-type StepRunStatus string
+type StepRunStatus int
 
 // Reason ...
 func (s StepRunStatus) Reason(exitCode int) string {
@@ -180,5 +180,62 @@ func (s StepRunStatus) Reason(exitCode int) string {
 		return "timed out due to no output"
 	default:
 		return "unknown result code"
+	}
+}
+
+func (s StepRunStatus) HumanReadableStatus() string {
+	switch s {
+	case StepRunStatusCodeSuccess:
+		return "success"
+	case StepRunStatusCodeFailed:
+		return "failed"
+	case StepRunStatusCodeFailedSkippable:
+		return "failed_skippable"
+	case StepRunStatusCodeSkipped:
+		return "skipped"
+	case StepRunStatusCodeSkippedWithRunIf:
+		return "skipped_with_run_if"
+	case StepRunStatusCodePreparationFailed:
+		return "preparation_failed"
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "aborted_with_custom_timeout"
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "aborted_with_no_output"
+	default:
+		return "unknown"
+	}
+}
+
+func (s StepRunStatus) IsFailure() bool {
+	if s == StepRunStatusCodeFailed ||
+		s == StepRunStatusCodePreparationFailed ||
+		s == StepRunStatusAbortedWithCustomTimeout ||
+		s == StepRunStatusAbortedWithNoOutputTimeout ||
+		s == StepRunStatusCodeFailedSkippable {
+		return true
+	}
+	return false
+}
+
+func InternalStatus(status string) int {
+	switch status {
+	case "success":
+		return StepRunStatusCodeSuccess
+	case "failed":
+		return StepRunStatusCodeFailed
+	case "failed_skippable":
+		return StepRunStatusCodeFailedSkippable
+	case "skipped":
+		return StepRunStatusCodeSkipped
+	case "skipped_with_run_if":
+		return StepRunStatusCodeSkippedWithRunIf
+	case "preparation_failed":
+		return StepRunStatusCodePreparationFailed
+	case "aborted_with_custom_timeout":
+		return StepRunStatusAbortedWithCustomTimeout
+	case "aborted_with_no_output":
+		return StepRunStatusAbortedWithNoOutputTimeout
+	default:
+		return -1
 	}
 }
