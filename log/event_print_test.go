@@ -1,9 +1,10 @@
 package log
 
 import (
+	"testing"
+
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestLogMessageWidthIsAboveTheMinimumValue(t *testing.T) {

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/bitrise-io/bitrise/bitrise"
 	"os/exec"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"

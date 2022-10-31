@@ -2,12 +2,13 @@ package log
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/stringutil"
-	"strings"
-	"time"
 )
 
 const (
@@ -103,14 +104,11 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	}
 
 	if params.Update != nil {
-		updateAvailable, _ := utils.IsUpdateAvailable(params.Update.ResolvedVersion, params.Update.LatestVersion)
-		if updateAvailable {
-			if hasPreviousSection {
-				lines = append(lines, sectionSeparator)
-			}
-			hasPreviousSection = true
-			lines = append(lines, getUpdateSection(*params.Update)...)
+		if hasPreviousSection {
+			lines = append(lines, sectionSeparator)
 		}
+		hasPreviousSection = true
+		lines = append(lines, getUpdateSection(*params.Update)...)
 	}
 
 	if deprecated {

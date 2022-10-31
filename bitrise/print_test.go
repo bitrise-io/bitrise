@@ -128,7 +128,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 			result: models.StepRunResultsModel{
 				StepInfo: noTitleInfo,
 				Status:   models.StepRunStatusCodeSuccess,
-				RunTime:  hourToDuration(1000),
+				RunTime:  time.Duration(1000) * time.Hour,
 			},
 			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|",
 		},
@@ -387,16 +387,4 @@ func TestPrintSummary(t *testing.T) {
 	}
 
 	PrintSummary(buildResults)
-}
-
-func secToDuration(sec float64) time.Duration {
-	return time.Duration(sec * 1e9)
-}
-
-func minToDuration(min float64) time.Duration {
-	return secToDuration(min * 60)
-}
-
-func hourToDuration(hour float64) time.Duration {
-	return minToDuration(hour * 60)
 }
