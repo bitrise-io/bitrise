@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -8,16 +9,16 @@ import (
 )
 
 const (
-	StepRunStatusCodeSuccess           = 0
-	StepRunStatusCodeFailed            = 1
-	StepRunStatusCodeFailedSkippable   = 2
-	StepRunStatusCodeSkipped           = 3
-	StepRunStatusCodeSkippedWithRunIf  = 4
-	StepRunStatusCodePreparationFailed = 5
+	StepRunStatusCodeSuccess           = "success"
+	StepRunStatusCodeFailed            = "failed"
+	StepRunStatusCodeFailedSkippable   = "failed_skippable"
+	StepRunStatusCodeSkipped           = "skipped"
+	StepRunStatusCodeSkippedWithRunIf  = "skipped_with_run_if"
+	StepRunStatusCodePreparationFailed = "preparation_failed"
 	// StepRunStatusAbortedWithCustomTimeout is used when a step times out due to a custom timeout
-	StepRunStatusAbortedWithCustomTimeout = 7
+	StepRunStatusAbortedWithCustomTimeout = "aborted_with_custom_timeout"
 	// StepRunStatusAbortedWithNoOutputTimeout is used when a step times out due to no output received (hang)
-	StepRunStatusAbortedWithNoOutputTimeout = 8
+	StepRunStatusAbortedWithNoOutputTimeout = "aborted_with_no_output"
 
 	// Version ...
 	Version = "12"
@@ -147,7 +148,7 @@ type BuildRunResultsModel struct {
 type StepRunResultsModel struct {
 	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
 	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
-	Status     int                         `json:"status" yaml:"status"`
+	Status     StepRunStatus               `json:"status" yaml:"status"`
 	Idx        int                         `json:"idx" yaml:"idx"`
 	RunTime    time.Duration               `json:"run_time" yaml:"run_time"`
 	StartTime  time.Time                   `json:"start_time" yaml:"start_time"`
@@ -161,4 +162,23 @@ type TestResultStepInfo struct {
 	Version string `json:"version" yaml:"version"`
 	Title   string `json:"title" yaml:"title"`
 	Number  int    `json:"number" yaml:"number"`
+}
+
+// StepRunStatus ...
+type StepRunStatus string
+
+// Reason ...
+func (s StepRunStatus) Reason(exitCode int) string {
+	switch s {
+	case StepRunStatusCodeSuccess, StepRunStatusCodeSkipped, StepRunStatusCodeSkippedWithRunIf:
+		return ""
+	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed, StepRunStatusCodeFailedSkippable:
+		return fmt.Sprintf("exit code: %d", exitCode)
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "timed out"
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "timed out due to no output"
+	default:
+		return "unknown result code"
+	}
 }

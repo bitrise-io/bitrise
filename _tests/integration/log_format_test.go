@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"
@@ -151,8 +150,6 @@ func convertStepFinishedEventLog(line []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	eventLog.Content.InternalStatus = bitrise.InternalStatus(eventLog.Content.Status)
 
 	var buf bytes.Buffer
 	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})

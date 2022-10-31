@@ -3,7 +3,6 @@ package log
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -111,11 +110,10 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Success",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeSuccess,
-				Status:         "success",
-				Title:          "Normal step name",
-				RunTime:        1234567,
-				LastStep:       true,
+				Status:   "success",
+				Title:    "Normal step name",
+				RunTime:  1234567,
+				LastStep: true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -127,12 +125,11 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Failed",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeFailed,
-				Status:         "failed",
-				StatusReason:   "exit code: 1",
-				Title:          "Loooooooooooooooooooooooooooooooooong step name",
-				RunTime:        9999,
-				LastStep:       true,
+				Status:       "failed",
+				StatusReason: "exit code: 1",
+				Title:        "Loooooooooooooooooooooooooooooooooong step name",
+				RunTime:      9999,
+				LastStep:     true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -144,12 +141,11 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Failed skippable",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeFailedSkippable,
-				Status:         "failed_skippable",
-				StatusReason:   "exit code: 2",
-				Title:          "Simple Git",
-				RunTime:        3333,
-				LastStep:       true,
+				Status:       "failed_skippable",
+				StatusReason: "exit code: 2",
+				Title:        "Simple Git",
+				RunTime:      3333,
+				LastStep:     true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -161,11 +157,10 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Skipped",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeSkipped,
-				Status:         "skipped",
-				Title:          "Step",
-				RunTime:        654321,
-				LastStep:       true,
+				Status:   "skipped",
+				Title:    "Step",
+				RunTime:  654321,
+				LastStep: true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -177,11 +172,10 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Skipped with run if",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeSkippedWithRunIf,
-				Status:         "skipped_with_run_if",
-				Title:          "Step",
-				RunTime:        42424242,
-				LastStep:       true,
+				Status:   "skipped_with_run_if",
+				Title:    "Step",
+				RunTime:  42424242,
+				LastStep: true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -193,12 +187,11 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Preparation failed",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodePreparationFailed,
-				Status:         "preparation_failed",
-				StatusReason:   "exit code: 3",
-				Title:          "Step",
-				RunTime:        11111,
-				LastStep:       true,
+				Status:       "preparation_failed",
+				StatusReason: "exit code: 3",
+				Title:        "Step",
+				RunTime:      11111,
+				LastStep:     true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -210,12 +203,11 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Aborted with custom timeout",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusAbortedWithCustomTimeout,
-				Status:         "aborted_with_custom_timeout",
-				StatusReason:   "timed out",
-				Title:          "Step",
-				RunTime:        99099,
-				LastStep:       true,
+				Status:       "aborted_with_custom_timeout",
+				StatusReason: "timed out",
+				Title:        "Step",
+				RunTime:      99099,
+				LastStep:     true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -227,12 +219,11 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Aborted with no output",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusAbortedWithNoOutputTimeout,
-				Status:         "aborted_with_no_output",
-				StatusReason:   "timed out due to no output",
-				Title:          "Step",
-				RunTime:        101,
-				LastStep:       true,
+				Status:       "aborted_with_no_output",
+				StatusReason: "timed out due to no output",
+				Title:        "Step",
+				RunTime:      101,
+				LastStep:     true,
 			},
 			expectedOutput: []string{
 				"|                                                                              |",
@@ -244,13 +235,12 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Error status prints the issue and source url",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeFailed,
-				Status:         "failed",
-				StatusReason:   "exit code: 11",
-				Title:          "Failed step",
-				RunTime:        88888,
-				SupportURL:     "https://issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url",
-				SourceCodeURL:  "https://source-code-url",
+				Status:        "failed",
+				StatusReason:  "exit code: 11",
+				Title:         "Failed step",
+				RunTime:       88888,
+				SupportURL:    "https://issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url",
+				SourceCodeURL: "https://source-code-url",
 				Errors: []StepError{
 					{Code: 11, Message: "This is an error message"},
 				},
@@ -269,10 +259,9 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Step update info is printed in the footer",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeSuccess,
-				Status:         "success",
-				Title:          "Step",
-				RunTime:        65748,
+				Status:  "success",
+				Title:   "Step",
+				RunTime: 65748,
 				Update: &StepUpdate{
 					OriginalVersion: "1",
 					ResolvedVersion: "1.2.3",
@@ -295,11 +284,10 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Deprecation is printed in the footer",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeFailed,
-				Status:         "failed",
-				StatusReason:   "exit code: 42",
-				Title:          "Loooooooooong step naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaame",
-				RunTime:        223,
+				Status:       "failed",
+				StatusReason: "exit code: 42",
+				Title:        "Loooooooooong step naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaame",
+				RunTime:      223,
 				Deprecation: &StepDeprecation{
 					RemovalDate: "2022-10-26",
 					Note:        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. In at ipsum nec orci convallis efficitur. Nulla ultrices eros non nisi tempus feugiat. Donec ac sapien in odio ultrices ullamcorper vel id erat. Interdum et malesuada fames ac ante ipsum primis in faucibus. Sed sed placerat augue, tincidunt varius ipsum. Donec.",
@@ -323,10 +311,9 @@ func TestStepFooterPrinting(t *testing.T) {
 		{
 			name: "Error urls, update and deprecation info can appear at the same time",
 			params: StepFinishedParams{
-				InternalStatus: models.StepRunStatusCodeSuccess,
-				Status:         "success",
-				Title:          "Regular step",
-				RunTime:        111111111111,
+				Status:  "success",
+				Title:   "Regular step",
+				RunTime: 111111111111,
 				Errors: []StepError{
 					{Code: 11, Message: "This is an error message"},
 				},

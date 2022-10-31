@@ -33,7 +33,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIdxPtr int,
 	runIf string,
-	resultCode int,
+	status models.StepRunStatus,
 	exitCode int,
 	err error,
 	isLastStep bool,
@@ -42,24 +42,24 @@ func (r buildRunResultCollector) registerStepRunResults(
 	properties coreanalytics.Properties) {
 
 	timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
-	if resultCode == models.StepRunStatusCodeFailed {
+	if status == models.StepRunStatusCodeFailed {
 		// Forward the status of a Step or a wrapped bitrise process.
 		switch exitCode {
 		case exitcode.CLIAbortedWithCustomTimeout:
-			resultCode = models.StepRunStatusAbortedWithCustomTimeout
+			status = models.StepRunStatusAbortedWithCustomTimeout
 		case exitcode.CLIAbortedWithNoOutputTimeout:
-			resultCode = models.StepRunStatusAbortedWithNoOutputTimeout
+			status = models.StepRunStatusAbortedWithNoOutputTimeout
 		}
 
 		var timeoutErr timeoutcmd.TimeoutError
 		if ok := errors.As(err, &timeoutErr); ok {
-			resultCode = models.StepRunStatusAbortedWithCustomTimeout
+			status = models.StepRunStatusAbortedWithCustomTimeout
 			timeout = timeoutErr.Timeout
 		}
 
 		var noOutputTimeoutErr timeoutcmd.NoOutputTimeoutError
 		if ok := errors.As(err, &noOutputTimeoutErr); ok {
-			resultCode = models.StepRunStatusAbortedWithNoOutputTimeout
+			status = models.StepRunStatusAbortedWithNoOutputTimeout
 			noOutputTimeout = noOutputTimeoutErr.Timeout
 		}
 	}
@@ -82,7 +82,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 
 	// Print step preparation errors before the step header box,
 	// other errors are printed within the step box.
-	if resultCode == models.StepRunStatusCodePreparationFailed && err != nil {
+	if status == models.StepRunStatusCodePreparationFailed && err != nil {
 		if !isExitStatusError {
 			log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 		}
@@ -99,7 +99,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 	stepResults := models.StepRunResultsModel{
 		StepInfo:   stepInfoCopy,
 		StepInputs: redactedStepInputs,
-		Status:     resultCode,
+		Status:     status,
 		Idx:        buildRunResults.ResultsCount(),
 		RunTime:    time.Since(stepStartTime),
 		ErrorStr:   errStr,
@@ -109,13 +109,13 @@ func (r buildRunResultCollector) registerStepRunResults(
 
 	r.tracker.SendStepFinishedEvent(properties, analytics.StepResult{
 		Info:            prepareAnalyticsStepInfo(step, stepInfoPtr),
-		Status:          resultCode,
+		Status:          status,
 		ErrorMessage:    errStr,
 		Timeout:         timeout,
 		NoOutputTimeout: noOutputTimeout,
 	})
 
-	switch resultCode {
+	switch status {
 	case models.StepRunStatusCodeSuccess:
 		buildRunResults.SuccessSteps = append(buildRunResults.SuccessSteps, stepResults)
 	case models.StepRunStatusCodePreparationFailed:
@@ -201,17 +201,16 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 	}
 
 	return log.StepFinishedParams{
-		ExecutionId:    stepExecutionId,
-		InternalStatus: results.Status,
-		Status:         bitrise.HumanReadableStatus(results.Status),
-		StatusReason:   bitrise.StatusReason(results.Status, results.ExitCode),
-		Title:          title,
-		RunTime:        results.RunTime.Milliseconds(),
-		SupportURL:     supportURL,
-		SourceCodeURL:  sourceURL,
-		Errors:         errors,
-		Update:         stepUpdate,
-		Deprecation:    stepDeprecation,
-		LastStep:       isLastStep,
+		ExecutionId:   stepExecutionId,
+		Status:        string(results.Status),
+		StatusReason:  results.Status.Reason(results.ExitCode),
+		Title:         title,
+		RunTime:       results.RunTime.Milliseconds(),
+		SupportURL:    supportURL,
+		SourceCodeURL: sourceURL,
+		Errors:        errors,
+		Update:        stepUpdate,
+		Deprecation:   stepDeprecation,
+		LastStep:      isLastStep,
 	}
 }
