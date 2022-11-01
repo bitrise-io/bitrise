@@ -15,48 +15,6 @@ const longStr = "This is a very long string, this is a very long string, " +
 	"this is a very long string, this is a very long string," +
 	"this is a very long string, this is a very long string."
 
-func TestIsUpdateAvailable(t *testing.T) {
-	t.Log("simple compare versions - ture")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "1.1.0",
-		}
-
-		require.Equal(t, true, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("simple compare versions - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "1.0.0",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("issue - no latest - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "1.0.0",
-			LatestVersion: "",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-
-	t.Log("issue - no current - false")
-	{
-		stepInfo1 := stepmanModels.StepInfoModel{
-			Version:       "",
-			LatestVersion: "1.0.0",
-		}
-
-		require.Equal(t, false, isUpdateAvailable(stepInfo1))
-	}
-}
-
 func TestGetTrimmedStepName(t *testing.T) {
 	t.Log("successful step")
 	{
@@ -170,7 +128,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 			result: models.StepRunResultsModel{
 				StepInfo: noTitleInfo,
 				Status:   models.StepRunStatusCodeSuccess,
-				RunTime:  hourToDuration(1000),
+				RunTime:  time.Duration(1000) * time.Hour,
 			},
 			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|",
 		},
@@ -390,38 +348,6 @@ func TestGetRunningStepFooterSubSection(t *testing.T) {
 
 func TestPrintRunningWorkflow(t *testing.T) {
 	PrintRunningWorkflow(longStr)
-}
-
-func TestPrintRunningStepFooter(t *testing.T) {
-	stepInfo := stepmanModels.StepInfoModel{
-		Step: stepmanModels.StepModel{
-			Title: pointers.NewStringPtr(longStr),
-		},
-		Version: longStr,
-	}
-
-	result := models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  10000000,
-		ErrorStr: longStr,
-		ExitCode: 1,
-	}
-	PrintRunningStepFooter(result, true)
-	PrintRunningStepFooter(result, false)
-
-	stepInfo.Step.Title = pointers.NewStringPtr("")
-	result = models.StepRunResultsModel{
-		StepInfo: stepInfo,
-		Status:   models.StepRunStatusCodeSuccess,
-		Idx:      0,
-		RunTime:  0,
-		ErrorStr: "",
-		ExitCode: 0,
-	}
-	PrintRunningStepFooter(result, true)
-	PrintRunningStepFooter(result, false)
 }
 
 func TestPrintSummary(t *testing.T) {

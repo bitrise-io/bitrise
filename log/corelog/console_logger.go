@@ -38,7 +38,7 @@ func newConsoleLogger(output io.Writer) *consoleLogger {
 
 // LogMessage ...
 func (l *consoleLogger) LogMessage(message string, fields MessageLogFields) {
-	message = addColor(fields.Level, message)
+	message = AddColor(fields.Level, message)
 
 	var prefixes []string
 	if fields.Timestamp != "" {
@@ -67,7 +67,7 @@ func (l consoleLogger) LogEvent(interface{}, EventLogFields) {
 
 }
 
-func addColor(level Level, message string) string {
+func AddColor(level Level, message string) string {
 	if message == "" {
 		return message
 	}
