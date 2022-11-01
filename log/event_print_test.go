@@ -1,9 +1,9 @@
 package log
 
 import (
-	"github.com/bitrise-io/bitrise/models"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/assert"
 )
 
