@@ -181,6 +181,35 @@ func (m *defaultLogger) PrintBitriseASCIIArt() {
 	m.Print()
 }
 
+// PrintStepStartedEvent ...
+func (m *defaultLogger) PrintStepStartedEvent(params StepStartedParams) {
+	if m.opts.LoggerType == JSONLogger {
+		m.logger.LogEvent(params, corelog.EventLogFields{
+			Timestamp: m.opts.TimeProvider().Format(rfc3339MicroTimeLayout),
+			EventType: "step_started",
+		})
+	} else {
+		lines := generateStepStartedHeaderLines(params)
+		for _, line := range lines {
+			m.Print(line)
+		}
+	}
+}
+
+func (m *defaultLogger) PrintStepFinishedEvent(params StepFinishedParams) {
+	if m.opts.LoggerType == JSONLogger {
+		m.logger.LogEvent(params, corelog.EventLogFields{
+			Timestamp: m.opts.TimeProvider().Format(rfc3339MicroTimeLayout),
+			EventType: "step_finished",
+		})
+	} else {
+		lines := generateStepFinishedFooterLines(params)
+		for _, line := range lines {
+			m.Print(line)
+		}
+	}
+}
+
 func (m *defaultLogger) logMessage(message string, level corelog.Level) {
 	fields := m.createMessageFields(level)
 	m.logger.LogMessage(message, corelog.MessageLogFields(fields))

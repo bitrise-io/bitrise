@@ -88,7 +88,7 @@ type StepInfo struct {
 // StepResult ...
 type StepResult struct {
 	Info                     StepInfo
-	Status                   int
+	Status                   models.StepRunStatus
 	ErrorMessage             string
 	Timeout, NoOutputTimeout time.Duration
 }

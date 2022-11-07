@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -147,7 +148,7 @@ type BuildRunResultsModel struct {
 type StepRunResultsModel struct {
 	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
 	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
-	Status     int                         `json:"status" yaml:"status"`
+	Status     StepRunStatus               `json:"status" yaml:"status"`
 	Idx        int                         `json:"idx" yaml:"idx"`
 	RunTime    time.Duration               `json:"run_time" yaml:"run_time"`
 	StartTime  time.Time                   `json:"start_time" yaml:"start_time"`
@@ -161,4 +162,80 @@ type TestResultStepInfo struct {
 	Version string `json:"version" yaml:"version"`
 	Title   string `json:"title" yaml:"title"`
 	Number  int    `json:"number" yaml:"number"`
+}
+
+// StepRunStatus ...
+type StepRunStatus int
+
+// Reason ...
+func (s StepRunStatus) Reason(exitCode int) string {
+	switch s {
+	case StepRunStatusCodeSuccess, StepRunStatusCodeSkipped, StepRunStatusCodeSkippedWithRunIf:
+		return ""
+	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed, StepRunStatusCodeFailedSkippable:
+		return fmt.Sprintf("exit code: %d", exitCode)
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "timed out"
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "timed out due to no output"
+	default:
+		return "unknown result code"
+	}
+}
+
+func (s StepRunStatus) HumanReadableStatus() string {
+	switch s {
+	case StepRunStatusCodeSuccess:
+		return "success"
+	case StepRunStatusCodeFailed:
+		return "failed"
+	case StepRunStatusCodeFailedSkippable:
+		return "failed_skippable"
+	case StepRunStatusCodeSkipped:
+		return "skipped"
+	case StepRunStatusCodeSkippedWithRunIf:
+		return "skipped_with_run_if"
+	case StepRunStatusCodePreparationFailed:
+		return "preparation_failed"
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "aborted_with_custom_timeout"
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "aborted_with_no_output"
+	default:
+		return "unknown"
+	}
+}
+
+func (s StepRunStatus) IsFailure() bool {
+	if s == StepRunStatusCodeFailed ||
+		s == StepRunStatusCodePreparationFailed ||
+		s == StepRunStatusAbortedWithCustomTimeout ||
+		s == StepRunStatusAbortedWithNoOutputTimeout ||
+		s == StepRunStatusCodeFailedSkippable {
+		return true
+	}
+	return false
+}
+
+func InternalStatus(status string) int {
+	switch status {
+	case "success":
+		return StepRunStatusCodeSuccess
+	case "failed":
+		return StepRunStatusCodeFailed
+	case "failed_skippable":
+		return StepRunStatusCodeFailedSkippable
+	case "skipped":
+		return StepRunStatusCodeSkipped
+	case "skipped_with_run_if":
+		return StepRunStatusCodeSkippedWithRunIf
+	case "preparation_failed":
+		return StepRunStatusCodePreparationFailed
+	case "aborted_with_custom_timeout":
+		return StepRunStatusAbortedWithCustomTimeout
+	case "aborted_with_no_output":
+		return StepRunStatusAbortedWithNoOutputTimeout
+	default:
+		return -1
+	}
 }

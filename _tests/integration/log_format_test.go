@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/log"
@@ -64,6 +65,25 @@ func restoreConsoleLog(t *testing.T, log []byte) string {
 }
 
 func convertEventLog(line []byte) (string, error) {
+	logLine, err := convertBitriseStartedEventLog(line)
+	if err == nil {
+		return logLine, nil
+	}
+
+	logLine, err = convertStepStartedEventLog(line)
+	if err == nil {
+		return logLine, nil
+	}
+
+	logLine, err = convertStepFinishedEventLog(line)
+	if err == nil {
+		return logLine, nil
+	}
+
+	return "", fmt.Errorf("unknown event log")
+}
+
+func convertBitriseStartedEventLog(line []byte) (string, error) {
 	type EventLog struct {
 		Timestamp   string                 `json:"timestamp"`
 		MessageType string                 `json:"type"`
@@ -84,6 +104,58 @@ func convertEventLog(line []byte) (string, error) {
 	var buf bytes.Buffer
 	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
 	logger.PrintBitriseStartedEvent(eventLog.Content)
+
+	return buf.String(), nil
+}
+
+func convertStepStartedEventLog(line []byte) (string, error) {
+	if !strings.Contains(string(line), "\"event_type\":\"step_started\"") {
+		return "", fmt.Errorf("not a step started event")
+	}
+
+	type EventLog struct {
+		Timestamp   string                `json:"timestamp"`
+		MessageType string                `json:"type"`
+		EventType   string                `json:"event_type"`
+		Content     log.StepStartedParams `json:"content"`
+	}
+
+	var eventLog EventLog
+	err := json.Unmarshal(line, &eventLog)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
+	logger.PrintStepStartedEvent(eventLog.Content)
+
+	return buf.String(), nil
+}
+
+func convertStepFinishedEventLog(line []byte) (string, error) {
+	if !strings.Contains(string(line), "\"event_type\":\"step_finished\"") {
+		return "", fmt.Errorf("not a step finished event")
+	}
+
+	type EventLog struct {
+		Timestamp   string                 `json:"timestamp"`
+		MessageType string                 `json:"type"`
+		EventType   string                 `json:"event_type"`
+		Content     log.StepFinishedParams `json:"content"`
+	}
+
+	var eventLog EventLog
+	err := json.Unmarshal(line, &eventLog)
+	if err != nil {
+		return "", err
+	}
+
+	eventLog.Content.InternalStatus = models.InternalStatus(eventLog.Content.Status)
+
+	var buf bytes.Buffer
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
+	logger.PrintStepFinishedEvent(eventLog.Content)
 
 	return buf.String(), nil
 }
