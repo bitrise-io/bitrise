@@ -119,53 +119,62 @@ func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.L
 			isRunCommand = true
 		}
 
-		if argument == "--"+OutputFormatKey || argument == "-"+OutputFormatKey {
-			// syntax
-			// -flag
-			// --flag   // double dashes are also permitted
-			// -flag=x
-			// -flag x  // non-boolean flags only
-			// One or two dashes may be used; they are equivalent.
-			// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-			if i+1 < len(arguments) {
-				value := arguments[i+1]
-				switch value {
-				case string(log.JSONLogger):
-					outputFormat = log.JSONLogger
-				case string(log.ConsoleLogger):
-					outputFormat = log.ConsoleLogger
-				default:
-					// At this point we don't care about invalid values,
-					// the execution will fail when parsing the command's arguments.
-				}
+		// syntax
+		// -flag
+		// --flag   // double dashes are also permitted
+		// -flag=x
+		// -flag x  // non-boolean flags only
+		// One or two dashes may be used; they are equivalent.
+		// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
+		if isFlag(OutputFormatKey, argument) {
+			var value string
+			components := strings.Split(argument, "=")
+
+			// If the flag value was specified with an `=` mark then the second element in the array is the actual value.
+			// Otherwise, the value was specified as a separate item after the flag, and we need to take the next
+			// argument value.
+			if len(components) == 2 {
+				value = components[1]
+			} else if i+1 < len(arguments) {
+				value = arguments[i+1]
 			}
-		}
-		if strings.HasPrefix(argument, "--"+OutputFormatKey+"=") || strings.HasPrefix(argument, "-"+OutputFormatKey+"=") {
-			flagValue := strings.TrimPrefix(argument, "--"+OutputFormatKey+"=")
-			flagValue = strings.TrimPrefix(flagValue, "-"+OutputFormatKey+"=")
-			if flagValue == string(log.JSONLogger) {
+
+			switch value {
+			case string(log.JSONLogger):
 				outputFormat = log.JSONLogger
-			} else if flagValue == string(log.ConsoleLogger) {
+			case string(log.ConsoleLogger):
 				outputFormat = log.ConsoleLogger
+			default:
+				// At this point we don't care about invalid values,
+				// the execution will fail when parsing the command's arguments.
 			}
 		}
 
-		if argument == "--"+DebugModeKey || argument == "-"+DebugModeKey {
-			// "-flag x" Command line flag syntax is not supported for boolean flags
-			// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-			isDebug = true
-		}
-		if strings.HasPrefix(argument, "--"+DebugModeKey+"=") || strings.HasPrefix(argument, "-"+DebugModeKey+"=") {
-			flagValue := strings.TrimPrefix(argument, "--"+DebugModeKey+"=")
-			flagValue = strings.TrimPrefix(flagValue, "-"+DebugModeKey+"=")
-			value, err := strconv.ParseBool(flagValue)
-			if err == nil {
-				isDebug = value
+		if isFlag(DebugModeKey, argument) {
+			components := strings.Split(argument, "=")
+			if len(components) == 2 {
+				value, err := strconv.ParseBool(components[1])
+				if err == nil {
+					isDebug = value
+				}
+			} else {
+				components := strings.Split(argument, " ")
+
+				// "-flag x" Command line flag syntax is not supported for boolean flags
+				// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
+				if len(components) == 1 {
+					isDebug = true
+				}
 			}
 		}
 	}
 
 	return
+}
+
+func isFlag(name, arg string) bool {
+	return arg == "--"+name || arg == "-"+name ||
+		strings.HasPrefix(arg, "--"+name+"=") || strings.HasPrefix(arg, "-"+name+"=")
 }
 
 func before(c *cli.Context) error {

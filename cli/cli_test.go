@@ -82,6 +82,11 @@ func Test_loggerParameters(t *testing.T) {
 			args:             []string{"-output-format", "invalid"},
 			wantOutputFormat: "",
 		},
+		{
+			name:             "Invalid flag",
+			args:             []string{"-output-format-invalid=json"},
+			wantOutputFormat: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
