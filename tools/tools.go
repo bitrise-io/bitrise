@@ -160,13 +160,13 @@ func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.Step
 
 // StepmanRawStepList ...
 func StepmanRawStepList(collection string) (string, error) {
-	args := createCommandArgsWithLogLevel("step-list", "--collection", collection, "--format", "raw")
+	args := []string{"step-list", "--collection", collection, "--format", "raw"}
 	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 }
 
 // StepmanJSONStepList ...
 func StepmanJSONStepList(collection string) (string, error) {
-	args := createCommandArgsWithLogLevel("step-list", "--collection", collection, "--format", "json")
+	args := []string{"step-list", "--collection", collection, "--format", "json"}
 
 	var outBuffer bytes.Buffer
 	var errBuffer bytes.Buffer
@@ -183,31 +183,31 @@ func StepmanJSONStepList(collection string) (string, error) {
 
 // StepmanShare ...
 func StepmanShare() error {
-	args := createCommandArgsWithLogLevel("share", "--toolmode")
+	args := []string{"share", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareAudit ...
 func StepmanShareAudit() error {
-	args := createCommandArgsWithLogLevel("share", "audit", "--toolmode")
+	args := []string{"share", "audit", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
-	args := createCommandArgsWithLogLevel("share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode")
+	args := []string{"share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareFinish ...
 func StepmanShareFinish() error {
-	args := createCommandArgsWithLogLevel("share", "finish", "--toolmode")
+	args := []string{"share", "finish", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
 // StepmanShareStart ...
 func StepmanShareStart(collection string) error {
-	args := createCommandArgsWithLogLevel("share", "start", "--collection", collection, "--toolmode")
+	args := []string{"share", "start", "--collection", collection, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
@@ -383,7 +383,7 @@ func MoveFile(oldpath, newpath string) error {
 
 // IsBuiltInFlagTypeKey returns true if the env key is a built-in flag type env key
 func IsBuiltInFlagTypeKey(env string) bool {
-	switch string(env) {
+	switch env {
 	case configs.IsSecretFilteringKey,
 		configs.IsSecretEnvsFilteringKey,
 		configs.CIModeEnvKey,
@@ -394,15 +394,4 @@ func IsBuiltInFlagTypeKey(env string) bool {
 	default:
 		return false
 	}
-}
-
-func createCommandArgsWithLogLevel(args ...string) []string {
-	return append(logLevelArg(), args...)
-}
-
-func logLevelArg() []string {
-	if configs.IsDebugMode {
-		return []string{"--loglevel", "debug"}
-	}
-	return nil
 }
