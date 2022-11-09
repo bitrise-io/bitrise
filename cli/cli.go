@@ -50,6 +50,11 @@ func Run() {
 
 		}
 
+		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
+			failf("Failed to set LOGLEVEL env, error: %s", err)
+
+		}
+
 		configs.IsDebugMode = true
 	}
 
