@@ -201,17 +201,16 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 	}
 
 	return log.StepFinishedParams{
-		ExecutionId:    stepExecutionId,
-		InternalStatus: int(results.Status),
-		Status:         results.Status.HumanReadableStatus(),
-		StatusReason:   results.Status.Reason(results.ExitCode),
-		Title:          title,
-		RunTime:        results.RunTime.Milliseconds(),
-		SupportURL:     supportURL,
-		SourceCodeURL:  sourceURL,
-		Errors:         errors,
-		Update:         stepUpdate,
-		Deprecation:    stepDeprecation,
-		LastStep:       isLastStep,
+		ExecutionId:   stepExecutionId,
+		Status:        string(results.Status),
+		StatusReason:  results.Status.Reason(results.ExitCode),
+		Title:         title,
+		RunTime:       results.RunTime.Milliseconds(),
+		SupportURL:    supportURL,
+		SourceCodeURL: sourceURL,
+		Errors:        errors,
+		Update:        stepUpdate,
+		Deprecation:   stepDeprecation,
+		LastStep:      isLastStep,
 	}
 }

@@ -305,7 +305,7 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 			extraProperties[reasonProperty] = runIfValue
 		}
 	default:
-		return "", analytics.Properties{}, fmt.Errorf("Unknown step status code: %d", result.Status)
+		return "", analytics.Properties{}, fmt.Errorf("Unknown step status code: %s", result.Status)
 	}
 
 	return eventName, extraProperties, nil
