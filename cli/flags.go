@@ -76,7 +76,7 @@ var (
 	// App flags
 	flDebugMode = cli.BoolFlag{
 		Name:   DebugModeKey,
-		Usage:  "If true it enabled DEBUG mode. If no separate Log Level is specified this will also set the loglevel to debug.",
+		Usage:  "If true it enables DEBUG mode.",
 		EnvVar: configs.DebugModeEnvKey,
 	}
 	flTool = cli.BoolFlag{
