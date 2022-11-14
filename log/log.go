@@ -144,7 +144,11 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		m.PrintBitriseASCIIArt()
+		v := strings.TrimSpace(plan.Version)
+		if v == "" {
+			v = version.VERSION
+		}
+		m.PrintBitriseASCIIArt(v)
 		m.Warnf("CI mode: %v", plan.CIMode)
 		m.Warnf("PR mode: %v", plan.PRMode)
 		m.Warnf("Debug mode: %v", plan.DebugMode)
@@ -169,7 +173,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 }
 
 // PrintBitriseASCIIArt ...
-func (m *defaultLogger) PrintBitriseASCIIArt() {
+func (m *defaultLogger) PrintBitriseASCIIArt(version string) {
 	m.Print(`
 ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
 ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
@@ -177,7 +181,7 @@ func (m *defaultLogger) PrintBitriseASCIIArt() {
 ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
 ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
 ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	m.Printf("version: %s", version.VERSION)
+	m.Printf("version: %s", version)
 	m.Print()
 }
 
