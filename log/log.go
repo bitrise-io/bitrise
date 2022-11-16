@@ -8,7 +8,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/version"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
@@ -144,11 +143,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		v := strings.TrimSpace(plan.Version)
-		if v == "" {
-			v = version.VERSION
-		}
-		m.PrintBitriseASCIIArt(v)
+		m.PrintBitriseASCIIArt(plan.Version)
 		m.Warnf("CI mode: %v", plan.CIMode)
 		m.Warnf("PR mode: %v", plan.PRMode)
 		m.Warnf("Debug mode: %v", plan.DebugMode)
