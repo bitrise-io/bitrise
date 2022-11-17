@@ -25,5 +25,5 @@ type Logger interface {
 	PrintBitriseStartedEvent(plan models.WorkflowRunPlan)
 	PrintStepStartedEvent(params StepStartedParams)
 	PrintStepFinishedEvent(params StepFinishedParams)
-	PrintBitriseASCIIArt()
+	PrintBitriseASCIIArt(version string)
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/version"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
@@ -144,7 +143,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		m.PrintBitriseASCIIArt()
+		m.PrintBitriseASCIIArt(plan.Version)
 		m.Warnf("CI mode: %v", plan.CIMode)
 		m.Warnf("PR mode: %v", plan.PRMode)
 		m.Warnf("Debug mode: %v", plan.DebugMode)
@@ -169,7 +168,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 }
 
 // PrintBitriseASCIIArt ...
-func (m *defaultLogger) PrintBitriseASCIIArt() {
+func (m *defaultLogger) PrintBitriseASCIIArt(version string) {
 	m.Print(`
 ██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
 ██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
@@ -177,7 +176,7 @@ func (m *defaultLogger) PrintBitriseASCIIArt() {
 ██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
 ██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
 ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	m.Printf("version: %s", version.VERSION)
+	m.Printf("version: %s", version)
 	m.Print()
 }
 
