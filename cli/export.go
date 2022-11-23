@@ -3,11 +3,12 @@ package cli
 import (
 	"encoding/json"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
+
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/output"
 )
 
 func export(c *cli.Context) error {
@@ -58,7 +59,12 @@ func export(c *cli.Context) error {
 			failf("Failed to generate config JSON, error: %s", err)
 		}
 	} else if outFormat == output.FormatYML {
-		configBytes, err = yaml.Marshal(bitriseConfig)
+		node := yaml.Node{}
+		if err = node.Encode(bitriseConfig); err != nil {
+			failf("Failed to generate config YML, error: %s", err)
+		}
+		node.Style = yaml.LiteralStyle
+		configBytes, err = yaml.Marshal(node)
 		if err != nil {
 			failf("Failed to generate config YML, error: %s", err)
 		}
