@@ -157,6 +157,51 @@ type StepRunResultsModel struct {
 	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
 }
 
+// Reason ...
+func (s StepRunResultsModel) StatusReason() string {
+	switch s.Status {
+	case StepRunStatusCodeSuccess:
+		return ""
+	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
+		return fmt.Sprintf("exit code: %d", s.ExitCode)
+	case StepRunStatusCodeFailedSkippable:
+		return "This Step failed, but it was marked as “is_skippable”, so the build continued."
+	case StepRunStatusCodeSkipped:
+		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
+	case StepRunStatusCodeSkippedWithRunIf:
+		return fmt.Sprintf(`
+This Step was skipped, because its “run_if” expression evaluated to false.
+
+The “run_if” expression was: %s
+`, *s.StepInfo.Step.RunIf)
+	case StepRunStatusAbortedWithCustomTimeout:
+		return fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
+	default:
+		return "unknown result code"
+	}
+}
+
+func formatStatusReasonTimeInterval(timeInterval int) string {
+	//h := timeInterval % 3600
+	//m := (timeInterval - h * 3600) % 60
+	//s := timeInterval - h * 3600 - m * 60
+	//
+	//var formattedTimeInterval = ""
+	//if h > 0 {
+	//	formattedTimeInterval += fmt.Sprintf("%dh ", h)
+	//}
+	//
+	//if m > 0 {
+	//	formattedTimeInterval += fmt.Sprintf("%dm ", h)
+	//}
+
+	formattedTimeInterval := fmt.Sprintf("%ds", timeInterval)
+
+	return formattedTimeInterval
+}
+
 // TestResultStepInfo ...
 type TestResultStepInfo struct {
 	ID      string `json:"id" yaml:"id"`
@@ -167,51 +212,6 @@ type TestResultStepInfo struct {
 
 // StepRunStatus ...
 type StepRunStatus int
-
-// Reason ...
-func (s StepRunStatus) Reason(result StepRunResultsModel) string {
-	switch s {
-	case StepRunStatusCodeSuccess:
-		return ""
-	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
-		return fmt.Sprintf("exit code: %d", result.ExitCode)
-	case StepRunStatusCodeFailedSkippable:
-		return "This Step failed, but it was marked as “is_skippable”, so the build continued."
-	case StepRunStatusCodeSkipped:
-		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
-	case StepRunStatusCodeSkippedWithRunIf:
-		return fmt.Sprintf(`
-This Step was skipped, because its “run_if” expression evaluated to false.
-
-The “run_if” expression was: %s
-`, *result.StepInfo.Step.RunIf)
-	case StepRunStatusAbortedWithCustomTimeout:
-		return fmt.Sprintf("This Step timed out after %s.", formatRunReasonTimeInterval(*result.StepInfo.Step.Timeout))
-	case StepRunStatusAbortedWithNoOutputTimeout:
-		return fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatRunReasonTimeInterval(*result.StepInfo.Step.NoOutputTimeout))
-	default:
-		return "unknown result code"
-	}
-}
-
-func formatRunReasonTimeInterval(timeInterval int) string {
-	h := timeInterval % 3600
-	m := (timeInterval - h*3600) % 60
-	s := timeInterval - h*3600 - m*60
-
-	var formattedTimeInterval = ""
-	if h > 0 {
-		formattedTimeInterval += fmt.Sprintf("%dh ", h)
-	}
-
-	if m > 0 {
-		formattedTimeInterval += fmt.Sprintf("%dm ", h)
-	}
-
-	formattedTimeInterval += fmt.Sprintf("%ds", s)
-
-	return formattedTimeInterval
-}
 
 func (s StepRunStatus) HumanReadableStatus() string {
 	switch s {
