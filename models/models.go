@@ -114,7 +114,8 @@ type BitriseDataModel struct {
 
 // StepIDData ...
 // structured representation of a composite-step-id
-//  a composite step id is: step-lib-source::step-id@1.0.0
+//
+//	a composite step id is: step-lib-source::step-id@1.0.0
 type StepIDData struct {
 	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
 	SteplibSource string
@@ -168,19 +169,48 @@ type TestResultStepInfo struct {
 type StepRunStatus int
 
 // Reason ...
-func (s StepRunStatus) Reason(exitCode int) string {
+func (s StepRunStatus) Reason(result StepRunResultsModel) string {
 	switch s {
-	case StepRunStatusCodeSuccess, StepRunStatusCodeSkipped, StepRunStatusCodeSkippedWithRunIf:
+	case StepRunStatusCodeSuccess:
 		return ""
-	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed, StepRunStatusCodeFailedSkippable:
-		return fmt.Sprintf("exit code: %d", exitCode)
+	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
+		return fmt.Sprintf("exit code: %d", result.ExitCode)
+	case StepRunStatusCodeFailedSkippable:
+		return "This Step failed, but it was marked as “is_skippable”, so the build continued."
+	case StepRunStatusCodeSkipped:
+		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
+	case StepRunStatusCodeSkippedWithRunIf:
+		return fmt.Sprintf(`
+This Step was skipped, because its “run_if” expression evaluated to false.
+
+The “run_if” expression was: %s
+`, *result.StepInfo.Step.RunIf)
 	case StepRunStatusAbortedWithCustomTimeout:
-		return "timed out"
+		return fmt.Sprintf("This Step timed out after %s.", formatRunReasonTimeInterval(*result.StepInfo.Step.Timeout))
 	case StepRunStatusAbortedWithNoOutputTimeout:
-		return "timed out due to no output"
+		return fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatRunReasonTimeInterval(*result.StepInfo.Step.NoOutputTimeout))
 	default:
 		return "unknown result code"
 	}
+}
+
+func formatRunReasonTimeInterval(timeInterval int) string {
+	h := timeInterval % 3600
+	m := (timeInterval - h*3600) % 60
+	s := timeInterval - h*3600 - m*60
+
+	var formattedTimeInterval = ""
+	if h > 0 {
+		formattedTimeInterval += fmt.Sprintf("%dh ", h)
+	}
+
+	if m > 0 {
+		formattedTimeInterval += fmt.Sprintf("%dm ", h)
+	}
+
+	formattedTimeInterval += fmt.Sprintf("%ds", s)
+
+	return formattedTimeInterval
 }
 
 func (s StepRunStatus) HumanReadableStatus() string {
