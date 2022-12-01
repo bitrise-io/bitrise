@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -184,20 +185,27 @@ The “run_if” expression was: %s
 }
 
 func formatStatusReasonTimeInterval(timeInterval int) string {
-	//h := timeInterval % 3600
-	//m := (timeInterval - h * 3600) % 60
-	//s := timeInterval - h * 3600 - m * 60
-	//
-	//var formattedTimeInterval = ""
-	//if h > 0 {
-	//	formattedTimeInterval += fmt.Sprintf("%dh ", h)
-	//}
-	//
-	//if m > 0 {
-	//	formattedTimeInterval += fmt.Sprintf("%dm ", h)
-	//}
+	var remaining int = timeInterval
+	h := int(remaining / 3600)
+	remaining = remaining - h*3600
+	m := int(remaining / 60)
+	remaining = remaining - m*60
+	s := remaining
 
-	formattedTimeInterval := fmt.Sprintf("%ds", timeInterval)
+	var formattedTimeInterval = ""
+	if h > 0 {
+		formattedTimeInterval += fmt.Sprintf("%dh ", h)
+	}
+
+	if m > 0 {
+		formattedTimeInterval += fmt.Sprintf("%dm ", m)
+	}
+
+	if s > 0 {
+		formattedTimeInterval += fmt.Sprintf("%ds", s)
+	}
+
+	formattedTimeInterval = strings.TrimSpace(formattedTimeInterval)
 
 	return formattedTimeInterval
 }
