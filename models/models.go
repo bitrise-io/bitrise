@@ -158,7 +158,7 @@ type StepRunResultsModel struct {
 	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
 }
 
-// Reason ...
+// StatusReason ...
 func (s StepRunResultsModel) StatusReason() string {
 	switch s.Status {
 	case StepRunStatusCodeSuccess:
