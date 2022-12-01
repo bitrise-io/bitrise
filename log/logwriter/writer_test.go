@@ -18,8 +18,6 @@ func referenceTime() time.Time {
 }
 
 func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name            string
 		producer        log.Producer
