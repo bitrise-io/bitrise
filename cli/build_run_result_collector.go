@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
@@ -121,31 +120,16 @@ func (r buildRunResultCollector) registerStepRunResults(
 	case models.StepRunStatusCodePreparationFailed:
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailed:
-		if !isExitStatusError {
-			log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		}
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailedSkippable:
-		if !isExitStatusError {
-			log.Warnf("Step (%s) failed, but was marked as skippable: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		} else {
-			log.Warnf("Step (%s) failed, but was marked as skippable", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
-		}
 		buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
-		log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeSkipped:
-		log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 		buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 	case models.StepRunStatusCodeSkippedWithRunIf:
-		log.Warn("The step's (" + pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title") + ") Run-If expression evaluated to false - skipping")
-		if runIf != "" {
-			log.Info("The Run-If expression was: ", colorstring.Blue(runIf))
-		}
 		buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 	default:
-		log.Error("Unknown result code")
 		return
 	}
 

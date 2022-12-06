@@ -91,6 +91,9 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	}
 
 	var lines []string
+	if params.StatusReason != "" {
+		lines = append(lines, params.StatusReason)
+	}
 	lines = append(lines, sectionSeparator)
 	lines = append(lines, mainSeparator)
 	lines = append(lines, getSummaryFooterRow(params.InternalStatus, params.Title, params.ShortReason, params.RunTime, deprecated))
