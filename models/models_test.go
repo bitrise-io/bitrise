@@ -138,7 +138,7 @@ func TestFormatStatusReasonTimeInterval(t *testing.T) {
 
 	actual := make(map[int]string)
 
-	for key, _ := range expected {
+	for key := range expected {
 		actual[key] = formatStatusReasonTimeInterval(key)
 	}
 
