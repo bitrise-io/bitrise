@@ -707,6 +707,18 @@ func activateAndRunSteps(
 			stepInfoPtr.Step.SourceCodeURL = pointers.NewStringPtr(*mergedStep.SourceCodeURL)
 		}
 
+		if mergedStep.RunIf != nil {
+			stepInfoPtr.Step.RunIf = pointers.NewStringPtr(*mergedStep.RunIf)
+		}
+
+		if mergedStep.Timeout != nil {
+			stepInfoPtr.Step.Timeout = pointers.NewIntPtr(*mergedStep.Timeout)
+		}
+
+		if mergedStep.NoOutputTimeout != nil {
+			stepInfoPtr.Step.NoOutputTimeout = pointers.NewIntPtr(*mergedStep.NoOutputTimeout)
+		}
+
 		// At this point we have a filled up step info model and also have a step model which is contains the merged step
 		// data from the bitrise.yml and the steps step.yml.
 		// If the step title contains the step id or the step library as a prefix then we will take the original steps
