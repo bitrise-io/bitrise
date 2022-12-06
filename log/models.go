@@ -39,6 +39,7 @@ type StepFinishedParams struct {
 	InternalStatus int         `json:"-"`
 	Status         string      `json:"status"`
 	StatusReason   string      `json:"status_reason,omitempty"`
+	ShortReason    string      `json:"status_reason_short,omitempty"`
 	Title          string      `json:"title"`
 	RunTime        int64       `json:"run_time_in_ms"`
 	SupportURL     string      `json:"support_url"`

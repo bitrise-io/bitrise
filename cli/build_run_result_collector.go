@@ -205,6 +205,7 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		InternalStatus: int(results.Status),
 		Status:         results.Status.HumanReadableStatus(),
 		StatusReason:   results.StatusReason(),
+		ShortReason:    results.ShortReason(),
 		Title:          title,
 		RunTime:        results.RunTime.Milliseconds(),
 		SupportURL:     supportURL,

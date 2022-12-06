@@ -170,15 +170,33 @@ func (s StepRunResultsModel) StatusReason() string {
 	case StepRunStatusCodeSkipped:
 		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
 	case StepRunStatusCodeSkippedWithRunIf:
-		return fmt.Sprintf(`
-This Step was skipped, because its “run_if” expression evaluated to false.
+		return fmt.Sprintf(`This Step was skipped, because its “run_if” expression evaluated to false.
 
-The “run_if” expression was: %s
-`, *s.StepInfo.Step.RunIf)
+The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
 	case StepRunStatusAbortedWithCustomTimeout:
 		return fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
 	case StepRunStatusAbortedWithNoOutputTimeout:
 		return fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
+	default:
+		return "unknown result code"
+	}
+}
+
+// ShortReason ...
+func (s StepRunResultsModel) ShortReason() string {
+	switch s.Status {
+	case StepRunStatusCodeSuccess:
+		return ""
+	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed, StepRunStatusCodeFailedSkippable:
+		return fmt.Sprintf("exit code: %d", s.ExitCode)
+	case StepRunStatusCodeSkipped:
+		return "skipped"
+	case StepRunStatusCodeSkippedWithRunIf:
+		return "skipped due to run_if"
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "timed out"
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "timed out due to no output"
 	default:
 		return "unknown result code"
 	}
