@@ -96,7 +96,7 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	}
 	lines = append(lines, sectionSeparator)
 	lines = append(lines, mainSeparator)
-	lines = append(lines, getSummaryFooterRow(params.InternalStatus, params.Title, params.ShortReason, params.RunTime, deprecated))
+	lines = append(lines, getSummaryFooterRow(params.InternalStatus, params.Title, params.StatusName, params.RunTime, deprecated))
 	lines = append(lines, mainSeparator)
 
 	hasPreviousSection := false

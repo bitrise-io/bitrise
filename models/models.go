@@ -182,8 +182,8 @@ The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
 	}
 }
 
-// ShortReason ...
-func (s StepRunResultsModel) ShortReason() string {
+// StatusName ...
+func (s StepRunResultsModel) StatusName() string {
 	switch s.Status {
 	case StepRunStatusCodeSuccess:
 		return "Success"
@@ -193,7 +193,8 @@ func (s StepRunResultsModel) ShortReason() string {
 		StepRunStatusAbortedWithCustomTimeout,
 		StepRunStatusAbortedWithNoOutputTimeout:
 		return "Failed"
-	case StepRunStatusCodeSkipped, StepRunStatusCodeSkippedWithRunIf:
+	case StepRunStatusCodeSkipped,
+		StepRunStatusCodeSkippedWithRunIf:
 		return "Skipped"
 	default:
 		return "Unknown"

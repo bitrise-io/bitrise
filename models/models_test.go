@@ -160,7 +160,7 @@ func TestShortReason(t *testing.T) {
 		var s StepRunResultsModel = StepRunResultsModel{
 			Status: k,
 		}
-		actual[k] = s.ShortReason()
+		actual[k] = s.StatusName()
 	}
 
 	assert.Equal(t, expected, actual)

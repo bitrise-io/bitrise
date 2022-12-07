@@ -38,8 +38,8 @@ type StepFinishedParams struct {
 	// The status we send to the log service is string based, but it is easier to work with an int.
 	InternalStatus int         `json:"-"`
 	Status         string      `json:"status"`
+	StatusName     string      `json:"-"`
 	StatusReason   string      `json:"status_reason,omitempty"`
-	ShortReason    string      `json:"status_reason_short,omitempty"`
 	Title          string      `json:"title"`
 	RunTime        int64       `json:"run_time_in_ms"`
 	SupportURL     string      `json:"support_url"`
