@@ -39,7 +39,7 @@ func trimTitle(title string, titleSuffix string, titleBoxWidth int) string {
 		return title
 	}
 
-	return fmt.Sprintf("%s %s", title, titleSuffix)
+	return strings.TrimSpace(fmt.Sprintf("%s %s", title, titleSuffix))
 }
 
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
