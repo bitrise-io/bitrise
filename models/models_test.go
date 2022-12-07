@@ -127,7 +127,7 @@ func TestStatusReasonDefault(t *testing.T) {
 }
 
 func TestFormatStatusReasonTimeInterval(t *testing.T) {
-	var expected = map[int]string{
+	expected := map[int]string{
 		10:   "10s",
 		60:   "1m",
 		61:   "1m 1s",
