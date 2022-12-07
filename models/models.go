@@ -186,19 +186,17 @@ The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
 func (s StepRunResultsModel) ShortReason() string {
 	switch s.Status {
 	case StepRunStatusCodeSuccess:
-		return ""
-	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed, StepRunStatusCodeFailedSkippable:
-		return fmt.Sprintf("exit code: %d", s.ExitCode)
-	case StepRunStatusCodeSkipped:
-		return "skipped"
-	case StepRunStatusCodeSkippedWithRunIf:
-		return "skipped due to run_if"
-	case StepRunStatusAbortedWithCustomTimeout:
-		return "timed out"
-	case StepRunStatusAbortedWithNoOutputTimeout:
-		return "timed out due to no output"
+		return "Success"
+	case StepRunStatusCodeFailed,
+		StepRunStatusCodePreparationFailed,
+		StepRunStatusCodeFailedSkippable,
+		StepRunStatusAbortedWithCustomTimeout,
+		StepRunStatusAbortedWithNoOutputTimeout:
+		return "Failed"
+	case StepRunStatusCodeSkipped, StepRunStatusCodeSkippedWithRunIf:
+		return "Skipped"
 	default:
-		return "unknown result code"
+		return "Unknown"
 	}
 }
 

@@ -144,3 +144,26 @@ func TestFormatStatusReasonTimeInterval(t *testing.T) {
 
 	assert.Equal(t, expected, actual)
 }
+
+func TestShortReason(t *testing.T) {
+	expected := map[StepRunStatus]string{
+		StepRunStatusCodeSuccess:                "Success",
+		StepRunStatusCodeFailed:                 "Failed",
+		StepRunStatusCodeFailedSkippable:        "Failed",
+		StepRunStatusCodeSkipped:                "Skipped",
+		StepRunStatusCodeSkippedWithRunIf:       "Skipped",
+		StepRunStatusCodePreparationFailed:      "Failed",
+		StepRunStatusAbortedWithCustomTimeout:   "Failed",
+		StepRunStatusAbortedWithNoOutputTimeout: "Failed",
+	}
+	actual := make(map[StepRunStatus]string)
+
+	for k := range expected {
+		var s StepRunResultsModel = StepRunResultsModel{
+			Status: k,
+		}
+		actual[k] = s.ShortReason()
+	}
+
+	assert.Equal(t, expected, actual)
+}
