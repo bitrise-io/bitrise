@@ -70,11 +70,9 @@ func TestStatusReasonSkippedWithRunIf(t *testing.T) {
 		Status:   StepRunStatusCodeSkippedWithRunIf,
 		StepInfo: info,
 	}
-	expected := `
-This Step was skipped, because its “run_if” expression evaluated to false.
+	expected := `This Step was skipped, because its “run_if” expression evaluated to false.
 
-The “run_if” expression was: 2+2==4
-`
+The “run_if” expression was: 2+2==4`
 	actual := s.StatusReason()
 
 	assert.Equal(t, expected, actual)
