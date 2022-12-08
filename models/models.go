@@ -147,26 +147,34 @@ type StepRunResultsModel struct {
 	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
 }
 
-// StatusReason ...
 func (s StepRunResultsModel) StatusReason() string {
 	switch s.Status {
-	case StepRunStatusCodeSuccess, StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
-		return ""
 	case StepRunStatusCodeFailedSkippable:
-		return "This Step failed, but it was marked as “is_skippable”, so the build continued."
+		return `This Step failed, but it was marked as "is_skippable", so the build continued.`
 	case StepRunStatusCodeSkipped:
 		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
 	case StepRunStatusCodeSkippedWithRunIf:
 		return fmt.Sprintf(`This Step was skipped, because its “run_if” expression evaluated to false.
 
 The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
-	case StepRunStatusAbortedWithCustomTimeout:
-		return fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
-	case StepRunStatusAbortedWithNoOutputTimeout:
-		return fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
 	default:
-		return "unknown result code"
+		return ""
 	}
+}
+
+func (s StepRunResultsModel) Error() (string, int) {
+	message := ""
+
+	switch s.Status {
+	case StepRunStatusAbortedWithCustomTimeout:
+		message = fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		message = fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
+	default:
+		message = s.ErrorStr
+	}
+
+	return message, s.ExitCode
 }
 
 func formatStatusReasonTimeInterval(timeInterval int) string {
