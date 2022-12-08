@@ -10,52 +10,66 @@ func TestStatusReasonSuccess(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status: StepRunStatusCodeSuccess,
 	}
-	expected := ""
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	var expectedStepErrors []StepError
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonFailed(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status:   StepRunStatusCodeFailed,
 		ExitCode: 25,
+		ErrorStr: "exit code: 25",
 	}
-	expected := ""
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	expectedStepErrors := []StepError{{Code: 25, Message: "exit code: 25"}}
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonPreparationFailed(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status:   StepRunStatusCodePreparationFailed,
 		ExitCode: 30,
+		ErrorStr: "Failed to clone step.",
 	}
-	expected := ""
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	expectedStepErrors := []StepError{{Code: 30, Message: "Failed to clone step."}}
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonFailedSkippable(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
-		Status: StepRunStatusCodeFailedSkippable,
+		Status:   StepRunStatusCodeFailedSkippable,
+		ExitCode: 10,
+		ErrorStr: "ABCD",
 	}
-	expected := "This Step failed, but it was marked as “is_skippable”, so the build continued."
-	actual := s.StatusReason()
+	expectedStatusReason := "This Step failed, but it was marked as \"is_skippable\", so the build continued."
+	expectedStepErrors := []StepError{{Code: 10, Message: "ABCD"}}
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonSkipped(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status: StepRunStatusCodeSkipped,
 	}
-	expected := "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
-	actual := s.StatusReason()
+	expectedStatusReason := "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
+	var expectedStepErrors []StepError
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonSkippedWithRunIf(t *testing.T) {
@@ -70,12 +84,13 @@ func TestStatusReasonSkippedWithRunIf(t *testing.T) {
 		Status:   StepRunStatusCodeSkippedWithRunIf,
 		StepInfo: info,
 	}
-	expected := `This Step was skipped, because its “run_if” expression evaluated to false.
-
+	expectedStatusReason := `This Step was skipped, because its “run_if” expression evaluated to false.
 The “run_if” expression was: 2+2==4`
-	actual := s.StatusReason()
+	var expectedStepErrors []StepError
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonCustomTimeout(t *testing.T) {
@@ -89,11 +104,15 @@ func TestStatusReasonCustomTimeout(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status:   StepRunStatusAbortedWithCustomTimeout,
 		StepInfo: info,
+		ExitCode: 5,
+		ErrorStr: "This won't be used.",
 	}
-	expected := "This Step timed out after 9h 50s."
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	expectedStepErrors := []StepError{{Code: 5, Message: "This Step timed out after 9h 50s."}}
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonNoOutputTimeout(t *testing.T) {
@@ -107,21 +126,27 @@ func TestStatusReasonNoOutputTimeout(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status:   StepRunStatusAbortedWithNoOutputTimeout,
 		StepInfo: info,
+		ExitCode: 6,
+		ErrorStr: "This won't be used.",
 	}
-	expected := "This Step failed, because it has not sent any output for 32s."
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	expectedStepErrors := []StepError{{Code: 6, Message: "This Step failed, because it has not sent any output for 32s."}}
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestStatusReasonDefault(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status: -999,
 	}
-	expected := "unknown result code"
-	actual := s.StatusReason()
+	expectedStatusReason := ""
+	var expectedStepErrors []StepError
+	actualStatusReason, actualStepErrors := s.StatusReasons()
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedStatusReason, actualStatusReason)
+	assert.Equal(t, expectedStepErrors, actualStepErrors)
 }
 
 func TestFormatStatusReasonTimeInterval(t *testing.T) {
@@ -160,7 +185,7 @@ func TestShortReason(t *testing.T) {
 		var s StepRunResultsModel = StepRunResultsModel{
 			Status: k,
 		}
-		actual[k] = s.StatusName()
+		actual[k] = s.Status.Name()
 	}
 
 	assert.Equal(t, expected, actual)

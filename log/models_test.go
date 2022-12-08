@@ -70,7 +70,7 @@ func TestStepFinishedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				RunTime:       1234567890,
 				SupportURL:    "SupportURL",
 				SourceCodeURL: "SourceCodeURL",
-				Errors: []StepError{
+				Errors: []models.StepError{
 					{
 						Code:    2,
 						Message: "Message",
@@ -100,7 +100,7 @@ func TestStepFinishedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				RunTime:       1234567890,
 				SupportURL:    "SupportURL",
 				SourceCodeURL: "SourceCodeURL",
-				Errors:        []StepError{},
+				Errors:        []models.StepError{},
 				Update:        nil,
 				Deprecation:   nil,
 				LastStep:      true,

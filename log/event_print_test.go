@@ -253,7 +253,7 @@ The “run_if” expression was: false`,
 				RunTime:       88888,
 				SupportURL:    "https://issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url-issue-url",
 				SourceCodeURL: "https://source-code-url",
-				Errors: []StepError{
+				Errors: []models.StepError{
 					{Code: 11, Message: "This is an error message"},
 				},
 				LastStep: true,
@@ -330,7 +330,7 @@ The “run_if” expression was: false`,
 				StatusReason: "",
 				Title:        "Regular step",
 				RunTime:      111111111111,
-				Errors: []StepError{
+				Errors: []models.StepError{
 					{Code: 11, Message: "This is an error message"},
 				},
 				Update: &StepUpdate{
