@@ -59,7 +59,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	}
 
 	suffix := ""
-	reason := stepRunResult.StatusName()
+	reason := stepRunResult.Status.Name()
 	if reason != "" {
 		suffix = fmt.Sprintf("(%s)", reason)
 	}

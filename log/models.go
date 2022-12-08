@@ -34,17 +34,14 @@ type StepError struct {
 
 // StepFinishedParams ...
 type StepFinishedParams struct {
-	ExecutionId string `json:"uuid"`
-	// The status we send to the log service is string based, but it is easier to work with an int.
-	InternalStatus int         `json:"-"`
-	Status         string      `json:"status"`
-	StatusName     string      `json:"-"`
-	StatusReason   string      `json:"status_reason,omitempty"`
-	Title          string      `json:"title"`
-	RunTime        int64       `json:"run_time_in_ms"`
-	SupportURL     string      `json:"support_url"`
-	SourceCodeURL  string      `json:"source_code_url"`
-	Errors         []StepError `json:"errors,omitempty"`
+	ExecutionId   string      `json:"uuid"`
+	Status        string      `json:"status"`
+	StatusReason  string      `json:"status_reason,omitempty"`
+	Title         string      `json:"title"`
+	RunTime       int64       `json:"run_time_in_ms"`
+	SupportURL    string      `json:"support_url"`
+	SourceCodeURL string      `json:"source_code_url"`
+	Errors        []StepError `json:"errors,omitempty"`
 	// The update and deprecation fields are pointers because an empty struct is always initialised so never omitted.
 	Update      *StepUpdate      `json:"update_available,omitempty"`
 	Deprecation *StepDeprecation `json:"deprecation,omitempty"`

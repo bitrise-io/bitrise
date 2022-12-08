@@ -39,7 +39,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		require.Equal(t, expected, actual)
 	}
 
-	t.Log("failed step")
+	t.Log("successful step - empty title")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Step: stepmanModels.StepModel{
