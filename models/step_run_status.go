@@ -77,12 +77,3 @@ func (s StepRunStatus) Name() string {
 		return "Unknown"
 	}
 }
-
-func (s StepRunStatus) IsFailure() bool {
-	if s == StepRunStatusCodeFailed ||
-		s == StepRunStatusCodePreparationFailed ||
-		s == StepRunStatusCodeFailedSkippable {
-		return true
-	}
-	return false
-}
