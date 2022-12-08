@@ -161,10 +161,8 @@ type StepRunResultsModel struct {
 // StatusReason ...
 func (s StepRunResultsModel) StatusReason() string {
 	switch s.Status {
-	case StepRunStatusCodeSuccess:
+	case StepRunStatusCodeSuccess, StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
 		return ""
-	case StepRunStatusCodeFailed, StepRunStatusCodePreparationFailed:
-		return fmt.Sprintf("exit code: %d", s.ExitCode)
 	case StepRunStatusCodeFailedSkippable:
 		return "This Step failed, but it was marked as “is_skippable”, so the build continued."
 	case StepRunStatusCodeSkipped:
@@ -264,8 +262,6 @@ func (s StepRunStatus) HumanReadableStatus() string {
 func (s StepRunStatus) IsFailure() bool {
 	if s == StepRunStatusCodeFailed ||
 		s == StepRunStatusCodePreparationFailed ||
-		s == StepRunStatusAbortedWithCustomTimeout ||
-		s == StepRunStatusAbortedWithNoOutputTimeout ||
 		s == StepRunStatusCodeFailedSkippable {
 		return true
 	}
