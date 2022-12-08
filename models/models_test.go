@@ -21,7 +21,7 @@ func TestStatusReasonFailed(t *testing.T) {
 		Status:   StepRunStatusCodeFailed,
 		ExitCode: 25,
 	}
-	expected := "exit code: 25"
+	expected := ""
 	actual := s.StatusReason()
 
 	assert.Equal(t, expected, actual)
@@ -32,7 +32,7 @@ func TestStatusReasonPreparationFailed(t *testing.T) {
 		Status:   StepRunStatusCodePreparationFailed,
 		ExitCode: 30,
 	}
-	expected := "exit code: 30"
+	expected := ""
 	actual := s.StatusReason()
 
 	assert.Equal(t, expected, actual)
