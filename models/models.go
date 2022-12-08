@@ -178,29 +178,40 @@ func (s StepRunResultsModel) StatusReasons() (string, []StepError) {
 
 func (s StepRunResultsModel) statusReason() string {
 	switch s.Status {
+	case StepRunStatusCodeSuccess,
+		StepRunStatusCodeFailed,
+		StepRunStatusCodePreparationFailed,
+		StepRunStatusAbortedWithCustomTimeout,
+		StepRunStatusAbortedWithNoOutputTimeout:
+		return ""
 	case StepRunStatusCodeFailedSkippable:
 		return `This Step failed, but it was marked as "is_skippable", so the build continued.`
 	case StepRunStatusCodeSkipped:
 		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
 	case StepRunStatusCodeSkippedWithRunIf:
 		return fmt.Sprintf(`This Step was skipped, because its “run_if” expression evaluated to false.
-
 The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
-	default:
-		return ""
 	}
+	
+	return ""
 }
 
 func (s StepRunResultsModel) error() []StepError {
 	message := ""
 
 	switch s.Status {
+	case StepRunStatusCodeSuccess,
+		StepRunStatusCodeSkipped,
+		StepRunStatusCodeSkippedWithRunIf:
+		return nil
+	case StepRunStatusCodeFailedSkippable,
+		StepRunStatusCodeFailed,
+		StepRunStatusCodePreparationFailed:
+		message = s.ErrorStr
 	case StepRunStatusAbortedWithCustomTimeout:
 		message = fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
 	case StepRunStatusAbortedWithNoOutputTimeout:
 		message = fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
-	default:
-		message = s.ErrorStr
 	}
 
 	return []StepError{{
