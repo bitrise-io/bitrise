@@ -147,7 +147,36 @@ type StepRunResultsModel struct {
 	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
 }
 
-func (s StepRunResultsModel) StatusReason() string {
+// StepError ...
+type StepError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func (s StepRunResultsModel) StatusReasons() (string, []StepError) {
+	switch s.Status {
+	case StepRunStatusCodeSuccess:
+		return "", nil
+	case StepRunStatusCodeSkipped:
+		return s.statusReason(), nil
+	case StepRunStatusCodeSkippedWithRunIf:
+		return s.statusReason(), nil
+	case StepRunStatusCodeFailedSkippable:
+		return s.statusReason(), s.error()
+	case StepRunStatusCodeFailed:
+		return "", s.error()
+	case StepRunStatusCodePreparationFailed:
+		return "", s.error()
+	case StepRunStatusAbortedWithCustomTimeout:
+		return "", s.error()
+	case StepRunStatusAbortedWithNoOutputTimeout:
+		return "", s.error()
+	default:
+		return "", nil
+	}
+}
+
+func (s StepRunResultsModel) statusReason() string {
 	switch s.Status {
 	case StepRunStatusCodeFailedSkippable:
 		return `This Step failed, but it was marked as "is_skippable", so the build continued.`
@@ -162,7 +191,7 @@ The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
 	}
 }
 
-func (s StepRunResultsModel) Error() (string, int) {
+func (s StepRunResultsModel) error() []StepError {
 	message := ""
 
 	switch s.Status {
@@ -174,7 +203,10 @@ func (s StepRunResultsModel) Error() (string, int) {
 		message = s.ErrorStr
 	}
 
-	return message, s.ExitCode
+	return []StepError{{
+		Code:    s.ExitCode,
+		Message: message,
+	}}
 }
 
 func formatStatusReasonTimeInterval(timeInterval int) string {
