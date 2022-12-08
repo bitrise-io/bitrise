@@ -170,7 +170,7 @@ func TestFormatStatusReasonTimeInterval(t *testing.T) {
 
 func TestShortReason(t *testing.T) {
 	expected := map[StepRunStatus]string{
-		StepRunStatusCodeSuccess:                "Success",
+		StepRunStatusCodeSuccess:                "",
 		StepRunStatusCodeFailed:                 "Failed",
 		StepRunStatusCodeFailedSkippable:        "Failed",
 		StepRunStatusCodeSkipped:                "Skipped",
@@ -178,6 +178,7 @@ func TestShortReason(t *testing.T) {
 		StepRunStatusCodePreparationFailed:      "Failed",
 		StepRunStatusAbortedWithCustomTimeout:   "Failed",
 		StepRunStatusAbortedWithNoOutputTimeout: "Failed",
+		-999:                                    "", //default case
 	}
 	actual := make(map[StepRunStatus]string)
 
