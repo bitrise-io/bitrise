@@ -96,7 +96,8 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	}
 	lines = append(lines, sectionSeparator)
 	lines = append(lines, mainSeparator)
-	lines = append(lines, getSummaryFooterRow(params.InternalStatus, params.Title, params.StatusName, params.RunTime, deprecated))
+	status := models.NewStepRunStatus(params.Status)
+	lines = append(lines, getSummaryFooterRow(status, params.Title, status.Name(), params.RunTime, deprecated))
 	lines = append(lines, mainSeparator)
 
 	hasPreviousSection := false
@@ -135,7 +136,7 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	return lines
 }
 
-func getSummaryFooterRow(status int, title, reason string, duration int64, deprecated bool) string {
+func getSummaryFooterRow(status models.StepRunStatus, title, reason string, duration int64, deprecated bool) string {
 	icon, level := transformStatusToIconAndLevel(status)
 	footerTitle := getFooterTitle(level, title, reason, deprecated, footerTitleBoxWidth)
 	executionTime := getFooterExecutionTime(duration)
@@ -143,7 +144,7 @@ func getSummaryFooterRow(status int, title, reason string, duration int64, depre
 	return fmt.Sprintf("|%s|%s|%s|", icon, footerTitle, executionTime)
 }
 
-func transformStatusToIconAndLevel(status int) (string, corelog.Level) {
+func transformStatusToIconAndLevel(status models.StepRunStatus) (string, corelog.Level) {
 	var icon string
 	var level corelog.Level
 

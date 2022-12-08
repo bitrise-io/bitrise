@@ -150,9 +150,7 @@ func convertStepFinishedEventLog(line []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	eventLog.Content.InternalStatus = models.InternalStatus(eventLog.Content.Status)
-
+	
 	var buf bytes.Buffer
 	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
 	logger.PrintStepFinishedEvent(eventLog.Content)

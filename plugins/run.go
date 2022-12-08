@@ -108,7 +108,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 	}
 	envs[PluginConfigBitriseVersionKey] = bitriseVersion.String()
 	envs[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
-	envs[PluginConfigFormatVersionKey] = models.Version
+	envs[PluginConfigFormatVersionKey] = models.FormatVersion
 
 	// Prepare plugin envstore
 	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")

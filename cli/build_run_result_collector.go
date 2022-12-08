@@ -157,14 +157,6 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		sourceURL = *results.StepInfo.Step.SourceCodeURL
 	}
 
-	var errors []log.StepError
-	if results.ErrorStr != "" && results.Status.IsFailure() {
-		errors = append(errors, log.StepError{
-			Code:    results.ExitCode,
-			Message: results.ErrorStr,
-		})
-	}
-
 	var stepUpdate *log.StepUpdate
 	updateAvailable, _ := utils.IsUpdateAvailable(results.StepInfo.Version, results.StepInfo.LatestVersion)
 	if updateAvailable {
@@ -184,19 +176,21 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		}
 	}
 
-	return log.StepFinishedParams{
-		ExecutionId:    stepExecutionId,
-		InternalStatus: int(results.Status),
-		Status:         results.Status.HumanReadableStatus(),
-		StatusName:     results.StatusName(),
-		StatusReason:   results.StatusReason(),
-		Title:          title,
-		RunTime:        results.RunTime.Milliseconds(),
-		SupportURL:     supportURL,
-		SourceCodeURL:  sourceURL,
-		Errors:         errors,
-		Update:         stepUpdate,
-		Deprecation:    stepDeprecation,
-		LastStep:       isLastStep,
+	params := log.StepFinishedParams{
+		ExecutionId:   stepExecutionId,
+		Status:        results.Status.String(),
+		Title:         title,
+		RunTime:       results.RunTime.Milliseconds(),
+		SupportURL:    supportURL,
+		SourceCodeURL: sourceURL,
+		Update:        stepUpdate,
+		Deprecation:   stepDeprecation,
+		LastStep:      isLastStep,
 	}
+
+	statusReason, stepErrors := results.StatusReasons()
+	params.StatusReason = statusReason
+	params.Errors = stepErrors
+
+	return params
 }
