@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	// Version ...
-	Version = "12"
+	// FormatVersion ...
+	FormatVersion = "12"
 )
 
 // StepListItemModel ...
