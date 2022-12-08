@@ -63,7 +63,7 @@ func (s StepRunStatus) String() string {
 func (s StepRunStatus) Name() string {
 	switch s {
 	case StepRunStatusCodeSuccess:
-		return "Success"
+		return ""
 	case StepRunStatusCodeFailed,
 		StepRunStatusCodePreparationFailed,
 		StepRunStatusCodeFailedSkippable,
@@ -74,6 +74,6 @@ func (s StepRunStatus) Name() string {
 		StepRunStatusCodeSkippedWithRunIf:
 		return "Skipped"
 	default:
-		return "Unknown"
+		return ""
 	}
 }
