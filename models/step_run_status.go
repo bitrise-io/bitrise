@@ -4,14 +4,14 @@ package models
 type StepRunStatus int
 
 const (
-	StepRunStatusCodeSuccess StepRunStatus = iota
-	StepRunStatusCodeFailed
-	StepRunStatusCodeFailedSkippable
-	StepRunStatusCodeSkipped
-	StepRunStatusCodeSkippedWithRunIf
-	StepRunStatusCodePreparationFailed
-	StepRunStatusAbortedWithCustomTimeout   // step times out due to a custom timeout
-	StepRunStatusAbortedWithNoOutputTimeout // step times out due to no output received (hang)
+	StepRunStatusCodeSuccess                StepRunStatus = 0
+	StepRunStatusCodeFailed                 StepRunStatus = 1
+	StepRunStatusCodeFailedSkippable        StepRunStatus = 2
+	StepRunStatusCodeSkipped                StepRunStatus = 3
+	StepRunStatusCodeSkippedWithRunIf       StepRunStatus = 4
+	StepRunStatusCodePreparationFailed      StepRunStatus = 5
+	StepRunStatusAbortedWithCustomTimeout   StepRunStatus = 7 // step times out due to a custom timeout
+	StepRunStatusAbortedWithNoOutputTimeout StepRunStatus = 8 // step times out due to no output received (hang)
 )
 
 func NewStepRunStatus(status string) StepRunStatus {
