@@ -64,10 +64,10 @@ func getHeaderLine(content string) string {
 }
 
 func widthConstrainedStringWithBorder(content string, width int) string {
-	return fmt.Sprintf("| %s |", WidthConstrainedString(content, width))
+	return fmt.Sprintf("| %s |", widthConstrainedString(content, width))
 }
 
-func WidthConstrainedString(content string, width int) string {
+func widthConstrainedString(content string, width int) string {
 	widthDiff := len(content) - width
 
 	if widthDiff < 0 {
@@ -211,10 +211,10 @@ func getFooterTitle(level corelog.Level, title, reason string, deprecated bool, 
 
 		// Deduct the deprecated prefix length and the space between them to only shorten the title
 		actualWidth = actualWidth - len(deprecatedPrefix) - 1
-		widthConstrainedTitle := WidthConstrainedString(title, actualWidth)
+		widthConstrainedTitle := widthConstrainedString(title, actualWidth)
 		title = fmt.Sprintf("%s %s", corelog.AddColor(corelog.ErrorLevel, deprecatedPrefix), corelog.AddColor(level, widthConstrainedTitle))
 	} else {
-		title = WidthConstrainedString(title, actualWidth)
+		title = widthConstrainedString(title, actualWidth)
 		title = corelog.AddColor(level, title)
 	}
 

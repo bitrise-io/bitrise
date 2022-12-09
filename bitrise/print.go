@@ -26,7 +26,21 @@ const (
 
 func trimTitle(title string, titleSuffix string, titleBoxWidth int) string {
 	titleWithSuffix := combineTitleAndSuffix(title, titleSuffix)
-	return log.WidthConstrainedString(titleWithSuffix, titleBoxWidth)
+
+	titleWithSuffixLength := len(titleWithSuffix)
+	if titleWithSuffixLength > titleBoxWidth {
+		diff := titleWithSuffixLength - titleBoxWidth
+
+		// TODO: if len(titleWithSuffix) > titleBoxWidth because of a long suffix,
+		// 	might we trim too much from the title
+		if len(title) > 0 {
+			title = stringutil.MaxFirstCharsWithDots(title, len(title)-diff)
+		} else if len(titleSuffix) > 0 {
+			titleSuffix = stringutil.MaxFirstCharsWithDots(titleSuffix, len(titleSuffix)-diff)
+		}
+	}
+
+	return combineTitleAndSuffix(title, titleSuffix)
 }
 
 func combineTitleAndSuffix(title, suffix string) string {
