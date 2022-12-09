@@ -35,7 +35,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := "This is a very long string, this is a very long s... (Success)"
+		expected := "This is a very long string, this is a very long string, thi..."
 		require.Equal(t, expected, actual)
 	}
 
@@ -58,7 +58,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		}
 
 		actual := getTrimmedStepName(result)
-		expected := "(Success)"
+		expected := ""
 		require.Equal(t, expected, actual)
 	}
 }
@@ -112,7 +112,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 				StepInfo: noTitleInfo,
 				Status:   models.StepRunStatusCodeSuccess,
 			},
-			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(Success)\x1b[0m                                                     | 0.00 sec |",
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 0.00 sec |",
 		},
 		{
 			name: "long runtime",
@@ -121,7 +121,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 				Status:   models.StepRunStatusCodeSuccess,
 				RunTime:  100 * 1000 * 1e9, // 100 * 1000 * 10^9 nanosec = 100 000 sec
 			},
-			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(Success)\x1b[0m                                                     | 28 hour  |",
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 28 hour  |",
 		},
 		{
 			name: "very long runtime",
@@ -130,7 +130,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 				Status:   models.StepRunStatusCodeSuccess,
 				RunTime:  time.Duration(1000) * time.Hour,
 			},
-			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m(Success)\x1b[0m                                                     | 999+ hour|",
+			expected: "| \x1b[32;1m✓\x1b[0m | \x1b[32;1m\x1b[0m                                                              | 999+ hour|",
 		},
 	}
 	for _, tt := range tests {
