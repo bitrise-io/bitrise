@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -10,7 +11,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -74,25 +74,18 @@ func (r buildRunResultCollector) registerStepRunResults(
 		DefinitionPth:   stepInfoPtr.DefinitionPth,
 	}
 
-	isExitStatusError := true
-	if err != nil {
-		isExitStatusError = errorutil.IsExitStatusError(err)
-	}
-
-	// Print step preparation errors before the step header box,
-	// other errors are printed within the step box.
-	if status == models.StepRunStatusCodePreparationFailed && err != nil {
-		if !isExitStatusError {
-			log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		}
-	}
 	if printStepHeader {
 		logStepStarted(stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
 	}
 
 	errStr := ""
 	if err != nil {
-		errStr = err.Error()
+		if status == models.StepRunStatusCodePreparationFailed {
+			stepTitle := pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title")
+			errStr = fmt.Sprintf("Preparing Step (%s) failed: %s", stepTitle, err.Error())
+		} else {
+			errStr = err.Error()
+		}
 	}
 
 	stepResults := models.StepRunResultsModel{

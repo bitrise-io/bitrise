@@ -8,6 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/utils"
+	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
 )
 
@@ -91,8 +92,12 @@ func generateStepFinishedFooterLines(params StepFinishedParams) []string {
 	}
 
 	var lines []string
+
+	for _, stepError := range params.Errors {
+		lines = append(lines, colorstring.Red(stepError.Message))
+	}
 	if params.StatusReason != "" {
-		lines = append(lines, params.StatusReason)
+		lines = append(lines, colorstring.Blue(params.StatusReason))
 	}
 	lines = append(lines, sectionSeparator)
 	lines = append(lines, mainSeparator)
