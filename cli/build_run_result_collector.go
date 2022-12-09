@@ -181,7 +181,7 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		LastStep:      isLastStep,
 	}
 
-	statusReason, stepErrors := results.StatusReasons()
+	statusReason, stepErrors := results.StatusReasonAndErrors()
 	params.StatusReason = statusReason
 	params.Errors = stepErrors
 

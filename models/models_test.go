@@ -13,7 +13,7 @@ func TestStatusReasonSuccess(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	var expectedStepErrors []StepError
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -27,7 +27,7 @@ func TestStatusReasonFailed(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 25, Message: "exit code: 25"}}
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -41,7 +41,7 @@ func TestStatusReasonPreparationFailed(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 30, Message: "Failed to clone step."}}
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -55,7 +55,7 @@ func TestStatusReasonFailedSkippable(t *testing.T) {
 	}
 	expectedStatusReason := "This Step failed, but it was marked as \"is_skippable\", so the build continued."
 	expectedStepErrors := []StepError{{Code: 10, Message: "ABCD"}}
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -67,7 +67,7 @@ func TestStatusReasonSkipped(t *testing.T) {
 	}
 	expectedStatusReason := `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`
 	var expectedStepErrors []StepError
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -88,7 +88,7 @@ func TestStatusReasonSkippedWithRunIf(t *testing.T) {
 	expectedStatusReason := `This Step was skipped, because its "run_if" expression evaluated to false.
 The "run_if" expression was: 2+2==4`
 	var expectedStepErrors []StepError
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -110,7 +110,7 @@ func TestStatusReasonCustomTimeout(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 5, Message: "This Step timed out after 9h 50s."}}
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -132,7 +132,7 @@ func TestStatusReasonNoOutputTimeout(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 6, Message: "This Step failed, because it has not sent any output for 32s."}}
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)
@@ -144,7 +144,7 @@ func TestStatusReasonDefault(t *testing.T) {
 	}
 	expectedStatusReason := ""
 	var expectedStepErrors []StepError
-	actualStatusReason, actualStepErrors := s.StatusReasons()
+	actualStatusReason, actualStepErrors := s.StatusReasonAndErrors()
 
 	assert.Equal(t, expectedStatusReason, actualStatusReason)
 	assert.Equal(t, expectedStepErrors, actualStepErrors)

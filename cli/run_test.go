@@ -1635,7 +1635,6 @@ route_map:
 					return strings.Contains(output, expectedEvent)
 				}
 				assert.Eventuallyf(t, condition, 5*time.Second, 150*time.Millisecond, "", "")
-				//assert.True(t, strings.Contains(output, expectedEvent), output)
 			}
 		}
 	}

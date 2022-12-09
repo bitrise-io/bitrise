@@ -152,7 +152,7 @@ type StepError struct {
 	Message string `json:"message"`
 }
 
-func (s StepRunResultsModel) StatusReasons() (string, []StepError) {
+func (s StepRunResultsModel) StatusReasonAndErrors() (string, []StepError) {
 	switch s.Status {
 	case StepRunStatusCodeSuccess:
 		return "", nil

@@ -607,6 +607,7 @@ func activateAndRunSteps(
 		// Per step variables
 		stepStartTime = time.Now()
 		isLastStep := isLastWorkflow && (idx == len(workflow.Steps)-1)
+		// TODO: stepInfoPtr.Step is not a real step, only stores presentation properties (printed in the step boxes)
 		stepInfoPtr := stepmanModels.StepInfoModel{}
 		stepIdxPtr := idx
 
