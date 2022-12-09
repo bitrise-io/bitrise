@@ -1,9 +1,10 @@
 package models
 
 import (
+	"testing"
+
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestStatusReasonSuccess(t *testing.T) {
@@ -64,7 +65,7 @@ func TestStatusReasonSkipped(t *testing.T) {
 	var s StepRunResultsModel = StepRunResultsModel{
 		Status: StepRunStatusCodeSkipped,
 	}
-	expectedStatusReason := "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
+	expectedStatusReason := `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`
 	var expectedStepErrors []StepError
 	actualStatusReason, actualStepErrors := s.StatusReasons()
 
@@ -84,8 +85,8 @@ func TestStatusReasonSkippedWithRunIf(t *testing.T) {
 		Status:   StepRunStatusCodeSkippedWithRunIf,
 		StepInfo: info,
 	}
-	expectedStatusReason := `This Step was skipped, because its “run_if” expression evaluated to false.
-The “run_if” expression was: 2+2==4`
+	expectedStatusReason := `This Step was skipped, because its "run_if" expression evaluated to false.
+The "run_if" expression was: 2+2==4`
 	var expectedStepErrors []StepError
 	actualStatusReason, actualStepErrors := s.StatusReasons()
 

@@ -170,13 +170,13 @@ func TestStepFooterPrinting(t *testing.T) {
 			name: "Skipped",
 			params: StepFinishedParams{
 				Status:       models.StepRunStatusCodeSkipped.String(),
-				StatusReason: "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”.",
+				StatusReason: `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`,
 				Title:        "Step",
 				RunTime:      654321,
 				LastStep:     true,
 			},
 			expectedOutput: []string{
-				"\x1b[34;1mThis Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”.\x1b[0m",
+				"\x1b[34;1mThis Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\".\x1b[0m",
 				"|                                                                              |",
 				"+---+---------------------------------------------------------------+----------+",
 				"| \x1b[34;1m-\x1b[0m | \x1b[34;1mStep (Skipped)                                               \x1b[0m | 10.9 min |",
@@ -187,15 +187,14 @@ func TestStepFooterPrinting(t *testing.T) {
 			name: "Skipped with run if",
 			params: StepFinishedParams{
 				Status: models.StepRunStatusCodeSkippedWithRunIf.String(),
-				StatusReason: `This Step was skipped, because its “run_if” expression evaluated to false.
-
-The “run_if” expression was: false`,
+				StatusReason: `This Step was skipped, because its "run_if" expression evaluated to false.
+The "run_if" expression was: false`,
 				Title:    "Step",
 				RunTime:  42424242,
 				LastStep: true,
 			},
 			expectedOutput: []string{
-				"\x1b[34;1mThis Step was skipped, because its “run_if” expression evaluated to false.\n\nThe “run_if” expression was: false\x1b[0m",
+				"\x1b[34;1mThis Step was skipped, because its \"run_if\" expression evaluated to false.\nThe \"run_if\" expression was: false\x1b[0m",
 				"|                                                                              |",
 				"+---+---------------------------------------------------------------+----------+",
 				"| \x1b[34;1m-\x1b[0m | \x1b[34;1mStep (Skipped)                                               \x1b[0m | 12 hour |",

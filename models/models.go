@@ -186,10 +186,10 @@ func (s StepRunResultsModel) statusReason() string {
 	case StepRunStatusCodeFailedSkippable:
 		return `This Step failed, but it was marked as "is_skippable", so the build continued.`
 	case StepRunStatusCodeSkipped:
-		return "This Step was skipped, because a previous Step failed, and this Step was not marked “is_always_run”."
+		return `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`
 	case StepRunStatusCodeSkippedWithRunIf:
-		return fmt.Sprintf(`This Step was skipped, because its “run_if” expression evaluated to false.
-The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
+		return fmt.Sprintf(`This Step was skipped, because its "run_if" expression evaluated to false.
+The "run_if" expression was: %s`, *s.StepInfo.Step.RunIf)
 	}
 
 	return ""
