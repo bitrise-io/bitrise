@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -10,8 +11,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	"github.com/bitrise-io/bitrise/utils"
-	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -75,25 +74,18 @@ func (r buildRunResultCollector) registerStepRunResults(
 		DefinitionPth:   stepInfoPtr.DefinitionPth,
 	}
 
-	isExitStatusError := true
-	if err != nil {
-		isExitStatusError = errorutil.IsExitStatusError(err)
-	}
-
-	// Print step preparation errors before the step header box,
-	// other errors are printed within the step box.
-	if status == models.StepRunStatusCodePreparationFailed && err != nil {
-		if !isExitStatusError {
-			log.Errorf("Preparing Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		}
-	}
 	if printStepHeader {
 		logStepStarted(stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
 	}
 
 	errStr := ""
 	if err != nil {
-		errStr = err.Error()
+		if status == models.StepRunStatusCodePreparationFailed {
+			stepTitle := pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title")
+			errStr = fmt.Sprintf("Preparing Step (%s) failed: %s", stepTitle, err.Error())
+		} else {
+			errStr = err.Error()
+		}
 	}
 
 	stepResults := models.StepRunResultsModel{
@@ -121,31 +113,16 @@ func (r buildRunResultCollector) registerStepRunResults(
 	case models.StepRunStatusCodePreparationFailed:
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailed:
-		if !isExitStatusError {
-			log.Errorf("Step (%s) failed: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		}
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeFailedSkippable:
-		if !isExitStatusError {
-			log.Warnf("Step (%s) failed, but was marked as skippable: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
-		} else {
-			log.Warnf("Step (%s) failed, but was marked as skippable", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
-		}
 		buildRunResults.FailedSkippableSteps = append(buildRunResults.FailedSkippableSteps, stepResults)
 	case models.StepRunStatusAbortedWithCustomTimeout, models.StepRunStatusAbortedWithNoOutputTimeout:
-		log.Errorf("Step (%s) aborted: %s", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"), err)
 		buildRunResults.FailedSteps = append(buildRunResults.FailedSteps, stepResults)
 	case models.StepRunStatusCodeSkipped:
-		log.Warnf("A previous step failed, and this step (%s) was not marked as IsAlwaysRun, skipped", pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title"))
 		buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 	case models.StepRunStatusCodeSkippedWithRunIf:
-		log.Warn("The step's (" + pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title") + ") Run-If expression evaluated to false - skipping")
-		if runIf != "" {
-			log.Info("The Run-If expression was: ", colorstring.Blue(runIf))
-		}
 		buildRunResults.SkippedSteps = append(buildRunResults.SkippedSteps, stepResults)
 	default:
-		log.Error("Unknown result code")
 		return
 	}
 
@@ -173,14 +150,6 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		sourceURL = *results.StepInfo.Step.SourceCodeURL
 	}
 
-	var errors []log.StepError
-	if results.ErrorStr != "" && results.Status.IsFailure() {
-		errors = append(errors, log.StepError{
-			Code:    results.ExitCode,
-			Message: results.ErrorStr,
-		})
-	}
-
 	var stepUpdate *log.StepUpdate
 	updateAvailable, _ := utils.IsUpdateAvailable(results.StepInfo.Version, results.StepInfo.LatestVersion)
 	if updateAvailable {
@@ -200,18 +169,21 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 		}
 	}
 
-	return log.StepFinishedParams{
-		ExecutionId:    stepExecutionId,
-		InternalStatus: int(results.Status),
-		Status:         results.Status.HumanReadableStatus(),
-		StatusReason:   results.Status.Reason(results.ExitCode),
-		Title:          title,
-		RunTime:        results.RunTime.Milliseconds(),
-		SupportURL:     supportURL,
-		SourceCodeURL:  sourceURL,
-		Errors:         errors,
-		Update:         stepUpdate,
-		Deprecation:    stepDeprecation,
-		LastStep:       isLastStep,
+	params := log.StepFinishedParams{
+		ExecutionId:   stepExecutionId,
+		Status:        results.Status.String(),
+		Title:         title,
+		RunTime:       results.RunTime.Milliseconds(),
+		SupportURL:    supportURL,
+		SourceCodeURL: sourceURL,
+		Update:        stepUpdate,
+		Deprecation:   stepDeprecation,
+		LastStep:      isLastStep,
 	}
+
+	statusReason, stepErrors := results.StatusReasonAndErrors()
+	params.StatusReason = statusReason
+	params.Errors = stepErrors
+
+	return params
 }

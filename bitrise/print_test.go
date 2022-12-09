@@ -39,7 +39,7 @@ func TestGetTrimmedStepName(t *testing.T) {
 		require.Equal(t, expected, actual)
 	}
 
-	t.Log("failed step")
+	t.Log("successful step - empty title")
 	{
 		stepInfo := stepmanModels.StepInfoModel{
 			Step: stepmanModels.StepModel{
@@ -92,7 +92,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 				ErrorStr: longStr,
 				ExitCode: 1,
 			},
-			expected: "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very l... (exit code: 1)\x1b[0m| 0.01 sec |",
+			expected: "| \x1b[31;1mx\x1b[0m | \x1b[31;1mThis is a very long string, this is a very long st... (Failed)\x1b[0m| 0.01 sec |",
 		},
 		{
 			name: "aborted step due to no output",
@@ -104,7 +104,7 @@ func Test_getRunningStepFooterMainSection(t *testing.T) {
 				ErrorStr: longStr,
 				ExitCode: 1,
 			},
-			expected: "| \x1b[31;1m/\x1b[0m | \x1b[31;1mThis is a very long string, th... (timed out due to no output)\x1b[0m| 0.01 sec |",
+			expected: "| \x1b[31;1m/\x1b[0m | \x1b[31;1mThis is a very long string, this is a very long st... (Failed)\x1b[0m| 0.01 sec |",
 		},
 		{
 			name: "successful step",

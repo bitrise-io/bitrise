@@ -25,21 +25,39 @@ const (
 //------------------------------
 
 func trimTitle(title string, titleSuffix string, titleBoxWidth int) string {
-	length := len(title)
-	if titleSuffix != "" {
-		length += 1 + len(titleSuffix)
+	titleWithSuffix := combineTitleAndSuffix(title, titleSuffix)
+
+	titleWithSuffixLength := len(titleWithSuffix)
+	if titleWithSuffixLength > titleBoxWidth {
+		diff := titleWithSuffixLength - titleBoxWidth
+
+		// TODO: if len(titleWithSuffix) > titleBoxWidth because of a long suffix,
+		// 	might we trim too much from the title
+		if len(title) > 0 {
+			title = stringutil.MaxFirstCharsWithDots(title, len(title)-diff)
+		} else if len(titleSuffix) > 0 {
+			titleSuffix = stringutil.MaxFirstCharsWithDots(titleSuffix, len(titleSuffix)-diff)
+		}
 	}
 
-	if length > titleBoxWidth {
-		diff := length - titleBoxWidth
-		title = stringutil.MaxFirstCharsWithDots(title, len(title)-diff)
+	return combineTitleAndSuffix(title, titleSuffix)
+}
+
+func combineTitleAndSuffix(title, suffix string) string {
+	var titleWithSuffix string
+
+	if len(title) > 0 {
+		titleWithSuffix = title
 	}
 
-	if titleSuffix == "" {
-		return title
+	if len(suffix) > 0 {
+		if len(titleWithSuffix) > 0 {
+			titleWithSuffix += " "
+		}
+		titleWithSuffix += suffix
 	}
 
-	return fmt.Sprintf("%s %s", title, titleSuffix)
+	return titleWithSuffix
 }
 
 func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
@@ -59,7 +77,7 @@ func getTrimmedStepName(stepRunResult models.StepRunResultsModel) string {
 	}
 
 	suffix := ""
-	reason := stepRunResult.Status.Reason(stepRunResult.ExitCode)
+	reason := stepRunResult.Status.Name()
 	if reason != "" {
 		suffix = fmt.Sprintf("(%s)", reason)
 	}

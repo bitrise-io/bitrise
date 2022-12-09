@@ -33,7 +33,7 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	if fullVersion {
-		versionOutput.FormatVersion = models.Version
+		versionOutput.FormatVersion = models.FormatVersion
 		versionOutput.BuildNumber = version.BuildNumber
 		versionOutput.Commit = version.Commit
 		versionOutput.OS = fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
