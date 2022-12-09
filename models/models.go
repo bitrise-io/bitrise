@@ -104,7 +104,6 @@ type BitriseDataModel struct {
 
 // StepIDData ...
 // structured representation of a composite-step-id
-//
 //	a composite step id is: step-lib-source::step-id@1.0.0
 type StepIDData struct {
 	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
@@ -192,7 +191,7 @@ func (s StepRunResultsModel) statusReason() string {
 		return fmt.Sprintf(`This Step was skipped, because its “run_if” expression evaluated to false.
 The “run_if” expression was: %s`, *s.StepInfo.Step.RunIf)
 	}
-	
+
 	return ""
 }
 
