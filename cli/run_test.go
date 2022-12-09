@@ -1630,8 +1630,12 @@ route_map:
 			// Then
 			require.NoError(t, err)
 			for _, expectedEvent := range test.expectedTriggeredEvents {
-				output := buf.String()
-				assert.True(t, strings.Contains(output, expectedEvent), output)
+				condition := func() bool {
+					output := buf.String()
+					return strings.Contains(output, expectedEvent)
+				}
+				assert.Eventuallyf(t, condition, 5*time.Second, 150*time.Millisecond, "", "")
+				//assert.True(t, strings.Contains(output, expectedEvent), output)
 			}
 		}
 	}
