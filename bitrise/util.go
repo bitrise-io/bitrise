@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -16,9 +20,6 @@ import (
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // InventoryModelFromYAMLBytes ...
@@ -431,9 +432,9 @@ func removeStepDefaultsAndFillStepOutputs(stepListItem *models.StepListItemModel
 
 		var cloneCmd *command.Model
 		if stepIDData.Version == "" {
-			cloneCmd = repo.Clone(stepIDData.IDorURI)
+			cloneCmd = repo.Clone(stepIDData.IDorURI, "--depth=1")
 		} else {
-			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
+			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version, "--depth=1")
 		}
 		if err := cloneCmd.Run(); err != nil {
 			return err
