@@ -58,9 +58,9 @@ func (a stepActivator) activateStep(
 		}
 		var cloneCmd *command.Model
 		if stepIDData.Version == "" {
-			cloneCmd = repo.Clone(stepIDData.IDorURI)
+			cloneCmd = repo.Clone(stepIDData.IDorURI, "--depth=1")
 		} else {
-			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version)
+			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version, "--depth=1")
 		}
 		if out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 			if strings.HasPrefix(stepIDData.IDorURI, "git@") {
