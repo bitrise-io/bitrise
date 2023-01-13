@@ -305,8 +305,9 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 
 	if !isDepInstalled {
 		// Tool isn't installed -- install it...
+		log.Infof(`This step requires "%s" to be available, but it is not installed.`, brewDep.GetBinaryName())
+
 		if !isCIMode {
-			log.Infof(`This step requires "%s" to be available, but it is not installed.`, brewDep.GetBinaryName())
 			allow, err := goinp.AskForBoolWithDefault(`Would you like to install the "`+brewDep.Name+`" package with brew?`, true)
 			if err != nil {
 				return err
@@ -315,12 +316,17 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 				return errors.New("(" + brewDep.Name + ") is required for step")
 			}
 		}
-
-		log.Infof("(%s) isn't installed, installing...", brewDep.Name)
-		if cmdOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "install", brewDep.Name); err != nil {
-			log.Errorf("brew install %s failed -- out: (%s) err: (%s)", brewDep.Name, cmdOut, err)
-			return err
+		
+		cmd := command.New("brew", "install", brewDep.Name)
+		log.Infof("Installing package: %s...", cmd.PrintableCommandArgs())
+		if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				return fmt.Errorf("command failed with exit status %d (%s): %s", exitErr.ExitCode(), cmd.PrintableCommandArgs(), out)
+			}
+			return fmt.Errorf("executing command failed (%s): %w", cmd.PrintableCommandArgs(), err)
 		}
+
 		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", brewDep.Name)
 	}
 
@@ -360,8 +366,9 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 
 	if !isDepInstalled {
 		// Tool isn't installed -- install it...
+		log.Infof(`This step requires "%s" to be available, but it is not installed.`, aptGetDep.GetBinaryName())
+
 		if !isCIMode {
-			log.Infof(`This step requires "%s" to be available, but it is not installed.`, aptGetDep.GetBinaryName())
 			allow, err := goinp.AskForBoolWithDefault(`Would you like to install the "`+aptGetDep.Name+`" package with apt-get?`, true)
 			if err != nil {
 				return err
@@ -373,7 +380,7 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 
 		if !isAptGetUpdated {
 			cmd := command.New("sudo", "apt-get", "update")
-			log.Infof(cmd.PrintableCommandArgs())
+			log.Infof("Updating package information: %s...", cmd.PrintableCommandArgs())
 			if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 				var exitErr *exec.ExitError
 				if errors.As(err, &exitErr) {
@@ -384,10 +391,14 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 			isAptGetUpdated = true
 		}
 
-		log.Infof("(%s) isn't installed, installing...", aptGetDep.Name)
-		if cmdOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("sudo", "apt-get", "-y", "install", aptGetDep.Name); err != nil {
-			log.Errorf("sudo apt-get -y install %s failed -- out: (%s) err: (%s)", aptGetDep.Name, cmdOut, err)
-			return err
+		cmd := command.New("sudo", "apt-get", "-y", "install", aptGetDep.Name)
+		log.Infof("Installing package: %s...", cmd.PrintableCommandArgs())
+		if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				return fmt.Errorf("command failed with exit status %d (%s): %s", exitErr.ExitCode(), cmd.PrintableCommandArgs(), out)
+			}
+			return fmt.Errorf("executing command failed (%s): %w", cmd.PrintableCommandArgs(), err)
 		}
 
 		log.Infof(" * "+colorstring.Green("[OK]")+" %s installed", aptGetDep.Name)
