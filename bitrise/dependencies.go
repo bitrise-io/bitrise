@@ -316,7 +316,7 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 				return errors.New("(" + brewDep.Name + ") is required for step")
 			}
 		}
-		
+
 		cmd := command.New("brew", "install", brewDep.Name)
 		log.Infof("Installing package: %s...", cmd.PrintableCommandArgs())
 		if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {

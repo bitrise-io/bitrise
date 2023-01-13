@@ -38,20 +38,20 @@ func (l RawLogger) Print(f Formatable) {
 	}
 }
 
-// JSONLoger ...
-type JSONLoger struct {
+// JSONLogger ...
+type JSONLogger struct {
 	writer io.Writer
 }
 
-// NewDefaultJSONLoger ...
-func NewDefaultJSONLoger() JSONLoger {
-	return JSONLoger{
+// NewDefaultJSONLogger ...
+func NewDefaultJSONLogger() JSONLogger {
+	return JSONLogger{
 		writer: os.Stdout,
 	}
 }
 
 // Print ...
-func (l JSONLoger) Print(f Formatable) {
+func (l JSONLogger) Print(f Formatable) {
 	if _, err := fmt.Fprint(l.writer, f.JSON()); err != nil {
 		log.Printf("failed to print message: %s, error: %s\n", f.JSON(), err)
 	}

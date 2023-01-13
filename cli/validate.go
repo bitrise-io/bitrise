@@ -241,7 +241,7 @@ func validate(c *cli.Context) error {
 	if format == output.FormatRaw {
 		log = NewDefaultRawLogger()
 	} else if format == output.FormatJSON {
-		log = NewDefaultJSONLoger()
+		log = NewDefaultJSONLogger()
 	} else {
 		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
 		os.Exit(1)
