@@ -3,7 +3,7 @@ package bitrise
 import (
 	"errors"
 	"fmt"
-	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -374,8 +374,12 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 		if !isAptGetUpdated {
 			cmd := command.New("sudo", "apt-get", "update")
 			log.Infof(cmd.PrintableCommandArgs())
-			if err := cmd.SetStdout(os.Stdout).SetStderr(os.Stderr).Run(); err != nil {
-				log.Errorf("apt-get update failed, error: %s", err)
+			if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) {
+					return fmt.Errorf("command failed with exit status %d (%s): %s", exitErr.ExitCode(), cmd.PrintableCommandArgs(), out)
+				}
+				return fmt.Errorf("executing command failed (%s): %w", cmd.PrintableCommandArgs(), err)
 			}
 			isAptGetUpdated = true
 		}
