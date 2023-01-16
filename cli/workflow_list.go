@@ -192,7 +192,7 @@ func workflowList(c *cli.Context) error {
 	var logger Logger
 	logger = NewDefaultRawLogger()
 	if format == output.FormatJSON {
-		logger = NewDefaultJSONLoger()
+		logger = NewDefaultJSONLogger()
 	}
 
 	if minimal && idOnly {
