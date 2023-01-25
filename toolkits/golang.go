@@ -302,12 +302,15 @@ func goBuildInGoPathMode(cmdRunner commandRunner, goConfig GoConfigurationModel,
 		return fmt.Errorf("Failed to create Project->Workspace symlink, error: %s", err)
 	}
 
-	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath,
-		goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
+	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath, goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
 	cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
+
 	buildCmd := command.NewWithCmd(cmd)
 
-	if err := cmdRunner.run(buildCmd); err != nil {
+	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 		return fmt.Errorf("Failed to install package, error: %s", err)
 	}
 
