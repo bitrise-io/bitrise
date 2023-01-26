@@ -161,9 +161,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		cmd,
 		-1,
 		-1,
-		nil,
 		input,
-		&logWriter,
 		&logWriter)
 
 	if err != nil {

@@ -2,19 +2,21 @@ package tools
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
 
+	"github.com/bitrise-io/bitrise/stepoutput"
+
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/errorfinder"
-	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	envmanEnv "github.com/bitrise-io/envman/env"
@@ -275,31 +277,31 @@ func EnvmanRun(envStorePth,
 	cmdArgs []string,
 	timeout time.Duration,
 	noOutputTimeout time.Duration,
-	secrets []string,
 	stdInPayload []byte,
-	stdout io.Writer,
-	stderr io.Writer,
+	outWriter io.Writer,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, err
 	}
 
+	//outWriter := NewEnvmanOutputWriter(configs.IsSecretFiltering, secrets, stepUUID)
+
+	//var outWriter io.Writer
+	//var errWriter io.Writer
+	//errorFinder := errorfinder.NewErrorFinder()
+	//var fw *filterwriter.Writer
+	//
+	//if !configs.IsSecretFiltering {
+	//	outWriter = errorFinder.WrapWriter(stdout)
+	//	errWriter = errorFinder.WrapWriter(stderr)
+	//} else {
+	//	fw = filterwriter.New(secrets, stdout)
+	//	outWriter = errorFinder.WrapWriter(fw)
+	//	errWriter = outWriter
+	//}
+
 	var inReader io.Reader
-	var outWriter io.Writer
-	var errWriter io.Writer
-	errorFinder := errorfinder.NewErrorFinder()
-	var fw *filterwriter.Writer
-
-	if !configs.IsSecretFiltering {
-		outWriter = errorFinder.WrapWriter(stdout)
-		errWriter = errorFinder.WrapWriter(stderr)
-	} else {
-		fw = filterwriter.New(secrets, stdout)
-		outWriter = errorFinder.WrapWriter(fw)
-		errWriter = outWriter
-	}
-
 	inReader = os.Stdin
 	if stdInPayload != nil {
 		inReader = bytes.NewReader(stdInPayload)
@@ -314,20 +316,44 @@ func EnvmanRun(envStorePth,
 	cmd := timeoutcmd.New(workDirPth, name, args...)
 	cmd.SetTimeout(timeout)
 	cmd.SetHangTimeout(noOutputTimeout)
-	cmd.SetStandardIO(inReader, outWriter, errWriter)
+	cmd.SetStandardIO(inReader, outWriter, outWriter)
 	cmd.SetEnv(append(envs, "PWD="+workDirPth))
 
 	err = cmd.Start()
 
+	stepOutputWriter, isStepOutputWriter := outWriter.(stepoutput.Writer)
 	// flush the writer anyway if the process is finished
 	if configs.IsSecretFiltering {
-		_, ferr := fw.Flush()
-		if ferr != nil {
-			return 1, errorFinder.WrapError(ferr)
+		if isStepOutputWriter {
+			_, ferr := stepOutputWriter.Flush()
+			if ferr != nil {
+				// TODO: flush error gets added to the potentially correct step error
+				// return 1, errorFinder.WrapError(ferr)
+				return 1, err
+			}
 		}
 	}
 
-	return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		if isStepOutputWriter {
+			stepRunErr := stepOutputWriter.RunError()
+			if stepRunErr != nil {
+				return exitErr.ExitCode(), stepRunErr
+			}
+		}
+
+		// TODO: check if this works with plugin run
+		return exitErr.ExitCode(), err
+	}
+
+	if err != nil {
+		return 1, fmt.Errorf("failed to execute step: %w", err)
+	}
+	return 0, nil
+
+	// TODO: do we still need timeoutcmd.ExitStatus ?
+	//return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
 }
 
 // ------------------
