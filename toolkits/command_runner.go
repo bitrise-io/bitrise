@@ -10,27 +10,11 @@ import (
 
 // commandRunner ...
 type commandRunner interface {
-	run(c *command.Model) error
 	runForOutput(c *command.Model) (string, error)
 }
 
 // defaultRunner ...
 type defaultRunner struct {
-}
-
-// run ...
-func (r *defaultRunner) run(c *command.Model) error {
-	log.Debugf("$ %s", c.PrintableCommandArgs())
-
-	if err := c.Run(); err != nil {
-		if errorutil.IsExitStatusError(err) {
-			return fmt.Errorf("command `%s` failed: %v", c.PrintableCommandArgs(), err)
-		}
-
-		return fmt.Errorf("failed to run command `%s`: %v", c.PrintableCommandArgs(), err)
-	}
-
-	return nil
 }
 
 // runForOutput ...
