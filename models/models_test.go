@@ -2,6 +2,7 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
@@ -95,11 +96,9 @@ The "run_if" expression was: 2+2==4`
 }
 
 func TestStatusReasonCustomTimeout(t *testing.T) {
-	var timeout int = 32450
-	var model models.StepModel = models.StepModel{
-		Timeout: &timeout,
-	}
-	var info models.StepInfoModel = models.StepInfoModel{
+	timeout := 32450 * time.Second
+	model := models.StepModel{}
+	info := models.StepInfoModel{
 		Step: model,
 	}
 	var s StepRunResultsModel = StepRunResultsModel{
@@ -107,6 +106,7 @@ func TestStatusReasonCustomTimeout(t *testing.T) {
 		StepInfo: info,
 		ExitCode: 5,
 		ErrorStr: "This won't be used.",
+		Timeout:  timeout,
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 5, Message: "This Step timed out after 9h 50s."}}
@@ -117,18 +117,17 @@ func TestStatusReasonCustomTimeout(t *testing.T) {
 }
 
 func TestStatusReasonNoOutputTimeout(t *testing.T) {
-	var noOutputTimeout int = 32
-	var model models.StepModel = models.StepModel{
-		NoOutputTimeout: &noOutputTimeout,
-	}
-	var info models.StepInfoModel = models.StepInfoModel{
+	noOutputTimeout := 32 * time.Second
+	model := models.StepModel{}
+	info := models.StepInfoModel{
 		Step: model,
 	}
 	var s StepRunResultsModel = StepRunResultsModel{
-		Status:   StepRunStatusAbortedWithNoOutputTimeout,
-		StepInfo: info,
-		ExitCode: 6,
-		ErrorStr: "This won't be used.",
+		Status:          StepRunStatusAbortedWithNoOutputTimeout,
+		StepInfo:        info,
+		ExitCode:        6,
+		ErrorStr:        "This won't be used.",
+		NoOutputTimeout: noOutputTimeout,
 	}
 	expectedStatusReason := ""
 	expectedStepErrors := []StepError{{Code: 6, Message: "This Step failed, because it has not sent any output for 32s."}}
@@ -151,16 +150,16 @@ func TestStatusReasonDefault(t *testing.T) {
 }
 
 func TestFormatStatusReasonTimeInterval(t *testing.T) {
-	expected := map[int]string{
-		10:   "10s",
-		60:   "1m",
-		61:   "1m 1s",
-		3600: "1h",
-		3601: "1h 1s",
-		3661: "1h 1m 1s",
+	expected := map[time.Duration]string{
+		10 * time.Second:   "10s",
+		60 * time.Second:   "1m",
+		61 * time.Second:   "1m 1s",
+		3600 * time.Second: "1h",
+		3601 * time.Second: "1h 1s",
+		3661 * time.Second: "1h 1m 1s",
 	}
 
-	actual := make(map[int]string)
+	actual := make(map[time.Duration]string)
 
 	for key := range expected {
 		actual[key] = formatStatusReasonTimeInterval(key)

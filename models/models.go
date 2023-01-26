@@ -144,6 +144,9 @@ type StepRunResultsModel struct {
 	StartTime  time.Time                   `json:"start_time" yaml:"start_time"`
 	ErrorStr   string                      `json:"error_str" yaml:"error_str"`
 	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
+
+	Timeout         time.Duration `json:"-"`
+	NoOutputTimeout time.Duration `json:"-"`
 }
 
 // StepError ...
@@ -208,9 +211,9 @@ func (s StepRunResultsModel) error() []StepError {
 		StepRunStatusCodePreparationFailed:
 		message = s.ErrorStr
 	case StepRunStatusAbortedWithCustomTimeout:
-		message = fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.Timeout))
+		message = fmt.Sprintf("This Step timed out after %s.", formatStatusReasonTimeInterval(s.Timeout))
 	case StepRunStatusAbortedWithNoOutputTimeout:
-		message = fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(*s.StepInfo.Step.NoOutputTimeout))
+		message = fmt.Sprintf("This Step failed, because it has not sent any output for %s.", formatStatusReasonTimeInterval(s.NoOutputTimeout))
 	}
 
 	return []StepError{{
@@ -219,8 +222,8 @@ func (s StepRunResultsModel) error() []StepError {
 	}}
 }
 
-func formatStatusReasonTimeInterval(timeInterval int) string {
-	var remaining int = timeInterval
+func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
+	var remaining int = int(timeInterval / time.Second)
 	h := int(remaining / 3600)
 	remaining = remaining - h*3600
 	m := int(remaining / 60)

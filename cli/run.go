@@ -88,7 +88,8 @@ func run(c *cli.Context) error {
 		failf("Failed to process arguments: %s", err)
 	}
 
-	exitCode, err := runWorkflowsWithSetupAndCheckForUpdate(*config)
+	runner := NewWorkflowRunner(*config)
+	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)
@@ -108,13 +109,21 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
-	if config.Workflow == "" {
+type WorkflowRunner struct {
+	config RunConfig
+}
+
+func NewWorkflowRunner(config RunConfig) WorkflowRunner {
+	return WorkflowRunner{config: config}
+}
+
+func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
+	if r.config.Workflow == "" {
 		return 1, workflowNotSpecifiedErr
 	}
-	_, exist := config.Config.Workflows[config.Workflow]
+	_, exist := r.config.Config.Workflows[r.config.Workflow]
 	if !exist {
-		return 1, fmt.Errorf("specified Workflow (%s) does not exist", config.Workflow)
+		return 1, fmt.Errorf("specified Workflow (%s) does not exist", r.config.Workflow)
 	}
 
 	tracker := analytics.NewDefaultTracker()
@@ -126,7 +135,7 @@ func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
 
-	if buildRunResults, err := runWorkflows(config, tracker); err != nil {
+	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
 		return 1, fmt.Errorf("failed to run workflow: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		return buildRunResults.ExitCode(), workflowRunFailedErr
@@ -139,17 +148,17 @@ func runWorkflowsWithSetupAndCheckForUpdate(config RunConfig) (int, error) {
 	return 0, nil
 }
 
-func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
+func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
 
 	// Register run modes
-	if err := registerRunModes(config.Modes); err != nil {
+	if err := registerRunModes(r.config.Modes); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %s", err)
 	}
 
-	targetWorkflow := config.Config.Workflows[config.Workflow]
+	targetWorkflow := r.config.Config.Workflows[r.config.Workflow]
 	if targetWorkflow.Title == "" {
-		targetWorkflow.Title = config.Workflow
+		targetWorkflow.Title = r.config.Workflow
 	}
 
 	// Envman setup
@@ -166,9 +175,9 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	}
 
 	// App level environment
-	environments := append(config.Secrets, config.Config.App.Environments...)
+	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", config.Workflow); err != nil {
+	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
 	}
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
@@ -195,7 +204,7 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	buildRunStartModel := models.BuildRunStartModel{
 		EventName:   string(plugins.WillStartRun),
 		StartTime:   startTime,
-		ProjectType: config.Config.ProjectType,
+		ProjectType: r.config.Config.ProjectType,
 	}
 	if err := plugins.TriggerEvent(plugins.WillStartRun, buildRunStartModel); err != nil {
 		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
@@ -203,13 +212,13 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 
 	// Prepare workflow run parameters
 	buildRunResults := models.BuildRunResultsModel{
-		WorkflowID:     config.Workflow,
+		WorkflowID:     r.config.Workflow,
 		StartTime:      startTime,
 		StepmanUpdates: map[string]int{},
-		ProjectType:    config.Config.ProjectType,
+		ProjectType:    r.config.Config.ProjectType,
 	}
 
-	plan := createWorkflowRunPlan(config.Workflow, config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
+	plan := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
 	if len(plan.ExecutionPlan) < 1 {
 		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
 	}
@@ -221,11 +230,11 @@ func runWorkflows(config RunConfig, tracker analytics.Tracker) (models.BuildRunR
 	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
-		workflowToRun := config.Config.Workflows[workflowRunPlan.WorkflowID]
+		workflowToRun := r.config.Config.Workflows[workflowRunPlan.WorkflowID]
 		if workflowToRun.Title == "" {
 			workflowToRun.Title = workflowRunPlan.WorkflowID
 		}
-		buildRunResults = runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, config.Config.DefaultStepLibSource, buildRunResults, &environments, config.Secrets, isLastWorkflow, tracker, buildIDProperties)
+		buildRunResults = r.runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
 	}
 
 	// Build finished
@@ -369,11 +378,10 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 		return fmt.Errorf("failed to register Secret Envs Filtering mode: %s", err)
 	}
 
-	registerNoOutputTimeout(modes.NoOutputTimeout)
 	return nil
 }
 
-func createWorkflowRunPlan(targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) models.WorkflowRunPlan {
+func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) models.WorkflowRunPlan {
 	var executionPlan []models.WorkflowExecutionPlan
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
@@ -398,12 +406,12 @@ func createWorkflowRunPlan(targetWorkflow string, workflows map[string]models.Wo
 	return models.WorkflowRunPlan{
 		Version:                 version.VERSION,
 		LogFormatVersion:        "1",
-		CIMode:                  configs.IsCIMode,
-		PRMode:                  configs.IsPullRequestMode,
-		DebugMode:               configs.IsDebugMode,
-		NoOutputTimeoutMode:     configs.NoOutputTimeout > 0,
-		SecretFilteringMode:     configs.IsSecretFiltering,
-		SecretEnvsFilteringMode: configs.IsSecretEnvsFiltering,
+		CIMode:                  modes.CIMode,
+		PRMode:                  modes.PRMode,
+		DebugMode:               modes.DebugMode,
+		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
+		SecretFilteringMode:     modes.SecretFilteringMode,
+		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
 		ExecutionPlan:           executionPlan,
 	}
 }

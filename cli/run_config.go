@@ -49,7 +49,3 @@ func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.Enviro
 
 	return time.Duration(timeout) * time.Second
 }
-
-func registerNoOutputTimeout(timeout time.Duration) {
-	configs.NoOutputTimeout = timeout
-}

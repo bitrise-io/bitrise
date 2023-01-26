@@ -33,9 +33,6 @@ var (
 	IsSecretFiltering = false
 	// IsSecretEnvsFiltering ...
 	IsSecretEnvsFiltering = false
-
-	// NoOutputTimeout is the timeout after Steps are aborted, when no output is received
-	NoOutputTimeout time.Duration
 )
 
 // ---------------------------
