@@ -64,177 +64,148 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 }
 
 func TestRegisteredFunctions(t *testing.T) {
-	defer func() {
-		// env cleanup
-		require.Equal(t, nil, os.Unsetenv("TEST_KEY"))
-	}()
-
 	buildRes := models.BuildRunResultsModel{}
 
-	propTempCont := `{{getenv "TEST_KEY" | eq "Test value"}}`
-	require.Equal(t, nil, os.Setenv("TEST_KEY", "Test value"))
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, true, isYes)
-
-	propTempCont = `{{getenv "TEST_KEY" | eq "A different value"}}`
-	require.Equal(t, nil, os.Setenv("TEST_KEY", "Test value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, false, isYes)
-
-	propTempCont = `{{enveq "TEST_KEY" "enveq value"}}`
-	require.Equal(t, nil, os.Setenv("TEST_KEY", "enveq value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, true, isYes)
-
-	propTempCont = `{{enveq "TEST_KEY" "different enveq value"}}`
-	require.Equal(t, nil, os.Setenv("TEST_KEY", "enveq value"))
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	require.Equal(t, nil, err)
-	require.Equal(t, false, isYes)
+	tests := []struct {
+		propTempCont string
+		envValue     string
+		expected     bool
+	}{
+		{
+			propTempCont: `{{getenv "TEST_KEY" | eq "Test value"}}`,
+			envValue:     "Test value",
+			expected:     true,
+		},
+		{
+			propTempCont: `{{getenv "TEST_KEY" | eq "A different value"}}`,
+			envValue:     "Test value",
+			expected:     false,
+		},
+		{
+			propTempCont: `{{enveq "TEST_KEY" "enveq value"}}`,
+			envValue:     "enveq value",
+			expected:     true,
+		},
+		{
+			propTempCont: `{{enveq "TEST_KEY" "different enveq value"}}`,
+			envValue:     "enveq value",
+			expected:     false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.propTempCont, func(t *testing.T) {
+			t.Setenv("TEST_KEY", test.envValue)
+			isYes, err := EvaluateTemplateToBool(test.propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
+			require.NoError(t, err)
+			require.Equal(t, test.expected, isYes)
+		})
+	}
 }
 
 func TestCIFlagsAndEnvs(t *testing.T) {
-	defer func() {
-		// env cleanup
-		if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
-			t.Error("Failed to unset environment: ", err)
-		}
-	}()
-
 	buildRes := models.BuildRunResultsModel{}
 
-	propTempCont := `{{.IsCI}}`
-	t.Log("IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env!")
+	tests := []struct {
+		name         string
+		propTempCont string
+		setEnvFn     func(t *testing.T)
+		isCI         bool
+		expected     bool
+	}{
+		{
+			name:         "IsCI=true; propTempCont: {{.IsCI}}",
+			propTempCont: "{{.IsCI}}",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			expected: true,
+		},
+		{
+			name:         "IsCI=false; propTempCont: {{.IsCI}}",
+			propTempCont: "{{.IsCI}}",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "false")
+			},
+			isCI:     false,
+			expected: false,
+		},
+		{
+			name:         "[unset] IsCI; propTempCont: {{.IsCI}}",
+			propTempCont: "{{.IsCI}}",
+			setEnvFn: func(t *testing.T) {
+				require.NoError(t, os.Unsetenv(configs.CIModeEnvKey))
+			},
+			isCI:     false,
+			expected: false,
+		},
+		{
+			name:         "IsCI=true; short with $; propTempCont: $.IsCI",
+			propTempCont: "$.IsCI",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			expected: true,
+		},
+		{
+			name:         "IsCI=true; short, no $; propTempCont: .IsCI",
+			propTempCont: ".IsCI",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			expected: true,
+		},
+		{
+			name:         "IsCI=true; NOT; propTempCont: not .IsCI",
+			propTempCont: "not .IsCI",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			expected: false,
+		},
+		{
+			name:         "IsCI=false; NOT; propTempCont: not .IsCI",
+			propTempCont: "not .IsCI",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.CIModeEnvKey, "false")
+			},
+			isCI:     false,
+			expected: true,
+		},
 	}
-	isYes, err := EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `{{.IsCI}}`
-	t.Log("IsCI=fase; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "false"); err != nil {
-		t.Fatal("Failed to set test env!")
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `{{.IsCI}}`
-	t.Log("[unset] IsCI; propTempCont: ", propTempCont)
-	if err := os.Unsetenv(configs.CIModeEnvKey); err != nil {
-		t.Fatal("Failed to set test env!")
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `$.IsCI`
-	t.Log("IsCI=true; short with $; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env!")
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `.IsCI`
-	t.Log("IsCI=true; short, no $; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env!")
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `not .IsCI`
-	t.Log("IsCI=true; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `not .IsCI`
-	t.Log("IsCI=false; NOT; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "false"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.setEnvFn(t)
+			isYes, err := EvaluateTemplateToBool(test.propTempCont, test.isCI, false, buildRes, envmanModels.EnvsJSONListModel{})
+			require.NoError(t, err)
+			require.Equal(t, test.expected, isYes)
+		})
 	}
 }
 
 func TestPullRequestFlagsAndEnvs(t *testing.T) {
-	defer func() {
-		// env cleanup
+	buildRes := models.BuildRunResultsModel{}
+
+	t.Run("IsPR [undefined]; propTempCont: {{.IsPR}}", func(t *testing.T) {
+		propTempCont := `{{.IsPR}}`
 		if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
 			t.Error("Failed to unset environment: ", err)
 		}
-	}()
+		isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
+		require.NoError(t, err)
+		require.Equal(t, false, isYes)
+	})
 
-	// env cleanup
-	if err := os.Unsetenv(configs.PullRequestIDEnvKey); err != nil {
-		t.Error("Failed to unset environment: ", err)
-	}
-
-	buildRes := models.BuildRunResultsModel{}
-
-	propTempCont := `{{.IsPR}}`
-	t.Log("IsPR [undefined]; propTempCont: ", propTempCont)
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `{{.IsPR}}`
-	t.Log("IsPR=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.PullRequestIDEnvKey, "123"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, true, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
+	t.Run("IsPR=true; propTempCont: {{.IsPR}}", func(t *testing.T) {
+		propTempCont := `{{.IsPR}}`
+		t.Setenv(configs.PullRequestIDEnvKey, "123")
+		isYes, err := EvaluateTemplateToBool(propTempCont, false, true, buildRes, envmanModels.EnvsJSONListModel{})
+		require.NoError(t, err)
+		require.Equal(t, true, isYes)
+	})
 }
 
 func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
@@ -250,66 +221,77 @@ func TestPullRequestAndCIFlagsAndEnvs(t *testing.T) {
 
 	buildRes := models.BuildRunResultsModel{}
 
-	propTempCont := `not .IsPR | and (not .IsCI)`
-	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
-	isYes, err := EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
+	tests := []struct {
+		name         string
+		propTempCont string
+		setEnvFn     func(t *testing.T)
+		isCI         bool
+		isPR         bool
+		expected     bool
+	}{
+		{
+			name:         "IsPR [undefined] & IsCI [undefined]; propTempCont: not .IsPR | and (not .IsCI)",
+			propTempCont: "not .IsPR | and (not .IsCI)",
+			setEnvFn: func(t *testing.T) {
+				require.NoError(t, os.Unsetenv(configs.PullRequestIDEnvKey))
+				require.NoError(t, os.Unsetenv(configs.CIModeEnvKey))
+			},
+			isCI:     false,
+			isPR:     false,
+			expected: true,
+		},
+		{
+			name:         "IsPR [undefined] & IsCI [undefined]; propTempCont: not .IsPR | and .IsCI",
+			propTempCont: "not .IsPR | and .IsCI",
+			setEnvFn: func(t *testing.T) {
+				require.NoError(t, os.Unsetenv(configs.PullRequestIDEnvKey))
+				require.NoError(t, os.Unsetenv(configs.CIModeEnvKey))
+			},
+			isCI:     false,
+			isPR:     false,
+			expected: false,
+		},
+		{
+			name:         "IsPR [undefined] & IsCI=true; propTempCont: not .IsPR | and .IsCI",
+			propTempCont: "not .IsPR | and .IsCI",
+			setEnvFn: func(t *testing.T) {
+				require.NoError(t, os.Unsetenv(configs.PullRequestIDEnvKey))
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			isPR:     false,
+			expected: true,
+		},
+		{
+			name:         "IsPR [undefined] & IsCI=true; propTempCont: .IsPR | and .IsCI",
+			propTempCont: ".IsPR | and .IsCI",
+			setEnvFn: func(t *testing.T) {
+				require.NoError(t, os.Unsetenv(configs.PullRequestIDEnvKey))
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			isPR:     false,
+			expected: false,
+		},
+		{
+			name:         "IsPR=true & IsCI=true; propTempCont: .IsPR | and .IsCI",
+			propTempCont: ".IsPR | and .IsCI",
+			setEnvFn: func(t *testing.T) {
+				t.Setenv(configs.PullRequestIDEnvKey, "123")
+				t.Setenv(configs.CIModeEnvKey, "true")
+			},
+			isCI:     true,
+			isPR:     true,
+			expected: true,
+		},
 	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `not .IsPR | and .IsCI`
-	t.Log("IsPR [undefined] & IsCI [undefined]; propTempCont: ", propTempCont)
-	isYes, err = EvaluateTemplateToBool(propTempCont, false, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `not .IsPR | and .IsCI`
-	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `.IsPR | and .IsCI`
-	t.Log("IsPR [undefined] & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if isYes {
-		t.Fatal("Invalid result")
-	}
-
-	propTempCont = `.IsPR | and .IsCI`
-	t.Log("IsPR=true & IsCI=true; propTempCont: ", propTempCont)
-	if err := os.Setenv(configs.PullRequestIDEnvKey, "123"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-		t.Fatal("Failed to set test env! : ", err)
-	}
-	isYes, err = EvaluateTemplateToBool(propTempCont, true, true, buildRes, envmanModels.EnvsJSONListModel{})
-	if err != nil {
-		t.Fatal("Unexpected error:", err)
-	}
-	if !isYes {
-		t.Fatal("Invalid result")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.setEnvFn(t)
+			isYes, err := EvaluateTemplateToBool(test.propTempCont, test.isCI, test.isPR, buildRes, envmanModels.EnvsJSONListModel{})
+			require.NoError(t, err)
+			require.Equal(t, test.expected, isYes)
+		})
 	}
 }
 

@@ -250,8 +250,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 
 	for _, mode := range []string{"on", "auto"} {
 		b.Run(fmt.Sprintf("Benchmarking GO111MODULE=%s", mode), func(b *testing.B) {
-			err := os.Setenv("GO111MODULE", mode)
-			require.NoError(b, err)
+			b.Setenv("GO111MODULE", mode)
 
 			for i := 0; i < b.N; i++ {
 				stepPerTestDir, err := ioutil.TempDir("", "")
