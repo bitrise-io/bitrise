@@ -97,6 +97,9 @@ func (r buildRunResultCollector) registerStepRunResults(
 		ErrorStr:   errStr,
 		ExitCode:   exitCode,
 		StartTime:  stepStartTime,
+
+		Timeout:         timeout,
+		NoOutputTimeout: noOutputTimeout,
 	}
 
 	r.tracker.SendStepFinishedEvent(properties, analytics.StepResult{

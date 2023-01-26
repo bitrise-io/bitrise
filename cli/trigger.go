@@ -197,7 +197,8 @@ func trigger(c *cli.Context) error {
 		Secrets:  inventoryEnvironments,
 	}
 
-	exitCode, err := runWorkflowsWithSetupAndCheckForUpdate(runConfig)
+	runner := NewWorkflowRunner(runConfig)
+	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)

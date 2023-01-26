@@ -378,7 +378,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func executeStep(
+func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
@@ -403,7 +403,7 @@ func executeStep(
 		timeout = time.Duration(timeoutSeconds) * time.Second
 	}
 
-	noOutputTimeout := configs.NoOutputTimeout
+	noOutputTimeout := r.config.Modes.NoOutputTimeout
 	if step.NoOutputTimeout != nil {
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
@@ -425,7 +425,7 @@ func executeStep(
 		&logWriter)
 }
 
-func runStep(
+func (r WorkflowRunner) runStep(
 	stepUUID string,
 	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
 	environments []envmanModels.EnvironmentItemModel, secrets []string) (int, []envmanModels.EnvironmentItemModel, error) {
@@ -465,7 +465,7 @@ func runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -575,7 +575,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	return info, didStepLibUpdate, nil
 }
 
-func activateAndRunSteps(
+func (r WorkflowRunner) activateAndRunSteps(
 	plan models.WorkflowExecutionPlan,
 	workflow models.WorkflowModel,
 	defaultStepLibSource string,
@@ -844,7 +844,7 @@ func activateAndRunSteps(
 
 			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
-			exit, outEnvironments, err := runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets)
+			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -904,7 +904,7 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 	}
 }
 
-func runWorkflow(
+func (r WorkflowRunner) runWorkflow(
 	plan models.WorkflowExecutionPlan,
 	workflowID string,
 	workflow models.WorkflowModel,
@@ -912,11 +912,12 @@ func runWorkflow(
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
+
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	bitrise.PrintRunningWorkflow(workflow.Title)
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflowID, workflow.Title)
 	*environments = append(*environments, workflow.Environments...)
-	results := activateAndRunSteps(plan, workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	results := r.activateAndRunSteps(plan, workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	return results
 }
