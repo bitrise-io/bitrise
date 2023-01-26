@@ -2,50 +2,131 @@ package errorfinder
 
 import (
 	"io"
+	"regexp"
+	"sync"
+	"time"
 )
 
-// ErrorFinder wraps one or multiple standard `io.Writer` instances with `errorFindingWriter` which parses the stream
-// coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence). `WrapError`
-// method wraps an error with the latest seen "red" error message if any is present.
-type ErrorFinder interface {
-	WrapWriter(writer io.Writer) io.Writer
-	WrapError(err error) error
+const maxLength = 20
+
+var redRegexp = regexp.MustCompile(`\x1b\[[^m]*31[^m]*m`)
+var controlRegexp = regexp.MustCompile(`\x1b\[[^m]*m`)
+
+// ErrorMessage ...
+type ErrorMessage struct {
+	Timestamp int64
+	Message   string
 }
 
-type errorFinder struct {
-	writers []errorFindingWriter
+// ErrorFinder parses the data coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence)
+// and hands over tha data to the wrapped `io.Writer` instance.
+type ErrorFinder struct {
+	mux               sync.Mutex
+	writer            io.Writer
+	timestampProvider TimestampProvider
+
+	chunk         string
+	collecting    bool
+	errorMessages []ErrorMessage
+}
+
+type TimestampProvider interface {
+	CurrentTimestamp() int64
+}
+
+type DefaultTimestampProvider struct {
+}
+
+func NewDefaultTimestampProvider() TimestampProvider {
+	return DefaultTimestampProvider{}
+}
+
+func (p DefaultTimestampProvider) CurrentTimestamp() int64 {
+	return time.Now().UnixNano()
 }
 
 // NewErrorFinder ...
-func NewErrorFinder() ErrorFinder {
-	return &errorFinder{}
+func NewErrorFinder(writer io.Writer, timestampProvider TimestampProvider) *ErrorFinder {
+	return &ErrorFinder{
+		writer:            writer,
+		timestampProvider: timestampProvider,
+	}
 }
 
-// WrapWriter ...
-func (e *errorFinder) WrapWriter(writer io.Writer) io.Writer {
-	result := newWriter(writer)
-	e.writers = append(e.writers, result)
-	return result
+func (e *ErrorFinder) Write(p []byte) (n int, err error) {
+	e.mux.Lock()
+	e.findString(string(p))
+	e.mux.Unlock()
+
+	if e.writer != nil {
+		return e.writer.Write(p)
+	}
+	return n, nil
 }
 
-// WrapError ...
-func (e *errorFinder) WrapError(err error) error {
-	if err == nil {
-		return nil
+func (e *ErrorFinder) GetErrorMessage() []ErrorMessage {
+	if e.collecting && e.chunk != "" {
+		e.errorMessages = append(e.errorMessages, ErrorMessage{
+			Timestamp: e.timestampProvider.CurrentTimestamp(),
+			Message:   redRegexp.ReplaceAllString(e.chunk, ""),
+		})
+		e.chunk = ""
+		e.collecting = false
 	}
-	var ts int64
-	var message string
-	for _, writer := range e.writers {
-		if msg := writer.getErrorMessage(); msg != nil && msg.Timestamp > ts {
-			message = msg.Message
-			ts = msg.Timestamp
+
+	return e.errorMessages
+}
+
+func (e *ErrorFinder) findString(s string) {
+	haystack := e.chunk + s
+	if e.collecting {
+		if endIndex := getEndColorIndex(haystack); len(endIndex) > 0 {
+			if endIndex[0] != 0 {
+				e.errorMessages = append(e.errorMessages, ErrorMessage{
+					Timestamp: e.timestampProvider.CurrentTimestamp(),
+					Message:   redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""),
+				})
+			}
+			e.chunk = ""
+			e.collecting = false
+			if len(haystack) > endIndex[1] {
+				e.findString(haystack[endIndex[1]:])
+			}
+		} else {
+			e.chunk = haystack
+		}
+	} else {
+		indices := redRegexp.FindStringIndex(haystack)
+		if len(indices) > 0 {
+			e.chunk = ""
+			e.collecting = true
+			if len(haystack) > indices[1] {
+				e.findString(haystack[indices[1]:])
+			}
+		} else {
+			if len(haystack) <= maxLength {
+				e.chunk = haystack
+			} else {
+				e.chunk = haystack[len(haystack)-maxLength:]
+			}
 		}
 	}
-	if message != "" {
-		return &StepError{
-			Message: message,
-			Err:     err,
-		}
+}
+
+func getEndColorIndex(haystack string) []int {
+	colorIndex := controlRegexp.FindStringIndex(haystack)
+	if len(colorIndex) == 0 {
+		return colorIndex
 	}
-	return err
+	redIndices := redRegexp.FindStringIndex(haystack)
+	if len(redIndices) == 0 || redIndices[0] > colorIndex[0] {
+		return colorIndex
+	}
+	offset := redIndices[1]
+	index := getEndColorIndex(haystack[offset:])
+	if len(index) > 0 {
+		index[0] += offset
+		index[1] += offset
+	}
+	return index
 }
