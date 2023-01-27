@@ -1886,11 +1886,8 @@ workflows:
 
 // Workflow contains before and after workflow, and no one contains steps, but circular workflow dependency exist, which should fail
 func TestBitriseDataModelValidateWorkflowsCircularDependency(t *testing.T) {
-	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
-
-	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
+	t.Setenv("BITRISE_BUILD_STATUS", "0")
+	t.Setenv("STEPLIB_BUILD_STATUS", "0")
 
 	beforeWorkflow := WorkflowModel{
 		BeforeRun: []string{"target"},

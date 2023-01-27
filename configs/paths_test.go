@@ -53,7 +53,7 @@ func TestInitPaths(t *testing.T) {
 	require.Equal(t, CurrentDir, os.Getenv(BitriseSourceDirEnvKey))
 
 	// Set BITRISE_SOURCE_DIR -> after InitPaths BITRISE_SOURCE_DIR should keep content
-	require.Equal(t, nil, os.Setenv(BitriseSourceDirEnvKey, "$HOME/test"))
+	t.Setenv(BitriseSourceDirEnvKey, "$HOME/test")
 	require.Equal(t, nil, InitPaths())
 	require.Equal(t, "$HOME/test", os.Getenv(BitriseSourceDirEnvKey))
 
@@ -68,7 +68,7 @@ func TestInitPaths(t *testing.T) {
 	require.NotEqual(t, "", os.Getenv(BitriseDeployDirEnvKey))
 
 	// Set BITRISE_DEPLOY_DIR -> after InitPaths BITRISE_DEPLOY_DIR should keep content
-	require.Equal(t, nil, os.Setenv(BitriseDeployDirEnvKey, "$HOME/test"))
+	t.Setenv(BitriseDeployDirEnvKey, "$HOME/test")
 	require.Equal(t, nil, InitPaths())
 	require.Equal(t, "$HOME/test", os.Getenv(BitriseDeployDirEnvKey))
 
@@ -83,7 +83,7 @@ func TestInitPaths(t *testing.T) {
 	require.NotEqual(t, "", os.Getenv(BitriseTestDeployDirEnvKey))
 
 	// Set BITRISE_TEST_DEPLOY_DIR -> after InitPaths BITRISE_TEST_DEPLOY_DIR should keep content
-	require.Equal(t, nil, os.Setenv(BitriseTestDeployDirEnvKey, "$HOME/test"))
+	t.Setenv(BitriseTestDeployDirEnvKey, "$HOME/test")
 	require.Equal(t, nil, InitPaths())
 	require.Equal(t, "$HOME/test", os.Getenv(BitriseTestDeployDirEnvKey))
 
@@ -98,7 +98,7 @@ func TestInitPaths(t *testing.T) {
 	require.NotEqual(t, "", os.Getenv(BitriseTmpDirEnvKey))
 
 	// Set BITRISE_TMP_DIR -> after InitPaths BITRISE_TMP_DIR should keep content
-	require.Equal(t, nil, os.Setenv(BitriseTmpDirEnvKey, "$HOME/test"))
+	t.Setenv(BitriseTmpDirEnvKey, "$HOME/test")
 	require.Equal(t, nil, InitPaths())
 	require.Equal(t, "$HOME/test", os.Getenv(BitriseTmpDirEnvKey))
 }
