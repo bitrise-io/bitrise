@@ -21,35 +21,20 @@ type ErrorMessage struct {
 // ErrorFinder parses the data coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence)
 // and hands over tha data to the wrapped `io.Writer` instance.
 type ErrorFinder struct {
-	mux               sync.Mutex
-	writer            io.Writer
-	timestampProvider TimestampProvider
+	mux          sync.Mutex
+	writer       io.Writer
+	timeProvider func() time.Time
 
 	chunk         string
 	collecting    bool
 	errorMessages []ErrorMessage
 }
 
-type TimestampProvider interface {
-	CurrentTimestamp() int64
-}
-
-type DefaultTimestampProvider struct {
-}
-
-func NewDefaultTimestampProvider() TimestampProvider {
-	return DefaultTimestampProvider{}
-}
-
-func (p DefaultTimestampProvider) CurrentTimestamp() int64 {
-	return time.Now().UnixNano()
-}
-
 // NewErrorFinder ...
-func NewErrorFinder(writer io.Writer, timestampProvider TimestampProvider) *ErrorFinder {
+func NewErrorFinder(writer io.Writer, timeProvider func() time.Time) *ErrorFinder {
 	return &ErrorFinder{
-		writer:            writer,
-		timestampProvider: timestampProvider,
+		writer:       writer,
+		timeProvider: timeProvider,
 	}
 }
 
@@ -67,7 +52,7 @@ func (e *ErrorFinder) Write(p []byte) (n int, err error) {
 func (e *ErrorFinder) ErrorMessages() []ErrorMessage {
 	if e.collecting && e.chunk != "" {
 		e.errorMessages = append(e.errorMessages, ErrorMessage{
-			Timestamp: e.timestampProvider.CurrentTimestamp(),
+			Timestamp: e.timeProvider().UnixNano(),
 			Message:   redRegexp.ReplaceAllString(e.chunk, ""),
 		})
 		e.chunk = ""
@@ -83,7 +68,7 @@ func (e *ErrorFinder) findString(s string) {
 		if endIndex := getEndColorIndex(haystack); len(endIndex) > 0 {
 			if endIndex[0] != 0 {
 				e.errorMessages = append(e.errorMessages, ErrorMessage{
-					Timestamp: e.timestampProvider.CurrentTimestamp(),
+					Timestamp: e.timeProvider().UnixNano(),
 					Message:   redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""),
 				})
 			}

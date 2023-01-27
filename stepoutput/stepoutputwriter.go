@@ -18,8 +18,7 @@ type Writer interface {
 type defaultWriter struct {
 	secretWriter *filterwriter.Writer
 	errorWriter  *errorfinder.ErrorFinder
-
-	writer io.Writer
+	writer       io.Writer
 }
 
 func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
@@ -28,14 +27,14 @@ func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
 	outWriter = logWriter
 
+	errorWriter := errorfinder.NewErrorFinder(outWriter, opts.TimeProvider)
+	outWriter = errorWriter
+
 	var secretWriter *filterwriter.Writer
 	if len(secrets) > 0 {
 		secretWriter = filterwriter.New(secrets, outWriter)
 		outWriter = secretWriter
 	}
-
-	errorWriter := errorfinder.NewErrorFinder(outWriter, errorfinder.NewDefaultTimestampProvider())
-	outWriter = errorWriter
 
 	return defaultWriter{
 		secretWriter: secretWriter,
