@@ -409,7 +409,14 @@ func (r WorkflowRunner) executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
-	writer := stepoutput.NewWriter(configs.IsSecretFiltering, secrets, stepUUID)
+	var stepSecrets []string
+	if configs.IsSecretFiltering {
+		stepSecrets = secrets
+	}
+	opts := log.GetGlobalLoggerOpts()
+	opts.Producer = log.Step
+	opts.ProducerID = stepUUID
+	writer := stepoutput.NewWriter(stepSecrets, opts)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,

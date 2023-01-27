@@ -337,9 +337,9 @@ func EnvmanRun(envStorePth,
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		if isStepOutputWriter {
-			stepRunErr := stepOutputWriter.RunError()
-			if stepRunErr != nil {
-				return exitErr.ExitCode(), stepRunErr
+			errorMessages := stepOutputWriter.ErrorMessages()
+			if len(errorMessages) > 0 {
+				return exitErr.ExitCode(), errors.New(errorMessages[len(errorMessages)-1].Message)
 			}
 		}
 

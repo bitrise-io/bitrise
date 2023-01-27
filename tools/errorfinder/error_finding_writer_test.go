@@ -103,14 +103,16 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 			inputs: []string{
 				"Foo\x1b[31;1mBar\x1b[0mBaz\x1b[31;1mQux\x1b[0m",
 			},
-			want: []ErrorMessage{{Message: "Qux"}},
+			want: []ErrorMessage{{Message: "Bar"},
+				{Message: "Qux"}},
 		},
 		{
 			name: "Complex multiple red sections",
 			inputs: []string{
 				"Foo\x1b[", "31;1mB\na\nr\x1b", "[0mBaz\x1b[31;1mQ", "\nu\nx\x1b[0mTest",
 			},
-			want: []ErrorMessage{{Message: "Q\nu\nx"}},
+			want: []ErrorMessage{{Message: "B\na\nr"},
+				{Message: "Q\nu\nx"}},
 		},
 		{
 			name: "Endless red",
@@ -156,7 +158,7 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 				_, err := w.Write([]byte(input))
 				require.NoError(t, err)
 			}
-			got := w.GetErrorMessage()
+			got := w.ErrorMessages()
 			require.Equal(t, tt.want, got)
 			//if (tt.want == nil && got != nil) || (tt.want != nil && got == nil) || (tt.want != nil && tt.want.Message != got.Message) {
 			//	t.Errorf("got %v. want %v", got, tt.want)

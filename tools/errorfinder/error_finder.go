@@ -64,7 +64,7 @@ func (e *ErrorFinder) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (e *ErrorFinder) GetErrorMessage() []ErrorMessage {
+func (e *ErrorFinder) ErrorMessages() []ErrorMessage {
 	if e.collecting && e.chunk != "" {
 		e.errorMessages = append(e.errorMessages, ErrorMessage{
 			Timestamp: e.timestampProvider.CurrentTimestamp(),

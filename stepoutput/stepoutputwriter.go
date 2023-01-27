@@ -12,45 +12,46 @@ import (
 type Writer interface {
 	Write(p []byte) (n int, err error)
 	Flush() (int, error)
-	RunError() error
+	ErrorMessages() []errorfinder.ErrorMessage
 }
 
-type writer struct {
+type defaultWriter struct {
+	secretWriter *filterwriter.Writer
+	errorWriter  *errorfinder.ErrorFinder
+
 	writer io.Writer
 }
 
-func NewWriter(isSecretFiltering bool, secrets []string, stepUUID string) Writer {
-	opts := log.GetGlobalLoggerOpts()
-	opts.Producer = log.Step
-	opts.ProducerID = stepUUID
+func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
+	var outWriter io.Writer
+
 	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
+	outWriter = logWriter
 
-	var w io.Writer
-
-	errorFinder := errorfinder.NewErrorFinder()
-	var fw *filterwriter.Writer
-
-	if !isSecretFiltering {
-		w = errorFinder.WrapWriter(logWriter)
-	} else {
-		fw = filterwriter.New(secrets, logWriter)
-		w = errorFinder.WrapWriter(fw)
+	var secretWriter *filterwriter.Writer
+	if len(secrets) > 0 {
+		secretWriter = filterwriter.New(secrets, outWriter)
+		outWriter = secretWriter
 	}
 
-	return writer{
-		writer: w,
+	errorWriter := errorfinder.NewErrorFinder(outWriter, errorfinder.NewDefaultTimestampProvider())
+	outWriter = errorWriter
+
+	return defaultWriter{
+		secretWriter: secretWriter,
+		errorWriter:  errorWriter,
+		writer:       outWriter,
 	}
 }
 
-func (w writer) Write(p []byte) (n int, err error) {
+func (w defaultWriter) Write(p []byte) (n int, err error) {
 	return w.writer.Write(p)
 }
 
-func (w writer) Flush() (int, error) {
-	return 0, nil
+func (w defaultWriter) Flush() (int, error) {
+	return w.secretWriter.Flush()
 }
 
-func (w writer) RunError() error {
-	// todo: unwarp and return error from the errorfinder writer
-	return nil
+func (w defaultWriter) ErrorMessages() []errorfinder.ErrorMessage {
+	return w.errorWriter.ErrorMessages()
 }
