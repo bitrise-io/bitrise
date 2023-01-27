@@ -7,30 +7,6 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
-  deploy_failure:
-    envs:
-    - BITRISE_BUILD_SLUG: fake
-    - BITRISE_APP_SLUG: fake
-    steps:
-    - deploy-to-bitrise-io:
-        run_if: true
-        inputs:
-        - deploy_path: "./unkown_dir/"
-        - build_url: fake
-        - build_api_token: fake
-
-  go_path_test:
-    steps:
-    - git-clone@4.0.17:
-        run_if: true
-
-  no_output_timeout_test:
-    steps:
-    - script:
-        inputs:
-        - content: |-
-            sleep 10
-
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:
