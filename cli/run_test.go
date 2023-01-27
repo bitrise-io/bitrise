@@ -663,11 +663,8 @@ workflows:
 func Test0Steps1Workflows(t *testing.T) {
 	workflow := models.WorkflowModel{}
 
-	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
-
-	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
+	t.Setenv("BITRISE_BUILD_STATUS", "0")
+	t.Setenv("STEPLIB_BUILD_STATUS", "0")
 
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
@@ -702,11 +699,8 @@ func Test0Steps1Workflows(t *testing.T) {
 
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
-	require.NoError(t, os.Setenv("BITRISE_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("BITRISE_BUILD_STATUS")) }()
-
-	require.NoError(t, os.Setenv("STEPLIB_BUILD_STATUS", "0"))
-	defer func() { require.NoError(t, os.Unsetenv("STEPLIB_BUILD_STATUS")) }()
+	t.Setenv("BITRISE_BUILD_STATUS", "0")
+	t.Setenv("STEPLIB_BUILD_STATUS", "0")
 
 	beforeWorkflow := models.WorkflowModel{}
 	afterWorkflow := models.WorkflowModel{}
