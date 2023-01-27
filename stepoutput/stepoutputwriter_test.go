@@ -6,17 +6,14 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-
 	"github.com/stretchr/testify/require"
 )
 
-func Test_writer_Write(t *testing.T) {
+func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 	tests := []struct {
-		name       string
-		messages   []string
-		loggerOpts log.LoggerOpts
-		secrets    []string
-		want       string
+		name     string
+		messages []string
+		want     string
 	}{
 		{
 			name:     "Simple log",
@@ -24,63 +21,129 @@ func Test_writer_Write(t *testing.T) {
 			want:     "failed to create file artifact: /bitrise/src/assets",
 		},
 		{
-			name: "error log",
+			name: "Error log",
 			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
 			want: `[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`,
 		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buff bytes.Buffer
+			opts := log.LoggerOpts{
+				LoggerType: log.ConsoleLogger,
+				Writer:     &buff,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
+			}
+
+			w := NewWriter(nil, opts)
+			for _, message := range tt.messages {
+				gotN, err := w.Write([]byte(message))
+				require.NoError(t, err)
+				require.Equal(t, len(message), gotN)
+			}
+
+			_, err := w.Flush()
+			require.NoError(t, err)
+
+			require.Equal(t, tt.want, buff.String())
+		})
+	}
+}
+
+func Test_GivenWriter_WhenJSONLogging_ThenWritesJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		messages []string
+		want     string
+	}{
 		{
-			name: "error log - json",
-			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
-  failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
-			loggerOpts: log.LoggerOpts{LoggerType: log.JSONLogger},
-			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}
+			name:     "Simple log",
+			messages: []string{"failed to create file artifact: /bitrise/src/assets"},
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"normal","message":"failed to create file artifact: /bitrise/src/assets"}
 `,
 		},
 		{
-			name: "error log - json - secret filtering",
+			name: "Error log",
 			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
-			loggerOpts: log.LoggerOpts{LoggerType: log.JSONLogger},
-			secrets:    []string{"SECRET_KEY"},
-			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}
 `,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buff bytes.Buffer
-			tt.loggerOpts.Writer = &buff
-			tt.loggerOpts.TimeProvider = func() time.Time {
-				return time.Time{}
+			opts := log.LoggerOpts{
+				LoggerType: log.JSONLogger,
+				Producer:   "Test",
+				ProducerID: "UUID",
+				Writer:     &buff,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
 			}
-			w := NewWriter(tt.secrets, tt.loggerOpts)
+			w := NewWriter(nil, opts)
 			for _, message := range tt.messages {
 				gotN, err := w.Write([]byte(message))
 				require.NoError(t, err)
 				require.Equal(t, len(message), gotN)
 			}
-			require.Equal(t, tt.want, string(buff.Bytes()))
+
+			_, err := w.Flush()
+			require.NoError(t, err)
+
+			require.Equal(t, tt.want, buff.String())
 		})
 	}
 }
 
-var failingDeployStepErrorMessages = []string{`failed to create file artifact: /bitrise/src/assets:
-  failed to get file size, error: file not exist at: /bitrise/src/assets`, `deploy failed, error:
-  failed to create file artifact: /bitrise/src/assets:
-    failed to get file size, error: file not exist at: /bitrise/src/assets`}
+func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		messages []string
+		want     string
+	}{
+		{
+			name:     "Simple log",
+			messages: []string{"failed to create file artifact: /bitrise/src/assets"},
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"normal","message":"failed to create file artifact: /bitrise/src/assets"}
+`,
+		},
+		{
+			name: "Error log",
+			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
+  failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buff bytes.Buffer
+			opts := log.LoggerOpts{
+				LoggerType: log.JSONLogger,
+				Producer:   "Test",
+				ProducerID: "UUID",
+				Writer:     &buff,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
+			}
+			w := NewWriter([]string{"secret value"}, opts)
+			for _, message := range tt.messages {
+				gotN, err := w.Write([]byte(message))
+				require.NoError(t, err)
+				require.Equal(t, len(message), gotN)
+			}
 
-const failingDeployStepLog = `[34;1mCollecting files to deploy...
-[0mBuild Artifact deployment mode: deploying single file
-List of files to deploy:
-- /bitrise/src/assets
+			_, err := w.Flush()
+			require.NoError(t, err)
 
-[34;1mDeploying files...
-[0mDeploying file: /bitrise/src/assets
-[31;1mfailed to create file artifact: /bitrise/src/assets:
-  failed to get file size, error: file not exist at: /bitrise/src/assets[0m
-
-[31;1mdeploy failed, error:
-  failed to create file artifact: /bitrise/src/assets:
-    failed to get file size, error: file not exist at: /bitrise/src/assets[0m`
+			require.Equal(t, tt.want, buff.String())
+		})
+	}
+}

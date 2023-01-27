@@ -49,9 +49,15 @@ func (w defaultWriter) Write(p []byte) (n int, err error) {
 }
 
 func (w defaultWriter) Flush() (int, error) {
-	return w.secretWriter.Flush()
+	if w.secretWriter != nil {
+		return w.secretWriter.Flush()
+	}
+	return 0, nil
 }
 
 func (w defaultWriter) ErrorMessages() []errorfinder.ErrorMessage {
-	return w.errorWriter.ErrorMessages()
+	if w.errorWriter != nil {
+		return w.errorWriter.ErrorMessages()
+	}
+	return nil
 }
