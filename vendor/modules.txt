@@ -8,7 +8,7 @@ github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
 github.com/bitrise-io/envman/output
 github.com/bitrise-io/envman/version
-# github.com/bitrise-io/go-utils v1.0.5-0.20230130121219-67e373f3f9b2
+# github.com/bitrise-io/go-utils v1.0.5
 ## explicit
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command

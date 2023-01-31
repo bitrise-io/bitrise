@@ -6,8 +6,8 @@ github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316/go.mod h1:L4WQyg
 github.com/bitrise-io/go-utils v0.0.0-20200224122728-e212188d99b4/go.mod h1:tTEsKvbz1LbzuN/KpVFHXnLtcAPdEgIdM41s0lL407s=
 github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e/go.mod h1:nhdaDQFvaMny1CugVV6KjK92/q97ENo0RuKSW5I4fbA=
 github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
-github.com/bitrise-io/go-utils v1.0.5-0.20230130121219-67e373f3f9b2 h1:EZg959PDApD9BtTI33WjTZSlNOpeF/+LwqQjZQTtBtU=
-github.com/bitrise-io/go-utils v1.0.5-0.20230130121219-67e373f3f9b2/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
+github.com/bitrise-io/go-utils v1.0.5 h1:RgLAvyK5m+CGAXeoogGUnz9apShWwbN4B2lBkJkU89c=
+github.com/bitrise-io/go-utils v1.0.5/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded h1:KOnT1jCD1hMMFsEd4Ll0Njd/PU7HcdAX2I+jNxypFqU=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded/go.mod h1:gZWtM7PLn1VOroa4gN1La/24aRVc0jg5R701jTsPaO8=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=

@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
-	github.com/bitrise-io/go-utils v1.0.5-0.20230130121219-67e373f3f9b2
+	github.com/bitrise-io/go-utils v1.0.5
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded
 	github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 	github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
