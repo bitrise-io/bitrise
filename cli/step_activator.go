@@ -44,7 +44,7 @@ func (a stepActivator) activateStep(
 		if err != nil {
 			return "", "", fmt.Errorf("failed to activate local step: failed to check if a directory exists at %s: %w", stepAbsLocalPth, err)
 		} else if !exist {
-			return "", "", fmt.Errorf("failed to activate local step: the provided directory (%s) doesn't exist", stepAbsLocalPth)
+			return "", "", fmt.Errorf("failed to activate local step: the provided directory doesn't exist: %s", stepAbsLocalPth)
 		}
 
 		log.Debug("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
