@@ -40,9 +40,23 @@ func (a stepActivator) activateStep(
 			return "", "", err
 		}
 
+		exist, err := pathutil.IsDirExists(stepAbsLocalPth)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to activate local step: failed to check if a directory exists at %s: %w", stepAbsLocalPth, err)
+		} else if !exist {
+			return "", "", fmt.Errorf("failed to activate local step: the provided directory doesn't exist: %s", stepAbsLocalPth)
+		}
+
 		log.Debug("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
 
 		origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
+		exist, err = pathutil.IsPathExists(origStepYMLPth)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to activate local step: failed to check if step.yml exists at %s: %w", origStepYMLPth, err)
+		} else if !exist {
+			return "", "", fmt.Errorf("failed to activate local step: step.yml doesn't exist at %s", origStepYMLPth)
+		}
+
 		if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
 			return "", "", err
 		}
