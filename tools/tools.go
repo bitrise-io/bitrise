@@ -277,8 +277,7 @@ func EnvmanRun(envStorePth,
 	noOutputTimeout time.Duration,
 	secrets []string,
 	stdInPayload []byte,
-	stdout io.Writer,
-	stderr io.Writer,
+	out io.Writer,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
@@ -287,17 +286,14 @@ func EnvmanRun(envStorePth,
 
 	var inReader io.Reader
 	var outWriter io.Writer
-	var errWriter io.Writer
-	errorFinder := errorfinder.NewErrorFinder()
-	var fw *filterwriter.Writer
 
-	if !configs.IsSecretFiltering {
-		outWriter = errorFinder.WrapWriter(stdout)
-		errWriter = errorFinder.WrapWriter(stderr)
-	} else {
-		fw = filterwriter.New(secrets, stdout)
-		outWriter = errorFinder.WrapWriter(fw)
-		errWriter = outWriter
+	errorFinderWriter := errorfinder.NewErrorFinder()
+	outWriter = errorFinderWriter.WrapWriter(out)
+
+	var secretRedactorWriter *filterwriter.Writer
+	if configs.IsSecretFiltering {
+		secretRedactorWriter = filterwriter.New(secrets, outWriter)
+		outWriter = secretRedactorWriter
 	}
 
 	inReader = os.Stdin
@@ -314,20 +310,20 @@ func EnvmanRun(envStorePth,
 	cmd := timeoutcmd.New(workDirPth, name, args...)
 	cmd.SetTimeout(timeout)
 	cmd.SetHangTimeout(noOutputTimeout)
-	cmd.SetStandardIO(inReader, outWriter, errWriter)
+	cmd.SetStandardIO(inReader, outWriter, outWriter)
 	cmd.SetEnv(append(envs, "PWD="+workDirPth))
 
 	err = cmd.Start()
 
 	// flush the writer anyway if the process is finished
 	if configs.IsSecretFiltering {
-		_, ferr := fw.Flush()
+		_, ferr := secretRedactorWriter.Flush()
 		if ferr != nil {
-			return 1, errorFinder.WrapError(ferr)
+			return 1, errorFinderWriter.WrapError(ferr)
 		}
 	}
 
-	return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
+	return timeoutcmd.ExitStatus(err), errorFinderWriter.WrapError(err)
 }
 
 // ------------------

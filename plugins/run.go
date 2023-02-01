@@ -163,7 +163,6 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		-1,
 		nil,
 		input,
-		&logWriter,
 		&logWriter)
 
 	if err != nil {
