@@ -106,3 +106,18 @@ starts in a new line`)
 		require.Contains(t, out, sshKeyLogChunk)
 	}
 }
+
+func Test_Secret_Filtering_FailingStep(t *testing.T) {
+	configPth := "secret_filtering_test_bitrise.yml"
+	secretsPth := "secret_filtering_test_secrets.yml"
+	workflowID := "failing_step_test"
+	secretEnvVarValue := "secret value"
+	regularEnvVarValue := "regular value"
+
+	cmd := command.New(binPath(), "run", workflowID, "--config", configPth, "--inventory", secretsPth)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.Error(t, err, out)
+	require.Equal(t, "exit status 1", err.Error(), out)
+	require.NotContains(t, out, secretEnvVarValue)
+	require.Contains(t, out, regularEnvVarValue)
+}
