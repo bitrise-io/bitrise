@@ -20,9 +20,9 @@ bitrise_testmfsWwlaF+Y0w0xVfAcABHdYjWHx2UHP02EC1ZGUAqF9z6XaCV8l9
 oMHHu9lvWKuxpVNPcGY/kR3G897Qn+6vE3yuVwbD4reu0IHAWZzBgt7e3we5
 -----END RSA PRIVATE KEY-----`
 
-func Test_LogFilter(t *testing.T) {
-	configPth := "log_filter_test_bitrise.yml"
-	secretsPth := "log_filter_test_secrets.yml"
+func Test_SecretFiltering(t *testing.T) {
+	configPth := "secret_filtering_test_bitrise.yml"
+	secretsPth := "secret_filtering_test_secrets.yml"
 
 	t.Log("trivial test")
 	{
@@ -96,7 +96,7 @@ starts in a new line`)
 
 	t.Log("disable filtering test")
 	{
-		secretsPth = "log_filter_disabled_test_secrets.yml"
+		secretsPth = "secret_filtering_disabled_test_secrets.yml"
 
 		os.Unsetenv("BITRISE_SECRET_FILTERING")
 
@@ -105,4 +105,19 @@ starts in a new line`)
 		require.NoError(t, err, out)
 		require.Contains(t, out, sshKeyLogChunk)
 	}
+}
+
+func Test_Secret_Filtering_FailingStep(t *testing.T) {
+	configPth := "secret_filtering_test_bitrise.yml"
+	secretsPth := "secret_filtering_test_secrets.yml"
+	workflowID := "failing_step_test"
+	secretEnvVarValue := "secret value"
+	regularEnvVarValue := "regular value"
+
+	cmd := command.New(binPath(), "run", workflowID, "--config", configPth, "--inventory", secretsPth)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.Error(t, err, out)
+	require.Equal(t, "exit status 1", err.Error(), out)
+	require.NotContains(t, out, secretEnvVarValue)
+	require.Contains(t, out, regularEnvVarValue)
 }

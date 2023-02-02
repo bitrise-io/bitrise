@@ -421,7 +421,6 @@ func (r WorkflowRunner) executeStep(
 		noOutputTimeout,
 		secrets,
 		nil,
-		&logWriter,
 		&logWriter)
 }
 
