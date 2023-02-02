@@ -284,9 +284,7 @@ func EnvmanRun(envStorePth,
 		return 1, err
 	}
 
-	var inReader io.Reader
 	var outWriter io.Writer
-
 	errorFinderWriter := errorfinder.NewErrorFinder()
 	outWriter = errorFinderWriter.WrapWriter(out)
 
@@ -296,6 +294,7 @@ func EnvmanRun(envStorePth,
 		outWriter = secretRedactorWriter
 	}
 
+	var inReader io.Reader
 	inReader = os.Stdin
 	if stdInPayload != nil {
 		inReader = bytes.NewReader(stdInPayload)
