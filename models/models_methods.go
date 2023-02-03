@@ -552,6 +552,11 @@ func validateStages(config *BitriseDataModel) ([]string, error) {
 		for _, stageWorkflow := range stage.Workflows {
 			found := false
 			stageWorkflowID, err := GetWorkflowIDFromListItemModel(stageWorkflow)
+
+			if isUtilityWorkflow(stageWorkflowID) {
+				return stageWarnings, fmt.Errorf("workflow (%s) defined in stage (%s), is a utility workflow", stageWorkflowID, ID)
+			}
+
 			if err != nil {
 				return stageWarnings, err
 			}
@@ -568,6 +573,10 @@ func validateStages(config *BitriseDataModel) ([]string, error) {
 	}
 
 	return stageWarnings, nil
+}
+
+func isUtilityWorkflow(workflowID string) bool {
+	return strings.HasPrefix(workflowID, "_")
 }
 
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {

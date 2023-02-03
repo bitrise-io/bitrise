@@ -1106,6 +1106,27 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
+	t.Log("Invalid bitriseData - stage contains utility workflow")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "12",
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []WorkflowListItemModel{
+						WorkflowListItemModel{"_utility_workflow": WorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+
+		warnings, err := bitriseData.Validate()
+		require.EqualError(t, err, "workflow (_utility_workflow) defined in stage (stage1), is a utility workflow")
+		require.Equal(t, 0, len(warnings))
+	}
+
 	t.Log("Invalid bitriseData - workflow ID empty")
 	{
 		bitriseData := BitriseDataModel{
