@@ -285,22 +285,6 @@ func EnvmanRun(envStorePth,
 		return 1, err
 	}
 
-	//outWriter := NewEnvmanOutputWriter(configs.IsSecretFiltering, secrets, stepUUID)
-
-	//var outWriter io.Writer
-	//var errWriter io.Writer
-	//errorFinder := errorfinder.NewErrorFinder()
-	//var fw *filterwriter.Writer
-	//
-	//if !configs.IsSecretFiltering {
-	//	outWriter = errorFinder.WrapWriter(stdout)
-	//	errWriter = errorFinder.WrapWriter(stderr)
-	//} else {
-	//	fw = filterwriter.New(secrets, stdout)
-	//	outWriter = errorFinder.WrapWriter(fw)
-	//	errWriter = outWriter
-	//}
-
 	var inReader io.Reader
 	inReader = os.Stdin
 	if stdInPayload != nil {
