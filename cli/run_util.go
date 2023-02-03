@@ -220,10 +220,10 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 
 	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
 	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to compare bitrise CLI models's version (%s) with the bitrise.yml FormatVersion (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
 	}
 	if !isConfigVersionOK {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("The bitrise.yml has a higher Format Version (%s) than the bitrise CLI model's version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("The bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
 	}
 
 	return bitriseConfig, warnings, nil
