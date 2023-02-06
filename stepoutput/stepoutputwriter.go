@@ -24,7 +24,7 @@ type defaultWriter struct {
 func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	var outWriter io.Writer
 
-	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
+	logWriter := logwriter.NewLogLevelWriter(log.NewLogger(opts))
 	outWriter = logWriter
 
 	errorWriter := errorfinder.NewErrorFinder(outWriter, opts.TimeProvider)
