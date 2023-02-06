@@ -282,13 +282,14 @@ func EnvmanRun(envStorePth,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
-		return 1, err
+		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
 	var inReader io.Reader
-	inReader = os.Stdin
 	if stdInPayload != nil {
 		inReader = bytes.NewReader(stdInPayload)
+	} else {
+		inReader = os.Stdin
 	}
 
 	name := cmdArgs[0]
@@ -307,37 +308,32 @@ func EnvmanRun(envStorePth,
 
 	stepOutputWriter, isStepOutputWriter := outWriter.(stepoutput.Writer)
 	// flush the writer anyway if the process is finished
-	if configs.IsSecretFiltering {
-		if isStepOutputWriter {
-			_, ferr := stepOutputWriter.Flush()
-			if ferr != nil {
-				// TODO: flush error gets added to the potentially correct step error
-				// return 1, errorFinder.WrapError(ferr)
-				return 1, err
-			}
+	if isStepOutputWriter {
+		if _, ferr := stepOutputWriter.Flush(); ferr != nil {
+			log.Warnf("Couldn't flush command output logs: %s", ferr)
 		}
-	}
-
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		if isStepOutputWriter {
-			errorMessages := stepOutputWriter.ErrorMessages()
-			if len(errorMessages) > 0 {
-				return exitErr.ExitCode(), errors.New(errorMessages[len(errorMessages)-1].Message)
-			}
-		}
-
-		// TODO: check if this works with plugin run
-		return exitErr.ExitCode(), err
 	}
 
 	if err != nil {
-		return 1, fmt.Errorf("failed to execute step: %w", err)
-	}
-	return 0, nil
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			exitCode := exitErr.ExitCode()
 
-	// TODO: do we still need timeoutcmd.ExitStatus ?
-	//return timeoutcmd.ExitStatus(err), errorFinder.WrapError(err)
+			if isStepOutputWriter {
+				errorMessages := stepOutputWriter.ErrorMessages()
+				if len(errorMessages) > 0 {
+					lastErrorMessage := errorMessages[len(errorMessages)-1].Message
+					return exitCode, errors.New(lastErrorMessage)
+				}
+			}
+
+			return exitCode, err
+		} else {
+			return 1, fmt.Errorf("executing command failed: %w", err)
+		}
+	}
+
+	return 0, nil
 }
 
 // ------------------
