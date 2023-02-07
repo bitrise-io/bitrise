@@ -8,26 +8,12 @@ import (
 	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
-// LogWriter ...
-type LogWriter struct {
-	logger log.Logger
-}
-
-// NewLogWriter ...
-func NewLogWriter(logger log.Logger) LogWriter {
-	return LogWriter{
-		logger: logger,
-	}
-}
-
-func (w LogWriter) Write(p []byte) (n int, err error) {
-	if len(p) == 0 {
-		return 0, nil
-	}
-
-	level, message := convertColoredString(string(p))
-	w.logger.LogMessage(message, level)
-	return len(p), nil
+var ansiEscapeCodeToLevel = map[corelog.ANSIColorCode]corelog.Level{
+	corelog.RedCode:     corelog.ErrorLevel,
+	corelog.YellowCode:  corelog.WarnLevel,
+	corelog.BlueCode:    corelog.InfoLevel,
+	corelog.GreenCode:   corelog.DoneLevel,
+	corelog.MagentaCode: corelog.DebugLevel,
 }
 
 type LogLevelWriter struct {
@@ -47,6 +33,10 @@ func NewLogLevelWriter(logger log.Logger) *LogLevelWriter {
 
 // TODO: handle if currentChunk is too big
 func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
 	chunk := string(p)
 
 	if string(w.currentColor) == "" {
@@ -112,6 +102,13 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 			return len(p), nil
 		}
 	}
+}
+
+func (w *LogLevelWriter) Flush() (int, error) {
+	if len(w.currentChunk) > 0 {
+		return w.Write([]byte(w.currentChunk))
+	}
+	return 0, nil
 }
 
 func startColorCode(s string) corelog.ANSIColorCode {
