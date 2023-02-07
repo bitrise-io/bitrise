@@ -16,16 +16,18 @@ type Writer interface {
 }
 
 type defaultWriter struct {
-	secretWriter *filterwriter.Writer
-	errorWriter  *errorfinder.ErrorFinder
-	writer       io.Writer
+	writer io.Writer
+
+	secretWriter   *filterwriter.Writer
+	errorWriter    *errorfinder.ErrorFinder
+	logLevelWriter *logwriter.LogLevelWriter
 }
 
 func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	var outWriter io.Writer
 
-	logWriter := logwriter.NewLogLevelWriter(log.NewLogger(opts))
-	outWriter = logWriter
+	logLevelWriter := logwriter.NewLogLevelWriter(log.NewLogger(opts))
+	outWriter = logLevelWriter
 
 	errorWriter := errorfinder.NewErrorFinder(outWriter, opts.TimeProvider)
 	outWriter = errorWriter
@@ -37,9 +39,11 @@ func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	}
 
 	return defaultWriter{
-		secretWriter: secretWriter,
-		errorWriter:  errorWriter,
-		writer:       outWriter,
+		writer: outWriter,
+
+		secretWriter:   secretWriter,
+		errorWriter:    errorWriter,
+		logLevelWriter: logLevelWriter,
 	}
 }
 
@@ -49,8 +53,17 @@ func (w defaultWriter) Write(p []byte) (n int, err error) {
 
 func (w defaultWriter) Flush() (int, error) {
 	if w.secretWriter != nil {
-		return w.secretWriter.Flush()
+		n, err := w.secretWriter.Flush()
+		if err != nil {
+			return n, err
+		}
+
 	}
+
+	if w.logLevelWriter != nil {
+		return w.logLevelWriter.Flush()
+	}
+	
 	return 0, nil
 }
 

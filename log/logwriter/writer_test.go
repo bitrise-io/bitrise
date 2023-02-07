@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log/corelog"
-
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -173,16 +172,11 @@ func Test_GivenWriter_WhenMessageIsWritten_ThenParsesLogLevel(t *testing.T) {
 			_, err = writer.Flush()
 			assert.NoError(t, err)
 			require.Equal(t, tt.expectedMessage, buf.String())
-
-			//level, message := convertColoredString(tt.message)
-			//
-			//assert.Equal(t, tt.expectedLevel, level)
-			//assert.Equal(t, tt.expectedMessage, message)
 		})
 	}
 }
 
-func ExampleNewLogWriter() {
+func ExampleNewLogLevelWriter() {
 	opts := log.LoggerOpts{
 		LoggerType:        log.JSONLogger,
 		Producer:          log.BitriseCLI,

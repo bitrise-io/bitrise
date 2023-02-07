@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/tools/errorfinder"
-
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/tools/errorfinder"
 	"github.com/stretchr/testify/require"
 )
 

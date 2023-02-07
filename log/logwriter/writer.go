@@ -32,6 +32,7 @@ func NewLogLevelWriter(logger log.Logger) *LogLevelWriter {
 }
 
 // TODO: handle if currentChunk is too big
+// TODO: handle frequent Writes (mux)
 func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
