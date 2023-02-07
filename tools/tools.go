@@ -306,6 +306,7 @@ func EnvmanRun(envStorePth,
 
 	err = cmd.Start()
 
+	// TODO: Flush should be called on stepoutput.Writer and logwriter.LogLevelWriter
 	stepOutputWriter, isStepOutputWriter := outWriter.(stepoutput.Writer)
 	// flush the writer anyway if the process is finished
 	if isStepOutputWriter {
