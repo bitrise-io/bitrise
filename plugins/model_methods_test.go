@@ -14,7 +14,7 @@ import (
 )
 
 func TestParseAndValidatePluginFromYML(t *testing.T) {
-	version.VERSION = "1.49.3"
+	version.Version = "1.49.3"
 
 	t.Log("simple plugin - with executables")
 	{

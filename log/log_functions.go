@@ -105,7 +105,7 @@ func PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 }
 
 func PrintBitriseASCIIArt() {
-	getGlobalLogger().PrintBitriseASCIIArt(version.VERSION)
+	getGlobalLogger().PrintBitriseASCIIArt(version.Version)
 }
 
 func PrintStepStartedEvent(params StepStartedParams) {

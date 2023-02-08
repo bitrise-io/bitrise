@@ -70,7 +70,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = version.VERSION
+	app.Version = version.Version
 
 	app.Author = ""
 	app.Email = ""
@@ -91,7 +91,7 @@ func Run() {
 				return fmt.Errorf("Plugin (%s) not installed", pluginName)
 			}
 
-			if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+			if err := bitrise.RunSetupIfNeeded(version.Version, false); err != nil {
 				failf("Setup failed, error: %s", err)
 			}
 

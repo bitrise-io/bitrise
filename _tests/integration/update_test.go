@@ -32,7 +32,7 @@ func Test_Update(t *testing.T) {
 		}
 
 		restoredVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
-		require.Equal(t, version.VERSION, restoredVer)
+		require.Equal(t, version.Version, restoredVer)
 	}
 	t.Log("Update --version invalid")
 	{

@@ -144,7 +144,7 @@ func newCLIVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	current := ver.Must(ver.NewVersion(version.VERSION))
+	current := ver.Must(ver.NewVersion(version.Version))
 	if latest.GreaterThan(current) {
 		return latest.String(), nil
 	}
@@ -219,7 +219,7 @@ func update(c *cli.Context) error {
 	log.Infof("Updating Bitrise CLI...")
 
 	versionFlag := c.String("version")
-	log.Printf("Current version: %s", version.VERSION)
+	log.Printf("Current version: %s", version.Version)
 
 	withBrew, err := installedWithBrew()
 	if err != nil {
@@ -266,7 +266,7 @@ func update(c *cli.Context) error {
 		versionFlag = latest.String()
 	}
 
-	if versionFlag == version.VERSION {
+	if versionFlag == version.Version {
 		log.Donef("Bitrise CLI is already up-to-date")
 		return nil
 	}

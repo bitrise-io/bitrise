@@ -48,12 +48,12 @@ func EnvmanVersion(binPath string) (version.Version, error) {
 
 // BitriseCliVersion ...
 func BitriseCliVersion() (version.Version, error) {
-	versionPtr, err := version.NewVersion(VERSION)
+	versionPtr, err := version.NewVersion(Version)
 	if err != nil {
 		return version.Version{}, err
 	}
 	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", VERSION)
+		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", Version)
 	}
 
 	return *versionPtr, nil

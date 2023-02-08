@@ -131,7 +131,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		tracker.Wait()
 	}()
 
-	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+	if err := bitrise.RunSetupIfNeeded(version.Version, false); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
 
@@ -404,7 +404,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 	}
 
 	return models.WorkflowRunPlan{
-		Version:                 version.VERSION,
+		Version:                 version.Version,
 		LogFormatVersion:        "1",
 		CIMode:                  modes.CIMode,
 		PRMode:                  modes.PRMode,

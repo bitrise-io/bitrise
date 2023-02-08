@@ -22,7 +22,7 @@ format version: 12
 os: %s
 go: %s
 build number: 
-commit:`, version.VERSION, expectedOSVersion, runtime.Version())
+commit:`, version.Version, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
 	}
