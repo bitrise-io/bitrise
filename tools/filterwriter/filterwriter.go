@@ -78,7 +78,6 @@ func (w *Writer) Write(p []byte) (int, error) {
 		return len(p), nil
 	}
 
-	var redactedBytes []byte
 	for _, line := range lastLines {
 		lines := append(w.store, line)
 		matchMap, partialMatchIndexes := w.matchSecrets(lines)
@@ -90,9 +89,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 		}
 
 		redactedLines := w.redact(linesToPrint, matchMap)
-		redactedBytes = append(redactedBytes, bytes.Join(redactedLines, nil)...)
-	}
-	if len(redactedBytes) > 0 {
+		redactedBytes := bytes.Join(redactedLines, nil)
 		if c, err := w.writer.Write(redactedBytes); err != nil {
 			return c, err
 		}
