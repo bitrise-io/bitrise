@@ -13,10 +13,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/bitrise-io/bitrise/stepoutput"
-
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/stepoutput"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	envmanEnv "github.com/bitrise-io/envman/env"
