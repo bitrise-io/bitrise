@@ -161,9 +161,6 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 			}
 			got := w.ErrorMessages()
 			require.Equal(t, tt.want, got)
-			//if (tt.want == nil && got != nil) || (tt.want != nil && got == nil) || (tt.want != nil && tt.want.Message != got.Message) {
-			//	t.Errorf("got %v. want %v", got, tt.want)
-			//}
 		})
 	}
 }

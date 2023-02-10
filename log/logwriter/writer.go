@@ -2,6 +2,7 @@ package logwriter
 
 import (
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/bitrise-io/bitrise/log"
@@ -17,6 +18,7 @@ var ansiEscapeCodeToLevel = map[corelog.ANSIColorCode]corelog.Level{
 }
 
 type LogLevelWriter struct {
+	mux    sync.Mutex
 	logger log.Logger
 
 	currentColor corelog.ANSIColorCode
@@ -32,11 +34,15 @@ func NewLogLevelWriter(logger log.Logger) *LogLevelWriter {
 }
 
 // TODO: handle if currentChunk is too big
-// TODO: handle frequent Writes (mux)
 func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
+
+	w.mux.Lock()
+	defer func() {
+		w.mux.Unlock()
+	}()
 
 	chunk := string(p)
 
