@@ -148,7 +148,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testin
 	}
 }
 
-func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnError(t *testing.T) {
+func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *testing.T) {
 	tests := []struct {
 		name     string
 		messages []string
