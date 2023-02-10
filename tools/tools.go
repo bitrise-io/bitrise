@@ -15,7 +15,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/stepoutput"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	envmanEnv "github.com/bitrise-io/envman/env"
@@ -270,6 +269,14 @@ func EnvmanClear(envStorePth string) error {
 	return envman.ClearEnvs(envStorePth)
 }
 
+type Flusher interface {
+	Flush() (int, error)
+}
+
+type ErrorParser interface {
+	ErrorMessages() []string
+}
+
 // EnvmanRun runs a command through envman.
 func EnvmanRun(envStorePth,
 	workDirPth string,
@@ -305,24 +312,25 @@ func EnvmanRun(envStorePth,
 
 	err = cmd.Start()
 
-	// TODO: Flush should be called on stepoutput.Writer and logwriter.LogLevelWriter
-	stepOutputWriter, isStepOutputWriter := outWriter.(stepoutput.Writer)
 	// flush the writer anyway if the process is finished
-	if isStepOutputWriter {
-		if _, ferr := stepOutputWriter.Flush(); ferr != nil {
+	flusher, isFlusher := outWriter.(Flusher)
+	if isFlusher {
+		if _, ferr := flusher.Flush(); ferr != nil {
 			log.Warnf("Couldn't flush command output logs: %s", ferr)
 		}
 	}
 
+	// return error message from the command output
+	errorParser, isErrorParser := outWriter.(ErrorParser)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			exitCode := exitErr.ExitCode()
 
-			if isStepOutputWriter {
-				errorMessages := stepOutputWriter.ErrorMessages()
+			if isErrorParser {
+				errorMessages := errorParser.ErrorMessages()
 				if len(errorMessages) > 0 {
-					lastErrorMessage := errorMessages[len(errorMessages)-1].Message
+					lastErrorMessage := errorMessages[len(errorMessages)-1]
 					return exitCode, errors.New(lastErrorMessage)
 				}
 			}

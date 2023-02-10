@@ -9,13 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/tools/filterwriter"
 )
 
-type Writer interface {
-	Write(p []byte) (n int, err error)
-	Flush() (int, error)
-	ErrorMessages() []errorfinder.ErrorMessage
-}
-
-type defaultWriter struct {
+type Writer struct {
 	writer io.Writer
 
 	secretWriter   *filterwriter.Writer
@@ -38,7 +32,7 @@ func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 		outWriter = secretWriter
 	}
 
-	return defaultWriter{
+	return Writer{
 		writer: outWriter,
 
 		secretWriter:   secretWriter,
@@ -47,11 +41,11 @@ func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	}
 }
 
-func (w defaultWriter) Write(p []byte) (n int, err error) {
+func (w Writer) Write(p []byte) (n int, err error) {
 	return w.writer.Write(p)
 }
 
-func (w defaultWriter) Flush() (int, error) {
+func (w Writer) Flush() (int, error) {
 	if w.secretWriter != nil {
 		n, err := w.secretWriter.Flush()
 		if err != nil {
@@ -63,11 +57,11 @@ func (w defaultWriter) Flush() (int, error) {
 	if w.logLevelWriter != nil {
 		return w.logLevelWriter.Flush()
 	}
-	
+
 	return 0, nil
 }
 
-func (w defaultWriter) ErrorMessages() []errorfinder.ErrorMessage {
+func (w Writer) ErrorMessages() []string {
 	if w.errorWriter != nil {
 		return w.errorWriter.ErrorMessages()
 	}

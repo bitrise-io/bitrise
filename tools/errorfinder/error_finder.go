@@ -12,12 +12,6 @@ const maxLength = 20
 var redRegexp = regexp.MustCompile(`\x1b\[[^m]*31[^m]*m`)
 var controlRegexp = regexp.MustCompile(`\x1b\[[^m]*m`)
 
-// ErrorMessage ...
-type ErrorMessage struct {
-	Timestamp int64
-	Message   string
-}
-
 // ErrorFinder parses the data coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence)
 // and hands over tha data to the wrapped `io.Writer` instance.
 type ErrorFinder struct {
@@ -27,7 +21,7 @@ type ErrorFinder struct {
 
 	chunk         string
 	collecting    bool
-	errorMessages []ErrorMessage
+	errorMessages []string
 }
 
 // NewErrorFinder ...
@@ -49,12 +43,9 @@ func (e *ErrorFinder) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (e *ErrorFinder) ErrorMessages() []ErrorMessage {
+func (e *ErrorFinder) ErrorMessages() []string {
 	if e.collecting && e.chunk != "" {
-		e.errorMessages = append(e.errorMessages, ErrorMessage{
-			Timestamp: e.timeProvider().UnixNano(),
-			Message:   redRegexp.ReplaceAllString(e.chunk, ""),
-		})
+		e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(e.chunk, ""))
 		e.chunk = ""
 		e.collecting = false
 	}
@@ -67,10 +58,7 @@ func (e *ErrorFinder) findString(s string) {
 	if e.collecting {
 		if endIndex := getEndColorIndex(haystack); len(endIndex) > 0 {
 			if endIndex[0] != 0 {
-				e.errorMessages = append(e.errorMessages, ErrorMessage{
-					Timestamp: e.timeProvider().UnixNano(),
-					Message:   redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""),
-				})
+				e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""))
 			}
 			e.chunk = ""
 			e.collecting = false

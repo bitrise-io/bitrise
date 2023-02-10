@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/errorfinder"
 	"github.com/stretchr/testify/require"
 )
 
@@ -153,7 +152,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnError(t *testi
 	tests := []struct {
 		name     string
 		messages []string
-		want     []errorfinder.ErrorMessage
+		want     []string
 	}{
 		{
 			name:     "Simple log",
@@ -164,7 +163,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnError(t *testi
 			name: "Error log",
 			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
-			want: []errorfinder.ErrorMessage{{Message: "failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}},
+			want: []string{"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"},
 		},
 	}
 	for _, tt := range tests {
