@@ -412,6 +412,7 @@ func (r WorkflowRunner) executeStep(
 	opts := log.GetGlobalLoggerOpts()
 	opts.Producer = log.Step
 	opts.ProducerID = stepUUID
+	opts.DebugLogEnabled = true
 	writer := stepoutput.NewWriter(stepSecrets, opts)
 
 	return tools.EnvmanRun(

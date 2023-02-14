@@ -3,6 +3,16 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
 workflows:
+  debug_log:
+    steps:
+    - script:
+        title: Success
+        inputs:
+        - content: |-
+            set -e
+            DEBUG_COLOUR='\x1b[35;1m'
+            NO_COLOUR='\x1b[0m'
+            echo -e "${DEBUG_COLOUR}This is a debug message${NO_COLOUR}"
   fail_test:
     title: Fails
     description: Workflow will fail
