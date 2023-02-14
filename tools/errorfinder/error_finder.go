@@ -33,9 +33,14 @@ func NewErrorFinder(writer io.Writer, timeProvider func() time.Time) *ErrorFinde
 }
 
 func (e *ErrorFinder) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
 	e.mux.Lock()
+	defer e.mux.Unlock()
+
 	e.findString(string(p))
-	e.mux.Unlock()
 
 	if e.writer != nil {
 		return e.writer.Write(p)

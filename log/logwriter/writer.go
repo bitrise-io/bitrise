@@ -40,9 +40,7 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	}
 
 	w.mux.Lock()
-	defer func() {
-		w.mux.Unlock()
-	}()
+	defer w.mux.Unlock()
 
 	chunk := string(p)
 
