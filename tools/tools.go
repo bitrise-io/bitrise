@@ -310,34 +310,32 @@ func EnvmanRun(envStorePth,
 	cmd.SetStandardIO(inReader, outWriter, outWriter)
 	cmd.SetEnv(append(envs, "PWD="+workDirPth))
 
-	err = cmd.Start()
+	cmdErr := cmd.Start()
 
 	if err := outWriter.Close(); err != nil {
 		log.Warnf("Failed to close command output writer: %s", err)
 	}
 
-	// return error message from the command output
-	errorParser, isErrorParser := outWriter.(ErrorParser)
-	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			exitCode := exitErr.ExitCode()
+	if cmdErr == nil {
+		return 0, nil
+	}
 
-			if isErrorParser {
-				errorMessages := errorParser.ErrorMessages()
-				if len(errorMessages) > 0 {
-					lastErrorMessage := errorMessages[len(errorMessages)-1]
-					return exitCode, errors.New(lastErrorMessage)
-				}
-			}
+	var exitErr *exec.ExitError
+	if !errors.As(cmdErr, &exitErr) {
+		return 1, fmt.Errorf("executing command failed: %w", cmdErr)
+	}
 
-			return exitCode, err
-		} else {
-			return 1, fmt.Errorf("executing command failed: %w", err)
+	exitCode := exitErr.ExitCode()
+
+	if errorParser, isErrorParser := outWriter.(ErrorParser); isErrorParser {
+		errorMessages := errorParser.ErrorMessages()
+		if len(errorMessages) > 0 {
+			lastErrorMessage := errorMessages[len(errorMessages)-1]
+			return exitCode, errors.New(lastErrorMessage)
 		}
 	}
 
-	return 0, nil
+	return exitCode, exitErr
 }
 
 // ------------------
