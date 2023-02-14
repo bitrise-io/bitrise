@@ -284,7 +284,7 @@ func EnvmanRun(envStorePth,
 	timeout time.Duration,
 	noOutputTimeout time.Duration,
 	stdInPayload []byte,
-	outWriter io.Writer,
+	outWriter io.WriteCloser,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
@@ -312,12 +312,8 @@ func EnvmanRun(envStorePth,
 
 	err = cmd.Start()
 
-	// flush the writer anyway if the process is finished
-	flusher, isFlusher := outWriter.(Flusher)
-	if isFlusher {
-		if _, ferr := flusher.Flush(); ferr != nil {
-			log.Warnf("Couldn't flush command output logs: %s", ferr)
-		}
+	if err := outWriter.Close(); err != nil {
+		log.Warnf("Failed to close command output writer: %s", err)
 	}
 
 	// return error message from the command output

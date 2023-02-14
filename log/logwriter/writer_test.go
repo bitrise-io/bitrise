@@ -169,7 +169,7 @@ func Test_GivenWriter_WhenMessageIsWritten_ThenParsesLogLevel(t *testing.T) {
 
 			_, err := writer.Write(b)
 			assert.NoError(t, err)
-			_, err = writer.Flush()
+			err = writer.Close()
 			assert.NoError(t, err)
 			require.Equal(t, tt.expectedMessage, buf.String())
 		})

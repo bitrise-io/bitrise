@@ -54,8 +54,8 @@ func redactWithSecrets(inputValue string, secrets []string) (string, error) {
 	if _, err := io.Copy(secretFilterDst, src); err != nil {
 		return "", fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
 	}
-	if _, err := secretFilterDst.Flush(); err != nil {
-		return "", fmt.Errorf("failed to redact secrets, stream flush failed: %s", err)
+	if err := secretFilterDst.Close(); err != nil {
+		return "", fmt.Errorf("failed to redact secrets, closing the stream failed: %s", err)
 	}
 
 	redactedValue := dstBuf.String()

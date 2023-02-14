@@ -46,7 +46,7 @@ func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 				require.Equal(t, len(message), gotN)
 			}
 
-			_, err := w.Flush()
+			err := w.Close()
 			require.NoError(t, err)
 
 			require.Equal(t, tt.want, buff.String())
@@ -93,7 +93,7 @@ func Test_GivenWriter_WhenJSONLogging_ThenWritesJSON(t *testing.T) {
 				require.Equal(t, len(message), gotN)
 			}
 
-			_, err := w.Flush()
+			err := w.Close()
 			require.NoError(t, err)
 
 			require.Equal(t, tt.want, buff.String())
@@ -140,7 +140,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testin
 				require.Equal(t, len(message), gotN)
 			}
 
-			_, err := w.Flush()
+			err := w.Close()
 			require.NoError(t, err)
 
 			require.Equal(t, tt.want, buff.String())
@@ -186,7 +186,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *test
 				require.Equal(t, len(message), gotN)
 			}
 
-			_, err := w.Flush()
+			err := w.Close()
 			require.NoError(t, err)
 
 			errors := w.ErrorMessages()

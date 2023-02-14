@@ -67,7 +67,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 			w.timer.C = nil
 		}
 		w.timer = time.AfterFunc(100*time.Millisecond, func() {
-			if _, err := w.Flush(); err != nil {
+			if _, err := w.flush(); err != nil {
 				log.Errorf("Failed to print last lines: %s", err)
 			}
 		})
@@ -100,8 +100,13 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// Flush writes the remaining bytes.
-func (w *Writer) Flush() (int, error) {
+func (w *Writer) Close() error {
+	_, err := w.flush()
+	return err
+}
+
+// flush writes the remaining bytes.
+func (w *Writer) flush() (int, error) {
 	defer func() {
 		w.mux.Unlock()
 	}()

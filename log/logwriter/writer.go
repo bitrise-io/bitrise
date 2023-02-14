@@ -111,11 +111,12 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	}
 }
 
-func (w *LogLevelWriter) Flush() (int, error) {
+func (w *LogLevelWriter) Close() error {
 	if len(w.currentChunk) > 0 {
-		return w.Write([]byte(w.currentChunk))
+		_, err := w.Write([]byte(w.currentChunk))
+		return err
 	}
-	return 0, nil
+	return nil
 }
 
 func startColorCode(s string) corelog.ANSIColorCode {

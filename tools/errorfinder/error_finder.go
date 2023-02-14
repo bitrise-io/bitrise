@@ -43,13 +43,16 @@ func (e *ErrorFinder) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (e *ErrorFinder) ErrorMessages() []string {
+func (e *ErrorFinder) Close() error {
 	if e.collecting && e.chunk != "" {
 		e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(e.chunk, ""))
 		e.chunk = ""
 		e.collecting = false
 	}
+	return nil
+}
 
+func (e *ErrorFinder) ErrorMessages() []string {
 	return e.errorMessages
 }
 

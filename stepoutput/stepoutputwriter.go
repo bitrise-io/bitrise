@@ -45,25 +45,20 @@ func (w Writer) Write(p []byte) (n int, err error) {
 	return w.writer.Write(p)
 }
 
-func (w Writer) Flush() (int, error) {
+func (w Writer) Close() error {
 	if w.secretWriter != nil {
-		n, err := w.secretWriter.Flush()
-		if err != nil {
-			return n, err
+		if err := w.secretWriter.Close(); err != nil {
+			return err
 		}
-
 	}
 
-	if w.logLevelWriter != nil {
-		return w.logLevelWriter.Flush()
+	if err := w.errorWriter.Close(); err != nil {
+		return err
 	}
 
-	return 0, nil
+	return w.logLevelWriter.Close()
 }
 
 func (w Writer) ErrorMessages() []string {
-	if w.errorWriter != nil {
-		return w.errorWriter.ErrorMessages()
-	}
-	return nil
+	return w.errorWriter.ErrorMessages()
 }
