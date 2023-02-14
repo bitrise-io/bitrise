@@ -159,6 +159,10 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 				_, err := w.Write([]byte(input))
 				require.NoError(t, err)
 			}
+
+			err := w.Close()
+			require.NoError(t, err)
+
 			got := w.ErrorMessages()
 			require.Equal(t, tt.want, got)
 		})

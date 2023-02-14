@@ -52,6 +52,8 @@ func (e *ErrorFinder) Close() error {
 	return nil
 }
 
+// ErrorMessages returns the collected error messages.
+// Close needs to be called before using this function to drain the internal error buffer and get all the error messages.
 func (e *ErrorFinder) ErrorMessages() []string {
 	return e.errorMessages
 }
