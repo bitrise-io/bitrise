@@ -14,33 +14,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	debugLogMessage = "This is a debug message"
+)
+
+func TestStepDebugLogMessagesAppear(t *testing.T) {
+	consoleLog, consoleErr := createConsoleLog(t, "debug_log")
+	require.NoError(t, consoleErr)
+	require.True(t, strings.Contains(consoleLog, debugLogMessage))
+
+	jsonLog, jsonErr := createJSONLog(t, "debug_log")
+	require.NoError(t, jsonErr)
+	require.True(t, strings.Contains(string(jsonLog), debugLogMessage))
+}
+
 func TestConsoleLogCanBeRestoredFromJSONLog(t *testing.T) {
-	consoleLog := createConsoleLog(t)
-	jsonLog := createJSONleLog(t)
+	consoleLog, consoleErr := createConsoleLog(t, "fail_test")
+	require.EqualError(t, consoleErr, "exit status 1")
+
+	jsonLog, jsonErr := createJSONLog(t, "fail_test")
+	require.EqualError(t, jsonErr, "exit status 1")
+
 	convertedConsoleLog := restoreConsoleLog(t, jsonLog)
 	require.Equal(t, replaceVariableParts(consoleLog), replaceVariableParts(convertedConsoleLog))
 }
 
-func createConsoleLog(t *testing.T) string {
+func createConsoleLog(t *testing.T, workflow string) (string, error) {
 	execCmd := exec.Command(binPath(), "setup")
 	outBytes, err := execCmd.CombinedOutput()
 	require.NoError(t, err, string(outBytes))
 
-	cmd := exec.Command(binPath(), "run", "fail_test", "--config", "log_format_test_bitrise.yml")
+	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml")
 	out, err := cmd.CombinedOutput()
-	require.EqualError(t, err, "exit status 1")
-	return string(out)
+	return string(out), err
 }
 
-func createJSONleLog(t *testing.T) []byte {
+func createJSONLog(t *testing.T, workflow string) ([]byte, error) {
 	execCmd := exec.Command(binPath(), "setup")
 	outBytes, err := execCmd.CombinedOutput()
 	require.NoError(t, err, string(outBytes))
 
-	cmd := exec.Command(binPath(), "run", "fail_test", "--config", "log_format_test_bitrise.yml", "--output-format", "json")
-	out, err := cmd.CombinedOutput()
-	require.EqualError(t, err, "exit status 1")
-	return out
+	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml", "--output-format", "json")
+	return cmd.CombinedOutput()
 }
 
 func restoreConsoleLog(t *testing.T, log []byte) string {
