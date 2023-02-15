@@ -284,7 +284,7 @@ func EnvmanRun(envStorePth,
 	timeout time.Duration,
 	noOutputTimeout time.Duration,
 	stdInPayload []byte,
-	outWriter io.WriteCloser,
+	outWriter io.Writer,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
@@ -312,8 +312,10 @@ func EnvmanRun(envStorePth,
 
 	cmdErr := cmd.Start()
 
-	if err := outWriter.Close(); err != nil {
-		log.Warnf("Failed to close command output writer: %s", err)
+	if closer, isCloser := outWriter.(io.Closer); isCloser {
+		if err := closer.Close(); err != nil {
+			log.Warnf("Failed to close command output writer: %s", err)
+		}
 	}
 
 	if cmdErr == nil {
