@@ -97,7 +97,7 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		_, err = out.Flush()
+		err = out.Close()
 		require.NoError(t, err)
 		require.Equal(t, "test with\nnew line\nand single line secret:[REDACTED]\nand multiline secret:[REDACTED]\n[REDACTED]\n[REDACTED]", buff.String())
 	}
@@ -111,7 +111,7 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		_, err = out.Flush()
+		err = out.Close()
 		require.NoError(t, err)
 		require.Equal(t, "test without newline, secret:[REDACTED]", buff.String())
 	}
@@ -125,7 +125,7 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)
 
-		_, err = out.Flush()
+		err = out.Close()
 		require.NoError(t, err)
 		require.Equal(t, "multiple secrets like: [REDACTED] and [REDACTED]\n[REDACTED] and some extra text", buff.String())
 	}
@@ -148,7 +148,7 @@ func TestWrite(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, len(log), wc)
 
-				_, err = out.Flush()
+				err = out.Close()
 
 				cherr <- err
 				chStr <- buff.String()

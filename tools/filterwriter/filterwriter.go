@@ -50,10 +50,12 @@ func New(secrets []string, target io.Writer) *Writer {
 // Since we do not know which is the last call of Write we need to call Flush
 // on buffer to write the remaining lines.
 func (w *Writer) Write(p []byte) (int, error) {
-	defer func() {
-		w.mux.Unlock()
-	}()
+	if len(p) == 0 {
+		return 0, nil
+	}
+
 	w.mux.Lock()
+	defer w.mux.Unlock()
 
 	// previous bytes may not ended with newline
 	data := append(w.chunk, p...)
@@ -67,7 +69,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 			w.timer.C = nil
 		}
 		w.timer = time.AfterFunc(100*time.Millisecond, func() {
-			if _, err := w.Flush(); err != nil {
+			if _, err := w.flush(); err != nil {
 				log.Errorf("Failed to print last lines: %s", err)
 			}
 		})
@@ -100,8 +102,13 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// Flush writes the remaining bytes.
-func (w *Writer) Flush() (int, error) {
+func (w *Writer) Close() error {
+	_, err := w.flush()
+	return err
+}
+
+// flush writes the remaining bytes.
+func (w *Writer) flush() (int, error) {
 	defer func() {
 		w.mux.Unlock()
 	}()

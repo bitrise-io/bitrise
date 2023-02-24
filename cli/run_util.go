@@ -17,8 +17,8 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/stepoutput"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/envman/env"
@@ -405,11 +405,15 @@ func (r WorkflowRunner) executeStep(
 		noOutputTimeout = time.Duration(*step.NoOutputTimeout) * time.Second
 	}
 
+	var stepSecrets []string
+	if r.config.Modes.SecretFilteringMode {
+		stepSecrets = secrets
+	}
 	opts := log.GetGlobalLoggerOpts()
 	opts.Producer = log.Step
 	opts.ProducerID = stepUUID
 	opts.DebugLogEnabled = true
-	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
+	writer := stepoutput.NewWriter(stepSecrets, opts)
 
 	return tools.EnvmanRun(
 		configs.InputEnvstorePath,
@@ -417,9 +421,8 @@ func (r WorkflowRunner) executeStep(
 		cmd,
 		timeout,
 		noOutputTimeout,
-		secrets,
 		nil,
-		&logWriter)
+		writer)
 }
 
 func (r WorkflowRunner) runStep(

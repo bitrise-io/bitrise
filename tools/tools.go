@@ -2,19 +2,19 @@ package tools
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/errorfinder"
-	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	envmanEnv "github.com/bitrise-io/envman/env"
@@ -269,35 +269,33 @@ func EnvmanClear(envStorePth string) error {
 	return envman.ClearEnvs(envStorePth)
 }
 
+type Flusher interface {
+	Flush() (int, error)
+}
+
+type ErrorParser interface {
+	ErrorMessages() []string
+}
+
 // EnvmanRun runs a command through envman.
 func EnvmanRun(envStorePth,
 	workDirPth string,
 	cmdArgs []string,
 	timeout time.Duration,
 	noOutputTimeout time.Duration,
-	secrets []string,
 	stdInPayload []byte,
-	out io.Writer,
+	outWriter io.Writer,
 ) (int, error) {
 	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
-		return 1, err
-	}
-
-	var outWriter io.Writer
-	errorFinderWriter := errorfinder.NewErrorFinder()
-	outWriter = errorFinderWriter.WrapWriter(out)
-
-	var secretRedactorWriter *filterwriter.Writer
-	if configs.IsSecretFiltering {
-		secretRedactorWriter = filterwriter.New(secrets, outWriter)
-		outWriter = secretRedactorWriter
+		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
 	var inReader io.Reader
-	inReader = os.Stdin
 	if stdInPayload != nil {
 		inReader = bytes.NewReader(stdInPayload)
+	} else {
+		inReader = os.Stdin
 	}
 
 	name := cmdArgs[0]
@@ -312,17 +310,34 @@ func EnvmanRun(envStorePth,
 	cmd.SetStandardIO(inReader, outWriter, outWriter)
 	cmd.SetEnv(append(envs, "PWD="+workDirPth))
 
-	err = cmd.Start()
+	cmdErr := cmd.Start()
 
-	// flush the writer anyway if the process is finished
-	if configs.IsSecretFiltering {
-		_, ferr := secretRedactorWriter.Flush()
-		if ferr != nil {
-			return 1, errorFinderWriter.WrapError(ferr)
+	if closer, isCloser := outWriter.(io.Closer); isCloser {
+		if err := closer.Close(); err != nil {
+			log.Warnf("Failed to close command output writer: %s", err)
 		}
 	}
 
-	return timeoutcmd.ExitStatus(err), errorFinderWriter.WrapError(err)
+	if cmdErr == nil {
+		return 0, nil
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(cmdErr, &exitErr) {
+		return 1, fmt.Errorf("executing command failed: %w", cmdErr)
+	}
+
+	exitCode := exitErr.ExitCode()
+
+	if errorParser, isErrorParser := outWriter.(ErrorParser); isErrorParser {
+		errorMessages := errorParser.ErrorMessages()
+		if len(errorMessages) > 0 {
+			lastErrorMessage := errorMessages[len(errorMessages)-1]
+			return exitCode, errors.New(lastErrorMessage)
+		}
+	}
+
+	return exitCode, exitErr
 }
 
 // ------------------
