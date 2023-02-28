@@ -17,7 +17,7 @@ var ansiEscapeCodeToLevel = map[corelog.ANSIColorCode]corelog.Level{
 	corelog.MagentaCode: corelog.DebugLevel,
 }
 
-type LogLevelWriter struct {
+type LogWriter struct {
 	mux    sync.Mutex
 	logger log.Logger
 
@@ -26,15 +26,15 @@ type LogLevelWriter struct {
 	currentChunk string
 }
 
-// NewLogLevelWriter ...
-func NewLogLevelWriter(logger log.Logger) *LogLevelWriter {
-	return &LogLevelWriter{
+// NewLogWriter ...
+func NewLogWriter(logger log.Logger) *LogWriter {
+	return &LogWriter{
 		logger: logger,
 	}
 }
 
 // TODO: handle if currentChunk is too big
-func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
+func (w *LogWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
@@ -47,10 +47,11 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	if string(w.currentColor) == "" {
 		// Start of a new message
 		color := startColorCode(chunk)
-		level, ok := ansiEscapeCodeToLevel[color]
+		level, isMessageWithLevel := ansiEscapeCodeToLevel[color]
 
-		isMessageWithLevel := ok
-		if ok {
+		if isMessageWithLevel {
+			// todo: this aims to filter out invalid messages, do we need this?
+			// todo: removeColor might removes not just the first color, while only the first and end codes should be removed
 			raw := removeColor(chunk, color)
 			if hasAnyColor(raw) {
 				isMessageWithLevel = false
@@ -61,6 +62,7 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 			// New message with log level
 			if hasColorResetSuffix(chunk) {
 				// End of a message with log level
+				// todo: trim only color suffix and prefix
 				raw := removeColor(chunk, color)
 				w.logger.LogMessage(raw, level)
 				return len(p), nil
@@ -79,6 +81,7 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	} else {
 		// Continuation of a message with potential log level
 		if hasAnyColor(chunk) {
+			// todo: this aims to filter out invalid messages, do we need this?
 			chunk = w.currentChunk + chunk
 			w.logger.LogMessage(chunk, corelog.NormalLevel)
 
@@ -109,7 +112,7 @@ func (w *LogLevelWriter) Write(p []byte) (n int, err error) {
 	}
 }
 
-func (w *LogLevelWriter) Close() error {
+func (w *LogWriter) Close() error {
 	if len(w.currentChunk) > 0 {
 		_, err := w.Write([]byte(w.currentChunk))
 		return err

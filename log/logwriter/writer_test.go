@@ -69,7 +69,7 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 				TimeProvider:      referenceTime,
 			}
 			logger := log.NewLogger(opts)
-			writer := logwriter.NewLogLevelWriter(logger)
+			writer := logwriter.NewLogWriter(logger)
 
 			b := []byte(tt.message)
 
@@ -163,7 +163,7 @@ func Test_GivenWriter_WhenMessageIsWritten_ThenParsesLogLevel(t *testing.T) {
 				TimeProvider:      referenceTime,
 			}
 			logger := log.NewLogger(opts)
-			writer := logwriter.NewLogLevelWriter(logger)
+			writer := logwriter.NewLogWriter(logger)
 
 			b := []byte(tt.message)
 
@@ -186,7 +186,7 @@ func ExampleNewLogLevelWriter() {
 		TimeProvider:      referenceTime,
 	}
 	logger := log.NewLogger(opts)
-	writer := logwriter.NewLogLevelWriter(logger)
+	writer := logwriter.NewLogWriter(logger)
 	cmd := exec.Command("echo", "test")
 	cmd.Stdout = writer
 	if err := cmd.Run(); err != nil {

@@ -153,7 +153,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	logWriter := logwriter.NewLogLevelWriter(logger)
+	logWriter := logwriter.NewLogWriter(logger)
 
 	_, err = tools.EnvmanRun(
 		pluginEnvstorePath,
