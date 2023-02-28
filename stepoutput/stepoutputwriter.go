@@ -12,16 +12,16 @@ import (
 type Writer struct {
 	writer io.Writer
 
-	secretWriter   *filterwriter.Writer
-	errorWriter    *errorfinder.ErrorFinder
-	logLevelWriter *logwriter.LogLevelWriter
+	secretWriter *filterwriter.Writer
+	errorWriter  *errorfinder.ErrorFinder
+	logWriter    logwriter.LogWriter
 }
 
 func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	var outWriter io.Writer
 
-	logLevelWriter := logwriter.NewLogLevelWriter(log.NewLogger(opts))
-	outWriter = logLevelWriter
+	logWriter := logwriter.NewLogWriter(log.NewLogger(opts))
+	outWriter = logWriter
 
 	errorWriter := errorfinder.NewErrorFinder(outWriter, opts.TimeProvider)
 	outWriter = errorWriter
@@ -35,9 +35,9 @@ func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
 	return Writer{
 		writer: outWriter,
 
-		secretWriter:   secretWriter,
-		errorWriter:    errorWriter,
-		logLevelWriter: logLevelWriter,
+		secretWriter: secretWriter,
+		errorWriter:  errorWriter,
+		logWriter:    logWriter,
 	}
 }
 
@@ -52,11 +52,7 @@ func (w Writer) Close() error {
 		}
 	}
 
-	if err := w.errorWriter.Close(); err != nil {
-		return err
-	}
-
-	return w.logLevelWriter.Close()
+	return w.errorWriter.Close()
 }
 
 func (w Writer) ErrorMessages() []string {
