@@ -45,10 +45,9 @@ func New(secrets []string, target io.Writer) *Writer {
 
 // Write implements io.Writer interface.
 // Splits p into lines, the lines are matched against the secrets,
-// this determines which lines can be redacted and written into the buffer.
-// There are may lines which needs to be stored, since they are partial matching to a secret.
-// Since we do not know which is the last call of Write we need to call Flush
-// on buffer to write the remaining lines.
+// this determines which lines can be redacted and passed to the next writer (target).
+// There might be lines that need to be buffered since they partially match a secret.
+// We do not know the last Write call, so Close needs to be called to flush the buffer.
 func (w *Writer) Write(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil
@@ -57,7 +56,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
-	// previous bytes may not ended with newline
+	// previous bytes may not end with newline
 	data := append(w.chunk, p...)
 
 	lastLines, chunk := splitAfterNewline(data)
@@ -225,7 +224,7 @@ func (w *Writer) matchLines(lines [][]byte, partialMatchIndexes map[int]bool) ([
 	first := w.linesToKeepRange(partialMatchIndexes)
 	switch first {
 	case -1:
-		// no lines needs to be kept
+		// no lines need to be kept
 		return lines, nil
 	case 0:
 		// partial match is always longer then the lines
