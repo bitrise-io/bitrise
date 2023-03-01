@@ -63,8 +63,16 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 	[0m
 */
 
+func (w *LogWriter) logMessage(chunk string, color corelog.ANSIColorCode, level corelog.Level) {
+	if level != corelog.NormalLevel {
+		chunk = removeColor(chunk, color)
+	}
+	w.logger.LogMessage(chunk, level)
+}
+
+// processLog identifies messages with log level in the incoming data stream.
 func (w *LogWriter) processLog(chunk string) {
-	if string(w.currentColor) == "" {
+	if string(w.currentChunk) == "" {
 		// Start of a new message
 		color := startColorCode(chunk)
 		level, isMessageWithLevel := ansiEscapeCodeToLevel[color]
@@ -73,42 +81,40 @@ func (w *LogWriter) processLog(chunk string) {
 			// New message with log level
 			if hasColorResetSuffix(chunk) {
 				// End of a message with log level
-				raw := removeColor(chunk, color)
-				w.logger.LogMessage(raw, level)
+				w.logMessage(chunk, color, level)
 			} else {
-				// Message with log level might be written in multiple chunks
+				// Start buffering the message
 				w.currentColor = color
 				w.currentLevel = level
 				w.currentChunk = chunk
 			}
 		} else {
 			// New message without a log level
-			w.logger.LogMessage(chunk, corelog.NormalLevel)
+			w.logMessage(chunk, "", corelog.NormalLevel)
 		}
 	} else {
 		// Continuation of a message with potential log level
 		if hasColorResetPrefix(chunk) {
-			// Our log package adds a newline and then the color reset code for colored messages
-			chunk = w.currentChunk
-			raw := removeColor(chunk, w.currentColor)
-			w.logger.LogMessage(raw, w.currentLevel)
+			// End of message with newline and color reset at the end.
+			w.logMessage(w.currentChunk, w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
 			w.currentChunk = ""
 
-			w.processLog(chunk)
+			// Chunk might contain a new message
+			if trimColorResetPrefix(chunk) != "" {
+				w.processLog(chunk)
+			}
 		} else if hasColorResetSuffix(chunk) {
-			// End of a message with log level
-			chunk = w.currentChunk + chunk
-			raw := removeColor(chunk, w.currentColor)
-			w.logger.LogMessage(raw, w.currentLevel)
+			// End of a message with color reset at the end.
+			w.logMessage(w.currentChunk+chunk, w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
 			w.currentChunk = ""
 		} else {
-			// Message with log level might be written in multiple chunks
+			// Continue buffering the message
 			w.currentChunk = w.currentChunk + chunk
 		}
 	}
@@ -137,6 +143,10 @@ func startColorCode(s string) corelog.ANSIColorCode {
 
 func hasColorResetPrefix(s string) bool {
 	return strings.HasPrefix(s, string(corelog.ResetCode))
+}
+
+func trimColorResetPrefix(s string) string {
+	return strings.TrimPrefix(s, string(corelog.ResetCode))
 }
 
 func hasColorResetSuffix(s string) bool {
