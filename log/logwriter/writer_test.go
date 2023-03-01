@@ -18,6 +18,161 @@ func referenceTime() time.Time {
 	return time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
 }
 
+func TestWriteJSONLog(t *testing.T) {
+	tests := []struct {
+		name             string
+		messages         []string
+		expectedMessages []string
+	}{
+		{
+			name:             "Writes messages with Normal log level by default",
+			messages:         []string{"Hello Bitrise!"},
+			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n"},
+		},
+		{
+			name:             "Detects log level",
+			messages:         []string{"\u001B[34;1mLogin to the service\u001B[0m"},
+			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n"},
+		},
+		{
+			name: "Detects a log level in a message stream",
+			messages: []string{
+				"\u001B[35;1mdetected login method:",
+				"- API key",
+				"- username\u001B[0m",
+			},
+			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n"},
+		},
+		{
+			name: "Detects multiple messages with log level in the message stream",
+			messages: []string{
+				"Hello Bitrise!",
+				"\u001B[35;1mdetected login method:",
+				"- API key",
+				"- username\u001B[0m",
+				"\u001B[34;1mLogin to the service\u001B[0m",
+			},
+			expectedMessages: []string{
+				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n",
+				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n",
+				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+
+			opts := log.LoggerOpts{
+				LoggerType:        log.JSONLogger,
+				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
+				DebugLogEnabled:   true,
+				Writer:            &buf,
+				TimeProvider:      referenceTime,
+			}
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
+
+			var actualMessages []string
+			for _, message := range tt.messages {
+				b := []byte(message)
+
+				_, err := writer.Write(b)
+				assert.NoError(t, err)
+
+				actualMessage := buf.String()
+				buf.Reset()
+				if actualMessage != "" {
+					actualMessages = append(actualMessages, actualMessage)
+				}
+			}
+
+			err := writer.Close()
+			require.NoError(t, err)
+
+			require.Equal(t, tt.expectedMessages, actualMessages)
+		})
+	}
+}
+
+func TestWrite(t *testing.T) {
+	tests := []struct {
+		name             string
+		messages         []string
+		expectedMessages []string
+	}{
+		{
+			name:             "Writes messages without log level as it is",
+			messages:         []string{"Hello Bitrise!"},
+			expectedMessages: []string{"Hello Bitrise!"},
+		},
+		{
+			name:             "Writes messages with log level as it is",
+			messages:         []string{"\u001B[34;1mLogin to the service\u001B[0m"},
+			expectedMessages: []string{"\u001B[34;1mLogin to the service\u001B[0m"},
+		},
+		{
+			name: "Detects a message with log level in the message stream",
+			messages: []string{
+				"\u001B[35;1mdetected login method:",
+				"- API key",
+				"- username\u001B[0m",
+			},
+			expectedMessages: []string{"\u001B[35;1mdetected login method:\n- API key\n- username\u001B[0m"},
+		},
+		{
+			name: "Detects multiple messages with log level in the message stream",
+			messages: []string{
+				"Hello Bitrise!",
+				"\u001B[35;1mdetected login method:",
+				"- API key",
+				"- username\u001B[0m",
+				"\u001B[34;1mLogin to the service\u001B[0m",
+			},
+			expectedMessages: []string{
+				"Hello Bitrise!",
+				"\u001B[35;1mdetected login method:\n- API key\n- username\u001B[0m",
+				"\u001B[34;1mLogin to the service\u001B[0m",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+
+			opts := log.LoggerOpts{
+				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
+				DebugLogEnabled:   true,
+				Writer:            &buf,
+				TimeProvider:      referenceTime,
+			}
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
+
+			var actualMessages []string
+			for _, message := range tt.messages {
+				b := []byte(message)
+
+				_, err := writer.Write(b)
+				assert.NoError(t, err)
+
+				actualMessage := buf.String()
+				buf.Reset()
+				if actualMessage != "" {
+					actualMessages = append(actualMessages, actualMessage)
+				}
+			}
+
+			err := writer.Close()
+			require.NoError(t, err)
+
+			require.Equal(t, tt.expectedMessages, actualMessages)
+		})
+	}
+}
+
 func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 	tests := []struct {
 		name            string

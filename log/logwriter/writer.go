@@ -20,9 +20,9 @@ type LogWriter struct {
 	mux    sync.Mutex
 	logger log.Logger
 
-	currentColor corelog.ANSIColorCode
-	currentLevel corelog.Level
-	currentChunk string
+	currentColor     corelog.ANSIColorCode
+	currentLevel     corelog.Level
+	bufferedMessages []string
 }
 
 // NewLogWriter ...
@@ -72,7 +72,7 @@ func (w *LogWriter) logMessage(chunk string, color corelog.ANSIColorCode, level 
 
 // processLog identifies messages with log level in the incoming data stream.
 func (w *LogWriter) processLog(chunk string) {
-	if string(w.currentChunk) == "" {
+	if len(w.bufferedMessages) == 0 {
 		// Start of a new message
 		color := startColorCode(chunk)
 		level, isMessageWithLevel := ansiEscapeCodeToLevel[color]
@@ -86,7 +86,7 @@ func (w *LogWriter) processLog(chunk string) {
 				// Start buffering the message
 				w.currentColor = color
 				w.currentLevel = level
-				w.currentChunk = chunk
+				w.bufferedMessages = []string{chunk}
 			}
 		} else {
 			// New message without a log level
@@ -96,11 +96,12 @@ func (w *LogWriter) processLog(chunk string) {
 		// Continuation of a message with potential log level
 		if hasColorResetPrefix(chunk) {
 			// End of message with newline and color reset at the end.
-			w.logMessage(w.currentChunk, w.currentColor, w.currentLevel)
+
+			w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
-			w.currentChunk = ""
+			w.bufferedMessages = nil
 
 			// Chunk might contain a new message
 			if trimColorResetPrefix(chunk) != "" {
@@ -108,22 +109,26 @@ func (w *LogWriter) processLog(chunk string) {
 			}
 		} else if hasColorResetSuffix(chunk) {
 			// End of a message with color reset at the end.
-			w.logMessage(w.currentChunk+chunk, w.currentColor, w.currentLevel)
+			w.bufferedMessages = append(w.bufferedMessages, chunk)
+			w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
-			w.currentChunk = ""
+			w.bufferedMessages = nil
 		} else {
 			// Continue buffering the message
-			w.currentChunk = w.currentChunk + chunk
+			w.bufferedMessages = append(w.bufferedMessages, chunk)
 		}
 	}
 }
 
 func (w *LogWriter) Close() error {
-	if len(w.currentChunk) > 0 {
-		_, err := w.Write([]byte(w.currentChunk))
-		return err
+	if len(w.bufferedMessages) > 0 {
+		w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
+
+		w.currentColor = ""
+		w.currentLevel = ""
+		w.bufferedMessages = nil
 	}
 	return nil
 }
