@@ -3,7 +3,6 @@ package logwriter
 import (
 	"strings"
 	"sync"
-	"unicode"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/corelog"
@@ -34,6 +33,7 @@ func NewLogWriter(logger log.Logger) *LogWriter {
 }
 
 // TODO: handle if currentChunk is too big
+
 func (w *LogWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
@@ -43,59 +43,53 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 	defer w.mux.Unlock()
 
 	chunk := string(p)
+	w.processLog(chunk)
+	return len(p), nil
+}
 
+/*
+	A message might start with the color code and end with the reset code:
+	[34;1m[MSG_START_1]Login to the service[MSG_END_1][0m`
+
+	or might end with a newline and reset code (because our log package adds a newline and then the color reset code):
+	[34;1m[MSG_START_1]Login to the service[MSG_END_1]
+	[0m
+
+	this results in subsequent messages starting with a reset code:
+	[34;1m[MSG_START_1]Login to the service[MSG_END_1]
+	[0m[35;1m[MSG_START_2]detected login method:
+	- API key
+	- username (bitrise-bot@email.com)[MSG_END_2]
+	[0m
+*/
+
+func (w *LogWriter) processLog(chunk string) {
 	if string(w.currentColor) == "" {
 		// Start of a new message
 		color := startColorCode(chunk)
 		level, isMessageWithLevel := ansiEscapeCodeToLevel[color]
 
 		if isMessageWithLevel {
-			// todo: this aims to filter out invalid messages, do we need this?
-			// todo: removeColor might removes not just the first color, while only the first and end codes should be removed
-			raw := removeColor(chunk, color)
-			if hasAnyColor(raw) {
-				isMessageWithLevel = false
-			}
-		}
-
-		if isMessageWithLevel {
 			// New message with log level
 			if hasColorResetSuffix(chunk) {
 				// End of a message with log level
-				// todo: trim only color suffix and prefix
 				raw := removeColor(chunk, color)
 				w.logger.LogMessage(raw, level)
-				return len(p), nil
 			} else {
 				// Message with log level might be written in multiple chunks
 				w.currentColor = color
 				w.currentLevel = level
 				w.currentChunk = chunk
-				return len(p), nil
 			}
 		} else {
 			// New message without a log level
 			w.logger.LogMessage(chunk, corelog.NormalLevel)
-			return len(p), nil
 		}
 	} else {
 		// Continuation of a message with potential log level
-		if hasAnyColor(chunk) {
-			// todo: this aims to filter out invalid messages, do we need this?
-			chunk = w.currentChunk + chunk
-			w.logger.LogMessage(chunk, corelog.NormalLevel)
-
-			w.currentColor = ""
-			w.currentLevel = ""
-			w.currentChunk = ""
-
-			return len(p), nil
-		}
-
-		if hasColorResetSuffix(chunk) {
-			// End of a message with log level
-			chunk = w.currentChunk + chunk
-
+		if hasColorResetPrefix(chunk) {
+			// Our log package adds a newline and then the color reset code for colored messages
+			chunk = w.currentChunk
 			raw := removeColor(chunk, w.currentColor)
 			w.logger.LogMessage(raw, w.currentLevel)
 
@@ -103,11 +97,19 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 			w.currentLevel = ""
 			w.currentChunk = ""
 
-			return len(p), nil
+			w.processLog(chunk)
+		} else if hasColorResetSuffix(chunk) {
+			// End of a message with log level
+			chunk = w.currentChunk + chunk
+			raw := removeColor(chunk, w.currentColor)
+			w.logger.LogMessage(raw, w.currentLevel)
+
+			w.currentColor = ""
+			w.currentLevel = ""
+			w.currentChunk = ""
 		} else {
 			// Message with log level might be written in multiple chunks
 			w.currentChunk = w.currentChunk + chunk
-			return len(p), nil
 		}
 	}
 }
@@ -121,6 +123,8 @@ func (w *LogWriter) Close() error {
 }
 
 func startColorCode(s string) corelog.ANSIColorCode {
+	s = strings.TrimPrefix(s, string(corelog.ResetCode))
+
 	var colorCode corelog.ANSIColorCode
 	for code := range ansiEscapeCodeToLevel {
 		if strings.HasPrefix(s, string(code)) {
@@ -131,21 +135,17 @@ func startColorCode(s string) corelog.ANSIColorCode {
 	return colorCode
 }
 
-func hasAnyColor(s string) bool {
-	for code := range ansiEscapeCodeToLevel {
-		if strings.Contains(s, string(code)) {
-			return true
-		}
-	}
-	return false
+func hasColorResetPrefix(s string) bool {
+	return strings.HasPrefix(s, string(corelog.ResetCode))
 }
 
 func hasColorResetSuffix(s string) bool {
-	trimmed := strings.TrimRightFunc(s, unicode.IsSpace)
-	return strings.HasSuffix(trimmed, string(corelog.ResetCode))
+	return strings.HasSuffix(s, string(corelog.ResetCode))
 }
 
 func removeColor(s string, color corelog.ANSIColorCode) string {
-	cleaned := strings.Replace(s, string(color), "", 1)
-	return strings.Replace(cleaned, string(corelog.ResetCode), "", 1)
+	s = strings.TrimPrefix(s, string(corelog.ResetCode))
+	s = strings.TrimPrefix(s, string(color))
+	s = strings.TrimSuffix(s, string(corelog.ResetCode))
+	return s
 }
