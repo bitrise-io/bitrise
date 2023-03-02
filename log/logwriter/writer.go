@@ -60,6 +60,10 @@ func (w *LogWriter) Close() error {
 }
 
 /*
+	A message is considered with log level if:
+	- starts with one of the known ANSI color codes
+	- ends with a color reset ANSI code
+
 	A message might start with the color code and end with the reset code:
 	[34;1m[MSG_START_1]Login to the service[MSG_END_1][0m`
 
