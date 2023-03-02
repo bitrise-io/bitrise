@@ -8,15 +8,10 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func referenceTime() time.Time {
-	return time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
-}
 
 func TestWriteJSONLog(t *testing.T) {
 	tests := []struct {
@@ -27,12 +22,12 @@ func TestWriteJSONLog(t *testing.T) {
 		{
 			name:             "Writes messages with Normal log level by default",
 			messages:         []string{"Hello Bitrise!"},
-			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n"},
+			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n"},
 		},
 		{
 			name:             "Detects log level",
 			messages:         []string{"\u001B[34;1mLogin to the service\u001B[0m"},
-			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n"},
+			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n"},
 		},
 		{
 			name: "Detects a log level in a message stream",
@@ -41,7 +36,7 @@ func TestWriteJSONLog(t *testing.T) {
 				"- API key",
 				"- username\u001B[0m",
 			},
-			expectedMessages: []string{`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n"},
+			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n"},
 		},
 		{
 			name: "Detects multiple messages with log level in the message stream",
@@ -53,9 +48,9 @@ func TestWriteJSONLog(t *testing.T) {
 				"\u001B[34;1mLogin to the service\u001B[0m",
 			},
 			expectedMessages: []string{
-				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n",
-				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n",
-				`{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n",
+				`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"Hello Bitrise!"}` + "\n",
+				`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n",
+				`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"info","message":"Login to the service"}` + "\n",
 			},
 		},
 	}
@@ -69,7 +64,9 @@ func TestWriteJSONLog(t *testing.T) {
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
 				Writer:            &buf,
-				TimeProvider:      referenceTime,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
 			}
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
@@ -146,7 +143,9 @@ func TestWrite(t *testing.T) {
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
 				Writer:            &buf,
-				TimeProvider:      referenceTime,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
 			}
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
@@ -193,7 +192,7 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 			producer:        log.Step,
 			loggerType:      log.JSONLogger,
 			message:         "Test message",
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"step","level":"normal","message":"Test message"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"step","level":"normal","message":"Test message"}` + "\n",
 		},
 		{
 			name:            "Empty step JSON log",
@@ -207,7 +206,7 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 			producer:        log.Step,
 			loggerType:      log.JSONLogger,
 			message:         "\n",
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"step","level":"normal","message":"\n"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"step","level":"normal","message":"\n"}` + "\n",
 		},
 	}
 
@@ -221,7 +220,9 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
 				Writer:            &buf,
-				TimeProvider:      referenceTime,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
 			}
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
@@ -239,70 +240,58 @@ func Test_GivenWriter_WhenMessageIsWritten_ThenParsesLogLevel(t *testing.T) {
 	tests := []struct {
 		name            string
 		message         string
-		expectedLevel   corelog.Level
 		expectedMessage string
 	}{
 		{
-			name:          "Normal message without a color literal",
-			message:       "This is a normal message without a color literal\n",
-			expectedLevel: corelog.NormalLevel,
-			//expectedMessage: "This is a normal message without a color literal\n",
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"This is a normal message without a color literal\n"}` + "\n",
+			name:            "Normal message without a color literal",
+			message:         "This is a normal message without a color literal\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"This is a normal message without a color literal\n"}` + "\n",
 		},
 
 		{
 			name:            "Error message",
 			message:         "\u001B[31;1mThis is an error\u001B[0m",
-			expectedLevel:   corelog.ErrorLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"error","message":"This is an error"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"error","message":"This is an error"}` + "\n",
 		},
 		{
 			name:            "Warn message",
 			message:         "\u001B[33;1mThis is a warning\u001B[0m",
-			expectedLevel:   corelog.WarnLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"warn","message":"This is a warning"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"warn","message":"This is a warning"}` + "\n",
 		},
 		{
 			name:            "Info message",
 			message:         "\u001B[34;1mThis is an Info\u001B[0m",
-			expectedLevel:   corelog.InfoLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"info","message":"This is an Info"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"info","message":"This is an Info"}` + "\n",
 		},
 		{
 			name:            "Done message",
 			message:         "\u001B[32;1mThis is a done message\u001B[0m",
-			expectedLevel:   corelog.DoneLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"done","message":"This is a done message"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"done","message":"This is a done message"}` + "\n",
 		},
 		{
 			name:            "Debug message",
 			message:         "\u001B[35;1mThis is a debug message\u001B[0m",
-			expectedLevel:   corelog.DebugLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"debug","message":"This is a debug message"}` + "\n",
-		},
-		{
-			name:            "Error message with whitespaces at the end",
-			message:         "\u001B[31;1mLast error\u001B[0m   \n",
-			expectedLevel:   corelog.ErrorLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"error","message":"Last error   \n"}` + "\n",
-		},
-		{
-			name:            "Error message with whitespaces at the beginning",
-			message:         "  \u001B[31;1mLast error\u001B[0m   \n",
-			expectedLevel:   corelog.NormalLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"  \u001b[31;1mLast error\u001b[0m   \n"}` + "\n",
-		},
-		{
-			name:            "Error message without a closing color literal",
-			message:         "\u001B[31;1mAnother error\n",
-			expectedLevel:   corelog.NormalLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"\u001b[31;1mAnother error\n\u001b[31;1mAnother error\n"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"debug","message":"This is a debug message"}` + "\n",
 		},
 		{
 			name:            "Info message with multiple embedded colors",
 			message:         "\u001B[34;1mThis is \u001B[33;1mmulti color \u001B[31;1mInfo message\u001B[0m",
-			expectedLevel:   corelog.NormalLevel,
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"","level":"normal","message":"\u001b[34;1mThis is \u001b[33;1mmulti color \u001b[31;1mInfo message\u001b[0m"}` + "\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"info","message":"This is \u001b[33;1mmulti color \u001b[31;1mInfo message"}` + "\n",
+		},
+		{
+			name:            "Error message with whitespaces at the end (not a message with log level)",
+			message:         "\u001B[31;1mLast error\u001B[0m   \n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\u001b[31;1mLast error\u001b[0m   \n"}` + "\n",
+		},
+		{
+			name:            "Error message with whitespaces at the beginning (not a message with log level)",
+			message:         "  \u001B[31;1mLast error\u001B[0m   \n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"  \u001b[31;1mLast error\u001b[0m   \n"}` + "\n",
+		},
+		{
+			name:            "Error message without a closing color literal (not a message with log level)",
+			message:         "\u001B[31;1mAnother error\n",
+			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\u001b[31;1mAnother error\n"}` + "\n",
 		},
 	}
 
@@ -315,7 +304,9 @@ func Test_GivenWriter_WhenMessageIsWritten_ThenParsesLogLevel(t *testing.T) {
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
 				Writer:            &buf,
-				TimeProvider:      referenceTime,
+				TimeProvider: func() time.Time {
+					return time.Time{}
+				},
 			}
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
@@ -338,7 +329,9 @@ func ExampleNewLogLevelWriter() {
 		ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 		DebugLogEnabled:   true,
 		Writer:            os.Stdout,
-		TimeProvider:      referenceTime,
+		TimeProvider: func() time.Time {
+			return time.Time{}
+		},
 	}
 	logger := log.NewLogger(opts)
 	writer := logwriter.NewLogWriter(logger)
@@ -347,5 +340,5 @@ func ExampleNewLogLevelWriter() {
 	if err := cmd.Run(); err != nil {
 		panic(err)
 	}
-	// Output: {"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"bitrise_cli","level":"normal","message":"test\n"}
+	// Output: {"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"bitrise_cli","level":"normal","message":"test\n"}
 }

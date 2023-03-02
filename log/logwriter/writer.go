@@ -47,6 +47,18 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+func (w *LogWriter) Close() error {
+	if len(w.bufferedMessages) > 0 {
+		// Color reset code doesn't found so far -> not a message with log level
+		w.logMessages(w.bufferedMessages, "", corelog.NormalLevel)
+
+		w.currentColor = ""
+		w.currentLevel = ""
+		w.bufferedMessages = nil
+	}
+	return nil
+}
+
 /*
 	A message might start with the color code and end with the reset code:
 	[34;1m[MSG_START_1]Login to the service[MSG_END_1][0m`
@@ -62,14 +74,6 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 	- username (bitrise-bot@email.com)[MSG_END_2]
 	[0m
 */
-
-func (w *LogWriter) logMessage(chunk string, color corelog.ANSIColorCode, level corelog.Level) {
-	if level != corelog.NormalLevel {
-		chunk = removeColor(chunk, color)
-	}
-	w.logger.LogMessage(chunk, level)
-}
-
 // processLog identifies messages with log level in the incoming data stream.
 func (w *LogWriter) processLog(chunk string) {
 	if len(w.bufferedMessages) == 0 {
@@ -81,7 +85,7 @@ func (w *LogWriter) processLog(chunk string) {
 			// New message with log level
 			if hasColorResetSuffix(chunk) {
 				// End of a message with log level
-				w.logMessage(chunk, color, level)
+				w.logMessages([]string{chunk}, color, level)
 			} else {
 				// Start buffering the message
 				w.currentColor = color
@@ -90,14 +94,14 @@ func (w *LogWriter) processLog(chunk string) {
 			}
 		} else {
 			// New message without a log level
-			w.logMessage(chunk, "", corelog.NormalLevel)
+			w.logMessages([]string{chunk}, "", corelog.NormalLevel)
 		}
 	} else {
 		// Continuation of a message with potential log level
 		if hasColorResetPrefix(chunk) {
 			// End of message with newline and color reset at the end.
 
-			w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
+			w.logMessages(w.bufferedMessages, w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
@@ -110,7 +114,7 @@ func (w *LogWriter) processLog(chunk string) {
 		} else if hasColorResetSuffix(chunk) {
 			// End of a message with color reset at the end.
 			w.bufferedMessages = append(w.bufferedMessages, chunk)
-			w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
+			w.logMessages(w.bufferedMessages, w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
@@ -122,15 +126,17 @@ func (w *LogWriter) processLog(chunk string) {
 	}
 }
 
-func (w *LogWriter) Close() error {
-	if len(w.bufferedMessages) > 0 {
-		w.logMessage(strings.Join(w.bufferedMessages, "\n"), w.currentColor, w.currentLevel)
-
-		w.currentColor = ""
-		w.currentLevel = ""
-		w.bufferedMessages = nil
+func (w *LogWriter) logMessages(messages []string, color corelog.ANSIColorCode, level corelog.Level) {
+	if level == corelog.NormalLevel {
+		// Messages without log level aren't modified
+		for _, message := range messages {
+			w.logger.LogMessage(message, level)
+		}
+	} else {
+		message := strings.Join(messages, "\n")
+		message = removeColor(message, color)
+		w.logger.LogMessage(message, level)
 	}
-	return nil
 }
 
 func startColorCode(s string) corelog.ANSIColorCode {
