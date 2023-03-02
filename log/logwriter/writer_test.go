@@ -1,7 +1,7 @@
 package logwriter_test
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,46 +13,60 @@ import (
 
 func Test_GivenWriter(t *testing.T) {
 	tests := []struct {
-		name            string
-		loggerType      log.LoggerType
-		message         string
-		expectedMessage string
+		name             string
+		loggerType       log.LoggerType
+		messages         []string
+		expectedMessages []string
 	}{
 		{
-			name:            "Empty message, console logging",
-			loggerType:      log.ConsoleLogger,
-			message:         "",
-			expectedMessage: "",
+			name:             "Empty message, console logging",
+			loggerType:       log.ConsoleLogger,
+			messages:         []string{""},
+			expectedMessages: nil,
 		},
 		{
-			name:            "New line message, console logging",
-			loggerType:      log.ConsoleLogger,
-			message:         "\n",
-			expectedMessage: "\n",
+			name:             "New line message, console logging",
+			loggerType:       log.ConsoleLogger,
+			messages:         []string{"\n"},
+			expectedMessages: []string{"\n"},
 		},
 		{
-			name:            "Empty message, JSON logging",
-			loggerType:      log.JSONLogger,
-			message:         "",
-			expectedMessage: "",
+			name:             "Empty message, JSON logging",
+			loggerType:       log.JSONLogger,
+			messages:         []string{""},
+			expectedMessages: nil,
 		},
 		{
-			name:            "New line message, json logging",
-			loggerType:      log.JSONLogger,
-			message:         "\n",
-			expectedMessage: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\n"}` + "\n",
+			name:             "New line message, json logging",
+			loggerType:       log.JSONLogger,
+			messages:         []string{"\n"},
+			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\n"}` + "\n"},
+		},
+		{
+			name:       "Message buffer has a max capacity",
+			loggerType: log.ConsoleLogger,
+			messages: []string{
+				"\u001B[31;1mLast error\u001B[0m   \n", // this triggers buffering
+				strings.Repeat("0", int(logwriter.MaxMessageSize)-36),
+				"This message overflows",
+			},
+			expectedMessages: []string{
+				"\u001B[31;1mLast error\u001B[0m   \n",
+				strings.Repeat("0", int(logwriter.MaxMessageSize)-36),
+				"This message overflows",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var buf bytes.Buffer
+			testWriter := &TestWriter{}
 
 			opts := log.LoggerOpts{
 				LoggerType:        tt.loggerType,
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
-				Writer:            &buf,
+				Writer:            testWriter,
 				TimeProvider: func() time.Time {
 					return time.Time{}
 				},
@@ -60,11 +74,16 @@ func Test_GivenWriter(t *testing.T) {
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
 
-			b := []byte(tt.message)
+			for _, message := range tt.messages {
+				b := []byte(message)
 
-			_, err := writer.Write(b)
-			assert.NoError(t, err)
-			require.Equal(t, tt.expectedMessage, buf.String())
+				_, err := writer.Write(b)
+				assert.NoError(t, err)
+			}
+
+			err := writer.Close()
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedMessages, testWriter.messages)
 		})
 	}
 }
@@ -128,13 +147,13 @@ func Test_GivenWriter_WhenJSONLogging_ThenDetectsLogLevel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var buf bytes.Buffer
+			testWriter := &TestWriter{}
 
 			opts := log.LoggerOpts{
 				LoggerType:        log.JSONLogger,
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
-				Writer:            &buf,
+				Writer:            testWriter,
 				TimeProvider: func() time.Time {
 					return time.Time{}
 				},
@@ -142,30 +161,16 @@ func Test_GivenWriter_WhenJSONLogging_ThenDetectsLogLevel(t *testing.T) {
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
 
-			var actualMessages []string
 			for _, message := range tt.messages {
 				b := []byte(message)
 
 				_, err := writer.Write(b)
 				assert.NoError(t, err)
-
-				actualMessage := buf.String()
-				buf.Reset()
-				if actualMessage != "" {
-					actualMessages = append(actualMessages, actualMessage)
-				}
 			}
 
 			err := writer.Close()
 			require.NoError(t, err)
-
-			actualMessage := buf.String()
-			buf.Reset()
-			if actualMessage != "" {
-				actualMessages = append(actualMessages, actualMessage)
-			}
-
-			require.Equal(t, tt.expectedMessages, actualMessages)
+			require.Equal(t, tt.expectedMessages, testWriter.messages)
 		})
 	}
 }
@@ -214,12 +219,12 @@ func Test_GivenWriter_WhenConsoleLogging_ThenDetectsLogLevel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var buf bytes.Buffer
+			testWriter := &TestWriter{}
 
 			opts := log.LoggerOpts{
 				ConsoleLoggerOpts: log.ConsoleLoggerOpts{},
 				DebugLogEnabled:   true,
-				Writer:            &buf,
+				Writer:            testWriter,
 				TimeProvider: func() time.Time {
 					return time.Time{}
 				},
@@ -227,24 +232,26 @@ func Test_GivenWriter_WhenConsoleLogging_ThenDetectsLogLevel(t *testing.T) {
 			logger := log.NewLogger(opts)
 			writer := logwriter.NewLogWriter(logger)
 
-			var actualMessages []string
 			for _, message := range tt.messages {
 				b := []byte(message)
 
 				_, err := writer.Write(b)
 				assert.NoError(t, err)
-
-				actualMessage := buf.String()
-				buf.Reset()
-				if actualMessage != "" {
-					actualMessages = append(actualMessages, actualMessage)
-				}
 			}
 
 			err := writer.Close()
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedMessages, actualMessages)
+			require.Equal(t, tt.expectedMessages, testWriter.messages)
 		})
 	}
+}
+
+type TestWriter struct {
+	messages []string
+}
+
+func (t *TestWriter) Write(p []byte) (int, error) {
+	t.messages = append(t.messages, string(p))
+	return len(p), nil
 }

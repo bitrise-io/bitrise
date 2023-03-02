@@ -8,6 +8,8 @@ import (
 	"github.com/bitrise-io/bitrise/log/corelog"
 )
 
+const MaxMessageSize uint64 = 32 * 1024
+
 var ansiEscapeCodeToLevel = map[corelog.ANSIColorCode]corelog.Level{
 	corelog.RedCode:     corelog.ErrorLevel,
 	corelog.YellowCode:  corelog.WarnLevel,
@@ -98,7 +100,6 @@ func (w *LogWriter) processLog(chunk string) {
 		// Continuation of a message with potential log level
 		if hasColorResetPrefix(chunk) {
 			// End of message with newline and color reset at the end.
-
 			w.logMessages(w.bufferedMessages, w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
@@ -111,16 +112,22 @@ func (w *LogWriter) processLog(chunk string) {
 			}
 		} else if hasColorResetSuffix(chunk) {
 			// End of a message with color reset at the end.
-			w.bufferedMessages = append(w.bufferedMessages, chunk)
-			w.logMessages(w.bufferedMessages, w.currentColor, w.currentLevel)
+			w.logMessages(append(w.bufferedMessages, chunk), w.currentColor, w.currentLevel)
 
 			w.currentColor = ""
 			w.currentLevel = ""
 			w.bufferedMessages = nil
 		} else {
 			// Continue buffering the message
-			// TODO: if the writer starts buffering messages unnecessarily writing logs might delayed and buffer can grow infinitely
-			w.bufferedMessages = append(w.bufferedMessages, chunk)
+			if w.isThereCapacityToBuffer(chunk) {
+				w.bufferedMessages = append(w.bufferedMessages, chunk)
+			} else {
+				w.logMessages(append(w.bufferedMessages, chunk), "", corelog.NormalLevel)
+
+				w.currentColor = ""
+				w.currentLevel = ""
+				w.bufferedMessages = nil
+			}
 		}
 	}
 }
@@ -136,6 +143,16 @@ func (w *LogWriter) logMessages(messages []string, color corelog.ANSIColorCode, 
 		message = removeColor(message, color)
 		w.logger.LogMessage(message, level)
 	}
+}
+
+func (w *LogWriter) isThereCapacityToBuffer(chunk string) bool {
+	var bufferedMessagesSize uint64
+	for _, message := range w.bufferedMessages {
+		bufferedMessagesSize += uint64(len(message))
+	}
+	currentSize := uint64(len(chunk))
+	currentSize += bufferedMessagesSize
+	return currentSize <= MaxMessageSize
 }
 
 func startColorCode(s string) corelog.ANSIColorCode {
