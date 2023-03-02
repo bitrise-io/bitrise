@@ -109,15 +109,16 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testin
 	}{
 		{
 			name:     "Simple log",
-			messages: []string{"failed to create file artifact: /bitrise/src/assets"},
-			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"normal","message":"failed to create file artifact: /bitrise/src/assets"}
+			messages: []string{"failed to create file artifact: /bitrise/src/assets\n"},
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"normal","message":"failed to create file artifact: /bitrise/src/assets\n"}
 `,
 		},
 		{
 			name: "Error log",
 			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
-  failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
-			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets"}
+  failed to get file size, error: file not exist at: /bitrise/src/assets[0m
+`},
+			want: `{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"Test","producer_id":"UUID","level":"error","message":"failed to create file artifact: /bitrise/src/assets:\n  failed to get file size, error: file not exist at: /bitrise/src/assets\n"}
 `,
 		},
 		{

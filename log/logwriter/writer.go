@@ -111,7 +111,8 @@ func (w *LogWriter) processLog(chunk string) {
 			w.bufferedMessages = nil
 
 			// Chunk might contain a new message
-			if trimColorResetPrefix(chunk) != "" {
+			chunk = trimColorResetPrefix(chunk)
+			if chunk != "" {
 				w.processLog(chunk)
 			}
 		} else if hasColorResetSuffix(chunk) {
@@ -143,7 +144,7 @@ func (w *LogWriter) logMessages(messages []string, color corelog.ANSIColorCode, 
 			w.logger.LogMessage(message, level)
 		}
 	} else {
-		message := strings.Join(messages, "\n")
+		message := strings.Join(messages, "")
 		message = removeColor(message, color)
 		w.logger.LogMessage(message, level)
 	}
@@ -181,12 +182,25 @@ func trimColorResetPrefix(s string) string {
 }
 
 func hasColorResetSuffix(s string) bool {
-	return strings.HasSuffix(s, string(corelog.ResetCode))
+	return strings.HasSuffix(strings.TrimSuffix(s, "\n"), string(corelog.ResetCode))
 }
 
 func removeColor(s string, color corelog.ANSIColorCode) string {
-	s = strings.TrimPrefix(s, string(corelog.ResetCode))
+	// [34;1mLogin to the service[0m\n
+	// [34;1mLogin to the service\n
+	// [0m
 	s = strings.TrimPrefix(s, string(color))
+
+	hasNewlineSuffix := strings.HasSuffix(s, "\n")
+	if hasNewlineSuffix {
+		s = strings.TrimSuffix(s, "\n")
+	}
+
 	s = strings.TrimSuffix(s, string(corelog.ResetCode))
+
+	if hasNewlineSuffix {
+		s += "\n"
+	}
+
 	return s
 }
