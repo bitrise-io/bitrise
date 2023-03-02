@@ -197,7 +197,6 @@ func removeColor(s string, color corelog.ANSIColorCode) string {
 	}
 
 	s = strings.TrimSuffix(s, string(corelog.ResetCode))
-
 	if hasNewlineSuffix {
 		s += "\n"
 	}

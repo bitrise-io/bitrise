@@ -107,8 +107,8 @@ func Test_GivenWriter_WhenJSONLogging_ThenDetectsLogLevel(t *testing.T) {
 		{
 			name: "Detects a log level in a message stream",
 			messages: []string{
-				"\u001B[35;1mdetected login method:",
-				"- API key",
+				"\u001B[35;1mdetected login method:\n",
+				"- API key\n",
 				"- username\u001B[0m",
 			},
 			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"debug","message":"detected login method:\n- API key\n- username"}` + "\n"},
@@ -117,8 +117,8 @@ func Test_GivenWriter_WhenJSONLogging_ThenDetectsLogLevel(t *testing.T) {
 			name: "Detects multiple messages with log level in the message stream",
 			messages: []string{
 				"Hello Bitrise!",
-				"\u001B[35;1mdetected login method:",
-				"- API key",
+				"\u001B[35;1mdetected login method:\n",
+				"- API key\n",
 				"- username\u001B[0m",
 				"\u001B[34;1mLogin to the service\u001B[0m",
 			},
@@ -194,8 +194,8 @@ func Test_GivenWriter_WhenConsoleLogging_ThenDetectsLogLevel(t *testing.T) {
 		{
 			name: "Detects a message with log level in the message stream",
 			messages: []string{
-				"\u001B[35;1mdetected login method:",
-				"- API key",
+				"\u001B[35;1mdetected login method:\n",
+				"- API key\n",
 				"- username\u001B[0m",
 			},
 			expectedMessages: []string{"\u001B[35;1mdetected login method:\n- API key\n- username\u001B[0m"},
@@ -203,15 +203,15 @@ func Test_GivenWriter_WhenConsoleLogging_ThenDetectsLogLevel(t *testing.T) {
 		{
 			name: "Detects multiple messages with log level in the message stream",
 			messages: []string{
-				"Hello Bitrise!",
-				"\u001B[35;1mdetected login method:",
-				"- API key",
-				"- username\u001B[0m",
+				"Hello Bitrise!\n",
+				"\u001B[35;1mdetected login method:\n",
+				"- API key\n",
+				"- username\u001B[0m\n",
 				"\u001B[34;1mLogin to the service\u001B[0m",
 			},
 			expectedMessages: []string{
-				"Hello Bitrise!",
-				"\u001B[35;1mdetected login method:\n- API key\n- username\u001B[0m",
+				"Hello Bitrise!\n",
+				"\u001B[35;1mdetected login method:\n- API key\n- username\n\u001B[0m",
 				"\u001B[34;1mLogin to the service\u001B[0m",
 			},
 		},
