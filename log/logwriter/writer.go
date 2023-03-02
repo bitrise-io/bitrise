@@ -32,8 +32,6 @@ func NewLogWriter(logger log.Logger) *LogWriter {
 	}
 }
 
-// TODO: handle if currentChunk is too big
-
 func (w *LogWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
@@ -121,6 +119,7 @@ func (w *LogWriter) processLog(chunk string) {
 			w.bufferedMessages = nil
 		} else {
 			// Continue buffering the message
+			// TODO: if the writer starts buffering messages unnecessarily writing logs might delayed and buffer can grow infinitely
 			w.bufferedMessages = append(w.bufferedMessages, chunk)
 		}
 	}
