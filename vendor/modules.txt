@@ -25,7 +25,7 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.12.0.20221010132402-33be72261ded
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.16
 ## explicit
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
@@ -48,7 +48,7 @@ github.com/bitrise-io/stepman/version
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/gofrs/uuid v4.2.0+incompatible
+# github.com/gofrs/uuid v4.3.1+incompatible
 ## explicit
 github.com/gofrs/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
@@ -58,7 +58,7 @@ github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/mitchellh/mapstructure v1.4.3
+# github.com/mitchellh/mapstructure v1.5.0
 github.com/mitchellh/mapstructure
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
@@ -69,7 +69,7 @@ github.com/russross/blackfriday/v2
 github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.8.1
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.7.1
+# github.com/stretchr/testify v1.8.1
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
@@ -79,7 +79,7 @@ github.com/urfave/cli
 # golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 ## explicit
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e
+# golang.org/x/sys v0.2.0
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
@@ -90,5 +90,5 @@ golang.org/x/term
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit
 gopkg.in/yaml.v2
-# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+# gopkg.in/yaml.v3 v3.0.1
 gopkg.in/yaml.v3
