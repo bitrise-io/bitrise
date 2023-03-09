@@ -120,7 +120,7 @@ func NewDefaultTracker() Tracker {
 	stateChecker := NewStateChecker(envRepository)
 
 	logger := newUtilsLogAdapter()
-	tracker := analytics.NewDefaultSyncTracker(&logger)
+	tracker := analytics.NewDefaultTracker(&logger)
 	if stateChecker.UseAsync() {
 		tracker = analytics.NewDefaultTracker(&logger)
 	}
