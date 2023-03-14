@@ -14,7 +14,7 @@ type Writer struct {
 
 	secretWriter *filterwriter.Writer
 	errorWriter  *errorfinder.ErrorFinder
-	logWriter    logwriter.LogWriter
+	logWriter    *logwriter.LogWriter
 }
 
 func NewWriter(secrets []string, opts log.LoggerOpts) Writer {
@@ -52,7 +52,11 @@ func (w Writer) Close() error {
 		}
 	}
 
-	return w.errorWriter.Close()
+	if err := w.errorWriter.Close(); err != nil {
+		return err
+	}
+
+	return w.logWriter.Close()
 }
 
 func (w Writer) ErrorMessages() []string {
