@@ -143,6 +143,11 @@ func Test_GivenWriter_WhenJSONLogging_ThenDetectsLogLevel(t *testing.T) {
 			messages:         []string{"\u001B[31;1mAnother error\n"},
 			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\u001b[31;1mAnother error\n"}` + "\n"},
 		},
+		{
+			name:             "Message with a colored part (not a message with log level)",
+			messages:         []string{"\u001B[32;1mWho are you / who's the author?\u001B[0m [Bitrise bot]"},
+			expectedMessages: []string{`{"timestamp":"0001-01-01T00:00:00Z","type":"log","producer":"","level":"normal","message":"\u001b[32;1mWho are you / who's the author?\u001b[0m [Bitrise bot]"}` + "\n"},
+		},
 	}
 
 	for _, tt := range tests {
