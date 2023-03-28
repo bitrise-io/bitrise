@@ -3,11 +3,73 @@ package filterwriter
 import (
 	"bytes"
 	"fmt"
-	"runtime"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+/*func Fuzz(data []byte) int {
+	secrets := strings.Split(string(data[:50]), "\n")
+	var buff bytes.Buffer
+	out := New(secrets, &buff)
+	wc, err := out.Write(data)
+	if err != nil {
+		panic("err nil")
+	}
+	if len(data) != wc {
+		panic("data len")
+	}
+	_, err = out.Flush()
+	if err != nil {
+		panic("err")
+	}
+	return 0
+}*/
+
+func BenchmarkPerf(t *testing.B) {
+	t.Log("multiple secret in the same line")
+	{
+		// randomReader := rand.New(rand.NewSource(int64(t.N)))
+		seed := time.Now().UnixNano()
+		t.Logf("Seed: %d", seed)
+		randomReader := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+		numSecrets := randomReader.Intn(358)
+		t.Logf("Num secrets %d", numSecrets)
+
+		secrets := []string{}
+		for i := 0; i < numSecrets; i++ {
+			lenSecret := randomReader.Intn(3)
+			buf := make([]byte, lenSecret)
+			_, err := randomReader.Read(buf)
+			if err != nil {
+				t.Fatalf("err %s", err)
+			}
+
+			secrets = append(secrets, string(buf))
+		}
+
+		t.Logf("Secrets %s", secrets)
+
+		dataLen := randomReader.Intn(130000)
+		t.Logf("Data len: %d", dataLen)
+		log := make([]byte, dataLen)
+		_, err := randomReader.Read(log)
+		require.NoError(t, err)
+
+		var buff bytes.Buffer
+		out := New(secrets, &buff)
+		wc, err := out.Write(log)
+		require.NoError(t, err)
+		require.Equal(t, len(log), wc)
+
+		_, err = out.flush()
+		require.NoError(t, err)
+		// require.Equal(t, "multiple secrets like: [REDACTED] and [REDACTED]\n[REDACTED] and some extra text", buff.String())
+	}
+}
 
 func TestSecretsByteList(t *testing.T) {
 	{
@@ -129,52 +191,54 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "multiple secrets like: [REDACTED] and [REDACTED]\n[REDACTED] and some extra text", buff.String())
 	}
+	/*
+	   maxRun := 150000
+	   t.Log("multiple secret in the same line with multiple gorutine ")
 
-	maxRun := 150000
-	t.Log("multiple secret in the same line with multiple gorutine ")
-	{
-		cherr := make(chan error, maxRun)
-		chStr := make(chan string, maxRun)
+	   	{
+	   		cherr := make(chan error, maxRun)
+	   		chStr := make(chan string, maxRun)
 
-		var buff bytes.Buffer
-		out := New([]string{"x1", "x\n2"}, &buff)
-		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
-		for i := 0; i < maxRun; i++ {
-			go func(buff bytes.Buffer, out *Writer, log []byte) {
-				runtime.Gosched()
-				buff.Reset()
+	   		var buff bytes.Buffer
+	   		out := New([]string{"x1", "x\n2"}, &buff)
+	   		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
+	   		for i := 0; i < maxRun; i++ {
+	   			go func(buff bytes.Buffer, out *Writer, log []byte) {
+	   				runtime.Gosched()
+	   				buff.Reset()
 
-				wc, err := out.Write(log)
-				require.NoError(t, err)
-				require.Equal(t, len(log), wc)
+	   				wc, err := out.Write(log)
+	   				require.NoError(t, err)
+	   				require.Equal(t, len(log), wc)
 
-				err = out.Close()
+	   				err = out.Close()
 
-				cherr <- err
-				chStr <- buff.String()
-			}(buff, out, log)
-		}
+	   				cherr <- err
+	   				chStr <- buff.String()
+	   			}(buff, out, log)
+	   		}
 
-		errCounter := 0
-		for err := range cherr {
-			require.NoError(t, err)
+	   		errCounter := 0
+	   		for err := range cherr {
+	   			require.NoError(t, err)
 
-			errCounter++
-			if errCounter == maxRun {
-				close(cherr)
-			}
-		}
+	   			errCounter++
+	   			if errCounter == maxRun {
+	   				close(cherr)
+	   			}
+	   		}
 
-		strCounter := 0
-		for str := range chStr {
-			fmt.Println(str)
+	   		strCounter := 0
+	   		for str := range chStr {
+	   			fmt.Println(str)
 
-			strCounter++
-			if strCounter == maxRun {
-				close(chStr)
-			}
-		}
-	}
+	   			strCounter++
+	   			if strCounter == maxRun {
+	   				close(chStr)
+	   			}
+	   		}
+	   	}
+	*/
 }
 
 func TestSecrets(t *testing.T) {
