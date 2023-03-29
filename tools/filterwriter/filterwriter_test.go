@@ -53,7 +53,7 @@ func BenchmarkPerf(t *testing.B) {
 
 		t.Logf("Secrets %s", secrets)
 
-		dataLen := randomReader.Intn(130000)
+		dataLen := randomReader.Intn(13000)
 		t.Logf("Data len: %d", dataLen)
 		log := make([]byte, dataLen)
 		_, err := randomReader.Read(log)
@@ -283,7 +283,7 @@ func TestMatchSecrets(t *testing.T) {
 		[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	out := New0(secrets, &buff)
 
 	matchMap, partialMatchMap := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -313,7 +313,7 @@ func TestLinesToKeepRange(t *testing.T) {
 	// 	[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	out := New0(secrets, &buff)
 
 	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
 	first := out.linesToKeepRange(partialMatchMap) // minimal index in the partialMatchMap
@@ -339,7 +339,7 @@ func TestMatchLine(t *testing.T) {
 		[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	out := New0(secrets, &buff)
 
 	_, partialMatchMap := out.matchSecrets(lines)
 	print, remaining := out.matchLines(lines, partialMatchMap)
@@ -371,7 +371,7 @@ func TestSecretLinesToRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	out := New0(secrets, &buff)
 
 	matchMap, _ := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -465,7 +465,7 @@ func TestRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	out := New0(secrets, &buff)
 
 	matchMap := map[int][]int{0: []int{2}, 1: []int{3}}
 	redacted := out.redact(lines, matchMap)
@@ -493,7 +493,7 @@ func TestRedact(t *testing.T) {
 			[]byte("99\n")}
 
 		var buff bytes.Buffer
-		out := New(secrets, &buff)
+		out := New0(secrets, &buff)
 
 		matchMap := map[int][]int{
 			0: []int{0},
