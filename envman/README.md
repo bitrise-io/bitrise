@@ -82,6 +82,14 @@ Echo it:
 envman run bash -c 'echo "Environment test: $MY_TEST_ENV_KEY"'
 ```
 
+## Mark an Env Var as sensitive and redact it from the build logs
+
+Add/store an environment variable:
+
+```
+envman add --key MY_SECERT_ENV_KEY --value 'this is a secret value' --sensitive
+```
+
 *Why `bash -c` is required? Because `echo` in itself
 does not do any environment expansion, it simply prints
 its input. So if you want to see the value of an environment
