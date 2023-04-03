@@ -134,7 +134,7 @@ func gitLog(cloneIntoDir, formatParam string) (string, error) {
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
 	gitCheckPath := filepath.Join(cloneIntoDir, ".git")
 	if exist, err := pathutil.IsPathExists(gitCheckPath); err != nil {
-		return fmt.Errorf("Failed to file path (%s), err: %s", gitCheckPath, err)
+		return fmt.Errorf("Failed to check if file path exists (%s), err: %s", gitCheckPath, err)
 	} else if exist {
 		return fmt.Errorf(".git folder already exists in the destination dir (%s)", gitCheckPath)
 	}
