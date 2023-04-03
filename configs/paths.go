@@ -69,7 +69,7 @@ func initBitriseWorkPaths() error {
 	if exist, err := pathutil.IsPathExists(bitriseWorkDirPath); err != nil {
 		return err
 	} else if !exist {
-		if err := os.MkdirAll(bitriseWorkDirPath, 0777); err != nil {
+		if err := os.MkdirAll(bitriseWorkDirPath, 0755); err != nil {
 			return err
 		}
 	}
@@ -82,7 +82,7 @@ func initBitriseWorkPaths() error {
 	if exist, err := pathutil.IsPathExists(bitriseWorkStepsDirPath); err != nil {
 		return err
 	} else if !exist {
-		if err := os.MkdirAll(bitriseWorkStepsDirPath, 0777); err != nil {
+		if err := os.MkdirAll(bitriseWorkStepsDirPath, 0755); err != nil {
 			return err
 		}
 	}
