@@ -36,12 +36,12 @@ func BenchmarkPerf(t *testing.B) {
 		t.Logf("Seed: %d", seed)
 		randomReader := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-		numSecrets := randomReader.Intn(358)
+		numSecrets := 12
 		t.Logf("Num secrets %d", numSecrets)
 
 		secrets := []string{}
 		for i := 0; i < numSecrets; i++ {
-			lenSecret := randomReader.Intn(3)
+			lenSecret := 234
 			buf := make([]byte, lenSecret)
 			_, err := randomReader.Read(buf)
 			if err != nil {
@@ -51,9 +51,9 @@ func BenchmarkPerf(t *testing.B) {
 			secrets = append(secrets, string(buf))
 		}
 
-		t.Logf("Secrets %s", secrets)
+		// t.Logf("Secrets %s", secrets)
 
-		dataLen := randomReader.Intn(13000)
+		dataLen := 63266
 		t.Logf("Data len: %d", dataLen)
 		log := make([]byte, dataLen)
 		_, err := randomReader.Read(log)
@@ -155,6 +155,20 @@ func TestWrite(t *testing.T) {
 		var buff bytes.Buffer
 		out := New([]string{"abc", "a\nb\nc"}, &buff)
 		log := []byte("test with\nnew line\nand single line secret:abc\nand multiline secret:a\nb\nc")
+		wc, err := out.Write(log)
+		require.NoError(t, err)
+		require.Equal(t, len(log), wc)
+
+		err = out.Close()
+		require.NoError(t, err)
+		require.Equal(t, "test with\nnew line\nand single line secret:[REDACTED]\nand multiline secret:[REDACTED]\n[REDACTED]\n[REDACTED]", buff.String())
+	}
+
+	t.Log("multiline prefix")
+	{
+		var buff bytes.Buffer
+		out := New([]string{"abc", "a\nb\nc"}, &buff)
+		log := []byte("test with\nnew line\nand single line secret:abc\nand multiline secret:a\n[prefix]b\n[prefix]c")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
 		require.Equal(t, len(log), wc)

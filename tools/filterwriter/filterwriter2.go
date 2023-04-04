@@ -3,10 +3,23 @@ package filterwriter
 import (
 	"bytes"
 	"io"
-	"log"
 	"strings"
 	"sync"
 )
+
+type matchKind byte
+
+const (
+	exactChar matchKind = iota
+	anyChar
+	anyCharExceptNewline
+)
+
+type matchState struct {
+	kind         matchKind
+	matchesChar  byte
+	matchesSince int
+}
 
 type Writer struct {
 	writer  io.Writer
@@ -15,7 +28,7 @@ type Writer struct {
 	buffer []byte
 	mux    sync.Mutex
 
-	partialMatches [][]bool
+	partialMatches [][]matchState
 	fullMatches    []matchRange
 }
 
@@ -41,9 +54,26 @@ func New(secrets []string, target io.Writer) *Writer {
 		}
 	}
 
-	partialMatches := make([][]bool, len(validSecrets))
+	partialMatches := make([][]matchState, len(validSecrets))
 	for i, secret := range validSecrets {
-		partialMatches[i] = make([]bool, len(secret))
+		lines := strings.Split(secret, string(newLine))
+
+		for j, line := range lines {
+			for k := 0; k < len(line); k++ {
+				partialMatches[i] = append(partialMatches[i], matchState{
+					kind:        exactChar,
+					matchesChar: line[k],
+				})
+			}
+
+			if j <= len(lines)-2 {
+				partialMatches[i] = append(partialMatches[i], matchState{
+					kind:        exactChar,
+					matchesChar: '\n',
+				})
+				partialMatches[i] = append(partialMatches[i], matchState{kind: anyCharExceptNewline})
+			}
+		}
 	}
 
 	return &Writer{
@@ -54,30 +84,65 @@ func New(secrets []string, target io.Writer) *Writer {
 	}
 }
 
-func (w *Writer) nextState(c byte) {
-	for i, secretPartialMatches := range w.partialMatches {
-		for matchIndex := len(secretPartialMatches) - 1; matchIndex > 0; matchIndex-- {
-			if secretPartialMatches[matchIndex-1] && c == w.secrets[i][matchIndex] {
-				secretPartialMatches[matchIndex] = true
-			}
+func isMatch(c byte, state matchState) bool {
+	switch state.kind {
+	case exactChar:
+		return c == state.matchesChar
+	case anyChar:
+		return true
+	case anyCharExceptNewline:
+		return c != '\n'
+	}
 
-			secretPartialMatches[matchIndex-1] = false
+	return false
+}
+
+func updateState(prevState *matchState, curState matchState, c byte) int {
+	prevMatchesSince := prevState.matchesSince
+	if prevState.kind != anyCharExceptNewline {
+		prevState.matchesSince = 0
+	}
+
+	if curState.kind == anyCharExceptNewline && curState.matchesSince != 0 && isMatch(c, curState) {
+		curState.matchesSince++
+	} else {
+		curState.matchesSince = 0
+	}
+
+	if prevMatchesSince != 0 && isMatch(c, curState) {
+		prevMatchesSince++
+		if prevMatchesSince > curState.matchesSince {
+			curState.matchesSince = prevMatchesSince
+		}
+	}
+
+	return curState.matchesSince
+}
+
+func (w *Writer) nextState(c byte) {
+	for _, states := range w.partialMatches {
+		for j := len(states) - 1; j > 0; j-- {
+			states[j].matchesSince = updateState(&states[j-1], states[j], c)
+
+			if states[j-1].kind == anyCharExceptNewline && j >= 2 {
+				states[j].matchesSince = updateState(&states[j-2], states[j], c)
+			}
 		}
 
-		// Secrets have at leat lenght 1
-		if c == w.secrets[i][0] {
-			secretPartialMatches[0] = true
+		if isMatch(c, states[0]) {
+			states[0].matchesSince = 1
 		}
 	}
 
 	for _, secretPartialMatches := range w.partialMatches {
-		if secretPartialMatches[len(secretPartialMatches)-1] { // full match
+		matchesSince := secretPartialMatches[len(secretPartialMatches)-1].matchesSince
+		if matchesSince != 0 { // full match
 			w.fullMatches = append(w.fullMatches, matchRange{
-				first: len(w.buffer) - len(secretPartialMatches),
+				first: len(w.buffer) - matchesSince,
 				last:  len(w.buffer) - 1,
 			})
 
-			secretPartialMatches[len(secretPartialMatches)-1] = false
+			secretPartialMatches[len(secretPartialMatches)-1].matchesSince = 0
 		}
 	}
 }
@@ -85,17 +150,13 @@ func (w *Writer) nextState(c byte) {
 // [NONSECRET]
 // [NONSECRET (optional)][SECRET (multiple, could)]
 // [NONSECRET (optional)][PARTIAL SECRET (multiple)]
-func (w *Writer) writeClearTexts(maxPartialStartRel int) (int, error) {
+func (w *Writer) writeClearTexts(firstPartialMatchStart int) (int, error) {
 	w.fullMatches = mergeAllRanges(w.fullMatches)
 
 	lastEnd := 0
 	for _, match := range w.fullMatches {
-		if match.first >= maxPartialStartRel {
+		if match.first >= firstPartialMatchStart {
 			break
-		}
-
-		if match.first < 0 {
-			log.Printf("sf")
 		}
 
 		n, err := w.writer.Write(w.buffer[lastEnd:match.first])
@@ -104,7 +165,7 @@ func (w *Writer) writeClearTexts(maxPartialStartRel int) (int, error) {
 		}
 		lastEnd = match.first
 
-		if match.last >= maxPartialStartRel {
+		if match.last >= firstPartialMatchStart {
 			break
 		}
 
@@ -119,24 +180,21 @@ func (w *Writer) writeClearTexts(maxPartialStartRel int) (int, error) {
 	}
 
 	if len(w.fullMatches) == 0 {
-		n, err := w.writer.Write(w.buffer[lastEnd:maxPartialStartRel])
+		n, err := w.writer.Write(w.buffer[lastEnd:firstPartialMatchStart])
 		if err != nil {
 			return n, err
 		}
-		lastEnd = maxPartialStartRel
+		lastEnd = firstPartialMatchStart
 	}
 
-	if lastEnd+1 >= len(w.buffer) {
+	if lastEnd > len(w.buffer)-1 {
 		w.buffer = w.buffer[:0]
 	} else {
-		w.buffer = w.buffer[lastEnd+1:]
+		w.buffer = w.buffer[lastEnd:]
 	}
 
 	for _, fm := range w.fullMatches {
 		fm.first -= lastEnd
-		if fm.first < 0 {
-			log.Printf("sf")
-		}
 		fm.last -= lastEnd
 	}
 
@@ -153,20 +211,21 @@ func (w *Writer) Write(data []byte) (int, error) {
 		w.buffer = append(w.buffer, char)
 
 		w.nextState(char)
-	}
 
-	maxPartialStartRel := len(w.buffer)
-	for _, match := range w.partialMatches {
-		for i, b := range match {
-			if b && i < maxPartialStartRel {
-				maxPartialStartRel = i
+		firstPartialMatch := 0
+		for _, states := range w.partialMatches {
+			for _, state := range states {
+				if state.matchesSince > firstPartialMatch {
+					firstPartialMatch = state.matchesSince
+				}
 			}
 		}
-	}
+		firstPartialMatch = len(w.buffer) - firstPartialMatch
 
-	n, err := w.writeClearTexts(maxPartialStartRel)
-	if err != nil {
-		return n, err
+		n, err := w.writeClearTexts(firstPartialMatch)
+		if err != nil {
+			return n, err
+		}
 	}
 
 	return len(data), nil
