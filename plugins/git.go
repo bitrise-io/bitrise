@@ -139,7 +139,7 @@ func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
 		return fmt.Errorf(".git folder already exists in the destination dir (%s)", gitCheckPath)
 	}
 
-	if err := os.MkdirAll(cloneIntoDir, 0777); err != nil {
+	if err := os.MkdirAll(cloneIntoDir, 0755); err != nil {
 		return fmt.Errorf("Failed to create the clone_destination_dir at: %s", cloneIntoDir)
 	}
 
