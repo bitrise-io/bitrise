@@ -1,13 +1,14 @@
 package toolkits
 
 import (
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/utils"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/utils"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 // SwiftToolkit ...
@@ -62,7 +63,7 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDD
 	}
 
 	_, err = io.Copy(out, resp.Body)
-	err = os.Chmod(executablePath, 0777)
+	err = os.Chmod(executablePath, 0755)
 
 	err = resp.Body.Close()
 	err = out.Close()

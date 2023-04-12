@@ -210,7 +210,7 @@ func TestDownloadPluginBin(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		require.NoError(t, os.MkdirAll(destinationDir, 0777))
+		require.NoError(t, os.MkdirAll(destinationDir, 0755))
 
 		destinationPth := filepath.Join(destinationDir, "example")
 
