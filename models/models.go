@@ -27,7 +27,9 @@ type StageListItemModel map[string]StageModel
 
 // StageModel ...
 type StageModel struct {
-	Workflows []WorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	ShouldAlwaysRun bool                    `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+	AbortOnFail     bool                    `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	Workflows       []WorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 // WorkflowListItemModel ...
