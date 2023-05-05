@@ -403,8 +403,13 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		})
 	}
 
+	cliVersion := version.VERSION
+	if version.IsAlternativeInstallation {
+		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
+	}
+
 	return models.WorkflowRunPlan{
-		Version:                 version.VERSION,
+		Version:                 cliVersion,
 		LogFormatVersion:        "1",
 		CIMode:                  modes.CIMode,
 		PRMode:                  modes.PRMode,
