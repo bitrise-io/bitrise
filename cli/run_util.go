@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -874,75 +875,89 @@ func (r WorkflowRunner) activateAndRunSteps(
 						srv := &http.Server{Addr: ":10000"}
 
 						http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-							b, derr := ioutil.ReadAll(r.Body)
-							if derr != nil {
-								fmt.Println("ERROR:", derr)
-							}
 
-							cmd := strings.Split(string(b), " ")
-
-							switch {
-							case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "continue":
-								fmt.Println("[DEBUGGER]: built-in command: continue")
-								w.WriteHeader(http.StatusOK)
-								if !buildRunResults.IsBuildFailed() && !debuggingIssueResolved {
-									runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-										*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false, redactedStepInputs, stepIDProperties)
+							if strings.HasPrefix(r.URL.Path, "/upload:") {
+								toFilePath := strings.TrimPrefix(r.URL.Path, "/upload:")
+								f, derr := os.Create(toFilePath)
+								if derr != nil {
+									fmt.Println("ERROR:", derr)
 								}
-								srv.Shutdown(context.Background())
-							case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "rerun":
-								fmt.Println("[DEBUGGER]: built-in command: rerun")
-								w.WriteHeader(http.StatusOK)
-								debuggingStarted = true
-								runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-									*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
-								rfn(idx, stepListItm, false, nil)
-							case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-i":
-								fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
-								w.WriteHeader(http.StatusOK)
-
-								i, derr := strconv.Atoi(cmd[3])
+								n, derr := io.Copy(f, r.Body)
+								if derr != nil {
+									fmt.Println("ERROR:", derr)
+								}
+								fmt.Println("[DEBUGGER]: file uploaded to", toFilePath, "size", n, "bytes.")
+							} else {
+								b, derr := ioutil.ReadAll(r.Body)
 								if derr != nil {
 									fmt.Println("ERROR:", derr)
 								}
 
-								debuggingStarted = true
-								runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-									*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
-								rfn(i, workflow.Steps[i], false, nil)
-							case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-v":
-								fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
-								w.WriteHeader(http.StatusOK)
+								cmd := strings.Split(string(b), " ")
 
-								debuggingStarted = true
-								runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
-									*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
+								switch {
+								case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "continue":
+									fmt.Println("[DEBUGGER]: built-in command: continue")
+									w.WriteHeader(http.StatusOK)
+									if !buildRunResults.IsBuildFailed() && !debuggingIssueResolved {
+										runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
+											*mergedStep.RunIf, models.StepRunStatusCodeFailed, exit, err, isLastStep, false, redactedStepInputs, stepIDProperties)
+									}
+									srv.Shutdown(context.Background())
+								case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "rerun":
+									fmt.Println("[DEBUGGER]: built-in command: rerun")
+									w.WriteHeader(http.StatusOK)
+									debuggingStarted = true
+									runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
+										*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
+									rfn(idx, stepListItm, false, nil)
+								case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-i":
+									fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
+									w.WriteHeader(http.StatusOK)
 
-								rfn(idx, stepListItm, false, &cmd[3])
-							default:
-								fmt.Println("[DEBUGGER]: built-in command: shell")
-								w.WriteHeader(http.StatusOK)
-								bitriseSourceDir, derr := getCurrentBitriseSourceDir(stepDeclaredEnvironments)
-								if derr != nil {
-									fmt.Println("[DEBUGGER]: ERROR:", derr)
+									i, derr := strconv.Atoi(cmd[3])
+									if derr != nil {
+										fmt.Println("ERROR:", derr)
+									}
+
+									debuggingStarted = true
+									runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
+										*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
+									rfn(i, workflow.Steps[i], false, nil)
+								case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-v":
+									fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
+									w.WriteHeader(http.StatusOK)
+
+									debuggingStarted = true
+									runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
+										*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
+
+									rfn(idx, stepListItm, false, &cmd[3])
+								default:
+									fmt.Println("[DEBUGGER]: built-in command: shell")
+									w.WriteHeader(http.StatusOK)
+									bitriseSourceDir, derr := getCurrentBitriseSourceDir(stepDeclaredEnvironments)
+									if derr != nil {
+										fmt.Println("[DEBUGGER]: ERROR:", derr)
+									}
+
+									writer := stepoutput.NewWriter(nil, log.GetGlobalLoggerOpts())
+
+									fmt.Println("$ ", []string{"sh", "-c", strings.Join(cmd, " ")})
+
+									n, derr := tools.EnvmanRun(
+										configs.InputEnvstorePath,
+										bitriseSourceDir,
+										[]string{"sh", "-c", strings.Join(cmd, " ")},
+										time.Hour,
+										time.Hour,
+										nil,
+										writer)
+									if derr != nil {
+										fmt.Println("[DEBUGGER]: ERROR:", derr)
+									}
+									fmt.Println("[DEBUGGER]: Exit code:", n)
 								}
-
-								writer := stepoutput.NewWriter(nil, log.GetGlobalLoggerOpts())
-
-								fmt.Println("$ ", []string{"sh", "-c", strings.Join(cmd, " ")})
-
-								n, derr := tools.EnvmanRun(
-									configs.InputEnvstorePath,
-									bitriseSourceDir,
-									[]string{"sh", "-c", strings.Join(cmd, " ")},
-									time.Hour,
-									time.Hour,
-									nil,
-									writer)
-								if derr != nil {
-									fmt.Println("[DEBUGGER]: ERROR:", derr)
-								}
-								fmt.Println("[DEBUGGER]: Exit code:", n)
 							}
 						})
 
