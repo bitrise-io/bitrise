@@ -898,6 +898,13 @@ func (r WorkflowRunner) activateAndRunSteps(
 								switch {
 								case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "continue":
 									fmt.Println("[DEBUGGER]: built-in command: continue")
+
+									stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+									if envErr != nil {
+										panic(err)
+									}
+									*environments = append(*environments, stepOutputs...)
+
 									w.WriteHeader(http.StatusOK)
 									if !buildRunResults.IsBuildFailed() && !debuggingIssueResolved {
 										runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
@@ -906,6 +913,13 @@ func (r WorkflowRunner) activateAndRunSteps(
 									srv.Shutdown(context.Background())
 								case len(cmd) == 2 && cmd[0] == "bitrise" && cmd[1] == "rerun":
 									fmt.Println("[DEBUGGER]: built-in command: rerun")
+
+									stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+									if envErr != nil {
+										panic(err)
+									}
+									*environments = append(*environments, stepOutputs...)
+
 									w.WriteHeader(http.StatusOK)
 									debuggingStarted = true
 									runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
@@ -913,6 +927,13 @@ func (r WorkflowRunner) activateAndRunSteps(
 									rfn(idx, stepListItm, false, nil)
 								case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-i":
 									fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
+
+									stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+									if envErr != nil {
+										panic(err)
+									}
+									*environments = append(*environments, stepOutputs...)
+
 									w.WriteHeader(http.StatusOK)
 
 									i, derr := strconv.Atoi(cmd[3])
@@ -925,7 +946,14 @@ func (r WorkflowRunner) activateAndRunSteps(
 										*mergedStep.RunIf, models.StepRunStatusCodeFailedSkippable, 0, err, false, false, redactedStepInputs, stepIDProperties)
 									rfn(i, workflow.Steps[i], false, nil)
 								case len(cmd) == 4 && cmd[0] == "bitrise" && cmd[1] == "rerun" && cmd[2] == "-v":
-									fmt.Println("[DEBUGGER]: built-in command: rerun Nth step")
+									fmt.Println("[DEBUGGER]: built-in command: rerun with new step version")
+
+									stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+									if envErr != nil {
+										panic(err)
+									}
+									*environments = append(*environments, stepOutputs...)
+
 									w.WriteHeader(http.StatusOK)
 
 									debuggingStarted = true
