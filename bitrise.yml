@@ -7,6 +7,16 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
+  suggestion_test:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            RED='\033[0;31m'
+            NC='\033[0m'
+            echo -e "${RED}transient network error${NC}"
+            exit 1
+
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:

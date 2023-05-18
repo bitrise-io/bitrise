@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/stepoutput"
+	"github.com/bitrise-io/bitrise/suggestionbox"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/envman/env"
@@ -415,7 +416,7 @@ func (r WorkflowRunner) executeStep(
 	opts.DebugLogEnabled = true
 	writer := stepoutput.NewWriter(stepSecrets, opts)
 
-	return tools.EnvmanRun(
+	exitStatus, err := tools.EnvmanRun(
 		configs.InputEnvstorePath,
 		bitriseSourceDir,
 		cmd,
@@ -423,6 +424,10 @@ func (r WorkflowRunner) executeStep(
 		noOutputTimeout,
 		nil,
 		writer)
+
+	err = suggestionbox.AddSuggestion(err, sIDData.IDorURI)
+
+	return exitStatus, err
 }
 
 func (r WorkflowRunner) runStep(

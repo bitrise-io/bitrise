@@ -14,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/suggestionbox"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
@@ -133,6 +134,10 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
+	}
+
+	if err := suggestionbox.Setup(); err != nil {
+		log.Warnf("Failed to setup suggestion box: %s", err)
 	}
 
 	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
