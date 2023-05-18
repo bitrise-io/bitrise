@@ -1,4 +1,4 @@
-package gomodmigrate
+package main
 
 import (
 	"fmt"
