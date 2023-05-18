@@ -28,7 +28,7 @@ func Setup() error {
 		return err
 	}
 
-	_, err = os.Stat(suggestionBoxHome)
+	_, err = os.Stat(filepath.Join(suggestionBoxHome, ".git"))
 	if err == nil {
 		if err := gitRepo.Pull().Run(); err != nil {
 			return err
