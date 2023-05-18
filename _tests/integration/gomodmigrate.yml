@@ -32,7 +32,7 @@ workflows:
               end
             end
             " > $TMP_DIR/fastlane/Fastfile
-    - fastlane@3.2.0:
+    - fastlane@3.4.3:
         inputs:
         - lane: test_fastlane
         - work_dir: $TMP_DIR
