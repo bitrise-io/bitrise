@@ -15,4 +15,4 @@ workflows:
 
   gomod:
     steps:
-    - path::./testdata/gomodmigrate: {}
+    - path::./testdata/gomodmigrate: { }
