@@ -15,26 +15,4 @@ workflows:
 
   gomod:
     steps:
-    - script:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            envman add --key TMP_DIR --value $(mktemp -d -t gomodmigrateXXXXXX)
-    - script:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            mkdir ${TMP_DIR}/fastlane
-            echo "default_platform(:ios)
-
-            platform :ios do
-              lane :test_fastlane do
-              end
-            end
-            " > $TMP_DIR/fastlane/Fastfile
-    - fastlane@3.2.0:
-        inputs:
-        - lane: test_fastlane
-        - work_dir: $TMP_DIR
-        - update_fastlane: "false"
-        - connection: "off"
+    - path::./testdata/gomodmigrate: {}

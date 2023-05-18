@@ -21,7 +21,7 @@ func Test_GoModMigration(t *testing.T) {
 			require.NoError(t, err, "failed to get HOME dir")
 
 			err = os.RemoveAll(filepath.Join(homeDir, ".bitrise", "toolkits", "go", "cache"))
-			require.NoError(t, err, "faield to clean Step binary cache")
+			require.NoError(t, err, "failed to clean Step binary cache")
 
 			cmd := command.New(binPath(), "--debug", "run", workflow, "--config", configPth).
 				AppendEnvs("GO111MODULE=" + mode)

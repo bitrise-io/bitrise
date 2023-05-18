@@ -1,0 +1,3 @@
+toolkit:
+  go:
+    package_name: github.com/bitrise-steplib/steps-some-fake-step
