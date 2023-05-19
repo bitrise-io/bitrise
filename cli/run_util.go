@@ -425,7 +425,9 @@ func (r WorkflowRunner) executeStep(
 		nil,
 		writer)
 
-	err = suggestionbox.AddSuggestion(err, sIDData.IDorURI)
+	if err != nil {
+		err = suggestionbox.AddSuggestion(err, sIDData.IDorURI)
+	}
 
 	return exitStatus, err
 }
