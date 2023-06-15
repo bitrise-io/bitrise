@@ -401,7 +401,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 // CreateBitriseConfigFromCLIParams ...
 func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
-	warnings := []string{}
+	var warnings []string
 
 	if bitriseConfigBase64Data != "" {
 		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
