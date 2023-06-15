@@ -528,7 +528,6 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 				} else {
 					isSkippedBecauseOfPlatform = true
 				}
-				break
 			default:
 				return errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 			}
