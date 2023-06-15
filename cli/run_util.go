@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,12 +22,9 @@ import (
 	"github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
-	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -488,287 +483,6 @@ func (r WorkflowRunner) executeStep(
 		writer)
 }
 
-func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
-	if prGlobalFlagPtr != nil {
-		return *prGlobalFlagPtr, nil
-	}
-
-	prIDEnv := os.Getenv(configs.PullRequestIDEnvKey)
-	prModeEnv := os.Getenv(configs.PRModeEnvKey)
-
-	if prIDEnv != "" || prModeEnv == "true" {
-		return true, nil
-	}
-
-	for _, env := range inventoryEnvironments {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return false, err
-		}
-
-		if key == configs.PullRequestIDEnvKey && value != "" {
-			return true, nil
-		}
-		if key == configs.PRModeEnvKey && value == "true" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func registerPrMode(isPRMode bool) error {
-	configs.IsPullRequestMode = isPRMode
-	return os.Setenv(configs.PRModeEnvKey, strconv.FormatBool(isPRMode))
-}
-
-func isCIMode(ciGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
-	if ciGlobalFlagPtr != nil {
-		return *ciGlobalFlagPtr, nil
-	}
-
-	ciModeEnv := os.Getenv(configs.CIModeEnvKey)
-
-	if ciModeEnv == "true" {
-		return true, nil
-	}
-
-	for _, env := range inventoryEnvironments {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return false, err
-		}
-
-		if key == configs.CIModeEnvKey && value == "true" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func registerCIMode(isCIMode bool) error {
-	configs.IsCIMode = isCIMode
-	return os.Setenv(configs.CIModeEnvKey, strconv.FormatBool(isCIMode))
-}
-
-func isSecretFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
-	if filteringFlag != nil {
-		return *filteringFlag, nil
-	}
-
-	expandedEnvs, err := tools.ExpandEnvItems(inventoryEnvironments, os.Environ())
-	if err != nil {
-		return false, err
-	}
-
-	value, ok := expandedEnvs[configs.IsSecretFilteringKey]
-	if ok {
-		if value == "true" {
-			return true, nil
-		} else if value == "false" {
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
-func registerSecretFiltering(filtering bool) error {
-	configs.IsSecretFiltering = filtering
-	return os.Setenv(configs.IsSecretFilteringKey, strconv.FormatBool(filtering))
-}
-
-func isSecretEnvsFiltering(filteringFlag *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
-	if filteringFlag != nil {
-		return *filteringFlag, nil
-	}
-
-	expandedEnvs, err := tools.ExpandEnvItems(inventoryEnvironments, os.Environ())
-	if err != nil {
-		return false, err
-	}
-
-	value, ok := expandedEnvs[configs.IsSecretEnvsFilteringKey]
-	if ok {
-		if value == "true" {
-			return true, nil
-		} else if value == "false" {
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
-func registerSecretEnvsFiltering(filtering bool) error {
-	configs.IsSecretEnvsFiltering = filtering
-	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
-}
-
-func isDirEmpty(path string) (bool, error) {
-	entries, err := ioutil.ReadDir(path)
-	if err != nil {
-		return false, err
-	}
-	return len(entries) == 0, nil
-}
-
-// GetBitriseConfigFromBase64Data ...
-func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
-	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
-	if err != nil {
-		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
-	}
-
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
-	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
-	}
-
-	return config, warnings, nil
-}
-
-// GetBitriseConfigFilePath ...
-func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
-	if bitriseConfigPath == "" {
-		bitriseConfigPath = filepath.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
-
-		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
-			return "", err
-		} else if !exist {
-			return "", fmt.Errorf("bitrise.yml path not defined and not found on it's default path: %s", bitriseConfigPath)
-		}
-	}
-
-	return bitriseConfigPath, nil
-}
-
-// CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
-	bitriseConfig := models.BitriseDataModel{}
-	warnings := []string{}
-
-	if bitriseConfigBase64Data != "" {
-		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
-		warnings = warns
-		if err != nil {
-			return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
-		}
-		bitriseConfig = config
-	} else {
-		bitriseConfigPath, err := GetBitriseConfigFilePath(bitriseConfigPath)
-		if err != nil {
-			return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
-		}
-		if bitriseConfigPath == "" {
-			return models.BitriseDataModel{}, []string{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
-		}
-
-		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-		warnings = warns
-		if err != nil {
-			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) is not valid: %s", bitriseConfigPath, err)
-		}
-		bitriseConfig = config
-	}
-
-	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
-	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
-	}
-	if !isConfigVersionOK {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("The bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
-	}
-
-	return bitriseConfig, warnings, nil
-}
-
-// GetInventoryFromBase64Data ...
-func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {
-	inventoryBase64Bytes, err := base64.StdEncoding.DecodeString(inventoryBase64Str)
-	if err != nil {
-		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
-	}
-
-	inventory, err := bitrise.InventoryModelFromYAMLBytes(inventoryBase64Bytes)
-	if err != nil {
-		return []envmanModels.EnvironmentItemModel{}, err
-	}
-
-	return inventory.Envs, nil
-}
-
-// GetInventoryFilePath ...
-func GetInventoryFilePath(inventoryPath string) (string, error) {
-	if inventoryPath == "" {
-		log.Debug("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
-		inventoryPath = filepath.Join(configs.CurrentDir, DefaultSecretsFileName)
-
-		if exist, err := pathutil.IsPathExists(inventoryPath); err != nil {
-			return "", err
-		} else if !exist {
-			inventoryPath = ""
-		}
-	}
-
-	return inventoryPath, nil
-}
-
-// CreateInventoryFromCLIParams ...
-func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]envmanModels.EnvironmentItemModel, error) {
-	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
-
-	if inventoryBase64Data != "" {
-		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
-		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory from base 64 data, err: %s", err)
-		}
-		inventoryEnvironments = inventory
-	} else {
-		inventoryPath, err := GetInventoryFilePath(inventoryPath)
-		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory path: %s", err)
-		}
-
-		if inventoryPath != "" {
-			bytes, err := fileutil.ReadBytesFromFile(inventoryPath)
-			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, err
-			}
-
-			if len(bytes) == 0 {
-				return []envmanModels.EnvironmentItemModel{}, errors.New("empty config")
-			}
-
-			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
-			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid inventory format: %s", err)
-			}
-			inventoryEnvironments = inventory
-		}
-	}
-
-	return inventoryEnvironments, nil
-}
-
-func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
-	bitriseSourceDir := os.Getenv(configs.BitriseSourceDirEnvKey)
-	for i := len(envlist) - 1; i >= 0; i-- {
-		env := envlist[i]
-
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return bitriseSourceDir, err
-		}
-
-		if key == configs.BitriseSourceDirEnvKey && value != "" {
-			return value, nil
-		}
-	}
-	return bitriseSourceDir, nil
-}
-
 func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	if len(step.Dependencies) > 0 {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
@@ -830,67 +544,21 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
-	didStepLibUpdate := false
+func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (string, error) {
+	bitriseSourceDir := os.Getenv(configs.BitriseSourceDirEnvKey)
+	for i := len(envlist) - 1; i >= 0; i-- {
+		env := envlist[i]
 
-	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-	if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
-		return stepmanModels.StepInfoModel{}, false, err
-	}
-
-	versionConstraint, err := stepmanModels.ParseRequiredVersion(stepIDData.Version)
-	if err != nil {
-		return stepmanModels.StepInfoModel{}, false,
-			fmt.Errorf("activating step (%s) from source (%s) failed, invalid version specified: %s", stepIDData.IDorURI, stepIDData.SteplibSource, err)
-	}
-	if versionConstraint.VersionLockType == stepmanModels.InvalidVersionConstraint {
-		return stepmanModels.StepInfoModel{}, false,
-			fmt.Errorf("activating step (%s) from source (%s) failed, version constraint is invalid", stepIDData.IDorURI, stepIDData.SteplibSource)
-	}
-
-	isStepLibUpdateNeeded := (versionConstraint.VersionLockType == stepmanModels.Latest) ||
-		(versionConstraint.VersionLockType == stepmanModels.MinorLocked) ||
-		(versionConstraint.VersionLockType == stepmanModels.MajorLocked)
-	if !isStepLibUpdated && isStepLibUpdateNeeded {
-		log.Print("Step uses latest version, updating StepLib...")
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
-		} else {
-			didStepLibUpdate = true
-		}
-	}
-
-	info, err := tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-	if err != nil {
-		if isStepLibUpdated {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
-		}
-
-		// May StepLib should be updated
-		log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
-		}
-
-		didStepLibUpdate = true
-
-		info, err = tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+		key, value, err := env.GetKeyValuePair()
 		if err != nil {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
+			return bitriseSourceDir, err
+		}
+
+		if key == configs.BitriseSourceDirEnvKey && value != "" {
+			return value, nil
 		}
 	}
-
-	if info.Step.Title == nil || *info.Step.Title == "" {
-		info.Step.Title = pointers.NewStringPtr(info.ID)
-	}
-	info.OriginalVersion = stepIDData.Version
-
-	if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, info.Version, destination, stepYMLCopyPth); err != nil {
-		return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
-	}
-	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
-
-	return info, didStepLibUpdate, nil
+	return bitriseSourceDir, nil
 }
 
 func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionId string, stepStartTime time.Time) {
@@ -943,4 +611,12 @@ func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultSte
 		}
 	}
 	return nil
+}
+
+func isDirEmpty(path string) (bool, error) {
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	return len(entries) == 0, nil
 }
