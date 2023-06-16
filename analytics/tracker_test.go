@@ -19,10 +19,11 @@ func Test_mapStepResultToEvent(t *testing.T) {
 		{
 			name: "Step succeeded",
 			result: StepResult{
-				Status: models.StepRunStatusCodeSuccess,
+				Status:       models.StepRunStatusCodeSuccess,
+				TotalRuntime: 30 * time.Second,
 			},
 			expectedEvent:      "step_finished",
-			expectedExtraProps: analytics.Properties{"status": "successful"},
+			expectedExtraProps: analytics.Properties{"status": "successful", "total_runtime": int64(30)},
 		},
 		{
 			name: "Step failed",
@@ -34,6 +35,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"status":        "failed",
 				"error_message": "msg",
+				"total_runtime": int64(0),
 			},
 		},
 		{
@@ -42,7 +44,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 				Status: models.StepRunStatusCodeFailedSkippable,
 			},
 			expectedEvent:      "step_finished",
-			expectedExtraProps: analytics.Properties{"status": "failed"},
+			expectedExtraProps: analytics.Properties{"status": "failed", "total_runtime": int64(0)},
 		},
 		{
 			name: "Step skipped",
@@ -55,9 +57,10 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			},
 			expectedEvent: "step_skipped",
 			expectedExtraProps: analytics.Properties{
-				"reason":    "build_failed",
-				"skippable": true,
-				"step_id":   "ID",
+				"reason":        "build_failed",
+				"skippable":     true,
+				"step_id":       "ID",
+				"total_runtime": int64(0),
 			},
 		},
 		{
@@ -67,8 +70,9 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			},
 			expectedEvent: "step_skipped",
 			expectedExtraProps: analytics.Properties{
-				"reason":    "run_if",
-				"skippable": false,
+				"reason":        "run_if",
+				"skippable":     false,
+				"total_runtime": int64(0),
 			},
 		},
 		{
@@ -81,6 +85,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"skippable":     false,
 				"error_message": "msg",
+				"total_runtime": int64(0),
 			},
 		},
 		{
@@ -91,8 +96,9 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			},
 			expectedEvent: "step_aborted",
 			expectedExtraProps: analytics.Properties{
-				"reason":  "timeout",
-				"timeout": int64(1),
+				"reason":        "timeout",
+				"timeout":       int64(1),
+				"total_runtime": int64(0),
 			},
 		},
 		{
@@ -103,8 +109,9 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			},
 			expectedEvent: "step_aborted",
 			expectedExtraProps: analytics.Properties{
-				"reason":  "no_output_timeout",
-				"timeout": int64(1),
+				"reason":        "no_output_timeout",
+				"timeout":       int64(1),
+				"total_runtime": int64(0),
 			},
 		},
 	}
