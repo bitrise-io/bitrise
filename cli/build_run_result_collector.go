@@ -31,7 +31,6 @@ func (r buildRunResultCollector) registerStepRunResults(
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIdxPtr int,
-	runIf string,
 	status models.StepRunStatus,
 	exitCode int,
 	err error,
