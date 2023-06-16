@@ -40,6 +40,8 @@ func (r buildRunResultCollector) registerStepRunResults(
 	redactedStepInputs map[string]string,
 	properties coreanalytics.Properties) {
 
+	stepTotalRunTime := time.Since(stepStartTime)
+
 	timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
 	if status == models.StepRunStatusCodeFailed {
 		// Forward the status of a Step or a wrapped bitrise process.
@@ -93,7 +95,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 		StepInputs: redactedStepInputs,
 		Status:     status,
 		Idx:        buildRunResults.ResultsCount(),
-		RunTime:    time.Since(stepStartTime),
+		RunTime:    stepTotalRunTime,
 		ErrorStr:   errStr,
 		ExitCode:   exitCode,
 		StartTime:  stepStartTime,
@@ -108,6 +110,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 		ErrorMessage:    errStr,
 		Timeout:         timeout,
 		NoOutputTimeout: noOutputTimeout,
+		TotalRuntime:    stepTotalRunTime,
 	})
 
 	switch status {
