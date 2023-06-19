@@ -53,6 +53,7 @@ const (
 	stepSourceProperty            = "step_source"
 	skippableProperty             = "skippable"
 	timeoutProperty               = "timeout"
+	runtime                       = "runtime"
 
 	failedValue          = "failed"
 	successfulValue      = "successful"
@@ -91,6 +92,7 @@ type StepResult struct {
 	Status                   models.StepRunStatus
 	ErrorMessage             string
 	Timeout, NoOutputTimeout time.Duration
+	Runtime                  time.Duration
 }
 
 // Tracker ...
@@ -307,6 +309,8 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 	default:
 		return "", analytics.Properties{}, fmt.Errorf("Unknown step status code: %d", result.Status)
 	}
+
+	extraProperties[runtime] = int64(result.Runtime.Seconds())
 
 	return eventName, extraProperties, nil
 }

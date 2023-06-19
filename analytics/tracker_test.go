@@ -19,10 +19,11 @@ func Test_mapStepResultToEvent(t *testing.T) {
 		{
 			name: "Step succeeded",
 			result: StepResult{
-				Status: models.StepRunStatusCodeSuccess,
+				Status:  models.StepRunStatusCodeSuccess,
+				Runtime: 30 * time.Second,
 			},
 			expectedEvent:      "step_finished",
-			expectedExtraProps: analytics.Properties{"status": "successful"},
+			expectedExtraProps: analytics.Properties{"status": "successful", "runtime": int64(30)},
 		},
 		{
 			name: "Step failed",
@@ -34,6 +35,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"status":        "failed",
 				"error_message": "msg",
+				"runtime":       int64(0),
 			},
 		},
 		{
@@ -42,7 +44,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 				Status: models.StepRunStatusCodeFailedSkippable,
 			},
 			expectedEvent:      "step_finished",
-			expectedExtraProps: analytics.Properties{"status": "failed"},
+			expectedExtraProps: analytics.Properties{"status": "failed", "runtime": int64(0)},
 		},
 		{
 			name: "Step skipped",
@@ -58,6 +60,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 				"reason":    "build_failed",
 				"skippable": true,
 				"step_id":   "ID",
+				"runtime":   int64(0),
 			},
 		},
 		{
@@ -69,6 +72,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"reason":    "run_if",
 				"skippable": false,
+				"runtime":   int64(0),
 			},
 		},
 		{
@@ -81,6 +85,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"skippable":     false,
 				"error_message": "msg",
+				"runtime":       int64(0),
 			},
 		},
 		{
@@ -93,6 +98,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"reason":  "timeout",
 				"timeout": int64(1),
+				"runtime": int64(0),
 			},
 		},
 		{
@@ -105,6 +111,7 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			expectedExtraProps: analytics.Properties{
 				"reason":  "no_output_timeout",
 				"timeout": int64(1),
+				"runtime": int64(0),
 			},
 		},
 	}

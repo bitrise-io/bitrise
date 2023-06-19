@@ -31,7 +31,6 @@ func (r buildRunResultCollector) registerStepRunResults(
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIdxPtr int,
-	runIf string,
 	status models.StepRunStatus,
 	exitCode int,
 	err error,
@@ -39,6 +38,8 @@ func (r buildRunResultCollector) registerStepRunResults(
 	printStepHeader bool,
 	redactedStepInputs map[string]string,
 	properties coreanalytics.Properties) {
+
+	stepRuntime := time.Since(stepStartTime)
 
 	timeout, noOutputTimeout := time.Duration(-1), time.Duration(-1)
 	if status == models.StepRunStatusCodeFailed {
@@ -93,7 +94,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 		StepInputs: redactedStepInputs,
 		Status:     status,
 		Idx:        buildRunResults.ResultsCount(),
-		RunTime:    time.Since(stepStartTime),
+		RunTime:    stepRuntime,
 		ErrorStr:   errStr,
 		ExitCode:   exitCode,
 		StartTime:  stepStartTime,
@@ -108,6 +109,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 		ErrorMessage:    errStr,
 		Timeout:         timeout,
 		NoOutputTimeout: noOutputTimeout,
+		Runtime:         stepRuntime,
 	})
 
 	switch status {
