@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/tools/filterwriter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -209,4 +210,10 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *test
 			require.Equal(t, tt.want, errors)
 		})
 	}
+}
+
+func Test_WhenSecretsProvided_ThenRootWriterIsFilterWriter(t *testing.T) {
+	w := NewWriter([]string{"secret"}, log.LoggerOpts{})
+	_, isFilterWriter := w.writer.(*filterwriter.Writer)
+	require.True(t, isFilterWriter)
 }
