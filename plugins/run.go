@@ -40,7 +40,7 @@ func strip(str string) string {
 
 		hasNewlineSuffix := false
 		if strings.HasSuffix(strippedStr, "\n") {
-			hasNewlinePrefix = true
+			hasNewlineSuffix = true
 			strippedStr = strings.TrimSuffix(strippedStr, "\n")
 		}
 
