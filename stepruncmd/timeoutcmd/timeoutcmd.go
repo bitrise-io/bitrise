@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/hangdetector"
+	"github.com/bitrise-io/bitrise/stepruncmd/hangdetector"
 )
 
 // Command controls the command run.

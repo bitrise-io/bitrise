@@ -4,7 +4,6 @@ import (
 	"io"
 	"regexp"
 	"sync"
-	"time"
 )
 
 const maxLength = 20
@@ -15,9 +14,8 @@ var controlRegexp = regexp.MustCompile(`\x1b\[[^m]*m`)
 // ErrorFinder parses the data coming via the `Write` method and keeps the latest "red" block (that matches \x1b[31;1m control sequence)
 // and hands over tha data to the wrapped `io.Writer` instance.
 type ErrorFinder struct {
-	mux          sync.Mutex
-	writer       io.Writer
-	timeProvider func() time.Time
+	mux    sync.Mutex
+	writer io.Writer
 
 	chunk         string
 	collecting    bool
@@ -25,10 +23,9 @@ type ErrorFinder struct {
 }
 
 // NewErrorFinder ...
-func NewErrorFinder(writer io.Writer, timeProvider func() time.Time) *ErrorFinder {
+func NewErrorFinder(writer io.Writer) *ErrorFinder {
 	return &ErrorFinder{
-		writer:       writer,
-		timeProvider: timeProvider,
+		writer: writer,
 	}
 }
 

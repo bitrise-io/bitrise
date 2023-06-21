@@ -2,7 +2,6 @@ package errorfinder
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -151,10 +150,7 @@ func Test_errorFindingWriter_findString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := NewErrorFinder(nil, func() time.Time {
-				// UnixNano() is 0 for this time
-				return time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-			})
+			w := NewErrorFinder(nil)
 			for _, input := range tt.inputs {
 				_, err := w.Write([]byte(input))
 				require.NoError(t, err)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bitrise-io/bitrise/tools/filterwriter"
+	"github.com/bitrise-io/bitrise/stepruncmd/filterwriter"
 	"github.com/bitrise-io/envman/models"
 )
 

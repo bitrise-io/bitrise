@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/exitcode"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
+	"github.com/bitrise-io/bitrise/stepruncmd/timeoutcmd"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"

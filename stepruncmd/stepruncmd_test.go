@@ -1,4 +1,4 @@
-package stepoutput
+package stepruncmd
 
 import (
 	"bytes"
@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/filterwriter"
+	"github.com/bitrise-io/bitrise/log/logwriter"
+	"github.com/bitrise-io/bitrise/stepruncmd/filterwriter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,8 +40,10 @@ func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 					return time.Time{}
 				},
 			}
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
 
-			w := NewWriter(nil, opts)
+			w := NewStdoutWriter(nil, writer)
 			for _, message := range tt.messages {
 				gotN, err := w.Write([]byte(message))
 				require.NoError(t, err)
@@ -87,7 +90,10 @@ func Test_GivenWriter_WhenJSONLogging_ThenWritesJSON(t *testing.T) {
 					return time.Time{}
 				},
 			}
-			w := NewWriter(nil, opts)
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
+
+			w := NewStdoutWriter(nil, writer)
 			for _, message := range tt.messages {
 				gotN, err := w.Write([]byte(message))
 				require.NoError(t, err)
@@ -150,7 +156,10 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testin
 					return time.Time{}
 				},
 			}
-			w := NewWriter([]string{"secret value"}, opts)
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
+
+			w := NewStdoutWriter([]string{"secret value"}, writer)
 			for _, message := range tt.messages {
 				gotN, err := w.Write([]byte(message))
 				require.NoError(t, err)
@@ -196,7 +205,10 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *test
 					return time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 				},
 			}
-			w := NewWriter([]string{"secret value"}, opts)
+			logger := log.NewLogger(opts)
+			writer := logwriter.NewLogWriter(logger)
+
+			w := NewStdoutWriter([]string{"secret value"}, writer)
 			for _, message := range tt.messages {
 				gotN, err := w.Write([]byte(message))
 				require.NoError(t, err)
@@ -213,7 +225,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *test
 }
 
 func Test_WhenSecretsProvided_ThenRootWriterIsFilterWriter(t *testing.T) {
-	w := NewWriter([]string{"secret"}, log.LoggerOpts{})
+	w := NewStdoutWriter([]string{"secret"}, nil)
 	_, isFilterWriter := w.writer.(*filterwriter.Writer)
 	require.True(t, isFilterWriter)
 }
