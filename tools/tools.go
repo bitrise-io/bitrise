@@ -2,20 +2,16 @@ package tools
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	envmanEnv "github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -267,77 +263,6 @@ func EnvmanReadEnvList(envStorePth string) (envmanModels.EnvsJSONListModel, erro
 // EnvmanClear ...
 func EnvmanClear(envStorePth string) error {
 	return envman.ClearEnvs(envStorePth)
-}
-
-type Flusher interface {
-	Flush() (int, error)
-}
-
-type ErrorParser interface {
-	ErrorMessages() []string
-}
-
-// EnvmanRun runs a command through envman.
-func EnvmanRun(envStorePth,
-	workDirPth string,
-	cmdArgs []string,
-	timeout time.Duration,
-	noOutputTimeout time.Duration,
-	stdInPayload []byte,
-	outWriter io.Writer,
-) (int, error) {
-	envs, err := envman.ReadAndEvaluateEnvs(envStorePth, &envmanEnv.DefaultEnvironmentSource{})
-	if err != nil {
-		return 1, fmt.Errorf("failed to read command environment: %w", err)
-	}
-
-	var inReader io.Reader
-	if stdInPayload != nil {
-		inReader = bytes.NewReader(stdInPayload)
-	} else {
-		inReader = os.Stdin
-	}
-
-	name := cmdArgs[0]
-	var args []string
-	if len(cmdArgs) > 1 {
-		args = cmdArgs[1:]
-	}
-
-	cmd := timeoutcmd.New(workDirPth, name, args...)
-	cmd.SetTimeout(timeout)
-	cmd.SetHangTimeout(noOutputTimeout)
-	cmd.SetStandardIO(inReader, outWriter, outWriter)
-	cmd.SetEnv(append(envs, "PWD="+workDirPth))
-
-	cmdErr := cmd.Start()
-
-	if closer, isCloser := outWriter.(io.Closer); isCloser {
-		if err := closer.Close(); err != nil {
-			log.Warnf("Failed to close command output writer: %s", err)
-		}
-	}
-
-	if cmdErr == nil {
-		return 0, nil
-	}
-
-	var exitErr *exec.ExitError
-	if !errors.As(cmdErr, &exitErr) {
-		return 1, fmt.Errorf("executing command failed: %w", cmdErr)
-	}
-
-	exitCode := exitErr.ExitCode()
-
-	if errorParser, isErrorParser := outWriter.(ErrorParser); isErrorParser {
-		errorMessages := errorParser.ErrorMessages()
-		if len(errorMessages) > 0 {
-			lastErrorMessage := errorMessages[len(errorMessages)-1]
-			return exitCode, errors.New(lastErrorMessage)
-		}
-	}
-
-	return exitCode, exitErr
 }
 
 // ------------------
