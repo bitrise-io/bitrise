@@ -2,21 +2,14 @@ package plugins
 
 import (
 	"bytes"
-	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
-	envman "github.com/bitrise-io/envman/cli"
-	envmanEnv "github.com/bitrise-io/envman/env"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 //=======================================
@@ -87,7 +80,7 @@ func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	log.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
-func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) error {
+func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []byte) error {
 	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
 		// Check for new version
 		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
@@ -106,43 +99,14 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		log.Print()
 	}
 
-	// Append common data to plugin iputs
+	// Append common data to plugin inputs
 	bitriseVersion, err := version.BitriseCliVersion()
 	if err != nil {
 		return err
 	}
-	envs[PluginConfigBitriseVersionKey] = bitriseVersion.String()
-	envs[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
-	envs[PluginConfigFormatVersionKey] = models.FormatVersion
-
-	// Prepare plugin envstore
-	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := os.RemoveAll(pluginWorkDir); err != nil {
-			log.Warnf("Failed to remove path (%s)", pluginWorkDir)
-		}
-	}()
-
-	// todo: no need for passing envs through an enstore as all the envs have is_expand=false
-	pluginEnvstorePath := filepath.Join(pluginWorkDir, "envstore.yml")
-
-	if err := tools.EnvmanInit(pluginEnvstorePath, true); err != nil {
-		return err
-	}
-
-	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false, false); err != nil {
-		return err
-	}
-
-	// Add plugin inputs
-	for key, value := range envs {
-		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false, false); err != nil {
-			return err
-		}
-	}
+	envKeyValues[PluginConfigBitriseVersionKey] = bitriseVersion.String()
+	envKeyValues[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
+	envKeyValues[PluginConfigFormatVersionKey] = models.FormatVersion
 
 	// Run plugin executable
 	pluginExecutable, isBin, err := GetPluginExecutablePath(plugin.Name)
@@ -160,17 +124,17 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 
 	cmd.SetStdin(bytes.NewReader(input))
 
+	var envs []string
+	for key, value := range envKeyValues {
+		envs = append(envs, key+"="+value)
+	}
+
+	cmd.AppendEnvs(envs...)
+
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logWriter := logwriter.NewLogWriter(logger)
 
 	cmd.SetStdout(logWriter)
-
-	evaluatedEnvs, err := envman.ReadAndEvaluateEnvs(pluginEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
-	if err != nil {
-		return fmt.Errorf("failed to read command environment: %w", err)
-	}
-
-	cmd.SetEnvs(evaluatedEnvs...)
 
 	cmdErr := cmd.Run()
 
