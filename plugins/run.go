@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +13,9 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
+	envman "github.com/bitrise-io/envman/cli"
+	envmanEnv "github.com/bitrise-io/envman/env"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -121,6 +126,7 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		}
 	}()
 
+	// todo: no need for passing envs through an enstore as all the envs have is_expand=false
 	pluginEnvstorePath := filepath.Join(pluginWorkDir, "envstore.yml")
 
 	if err := tools.EnvmanInit(pluginEnvstorePath, true); err != nil {
@@ -144,29 +150,33 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		return err
 	}
 
-	cmd := []string{}
+	var cmd *command.Model
 
 	if isBin {
-		cmd = append([]string{pluginExecutable}, args...)
+		cmd = command.New(pluginExecutable, args...)
 	} else {
-		cmd = append([]string{"bash", pluginExecutable}, args...)
+		cmd = command.New("bash", append([]string{pluginExecutable}, args...)...)
 	}
+
+	cmd.SetStdin(bytes.NewReader(input))
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logWriter := logwriter.NewLogWriter(logger)
 
-	_, err = tools.EnvmanRun(
-		pluginEnvstorePath,
-		"",
-		cmd,
-		-1,
-		-1,
-		input,
-		logWriter)
+	cmd.SetStdout(logWriter)
 
+	evaluatedEnvs, err := envman.ReadAndEvaluateEnvs(pluginEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read command environment: %w", err)
 	}
 
-	return nil
+	cmd.SetEnvs(evaluatedEnvs...)
+
+	cmdErr := cmd.Run()
+
+	if err := logWriter.Close(); err != nil {
+		log.Warnf("Failed to close command output writer: %s", err)
+	}
+
+	return cmdErr
 }
