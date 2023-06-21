@@ -11,7 +11,7 @@ type matchRange struct{ first, last int }
 func allRanges(b, pattern []byte) (ranges []matchRange) {
 	i := 0
 	for {
-		sub := b[i:len(b)]
+		sub := b[i:]
 		idx := bytes.Index(sub, pattern)
 		if idx == -1 {
 			return

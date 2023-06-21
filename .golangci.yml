@@ -9,7 +9,7 @@ issues:
   - path: cli/update.go
     linters:
     - staticcheck
-  - path: tools/timeoutcmd/timeoutcmd.go
+  - path: stepruncmd/timeoutcmd/timeoutcmd.go
     linters:
     - staticcheck
     - govet
@@ -77,9 +77,6 @@ issues:
     linters:
     - ineffassign
   - path: configs/configs.go
-    linters:
-    - gosimple
-  - path: tools/filterwriter/range.go
     linters:
     - gosimple
   - path: plugins/git.go
