@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -21,7 +22,10 @@ import (
 	"github.com/bitrise-io/bitrise/stepoutput"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
+	envman "github.com/bitrise-io/envman/cli"
 	"github.com/bitrise-io/envman/env"
+	envmanEnv "github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -380,6 +384,7 @@ func (r WorkflowRunner) executeStep(
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
 	secrets []string) (int, error) {
+
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
 
@@ -388,7 +393,7 @@ func (r WorkflowRunner) executeStep(
 			toolkitName, err)
 	}
 
-	cmd, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
+	cmdArgs, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
 	if err != nil {
 		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
 			toolkitName, err)
@@ -409,20 +414,54 @@ func (r WorkflowRunner) executeStep(
 	if r.config.Modes.SecretFilteringMode {
 		stepSecrets = secrets
 	}
+
 	opts := log.GetGlobalLoggerOpts()
 	opts.Producer = log.Step
 	opts.ProducerID = stepUUID
 	opts.DebugLogEnabled = true
-	writer := stepoutput.NewWriter(stepSecrets, opts)
+	outWriter := stepoutput.NewWriter(stepSecrets, opts)
 
-	return tools.EnvmanRun(
-		configs.InputEnvstorePath,
-		bitriseSourceDir,
-		cmd,
-		timeout,
-		noOutputTimeout,
-		nil,
-		writer)
+	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	if err != nil {
+		return 1, fmt.Errorf("failed to read command environment: %w", err)
+	}
+
+	name := cmdArgs[0]
+	var args []string
+	if len(cmdArgs) > 1 {
+		args = cmdArgs[1:]
+	}
+
+	cmd := timeoutcmd.New(bitriseSourceDir, name, args...)
+	cmd.SetTimeout(timeout)
+	cmd.SetHangTimeout(noOutputTimeout)
+	cmd.SetStandardIO(os.Stdin, outWriter, outWriter)
+	cmd.SetEnv(append(envs, "PWD="+bitriseSourceDir))
+
+	cmdErr := cmd.Start()
+
+	if err := outWriter.Close(); err != nil {
+		log.Warnf("Failed to close command output writer: %s", err)
+	}
+
+	if cmdErr == nil {
+		return 0, nil
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(cmdErr, &exitErr) {
+		return 1, fmt.Errorf("executing command failed: %w", cmdErr)
+	}
+
+	exitCode := exitErr.ExitCode()
+
+	errorMessages := outWriter.ErrorMessages()
+	if len(errorMessages) > 0 {
+		lastErrorMessage := errorMessages[len(errorMessages)-1]
+		return exitCode, errors.New(lastErrorMessage)
+	}
+
+	return exitCode, exitErr
 }
 
 func (r WorkflowRunner) runStep(
@@ -510,69 +549,6 @@ func (r WorkflowRunner) runStep(
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return 0, updatedStepOutputs, nil
-}
-
-func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
-	didStepLibUpdate := false
-
-	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-	if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
-		return stepmanModels.StepInfoModel{}, false, err
-	}
-
-	versionConstraint, err := stepmanModels.ParseRequiredVersion(stepIDData.Version)
-	if err != nil {
-		return stepmanModels.StepInfoModel{}, false,
-			fmt.Errorf("activating step (%s) from source (%s) failed, invalid version specified: %s", stepIDData.IDorURI, stepIDData.SteplibSource, err)
-	}
-	if versionConstraint.VersionLockType == stepmanModels.InvalidVersionConstraint {
-		return stepmanModels.StepInfoModel{}, false,
-			fmt.Errorf("activating step (%s) from source (%s) failed, version constraint is invalid", stepIDData.IDorURI, stepIDData.SteplibSource)
-	}
-
-	isStepLibUpdateNeeded := (versionConstraint.VersionLockType == stepmanModels.Latest) ||
-		(versionConstraint.VersionLockType == stepmanModels.MinorLocked) ||
-		(versionConstraint.VersionLockType == stepmanModels.MajorLocked)
-	if !isStepLibUpdated && isStepLibUpdateNeeded {
-		log.Print("Step uses latest version, updating StepLib...")
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
-		} else {
-			didStepLibUpdate = true
-		}
-	}
-
-	info, err := tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-	if err != nil {
-		if isStepLibUpdated {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
-		}
-
-		// May StepLib should be updated
-		log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
-		}
-
-		didStepLibUpdate = true
-
-		info, err = tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-		if err != nil {
-			return stepmanModels.StepInfoModel{}, didStepLibUpdate, fmt.Errorf("stepman JSON steplib step info failed: %s", err)
-		}
-	}
-
-	if info.Step.Title == nil || *info.Step.Title == "" {
-		info.Step.Title = pointers.NewStringPtr(info.ID)
-	}
-	info.OriginalVersion = stepIDData.Version
-
-	if err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, info.Version, destination, stepYMLCopyPth); err != nil {
-		return stepmanModels.StepInfoModel{}, didStepLibUpdate, err
-	}
-	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
-
-	return info, didStepLibUpdate, nil
 }
 
 func (r WorkflowRunner) activateAndRunSteps(
