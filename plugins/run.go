@@ -129,6 +129,9 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 		envs = append(envs, key+"="+value)
 	}
 
+	// envs are not expanded when running a plugin,
+	// this means if you pass (ENV_1=value, ENV_2=$ENV_1) and echo $ENV_2,
+	// $ENV_1 will be printed (and not value).
 	cmd.AppendEnvs(envs...)
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
