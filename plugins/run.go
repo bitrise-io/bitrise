@@ -1,17 +1,15 @@
 package plugins
 
 import (
-	"os"
-	"path/filepath"
+	"bytes"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/version"
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/command"
 )
 
 //=======================================
@@ -42,7 +40,7 @@ func strip(str string) string {
 
 		hasNewlineSuffix := false
 		if strings.HasSuffix(strippedStr, "\n") {
-			hasNewlinePrefix = true
+			hasNewlineSuffix = true
 			strippedStr = strings.TrimSuffix(strippedStr, "\n")
 		}
 
@@ -82,7 +80,7 @@ func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	log.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
-func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) error {
+func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []byte) error {
 	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
 		// Check for new version
 		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
@@ -101,42 +99,14 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		log.Print()
 	}
 
-	// Append common data to plugin iputs
+	// Append common data to plugin inputs
 	bitriseVersion, err := version.BitriseCliVersion()
 	if err != nil {
 		return err
 	}
-	envs[PluginConfigBitriseVersionKey] = bitriseVersion.String()
-	envs[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
-	envs[PluginConfigFormatVersionKey] = models.FormatVersion
-
-	// Prepare plugin envstore
-	pluginWorkDir, err := pathutil.NormalizedOSTempDirPath("plugin-work-dir")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := os.RemoveAll(pluginWorkDir); err != nil {
-			log.Warnf("Failed to remove path (%s)", pluginWorkDir)
-		}
-	}()
-
-	pluginEnvstorePath := filepath.Join(pluginWorkDir, "envstore.yml")
-
-	if err := tools.EnvmanInit(pluginEnvstorePath, true); err != nil {
-		return err
-	}
-
-	if err := tools.EnvmanAdd(pluginEnvstorePath, configs.EnvstorePathEnvKey, pluginEnvstorePath, false, false, false); err != nil {
-		return err
-	}
-
-	// Add plugin inputs
-	for key, value := range envs {
-		if err := tools.EnvmanAdd(pluginEnvstorePath, key, value, false, false, false); err != nil {
-			return err
-		}
-	}
+	envKeyValues[PluginConfigBitriseVersionKey] = bitriseVersion.String()
+	envKeyValues[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
+	envKeyValues[PluginConfigFormatVersionKey] = models.FormatVersion
 
 	// Run plugin executable
 	pluginExecutable, isBin, err := GetPluginExecutablePath(plugin.Name)
@@ -144,29 +114,36 @@ func runPlugin(plugin Plugin, args []string, envs PluginConfig, input []byte) er
 		return err
 	}
 
-	cmd := []string{}
+	var cmd *command.Model
 
 	if isBin {
-		cmd = append([]string{pluginExecutable}, args...)
+		cmd = command.New(pluginExecutable, args...)
 	} else {
-		cmd = append([]string{"bash", pluginExecutable}, args...)
+		cmd = command.New("bash", append([]string{pluginExecutable}, args...)...)
 	}
+
+	cmd.SetStdin(bytes.NewReader(input))
+
+	var envs []string
+	for key, value := range envKeyValues {
+		envs = append(envs, key+"="+value)
+	}
+
+	// envs are not expanded when running a plugin,
+	// this means if you pass (ENV_1=value, ENV_2=$ENV_1) and echo $ENV_2,
+	// $ENV_1 will be printed (and not value).
+	cmd.AppendEnvs(envs...)
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logWriter := logwriter.NewLogWriter(logger)
 
-	_, err = tools.EnvmanRun(
-		pluginEnvstorePath,
-		"",
-		cmd,
-		-1,
-		-1,
-		input,
-		logWriter)
+	cmd.SetStdout(logWriter)
 
-	if err != nil {
-		return err
+	cmdErr := cmd.Run()
+
+	if err := logWriter.Close(); err != nil {
+		log.Warnf("Failed to close command output writer: %s", err)
 	}
 
-	return nil
+	return cmdErr
 }
