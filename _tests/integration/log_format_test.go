@@ -40,9 +40,17 @@ func TestConsoleLogCanBeRestoredFromJSONLog(t *testing.T) {
 }
 
 func createConsoleLog(t *testing.T, workflow string) (string, error) {
-	execCmd := exec.Command(binPath(), "setup")
-	outBytes, err := execCmd.CombinedOutput()
-	require.NoError(t, err, string(outBytes))
+	{
+		cmd := exec.Command(binPath(), "setup")
+		outBytes, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(outBytes))
+	}
+
+	{
+		cmd := exec.Command(binPath(), ":analytics", "off")
+		outBytes, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(outBytes))
+	}
 
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml")
 	out, err := cmd.CombinedOutput()
@@ -50,9 +58,17 @@ func createConsoleLog(t *testing.T, workflow string) (string, error) {
 }
 
 func createJSONLog(t *testing.T, workflow string) ([]byte, error) {
-	execCmd := exec.Command(binPath(), "setup")
-	outBytes, err := execCmd.CombinedOutput()
-	require.NoError(t, err, string(outBytes))
+	{
+		cmd := exec.Command(binPath(), "setup")
+		outBytes, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(outBytes))
+	}
+
+	{
+		cmd := exec.Command(binPath(), ":analytics", "off")
+		outBytes, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(outBytes))
+	}
 
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml", "--output-format", "json")
 	return cmd.CombinedOutput()
@@ -165,7 +181,7 @@ func convertStepFinishedEventLog(line []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	var buf bytes.Buffer
 	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
 	logger.PrintStepFinishedEvent(eventLog.Content)
