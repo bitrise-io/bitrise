@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -18,11 +17,11 @@ import (
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/stepoutput"
+	"github.com/bitrise-io/bitrise/stepruncmd"
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/bitrise/tools/timeoutcmd"
 	envman "github.com/bitrise-io/envman/cli"
 	"github.com/bitrise-io/envman/env"
 	envmanEnv "github.com/bitrise-io/envman/env"
@@ -419,12 +418,8 @@ func (r WorkflowRunner) executeStep(
 	opts.Producer = log.Step
 	opts.ProducerID = stepUUID
 	opts.DebugLogEnabled = true
-	outWriter := stepoutput.NewWriter(stepSecrets, opts)
-
-	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
-	if err != nil {
-		return 1, fmt.Errorf("failed to read command environment: %w", err)
-	}
+	logger := log.NewLogger(opts)
+	stdout := logwriter.NewLogWriter(logger)
 
 	name := cmdArgs[0]
 	var args []string
@@ -432,36 +427,13 @@ func (r WorkflowRunner) executeStep(
 		args = cmdArgs[1:]
 	}
 
-	cmd := timeoutcmd.New(bitriseSourceDir, name, args...)
-	cmd.SetTimeout(timeout)
-	cmd.SetHangTimeout(noOutputTimeout)
-	cmd.SetStandardIO(os.Stdin, outWriter, outWriter)
-	cmd.SetEnv(append(envs, "PWD="+bitriseSourceDir))
-
-	cmdErr := cmd.Start()
-
-	if err := outWriter.Close(); err != nil {
-		log.Warnf("Failed to close command output writer: %s", err)
+	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	if err != nil {
+		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
-	if cmdErr == nil {
-		return 0, nil
-	}
-
-	var exitErr *exec.ExitError
-	if !errors.As(cmdErr, &exitErr) {
-		return 1, fmt.Errorf("executing command failed: %w", cmdErr)
-	}
-
-	exitCode := exitErr.ExitCode()
-
-	errorMessages := outWriter.ErrorMessages()
-	if len(errorMessages) > 0 {
-		lastErrorMessage := errorMessages[len(errorMessages)-1]
-		return exitCode, errors.New(lastErrorMessage)
-	}
-
-	return exitCode, exitErr
+	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout)
+	return cmd.Run()
 }
 
 func (r WorkflowRunner) runStep(
