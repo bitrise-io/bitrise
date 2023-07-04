@@ -19,7 +19,10 @@ type StepListItemModel map[string]stepmanModels.StepModel
 
 // PipelineModel ...
 type PipelineModel struct {
-	Stages []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Title       string               `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string               `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
+	Stages      []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
 }
 
 // StageListItemModel ...
@@ -27,6 +30,9 @@ type StageListItemModel map[string]StageModel
 
 // StageModel ...
 type StageModel struct {
+	Title           string                  `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary         string                  `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description     string                  `json:"description,omitempty" yaml:"description,omitempty"`
 	ShouldAlwaysRun bool                    `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
 	AbortOnFail     bool                    `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
 	RunIf           string                  `json:"run_if,omitempty" yaml:"run_if,omitempty"`

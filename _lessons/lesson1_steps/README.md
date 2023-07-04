@@ -9,7 +9,7 @@ First of all let's talk about Steps. Steps are the building blocks of a [Bitrise
 Now that you created your first local project (by calling the `bitrise setup` and after it the `bitrise init`) we can have some fun with the Steps! Open the bitrise.yml and let's add some steps!
 
 ## StepID
-SetpID is a unique identifier of a step. In your Workflow you have to include this ID to tell [Bitrise](https://bitrise.io) which Step you'd like to run. In our [StepLib](https://github.com/bitrise-io/bitrise-steplib) if you open the [steps folder](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps) you can see that every Step folder's name is the StepID.
+StepID is a unique identifier of a step. In your Workflow you have to include this ID to tell [Bitrise](https://bitrise.io) which Step you'd like to run. In our [StepLib](https://github.com/bitrise-io/bitrise-steplib) if you open the [steps folder](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps) you can see that every Step folder's name is the StepID.
 
 ### StepID format in the .yml
 
