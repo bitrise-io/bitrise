@@ -11,7 +11,7 @@ import (
 
 const (
 	// FormatVersion ...
-	FormatVersion = "12"
+	FormatVersion = "13"
 )
 
 // StepListItemModel ...
@@ -113,6 +113,7 @@ type BitriseDataModel struct {
 
 // StepIDData ...
 // structured representation of a composite-step-id
+//
 //	a composite step id is: step-lib-source::step-id@1.0.0
 type StepIDData struct {
 	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
