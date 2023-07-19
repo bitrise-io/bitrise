@@ -26,6 +26,7 @@ import (
 	"github.com/bitrise-io/envman/env"
 	envmanEnv "github.com/bitrise-io/envman/env"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-steputils/v2/secretkeys"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -438,8 +439,13 @@ func (r WorkflowRunner) executeStep(
 
 func (r WorkflowRunner) runStep(
 	stepUUID string,
-	step stepmanModels.StepModel, stepIDData models.StepIDData, stepDir string,
-	environments []envmanModels.EnvironmentItemModel, secrets []string) (int, []envmanModels.EnvironmentItemModel, error) {
+	step stepmanModels.StepModel,
+	stepIDData models.StepIDData,
+	officialStep bool,
+	stepDir string,
+	environments []envmanModels.EnvironmentItemModel,
+	secretKeys []string,
+	secretValues []string) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -467,6 +473,10 @@ func (r WorkflowRunner) runStep(
 		return 1, []envmanModels.EnvironmentItemModel{}, err
 	}
 
+	if err := exportEnvKeyList(secretKeys); err != nil {
+		log.Debugf("[BITRISE_CLI] - Failed to add Bitrise env key list")
+	}
+
 	// Run step
 	bitriseSourceDir, err := getCurrentBitriseSourceDir(environments)
 	if err != nil {
@@ -476,7 +486,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secretValues); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -521,6 +531,11 @@ func (r WorkflowRunner) runStep(
 	log.Debugf("[BITRISE_CLI] - Step executed: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return 0, updatedStepOutputs, nil
+}
+
+func exportEnvKeyList(keys []string) error {
+	concatenatedKeys := secretkeys.NewManager().Format(keys)
+	return tools.EnvmanAdd(configs.InputEnvstorePath, secretkeys.EnvKey, concatenatedKeys, false, true, true)
 }
 
 func (r WorkflowRunner) activateAndRunSteps(
@@ -761,7 +776,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 				continue
 			}
 
-			stepSecrets := tools.GetSecretValues(secrets)
+			stepSecretKeys, stepSecretValues := tools.GetSecretKeysAndValues(secrets)
 			if configs.IsSecretEnvsFiltering {
 				sensitiveEnvs, err := getSensitiveEnvs(stepDeclaredEnvironments, expandedStepEnvironment)
 				if err != nil {
@@ -772,10 +787,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 					continue
 				}
 
-				stepSecrets = append(stepSecrets, tools.GetSecretValues(sensitiveEnvs)...)
+				sensitiveEnvKeys, sensitiveEnvValues := tools.GetSecretKeysAndValues(sensitiveEnvs)
+				stepSecretKeys = append(stepSecretKeys, sensitiveEnvKeys...)
+				stepSecretValues = append(stepSecretValues, sensitiveEnvValues...)
 			}
 
-			redactedStepInputs, redactedOriginalInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecrets)
+			redactedStepInputs, redactedOriginalInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecretValues)
 			if err != nil {
 				runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, mergedStep, stepInfoPtr, stepIdxPtr,
 					models.StepRunStatusCodePreparationFailed, 1,
@@ -792,7 +809,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
-			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecrets)
+			isOfficialStep := stepInfoPtr.GroupInfo.Maintainer == "bitrise"
+			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, isOfficialStep, stepDir, stepDeclaredEnvironments, stepSecretKeys, stepSecretValues)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
