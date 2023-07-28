@@ -10,13 +10,24 @@ func (g *Git) Init() *command.Model {
 }
 
 // Clone a repository into a new directory.
-func (g *Git) Clone(repo string) *command.Model {
-	return g.command("clone", repo, ".")
+func (g *Git) Clone(repo string, opts ...string) *command.Model {
+	args := []string{"clone"}
+	args = append(args, opts...)
+	args = append(args, repo)
+	args = append(args, ".")
+	return g.command(args...)
 }
 
 // CloneTagOrBranch is recursively clones a tag or branch.
-func (g *Git) CloneTagOrBranch(repo, tagOrBranch string) *command.Model {
-	return g.command("clone", "--recursive", "--branch", tagOrBranch, repo, ".")
+func (g *Git) CloneTagOrBranch(repo, tagOrBranch string, opts ...string) *command.Model {
+	args := []string{"clone"}
+	args = append(args, "--recursive")
+	args = append(args, []string{"--branch", tagOrBranch}...)
+	args = append(args, opts...)
+	args = append(args, repo)
+	args = append(args, ".")
+
+	return g.command(args...)
 }
 
 // RemoteList shows a list of existing remote urls with remote names.
