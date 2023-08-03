@@ -38,6 +38,7 @@ const (
 	secretFilteringProperty       = "secret_filtering"
 	secretEnvsFilteringProperty   = "secret_envs_filtering"
 	buildSlugProperty             = "build_slug"
+	appSlugProperty               = "app_slug"
 	parentStepExecutionIDProperty = "parent_step_execution_id"
 	cliVersionProperty            = "cli_version"
 	envmanVersionProperty         = "envman_version"
@@ -63,6 +64,7 @@ const (
 	noOutputTimeoutValue = "no_output_timeout"
 
 	buildSlugEnvKey = "BITRISE_BUILD_SLUG"
+	appSlugEnvKey   = "BITRISE_APP_SLUG"
 	// StepExecutionIDEnvKey ...
 	StepExecutionIDEnvKey = "BITRISE_STEP_EXECUTION_ID"
 
@@ -143,6 +145,7 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 	isSecretFiltering := t.envRepository.Get(configs.IsSecretFilteringKey) == "true"
 	isSecretEnvsFiltering := t.envRepository.Get(configs.IsSecretEnvsFilteringKey) == "true"
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
+	appSlug := t.envRepository.Get(appSlugEnvKey)
 	parentStepExecutionID := t.envRepository.Get(StepExecutionIDEnvKey)
 
 	var bitriseVersion string
@@ -175,6 +178,7 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 		stateProperties[workflowTitleProperty] = title
 	}
 	stateProperties.AppendIfNotEmpty(buildSlugProperty, buildSlug)
+	stateProperties.AppendIfNotEmpty(appSlugProperty, appSlug)
 	stateProperties.AppendIfNotEmpty(parentStepExecutionIDProperty, parentStepExecutionID)
 	stateProperties.AppendIfNotEmpty(cliVersionProperty, bitriseVersion)
 	stateProperties.AppendIfNotEmpty(envmanVersionProperty, envmanVersion)
