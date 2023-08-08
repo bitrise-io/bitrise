@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"bytes"
+	"os"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/configs"
@@ -122,7 +123,11 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 		cmd = command.New("bash", append([]string{pluginExecutable}, args...)...)
 	}
 
-	cmd.SetStdin(bytes.NewReader(input))
+	if len(input) > 0 {
+		cmd.SetStdin(bytes.NewReader(input))
+	} else {
+		cmd.SetStdin(os.Stdin)
+	}
 
 	var envs []string
 	for key, value := range envKeyValues {
