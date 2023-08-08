@@ -143,6 +143,7 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 	logWriter := logwriter.NewLogWriter(logger)
 
 	cmd.SetStdout(logWriter)
+	cmd.SetStderr(logWriter)
 
 	cmdErr := cmd.Run()
 
