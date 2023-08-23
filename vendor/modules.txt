@@ -9,6 +9,9 @@ github.com/bitrise-io/envman/envman
 github.com/bitrise-io/envman/models
 github.com/bitrise-io/envman/output
 github.com/bitrise-io/envman/version
+# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
+## explicit; go 1.17
+github.com/bitrise-io/go-steputils/v2/secretkeys
 # github.com/bitrise-io/go-utils v1.0.8
 ## explicit; go 1.13
 github.com/bitrise-io/go-utils/colorstring
