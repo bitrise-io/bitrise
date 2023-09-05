@@ -268,8 +268,9 @@ func EnvmanClear(envStorePth string) error {
 // ------------------
 // --- Utility
 
-// GetSecretValues filters out built in configuration parameters from the secret envs
-func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
+// GetSecretKeysAndValues filters out built in configuration parameters from the secret envs
+func GetSecretKeysAndValues(secrets []envmanModels.EnvironmentItemModel) ([]string, []string) {
+	var secretKeys []string
 	var secretValues []string
 	for _, secret := range secrets {
 		key, value, err := secret.GetKeyValuePair()
@@ -279,10 +280,11 @@ func GetSecretValues(secrets []envmanModels.EnvironmentItemModel) []string {
 			}
 			continue
 		}
+		secretKeys = append(secretKeys, key)
 		secretValues = append(secretValues, value)
 	}
 
-	return secretValues
+	return secretKeys, secretValues
 }
 
 // MoveFile ...
