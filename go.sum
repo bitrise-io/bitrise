@@ -12,8 +12,8 @@ github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0
 github.com/bitrise-io/go-utils v1.0.8 h1:ekXH6FK5V8UxkyHm2FsQL8yk9Wqd5fjg1NGlD7jK2kc=
 github.com/bitrise-io/go-utils v1.0.8/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.13/go.mod h1:gZWtM7PLn1VOroa4gN1La/24aRVc0jg5R701jTsPaO8=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.16 h1:y+Yo0d8pYIjZiKhQuPM/Z5FY9/mu+wrWkyQlch8f9Po=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.16/go.mod h1:Laih4ji980SQkRgdnMCH0g4u2GZI/5nnbqmYT9UfKFQ=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19 h1:55as5Iv0N4btuRP3YwRzN+BCMtKO210MnJ8mpxmeI7o=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19/go.mod h1:Laih4ji980SQkRgdnMCH0g4u2GZI/5nnbqmYT9UfKFQ=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4 h1:ytUxnO7iSGHlNpbdjhDUefEM5WRy1kD2ElGfBA7r1PE=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=

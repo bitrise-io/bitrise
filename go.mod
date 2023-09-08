@@ -6,7 +6,7 @@ require (
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.8
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.16
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4
 	github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 	github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
