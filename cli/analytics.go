@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/envman/models"
-	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/redactwriter"
 )
 
@@ -50,7 +50,8 @@ func redactStepInputs(environment map[string]string, inputs []models.Environment
 func redactWithSecrets(inputValue string, secrets []string) (string, error) {
 	src := bytes.NewReader([]byte(inputValue))
 	dstBuf := new(bytes.Buffer)
-	redactWriterDst := redactwriter.New(secrets, dstBuf, log.NewLogger())
+	logger := log.NewUtilsLogAdapter()
+	redactWriterDst := redactwriter.New(secrets, dstBuf, &logger)
 
 	if _, err := io.Copy(redactWriterDst, src); err != nil {
 		return "", fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
