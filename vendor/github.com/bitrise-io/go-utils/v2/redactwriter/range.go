@@ -1,4 +1,4 @@
-package filterwriter
+package redactwriter
 
 import (
 	"bytes"

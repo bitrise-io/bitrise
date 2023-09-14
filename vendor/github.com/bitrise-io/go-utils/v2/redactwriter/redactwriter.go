@@ -1,4 +1,4 @@
-package filterwriter
+package redactwriter
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 // RedactStr ...
@@ -21,14 +21,15 @@ type Writer struct {
 	writer  io.Writer
 	secrets [][][]byte
 
-	chunk []byte
-	store [][]byte
-	mux   sync.Mutex
-	timer *time.Timer
+	chunk  []byte
+	store  [][]byte
+	mux    sync.Mutex
+	timer  *time.Timer
+	logger log.Logger
 }
 
 // New ...
-func New(secrets []string, target io.Writer) *Writer {
+func New(secrets []string, target io.Writer, logger log.Logger) *Writer {
 	extendedSecrets := secrets
 	// adding transformed secrets with escaped newline characters to ensure that these are also obscured if found in logs
 	for _, secret := range secrets {
@@ -40,6 +41,7 @@ func New(secrets []string, target io.Writer) *Writer {
 	return &Writer{
 		writer:  target,
 		secrets: secretsByteList(extendedSecrets),
+		logger:  logger,
 	}
 }
 
@@ -69,7 +71,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 		}
 		w.timer = time.AfterFunc(100*time.Millisecond, func() {
 			if _, err := w.flush(); err != nil {
-				log.Errorf("Failed to print last lines: %s", err)
+				w.logger.Errorf("Failed to print last lines: %s", err)
 			}
 		})
 	}
@@ -101,6 +103,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// Close implements io.Writer interface
 func (w *Writer) Close() error {
 	_, err := w.flush()
 	return err

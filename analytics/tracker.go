@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/v2/analytics"
@@ -123,7 +124,7 @@ func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 	stateChecker := NewStateChecker(envRepository)
 
-	logger := newUtilsLogAdapter()
+	logger := log.NewUtilsLogAdapter()
 	tracker := analytics.NewDefaultTracker(&logger)
 	if stateChecker.UseAsync() {
 		tracker = analytics.NewDefaultTracker(&logger)
