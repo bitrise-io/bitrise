@@ -91,6 +91,16 @@ func TestRegisteredFunctions(t *testing.T) {
 			envValue:     "enveq value",
 			expected:     false,
 		},
+		{
+			propTempCont: `{{envcontain "TEST_KEY" "val"}}`,
+			envValue:     "enveq value",
+			expected:     true,
+		},
+		{
+			propTempCont: `{{envcontain "TEST_KEY" "different"}}`,
+			envValue:     "enveq value",
+			expected:     false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.propTempCont, func(t *testing.T) {
