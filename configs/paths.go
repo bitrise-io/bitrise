@@ -40,6 +40,8 @@ const (
 	BitrisePerStepTestResultDirEnvKey = "BITRISE_TEST_RESULT_DIR"
 	// BitriseTmpDirEnvKey ...
 	BitriseTmpDirEnvKey = "BITRISE_TMP_DIR"
+	// BitriseHtmlReportDirEnvKey ...
+	BitriseHtmlReportDirEnvKey = "BITRISE_HTML_REPORT_DIR"
 )
 
 // GetBitriseHomeDirPath ...
@@ -173,7 +175,7 @@ func InitPaths() error {
 		}
 
 		if err := os.Setenv(BitriseDeployDirEnvKey, deployDir); err != nil {
-			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR, error: %s", err)
+			return fmt.Errorf("Failed to set %s, error: %s", BitriseDeployDirEnvKey, err)
 		}
 	}
 
@@ -181,11 +183,23 @@ func InitPaths() error {
 	if os.Getenv(BitriseTestDeployDirEnvKey) == "" {
 		testsDir, err := pathutil.NormalizedOSTempDirPath("test_results")
 		if err != nil {
-			return fmt.Errorf("Failed to set deploy dir, error: %s", err)
+			return fmt.Errorf("Failed to set test_results dir, error: %s", err)
 		}
 
 		if err := os.Setenv(BitriseTestDeployDirEnvKey, testsDir); err != nil {
 			return fmt.Errorf("Failed to set %s, error: %s", BitriseTestDeployDirEnvKey, err)
+		}
+	}
+
+	// BITRISE_HTML_REPORT_DIR
+	if os.Getenv(BitriseHtmlReportDirEnvKey) == "" {
+		htmlReportDir, err := pathutil.NormalizedOSTempDirPath("html_reports")
+		if err != nil {
+			return fmt.Errorf("Failed to set html_reports dir, error: %s", err)
+		}
+
+		if err := os.Setenv(BitriseHtmlReportDirEnvKey, htmlReportDir); err != nil {
+			return fmt.Errorf("Failed to set %s, error: %s", BitriseHtmlReportDirEnvKey, err)
 		}
 	}
 
