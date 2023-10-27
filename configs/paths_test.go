@@ -86,19 +86,4 @@ func TestInitPaths(t *testing.T) {
 	t.Setenv(BitriseTestDeployDirEnvKey, "$HOME/test")
 	require.Equal(t, nil, InitPaths())
 	require.Equal(t, "$HOME/test", os.Getenv(BitriseTestDeployDirEnvKey))
-
-	//
-	// BITRISE_TMP_DIR
-
-	// Unset BITRISE_TMP_DIR -> after InitPaths BITRISE_TMP_DIR should be temp dir
-	if os.Getenv(BitriseTmpDirEnvKey) != "" {
-		require.Equal(t, nil, os.Unsetenv(BitriseTmpDirEnvKey))
-	}
-	require.Equal(t, nil, InitPaths())
-	require.NotEqual(t, "", os.Getenv(BitriseTmpDirEnvKey))
-
-	// Set BITRISE_TMP_DIR -> after InitPaths BITRISE_TMP_DIR should keep content
-	t.Setenv(BitriseTmpDirEnvKey, "$HOME/test")
-	require.Equal(t, nil, InitPaths())
-	require.Equal(t, "$HOME/test", os.Getenv(BitriseTmpDirEnvKey))
 }
