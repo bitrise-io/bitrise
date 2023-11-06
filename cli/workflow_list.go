@@ -24,7 +24,6 @@ var workflowListCommand = cli.Command{
 		return nil
 	},
 	Flags: []cli.Flag{
-		flPath,
 		flConfig,
 		flConfigBase64,
 		cli.StringFlag{

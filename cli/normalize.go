@@ -11,11 +11,6 @@ func normalize(c *cli.Context) error {
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		log.Warn("'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 	//
 
 	// Input validation

@@ -193,13 +193,8 @@ func validateInventory(inventoryPath string, inventoryBase64Data string) (*Valid
 	return nil, nil
 }
 
-func runValidate(bitriseConfigPath string, deprecatedBitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, []string, error) {
+func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inventoryPath string, inventoryBase64Data string) (*ValidationModel, []string, error) {
 	warnings := []string{}
-
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	validation := ValidationModel{}
 
@@ -226,7 +221,6 @@ func validate(c *cli.Context) error {
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
@@ -247,7 +241,7 @@ func validate(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	validation, warnings, err := runValidate(bitriseConfigPath, deprecatedBitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
+	validation, warnings, err := runValidate(bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data)
 	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)

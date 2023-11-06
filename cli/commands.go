@@ -38,7 +38,6 @@ var (
 			Usage:  "Validates a specified bitrise config.",
 			Action: validate,
 			Flags: []cli.Flag{
-				flPath,
 				flConfig,
 				flConfigBase64,
 				flInventory,
@@ -69,8 +68,6 @@ var (
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 
-				// deprecated
-				flPath,
 
 				// should deprecate
 				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
@@ -83,7 +80,6 @@ var (
 			Usage:  "Export the bitrise configuration.",
 			Action: export,
 			Flags: []cli.Flag{
-				flPath,
 				flConfig,
 				flConfigBase64,
 				flFormat,
@@ -96,7 +92,6 @@ var (
 			Usage:  "Normalize the bitrise configuration.",
 			Action: normalize,
 			Flags: []cli.Flag{
-				flPath,
 				flConfig,
 				flConfigBase64,
 			},
