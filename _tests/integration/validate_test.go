@@ -63,19 +63,6 @@ func Test_ValidateTest(t *testing.T) {
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 
-	t.Log("valid - warning test - `-p` flag is deprecated")
-	{
-		var out string
-		var err error
-		elapsed := withRunningTimeCheck(func() {
-			cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml")
-			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
-		require.NoError(t, err)
-		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- 'path' key is deprecated, use 'config' instead!", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
-	}
-
 	t.Log("valid - invalid pipeline id")
 	{
 		configPth := filepath.Join(tmpDir, "bitrise.yml")
@@ -145,19 +132,6 @@ func Test_ValidateTestJSON(t *testing.T) {
 		}, runtimeLimit)
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}}}", out)
-		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
-	}
-
-	t.Log("valid - warning test - `-p` flag is deprecated")
-	{
-		var out string
-		var err error
-		elapsed := withRunningTimeCheck(func() {
-			cmd := command.New(binPath(), "validate", "-p", "trigger_params_test_bitrise.yml", "--format", "json")
-			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
-		require.NoError(t, err)
-		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}},\"warnings\":[\"'path' key is deprecated, use 'config' instead!\"]}", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
 

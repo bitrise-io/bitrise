@@ -108,11 +108,6 @@ func triggerCheck(c *cli.Context) error {
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)

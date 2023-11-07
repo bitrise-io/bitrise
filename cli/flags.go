@@ -6,69 +6,46 @@ import (
 )
 
 const (
-	// CollectionPathEnvKey ...
 	CollectionPathEnvKey = "STEPMAN_COLLECTION"
-	// CIKey ...
 	CIKey = "ci"
-	// PRKey ...
 	PRKey = "pr"
-	// DebugModeKey ...
 	DebugModeKey = "debug"
 
-	// VersionKey ...
 	VersionKey      = "version"
 	versionKeyShort = "v"
 
-	// PathKey ...
-	PathKey      = "path"
-	pathKeyShort = "p"
-
-	// CollectionKey ...
 	CollectionKey      = "collection"
 	collectionKeyShort = "c"
 
 	inventoryShortKey = "i"
 
-	// InventoryBase64Key ...
 	InventoryBase64Key = "inventory-base64"
 
 	configShortKey = "c"
 
-	// ConfigBase64Key ...
 	ConfigBase64Key = "config-base64"
 
-	// HelpKey ...
 	HelpKey      = "help"
 	helpKeyShort = "h"
 
-	// MinimalModeKey ...
 	MinimalModeKey = "minimal"
-	// FullModeKey ...
 	FullModeKey = "full"
 
 	ouputFormatKeyShort = "f"
-	// OuputPathKey ...
 	OuputPathKey = "outpath"
-	// PrettyFormatKey ...
 	PrettyFormatKey = "pretty"
 
-	// IDKey ...
 	IDKey      = "id"
 	idKeyShort = "i"
-	// ShortKey ...
 	ShortKey = "short"
 
-	// StepYMLKey ...
 	StepYMLKey = "step-yml"
 
 	//
 	// Stepman share
 
-	// TagKey ...
 	TagKey = "tag"
-	// GitKey ...
 	GitKey = "git"
-	// StepIDKey ...
 	StepIDKey = "stepid"
 )
 
@@ -97,10 +74,6 @@ var (
 	flOutputFormat = cli.StringFlag{
 		Name:  OuputFormatKey + ", " + ouputFormatKeyShort,
 		Usage: "Output format. Accepted: raw (default), json, yml",
-	}
-	flPath = cli.StringFlag{
-		Name:  PathKey + ", " + pathKeyShort,
-		Usage: "[Deprecated!!! Use 'config'] Path where the workflow config file is located.",
 	}
 	flCollection = cli.StringFlag{
 		Name:   CollectionKey + ", " + collectionKeyShort,

@@ -64,9 +64,6 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 		cli.StringFlag{Name: OutputFormatKey, Usage: "Log format. Available values: json, console"},
 
-		// deprecated
-		flPath,
-
 		// should deprecate
 		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
 		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
@@ -283,11 +280,6 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		log.Warn("'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
