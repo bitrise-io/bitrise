@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/pathutil"
-	yaml "gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
 const agentConfigFileName = "agent-config.yml"
