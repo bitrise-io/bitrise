@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadAgentConfig(t *testing.T) {
@@ -12,7 +14,8 @@ func TestReadAgentConfig(t *testing.T) {
 	t.Setenv("BITRISE_BUILD_SLUG", "80b66786-d011-430f-9c68-00e9416a7325")
 	tempDir := t.TempDir()
 	t.Setenv("HOOKS_DIR", tempDir)
-	ioutil.WriteFile(filepath.Join(tempDir, "cleanup.sh"), []byte("echo cleanup.sh"), 0644)
+	err := ioutil.WriteFile(filepath.Join(tempDir, "cleanup.sh"), []byte("echo cleanup.sh"), 0644)
+	require.NoError(t, err)
 
 	testCases := []struct {
 		name          string
