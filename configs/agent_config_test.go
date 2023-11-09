@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -8,7 +10,10 @@ import (
 func TestReadAgentConfig(t *testing.T) {
 	t.Setenv("BITRISE_APP_SLUG", "ef7a9665e8b6408b")
 	t.Setenv("BITRISE_BUILD_SLUG", "80b66786-d011-430f-9c68-00e9416a7325")
-	t.Setenv("HOME", "/Users/bitrise")
+	tempDir := t.TempDir()
+	t.Setenv("HOOKS_DIR", tempDir)
+	ioutil.WriteFile(filepath.Join(tempDir, "cleanup.sh"), []byte("echo cleanup.sh"), 0644)
+
 	testCases := []struct {
 		name          string
 		configFile     string
@@ -27,8 +32,8 @@ func TestReadAgentConfig(t *testing.T) {
 				AgentHooks {
 					CleanupOnWorkflowStart: []string { "$BITRISE_DEPLOY_DIR" },
 					CleanupOnWorkflowEnd: []string { "$BITRISE_TEST_DEPLOY_DIR" },
-					DoOnWorkflowStart: "/Users/bitrise/hooks/pre-build.sh",
-					DoOnWorkflowEnd: "/Users/bitrise/hooks/post-build.sh",
+					DoOnWorkflowStart: filepath.Join(tempDir, "cleanup.sh"),
+					DoOnWorkflowEnd: filepath.Join(tempDir, "cleanup.sh"),
 				},
 			},
 			expectedErr: false,

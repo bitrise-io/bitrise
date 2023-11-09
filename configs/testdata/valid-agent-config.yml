@@ -10,5 +10,5 @@ hooks:
   cleanup_on_workflow_end:
   - $BITRISE_TEST_DEPLOY_DIR
 
-  do_on_workflow_start: ~/hooks/pre-build.sh
-  do_on_workflow_end: ~/hooks/post-build.sh
+  do_on_workflow_start: $HOOKS_DIR/cleanup.sh
+  do_on_workflow_end: $HOOKS_DIR/cleanup.sh

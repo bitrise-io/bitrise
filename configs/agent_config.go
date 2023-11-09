@@ -8,8 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const agentConfigFileName = "agent-config.yml"
-
 type AgentConfig struct {
 	BitriseDirs BitriseDirs `yaml:"bitrise_dirs"`
 	Hooks       AgentHooks  `yaml:"hooks"`
@@ -70,11 +68,25 @@ func readAgentConfig(configFile string) (AgentConfig, error) {
 	if err != nil {
 		return AgentConfig{}, fmt.Errorf("expand do_on_workflow_start value: %s", err)
 	}
+	doOnWorkflowStartExists, err := pathutil.IsPathExists(expandedDoOnWorkflowStart)
+	if err != nil {
+		return AgentConfig{}, err
+	}
+	if !doOnWorkflowStartExists {
+		return AgentConfig{}, fmt.Errorf("do_on_workflow_start path does not exist: %s", expandedDoOnWorkflowStart)
+	}
 	config.Hooks.DoOnWorkflowStart = expandedDoOnWorkflowStart
 
 	expandedDoOnWorkflowEnd, err := expandPath(config.Hooks.DoOnWorkflowEnd)
 	if err != nil {
 		return AgentConfig{}, fmt.Errorf("expand do_on_workflow_end value: %s", err)
+	}
+	doOnWorkflowEndExists, err := pathutil.IsPathExists(expandedDoOnWorkflowEnd)
+	if err != nil {
+		return AgentConfig{}, err
+	}
+	if !doOnWorkflowEndExists {
+		return AgentConfig{}, fmt.Errorf("do_on_workflow_end path does not exist: %s", expandedDoOnWorkflowStart)
 	}
 	config.Hooks.DoOnWorkflowEnd = expandedDoOnWorkflowEnd
 
