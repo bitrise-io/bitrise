@@ -75,9 +75,6 @@ func TestReadAgentConfig(t *testing.T) {
 			if (err != nil) != tc.expectedErr {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			// if !reflect.DeepEqual(config, tc.expectedConfig) {
-			// 	t.Errorf("Expected config: %+v, but got: %+v", tc.expectedConfig, config)
-			// }
 			require.Equal(t, tc.expectedConfig, config)
 		})
 	}
