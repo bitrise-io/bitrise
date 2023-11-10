@@ -1,4 +1,5 @@
 bitrise_dirs:
+  BITRISE_DATA_HOME_DIR: /opt/bitrise
   BITRISE_SOURCE_DIR: /opt/bitrise/workspace/$BITRISE_APP_SLUG
   BITRISE_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
   BITRISE_TEST_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
