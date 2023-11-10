@@ -1,0 +1,2 @@
+bitrise_dirs:
+  BITRISE_DATA_HOME_DIR: /opt/bitrise
