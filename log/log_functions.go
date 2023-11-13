@@ -6,7 +6,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/version"
 )
 
 var globalLogger *defaultLogger
@@ -102,10 +101,6 @@ func LogMessage(message string, level corelog.Level) {
 
 func PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 	getGlobalLogger().PrintBitriseStartedEvent(plan)
-}
-
-func PrintBitriseASCIIArt() {
-	getGlobalLogger().PrintBitriseASCIIArt(version.VERSION)
 }
 
 func PrintStepStartedEvent(params StepStartedParams) {
