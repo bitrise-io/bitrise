@@ -134,14 +134,10 @@ func convertBitriseStartedEventLog(line []byte) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf, TimeProvider: referenceTime})
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf, TimeProvider: time.Now})
 	logger.PrintBitriseStartedEvent(eventLog.Content)
 
 	return buf.String(), nil
-}
-
-func referenceTime() time.Time {
-	return time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
 }
 
 func convertStepStartedEventLog(line []byte) (string, error) {
@@ -264,6 +260,9 @@ func replaceVariableParts(line string) string {
 
 	totalRunTimeRegexp := regexp.MustCompile(`(\| Total runtime: .+ \|)`)
 	line = totalRunTimeRegexp.ReplaceAllString(line, "[REPLACED]")
+
+	invocationStartRegexp := regexp.MustCompile(`(\| Invocation started at .+)`)
+	line = invocationStartRegexp.ReplaceAllString(line, "[REPLACED]")
 
 	return line
 }
