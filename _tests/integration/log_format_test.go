@@ -261,7 +261,7 @@ func replaceVariableParts(line string) string {
 	totalRunTimeRegexp := regexp.MustCompile(`(\| Total runtime: .+ \|)`)
 	line = totalRunTimeRegexp.ReplaceAllString(line, "[REPLACED]")
 
-	invocationStartRegexp := regexp.MustCompile(`(\| Invocation started at .+)`)
+	invocationStartRegexp := regexp.MustCompile(`Invocation started at .+`)
 	line = invocationStartRegexp.ReplaceAllString(line, "[REPLACED]")
 
 	return line
