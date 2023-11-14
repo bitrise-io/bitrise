@@ -134,10 +134,14 @@ func convertBitriseStartedEventLog(line []byte) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf, TimeProvider: time.Now})
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf, TimeProvider: referenceTime})
 	logger.PrintBitriseStartedEvent(eventLog.Content)
 
 	return buf.String(), nil
+}
+
+func referenceTime() time.Time {
+	return time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC)
 }
 
 func convertStepStartedEventLog(line []byte) (string, error) {
