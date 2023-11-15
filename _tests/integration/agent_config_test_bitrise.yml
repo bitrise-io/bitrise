@@ -8,28 +8,28 @@ workflows:
         inputs:
         - content: |
             set -ex
-            if [[ "$BITRISE_DATA_HOME_DIR" != $(realpath "$INTEGRATION_TEST_BINARY_PATH/../agent") ]]; then
+            if [[ "$BITRISE_DATA_HOME_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent ]]; then
               echo "BITRISE_DATA_HOME_DIR does not point to the expected directory"
               exit 1
             fi
 
             ls $BITRISE_DATA_HOME_DIR
 
-            if [[ "$BITRISE_SOURCE_DIR" != $(realpath "$INTEGRATION_TEST_BINARY_PATH/../agent/workspace/$BITRISE_APP_SLUG") ]]; then
+            if [[ "$BITRISE_SOURCE_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/workspace/$BITRISE_APP_SLUG ]]; then
               echo "BITRISE_SOURCE_DIR does not point to the expected directory"
               exit 1
             fi
 
             ls $BITRISE_SOURCE_DIR
 
-            if [[ "$BITRISE_DEPLOY_DIR" != $(realpath "$INTEGRATION_TEST_BINARY_PATH/../agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts") ]]; then
+            if [[ "$BITRISE_DEPLOY_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts ]]; then
               echo "BITRISE_DEPLOY_DIR does not point to the expected directory"
               exit 1
             fi
 
             ls $BITRISE_DEPLOY_DIR
 
-            if [[ "$BITRISE_TEST_DEPLOY_DIR" != $(realpath "$INTEGRATION_TEST_BINARY_PATH/../agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results") ]]; then
+            if [[ "$BITRISE_TEST_DEPLOY_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results ]]; then
               echo "BITRISE_TEST_DEPLOY_DIR does not point to the expected directory"
               exit 1
             fi
