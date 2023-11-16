@@ -35,8 +35,8 @@ func TestReadAgentConfig(t *testing.T) {
 				AgentHooks{
 					CleanupOnWorkflowStart: []string{"$BITRISE_DEPLOY_DIR"},
 					CleanupOnWorkflowEnd:   []string{"$BITRISE_TEST_DEPLOY_DIR"},
-					DoOnWorkflowStart:      filepath.Join(tempDir, "cleanup.sh"),
-					DoOnWorkflowEnd:        filepath.Join(tempDir, "cleanup.sh"),
+					DoOnBuildStart:         filepath.Join(tempDir, "cleanup.sh"),
+					DoOnBuildEnd:           filepath.Join(tempDir, "cleanup.sh"),
 				},
 			},
 			expectedErr: false,

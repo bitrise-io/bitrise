@@ -258,6 +258,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	bitrise.PrintSummary(buildRunResults)
 
 	if agentConfig != nil {
+		log.Warn("hello")
 		if err := runBuildEndHooks(agentConfig.Hooks); err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("build end hooks: %s", err)
 		}
