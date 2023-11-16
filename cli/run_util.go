@@ -423,19 +423,35 @@ func (r WorkflowRunner) executeStep(
 	logger := log.NewLogger(opts)
 	stdout := logwriter.NewLogWriter(logger)
 
-	name := "docker"
-	cmdArgs = append([]string{"exec", "workflow-container", }, cmdArgs...)
-	// var args []string
-	// if len(cmdArgs) > 1 {
-	// 	args = cmdArgs[1:]
-	// }
-
 	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
-	cmd := stepruncmd.New(name, cmdArgs, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+	name := "docker"
+	dockerArgs := []string{"exec" }
+	// var args []string
+	// if len(cmdArgs) > 1 {
+	// 	args = cmdArgs[1:]
+	// }
+	for _, env := range envs {
+		if strings.HasPrefix(env, "PWD=") {
+			dockerArgs = append(dockerArgs, "-e", "PWD=/tmp")
+			continue
+		}
+		if strings.HasPrefix(env, "BITRISE_SOURCE_DIR=") {
+			dockerArgs = append(dockerArgs, "-e", "BITRISE_SOURCE_DIR=/tmp")
+			continue
+		}
+		dockerArgs = append(dockerArgs, "-e", env)
+	}
+
+	dockerArgs = append(dockerArgs, "workflow-container")
+	dockerArgs = append(dockerArgs, cmdArgs...)
+
+	log.Debugf("Docker exec args: %s", dockerArgs)
+
+	cmd := stepruncmd.New(name, dockerArgs, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
 }

@@ -89,12 +89,18 @@ func run(c *cli.Context) error {
 		log.Errorf(out)
 		return err
 	}
-	out, err = command.New("docker", "run", "--network=bitrise", "-d", "-v=/User/oliverfalvai/projects/steps/bitrise/tmp/.bitrise:/root/.bitrise", "--name=workflow-container", "ruby:latest", "sleep", "infinity").RunAndReturnTrimmedCombinedOutput()
+	out, err = command.New("docker", "run", "--platform", "linux/amd64", "--network=bitrise", "-d", "-v", "/Users/oliverfalvai/projects/steps/bitrise/tmp/.bitrise:/root/.bitrise", "-v", "/tmp:/tmp", "--name=workflow-container", "ruby:latest", "sleep", "infinity").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
 		return err
 	}
 
+	out, err = command.New("docker", "exec", "workflow-container", "ls", "-la", "/root/").RunAndReturnTrimmedCombinedOutput()
+	log.Infof("ls: %s", out)
+	if err != nil {
+		log.Errorf(out)
+		return err
+	}
 
 
 

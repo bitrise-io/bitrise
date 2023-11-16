@@ -7,6 +7,22 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
+  container-workflow:
+    steps:
+      - fastlane:
+          run_if: "true"
+          inputs:
+          - work_dir: /tmp
+          - lane: something
+    # - script:
+    #     title: Setup
+    #     inputs:
+    #     - content: |-
+    #         #!/usr/bin/env bash
+    #         echo $PWD
+
+
+
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:
