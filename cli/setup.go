@@ -31,8 +31,6 @@ var setupCommand = cli.Command{
 }
 
 func setup(c *cli.Context) error {
-	log.PrintBitriseASCIIArt()
-
 	fullMode := c.Bool("full")
 	cleanMode := c.Bool("clean")
 

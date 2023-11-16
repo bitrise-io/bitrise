@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/log/corelog"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/colorstring"
 )
 
 const rfc3339MicroTimeLayout = "2006-01-02T15:04:05.999999Z07:00"
@@ -143,13 +144,17 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		m.PrintBitriseASCIIArt(plan.Version)
-		m.Warnf("CI mode: %v", plan.CIMode)
-		m.Warnf("PR mode: %v", plan.PRMode)
-		m.Warnf("Debug mode: %v", plan.DebugMode)
-		m.Warnf("Secret filtering mode: %v", plan.SecretFilteringMode)
-		m.Warnf("Secret Envs filtering mode: %v", plan.SecretEnvsFilteringMode)
-		m.Warnf("No output timeout mode: %v", plan.NoOutputTimeoutMode)
+		m.Print()
+		m.Printf("Invocation started at %s", colorstring.Cyan(m.opts.TimeProvider().Format(consoleTimeLayout)))
+		m.Printf("Bitrise CLI version: %s", colorstring.Cyan(plan.Version))
+		m.Print()
+		m.Infof("Run modes:")
+		m.Printf("CI mode: %v", colorstring.Cyan("%v", plan.CIMode))
+		m.Printf("PR mode: %v", colorstring.Cyan("%v", plan.PRMode))
+		m.Printf("Debug mode: %v", colorstring.Cyan("%v", plan.DebugMode))
+		m.Printf("Secret filtering mode: %v", colorstring.Cyan("%v", plan.SecretFilteringMode))
+		m.Printf("Secret Envs filtering mode: %v", colorstring.Cyan("%v", plan.SecretEnvsFilteringMode))
+		m.Printf("No output timeout mode: %v", colorstring.Cyan("%v", plan.NoOutputTimeoutMode))
 		m.Print()
 		var workflowIDs []string
 		for _, workflowPlan := range plan.ExecutionPlan {
@@ -163,24 +168,11 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			prefix = "Running workflows"
 		}
 
-		m.Infof("%s: %s", prefix, strings.Join(workflowIDs, " -->  "))
+		m.Printf("%s: %s", prefix, colorstring.Cyan(strings.Join(workflowIDs, " → ")))
 	}
 }
 
-// PrintBitriseASCIIArt ...
-func (m *defaultLogger) PrintBitriseASCIIArt(version string) {
-	m.Print(`
-██████╗ ██╗████████╗██████╗ ██╗███████╗███████╗
-██╔══██╗██║╚══██╔══╝██╔══██╗██║██╔════╝██╔════╝
-██████╔╝██║   ██║   ██████╔╝██║███████╗█████╗
-██╔══██╗██║   ██║   ██╔══██╗██║╚════██║██╔══╝
-██████╔╝██║   ██║   ██║  ██║██║███████║███████╗
-╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝`)
-	m.Printf("version: %s", version)
-	m.Print()
-}
 
-// PrintStepStartedEvent ...
 func (m *defaultLogger) PrintStepStartedEvent(params StepStartedParams) {
 	if m.opts.LoggerType == JSONLogger {
 		m.logger.LogEvent(params, corelog.EventLogFields{

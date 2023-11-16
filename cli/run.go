@@ -222,6 +222,10 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 
+	if err := configs.RegisterAgentOverrides(); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("apply agent config: %s", err)
+	}
+
 	log.PrintBitriseStartedEvent(plan)
 
 	// Run workflows

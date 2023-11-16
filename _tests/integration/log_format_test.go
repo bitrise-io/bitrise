@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -133,7 +134,7 @@ func convertBitriseStartedEventLog(line []byte) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf})
+	logger := log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: &buf, TimeProvider: time.Now})
 	logger.PrintBitriseStartedEvent(eventLog.Content)
 
 	return buf.String(), nil
@@ -259,6 +260,9 @@ func replaceVariableParts(line string) string {
 
 	totalRunTimeRegexp := regexp.MustCompile(`(\| Total runtime: .+ \|)`)
 	line = totalRunTimeRegexp.ReplaceAllString(line, "[REPLACED]")
+
+	invocationStartRegexp := regexp.MustCompile(`Invocation started at .+`)
+	line = invocationStartRegexp.ReplaceAllString(line, "[REPLACED]")
 
 	return line
 }
