@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/gofrs/uuid"
@@ -71,18 +72,31 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
+
+	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		// TODO: check if network already exists
+		log.Warnf(out)
+	}
+	defer func() {
+		out, err = command.New("docker", "network", "rm", "bitrise").RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+		}
+	}()
+
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
 			if config != nil {
 				printAvailableWorkflows(config.Config)
 			}
-			failf("No workflow specified")
+			return fmt.Errorf("No workflow specified")
 		} else if err == utilityWorkflowSpecifiedErr {
 			printAboutUtilityWorkflowsText()
-			failf("Utility workflows can't be triggered directly")
+			return fmt.Errorf("Utility workflows can't be triggered directly")
 		}
-		failf("Failed to process arguments: %s", err)
+		return fmt.Errorf("Failed to process arguments: %s", err)
 	}
 
 	agentConfig, err := setupAgentConfig()
@@ -103,16 +117,16 @@ func run(c *cli.Context) error {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-			os.Exit(exitCode)
+			// os.Exit(exitCode)
 		}
 
-		failf(err.Error())
+		return fmt.Errorf(err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
 	printWorkflowRunStatusMessage(msg)
 	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-	os.Exit(0)
+	// os.Exit(0)
 
 	return nil
 }
@@ -140,10 +154,11 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 }
 
 type WorkflowRunner struct {
-	config      RunConfig
-	
+	config RunConfig
+
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig *configs.AgentConfig
+	agentConfig   *configs.AgentConfig
+	dockerManager DockerManager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
