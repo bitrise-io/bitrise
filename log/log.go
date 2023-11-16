@@ -151,9 +151,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		m.Infof("Run modes:")
 		m.Printf("CI mode: %v", colorstring.Cyan("%v", plan.CIMode))
 		m.Printf("PR mode: %v", colorstring.Cyan("%v", plan.PRMode))
-		if plan.DebugMode {
-			m.Printf("Debug mode: %v", colorstring.Cyan("%v", plan.DebugMode))
-		}
+		m.Printf("Debug mode: %v", colorstring.Cyan("%v", plan.DebugMode))
 		m.Printf("Secret filtering mode: %v", colorstring.Cyan("%v", plan.SecretFilteringMode))
 		m.Printf("Secret Envs filtering mode: %v", colorstring.Cyan("%v", plan.SecretEnvsFilteringMode))
 		m.Printf("No output timeout mode: %v", colorstring.Cyan("%v", plan.NoOutputTimeoutMode))

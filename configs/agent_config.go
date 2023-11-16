@@ -70,47 +70,37 @@ func RegisterAgentOverrides() error {
 	if err != nil {
 		return fmt.Errorf("agent config file: %w", err)
 	}
-	log.Printf("env: %s", os.Getenv(BitriseDataHomeDirEnvKey))
 
-	// BITRISE_DATA_HOME_DIR
-	err = pathutil.EnsureDirExist(config.BitriseDirs.BitriseDataHomeDir)
-	if err != nil {
-		return fmt.Errorf("can't create BITRISE_DATA_HOME_DIR: %w", err)
+	params := []struct {
+		dir    string
+		envKey string
+	}{
+		{
+			dir:    config.BitriseDirs.BitriseDataHomeDir,
+			envKey: BitriseDataHomeDirEnvKey,
+		},
+		{
+			dir:    config.BitriseDirs.SourceDir,
+			envKey: BitriseSourceDirEnvKey,
+		},
+		{
+			dir:    config.BitriseDirs.DeployDir,
+			envKey: BitriseDeployDirEnvKey,
+		},
+		{
+			dir:    config.BitriseDirs.TestDeployDir,
+			envKey: BitriseTestDeployDirEnvKey,
+		},
 	}
-	err = os.Setenv(BitriseDataHomeDirEnvKey, config.BitriseDirs.BitriseDataHomeDir)
-	if err != nil {
-		return fmt.Errorf("set BITRISE_DATA_HOME_DIR: %w", err)
-	}
-
-
-	// BITRISE_SOURCE_DIR
-	err = pathutil.EnsureDirExist(config.BitriseDirs.SourceDir)
-	if err != nil {
-		return fmt.Errorf("can't create BITRISE_SOURCE_DIR: %w", err)
-	}
-	err = os.Setenv(BitriseSourceDirEnvKey, config.BitriseDirs.SourceDir)
-	if err != nil {
-		return fmt.Errorf("set BITRISE_SOURCE_DIR: %w", err)
-	}
-
-	// BITRISE_DEPLOY_DIR
-	err = pathutil.EnsureDirExist(config.BitriseDirs.DeployDir)
-	if err != nil {
-		return fmt.Errorf("can't create BITRISE_DEPLOY_DIR: %w", err)
-	}
-	os.Setenv(BitriseDeployDirEnvKey, config.BitriseDirs.DeployDir)
-	if err != nil {
-		return fmt.Errorf("set BITRISE_DEPLOY_DIR: %w", err)
-	}
-
-	// BITRISE_TEST_DEPLOY_DIR
-	err = pathutil.EnsureDirExist(config.BitriseDirs.TestDeployDir)
-	if err != nil {
-		return fmt.Errorf("can't create BITRISE_TEST_DEPLOY_DIR: %w", err)
-	}
-	os.Setenv(BitriseTestDeployDirEnvKey, config.BitriseDirs.TestDeployDir)
-	if err != nil {
-		return fmt.Errorf("set BITRISE_TEST_DEPLOY_DIR: %w", err)
+	for _, param := range params {
+		err = pathutil.EnsureDirExist(param.dir)
+		if err != nil {
+			return fmt.Errorf("can't create %s: %w", param.envKey, err)
+		}
+		err = os.Setenv(param.envKey, param.dir)
+		if err != nil {
+			return fmt.Errorf("set %s: %w", param.envKey, err)
+		}
 	}
 
 	return nil
