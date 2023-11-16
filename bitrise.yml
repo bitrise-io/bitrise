@@ -7,6 +7,79 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
+  _clone:
+    steps:
+    - activate-ssh-key: {}
+    - git::https://github.com/bitrise-steplib/steps-git-clone.git@ofalvai/no-lfs:
+        run_if: "true"
+        inputs:
+          - repository_url: git@github.com:bitrise-io/subscription-service.git
+          - branch: gci-2
+          - clone_into_dir: ./_tmp/subscription
+#    - script:
+#        title: Run docker serivces
+#        inputs:
+#        - content: |-
+#            !/usr/bin/env bash
+#
+#            docker run -d --rm --name postgres --network bitrise -e POSTGRES_USER=postgres -e POSTGRES_DB=subscription_service_test -e POSTGRES_PASSWORD=password postgres:13
+#            docker run -d --rm --name redis --network bitrise redis:6
+
+  _cleanup:
+    steps: []
+#    - script:
+#        title: Cleanup
+#        inputs:
+#        - content: |-
+#            #!/usr/bin/env bash
+#            set -ex
+#
+#            docker rm -f postgres redis
+
+  container-workflow:
+    services:
+      postgres:
+        image: postgres:13
+        envs:
+        - POSTGRES_USER: postgres
+        - POSTGRES_DB: subscription_service_test
+        - POSTGRES_PASSWORD: password
+        ports:
+        - "5432:5432"
+      redis:
+        image: redis:6
+        ports:
+        - "6379:6379"
+    container:
+      image: ruby:3.1.2
+    envs:
+    - BUNDLE_GEMS__CONTRIBSYS__COM: "xxx"
+    - REDIS_URL: "redis://redis:6379/1"
+    - DATABASE_HOST: "postgres"
+    - DATABASE_PORT: "5432"
+    before_run:
+    - _clone
+    after_run:
+    - _cleanup
+    steps:
+      # - fastlane:
+      #     run_if: "true"
+      #     inputs:
+      #     - work_dir: /tmp
+      #     - lane: something
+    - script:
+        title: Setup
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            echo "Sent from my container"
+            echo $PWD
+
+            cd /usr/src/bitrise/_tmp/subscription
+            bundle install
+            bundle exec rails db:setup
+            bundle exec rake
+
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:
