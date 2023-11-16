@@ -423,18 +423,20 @@ func (r WorkflowRunner) executeStep(
 	logger := log.NewLogger(opts)
 	stdout := logwriter.NewLogWriter(logger)
 
-	name := cmdArgs[0]
-	var args []string
-	if len(cmdArgs) > 1 {
-		args = cmdArgs[1:]
-	}
+	name := "docker"
+	cmdArgs = append([]string{"exec", "workflow-container", }, cmdArgs...)
+	// var args []string
+	// if len(cmdArgs) > 1 {
+	// 	args = cmdArgs[1:]
+	// }
 
 	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
-	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+	cmd := stepruncmd.New(name, cmdArgs, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+
 	return cmd.Run()
 }
 

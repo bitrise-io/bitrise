@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/gofrs/uuid"
@@ -71,18 +72,44 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
+	defer func() {
+		out, err := command.New("docker", "rm", "--force", "workflow-container").RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+		}
+		out, err = command.New("docker", "network", "rm", "bitrise").RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+		}
+	}()
+
+	
+	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Errorf(out)
+		return err
+	}
+	out, err = command.New("docker", "run", "--network=bitrise", "-d", "-v=/User/oliverfalvai/projects/steps/bitrise/tmp/.bitrise:/root/.bitrise", "--name=workflow-container", "ruby:latest", "sleep", "infinity").RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Errorf(out)
+		return err
+	}
+
+
+
+
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
 			if config != nil {
 				printAvailableWorkflows(config.Config)
 			}
-			failf("No workflow specified")
+			return fmt.Errorf("No workflow specified")
 		} else if err == utilityWorkflowSpecifiedErr {
 			printAboutUtilityWorkflowsText()
-			failf("Utility workflows can't be triggered directly")
+			return fmt.Errorf("Utility workflows can't be triggered directly")
 		}
-		failf("Failed to process arguments: %s", err)
+		return fmt.Errorf("Failed to process arguments: %s", err)
 	}
 
 	runner := NewWorkflowRunner(*config)
@@ -92,10 +119,10 @@ func run(c *cli.Context) error {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-			os.Exit(exitCode)
+			// os.Exit(exitCode)
 		}
 
-		failf(err.Error())
+		return fmt.Errorf(err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
