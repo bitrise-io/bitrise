@@ -71,7 +71,7 @@ func TestReadAgentConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			config, err := readAgentConfig(tc.configFile)
+			config, err := ReadAgentConfig(tc.configFile)
 			if (err != nil) != tc.expectedErr {
 				t.Errorf("Unexpected error: %v", err)
 			}

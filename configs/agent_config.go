@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"gopkg.in/yaml.v2"
 )
@@ -52,66 +51,19 @@ type AgentHooks struct {
 	DoOnWorkflowStart string `yaml:"do_on_workflow_start"`
 
 	// DoOnWorkflowEnd is an optional executable to run when the workflow ends.
-	DoOnWorkflowEnd   string `yaml:"do_on_workflow_end"`
+	DoOnWorkflowEnd string `yaml:"do_on_workflow_end"`
 }
 
-func RegisterAgentOverrides() error {
-	if !hasAgentConfigFile() {
-		return nil
-	}
-
-	file := filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName)
-
-	log.Print("")
-	log.Info("Running in agent mode")
-	log.Printf("Config file: %s", file)
-
-	config, err := readAgentConfig(file)
-	if err != nil {
-		return fmt.Errorf("agent config file: %w", err)
-	}
-
-	params := []struct {
-		dir    string
-		envKey string
-	}{
-		{
-			dir:    config.BitriseDirs.BitriseDataHomeDir,
-			envKey: BitriseDataHomeDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.SourceDir,
-			envKey: BitriseSourceDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.DeployDir,
-			envKey: BitriseDeployDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.TestDeployDir,
-			envKey: BitriseTestDeployDirEnvKey,
-		},
-	}
-	for _, param := range params {
-		err = pathutil.EnsureDirExist(param.dir)
-		if err != nil {
-			return fmt.Errorf("can't create %s: %w", param.envKey, err)
-		}
-		err = os.Setenv(param.envKey, param.dir)
-		if err != nil {
-			return fmt.Errorf("set %s: %w", param.envKey, err)
-		}
-	}
-
-	return nil
+func GetAgentConfigPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName)
 }
 
-func hasAgentConfigFile() bool {
-	exists, _ := pathutil.IsPathExists(filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName))
+func HasAgentConfig() bool {
+	exists, _ := pathutil.IsPathExists(GetAgentConfigPath())
 	return exists
 }
 
-func readAgentConfig(configFile string) (AgentConfig, error) {
+func ReadAgentConfig(configFile string) (AgentConfig, error) {
 	fileContent, err := os.ReadFile(configFile)
 	if err != nil {
 		return AgentConfig{}, err
