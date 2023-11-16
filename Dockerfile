@@ -1,34 +1,18 @@
-FROM golang:1.11
+FROM golang:latest
 
-ENV PROJ_NAME bitrise
+RUN apt-get update && apt-get install -y rsync
 
-RUN apt-get update
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install curl git mercurial rsync ruby sudo
-
-# From the official Golang Dockerfile
-#  https://github.com/docker-library/golang/blob/master/1.4/Dockerfile
-RUN mkdir -p /go/src /go/bin && chmod -R 777 /go
-ENV GOPATH /go
-ENV PATH /go/bin:$PATH
-
-# Install required (testing) tools
-#  Install dependencies
-RUN go get -u github.com/tools/godep
-#  Check for unhandled errors
-RUN go get -u github.com/kisielk/errcheck
-#  Go lint
-RUN go get -u github.com/golang/lint/golint
-
-RUN mkdir -p /go/src/github.com/bitrise-io/$PROJ_NAME
-COPY . /go/src/github.com/bitrise-io/$PROJ_NAME
-
-WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
-# install
-RUN go install
-
-# setup (downloads envman & stepman)
-RUN bitrise setup
-RUN $HOME/.bitrise/tools/stepman setup -c https://github.com/bitrise-io/bitrise-steplib.git
-
-CMD bitrise version
+RUN install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    chmod a+r /etc/apt/keyrings/docker.gpg && \
+    echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+        "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin && \
+    rm -rf /var/lib/apt/lists/*

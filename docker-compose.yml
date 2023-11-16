@@ -1,4 +1,14 @@
-app:
-  build: .
-  volumes:
-  - .:/go/src/github.com/bitrise-io/bitrise
+
+
+
+services:
+  main-container:
+    build:
+      context: .
+    platform: linux/amd64
+    volumes:
+      - ./:/usr/src/bitrise
+      - ./tmp/.bitrise:/root/.bitrise
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /usr/src/bitrise
+    command: sleep infinity
