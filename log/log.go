@@ -144,10 +144,10 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			EventType: "bitrise_started",
 		})
 	} else {
-		m.Print("")
+		m.Print()
 		m.Printf("Invocation started at %s", colorstring.Cyan(m.opts.TimeProvider().Format(consoleTimeLayout)))
 		m.Printf("Bitrise CLI version: %s", colorstring.Cyan(plan.Version))
-		m.Print("")
+		m.Print()
 		m.Infof("Run modes:")
 		m.Printf("CI mode: %v", colorstring.Cyan("%v", plan.CIMode))
 		m.Printf("PR mode: %v", colorstring.Cyan("%v", plan.PRMode))
