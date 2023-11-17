@@ -225,10 +225,11 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	var agentConfig *configs.AgentConfig
 	if configs.HasAgentConfig() {
 		configFile := configs.GetAgentConfigPath()
-		agentConfig, err := configs.ReadAgentConfig(configFile)
+		config, err := configs.ReadAgentConfig(configFile)
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("agent config file: %w", err)
 		}
+		agentConfig = &config
 
 		log.Print()
 		log.Info("Running in agent mode")
@@ -258,7 +259,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	bitrise.PrintSummary(buildRunResults)
 
 	if agentConfig != nil {
-		log.Warn("hello")
 		if err := runBuildEndHooks(agentConfig.Hooks); err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("build end hooks: %s", err)
 		}
