@@ -4,9 +4,9 @@ services:
       context: .
     platform: linux/amd64
     volumes:
+      - /tmp:/tmp
+      - ../_containers/.bitrise:/root/.bitrise
       - ./:/usr/src/bitrise
-      - ./tmp:/tmp
-      - ./tmp-.bitrise:/root/.bitrise
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /usr/src/bitrise
     command: sleep infinity

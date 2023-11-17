@@ -89,14 +89,14 @@ func run(c *cli.Context) error {
 		log.Warnf(out)
 	}
 
-	stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath)
+	stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath) // this is a unique dir within /tmp
 	pwd := os.Getenv(configs.BitriseSourceDirEnvKey) // TODO: this is initialized at command run time to the current workdir
 	pwdMount := fmt.Sprintf("%s:%s", pwd, pwd)
 	out, err = command.New("docker", "run",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
 		"-d",
-		"-v", "/Users/oliverfalvai/projects/steps/bitrise/tmp-.bitrise:/root/.bitrise",
+		"-v", "/Users/oliverfalvai/projects/steps/_containers/.bitrise:/root/.bitrise",
 		"-v", stepSourceMount,
 		"-v", pwdMount,
 		"--name=workflow-container",
