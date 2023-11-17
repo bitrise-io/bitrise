@@ -132,6 +132,34 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
 
+	var agentConfig *configs.AgentConfig
+	if configs.HasAgentConfig() {
+		configFile := configs.GetAgentConfigPath()
+		config, err := configs.ReadAgentConfig(configFile)
+		if err != nil {
+			return 1, fmt.Errorf("agent config file: %w", err)
+		}
+		agentConfig = &config
+
+		log.Print()
+		log.Info("Running in agent mode")
+		log.Printf("Config file: %s", configFile)
+		if err := registerAgentOverrides(agentConfig.BitriseDirs); err != nil {
+			return 1, fmt.Errorf("apply Bitrise dirs: %s", err)
+		}
+
+		if err = runBuildStartHooks(agentConfig.Hooks); err != nil {
+			return 1, fmt.Errorf("build start hooks: %s", err)
+		}
+	}
+	defer func() {
+		if agentConfig != nil {
+			if err := runBuildEndHooks(agentConfig.Hooks); err != nil {
+				log.Errorf("build end hooks: %s", err)
+			}
+		}
+	}()
+
 	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
 		return 1, fmt.Errorf("failed to run workflow: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
@@ -222,27 +250,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 
-	var agentConfig *configs.AgentConfig
-	if configs.HasAgentConfig() {
-		configFile := configs.GetAgentConfigPath()
-		config, err := configs.ReadAgentConfig(configFile)
-		if err != nil {
-			return models.BuildRunResultsModel{}, fmt.Errorf("agent config file: %w", err)
-		}
-		agentConfig = &config
-
-		log.Print()
-		log.Info("Running in agent mode")
-		log.Printf("Config file: %s", configFile)
-		if err := registerAgentOverrides(agentConfig.BitriseDirs); err != nil {
-			return models.BuildRunResultsModel{}, fmt.Errorf("apply agent config: %s", err)
-		}
-
-		if err = runBuildStartHooks(agentConfig.Hooks); err != nil {
-			return models.BuildRunResultsModel{}, fmt.Errorf("build start hooks: %s", err)
-		}
-	}
-
 	log.PrintBitriseStartedEvent(plan)
 
 	// Run workflows
@@ -257,12 +264,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	// Build finished
 	bitrise.PrintSummary(buildRunResults)
-
-	if agentConfig != nil {
-		if err := runBuildEndHooks(agentConfig.Hooks); err != nil {
-			return models.BuildRunResultsModel{}, fmt.Errorf("build end hooks: %s", err)
-		}
-	}
 
 	// Trigger WorkflowRunDidFinish
 	buildRunResults.EventName = string(plugins.DidFinishRun)
