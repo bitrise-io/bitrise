@@ -2,7 +2,7 @@ format_version: 13
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
-  test:
+  test_bitrise_dirs:
     steps:
     - script:
         inputs:
@@ -35,3 +35,20 @@ workflows:
             fi
 
             ls $BITRISE_TEST_DEPLOY_DIR
+  test_build_hooks:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            HOOK_DIR=$(dirname "$INTEGRATION_TEST_BINARY_PATH")/hooks
+
+            if [[ ! -f $HOOK_DIR/build_start ]]; then
+              echo "$HOOK_DIR/build_start does not exist"
+              exit 1
+            fi
+
+            if [[ ! -f $HOOK_DIR/build_end ]]; then
+              echo "$HOOK_DIR/build_end does not exist"
+              exit 1
+            fi
