@@ -579,7 +579,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			"--platform", "linux/amd64",
 			"--network=bitrise",
 			"-d",
-			"-v", "/Users/xxx/bitrise/bitrise/_containers:/root/.bitrise",
+			"-v", "/Users/xxx/bitrise/bitrise/_containers/.bitrise:/root/.bitrise",
 			"-v", stepSourceMount,
 			"-v", pwdMount,
 			"-v", "/Users/xxx/.ssh:/root/.ssh",
