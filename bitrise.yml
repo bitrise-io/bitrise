@@ -9,17 +9,18 @@ app:
 workflows:
   container-workflow:
     steps:
-      - fastlane:
-          run_if: "true"
-          inputs:
-          - work_dir: /tmp
-          - lane: something
-    # - script:
-    #     title: Setup
-    #     inputs:
-    #     - content: |-
-    #         #!/usr/bin/env bash
-    #         echo $PWD
+      # - fastlane:
+      #     run_if: "true"
+      #     inputs:
+      #     - work_dir: /tmp
+      #     - lane: something
+    - script:
+        title: Setup
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            echo "Sent from my container"
+            echo $PWD
 
 
 

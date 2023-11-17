@@ -10,3 +10,6 @@ _FAKE_HOME/
 .vscode
 .idea/
 dist/
+
+tmp/
+tmp-.bitrise/
