@@ -44,6 +44,7 @@ type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
+	Image        string                              `json:"image,omitempty" yaml:"image,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`

@@ -29,6 +29,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-steputils/v2/secretkeys"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -387,7 +388,9 @@ func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
-	secrets []string) (int, error) {
+	secrets []string,
+	workflow models.WorkflowModel,
+) (int, error) {
 
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
@@ -431,20 +434,28 @@ func (r WorkflowRunner) executeStep(
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
-	name := "docker"
-	dockerArgs := []string{"exec" }
-	// var args []string
-	// if len(cmdArgs) > 1 {
-	// 	args = cmdArgs[1:]
-	// }
-	for _, env := range envs {
-		dockerArgs = append(dockerArgs, "-e", env)
+	var name string
+	var args []string
+
+	if workflow.Image != "" {
+		name = "docker"
+
+		args = []string{"exec"}
+
+		for _, env := range envs {
+			args = append(args, "-e", env)
+		}
+
+		args = append(args, "workflow-container")
+		args = append(args, cmdArgs...)
+	} else {
+		name = cmdArgs[0]
+		if len(cmdArgs) > 1 {
+			args = cmdArgs[1:]
+		}
 	}
 
-	dockerArgs = append(dockerArgs, "workflow-container")
-	dockerArgs = append(dockerArgs, cmdArgs...)
-
-	cmd := stepruncmd.New(name, dockerArgs, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
 }
@@ -455,7 +466,9 @@ func (r WorkflowRunner) runStep(
 	stepIDData models.StepIDData,
 	stepDir string,
 	environments []envmanModels.EnvironmentItemModel,
-	secrets []string) (int, []envmanModels.EnvironmentItemModel, error) {
+	secrets []string,
+	workflow models.WorkflowModel,
+) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -492,7 +505,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets, workflow); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -554,6 +567,38 @@ func (r WorkflowRunner) activateAndRunSteps(
 	if len(workflow.Steps) == 0 {
 		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", workflow.Title)
 		return buildRunResults
+	}
+
+	if workflow.Image != "" {
+		log.Debugf("Running workflow in docker container: %s", workflow.Image)
+
+		stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath) // this is a unique dir within /tmp
+		pwd := os.Getenv(configs.BitriseSourceDirEnvKey)                                                // TODO: this is initialized at command run time to the current workdir
+		pwdMount := fmt.Sprintf("/Users/xxx/bitrise/bitrise/:%s", pwd)
+		out, err := command.New("docker", "run",
+			"--platform", "linux/amd64",
+			"--network=bitrise",
+			"-d",
+			"-v", "/Users/xxx/bitrise/bitrise/_containers:/root/.bitrise",
+			"-v", stepSourceMount,
+			"-v", pwdMount,
+			"-v", "/Users/xxx/.ssh:/root/.ssh",
+			"-v", "/Users/xxx/bitrise/bitrise/_local:/usr/local/bundle",
+			"--name=workflow-container",
+			workflow.Image,
+			"sleep", "infinity",
+		).RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+
+			panic(err)
+		}
+		defer func() {
+			out, err := command.New("docker", "rm", "--force", "workflow-container").RunAndReturnTrimmedCombinedOutput()
+			if err != nil {
+				log.Errorf(out)
+			}
+		}()
 	}
 
 	// ------------------------------------------
@@ -813,7 +858,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
-			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues)
+			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, workflow)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {

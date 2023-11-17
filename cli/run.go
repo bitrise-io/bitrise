@@ -72,43 +72,18 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
-	defer func() {
-		out, err := command.New("docker", "rm", "--force", "workflow-container").RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
-			log.Errorf(out)
-		}
-		out, err = command.New("docker", "network", "rm", "bitrise").RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
-			log.Errorf(out)
-		}
-	}()
 
 	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		// TODO: check if network already exists
 		log.Warnf(out)
 	}
-
-	stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath) // this is a unique dir within /tmp
-	pwd := os.Getenv(configs.BitriseSourceDirEnvKey) // TODO: this is initialized at command run time to the current workdir
-	pwdMount := fmt.Sprintf("%s:%s", pwd, pwd)
-	out, err = command.New("docker", "run",
-		"--platform", "linux/amd64",
-		"--network=bitrise",
-		"-d",
-		"-v", "/Users/oliverfalvai/projects/steps/_containers/.bitrise:/root/.bitrise",
-		"-v", stepSourceMount,
-		"-v", pwdMount,
-		"--name=workflow-container",
-		"ruby:latest",
-		"sleep", "infinity",
-	).RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		log.Errorf(out)
-		return err
-	}
-
-
+	defer func() {
+		out, err = command.New("docker", "network", "rm", "bitrise").RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+		}
+	}()
 
 	config, err := processArgs(c)
 	if err != nil {
@@ -151,7 +126,7 @@ func run(c *cli.Context) error {
 	msg := createWorkflowRunStatusMessage(0)
 	printWorkflowRunStatusMessage(msg)
 	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-	os.Exit(0)
+	// os.Exit(0)
 
 	return nil
 }
