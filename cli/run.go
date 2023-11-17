@@ -83,20 +83,26 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	
 	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		log.Errorf(out)
-		return err
-	}
-	out, err = command.New("docker", "run", "--platform", "linux/amd64", "--network=bitrise", "-d", "-v", "/Users/oliverfalvai/projects/steps/bitrise/tmp/.bitrise:/root/.bitrise", "-v", "/tmp:/tmp", "--name=workflow-container", "ruby:latest", "sleep", "infinity").RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		log.Errorf(out)
-		return err
+		// TODO: check if network already exists
+		log.Warnf(out)
 	}
 
-	out, err = command.New("docker", "exec", "workflow-container", "ls", "-la", "/root/").RunAndReturnTrimmedCombinedOutput()
-	log.Infof("ls: %s", out)
+	stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath)
+	pwd := os.Getenv(configs.BitriseSourceDirEnvKey) // TODO: this is initialized at command run time to the current workdir
+	pwdMount := fmt.Sprintf("%s:%s", pwd, pwd)
+	out, err = command.New("docker", "run",
+		"--platform", "linux/amd64",
+		"--network=bitrise",
+		"-d",
+		"-v", "/Users/oliverfalvai/projects/steps/bitrise/tmp-.bitrise:/root/.bitrise",
+		"-v", stepSourceMount,
+		"-v", pwdMount,
+		"--name=workflow-container",
+		"ruby:latest",
+		"sleep", "infinity",
+	).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
 		return err
