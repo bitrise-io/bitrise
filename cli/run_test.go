@@ -57,7 +57,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "skip_if_empty"}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		buildRunResults, err := runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -98,7 +98,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "skip_if_empty"}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		buildRunResults, err := runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 		require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -158,7 +158,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "test"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 4, len(buildRunResults.SuccessSteps))
@@ -224,7 +224,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 5, len(buildRunResults.SuccessSteps))
@@ -269,7 +269,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "test"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -332,7 +332,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -375,7 +375,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -420,7 +420,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -471,7 +471,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -513,7 +513,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -558,7 +558,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -604,7 +604,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -653,7 +653,7 @@ workflows:
 		require.NoError(t, configs.InitPaths())
 
 		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig)
+		runner := NewWorkflowRunner(runConfig, nil)
 		_, err = runner.runWorkflows(noOpTracker{})
 		require.NoError(t, err)
 	}
@@ -685,7 +685,7 @@ func Test0Steps1Workflows(t *testing.T) {
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "zero_steps"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err = runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
@@ -731,7 +731,7 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err = runner.runWorkflows(noOpTracker{})
 
 	require.NoError(t, err)
@@ -790,7 +790,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "trivial_fail"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err = runner.runWorkflows(noOpTracker{})
 
 	require.NoError(t, err)
@@ -873,7 +873,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -981,7 +981,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -1038,7 +1038,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -1073,7 +1073,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -1131,7 +1131,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -1192,7 +1192,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
@@ -1253,7 +1253,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
@@ -1302,7 +1302,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
@@ -1359,7 +1359,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
@@ -1420,7 +1420,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "out-test"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -1470,7 +1470,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "test"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(buildRunResults.SuccessSteps))
@@ -1524,7 +1524,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "test"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.Equal(t, nil, err)
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
@@ -1554,7 +1554,7 @@ workflows:
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, nil)
 	results, err := runner.runWorkflows(noOpTracker{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
 }
@@ -1647,7 +1647,7 @@ route_map:
 			log.InitGlobalLogger(opts)
 
 			runConfig := RunConfig{Config: config, Workflow: "test"}
-			runner := NewWorkflowRunner(runConfig)
+			runner := NewWorkflowRunner(runConfig, nil)
 			_, err := runner.runWorkflows(noOpTracker{})
 			opts.Writer = origWiter
 
