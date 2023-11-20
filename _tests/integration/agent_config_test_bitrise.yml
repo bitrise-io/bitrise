@@ -35,20 +35,19 @@ workflows:
             fi
 
             ls $BITRISE_TEST_DEPLOY_DIR
-  test_build_hooks:
+  test_build_hooks_success:
     steps:
     - script:
         inputs:
         - content: |-
             set -ex
-            HOOK_DIR=$(dirname "$INTEGRATION_TEST_BINARY_PATH")/hooks
-
-            if [[ ! -f $HOOK_DIR/build_start ]]; then
-              echo "$HOOK_DIR/build_start does not exist"
-              exit 1
-            fi
-
-            if [[ ! -f $HOOK_DIR/build_end ]]; then
-              echo "$HOOK_DIR/build_end does not exist"
-              exit 1
-            fi
+            echo "Let's see what happens after a successful workflow"
+            exit 0
+  test_build_hooks_failure:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            echo "Let's see what happens after a failed workflow"
+            exit 42

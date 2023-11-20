@@ -2,6 +2,7 @@ package integration
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -18,13 +19,37 @@ func Test_AgentConfigBitriseDirs(t *testing.T) {
 	require.NoError(t, err, out)
 }
 
-func Test_AgentConfigBuildHooks(t *testing.T) {
+func Test_AgentConfigBuildHooksSuccess(t *testing.T) {
 	cleanupFn := setupAgentConfig(t)
 	defer cleanupFn()
 
-	cmd := command.New(binPath(), "run", "test_build_hooks", "--config", "agent_config_test_bitrise.yml")
+	cmd := command.New(binPath(), "run", "test_build_hooks_success", "--config", "agent_config_test_bitrise.yml")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
+
+	hookDataDir := filepath.Join(binPath(), "..", "hooks")
+
+	_, err = os.Stat(filepath.Join(hookDataDir, "build_start"))
+	require.NoError(t, err)
+
+	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
+	require.NoError(t, err)
+}
+
+func Test_AgentConfigBuildHooksFailure(t *testing.T) {
+	cleanupFn := setupAgentConfig(t)
+	defer cleanupFn()
+
+	cmd := command.New(binPath(), "run", "test_build_hooks_failure", "--config", "agent_config_test_bitrise.yml")
+	_, _ = cmd.RunAndReturnTrimmedCombinedOutput()
+
+	hookDataDir := filepath.Join(binPath(), "..", "hooks")
+
+	_, err := os.Stat(filepath.Join(hookDataDir, "build_start"))
+	require.NoError(t, err)
+
+	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
+	require.NoError(t, err)
 }
 
 func setupAgentConfig(t *testing.T) func() {
