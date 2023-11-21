@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
