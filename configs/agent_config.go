@@ -36,21 +36,24 @@ type BitriseDirs struct {
 	TestDeployDir string `yaml:"BITRISE_TEST_DEPLOY_DIR"`
 }
 
+// AgentHooks are various hooks that are executed before and after the CLI runs a build.
+// In this context, a build means a CI execution triggered automatically (unlike a local invocation by `bitrise run x`).
+// These hooks are only executed once, even if the actual workflow triggers other workflows.
 type AgentHooks struct {
-	// CleanupOnWorkflowStart is the list of UNEXPANDED paths to clean up when the workflow starts.
+	// CleanupOnBuildStart is the list of UNEXPANDED paths to clean up before executing the main workflow.
 	// The actual string value should be expanded at execution time, so that
 	// Bitrise dirs defined in this config file are correctly expanded.
-	CleanupOnWorkflowStart []string `yaml:"cleanup_on_workflow_start"`
+	CleanupOnBuildStart []string `yaml:"cleanup_on_build_start"`
 
-	// CleanupOnWorkflowEnd is the list of UNEXPANDED paths to clean up when the workflow end.
+	// CleanupOnBuildEnd is the list of UNEXPANDED paths to clean up after executing the main workflow.
 	// The actual string value should be expanded at execution time, so that
 	// Bitrise dirs defined in this config file are correctly expanded.
-	CleanupOnWorkflowEnd []string `yaml:"cleanup_on_workflow_end"`
+	CleanupOnBuildEnd []string `yaml:"cleanup_on_build_end"`
 
-	// DoOnBuildStart is an optional executable to run when the workflow starts.
+	// DoOnBuildStart is an optional executable to run before executing the main workflow..
 	DoOnBuildStart string `yaml:"do_on_build_start"`
 
-	// DoOnBuildEnd is an optional executable to run when the workflow ends.
+	// DoOnBuildEnd is an optional executable to run after executing the main workflow.
 	DoOnBuildEnd string `yaml:"do_on_build_end"`
 }
 

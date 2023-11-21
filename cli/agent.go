@@ -8,6 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -94,4 +95,31 @@ func runBuildEndHooks(hooks configs.AgentHooks) error {
 	cmd.Stdout = logWriter
 	cmd.Stderr = logWriter
 	return cmd.Run()
+}
+
+func cleanupDirs(dirs []string) error {
+	log.Print()
+	for _, dir := range dirs {
+		expandedPath := os.ExpandEnv(dir)
+		if expandedPath == "" {
+			continue
+		}
+		expandedPath, err := pathutil.ExpandTilde(expandedPath)
+		if err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		if expandedPath == "" {
+			continue
+		}
+		absPath, err := pathutil.AbsPath(expandedPath)
+		if err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		if err := os.RemoveAll(absPath); err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		log.Donef("Cleaned %s", colorstring.Cyan(expandedPath))
+	}
+
+	return nil
 }

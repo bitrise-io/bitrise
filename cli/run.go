@@ -169,9 +169,15 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
 			return 1, fmt.Errorf("build start hooks: %s", err)
 		}
+		if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildStart); err != nil {
+			return 1, fmt.Errorf("build start dir cleanup: %s", err)
+		}
 		defer func() {
 			if err := runBuildEndHooks(r.agentConfig.Hooks); err != nil {
 				log.Errorf("build end hooks: %s", err)
+			}
+			if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildEnd); err != nil {
+				log.Errorf("build end dir cleanup: %s", err)
 			}
 		}()
 	}
