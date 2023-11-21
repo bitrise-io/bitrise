@@ -54,12 +54,6 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 		return nil
 	}
 
-	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
-		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
-		// In that case, we don't want to run the hooks because they would be executed twice.
-		return nil
-	}
-
 	log.Print()
 	log.Infof("Run build start hook")
 	log.Print(hooks.DoOnBuildStart)
@@ -75,12 +69,6 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 
 func runBuildEndHooks(hooks configs.AgentHooks) error {
 	if hooks.DoOnBuildEnd == "" {
-		return nil
-	}
-
-	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
-		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
-		// In that case, we don't want to run the hooks because they would be executed twice.
 		return nil
 	}
 
@@ -104,7 +92,6 @@ func cleanupDirs(dirs []string) error {
 	
 	log.Print()
 	log.Infof("Run cleanups before build")
-	log.Print()
 	for _, dir := range dirs {
 		expandedPath := os.ExpandEnv(dir)
 		if expandedPath == "" {
