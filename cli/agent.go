@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -51,6 +52,12 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 		return nil
 	}
 
+	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
+		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
+		// In that case, we don't want to run the hooks because they would be executed twice.
+		return nil
+	}
+
 	log.Print()
 	log.Infof("Run build start hook")
 	log.Print(hooks.DoOnBuildStart)
@@ -64,6 +71,12 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 
 func runBuildEndHooks(hooks configs.AgentHooks) error {
 	if hooks.DoOnBuildEnd == "" {
+		return nil
+	}
+
+	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
+		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
+		// In that case, we don't want to run the hooks because they would be executed twice.
 		return nil
 	}
 
