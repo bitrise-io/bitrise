@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/colorstring"
