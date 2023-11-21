@@ -1,10 +1,12 @@
 package integration
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
@@ -65,6 +67,10 @@ func setupAgentConfig(t *testing.T) func() {
 
 	t.Setenv("BITRISE_APP_SLUG", "ef7a9665e8b6408b")
 	t.Setenv("BITRISE_BUILD_SLUG", "80b66786-d011-430f-9c68-00e9416a7325")
+
+	// Clear the execution ID env var as we are already running inside a Bitrise CLI execution.
+	// This would confuse the logic that prevents running agent hooks in nested executions.
+	t.Setenv(analytics.StepExecutionIDEnvKey, "")
 
 	return cleanupFn
 }
