@@ -35,8 +35,8 @@ func TestReadAgentConfig(t *testing.T) {
 				AgentHooks{
 					CleanupOnWorkflowStart: []string{"$BITRISE_DEPLOY_DIR"},
 					CleanupOnWorkflowEnd:   []string{"$BITRISE_TEST_DEPLOY_DIR"},
-					DoOnWorkflowStart:      filepath.Join(tempDir, "cleanup.sh"),
-					DoOnWorkflowEnd:        filepath.Join(tempDir, "cleanup.sh"),
+					DoOnBuildStart:         filepath.Join(tempDir, "cleanup.sh"),
+					DoOnBuildEnd:           filepath.Join(tempDir, "cleanup.sh"),
 				},
 			},
 			expectedErr: false,
@@ -71,7 +71,7 @@ func TestReadAgentConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			config, err := readAgentConfig(tc.configFile)
+			config, err := ReadAgentConfig(tc.configFile)
 			if (err != nil) != tc.expectedErr {
 				t.Errorf("Unexpected error: %v", err)
 			}

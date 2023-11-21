@@ -188,8 +188,12 @@ func trigger(c *cli.Context) error {
 		Workflow: workflowToRunID,
 		Secrets:  inventoryEnvironments,
 	}
+	agentConfig, err := setupAgentConfig()
+	if err != nil {
+		failf("Failed to process agent config: %w", err)
+	}
 
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == workflowRunFailedErr {

@@ -2,7 +2,7 @@ format_version: 13
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
-  test:
+  test_bitrise_dirs:
     steps:
     - script:
         inputs:
@@ -35,3 +35,19 @@ workflows:
             fi
 
             ls $BITRISE_TEST_DEPLOY_DIR
+  test_build_hooks_success:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            echo "Let's see what happens after a successful workflow"
+            exit 0
+  test_build_hooks_failure:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            echo "Let's see what happens after a failed workflow"
+            exit 42

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"gopkg.in/yaml.v2"
 )
@@ -48,70 +47,23 @@ type AgentHooks struct {
 	// Bitrise dirs defined in this config file are correctly expanded.
 	CleanupOnWorkflowEnd []string `yaml:"cleanup_on_workflow_end"`
 
-	// DoOnWorkflowStart is an optional executable to run when the workflow starts.
-	DoOnWorkflowStart string `yaml:"do_on_workflow_start"`
+	// DoOnBuildStart is an optional executable to run when the workflow starts.
+	DoOnBuildStart string `yaml:"do_on_build_start"`
 
-	// DoOnWorkflowEnd is an optional executable to run when the workflow ends.
-	DoOnWorkflowEnd   string `yaml:"do_on_workflow_end"`
+	// DoOnBuildEnd is an optional executable to run when the workflow ends.
+	DoOnBuildEnd string `yaml:"do_on_build_end"`
 }
 
-func RegisterAgentOverrides() error {
-	if !hasAgentConfigFile() {
-		return nil
-	}
-
-	file := filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName)
-
-	log.Print("")
-	log.Info("Running in agent mode")
-	log.Printf("Config file: %s", file)
-
-	config, err := readAgentConfig(file)
-	if err != nil {
-		return fmt.Errorf("agent config file: %w", err)
-	}
-
-	params := []struct {
-		dir    string
-		envKey string
-	}{
-		{
-			dir:    config.BitriseDirs.BitriseDataHomeDir,
-			envKey: BitriseDataHomeDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.SourceDir,
-			envKey: BitriseSourceDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.DeployDir,
-			envKey: BitriseDeployDirEnvKey,
-		},
-		{
-			dir:    config.BitriseDirs.TestDeployDir,
-			envKey: BitriseTestDeployDirEnvKey,
-		},
-	}
-	for _, param := range params {
-		err = pathutil.EnsureDirExist(param.dir)
-		if err != nil {
-			return fmt.Errorf("can't create %s: %w", param.envKey, err)
-		}
-		err = os.Setenv(param.envKey, param.dir)
-		if err != nil {
-			return fmt.Errorf("set %s: %w", param.envKey, err)
-		}
-	}
-
-	return nil
+func GetAgentConfigPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName)
 }
 
-func hasAgentConfigFile() bool {
-	exists, _ := pathutil.IsPathExists(filepath.Join(GetBitriseHomeDirPath(), agentConfigFileName))
+func HasAgentConfig() bool {
+	exists, _ := pathutil.IsPathExists(GetAgentConfigPath())
 	return exists
 }
 
-func readAgentConfig(configFile string) (AgentConfig, error) {
+func ReadAgentConfig(configFile string) (AgentConfig, error) {
 	fileContent, err := os.ReadFile(configFile)
 	if err != nil {
 		return AgentConfig{}, err
@@ -160,34 +112,34 @@ func readAgentConfig(configFile string) (AgentConfig, error) {
 	config.BitriseDirs.TestDeployDir = testDeployDir
 
 	// Hooks
-	if config.Hooks.DoOnWorkflowStart != "" {
-		doOnWorkflowStart, err := normalizePath(config.Hooks.DoOnWorkflowStart)
+	if config.Hooks.DoOnBuildStart != "" {
+		doOnBuildStart, err := normalizePath(config.Hooks.DoOnBuildStart)
 		if err != nil {
-			return AgentConfig{}, fmt.Errorf("expand do_on_workflow_start value: %s", err)
+			return AgentConfig{}, fmt.Errorf("expand do_on_build_start value: %s", err)
 		}
-		doOnWorkflowStartExists, err := pathutil.IsPathExists(doOnWorkflowStart)
+		doOnBuildStartExists, err := pathutil.IsPathExists(doOnBuildStart)
 		if err != nil {
 			return AgentConfig{}, err
 		}
-		if !doOnWorkflowStartExists {
-			return AgentConfig{}, fmt.Errorf("do_on_workflow_start path does not exist: %s", doOnWorkflowStart)
+		if !doOnBuildStartExists {
+			return AgentConfig{}, fmt.Errorf("do_on_build_start path does not exist: %s", doOnBuildStart)
 		}
-		config.Hooks.DoOnWorkflowStart = doOnWorkflowStart
+		config.Hooks.DoOnBuildStart = doOnBuildStart
 	}
 
-	if config.Hooks.DoOnWorkflowEnd != "" {
-		doOnWorkflowEnd, err := normalizePath(config.Hooks.DoOnWorkflowEnd)
+	if config.Hooks.DoOnBuildEnd != "" {
+		doOnBuildEnd, err := normalizePath(config.Hooks.DoOnBuildEnd)
 		if err != nil {
-			return AgentConfig{}, fmt.Errorf("expand do_on_workflow_end value: %s", err)
+			return AgentConfig{}, fmt.Errorf("expand do_on_build_end value: %s", err)
 		}
-		doOnWorkflowEndExists, err := pathutil.IsPathExists(doOnWorkflowEnd)
+		doOnBuildEndExists, err := pathutil.IsPathExists(doOnBuildEnd)
 		if err != nil {
 			return AgentConfig{}, err
 		}
-		if !doOnWorkflowEndExists {
-			return AgentConfig{}, fmt.Errorf("do_on_workflow_end path does not exist: %s", doOnWorkflowEnd)
+		if !doOnBuildEndExists {
+			return AgentConfig{}, fmt.Errorf("do_on_build_end path does not exist: %s", doOnBuildEnd)
 		}
-		config.Hooks.DoOnWorkflowEnd = doOnWorkflowEnd
+		config.Hooks.DoOnBuildEnd = doOnBuildEnd
 	}
 
 	return config, nil

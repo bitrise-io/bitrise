@@ -85,7 +85,12 @@ func run(c *cli.Context) error {
 		failf("Failed to process arguments: %s", err)
 	}
 
-	runner := NewWorkflowRunner(*config)
+	agentConfig, err := setupAgentConfig()
+	if err != nil {
+		failf("Failed to process agent config: %w", err)
+	}
+
+	runner := NewWorkflowRunner(*config, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == workflowRunFailedErr {
@@ -106,12 +111,40 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-type WorkflowRunner struct {
-	config RunConfig
+func setupAgentConfig() (*configs.AgentConfig, error) {
+	if !configs.HasAgentConfig() {
+		return nil, nil
+	}
+
+	configFile := configs.GetAgentConfigPath()
+	config, err := configs.ReadAgentConfig(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("agent config file: %w", err)
+	}
+
+	log.Print()
+	log.Info("Running in agent mode")
+	log.Printf("Config file: %s", configFile)
+
+	if err := registerAgentOverrides(config.BitriseDirs); err != nil {
+		return nil, fmt.Errorf("apply Bitrise dirs: %s", err)
+	}
+
+	return &config, nil
 }
 
-func NewWorkflowRunner(config RunConfig) WorkflowRunner {
-	return WorkflowRunner{config: config}
+type WorkflowRunner struct {
+	config      RunConfig
+	
+	// agentConfig is only non-nil if the CLI is configured to run in agent mode
+	agentConfig *configs.AgentConfig
+}
+
+func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
+	return WorkflowRunner{
+		config:      config,
+		agentConfig: agentConfig,
+	}
 }
 
 func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
@@ -130,6 +163,17 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
+	}
+
+	if r.agentConfig != nil {
+		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
+			return 1, fmt.Errorf("build start hooks: %s", err)
+		}
+		defer func() {
+			if err := runBuildEndHooks(r.agentConfig.Hooks); err != nil {
+				log.Errorf("build end hooks: %s", err)
+			}
+		}()
 	}
 
 	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
@@ -221,10 +265,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
-
-	if err := configs.RegisterAgentOverrides(); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("apply agent config: %s", err)
-	}
 
 	log.PrintBitriseStartedEvent(plan)
 

@@ -66,7 +66,6 @@ const (
 
 	buildSlugEnvKey = "BITRISE_BUILD_SLUG"
 	appSlugEnvKey   = "BITRISE_APP_SLUG"
-	// StepExecutionIDEnvKey ...
 	StepExecutionIDEnvKey = "BITRISE_STEP_EXECUTION_ID"
 
 	bitriseVersionKey = "bitrise"
