@@ -135,6 +135,8 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 
 type WorkflowRunner struct {
 	config      RunConfig
+	
+	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig *configs.AgentConfig
 }
 
