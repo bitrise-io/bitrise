@@ -569,6 +569,44 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
+	serviceNames := []string{}
+	for name, service := range workflow.Services {
+		log.Debugf("Creating service container from image: %s", workflow.Image)
+
+		args := []string{"run", "--platform", "linux/amd64", "--network=bitrise", "-d", fmt.Sprintf("--name=%s", name)}
+		for _, env := range service.Envs {
+			for name, value := range env {
+				args = append(args, "-e", fmt.Sprintf("%s=%s", name, value))
+			}
+		}
+		for _, port := range service.Ports {
+			ports := strings.Split(port, ":")
+			args = append(args, "-p", fmt.Sprintf("%s:%s", ports[0], ports[1]))
+		}
+
+		args = append(args, service.Image)
+
+		// TODO: Add commands here if we support it
+
+		cmd := command.New("docker", args...)
+
+		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			log.Errorf(out)
+			panic(err)
+		}
+		serviceNames = append(serviceNames, name)
+	}
+
+	defer func() {
+		for _, name := range serviceNames {
+			out, err := command.New("docker", "rm", "--force", name).RunAndReturnTrimmedCombinedOutput()
+			if err != nil {
+				log.Errorf(out)
+			}
+		}
+	}()
+
 	if workflow.Image != "" {
 		log.Debugf("Running workflow in docker container: %s", workflow.Image)
 
