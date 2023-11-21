@@ -8,6 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -64,8 +65,10 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 	log.Print()
 
 	cmd := exec.Command(hooks.DoOnBuildStart)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	logWriter := logwriter.NewLogWriter(logger)
+	cmd.Stdout = logWriter
+	cmd.Stderr = logWriter
 	return cmd.Run()
 }
 
@@ -86,7 +89,9 @@ func runBuildEndHooks(hooks configs.AgentHooks) error {
 	log.Print()
 
 	cmd := exec.Command(hooks.DoOnBuildEnd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	logWriter := logwriter.NewLogWriter(logger)
+	cmd.Stdout = logWriter
+	cmd.Stderr = logWriter
 	return cmd.Run()
 }
