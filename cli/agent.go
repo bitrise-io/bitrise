@@ -98,6 +98,12 @@ func runBuildEndHooks(hooks configs.AgentHooks) error {
 }
 
 func cleanupDirs(dirs []string) error {
+	if len(dirs) == 0 {
+		return nil
+	}
+	
+	log.Print()
+	log.Infof("Run cleanups before build")
 	log.Print()
 	for _, dir := range dirs {
 		expandedPath := os.ExpandEnv(dir)
@@ -118,7 +124,7 @@ func cleanupDirs(dirs []string) error {
 		if err := os.RemoveAll(absPath); err != nil {
 			return fmt.Errorf("cleaning up %s: %w", dir, err)
 		}
-		log.Donef("Cleaned %s", colorstring.Cyan(expandedPath))
+		log.Donef("- Cleaned %s", colorstring.Cyan(expandedPath))
 	}
 
 	return nil
