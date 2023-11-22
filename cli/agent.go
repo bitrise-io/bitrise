@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/bitrise/log/logwriter"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
@@ -53,12 +53,6 @@ func runBuildStartHooks(hooks configs.AgentHooks) error {
 		return nil
 	}
 
-	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
-		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
-		// In that case, we don't want to run the hooks because they would be executed twice.
-		return nil
-	}
-
 	log.Print()
 	log.Infof("Run build start hook")
 	log.Print(hooks.DoOnBuildStart)
@@ -77,12 +71,6 @@ func runBuildEndHooks(hooks configs.AgentHooks) error {
 		return nil
 	}
 
-	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
-		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
-		// In that case, we don't want to run the hooks because they would be executed twice.
-		return nil
-	}
-
 	log.Print()
 	log.Infof("Run build end hook")
 	log.Print(hooks.DoOnBuildEnd)
@@ -94,4 +82,36 @@ func runBuildEndHooks(hooks configs.AgentHooks) error {
 	cmd.Stdout = logWriter
 	cmd.Stderr = logWriter
 	return cmd.Run()
+}
+
+func cleanupDirs(dirs []string) error {
+	if len(dirs) == 0 {
+		return nil
+	}
+	
+	log.Print()
+	log.Infof("Run directory cleanups")
+	for _, dir := range dirs {
+		expandedPath := os.ExpandEnv(dir)
+		if expandedPath == "" {
+			continue
+		}
+		expandedPath, err := pathutil.ExpandTilde(expandedPath)
+		if err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		if expandedPath == "" {
+			continue
+		}
+		absPath, err := pathutil.AbsPath(expandedPath)
+		if err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		if err := os.RemoveAll(absPath); err != nil {
+			return fmt.Errorf("cleaning up %s: %w", dir, err)
+		}
+		log.Donef("- Cleaned %s", colorstring.Cyan(expandedPath))
+	}
+
+	return nil
 }

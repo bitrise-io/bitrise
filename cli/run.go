@@ -89,6 +89,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		failf("Failed to process agent config: %w", err)
 	}
+	if agentConfig != nil && os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
+		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
+		log.Warn("Bitrise is configured to run in agent mode, but this is a nested execution.")
+		log.Warn("Hooks and directory cleanups won't be executed in this process to avoid running them multiple times.")
+		agentConfig = nil
+	}
 
 	runner := NewWorkflowRunner(*config, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
@@ -169,9 +175,15 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
 			return 1, fmt.Errorf("build start hooks: %s", err)
 		}
+		if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildStart); err != nil {
+			return 1, fmt.Errorf("build start dir cleanup: %s", err)
+		}
 		defer func() {
 			if err := runBuildEndHooks(r.agentConfig.Hooks); err != nil {
 				log.Errorf("build end hooks: %s", err)
+			}
+			if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildEnd); err != nil {
+				log.Errorf("build end dir cleanup: %s", err)
 			}
 		}()
 	}
