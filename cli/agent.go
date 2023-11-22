@@ -90,7 +90,7 @@ func cleanupDirs(dirs []string) error {
 	}
 	
 	log.Print()
-	log.Infof("Run cleanups before build")
+	log.Infof("Run directory cleanups")
 	for _, dir := range dirs {
 		expandedPath := os.ExpandEnv(dir)
 		if expandedPath == "" {

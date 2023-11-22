@@ -171,7 +171,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
 
-	if r.agentConfig != nil && os.Getenv(analytics.StepExecutionIDEnvKey) == "" {
+	if r.agentConfig != nil {
 		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
 			return 1, fmt.Errorf("build start hooks: %s", err)
 		}
