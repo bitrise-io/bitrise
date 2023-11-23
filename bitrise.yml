@@ -50,7 +50,8 @@ workflows:
         image: redis:6
         ports:
         - "6379:6379"
-    image: ruby:3.1.2
+    container:
+      image: ruby:3.1.2
     envs:
     - BUNDLE_GEMS__CONTRIBSYS__COM: "xxx"
     - REDIS_URL: "redis://redis:6379/1"

@@ -437,7 +437,7 @@ func (r WorkflowRunner) executeStep(
 	var name string
 	var args []string
 
-	if workflow.Image != "" {
+	if workflow.Container.Image != "" {
 		name = "docker"
 
 		args = []string{"exec"}
@@ -571,7 +571,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 	serviceNames := []string{}
 	for name, service := range workflow.Services {
-		log.Debugf("Creating service container from image: %s", workflow.Image)
+		log.Debugf("Creating service container from image: %s", service.Image)
 
 		args := []string{"run", "--platform", "linux/amd64", "--network=bitrise", "-d", fmt.Sprintf("--name=%s", name)}
 		for _, env := range service.Envs {
@@ -607,8 +607,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 	}()
 
-	if workflow.Image != "" {
-		log.Debugf("Running workflow in docker container: %s", workflow.Image)
+	if workflow.Container.Image != "" {
+		log.Debugf("Running workflow in docker container: %s", workflow.Container.Image)
 
 		stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath) // this is a unique dir within /tmp
 		pwd := os.Getenv(configs.BitriseSourceDirEnvKey)                                                // TODO: this is initialized at command run time to the current workdir
@@ -623,7 +623,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			"-v", "/Users/xxx/.ssh:/root/.ssh",
 			"-v", "/Users/xxx/bitrise/bitrise/_local:/usr/local/bundle",
 			"--name=workflow-container",
-			workflow.Image,
+			workflow.Container.Image,
 			"sleep", "infinity",
 		).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {

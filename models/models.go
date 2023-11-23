@@ -44,6 +44,7 @@ type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
+	Container    WorkflowContainer                   `json:"container,omitempty" yaml:"container,omitempty"`
 	Image        string                              `json:"image,omitempty" yaml:"image,omitempty"`
 	Services     map[string]WorkflowService          `json:"services,omitempty" yaml:"services,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -54,6 +55,10 @@ type WorkflowModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
 	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
+}
+
+type WorkflowContainer struct {
+	Image string `json:"image,omitempty" yaml:"image,omitempty"`
 }
 
 type WorkflowService struct {
