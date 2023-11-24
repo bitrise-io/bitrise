@@ -610,18 +610,14 @@ func (r WorkflowRunner) activateAndRunSteps(
 	if workflow.Container.Image != "" {
 		log.Debugf("Running workflow in docker container: %s", workflow.Container.Image)
 
-		stepSourceMount := fmt.Sprintf("%s:%s", configs.BitriseWorkDirPath, configs.BitriseWorkDirPath) // this is a unique dir within /tmp
-		pwd := os.Getenv(configs.BitriseSourceDirEnvKey)                                                // TODO: this is initialized at command run time to the current workdir
-		pwdMount := fmt.Sprintf("/Users/xxx/bitrise/bitrise/:%s", pwd)
 		out, err := command.New("docker", "run",
 			"--platform", "linux/amd64",
 			"--network=bitrise",
 			"-d",
-			"-v", "/Users/xxx/bitrise/bitrise/_containers/.bitrise:/root/.bitrise",
-			"-v", stepSourceMount,
-			"-v", pwdMount,
-			"-v", "/Users/xxx/.ssh:/root/.ssh",
-			"-v", "/Users/xxx/bitrise/bitrise/_local:/usr/local/bundle",
+			"-v", "/home/vagrant/.bitrise:/root/.bitrise", // .bitrise aka BitriseHomeDirPath
+			"-v", "/tmp:/tmp", // BitriseWorkDirPath
+			"-v", "/bitrise:/bitrise",
+			"-w", "/bitrise/src", // BitriseSourceDir
 			"--name=workflow-container",
 			workflow.Container.Image,
 			"sleep", "infinity",
