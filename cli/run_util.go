@@ -614,7 +614,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			"--platform", "linux/amd64",
 			"--network=bitrise",
 			"-d",
-			"-v", "/home/vagrant/.bitrise:/root/.bitrise", // .bitrise aka BitriseHomeDirPath
+			"-v", "/root/.bitrise:/root/.bitrise", // .bitrise aka BitriseHomeDirPath
 			"-v", "/tmp:/tmp", // BitriseWorkDirPath
 			"-v", "/bitrise:/bitrise",
 			"-w", "/bitrise/src", // BitriseSourceDir
