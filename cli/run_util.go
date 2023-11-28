@@ -608,7 +608,50 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}()
 
 	if workflow.Container.Image != "" {
-		log.Debugf("Running workflow in docker container: %s", workflow.Container.Image)
+		log.Infof("Running workflow in docker container: %s", workflow.Container.Image)
+
+		log.Debugf("Docker cred: %s", workflow.Container.Credentials)
+
+		if workflow.Container.Credentials.Username != "" && workflow.Container.Credentials.Password != "" {
+			log.Debugf("Logging into docker registry: %s", workflow.Container.Image)
+
+			password := workflow.Container.Credentials.Password
+			if strings.HasPrefix(password, "$") {
+				err := tools.EnvmanInit(configs.InputEnvstorePath, true)
+				if err != nil {
+					return models.BuildRunResultsModel{}
+				}
+				err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
+				if err != nil {
+					return models.BuildRunResultsModel{}
+				}
+				list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
+				if err != nil {
+					return models.BuildRunResultsModel{}
+				}
+
+				if value, ok := list[strings.TrimPrefix(workflow.Container.Credentials.Password, "$")]; ok {
+					password = value
+				}
+			}
+
+			args := []string{"login", "--username", workflow.Container.Credentials.Username, "--password", password}
+
+			if workflow.Container.Credentials.Server != "" {
+				args = append(args, workflow.Container.Credentials.Server)
+			} else if len(strings.Split(workflow.Container.Image, "/")) > 2 {
+				args = append(args, workflow.Container.Image)
+			}
+
+			log.Debugf("Running command: docker %s", strings.Join(args, " "))
+
+			out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
+			if err != nil {
+				log.Errorf(out)
+
+				panic(err)
+			}
+		}
 
 		out, err := command.New("docker", "run",
 			"--platform", "linux/amd64",

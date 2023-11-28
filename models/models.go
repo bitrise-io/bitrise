@@ -58,7 +58,12 @@ type WorkflowModel struct {
 }
 
 type WorkflowContainer struct {
-	Image string `json:"image,omitempty" yaml:"image,omitempty"`
+	Image       string `json:"image,omitempty" yaml:"image,omitempty"`
+	Credentials struct {
+		Username string `json:"username,omitempty" yaml:"username,omitempty"`
+		Password string `json:"password,omitempty" yaml:"password,omitempty"`
+		Server   string `json:"server,omitempty" yaml:"server,omitempty"`
+	}
 }
 
 type WorkflowService struct {
