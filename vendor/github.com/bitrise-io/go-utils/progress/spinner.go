@@ -35,10 +35,14 @@ func NewSpinner(message string, chars []string, delay time.Duration, writer io.W
 
 // NewDefaultSpinner ...
 func NewDefaultSpinner(message string) Spinner {
+	return NewDefaultSpinnerWithOutput(message, os.Stdout)
+}
+
+// NewDefaultSpinnerWithOutput ...
+func NewDefaultSpinnerWithOutput(message string, output io.Writer) Spinner {
 	chars := []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 	delay := 100 * time.Millisecond
-	writer := os.Stdout
-	return NewSpinner(message, chars, delay, writer)
+	return NewSpinner(message, chars, delay, output)
 }
 
 func (s *Spinner) erase() {

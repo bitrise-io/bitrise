@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/progress"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	ver "github.com/hashicorp/go-version"
 )
@@ -169,7 +169,7 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		tmpPluginBinPth := filepath.Join(tmpPluginBinDir, newPlugin.Name)
 
 		var err error
-		progress.NewDefaultWrapper("Downloading plugin binary").WrapAction(func() {
+		progress.ShowIndicator("Downloading plugin binary", func() {
 			err = downloadPluginBin(executableURL, tmpPluginBinPth)
 		})
 		if err != nil {
@@ -252,7 +252,7 @@ func InstallPlugin(pluginSourceURI, versionTag string) (Plugin, string, error) {
 		version := ""
 		err = nil
 
-		progress.NewDefaultWrapper("git clone plugin source").WrapAction(func() {
+		progress.ShowIndicator("git clone plugin source", func() {
 			version, err = GitCloneAndCheckoutVersionOrLatestVersion(pluginSrcTmpDir, pluginSourceURI, versionTag)
 		})
 

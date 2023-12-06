@@ -2,6 +2,7 @@ package progress
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -26,6 +27,13 @@ func NewWrapper(spinner Spinner, interactiveMode bool) Wrapper {
 // NewDefaultWrapper ...
 func NewDefaultWrapper(message string) Wrapper {
 	spinner := NewDefaultSpinner(message)
+	interactiveMode := OutputDeviceIsTerminal()
+	return NewWrapper(spinner, interactiveMode)
+}
+
+// NewDefaultWrapperWithOutput ...
+func NewDefaultWrapperWithOutput(message string, output io.Writer) Wrapper {
+	spinner := NewDefaultSpinnerWithOutput(message, output)
 	interactiveMode := OutputDeviceIsTerminal()
 	return NewWrapper(spinner, interactiveMode)
 }
