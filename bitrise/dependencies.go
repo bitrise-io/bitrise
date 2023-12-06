@@ -9,11 +9,11 @@ import (
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/progress"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
@@ -125,7 +125,7 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 		// brew doctor
 		doctorOutput := ""
 		var err error
-		progress.NewDefaultWrapper("brew doctor").WrapAction(func() {
+		progress.ShowIndicator("brew doctor", func() {
 			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
 		})
 		if err != nil {
@@ -196,7 +196,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 		// Install
 		var err error
-		progress.NewDefaultWrapper("Installing").WrapAction(func() {
+		progress.ShowIndicator("Installing", func() {
 			err = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 				if attempt > 0 {
 					log.Warnf("Download failed, retrying ...")

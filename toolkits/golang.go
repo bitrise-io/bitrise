@@ -13,11 +13,11 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/progress"
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/progress"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/gows/gows"
@@ -225,7 +225,7 @@ func (toolkit GoToolkit) Install() error {
 	goArchiveDownloadPath := filepath.Join(goTmpDirPath, localFileName)
 
 	var downloadErr error
-	progress.NewDefaultWrapper("Downloading").WrapAction(func() {
+	progress.ShowIndicator("Downloading", func() {
 		downloadErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 			if attempt > 0 {
 				log.Warnf("==> Download failed, retrying ...")
