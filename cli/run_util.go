@@ -429,15 +429,16 @@ func (r WorkflowRunner) executeStep(
 	logger := log.NewLogger(opts)
 	stdout := logwriter.NewLogWriter(logger)
 
-	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
-	if err != nil {
-		return 1, fmt.Errorf("failed to read command environment: %w", err)
-	}
-
 	var name string
 	var args []string
+	var envs []string
 
 	if workflow.Container.Image != "" {
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &EmptyEnv{})
+		if err != nil {
+			return 1, fmt.Errorf("failed to read command environment: %w", err)
+		}
+
 		name = "docker"
 
 		args = []string{"exec"}
@@ -449,6 +450,11 @@ func (r WorkflowRunner) executeStep(
 		args = append(args, "workflow-container")
 		args = append(args, cmdArgs...)
 	} else {
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+		if err != nil {
+			return 1, fmt.Errorf("failed to read command environment: %w", err)
+		}
+
 		name = cmdArgs[0]
 		if len(cmdArgs) > 1 {
 			args = cmdArgs[1:]
@@ -458,6 +464,12 @@ func (r WorkflowRunner) executeStep(
 	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
+}
+
+type EmptyEnv struct{}
+
+func (ee *EmptyEnv) GetEnvironment() map[string]string {
+	return make(map[string]string)
 }
 
 func (r WorkflowRunner) runStep(
