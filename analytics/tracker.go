@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/bitrise-io/bitrise/configs"
@@ -12,15 +13,13 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
+	utilslog "github.com/bitrise-io/go-utils/v2/log"
 )
 
 const (
-	// BuildExecutionID ...
-	BuildExecutionID = "build_execution_id"
-	// WorkflowExecutionID ...
+	BuildExecutionID    = "build_execution_id"
 	WorkflowExecutionID = "workflow_execution_id"
-	// StepExecutionID ...
-	StepExecutionID = "step_execution_id"
+	StepExecutionID     = "step_execution_id"
 
 	workflowStartedEventName       = "workflow_started"
 	workflowFinishedEventName      = "workflow_finished"
@@ -30,6 +29,7 @@ const (
 	stepPreparationFailedEventName = "step_preparation_failed"
 	stepSkippedEventName           = "step_skipped"
 	cliWarningEventName            = "cli_warning"
+	toolVersionSnapshotEventName   = "tool_version_snapshot"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -55,31 +55,36 @@ const (
 	stepSourceProperty            = "step_source"
 	skippableProperty             = "skippable"
 	timeoutProperty               = "timeout"
-	runtime                       = "runtime"
+	runTimeProperty               = "runtime"
+	osProperty                    = "os"
+	stackRevIdProperty            = "stack_rev_id"
+	snapshotProperty              = "snapshot"
+	toolVersionsProperty          = "tool_versions"
 
-	failedValue          = "failed"
-	successfulValue      = "successful"
-	buildFailedValue     = "build_failed"
-	runIfValue           = "run_if"
-	customTimeoutValue   = "timeout"
-	noOutputTimeoutValue = "no_output_timeout"
+	failedValue                    = "failed"
+	successfulValue                = "successful"
+	buildFailedValue               = "build_failed"
+	runIfValue                     = "run_if"
+	customTimeoutValue             = "timeout"
+	noOutputTimeoutValue           = "no_output_timeout"
+	ToolSnapshotEndOfWorkflowValue = "end_of_workflow"
 
-	buildSlugEnvKey = "BITRISE_BUILD_SLUG"
-	appSlugEnvKey   = "BITRISE_APP_SLUG"
+	buildSlugEnvKey       = "BITRISE_BUILD_SLUG"
+	appSlugEnvKey         = "BITRISE_APP_SLUG"
 	StepExecutionIDEnvKey = "BITRISE_STEP_EXECUTION_ID"
+	stackRevIdKey         = "BITRISE_STACK_REV_ID"
+	macStackRevIdKey      = "BITRISE_OSX_STACK_REV_ID"
 
 	bitriseVersionKey = "bitrise"
 	envmanVersionKey  = "envman"
 	stepmanVersionKey = "stepman"
 )
 
-// Input ...
 type Input struct {
 	Value         interface{} `json:"value"`
 	OriginalValue string      `json:"original_value,omitempty"`
 }
 
-// StepInfo ...
 type StepInfo struct {
 	StepID      string
 	StepTitle   string
@@ -88,7 +93,6 @@ type StepInfo struct {
 	Skippable   bool
 }
 
-// StepResult ...
 type StepResult struct {
 	Info                     StepInfo
 	Status                   models.StepRunStatus
@@ -97,13 +101,13 @@ type StepResult struct {
 	Runtime                  time.Duration
 }
 
-// Tracker ...
 type Tracker interface {
 	SendWorkflowStarted(properties analytics.Properties, name string, title string)
 	SendWorkflowFinished(properties analytics.Properties, failed bool)
 	SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string)
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
 	SendCLIWarning(message string)
+	SendToolVersionSnapshot(toolVersions, snapshotType string)
 	Wait()
 }
 
@@ -111,14 +115,13 @@ type tracker struct {
 	tracker       analytics.Tracker
 	envRepository env.Repository
 	stateChecker  StateChecker
+	logger        utilslog.Logger
 }
 
-// NewTracker ...
-func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository, stateChecker StateChecker) Tracker {
-	return tracker{tracker: analyticsTracker, envRepository: envRepository, stateChecker: stateChecker}
+func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository, stateChecker StateChecker, logger utilslog.Logger) Tracker {
+	return tracker{tracker: analyticsTracker, envRepository: envRepository, stateChecker: stateChecker, logger: logger}
 }
 
-// NewDefaultTracker ...
 func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
 	stateChecker := NewStateChecker(envRepository)
@@ -129,7 +132,7 @@ func NewDefaultTracker() Tracker {
 		tracker = analytics.NewDefaultTracker(&logger)
 	}
 
-	return NewTracker(tracker, envRepository, stateChecker)
+	return NewTracker(tracker, envRepository, stateChecker, &logger)
 }
 
 // SendWorkflowStarted sends `workflow_started` events. `parent_step_execution_id` can be used to filter those
@@ -187,7 +190,6 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 	t.tracker.Enqueue(workflowStartedEventName, properties, stateProperties)
 }
 
-// SendWorkflowFinished ...
 func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bool) {
 	if !t.stateChecker.Enabled() {
 		return
@@ -203,7 +205,28 @@ func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bo
 	t.tracker.Enqueue(workflowFinishedEventName, properties, analytics.Properties{statusProperty: statusMessage})
 }
 
-// SendStepStartedEvent ...
+func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
+	if !t.stateChecker.Enabled() {
+		return
+	}
+
+	stackRevId := t.envRepository.Get(stackRevIdKey)
+	if stackRevId == "" {
+		// Legacy
+		stackRevId = t.envRepository.Get(macStackRevIdKey)
+	}
+
+	properties := analytics.Properties{
+		ciModeProperty:       t.envRepository.Get(configs.CIModeEnvKey) == "true",
+		osProperty:           runtime.GOOS,
+		stackRevIdProperty:   stackRevId,
+		snapshotProperty:     snapshotType,
+		toolVersionsProperty: toolVersions,
+	}
+
+	t.tracker.Enqueue(toolVersionSnapshotEventName, properties)
+}
+
 func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string) {
 	if !t.stateChecker.Enabled() {
 		return
@@ -230,7 +253,6 @@ func (t tracker) SendStepStartedEvent(properties analytics.Properties, info Step
 	t.tracker.Enqueue(stepStartedEventName, extraProperties...)
 }
 
-// SendStepFinishedEvent ...
 func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result StepResult) {
 	if !t.stateChecker.Enabled() {
 		return
@@ -244,7 +266,6 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 	t.tracker.Enqueue(eventName, properties, extraProperties)
 }
 
-// SendCLIWarning ...
 func (t tracker) SendCLIWarning(message string) {
 	if !t.stateChecker.Enabled() {
 		return
@@ -253,7 +274,6 @@ func (t tracker) SendCLIWarning(message string) {
 	t.tracker.Enqueue(cliWarningEventName, analytics.Properties{messageProperty: message})
 }
 
-// Wait ...
 func (t tracker) Wait() {
 	t.tracker.Wait()
 }
@@ -314,7 +334,7 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 		return "", analytics.Properties{}, fmt.Errorf("Unknown step status code: %d", result.Status)
 	}
 
-	extraProperties[runtime] = int64(result.Runtime.Seconds())
+	extraProperties[runTimeProperty] = int64(result.Runtime.Seconds())
 
 	return eventName, extraProperties, nil
 }
