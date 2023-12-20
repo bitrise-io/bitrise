@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/v2/command"
-	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,8 +52,7 @@ func TestIsAvailable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := log.NewLogger()
-			logger.EnableDebugLog(true)
+			logger := log.NewLogger(log.GetGlobalLoggerOpts())
 			r := NewASDFVersionReporter(
 				fakeCommandLocator{path: tt.systemPath},
 				fakeCommandFactory{stdout: tt.cmdOutput, exitCode: tt.cmdExitCode},
@@ -128,8 +127,7 @@ func TestCurrentToolVersions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			logger := log.NewLogger()
-			logger.EnableDebugLog(true)
+			logger := log.NewLogger(log.GetGlobalLoggerOpts())
 			r := NewASDFVersionReporter(
 				fakeCommandLocator{path: "/root/.asdf/bin/asdf"},
 				fakeCommandFactory{stdout: tt.cmdOutput},

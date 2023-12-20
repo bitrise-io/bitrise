@@ -8,7 +8,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
-	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/bitrise/log"
 )
 
 type ToolVersionReporter interface {
@@ -22,10 +22,10 @@ type ToolVersionReporter interface {
 }
 
 type ToolVersion struct {
-	Version        string
-	IsInstalled    bool
-	DeclaredByFile string
-	IsGlobal       bool
+	Version        string `json:"version"`
+	IsInstalled    bool   `json:"is_installed"`
+	DeclaredByFile string `json:"declared_by_file"`
+	IsGlobal       bool   `json:"is_global"`
 }
 
 type ASDFVersionReporter struct {
