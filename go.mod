@@ -1,8 +1,6 @@
 module github.com/bitrise-io/bitrise
 
-go 1.21
-
-toolchain go1.21.5
+go 1.18
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
@@ -10,7 +8,7 @@ require (
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.11
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19
-	github.com/bitrise-io/goinp v0.0.0-20240103093703-f575b03fd460
+	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 	github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
 	github.com/gofrs/uuid v4.3.1+incompatible

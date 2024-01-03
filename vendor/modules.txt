@@ -37,8 +37,8 @@ github.com/bitrise-io/go-utils/v2/log
 github.com/bitrise-io/go-utils/v2/log/colorstring
 github.com/bitrise-io/go-utils/v2/redactwriter
 github.com/bitrise-io/go-utils/v2/retryhttp
-# github.com/bitrise-io/goinp v0.0.0-20240103093703-f575b03fd460
-## explicit; go 1.21
+# github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
+## explicit; go 1.18
 github.com/bitrise-io/goinp/goinp
 # github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88
 ## explicit; go 1.16
