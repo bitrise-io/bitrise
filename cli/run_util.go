@@ -475,6 +475,8 @@ type EmptyEnv struct {
 func (ee *EmptyEnv) GetEnvironment() map[string]string {
 	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
 	passthroughEnvsList = append(passthroughEnvsList, "PATH")
+	passthroughEnvsList = append(passthroughEnvsList, "PR")
+	passthroughEnvsList = append(passthroughEnvsList, "ENVMAN_ENVSTORE_PATH")
 	dockerPassthroughEnvsMap := make(map[string]bool)
 	for _, k := range passthroughEnvsList {
 		dockerPassthroughEnvsMap[k] = true
@@ -490,8 +492,8 @@ func (ee *EmptyEnv) GetEnvironment() map[string]string {
 	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
 	for _, env := range processEnvs {
 		key, value := SplitEnv(env)
-		_, whiteListed := dockerPassthroughEnvsMap[key]
-		if key == "" || !whiteListed {
+		_, allowed := dockerPassthroughEnvsMap[key]
+		if !strings.HasPrefix(key, "BITRISE") && (key == "" || !allowed) {
 			ee.logger.Infof("disallowed env: %s", key)
 			continue
 		}
