@@ -434,7 +434,9 @@ func (r WorkflowRunner) executeStep(
 	var envs []string
 
 	if workflow.Container.Image != "" {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &EmptyEnv{})
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &EmptyEnv{
+			logger: logger,
+		})
 		if err != nil {
 			return 1, fmt.Errorf("failed to read command environment: %w", err)
 		}
@@ -466,11 +468,15 @@ func (r WorkflowRunner) executeStep(
 	return cmd.Run()
 }
 
-type EmptyEnv struct{}
+type EmptyEnv struct {
+	logger log.Logger
+}
 
 func (ee *EmptyEnv) GetEnvironment() map[string]string {
+	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
+	passthroughEnvsList = append(passthroughEnvsList, "PATH")
 	dockerPassthroughEnvsMap := make(map[string]bool)
-	for _, k := range strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",") {
+	for _, k := range passthroughEnvsList {
 		dockerPassthroughEnvsMap[k] = true
 	}
 
@@ -486,6 +492,7 @@ func (ee *EmptyEnv) GetEnvironment() map[string]string {
 		key, value := SplitEnv(env)
 		_, whiteListed := dockerPassthroughEnvsMap[key]
 		if key == "" || !whiteListed {
+			ee.logger.Infof("disallowed env: %s", key)
 			continue
 		}
 
