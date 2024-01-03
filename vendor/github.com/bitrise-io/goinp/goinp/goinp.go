@@ -20,6 +20,8 @@ import (
 
 // AskForStringFromReaderWithDefault ...
 func AskForStringFromReaderWithDefault(messageToPrint, defaultValue string, inputReader io.Reader) (string, error) {
+	defer fmt.Println()
+
 	scanner := bufio.NewScanner(inputReader)
 
 	if defaultValue == "" {
@@ -66,7 +68,12 @@ func AskForString(messageToPrint string) (string, error) {
 func WriteToTerminalInputBuffer(text string) error {
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
 		for _, c := range []byte(text) {
-			if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), syscall.TIOCSTI, uintptr(unsafe.Pointer(&c))); errno != 0 {
+			if _, _, errno := syscall.Syscall(
+				syscall.SYS_IOCTL,
+				os.Stdin.Fd(),
+				syscall.TIOCSTI,
+				uintptr(unsafe.Pointer(&c)),
+			); errno != 0 {
 				return fmt.Errorf("failed to write to stdin, err no: %d", errno)
 			}
 		}
@@ -107,11 +114,12 @@ func AskForOptionalInput(defaultValue string, optional bool) (string, error) {
 //=======================================
 
 // AskForPathFromReaderWithDefault asks for a path. The difference between this
-//  and the generic "AskForString..." functions is that this'll
-//  clean up the input. For example, if the user drag-and-drops a file/dir
-//  for the input then the input might include back-slash escapes for
-//  spaces in the path - these will be removed, so the
-//  returned path will be "path/with space" instead of "path/with\ space".
+//
+//	and the generic "AskForString..." functions is that this'll
+//	clean up the input. For example, if the user drag-and-drops a file/dir
+//	for the input then the input might include back-slash escapes for
+//	spaces in the path - these will be removed, so the
+//	returned path will be "path/with space" instead of "path/with\ space".
 func AskForPathFromReaderWithDefault(messageToPrint, defaultValue string, inputReader io.Reader) (string, error) {
 	str, err := AskForStringFromReaderWithDefault(messageToPrint, defaultValue, inputReader)
 	if err != nil {
@@ -191,6 +199,8 @@ func ParseBool(userInputStr string) (bool, error) {
 
 // AskForBoolFromReaderWithDefaultValue ...
 func AskForBoolFromReaderWithDefaultValue(messageToPrint string, defaultValue bool, inputReader io.Reader) (bool, error) {
+	defer fmt.Println()
+
 	keywordYes := "yes"
 	keywordNo := "no"
 	if defaultValue == true {
@@ -247,7 +257,11 @@ func SelectFromStringsFromReaderWithDefault(messageToPrint string, defaultValue 
 		fmt.Printf("[%d] : %s\n", idx+1, anOption)
 	}
 
-	selectedOptionNum, err := AskForIntFromReaderWithDefault("(type in the option's number, then hit Enter)", defaultValue, inputReader)
+	selectedOptionNum, err := AskForIntFromReaderWithDefault(
+		"(type in the option's number, then hit Enter)",
+		defaultValue,
+		inputReader,
+	)
 	if err != nil {
 		return "", err
 	}
