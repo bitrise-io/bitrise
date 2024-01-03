@@ -469,7 +469,44 @@ func (r WorkflowRunner) executeStep(
 type EmptyEnv struct{}
 
 func (ee *EmptyEnv) GetEnvironment() map[string]string {
-	return make(map[string]string)
+	dockerPassthroughEnvsMap := make(map[string]bool)
+	for _, k := range strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",") {
+		dockerPassthroughEnvsMap[k] = true
+	}
+
+	processEnvs := os.Environ()
+	envs := make(map[string]string)
+
+	// String names can be duplicated (on Unix), and the Go libraries return the first instance of them:
+	// https://github.com/golang/go/blob/98d20fb23551a7ab900fcfe9d25fd9cb6a98a07f/src/syscall/env_unix.go#L45
+	// From https://pubs.opengroup.org/onlinepubs/9699919799/:
+	// > "There is no meaning associated with the order of strings in the environment.
+	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
+	for _, env := range processEnvs {
+		key, value := SplitEnv(env)
+		_, whiteListed := dockerPassthroughEnvsMap[key]
+		if key == "" || !whiteListed {
+			continue
+		}
+
+		envs[key] = value
+	}
+
+	return envs
+}
+
+// SplitEnv splits an env returned by os.Environ
+func SplitEnv(env string) (key string, value string) {
+	const sep = "="
+	split := strings.SplitAfterN(env, sep, 2)
+	if split == nil {
+		return "", ""
+	}
+	key = strings.TrimSuffix(split[0], sep)
+	if len(split) > 1 {
+		value = split[1]
+	}
+	return
 }
 
 func (r WorkflowRunner) runStep(
