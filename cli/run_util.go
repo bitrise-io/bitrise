@@ -709,21 +709,27 @@ func (r WorkflowRunner) activateAndRunSteps(
 			}
 		}
 
-		out, err := command.New("docker", "run",
+		dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
+		dockerRunArgs := []string{"run",
 			"--platform", "linux/amd64",
 			"--network=bitrise",
 			"-d",
-			"-v", "/root/.bitrise:/root/.bitrise", // .bitrise aka BitriseHomeDirPath
-			"-v", "/tmp:/tmp", // BitriseWorkDirPath
-			"-v", "/bitrise:/bitrise",
+		}
+
+		for _, o := range dockerMountOverrides {
+			dockerRunArgs = append(dockerRunArgs, "-v", o)
+		}
+
+		dockerRunArgs = append(dockerRunArgs,
 			"-w", "/bitrise/src", // BitriseSourceDir
 			"--name=workflow-container",
 			workflow.Container.Image,
 			"sleep", "infinity",
-		).RunAndReturnTrimmedCombinedOutput()
+		)
+
+		out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {
 			log.Errorf(out)
-
 			panic(err)
 		}
 		defer func() {
