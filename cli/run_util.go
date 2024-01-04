@@ -434,7 +434,7 @@ func (r WorkflowRunner) executeStep(
 	var envs []string
 
 	if workflow.Container.Image != "" {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &EmptyEnv{
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &DockerEnvironmentSource{
 			logger: logger,
 		})
 		if err != nil {
@@ -468,15 +468,13 @@ func (r WorkflowRunner) executeStep(
 	return cmd.Run()
 }
 
-type EmptyEnv struct {
+type DockerEnvironmentSource struct {
 	logger log.Logger
 }
 
-func (ee *EmptyEnv) GetEnvironment() map[string]string {
+func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
-	passthroughEnvsList = append(passthroughEnvsList, "PATH")
-	passthroughEnvsList = append(passthroughEnvsList, "PR")
-	passthroughEnvsList = append(passthroughEnvsList, "ENVMAN_ENVSTORE_PATH")
+	passthroughEnvsList = append(passthroughEnvsList, "PATH", "PR", "ENVMAN_ENVSTORE_PATH")
 	dockerPassthroughEnvsMap := make(map[string]bool)
 	for _, k := range passthroughEnvsList {
 		dockerPassthroughEnvsMap[k] = true
@@ -491,10 +489,10 @@ func (ee *EmptyEnv) GetEnvironment() map[string]string {
 	// > "There is no meaning associated with the order of strings in the environment.
 	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
 	for _, env := range processEnvs {
-		key, value := SplitEnv(env)
+		key, value := des.splitEnv(env)
 		_, allowed := dockerPassthroughEnvsMap[key]
 		if !strings.HasPrefix(key, "BITRISE") && (key == "" || !allowed) {
-			ee.logger.Infof("disallowed env: %s", key)
+			des.logger.Debugf("disallowed env: %s", key)
 			continue
 		}
 
@@ -505,7 +503,7 @@ func (ee *EmptyEnv) GetEnvironment() map[string]string {
 }
 
 // SplitEnv splits an env returned by os.Environ
-func SplitEnv(env string) (key string, value string) {
+func (des *DockerEnvironmentSource) splitEnv(env string) (key string, value string) {
 	const sep = "="
 	split := strings.SplitAfterN(env, sep, 2)
 	if split == nil {
