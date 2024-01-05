@@ -10,6 +10,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/cli/docker"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -163,8 +164,9 @@ type WorkflowRunner struct {
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
 	return WorkflowRunner{
-		config:      config,
-		agentConfig: agentConfig,
+		config:        config,
+		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts())),
+		agentConfig:   agentConfig,
 	}
 }
 
