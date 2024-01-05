@@ -84,7 +84,8 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 
 func (cm *ContainerManager) StartWorkflowContainer(container models.Container, workflowID string) (*RunningContainer, error) {
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
-	runningContainer, err := cm.startContainer(container, containerName)
+	// TODO: make sure the sleep command works across OS flavours
+	runningContainer, err := cm.startContainer(container, containerName, "sleep infinity")
 	if err != nil {
 		return nil, fmt.Errorf("start workflow container: %w", err)
 	}
@@ -94,7 +95,7 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 
 func (cm *ContainerManager) StartServiceContainer(service models.Container, workflowID string, serviceName string) (*RunningContainer, error) {
 	containerName := fmt.Sprintf("service-%s-%s", workflowID, serviceName)
-	runningContainer, err := cm.startContainer(service, containerName)
+	runningContainer, err := cm.startContainer(service, containerName, "")
 	if err != nil {
 		return nil, fmt.Errorf("start service container: %w", err)
 	}
@@ -128,7 +129,7 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	return nil
 }
 
-func (cm *ContainerManager) startContainer(container models.Container, name string) (*RunningContainer, error) {
+func (cm *ContainerManager) startContainer(container models.Container, name string, commandArgs string) (*RunningContainer, error) {
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 	dockerRunArgs := []string{"run",
 		"--platform", "linux/amd64",
@@ -154,8 +155,11 @@ func (cm *ContainerManager) startContainer(container models.Container, name stri
 		"-w", "/bitrise/src", // BitriseSourceDir
 		fmt.Sprintf("--name=%s", name),
 		container.Image,
-		"sleep", "infinity", // TODO: enable setting command from the outside, important for services
 	)
+
+	// TODO: think about enabling setting this on the public UI as well
+	commandArgsList := strings.Split(commandArgs, " ")
+	dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
