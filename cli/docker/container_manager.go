@@ -160,7 +160,6 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	}
 
 	dockerRunArgs = append(dockerRunArgs,
-		"-w", "/bitrise/src", // BitriseSourceDir
 		fmt.Sprintf("--name=%s", name),
 		container.Image,
 	)
