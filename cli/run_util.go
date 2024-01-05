@@ -598,12 +598,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	defer func() {
-		containers := r.dockerManager.GetServiceContainers(workflowID)
-		for _, container := range containers {
-			if err := container.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for service: %s", container.Name)
-			}
-		}
+		//containers := r.dockerManager.GetServiceContainers(workflowID)
+		//for _, container := range containers {
+		//	if err := container.Destroy(); err != nil {
+		//		log.Errorf("Attempted to stop the docker container for service: %s", container.Name)
+		//	}
+		//}
 	}()
 
 	err := tools.EnvmanInit(configs.InputEnvstorePath, true)

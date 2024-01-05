@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -84,8 +85,9 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 
 func (cm *ContainerManager) StartWorkflowContainer(container models.Container, workflowID string) (*RunningContainer, error) {
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
+	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 	// TODO: make sure the sleep command works across OS flavours
-	runningContainer, err := cm.startContainer(container, containerName, "sleep infinity")
+	runningContainer, err := cm.startContainer(container, containerName, dockerMountOverrides, "sleep infinity", "/bitrise/src")
 	if err != nil {
 		return nil, fmt.Errorf("start workflow container: %w", err)
 	}
@@ -95,7 +97,7 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 
 func (cm *ContainerManager) StartServiceContainer(service models.Container, workflowID string, serviceName string) (*RunningContainer, error) {
 	containerName := fmt.Sprintf("service-%s-%s", workflowID, serviceName)
-	runningContainer, err := cm.startContainer(service, containerName, "")
+	runningContainer, err := cm.startContainer(service, containerName, []string{}, "", "")
 	if err != nil {
 		return nil, fmt.Errorf("start service container: %w", err)
 	}
@@ -129,15 +131,18 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	return nil
 }
 
-func (cm *ContainerManager) startContainer(container models.Container, name string, commandArgs string) (*RunningContainer, error) {
-	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
+func (cm *ContainerManager) startContainer(container models.Container,
+	name string,
+	volumes []string,
+	commandArgs, workingDir string,
+) (*RunningContainer, error) {
 	dockerRunArgs := []string{"run",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
 		"-d",
 	}
 
-	for _, o := range dockerMountOverrides {
+	for _, o := range volumes {
 		dockerRunArgs = append(dockerRunArgs, "-v", o)
 	}
 
@@ -151,6 +156,10 @@ func (cm *ContainerManager) startContainer(container models.Container, name stri
 		dockerRunArgs = append(dockerRunArgs, "-p", port)
 	}
 
+	if workingDir != "" {
+		dockerRunArgs = append(dockerRunArgs, "-w", workingDir)
+	}
+
 	dockerRunArgs = append(dockerRunArgs,
 		"-w", "/bitrise/src", // BitriseSourceDir
 		fmt.Sprintf("--name=%s", name),
@@ -158,14 +167,18 @@ func (cm *ContainerManager) startContainer(container models.Container, name stri
 	)
 
 	// TODO: think about enabling setting this on the public UI as well
-	commandArgsList := strings.Split(commandArgs, " ")
-	dockerRunArgs = append(dockerRunArgs, commandArgsList...)
+	if commandArgs != "" {
+		commandArgsList := strings.Split(commandArgs, " ")
+		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
+	}
 
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
 		return nil, fmt.Errorf("run docker container: %w", err)
 	}
+
+	time.Sleep(10 * time.Second)
 
 	runningContainer := &RunningContainer{
 		Name: name,
