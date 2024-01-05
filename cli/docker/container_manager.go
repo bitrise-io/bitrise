@@ -107,10 +107,17 @@ func (cm *ContainerManager) Destroy() error {
 		return fmt.Errorf("remove docker container: %w", err)
 	}
 
+	cm.container.initialized = false
+	cm.container.name = ""
+
 	return nil
 }
 
 func (cm *ContainerManager) ExecuteCommandArgs(envs []string) []string {
+	if cm.container == nil || !cm.container.initialized {
+		// TODO handle err
+	}
+
 	args := []string{"exec"}
 
 	for _, env := range envs {
