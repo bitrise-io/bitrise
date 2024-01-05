@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -176,6 +177,8 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		log.Errorf(out)
 		return nil, fmt.Errorf("run docker container: %w", err)
 	}
+
+	time.Sleep(10 * time.Second)
 
 	runningContainer := &RunningContainer{
 		Name: name,
