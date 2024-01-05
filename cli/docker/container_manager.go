@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -96,8 +95,8 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 }
 
 func (cm *ContainerManager) StartServiceContainer(service models.Container, workflowID string, serviceName string) (*RunningContainer, error) {
-	containerName := fmt.Sprintf("service-%s-%s", workflowID, serviceName)
-	runningContainer, err := cm.startContainer(service, containerName, []string{}, "", "")
+	// Naming the container other than the service name, can cause issues with network calls
+	runningContainer, err := cm.startContainer(service, serviceName, []string{}, "", "")
 	if err != nil {
 		return nil, fmt.Errorf("start service container: %w", err)
 	}
@@ -177,8 +176,6 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		log.Errorf(out)
 		return nil, fmt.Errorf("run docker container: %w", err)
 	}
-
-	time.Sleep(10 * time.Second)
 
 	runningContainer := &RunningContainer{
 		Name: name,
