@@ -15,6 +15,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/cli/docker"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/logwriter"
@@ -434,86 +435,35 @@ func (r WorkflowRunner) executeStep(
 	var envs []string
 
 	if workflow.Container.Image != "" {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &DockerEnvironmentSource{
-			logger: logger,
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.DockerEnvironmentSource{
+			Logger: logger,
 		})
 		if err != nil {
 			return 1, fmt.Errorf("failed to read command environment: %w", err)
 		}
 
 		name = "docker"
-
-		args = []string{"exec"}
-
-		for _, env := range envs {
-			args = append(args, "-e", env)
-		}
-
-		args = append(args, "workflow-container")
+		args = r.dockerManager.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
-	} else {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
-		if err != nil {
-			return 1, fmt.Errorf("failed to read command environment: %w", err)
-		}
 
-		name = cmdArgs[0]
-		if len(cmdArgs) > 1 {
-			args = cmdArgs[1:]
-		}
+		cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+
+		return cmd.Run()
+	}
+
+	envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	if err != nil {
+		return 1, fmt.Errorf("failed to read command environment: %w", err)
+	}
+
+	name = cmdArgs[0]
+	if len(cmdArgs) > 1 {
+		args = cmdArgs[1:]
 	}
 
 	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
-}
-
-type DockerEnvironmentSource struct {
-	logger log.Logger
-}
-
-func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
-	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
-	passthroughEnvsList = append(passthroughEnvsList, "PATH", "PR", "ENVMAN_ENVSTORE_PATH")
-	dockerPassthroughEnvsMap := make(map[string]bool)
-	for _, k := range passthroughEnvsList {
-		dockerPassthroughEnvsMap[k] = true
-	}
-
-	processEnvs := os.Environ()
-	envs := make(map[string]string)
-
-	// String names can be duplicated (on Unix), and the Go libraries return the first instance of them:
-	// https://github.com/golang/go/blob/98d20fb23551a7ab900fcfe9d25fd9cb6a98a07f/src/syscall/env_unix.go#L45
-	// From https://pubs.opengroup.org/onlinepubs/9699919799/:
-	// > "There is no meaning associated with the order of strings in the environment.
-	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
-	for _, env := range processEnvs {
-		key, value := des.splitEnv(env)
-		_, allowed := dockerPassthroughEnvsMap[key]
-		if !strings.HasPrefix(key, "BITRISE") && (key == "" || !allowed) {
-			des.logger.Debugf("disallowed env: %s", key)
-			continue
-		}
-
-		envs[key] = value
-	}
-
-	return envs
-}
-
-// SplitEnv splits an env returned by os.Environ
-func (des *DockerEnvironmentSource) splitEnv(env string) (key string, value string) {
-	const sep = "="
-	split := strings.SplitAfterN(env, sep, 2)
-	if split == nil {
-		return "", ""
-	}
-	key = strings.TrimSuffix(split[0], sep)
-	if len(split) > 1 {
-		value = split[1]
-	}
-	return
 }
 
 func (r WorkflowRunner) runStep(
@@ -608,6 +558,13 @@ func (r WorkflowRunner) runStep(
 	return 0, updatedStepOutputs, nil
 }
 
+type DockerManager interface {
+	Login(models.Container, map[string]string) error
+	StartContainer(models.Container) error
+	Destroy() error
+	ExecuteCommandArgs(envs []string) []string
+}
+
 func (r WorkflowRunner) activateAndRunSteps(
 	plan models.WorkflowExecutionPlan,
 	workflow models.WorkflowModel,
@@ -624,6 +581,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", workflow.Title)
 		return buildRunResults
 	}
+
+	// ensure to have new instance of containerManager instance for each workflow
+	r.dockerManager = docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts()))
 
 	serviceNames := []string{}
 	for name, service := range workflow.Services {
@@ -663,79 +623,32 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 	}()
 
+	err := tools.EnvmanInit(configs.InputEnvstorePath, true)
+	if err != nil {
+		log.Debugf("Couldn't initialize envman.")
+	}
+	err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
+	if err != nil {
+		log.Debugf("Couldn't add envs.")
+	}
+	list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
+	if err != nil {
+		log.Debugf("Couldn't read envs from envman.")
+	}
+
 	if workflow.Container.Image != "" {
-		log.Infof("Running workflow in docker container: %s", workflow.Container.Image)
-
-		log.Debugf("Docker cred: %s", workflow.Container.Credentials)
-
-		if workflow.Container.Credentials.Username != "" && workflow.Container.Credentials.Password != "" {
-			log.Debugf("Logging into docker registry: %s", workflow.Container.Image)
-
-			password := workflow.Container.Credentials.Password
-			if strings.HasPrefix(password, "$") {
-				err := tools.EnvmanInit(configs.InputEnvstorePath, true)
-				if err != nil {
-					return models.BuildRunResultsModel{}
-				}
-				err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
-				if err != nil {
-					return models.BuildRunResultsModel{}
-				}
-				list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-				if err != nil {
-					return models.BuildRunResultsModel{}
-				}
-
-				if value, ok := list[strings.TrimPrefix(workflow.Container.Credentials.Password, "$")]; ok {
-					password = value
-				}
-			}
-
-			args := []string{"login", "--username", workflow.Container.Credentials.Username, "--password", password}
-
-			if workflow.Container.Credentials.Server != "" {
-				args = append(args, workflow.Container.Credentials.Server)
-			} else if len(strings.Split(workflow.Container.Image, "/")) > 2 {
-				args = append(args, workflow.Container.Image)
-			}
-
-			log.Debugf("Running command: docker %s", strings.Join(args, " "))
-
-			out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
-			if err != nil {
-				log.Errorf(out)
-
-				panic(err)
-			}
+		if err := r.dockerManager.Login(workflow.Container, list); err != nil {
+			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
 		}
 
-		dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
-		dockerRunArgs := []string{"run",
-			"--platform", "linux/amd64",
-			"--network=bitrise",
-			"-d",
-		}
-
-		for _, o := range dockerMountOverrides {
-			dockerRunArgs = append(dockerRunArgs, "-v", o)
-		}
-
-		dockerRunArgs = append(dockerRunArgs,
-			"-w", "/bitrise/src", // BitriseSourceDir
-			"--name=workflow-container",
-			workflow.Container.Image,
-			"sleep", "infinity",
-		)
-
-		out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
+		err := r.dockerManager.StartContainer(workflow.Container)
 		if err != nil {
-			log.Errorf(out)
-			panic(err)
+			log.Errorf("Could not start the specified docker image for workflow: %s", workflow.Title)
 		}
+
 		defer func() {
-			out, err := command.New("docker", "rm", "--force", "workflow-container").RunAndReturnTrimmedCombinedOutput()
-			if err != nil {
-				log.Errorf(out)
+			if err := r.dockerManager.Destroy(); err != nil {
+				log.Errorf("Attempted to stop the docker container for container: %s", workflow.Title)
 			}
 		}()
 	}

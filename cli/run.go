@@ -154,10 +154,11 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 }
 
 type WorkflowRunner struct {
-	config      RunConfig
-	
+	config RunConfig
+
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig *configs.AgentConfig
+	agentConfig   *configs.AgentConfig
+	dockerManager DockerManager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
