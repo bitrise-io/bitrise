@@ -171,6 +171,7 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
+	log.Infof("Running command: docker %s", strings.Join(dockerRunArgs, " "))
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
