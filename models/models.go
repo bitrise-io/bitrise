@@ -45,7 +45,7 @@ type WorkflowListItemModel map[string]WorkflowModel
 // WorkflowModel ...
 type WorkflowModel struct {
 	Container    Container                           `json:"container,omitempty" yaml:"container,omitempty"`
-	Services     map[string]WorkflowService          `json:"services,omitempty" yaml:"services,omitempty"`
+	Services     map[string]Container                `json:"services,omitempty" yaml:"services,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
@@ -63,14 +63,10 @@ type DockerCredentials struct {
 }
 
 type Container struct {
-	Image       string `json:"image,omitempty" yaml:"image,omitempty"`
-	Credentials DockerCredentials
-}
-
-type WorkflowService struct {
-	Image string                              `json:"image,omitempty" yaml:"image,omitempty"`
-	Ports []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
-	Envs  []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
+	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
 // AppModel ...

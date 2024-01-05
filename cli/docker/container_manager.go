@@ -11,11 +11,11 @@ import (
 )
 
 type RunningContainer struct {
-	name string // TODO refactor to use docker sdk, and return container ID instead of name
+	Name string // TODO refactor to use docker sdk, and return container ID instead of name
 }
 
 func (rc *RunningContainer) Destroy() error {
-	_, err := command.New("docker", "rm", "--force", rc.name).RunAndReturnTrimmedCombinedOutput()
+	_, err := command.New("docker", "rm", "--force", rc.Name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		// rc.logger.Errorf(out)
 		return fmt.Errorf("remove docker container: %w", err)
@@ -30,7 +30,7 @@ func (rc *RunningContainer) ExecuteCommandArgs(envs []string) []string {
 		args = append(args, "-e", env)
 	}
 
-	args = append(args, rc.name)
+	args = append(args, rc.Name)
 
 	return args
 }
@@ -92,9 +92,9 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainer(container models.Container, workflowID string, service string) (*RunningContainer, error) {
-	containerName := fmt.Sprintf("service-%s-%s", workflowID, service)
-	runningContainer, err := cm.startContainer(container, containerName)
+func (cm *ContainerManager) StartServiceContainer(service models.Container, workflowID string, serviceName string) (*RunningContainer, error) {
+	containerName := fmt.Sprintf("service-%s-%s", workflowID, serviceName)
+	runningContainer, err := cm.startContainer(service, containerName)
 	if err != nil {
 		return nil, fmt.Errorf("start service container: %w", err)
 	}
@@ -140,11 +140,21 @@ func (cm *ContainerManager) startContainer(container models.Container, name stri
 		dockerRunArgs = append(dockerRunArgs, "-v", o)
 	}
 
+	for _, env := range container.Envs {
+		for name, value := range env {
+			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, value))
+		}
+	}
+
+	for _, port := range container.Ports {
+		dockerRunArgs = append(dockerRunArgs, "-p", port)
+	}
+
 	dockerRunArgs = append(dockerRunArgs,
 		"-w", "/bitrise/src", // BitriseSourceDir
 		fmt.Sprintf("--name=%s", name),
 		container.Image,
-		"sleep", "infinity",
+		"sleep", "infinity", // TODO: enable setting command from the outside, important for services
 	)
 
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
@@ -154,7 +164,7 @@ func (cm *ContainerManager) startContainer(container models.Container, name stri
 	}
 
 	runningContainer := &RunningContainer{
-		name: name,
+		Name: name,
 	}
 	return runningContainer, nil
 }

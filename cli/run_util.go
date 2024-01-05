@@ -30,7 +30,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-steputils/v2/secretkeys"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -563,6 +562,7 @@ func (r WorkflowRunner) runStep(
 type DockerManager interface {
 	Login(models.Container, map[string]string) error
 	StartWorkflowContainer(models.Container, string) (*docker.RunningContainer, error)
+	StartServiceContainer(service models.Container, workflowID string, serviceName string) (*docker.RunningContainer, error)
 	GetWorkflowContainer(string) *docker.RunningContainer
 	GetServiceContainers(string) []*docker.RunningContainer
 	DestroyAllContainers() error
@@ -587,40 +587,21 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	serviceNames := []string{}
 	for name, service := range workflow.Services {
-		log.Debugf("Creating service container from image: %s", service.Image)
+		log.Infof("Creating service container from image: %s", service.Image)
 
-		args := []string{"run", "--platform", "linux/amd64", "--network=bitrise", "-d", fmt.Sprintf("--name=%s", name)}
-		for _, env := range service.Envs {
-			for name, value := range env {
-				args = append(args, "-e", fmt.Sprintf("%s=%s", name, value))
-			}
-		}
-		for _, port := range service.Ports {
-			ports := strings.Split(port, ":")
-			args = append(args, "-p", fmt.Sprintf("%s:%s", ports[0], ports[1]))
-		}
-
-		args = append(args, service.Image)
-
-		// TODO: Add commands here if we support it
-
-		cmd := command.New("docker", args...)
-
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		_, err := r.dockerManager.StartServiceContainer(service, workflowID, name)
 		if err != nil {
-			log.Errorf(out)
-			panic(err)
+			log.Errorf("Could not start the specified docker image for service: %s", name)
 		}
-		serviceNames = append(serviceNames, name)
+		// TODO: Add commands here if we support it
 	}
 
 	defer func() {
-		for _, name := range serviceNames {
-			out, err := command.New("docker", "rm", "--force", name).RunAndReturnTrimmedCombinedOutput()
-			if err != nil {
-				log.Errorf(out)
+		containers := r.dockerManager.GetServiceContainers(workflowID)
+		for _, container := range containers {
+			if err := container.Destroy(); err != nil {
+				log.Errorf("Attempted to stop the docker container for service: %s", container.Name)
 			}
 		}
 	}()
