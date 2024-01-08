@@ -20,7 +20,6 @@ import (
 	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/gofrs/uuid"
@@ -73,19 +72,6 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
-
-	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		// TODO: check if network already exists
-		log.Warnf(out)
-	}
-	defer func() {
-		out, err = command.New("docker", "network", "rm", "bitrise").RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
-			log.Errorf(out)
-		}
-	}()
-
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
