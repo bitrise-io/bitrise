@@ -135,6 +135,8 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	volumes []string,
 	commandArgs, workingDir string,
 ) (*RunningContainer, error) {
+	cm.ensureNetwork()
+
 	dockerRunArgs := []string{"run",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
@@ -181,4 +183,12 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		Name: name,
 	}
 	return runningContainer, nil
+}
+
+func (cm *ContainerManager) ensureNetwork() {
+	// TODO: check if network exists
+	out, err := command.New("docker", "network", "create", "bitrise").RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Infof("create network: %s", out)
+	}
 }
