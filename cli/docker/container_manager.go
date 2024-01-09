@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -48,7 +49,6 @@ type ContainerManager struct {
 
 func NewContainerManager(logger log.Logger) *ContainerManager {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	logger.Infof("Docker client: %v", dockerClient)
 	if err != nil {
 		logger.Warnf("Docker client failed to initialize (possibly running on unsupported stack): %s", err)
 	}
@@ -173,6 +173,12 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		dockerRunArgs = append(dockerRunArgs, "-w", workingDir)
 	}
 
+	if container.Options != "" {
+		log.Infof("Container options: %s", container.Options)
+		optionsList := strings.Split(container.Options, " ")
+		dockerRunArgs = append(dockerRunArgs, optionsList...)
+	}
+
 	dockerRunArgs = append(dockerRunArgs,
 		fmt.Sprintf("--name=%s", name),
 		container.Image,
@@ -218,11 +224,34 @@ func (cm *ContainerManager) healthCheckContainer(err error, name string) error {
 		return fmt.Errorf("inspect container: %w", err)
 	}
 
-	if inspect.State.Health != nil {
-		cm.logger.Infof("Container health status: %v", inspect.State.Health.Status)
-	} else {
+	if inspect.State.Health == nil {
 		cm.logger.Infof("No healthcheck is defined for container, assuming healthy...")
+		return nil
 	}
+
+	retries := 0
+	for inspect.State.Health.Status != "healthy" {
+		if retries > 30 {
+			return fmt.Errorf("container unable to start properly: %w", err)
+		}
+
+		// TODO: more sophisticated retry logic
+		// this solution prefers quick retries at the beginning and constant for the rest
+		sleep := 5
+		if retries < 5 {
+			sleep = retries
+		}
+		time.Sleep(time.Duration(sleep) * time.Second)
+
+		cm.logger.Infof("Waiting for container (%s) to start...", name)
+		inspect, err = cm.client.ContainerInspect(context.Background(), containers[0].ID)
+		if err != nil {
+			return fmt.Errorf("inspect container: %w", err)
+		}
+		retries++
+
+	}
+
 	return nil
 }
 
