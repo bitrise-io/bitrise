@@ -2,10 +2,8 @@ package models
 
 import "fmt"
 
-// TriggerMapModel ...
 type TriggerMapModel []TriggerMapItemModel
 
-// Validate ...
 func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]string, error) {
 	var warnings []string
 	for _, item := range triggerMap {

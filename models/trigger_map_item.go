@@ -7,21 +7,15 @@ import (
 	"github.com/ryanuber/go-glob"
 )
 
-// TriggerEventType ...
 type TriggerEventType string
 
 const (
-	// TriggerEventTypeCodePush ...
-	TriggerEventTypeCodePush TriggerEventType = "code-push"
-	// TriggerEventTypePullRequest ...
+	TriggerEventTypeCodePush    TriggerEventType = "code-push"
 	TriggerEventTypePullRequest TriggerEventType = "pull-request"
-	// TriggerEventTypeTag ...
-	TriggerEventTypeTag TriggerEventType = "tag"
-	// TriggerEventTypeUnknown ...
-	TriggerEventTypeUnknown TriggerEventType = "unknown"
+	TriggerEventTypeTag         TriggerEventType = "tag"
+	TriggerEventTypeUnknown     TriggerEventType = "unknown"
 )
 
-// TriggerMapItemModel ...
 type TriggerMapItemModel struct {
 	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
@@ -35,7 +29,6 @@ type TriggerMapItemModel struct {
 	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
 }
 
-// Validate ...
 func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) ([]string, error) {
 	var warnings []string
 
@@ -90,7 +83,6 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	return warnings, nil
 }
 
-// MatchWithParams ...
 func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
