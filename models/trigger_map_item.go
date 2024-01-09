@@ -140,6 +140,14 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	return false, nil
 }
 
+func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
+	draftPullRequestEnabled := defaultDraftPullRequestEnabled
+	if triggerItem.DraftPullRequestEnabled != nil {
+		draftPullRequestEnabled = *triggerItem.DraftPullRequestEnabled
+	}
+	return draftPullRequestEnabled
+}
+
 func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 	str := ""
 
@@ -163,12 +171,7 @@ func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 		}
 
-		draftPullRequestEnabled := defaultDraftPullRequestEnabled
-		if triggerItem.DraftPullRequestEnabled != nil {
-			draftPullRequestEnabled = *triggerItem.DraftPullRequestEnabled
-		}
-
-		str += fmt.Sprintf(" && draft_pull_request_enabled: %v", draftPullRequestEnabled)
+		str += fmt.Sprintf(" && draft_pull_request_enabled: %v", triggerItem.IsDraftPullRequestEnabled())
 	}
 
 	if triggerItem.Tag != "" {
