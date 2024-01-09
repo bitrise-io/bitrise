@@ -10,156 +10,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/ryanuber/go-glob"
 )
-
-func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
-	str := ""
-
-	if triggerItem.PushBranch != "" {
-		str = fmt.Sprintf("push_branch: %s", triggerItem.PushBranch)
-	}
-
-	if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
-		if str != "" {
-			str += " "
-		}
-
-		if triggerItem.PullRequestSourceBranch != "" {
-			str += fmt.Sprintf("pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
-		}
-		if triggerItem.PullRequestTargetBranch != "" {
-			if triggerItem.PullRequestSourceBranch != "" {
-				str += " && "
-			}
-
-			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
-		}
-	}
-
-	if triggerItem.Tag != "" {
-		if str != "" {
-			str += " "
-		}
-
-		str += fmt.Sprintf("tag: %s", triggerItem.Tag)
-	}
-
-	if triggerItem.Pattern != "" {
-		if str != "" {
-			str += " "
-		}
-
-		str += fmt.Sprintf("pattern: %s && is_pull_request_allowed: %v", triggerItem.Pattern, triggerItem.IsPullRequestAllowed)
-	}
-
-	if printTarget {
-		if triggerItem.PipelineID != "" {
-			str += fmt.Sprintf(" -> pipeline: %s", triggerItem.PipelineID)
-		} else {
-			str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
-		}
-	}
-
-	return str
-}
-
-func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag string) (TriggerEventType, error) {
-	if pushBranch != "" {
-		// Ensure not mixed with code-push event
-		if prSourceBranch != "" {
-			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_source_branch (%s) also provided", pushBranch, prSourceBranch)
-		}
-		if prTargetBranch != "" {
-			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but pull_request_target_branch (%s) also provided", pushBranch, prTargetBranch)
-		}
-
-		// Ensure not mixed with tag event
-		if tag != "" {
-			return TriggerEventTypeUnknown, fmt.Errorf("push_branch (%s) selects code-push trigger event, but tag (%s) also provided", pushBranch, tag)
-		}
-
-		return TriggerEventTypeCodePush, nil
-	} else if prSourceBranch != "" || prTargetBranch != "" {
-		// Ensure not mixed with tag event
-		if tag != "" {
-			return TriggerEventTypeUnknown, fmt.Errorf("pull_request_source_branch (%s) and pull_request_target_branch (%s) selects pull-request trigger event, but tag (%s) also provided", prSourceBranch, prTargetBranch, tag)
-		}
-
-		return TriggerEventTypePullRequest, nil
-	} else if tag != "" {
-		return TriggerEventTypeTag, nil
-	}
-
-	return TriggerEventTypeUnknown, fmt.Errorf("failed to determin trigger event from params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", pushBranch, prSourceBranch, prTargetBranch, tag)
-}
-
-func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapItemModel {
-	migratedItems := []TriggerMapItemModel{
-		TriggerMapItemModel{
-			PushBranch: triggerItem.Pattern,
-			WorkflowID: triggerItem.WorkflowID,
-		},
-	}
-	if triggerItem.IsPullRequestAllowed {
-		migratedItems = append(migratedItems, TriggerMapItemModel{
-			PullRequestSourceBranch: triggerItem.Pattern,
-			WorkflowID:              triggerItem.WorkflowID,
-		})
-	}
-	return migratedItems
-}
-
-// MatchWithParams ...
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag string) (bool, error) {
-	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-	if err != nil {
-		return false, err
-	}
-
-	migratedTriggerItems := []TriggerMapItemModel{triggerItem}
-	if triggerItem.Pattern != "" {
-		migratedTriggerItems = migrateDeprecatedTriggerItem(triggerItem)
-	}
-
-	for _, migratedTriggerItem := range migratedTriggerItems {
-		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch, migratedTriggerItem.Tag)
-		if err != nil {
-			return false, err
-		}
-
-		if paramsEventType != itemEventType {
-			continue
-		}
-
-		switch itemEventType {
-		case TriggerEventTypeCodePush:
-			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
-			return match, nil
-		case TriggerEventTypePullRequest:
-			sourceMatch := false
-			if migratedTriggerItem.PullRequestSourceBranch == "" {
-				sourceMatch = true
-			} else {
-				sourceMatch = glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
-			}
-
-			targetMatch := false
-			if migratedTriggerItem.PullRequestTargetBranch == "" {
-				targetMatch = true
-			} else {
-				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
-			}
-
-			return (sourceMatch && targetMatch), nil
-		case TriggerEventTypeTag:
-			match := glob.Glob(migratedTriggerItem.Tag, tag)
-			return match, nil
-		}
-	}
-
-	return false, nil
-}
 
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
@@ -218,6 +69,36 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 	workflowStack = removeWorkflowName(workflowID, workflowStack)
 
 	return nil
+}
+
+func (config *BitriseDataModel) getWorkflowIDs() []string {
+	uniqueWorkflowIDs := map[string]bool{}
+
+	for workflowID := range config.Workflows {
+		uniqueWorkflowIDs[workflowID] = true
+	}
+
+	var workflowIDs []string
+	for workflowID := range uniqueWorkflowIDs {
+		workflowIDs = append(workflowIDs, workflowID)
+	}
+
+	return workflowIDs
+}
+
+func (config *BitriseDataModel) getPipelineIDs() []string {
+	uniquePipelineIDs := map[string]bool{}
+
+	for pipelineID := range config.Pipelines {
+		uniquePipelineIDs[pipelineID] = true
+	}
+
+	var pipelineIDs []string
+	for pipelineID := range uniquePipelineIDs {
+		pipelineIDs = append(pipelineIDs, pipelineID)
+	}
+
+	return pipelineIDs
 }
 
 // ----------------------------
@@ -334,89 +215,6 @@ func (app *AppModel) Validate() error {
 }
 
 // Validate ...
-func (triggerItem TriggerMapItemModel) Validate() error {
-	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
-		return fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
-	}
-	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
-	}
-
-	if triggerItem.Pattern == "" {
-		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-		if err != nil {
-			return fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem.String(true), err)
-		}
-	} else if triggerItem.PushBranch != "" ||
-		triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" || triggerItem.Tag != "" {
-		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s, tag: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-	}
-
-	return nil
-}
-
-// Validate ...
-func (triggerMap TriggerMapModel) Validate() error {
-	for _, item := range triggerMap {
-		if err := item.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
-	triggeTypeItemMap := map[string][]TriggerMapItemModel{}
-
-	for _, triggerItem := range triggerMap {
-		if triggerItem.Pattern == "" {
-			triggerType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-			if err != nil {
-				return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
-			}
-
-			triggerItems := triggeTypeItemMap[string(triggerType)]
-
-			for _, item := range triggerItems {
-				switch triggerType {
-				case TriggerEventTypeCodePush:
-					if triggerItem.PushBranch == item.PushBranch {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				case TriggerEventTypePullRequest:
-					if triggerItem.PullRequestSourceBranch == item.PullRequestSourceBranch &&
-						triggerItem.PullRequestTargetBranch == item.PullRequestTargetBranch {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				case TriggerEventTypeTag:
-					if triggerItem.Tag == item.Tag {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				}
-			}
-
-			triggerItems = append(triggerItems, triggerItem)
-			triggeTypeItemMap[string(triggerType)] = triggerItems
-		} else if triggerItem.Pattern != "" {
-			triggerItems := triggeTypeItemMap["deprecated"]
-
-			for _, item := range triggerItems {
-				if triggerItem.Pattern == item.Pattern &&
-					triggerItem.IsPullRequestAllowed == item.IsPullRequestAllowed {
-					return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-				}
-			}
-
-			triggerItems = append(triggerItems, triggerItem)
-			triggeTypeItemMap["deprecated"] = triggerItems
-		}
-	}
-
-	return nil
-}
-
-// Validate ...
 func (config *BitriseDataModel) Validate() ([]string, error) {
 	warnings := []string{}
 
@@ -425,42 +223,11 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	// trigger map
-	if err := config.TriggerMap.Validate(); err != nil {
-		return warnings, err
-	}
-
-	for _, triggerMapItem := range config.TriggerMap {
-		if strings.HasPrefix(triggerMapItem.WorkflowID, "_") {
-			warnings = append(warnings, fmt.Sprintf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerMapItem.WorkflowID, triggerMapItem.String(true)))
-		}
-
-		found := false
-		if triggerMapItem.PipelineID != "" {
-			for pipelineID := range config.Pipelines {
-				if pipelineID == triggerMapItem.PipelineID {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerMapItem.PipelineID, triggerMapItem.String(true))
-			}
-		} else {
-			for workflowID := range config.Workflows {
-				if workflowID == triggerMapItem.WorkflowID {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
-			}
-		}
-	}
-
-	if err := checkDuplicatedTriggerMapItems(config.TriggerMap); err != nil {
+	workflows := config.getWorkflowIDs()
+	pipelines := config.getPipelineIDs()
+	warns, err := config.TriggerMap.Validate(workflows, pipelines)
+	warnings = append(warnings, warns...)
+	if err != nil {
 		return warnings, err
 	}
 	// ---
@@ -1123,18 +890,18 @@ func isStepLibSource(source string) bool {
 
 // CreateStepIDDataFromString ...
 // compositeVersionStr examples:
-//  * local path:
-//    * path::~/path/to/step/dir
-//  * direct git url and branch or tag:
-//    * git::https://github.com/bitrise-io/steps-timestamp.git@master
-//  * Steplib independent step:
-//    * _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
-//  * full ID with steplib, stepid and version:
-//    * https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
-//  * only stepid and version (requires a default steplib source to be provided):
-//    * script@2.0.0
-//  * only stepid, latest version will be used (requires a default steplib source to be provided):
-//    * script
+//   - local path:
+//   - path::~/path/to/step/dir
+//   - direct git url and branch or tag:
+//   - git::https://github.com/bitrise-io/steps-timestamp.git@master
+//   - Steplib independent step:
+//   - _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
+//   - full ID with steplib, stepid and version:
+//   - https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
+//   - only stepid and version (requires a default steplib source to be provided):
+//   - script@2.0.0
+//   - only stepid, latest version will be used (requires a default steplib source to be provided):
+//   - script
 func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
 	src := getStepSource(compositeVersionStr)
 	if src == "" {

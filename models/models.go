@@ -62,37 +62,6 @@ type AppModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
-// TriggerEventType ...
-type TriggerEventType string
-
-const (
-	// TriggerEventTypeCodePush ...
-	TriggerEventTypeCodePush TriggerEventType = "code-push"
-	// TriggerEventTypePullRequest ...
-	TriggerEventTypePullRequest TriggerEventType = "pull-request"
-	// TriggerEventTypeTag ...
-	TriggerEventTypeTag TriggerEventType = "tag"
-	// TriggerEventTypeUnknown ...
-	TriggerEventTypeUnknown TriggerEventType = "unknown"
-)
-
-// TriggerMapItemModel ...
-type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
-
-	// deprecated
-	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
-}
-
-// TriggerMapModel ...
-type TriggerMapModel []TriggerMapItemModel
-
 // BitriseDataModel ...
 type BitriseDataModel struct {
 	FormatVersion        string `json:"format_version" yaml:"format_version"`
