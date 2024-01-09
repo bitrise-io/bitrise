@@ -327,7 +327,7 @@ workflows:
 			Tag: "1.0",
 		}
 		pipelineID, workflowID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
-		require.EqualError(t, err, "no matching pipeline & workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
+		require.EqualError(t, err, "no matching pipeline or workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
 		require.Equal(t, "", pipelineID)
 		require.Equal(t, "", workflowID)
 	}
@@ -377,7 +377,7 @@ workflows:
 			Tag: "1.0",
 		}
 		pipelineID, workflowID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
-		require.EqualError(t, err, "no matching pipeline & workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
+		require.EqualError(t, err, "no matching pipeline or workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: 1.0")
 		require.Equal(t, "", pipelineID)
 		require.Equal(t, "", workflowID)
 	}
@@ -402,7 +402,7 @@ workflows:
 			Tag: "v1.0",
 		}
 		pipelineID, workflowID, err := getPipelineAndWorkflowIDByParamsInCompatibleMode(config.TriggerMap, params, false)
-		require.EqualError(t, err, "no matching pipeline & workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: v1.0")
+		require.EqualError(t, err, "no matching pipeline or workflow found with trigger params: push-branch: , pr-source-branch: , pr-target-branch: , tag: v1.0")
 		require.Equal(t, "", pipelineID)
 		require.Equal(t, "", workflowID)
 	}

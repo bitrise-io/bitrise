@@ -20,6 +20,20 @@ func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) error 
 	return nil
 }
 
+func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch, tag string) (string, string, error) {
+	for _, item := range triggerMap {
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		if err != nil {
+			return "", "", err
+		}
+		if match {
+			return item.PipelineID, item.WorkflowID, nil
+		}
+	}
+
+	return "", "", fmt.Errorf("no matching pipeline or workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", pushBranch, prSourceBranch, prTargetBranch, tag)
+}
+
 func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
 	triggerTypeItemMap := map[string][]TriggerMapItemModel{}
 
