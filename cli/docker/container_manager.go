@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -8,6 +9,9 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 )
 
 type RunningContainer struct {
@@ -39,13 +43,21 @@ type ContainerManager struct {
 	logger             log.Logger
 	workflowContainers map[string]*RunningContainer
 	serviceContainers  map[string][]*RunningContainer
+	client             *client.Client
 }
 
 func NewContainerManager(logger log.Logger) *ContainerManager {
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	logger.Infof("Docker client: %v", dockerClient)
+	if err != nil {
+		logger.Warnf("Docker client failed to initialize (possibly running on unsupported stack): %s", err)
+	}
+
 	return &ContainerManager{
 		logger:             logger,
 		workflowContainers: make(map[string]*RunningContainer),
 		serviceContainers:  make(map[string][]*RunningContainer),
+		client:             dockerClient,
 	}
 }
 
@@ -179,10 +191,39 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		return nil, fmt.Errorf("run docker container: %w", err)
 	}
 
+	if err := cm.healthCheckContainer(err, name); err != nil {
+		return nil, fmt.Errorf("container unable to start properly: %w", err)
+	}
+
 	runningContainer := &RunningContainer{
 		Name: name,
 	}
 	return runningContainer, nil
+}
+
+func (cm *ContainerManager) healthCheckContainer(err error, name string) error {
+	containers, err := cm.client.ContainerList(context.Background(), types.ContainerListOptions{
+		Filters: filters.NewArgs(filters.Arg("name", name)),
+	})
+	if err != nil {
+		return fmt.Errorf("list containers: %w", err)
+	}
+
+	if len(containers) != 1 {
+		return fmt.Errorf("multiple containers with the same name found: %s", name)
+	}
+
+	inspect, err := cm.client.ContainerInspect(context.Background(), containers[0].ID)
+	if err != nil {
+		return fmt.Errorf("inspect container: %w", err)
+	}
+
+	if inspect.State.Health != nil {
+		cm.logger.Infof("Container health status: %v", inspect.State.Health.Status)
+	} else {
+		cm.logger.Infof("No healthcheck is defined for container, assuming healthy...")
+	}
+	return nil
 }
 
 func (cm *ContainerManager) ensureNetwork() {
