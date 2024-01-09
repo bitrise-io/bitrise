@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ryanuber/go-glob"
 )
@@ -35,7 +36,8 @@ type TriggerMapItemModel struct {
 }
 
 // Validate ...
-func (triggerItem TriggerMapItemModel) Validate() error {
+func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) error {
+	// Validate target
 	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
 		return fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
 	}
@@ -43,6 +45,36 @@ func (triggerItem TriggerMapItemModel) Validate() error {
 		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
 	}
 
+	if strings.HasPrefix(triggerItem.WorkflowID, "_") {
+		return fmt.Errorf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerItem.WorkflowID, triggerItem.String(true))
+	}
+
+	found := false
+	if triggerItem.PipelineID != "" {
+		for _, pipelineID := range pipelines {
+			if pipelineID == triggerItem.PipelineID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerItem.PipelineID, triggerItem.String(true))
+		}
+	} else {
+		for _, workflowID := range workflows {
+			if workflowID == triggerItem.WorkflowID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerItem.WorkflowID, triggerItem.String(true))
+		}
+	}
+
+	// Validate match criteria
 	if triggerItem.Pattern == "" {
 		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 		if err != nil {

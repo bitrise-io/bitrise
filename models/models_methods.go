@@ -71,6 +71,36 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 	return nil
 }
 
+func (config *BitriseDataModel) getWorkflowIDs() []string {
+	uniqueWorkflowIDs := map[string]bool{}
+
+	for workflowID := range config.Workflows {
+		uniqueWorkflowIDs[workflowID] = true
+	}
+
+	var workflowIDs []string
+	for workflowID := range uniqueWorkflowIDs {
+		workflowIDs = append(workflowIDs, workflowID)
+	}
+
+	return workflowIDs
+}
+
+func (config *BitriseDataModel) getPipelineIDs() []string {
+	uniquePipelineIDs := map[string]bool{}
+
+	for pipelineID := range config.Pipelines {
+		uniquePipelineIDs[pipelineID] = true
+	}
+
+	var pipelineIDs []string
+	for pipelineID := range uniquePipelineIDs {
+		pipelineIDs = append(pipelineIDs, pipelineID)
+	}
+
+	return pipelineIDs
+}
+
 // ----------------------------
 // --- Normalize
 
@@ -193,39 +223,10 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	// trigger map
-	if err := config.TriggerMap.Validate(); err != nil {
+	workflows := config.getWorkflowIDs()
+	pipelines := config.getPipelineIDs()
+	if err := config.TriggerMap.Validate(workflows, pipelines); err != nil {
 		return warnings, err
-	}
-
-	for _, triggerMapItem := range config.TriggerMap {
-		if strings.HasPrefix(triggerMapItem.WorkflowID, "_") {
-			warnings = append(warnings, fmt.Sprintf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerMapItem.WorkflowID, triggerMapItem.String(true)))
-		}
-
-		found := false
-		if triggerMapItem.PipelineID != "" {
-			for pipelineID := range config.Pipelines {
-				if pipelineID == triggerMapItem.PipelineID {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerMapItem.PipelineID, triggerMapItem.String(true))
-			}
-		} else {
-			for workflowID := range config.Workflows {
-				if workflowID == triggerMapItem.WorkflowID {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerMapItem.WorkflowID, triggerMapItem.String(true))
-			}
-		}
 	}
 
 	if err := checkDuplicatedTriggerMapItems(config.TriggerMap); err != nil {

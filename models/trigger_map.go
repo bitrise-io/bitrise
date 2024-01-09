@@ -6,9 +6,9 @@ import "fmt"
 type TriggerMapModel []TriggerMapItemModel
 
 // Validate ...
-func (triggerMap TriggerMapModel) Validate() error {
+func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) error {
 	for _, item := range triggerMap {
-		if err := item.Validate(); err != nil {
+		if err := item.Validate(workflows, pipelines); err != nil {
 			return err
 		}
 	}
