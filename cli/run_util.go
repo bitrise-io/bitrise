@@ -630,6 +630,10 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 
 		defer func() {
+			if runningContainer == nil {
+				return
+			}
+
 			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 			if err := runningContainer.Destroy(); err != nil {
 				log.Errorf("Attempted to stop the docker container for container: %s", workflow.Title)
