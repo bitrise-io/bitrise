@@ -13,11 +13,15 @@ func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) error 
 		}
 	}
 
+	if err := triggerMap.checkDuplicatedTriggerMapItems(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
-	triggeTypeItemMap := map[string][]TriggerMapItemModel{}
+func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
+	triggerTypeItemMap := map[string][]TriggerMapItemModel{}
 
 	for _, triggerItem := range triggerMap {
 		if triggerItem.Pattern == "" {
@@ -26,7 +30,7 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 				return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
 			}
 
-			triggerItems := triggeTypeItemMap[string(triggerType)]
+			triggerItems := triggerTypeItemMap[string(triggerType)]
 
 			for _, item := range triggerItems {
 				switch triggerType {
@@ -47,9 +51,9 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 			}
 
 			triggerItems = append(triggerItems, triggerItem)
-			triggeTypeItemMap[string(triggerType)] = triggerItems
+			triggerTypeItemMap[string(triggerType)] = triggerItems
 		} else if triggerItem.Pattern != "" {
-			triggerItems := triggeTypeItemMap["deprecated"]
+			triggerItems := triggerTypeItemMap["deprecated"]
 
 			for _, item := range triggerItems {
 				if triggerItem.Pattern == item.Pattern &&
@@ -59,7 +63,7 @@ func checkDuplicatedTriggerMapItems(triggerMap TriggerMapModel) error {
 			}
 
 			triggerItems = append(triggerItems, triggerItem)
-			triggeTypeItemMap["deprecated"] = triggerItems
+			triggerTypeItemMap["deprecated"] = triggerItems
 		}
 	}
 

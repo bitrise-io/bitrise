@@ -9,7 +9,7 @@ import (
 func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 	t.Log("duplicated push - error")
 	{
-		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err := TriggerMapModel{
 			TriggerMapItemModel{
 				PushBranch: "master",
 				WorkflowID: "ci",
@@ -18,14 +18,14 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				PushBranch: "master",
 				WorkflowID: "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.EqualError(t, err, "duplicated trigger item found (push_branch: master)")
 	}
 
 	t.Log("duplicated pull request - error")
 	{
-		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err := TriggerMapModel{
 			TriggerMapItemModel{
 				PullRequestSourceBranch: "develop",
 				WorkflowID:              "ci",
@@ -34,11 +34,11 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				PullRequestSourceBranch: "develop",
 				WorkflowID:              "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.EqualError(t, err, "duplicated trigger item found (pull_request_source_branch: develop)")
 
-		err = checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err = TriggerMapModel{
 			TriggerMapItemModel{
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "ci",
@@ -47,11 +47,11 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.EqualError(t, err, "duplicated trigger item found (pull_request_target_branch: master)")
 
-		err = checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err = TriggerMapModel{
 			TriggerMapItemModel{
 				PullRequestSourceBranch: "develop",
 				PullRequestTargetBranch: "master",
@@ -62,14 +62,14 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.EqualError(t, err, "duplicated trigger item found (pull_request_source_branch: develop && pull_request_target_branch: master)")
 	}
 
 	t.Log("duplicated tag - error")
 	{
-		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err := TriggerMapModel{
 			TriggerMapItemModel{
 				Tag:        "0.9.0",
 				WorkflowID: "ci",
@@ -78,14 +78,14 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				Tag:        "0.9.0",
 				WorkflowID: "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.EqualError(t, err, "duplicated trigger item found (tag: 0.9.0)")
 	}
 
 	t.Log("complex trigger map - no error")
 	{
-		err := checkDuplicatedTriggerMapItems(TriggerMapModel{
+		err := TriggerMapModel{
 			TriggerMapItemModel{
 				PushBranch: "master",
 				WorkflowID: "ci",
@@ -99,7 +99,7 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 				Tag:        "0.9.0",
 				WorkflowID: "release",
 			},
-		})
+		}.checkDuplicatedTriggerMapItems()
 
 		require.NoError(t, err)
 	}

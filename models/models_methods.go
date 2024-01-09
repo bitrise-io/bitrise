@@ -228,10 +228,6 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	if err := config.TriggerMap.Validate(workflows, pipelines); err != nil {
 		return warnings, err
 	}
-
-	if err := checkDuplicatedTriggerMapItems(config.TriggerMap); err != nil {
-		return warnings, err
-	}
 	// ---
 
 	// app

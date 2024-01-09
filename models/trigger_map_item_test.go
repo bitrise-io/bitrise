@@ -25,8 +25,8 @@ workflows:
 		require.NoError(t, err)
 
 		warnings, err := config.Validate()
-		require.NoError(t, err)
-		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
+		require.EqualError(t, err, "workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly")
+		require.Equal(t, []string{}, warnings)
 	}
 
 	t.Log("pipeline not exists")
@@ -87,7 +87,7 @@ workflows:
 			Pattern:    "*",
 			PipelineID: "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate(nil, []string{"primary"}))
 	}
 
 	t.Log("it validates deprecated trigger item with triggered workflow")
@@ -96,7 +96,7 @@ workflows:
 			Pattern:    "*",
 			WorkflowID: "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for invalid deprecated trigger item - pipeline & workflow both defined")
@@ -106,7 +106,7 @@ workflows:
 			PipelineID: "pipeline-1",
 			WorkflowID: "workflow-1",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"pipeline-1"}, []string{"workflow-1"}))
 	}
 
 	t.Log("it fails for invalid deprecated trigger item - missing pipeline & workflow")
@@ -114,7 +114,7 @@ workflows:
 		item := TriggerMapItemModel{
 			Pattern: "*",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"pipeline-1"}, []string{"workflow-1"}))
 	}
 
 	t.Log("it fails for invalid deprecated trigger item - missing pattern")
@@ -123,7 +123,7 @@ workflows:
 			Pattern:    "",
 			WorkflowID: "primary",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it validates code-push trigger item with triggered pipeline")
@@ -132,7 +132,7 @@ workflows:
 			PushBranch: "*",
 			PipelineID: "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate(nil, []string{"primary"}))
 	}
 
 	t.Log("it validates code-push trigger item with triggered workflow")
@@ -141,7 +141,7 @@ workflows:
 			PushBranch: "*",
 			WorkflowID: "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for invalid code-push trigger item - missing push-branch")
@@ -150,7 +150,7 @@ workflows:
 			PushBranch: "",
 			WorkflowID: "primary",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for invalid code-push trigger item - missing pipeline & workflow")
@@ -158,7 +158,7 @@ workflows:
 		item := TriggerMapItemModel{
 			PushBranch: "*",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it validates pull-request trigger item with triggered pipeline")
@@ -167,7 +167,7 @@ workflows:
 			PullRequestSourceBranch: "feature/",
 			PipelineID:              "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate(nil, []string{"primary"}))
 	}
 
 	t.Log("it validates pull-request trigger item with triggered workflow")
@@ -176,7 +176,7 @@ workflows:
 			PullRequestSourceBranch: "feature/",
 			WorkflowID:              "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it validates pull-request trigger item with triggered pipeline")
@@ -185,7 +185,7 @@ workflows:
 			PullRequestTargetBranch: "master",
 			PipelineID:              "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate(nil, []string{"primary"}))
 	}
 
 	t.Log("it validates pull-request trigger item with triggered workflow")
@@ -194,7 +194,7 @@ workflows:
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		require.NoError(t, item.Validate())
+		require.NoError(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
@@ -202,7 +202,7 @@ workflows:
 		item := TriggerMapItemModel{
 			PullRequestTargetBranch: "*",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
@@ -211,7 +211,7 @@ workflows:
 			PullRequestSourceBranch: "",
 			PullRequestTargetBranch: "",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for mixed trigger item")
@@ -222,7 +222,7 @@ workflows:
 			PullRequestTargetBranch: "",
 			WorkflowID:              "primary",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 
 	t.Log("it fails for mixed trigger item")
@@ -232,7 +232,7 @@ workflows:
 			Pattern:    "*",
 			WorkflowID: "primary",
 		}
-		require.Error(t, item.Validate())
+		require.Error(t, item.Validate([]string{"primary"}, nil))
 	}
 }
 
