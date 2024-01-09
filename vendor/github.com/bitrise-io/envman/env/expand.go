@@ -97,12 +97,12 @@ func SplitEnv(env string) (key string, value string) {
 // The new variables (models.EnvironmentItemModel) can be defined in the envman definition file, or filled in directly.
 // If the source of the variables (models.EnvironmentItemModel) is the bitrise.yml workflow,
 // they will be in this order:
-//   - Bitrise CLI configuration parameters (IS_CI, IS_DEBUG)
-//   - App secrets
-//   - App level envs
-//   - Workflow level envs
-//   - Additional Step inputs envs (BITRISE_STEP_SOURCE_DIR; BitriseTestDeployDirEnvKey ("BITRISE_TEST_DEPLOY_DIR"), PWD)
-//   - Input envs
+//  - Bitrise CLI configuration parameters (IS_CI, IS_DEBUG)
+//  - App secrets
+//  - App level envs
+//  - Workflow level envs
+//  - Additional Step inputs envs (BITRISE_STEP_SOURCE_DIR; BitriseTestDeployDirEnvKey ("BITRISE_TEST_DEPLOY_DIR"), PWD)
+//  - Input envs
 func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource EnvironmentSource) (DeclarationSideEffects, error) {
 	envs := envSource.GetEnvironment()
 	commandHistory := make([]Command, len(newEnvs))
