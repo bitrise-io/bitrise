@@ -104,3 +104,56 @@ func TestCheckDuplicatedTriggerMapItems(t *testing.T) {
 		require.NoError(t, err)
 	}
 }
+
+func TestTriggerMapModel_Validate(t *testing.T) {
+	tests := []struct {
+		name         string
+		triggerMap   TriggerMapModel
+		workflows    []string
+		pipelines    []string
+		wantErr      string
+		wantWarnings []string
+	}{
+		{
+			name: "duplicated push - error",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					PushBranch: "master",
+					WorkflowID: "ci",
+				},
+				TriggerMapItemModel{
+					PushBranch: "master",
+					WorkflowID: "release",
+				},
+			},
+			workflows: []string{"ci", "release"},
+			wantErr:   "duplicated trigger item found (push_branch: master)",
+		},
+		{
+			name: "duplicated pull request - error",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "develop",
+					WorkflowID:              "ci",
+				},
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "develop",
+					WorkflowID:              "release",
+				},
+			},
+			workflows: []string{"ci", "release"},
+			wantErr:   "duplicated trigger item found (push_branch: master)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warnings, err := tt.triggerMap.Validate(tt.workflows, tt.pipelines)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tt.wantErr)
+			}
+			require.Equal(t, tt.wantWarnings, warnings)
+		})
+	}
+}
