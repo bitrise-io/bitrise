@@ -67,6 +67,7 @@ type Container struct {
 	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
 	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
 	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 // AppModel ...
