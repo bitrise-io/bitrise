@@ -578,97 +578,6 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 	}
 }
 
-func TestTriggerMapItemModelString(t *testing.T) {
-	t.Log("triggering pipeline")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "master",
-			PipelineID: "pipeline-1",
-		}
-		require.Equal(t, "push_branch: master -> pipeline: pipeline-1", item.String(true))
-		require.Equal(t, "push_branch: master", item.String(false))
-	}
-
-	t.Log("push event")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "master",
-			WorkflowID: "ci",
-		}
-		require.Equal(t, "push_branch: master -> workflow: ci", item.String(true))
-		require.Equal(t, "push_branch: master", item.String(false))
-	}
-
-	t.Log("pull request event")
-	{
-		prSourceItem := TriggerMapItemModel{
-			PullRequestSourceBranch: "develop",
-			WorkflowID:              "ci",
-		}
-		require.Equal(t, "pull_request_source_branch: develop -> workflow: ci", prSourceItem.String(true))
-		require.Equal(t, "pull_request_source_branch: develop", prSourceItem.String(false))
-
-		prTargetItem := TriggerMapItemModel{
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "ci",
-		}
-		require.Equal(t, "pull_request_target_branch: master -> workflow: ci", prTargetItem.String(true))
-		require.Equal(t, "pull_request_target_branch: master", prTargetItem.String(false))
-
-		prItem := TriggerMapItemModel{
-			PullRequestSourceBranch: "develop",
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "ci",
-		}
-		require.Equal(t, "pull_request_source_branch: develop && pull_request_target_branch: master -> workflow: ci", prItem.String(true))
-		require.Equal(t, "pull_request_source_branch: develop && pull_request_target_branch: master", prItem.String(false))
-	}
-
-	t.Log("tag event")
-	{
-		item := TriggerMapItemModel{
-			Tag:        "0.9.0",
-			WorkflowID: "release",
-		}
-		require.Equal(t, "tag: 0.9.0 -> workflow: release", item.String(true))
-		require.Equal(t, "tag: 0.9.0", item.String(false))
-	}
-
-	t.Log("deprecated type")
-	{
-		prNotAllowedItem := TriggerMapItemModel{
-			Pattern:              "master",
-			IsPullRequestAllowed: false,
-			WorkflowID:           "ci",
-		}
-		require.Equal(t, "pattern: master && is_pull_request_allowed: false -> workflow: ci", prNotAllowedItem.String(true))
-		require.Equal(t, "pattern: master && is_pull_request_allowed: false", prNotAllowedItem.String(false))
-
-		prAllowedItem := TriggerMapItemModel{
-			Pattern:              "master",
-			IsPullRequestAllowed: true,
-			WorkflowID:           "ci",
-		}
-		require.Equal(t, "pattern: master && is_pull_request_allowed: true -> workflow: ci", prAllowedItem.String(true))
-		require.Equal(t, "pattern: master && is_pull_request_allowed: true", prAllowedItem.String(false))
-	}
-
-	t.Log("mixed")
-	{
-		item := TriggerMapItemModel{
-			PushBranch:              "master",
-			PullRequestSourceBranch: "develop",
-			PullRequestTargetBranch: "master",
-			Tag:                     "0.9.0",
-			Pattern:                 "*",
-			IsPullRequestAllowed:    true,
-			WorkflowID:              "ci",
-		}
-		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci", item.String(true))
-		require.Equal(t, "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master tag: 0.9.0 pattern: * && is_pull_request_allowed: true", item.String(false))
-	}
-}
-
 func TestTriggerEventType(t *testing.T) {
 	t.Log("it determins trigger event type")
 	{
@@ -764,5 +673,110 @@ func TestTriggerEventType(t *testing.T) {
 		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 		require.Error(t, err)
 		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+}
+
+func TestTriggerMapItemModel_String(t *testing.T) {
+	tests := []struct {
+		name                string
+		triggerMapItem      TriggerMapItemModel
+		want                string
+		wantWithPrintTarget string
+	}{
+		{
+			name: "triggering pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "master",
+				PipelineID: "pipeline-1",
+			},
+			want:                "push_branch: master",
+			wantWithPrintTarget: "push_branch: master -> pipeline: pipeline-1",
+		},
+		{
+			name: "push event",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "master",
+				WorkflowID: "ci",
+			},
+			want:                "push_branch: master",
+			wantWithPrintTarget: "push_branch: master -> workflow: ci",
+		},
+		{
+			name: "pull request event - pr source branch",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				WorkflowID:              "ci",
+			},
+			want:                "pull_request_source_branch: develop && draft_pull_request_enabled: true",
+			wantWithPrintTarget: "pull_request_source_branch: develop && draft_pull_request_enabled: true -> workflow: ci",
+		},
+		{
+			name: "pull request event - pr target branch",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "ci",
+			},
+			want:                "pull_request_target_branch: master && draft_pull_request_enabled: true",
+			wantWithPrintTarget: "pull_request_target_branch: master && draft_pull_request_enabled: true -> workflow: ci",
+		},
+		{
+			name: "pull request event - pr target and source branch",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "ci",
+			},
+			want:                "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true",
+			wantWithPrintTarget: "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true -> workflow: ci",
+		},
+		{
+			name: "tag event",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:        "0.9.0",
+				WorkflowID: "release",
+			},
+			want:                "tag: 0.9.0",
+			wantWithPrintTarget: "tag: 0.9.0 -> workflow: release",
+		},
+		{
+			name: "deprecated type - pr disabled", // TODO: should incorporate draft pr enabled control here?
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:              "master",
+				IsPullRequestAllowed: false,
+				WorkflowID:           "ci",
+			},
+			want:                "pattern: master && is_pull_request_allowed: false",
+			wantWithPrintTarget: "pattern: master && is_pull_request_allowed: false -> workflow: ci",
+		},
+		{
+			name: "deprecated type - pr enabled", // TODO: should incorporate draft pr enabled control here?
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:              "master",
+				IsPullRequestAllowed: true,
+				WorkflowID:           "ci",
+			},
+			want:                "pattern: master && is_pull_request_allowed: true",
+			wantWithPrintTarget: "pattern: master && is_pull_request_allowed: true -> workflow: ci",
+		},
+		{
+			name: "mixed",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch:              "master",
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				Tag:                     "0.9.0",
+				Pattern:                 "*",
+				IsPullRequestAllowed:    true,
+				WorkflowID:              "ci",
+			},
+			want:                "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true tag: 0.9.0 pattern: * && is_pull_request_allowed: true",
+			wantWithPrintTarget: "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, tt.triggerMapItem.String(false))
+			require.Equal(t, tt.wantWithPrintTarget, tt.triggerMapItem.String(true))
+		})
 	}
 }

@@ -16,15 +16,22 @@ const (
 	TriggerEventTypeUnknown     TriggerEventType = "unknown"
 )
 
+const defaultDraftPullRequestEnabled = true
+
 type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	// Trigger target
+	PipelineID string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
+	WorkflowID string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	// Commit push event criteria
+	PushBranch string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	// Tag push event criteria
+	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	// Pull Request event criteria
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	DraftPullRequestEnabled *bool  `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
 
-	// deprecated
+	// Deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
 	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
 }
@@ -155,6 +162,13 @@ func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 
 			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 		}
+
+		draftPullRequestEnabled := defaultDraftPullRequestEnabled
+		if triggerItem.DraftPullRequestEnabled != nil {
+			draftPullRequestEnabled = *triggerItem.DraftPullRequestEnabled
+		}
+
+		str += fmt.Sprintf(" && draft_pull_request_enabled: %v", draftPullRequestEnabled)
 	}
 
 	if triggerItem.Tag != "" {
