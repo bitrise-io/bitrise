@@ -225,7 +225,9 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// trigger map
 	workflows := config.getWorkflowIDs()
 	pipelines := config.getPipelineIDs()
-	if err := config.TriggerMap.Validate(workflows, pipelines); err != nil {
+	warns, err := config.TriggerMap.Validate(workflows, pipelines)
+	warnings = append(warnings, warns...)
+	if err != nil {
 		return warnings, err
 	}
 	// ---

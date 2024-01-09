@@ -36,17 +36,19 @@ type TriggerMapItemModel struct {
 }
 
 // Validate ...
-func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) error {
+func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) ([]string, error) {
+	var warnings []string
+
 	// Validate target
 	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
-		return fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
+		return warnings, fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
 	}
 	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
+		return warnings, fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
 	}
 
 	if strings.HasPrefix(triggerItem.WorkflowID, "_") {
-		return fmt.Errorf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerItem.WorkflowID, triggerItem.String(true))
+		warnings = append(warnings, fmt.Sprintf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerItem.WorkflowID, triggerItem.String(true)))
 	}
 
 	found := false
@@ -59,7 +61,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) e
 		}
 
 		if !found {
-			return fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerItem.PipelineID, triggerItem.String(true))
+			return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerItem.PipelineID, triggerItem.String(true))
 		}
 	} else {
 		for _, workflowID := range workflows {
@@ -70,7 +72,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) e
 		}
 
 		if !found {
-			return fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerItem.WorkflowID, triggerItem.String(true))
+			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerItem.WorkflowID, triggerItem.String(true))
 		}
 	}
 
@@ -78,14 +80,14 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) e
 	if triggerItem.Pattern == "" {
 		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 		if err != nil {
-			return fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem.String(true), err)
+			return warnings, fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem.String(true), err)
 		}
 	} else if triggerItem.PushBranch != "" ||
 		triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" || triggerItem.Tag != "" {
-		return fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s, tag: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
+		return warnings, fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s, tag: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // MatchWithParams ...

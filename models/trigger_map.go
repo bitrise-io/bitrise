@@ -6,18 +6,21 @@ import "fmt"
 type TriggerMapModel []TriggerMapItemModel
 
 // Validate ...
-func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) error {
+func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]string, error) {
+	var warnings []string
 	for _, item := range triggerMap {
-		if err := item.Validate(workflows, pipelines); err != nil {
-			return err
+		warns, err := item.Validate(workflows, pipelines)
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, err
 		}
 	}
 
 	if err := triggerMap.checkDuplicatedTriggerMapItems(); err != nil {
-		return err
+		return warnings, err
 	}
 
-	return nil
+	return warnings, nil
 }
 
 func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch, tag string) (string, string, error) {
