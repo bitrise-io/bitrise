@@ -31,7 +31,7 @@ func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch
 		}
 	}
 
-	return "", "", fmt.Errorf("no matching pipeline or workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", pushBranch, prSourceBranch, prTargetBranch, tag)
+	return "", "", fmt.Errorf("no matching pipeline & workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", pushBranch, prSourceBranch, prTargetBranch, tag)
 }
 
 func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
