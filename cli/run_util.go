@@ -443,7 +443,12 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		args = r.dockerManager.GetWorkflowContainer(workflowID).ExecuteCommandArgs(envs)
+		container := r.dockerManager.GetWorkflowContainer(workflowID)
+		if container == nil {
+			return 1, fmt.Errorf("Docker container does not exist")
+		}
+
+		args = container.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
 
 		cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
