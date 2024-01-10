@@ -101,10 +101,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	isDraftPR := false
-	if c.IsSet(DraftPRKey) {
-		isDraftPR = c.Bool(DraftPRKey)
-	}
+	isDraftPR := c.Bool(DraftPRKey)
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)

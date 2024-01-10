@@ -60,7 +60,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-				cli.StringFlag{Name: DraftPRKey, Usage: "Is the pull request in draft state?"},
+				cli.BoolFlag{Name: DraftPRKey, Usage: "Is the pull request in draft state?"},
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
