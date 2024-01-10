@@ -41,10 +41,10 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 
 	// Validate target
 	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
-		return warnings, fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
+		return warnings, fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern) // TODO: update error message (triggerItem.Pattern might empty)
 	}
 	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return warnings, fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
+		return warnings, fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern) // TODO: update error message (triggerItem.Pattern might empty)
 	}
 
 	if strings.HasPrefix(triggerItem.WorkflowID, "_") {

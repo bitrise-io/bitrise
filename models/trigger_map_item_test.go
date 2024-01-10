@@ -7,254 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTriggerMapItemValidate(t *testing.T) {
-	t.Log("utility workflow triggered - Warning")
-	{
-		configStr := `
-format_version: 1.3.1
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-trigger_map:
-- push_branch: "/release"
-  workflow: _deps-update
-
-workflows:
-  _deps-update:
-`
-
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-
-		warnings, err := config.Validate()
-		require.NoError(t, err)
-		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
-	}
-
-	t.Log("pipeline not exists")
-	{
-		configStr := `
-format_version: 1.3.1
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-trigger_map:
-- push_branch: "/release"
-  pipeline: release
-
-pipelines:
-  primary:
-    stages:
-    - ci-stage: {}
-
-stages:
-  ci-stage:
-    workflows:
-    - ci: {}
-
-workflows:
-  ci:
-`
-
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-
-		_, err = config.Validate()
-		require.EqualError(t, err, "pipeline (release) defined in trigger item (push_branch: /release -> pipeline: release), but does not exist")
-	}
-
-	t.Log("workflow not exists")
-	{
-		configStr := `
-format_version: 1.3.1
-default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
-
-trigger_map:
-- push_branch: "/release"
-  workflow: release
-
-workflows:
-  ci:
-`
-
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-
-		_, err = config.Validate()
-		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but does not exist")
-	}
-
-	t.Log("it validates deprecated trigger item with triggered pipeline")
-	{
-		item := TriggerMapItemModel{
-			Pattern:    "*",
-			PipelineID: "primary",
-		}
-		_, err := item.Validate(nil, []string{"primary"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it validates deprecated trigger item with triggered workflow")
-	{
-		item := TriggerMapItemModel{
-			Pattern:    "*",
-			WorkflowID: "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.NoError(t, err)
-	}
-
-	t.Log("it fails for invalid deprecated trigger item - pipeline & workflow both defined")
-	{
-		item := TriggerMapItemModel{
-			Pattern:    "*",
-			PipelineID: "pipeline-1",
-			WorkflowID: "workflow-1",
-		}
-		_, err := item.Validate([]string{"pipeline-1"}, []string{"workflow-1"})
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for invalid deprecated trigger item - missing pipeline & workflow")
-	{
-		item := TriggerMapItemModel{
-			Pattern: "*",
-		}
-		_, err := item.Validate([]string{"pipeline-1"}, []string{"workflow-1"})
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for invalid deprecated trigger item - missing pattern")
-	{
-		item := TriggerMapItemModel{
-			Pattern:    "",
-			WorkflowID: "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it validates code-push trigger item with triggered pipeline")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "*",
-			PipelineID: "primary",
-		}
-		_, err := item.Validate(nil, []string{"primary"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it validates code-push trigger item with triggered workflow")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "*",
-			WorkflowID: "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.NoError(t, err)
-	}
-
-	t.Log("it fails for invalid code-push trigger item - missing push-branch")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "",
-			WorkflowID: "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for invalid code-push trigger item - missing pipeline & workflow")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "*",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it validates pull-request trigger item with triggered pipeline")
-	{
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "feature/",
-			PipelineID:              "primary",
-		}
-		_, err := item.Validate(nil, []string{"primary"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it validates pull-request trigger item with triggered workflow")
-	{
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "feature/",
-			WorkflowID:              "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.NoError(t, err)
-	}
-
-	t.Log("it validates pull-request trigger item with triggered pipeline")
-	{
-		item := TriggerMapItemModel{
-			PullRequestTargetBranch: "master",
-			PipelineID:              "primary",
-		}
-		_, err := item.Validate(nil, []string{"primary"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it validates pull-request trigger item with triggered workflow")
-	{
-		item := TriggerMapItemModel{
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.NoError(t, err)
-	}
-
-	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
-	{
-		item := TriggerMapItemModel{
-			PullRequestTargetBranch: "*",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for invalid pull-request trigger item - missing pipeline & workflow")
-	{
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "",
-			PullRequestTargetBranch: "",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for mixed trigger item")
-	{
-		item := TriggerMapItemModel{
-			PushBranch:              "master",
-			PullRequestSourceBranch: "feature/*",
-			PullRequestTargetBranch: "",
-			WorkflowID:              "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-
-	t.Log("it fails for mixed trigger item")
-	{
-		item := TriggerMapItemModel{
-			PushBranch: "master",
-			Pattern:    "*",
-			WorkflowID: "primary",
-		}
-		_, err := item.Validate([]string{"primary"}, nil)
-		require.Error(t, err)
-	}
-}
-
-func TestMatchWithParamsCodePushItem(t *testing.T) {
+func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 	t.Log("The following patterns are all matches")
 	{
 		for aPattern, aPushBranch := range map[string]string{
@@ -503,7 +256,7 @@ func TestTriggerMapItemModel_MatchWithParams_PRParams(t *testing.T) {
 	}
 }
 
-func TestMatchWithParamsTagTypeItem(t *testing.T) {
+func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 	t.Log("tag against tag type item - MATCH")
 	{
 		pushBranch := ""
@@ -582,104 +335,6 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
-	}
-}
-
-func TestTriggerEventType(t *testing.T) {
-	t.Log("it determines trigger event type")
-	{
-		pushBranch := "master"
-		prSourceBranch := ""
-		prTargetBranch := ""
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.NoError(t, err)
-		require.Equal(t, TriggerEventTypeCodePush, event)
-	}
-
-	t.Log("it determines trigger event type")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := ""
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.NoError(t, err)
-		require.Equal(t, TriggerEventTypePullRequest, event)
-	}
-
-	t.Log("it determines trigger event type")
-	{
-		pushBranch := ""
-		prSourceBranch := ""
-		prTargetBranch := "master"
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.NoError(t, err)
-		require.Equal(t, TriggerEventTypePullRequest, event)
-	}
-
-	t.Log("it determines trigger event type")
-	{
-		pushBranch := ""
-		prSourceBranch := ""
-		prTargetBranch := ""
-		tag := "0.9.0"
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.NoError(t, err)
-		require.Equal(t, TriggerEventTypeTag, event)
-	}
-
-	t.Log("it fails without inputs")
-	{
-		pushBranch := ""
-		prSourceBranch := ""
-		prTargetBranch := ""
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.Error(t, err)
-		require.Equal(t, TriggerEventTypeUnknown, event)
-	}
-
-	t.Log("it fails if event type not clear")
-	{
-		pushBranch := "master"
-		prSourceBranch := "develop"
-		prTargetBranch := ""
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.Error(t, err)
-		require.Equal(t, TriggerEventTypeUnknown, event)
-	}
-
-	t.Log("it fails if event type not clear")
-	{
-		pushBranch := "master"
-		prSourceBranch := ""
-		prTargetBranch := "master"
-		tag := ""
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.Error(t, err)
-		require.Equal(t, TriggerEventTypeUnknown, event)
-	}
-
-	t.Log("it fails if event type not clear")
-	{
-		pushBranch := "master"
-		prSourceBranch := ""
-		prTargetBranch := ""
-		tag := "0.9.0"
-
-		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-		require.Error(t, err)
-		require.Equal(t, TriggerEventTypeUnknown, event)
 	}
 }
 
@@ -796,5 +451,268 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 			require.Equal(t, tt.want, tt.triggerMapItem.String(false))
 			require.Equal(t, tt.wantWithPrintTarget, tt.triggerMapItem.String(true))
 		})
+	}
+}
+
+func TestTriggerMapItemModel_Validate(t *testing.T) {
+	tests := []struct {
+		name           string
+		triggerMapItem TriggerMapItemModel
+		workflows      []string
+		pipelines      []string
+		wantWarns      []string
+		wantErr        string
+	}{
+		{
+			name: "it validates deprecated trigger item with triggered pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:    "*",
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it validates deprecated trigger item with triggered workflow",
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:    "*",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "it fails for invalid deprecated trigger item - pipeline & workflow both defined",
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:    "*",
+				PipelineID: "pipeline-1",
+				WorkflowID: "workflow-1",
+			},
+			workflows: []string{"pipeline-1", "workflow-1"},
+			wantErr:   "invalid trigger item: (*), error: pipeline & workflow both defined",
+		},
+		{
+			name: "it fails for invalid deprecated trigger item - missing pipeline & workflow",
+			triggerMapItem: TriggerMapItemModel{
+				Pattern: "*",
+			},
+			wantErr: "invalid trigger item: (*), error: empty pipeline & workflow",
+		},
+		{
+			name: "it fails for invalid deprecated trigger item - missing pattern",
+			triggerMapItem: TriggerMapItemModel{
+				Pattern:    "",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger map item ( -> workflow: primary) validate failed, error: failed to determin trigger event from params: push-branch: , pr-source-branch: , pr-target-branch: , tag: ",
+		},
+		{
+			name: "it validates code-push trigger item with triggered pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "*",
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it validates code-push trigger item with triggered workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "*",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "it fails for invalid code-push trigger item - missing push-branch",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger map item ( -> workflow: primary) validate failed, error: failed to determin trigger event from params: push-branch: , pr-source-branch: , pr-target-branch: , tag: ",
+		},
+		{
+			name: "it fails for invalid code-push trigger item - missing pipeline & workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "*",
+			},
+			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+		},
+		{
+			name: "it validates pull-request trigger item (with source branch) with triggered pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "feature/",
+				PipelineID:              "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it validates pull-request trigger item (with source branch) with triggered workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "feature/",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "it validates pull-request trigger item (with target branch) with triggered pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				PipelineID:              "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it validates pull-request trigger item (with target branch) with triggered workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "it fails for invalid pull-request trigger item (target branch set) - missing pipeline & workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "*",
+			},
+			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+		},
+		{
+			name: "it fails for invalid pull-request trigger item (target and source branch set) - missing pipeline & workflow",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "",
+				PullRequestTargetBranch: "",
+			},
+			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+		},
+		{
+			name: "it fails for mixed (mixed types) trigger item",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch:              "master",
+				PullRequestSourceBranch: "feature/*",
+				PullRequestTargetBranch: "",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger map item (push_branch: master pull_request_source_branch: feature/* && draft_pull_request_enabled: true -> workflow: primary) validate failed, error: push_branch (master) selects code-push trigger event, but pull_request_source_branch (feature/*) also provided",
+		},
+		{
+			name: "it fails for mixed (mixed new and legacy properties) trigger item",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "master",
+				Pattern:    "*",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "deprecated trigger item (pattern defined), mixed with trigger params (push_branch: master, pull_request_source_branch: , pull_request_target_branch: , tag: )",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.triggerMapItem.Validate(tt.workflows, tt.pipelines)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantWarns, warns)
+		})
+	}
+}
+
+func TestTriggerEventType(t *testing.T) {
+	t.Log("it determines trigger event type")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypeCodePush, event)
+	}
+
+	t.Log("it determines trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypePullRequest, event)
+	}
+
+	t.Log("it determines trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := "master"
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypePullRequest, event)
+	}
+
+	t.Log("it determines trigger event type")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := "0.9.0"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.NoError(t, err)
+		require.Equal(t, TriggerEventTypeTag, event)
+	}
+
+	t.Log("it fails without inputs")
+	{
+		pushBranch := ""
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+
+	t.Log("it fails if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := "develop"
+		prTargetBranch := ""
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+
+	t.Log("it fails if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := "master"
+		tag := ""
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
+	}
+
+	t.Log("it fails if event type not clear")
+	{
+		pushBranch := "master"
+		prSourceBranch := ""
+		prTargetBranch := ""
+		tag := "0.9.0"
+
+		event, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
+		require.Error(t, err)
+		require.Equal(t, TriggerEventTypeUnknown, event)
 	}
 }
