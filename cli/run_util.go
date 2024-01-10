@@ -569,6 +569,7 @@ type DockerManager interface {
 	Login(models.Container, map[string]string) error
 	StartWorkflowContainer(models.Container, string) (*docker.RunningContainer, error)
 	StartServiceContainer(service models.Container, workflowID string, serviceName string) (*docker.RunningContainer, error)
+	StartServiceContainers(services map[string]models.Container, workflowID string) ([]*docker.RunningContainer, error)
 	GetWorkflowContainer(string) *docker.RunningContainer
 	GetServiceContainers(string) []*docker.RunningContainer
 	DestroyAllContainers() error
@@ -593,26 +594,20 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	for name, service := range workflow.Services {
-		log.Infof("Creating service container from image: %s", service.Image)
-
-		_, err := r.dockerManager.StartServiceContainer(service, workflowID, name)
-		if err != nil {
-			log.Errorf("Could not start the specified docker image for service: %s", name)
-		}
-		// TODO: Add commands here if we support it
+	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID)
+	if err != nil {
+		log.Errorf("Failed to start services: %s", err.Error())
 	}
 
 	defer func() {
-		containers := r.dockerManager.GetServiceContainers(workflowID)
-		for _, container := range containers {
+		for _, container := range serviceContainers {
 			if err := container.Destroy(); err != nil {
 				log.Errorf("Attempted to stop the docker container for service: %s", container.Name)
 			}
 		}
 	}()
 
-	err := tools.EnvmanInit(configs.InputEnvstorePath, true)
+	err = tools.EnvmanInit(configs.InputEnvstorePath, true)
 	if err != nil {
 		log.Debugf("Couldn't initialize envman.")
 	}
