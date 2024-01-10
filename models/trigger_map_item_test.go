@@ -3,6 +3,7 @@ package models
 import (
 	"testing"
 
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -345,155 +346,160 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 	}
 }
 
-// TODO: add test case for draft pr = true
-func TestMatchWithParamsPrTypeItem(t *testing.T) {
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "develop",
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
+func TestTriggerMapItemModel_MatchWithParams_PRParams(t *testing.T) {
+	tests := []struct {
+		name           string
+		triggerMapItem TriggerMapItemModel
+		pushBranch     string
+		prSourceBranch string
+		prTargetBranch string
+		isDraftPR      bool
+		tag            string
+		want           bool
+		wantErr        string
+	}{
+		// Match tests
+		{
+			name: "pr against pr type item - MATCH (source branch)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           true,
+		},
+		{
+			name: "pr against pr type item - MATCH (target branch)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           true,
+		},
+		{
+			name: "pr against pr type item - MATCH (target and source branch)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           true,
+		},
+		{
+			name: "pr against pr type item (simple glob source branch) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "*",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           true,
+		},
+		{
+			name: "pr against pr type item (glob target branch) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "deploy_*",
+				WorkflowID:              "primary",
+			},
+			prTargetBranch: "deploy_1_0_0",
+			want:           true,
+		},
+		{
+			name: "pr against pr type item (complex glob source branch) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "feature/*",
+				PullRequestTargetBranch: "develop",
+				WorkflowID:              "test",
+			},
+			prSourceBranch: "feature/login",
+			prTargetBranch: "develop",
+			want:           true,
+		},
+		{
+			name: "draft pr against pr type item (draft pr explicitly enabled) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				DraftPullRequestEnabled: pointers.NewBoolPtr(true),
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			isDraftPR:      true,
+			want:           true,
+		},
+		{
+			name: "draft pr against pr type item (draft pr enabled by default) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			isDraftPR:      true,
+			want:           true,
+		},
+		// No match tests
+		{
+			name: "pr against pr type item - NOT MATCH (target branch mismatch)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "deploy",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           false,
+		},
+		{
+			name: "pr against pr type item - NOT MATCH (source branch mismatch)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "feature/*",
+				PullRequestTargetBranch: "master",
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           false,
+		},
+		{
+			name: "pr against push type item - NOT MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "master",
+				WorkflowID: "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			want:           false,
+		},
+		{
+			name: "draft pr against pr type item (draft pr explicitly disabled) - MATCH",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "master",
+				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
+				WorkflowID:              "primary",
+			},
+			prSourceBranch: "develop",
+			prTargetBranch: "master",
+			isDraftPR:      true,
+			want:           false,
+		},
 	}
-
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "feature/login"
-		prTargetBranch := "develop"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "feature/*",
-			PullRequestTargetBranch: "develop",
-			WorkflowID:              "test",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
-	}
-
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "*",
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
-	}
-
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
-	}
-
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "develop",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
-	}
-
-	t.Log("pr against pr type item - MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := ""
-		prTargetBranch := "deploy_1_0_0"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestTargetBranch: "deploy_*",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, true, match)
-	}
-
-	t.Log("pr against pr type item - NOT MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "develop",
-			PullRequestTargetBranch: "deploy",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, false, match)
-	}
-
-	t.Log("pr against pr type item - NOT MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PullRequestSourceBranch: "feature/*",
-			PullRequestTargetBranch: "master",
-			WorkflowID:              "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, false, match)
-	}
-
-	t.Log("pr against push type item - NOT MATCH")
-	{
-		pushBranch := ""
-		prSourceBranch := "develop"
-		prTargetBranch := "master"
-		tag := ""
-
-		item := TriggerMapItemModel{
-			PushBranch: "master",
-			WorkflowID: "primary",
-		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
-		require.NoError(t, err)
-		require.Equal(t, false, match)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.triggerMapItem.MatchWithParams(tt.pushBranch, tt.prSourceBranch, tt.prTargetBranch, tt.isDraftPR, tt.tag)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.want, got)
+		})
 	}
 }
 
@@ -729,6 +735,17 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 			},
 			want:                "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true",
 			wantWithPrintTarget: "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true -> workflow: ci",
+		},
+		{
+			name: "pull request event - pr target and source branch and disable draft prs",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "develop",
+				PullRequestTargetBranch: "master",
+				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
+				WorkflowID:              "ci",
+			},
+			want:                "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: false",
+			wantWithPrintTarget: "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: false -> workflow: ci",
 		},
 		{
 			name: "tag event",
