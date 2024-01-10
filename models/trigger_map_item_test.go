@@ -273,7 +273,7 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 				PushBranch: aPattern,
 				WorkflowID: "primary",
 			}
-			match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+			match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 			require.NoError(t, err)
 			require.Equal(t, true, match, "(pattern: %s) (branch: %s)", aPattern, aPushBranch)
 		}
@@ -290,7 +290,7 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 			PushBranch: "deploy",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -306,7 +306,7 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 			PullRequestSourceBranch: "develop",
 			WorkflowID:              "test",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -322,7 +322,7 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -339,12 +339,13 @@ func TestMatchWithParamsCodePushItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
 }
 
+// TODO: add test case for draft pr = true
 func TestMatchWithParamsPrTypeItem(t *testing.T) {
 	t.Log("pr against pr type item - MATCH")
 	{
@@ -358,7 +359,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -375,7 +376,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "develop",
 			WorkflowID:              "test",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -392,7 +393,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -408,7 +409,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -424,7 +425,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestSourceBranch: "develop",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -440,7 +441,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "deploy_*",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -457,7 +458,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "deploy",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -474,7 +475,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -490,7 +491,7 @@ func TestMatchWithParamsPrTypeItem(t *testing.T) {
 			PushBranch: "master",
 			WorkflowID: "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -508,7 +509,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 			Tag:        "0.9.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -524,7 +525,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 			Tag:        "0.9.0",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -540,7 +541,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 			Tag:        "0.9.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -556,7 +557,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 			Tag:        "1.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -572,7 +573,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 			PushBranch: "master",
 			WorkflowID: "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}

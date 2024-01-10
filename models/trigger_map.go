@@ -21,9 +21,9 @@ func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]str
 	return warnings, nil
 }
 
-func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch, tag string) (string, string, error) {
+func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch string, isDraftPR bool, tag string) (string, string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, isDraftPR, tag)
 		if err != nil {
 			return "", "", err
 		}

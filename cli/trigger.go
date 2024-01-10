@@ -28,6 +28,7 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+		cli.BoolFlag{Name: DraftPRKey, Usage: "Is the pull request in draft state?"},
 		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 		// cli params used in CI mode
@@ -100,6 +101,10 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	isDraftPR := false
+	if c.IsSet(DraftPRKey) {
+		isDraftPR = c.Bool(DraftPRKey)
+	}
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
@@ -113,7 +118,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tag,
+		pushBranch, prSourceBranch, prTargetBranch, isDraftPR, tag,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)

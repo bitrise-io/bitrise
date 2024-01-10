@@ -90,7 +90,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	return warnings, nil
 }
 
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag string) (bool, error) {
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, isDraftPR bool, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
@@ -130,7 +130,12 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
-			return (sourceMatch && targetMatch), nil
+			prStateMatch := true
+			if !migratedTriggerItem.IsDraftPullRequestEnabled() && isDraftPR {
+				prStateMatch = false
+			}
+
+			return sourceMatch && targetMatch && prStateMatch, nil
 		case TriggerEventTypeTag:
 			match := glob.Glob(migratedTriggerItem.Tag, tag)
 			return match, nil
