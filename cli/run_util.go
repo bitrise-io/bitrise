@@ -453,6 +453,7 @@ func (r WorkflowRunner) executeStep(
 
 		cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
+		logger.Infof("Step is running in container: %s", workflow.Container.Image)
 		return cmd.Run()
 	}
 
