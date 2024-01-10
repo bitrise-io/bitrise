@@ -142,7 +142,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 
 	for _, container := range containers {
 		if err := cm.healthCheckContainer(context.Background(), container.Name); err != nil {
-			return nil, fmt.Errorf("container health check: %w", err)
+			return containers, fmt.Errorf("container health check: %w", err)
 		}
 	}
 
@@ -184,10 +184,9 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
 	}
 
-	dockerRunArgs := []string{"run",
+	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
-		"-d",
 	}
 
 	for _, o := range volumes {
@@ -239,18 +238,26 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
-		return nil, fmt.Errorf("run docker container: %w", err)
+		return nil, fmt.Errorf("create docker container: %w", err)
 	}
-
-	if err := cm.ensureContainerRunning(context.Background(), name); err != nil {
-		return nil, fmt.Errorf("container unable to start properly: %w", err)
-	}
-
-	log.Infof("Container (%s) is running ✅", name)
 
 	runningContainer := &RunningContainer{
 		Name: name,
 	}
+
+	log.Infof("Running command: docker start %s", name)
+	out, err = command.New("docker", "start", name).RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Errorf(out)
+		return runningContainer, fmt.Errorf("start docker container: %w", err)
+	}
+
+	if err := cm.ensureContainerRunning(context.Background(), name); err != nil {
+		return runningContainer, fmt.Errorf("container unable to start properly: %w", err)
+	}
+
+	log.Infof("Container (%s) is running ✅", name)
+
 	return runningContainer, nil
 }
 
