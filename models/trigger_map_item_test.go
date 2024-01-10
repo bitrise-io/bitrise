@@ -580,7 +580,7 @@ func TestMatchWithParamsTagTypeItem(t *testing.T) {
 }
 
 func TestTriggerEventType(t *testing.T) {
-	t.Log("it determins trigger event type")
+	t.Log("it determines trigger event type")
 	{
 		pushBranch := "master"
 		prSourceBranch := ""
@@ -592,7 +592,7 @@ func TestTriggerEventType(t *testing.T) {
 		require.Equal(t, TriggerEventTypeCodePush, event)
 	}
 
-	t.Log("it determins trigger event type")
+	t.Log("it determines trigger event type")
 	{
 		pushBranch := ""
 		prSourceBranch := "develop"
@@ -604,7 +604,7 @@ func TestTriggerEventType(t *testing.T) {
 		require.Equal(t, TriggerEventTypePullRequest, event)
 	}
 
-	t.Log("it determins trigger event type")
+	t.Log("it determines trigger event type")
 	{
 		pushBranch := ""
 		prSourceBranch := ""
@@ -616,7 +616,7 @@ func TestTriggerEventType(t *testing.T) {
 		require.Equal(t, TriggerEventTypePullRequest, event)
 	}
 
-	t.Log("it determins trigger event type")
+	t.Log("it determines trigger event type")
 	{
 		pushBranch := ""
 		prSourceBranch := ""
