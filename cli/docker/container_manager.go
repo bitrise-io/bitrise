@@ -2,8 +2,10 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -103,6 +105,11 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 		return nil, fmt.Errorf("start workflow container: %w", err)
 	}
 	cm.workflowContainers[workflowID] = runningContainer
+
+	if err := cm.healthCheckContainer(context.Background(), containerName); err != nil {
+		return nil, fmt.Errorf("container health check: %w", err)
+	}
+
 	return runningContainer, nil
 }
 
@@ -113,7 +120,34 @@ func (cm *ContainerManager) StartServiceContainer(service models.Container, work
 		return nil, fmt.Errorf("start service container: %w", err)
 	}
 	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], runningContainer)
+
+	if err := cm.healthCheckContainer(context.Background(), serviceName); err != nil {
+		return nil, fmt.Errorf("container health check: %w", err)
+	}
+
 	return runningContainer, nil
+}
+
+func (cm *ContainerManager) StartServiceContainers(services map[string]models.Container, workflowID string) ([]*RunningContainer, error) {
+	var containers []*RunningContainer
+	for serviceName := range services {
+		// Naming the container other than the service name, can cause issues with network calls
+		runningContainer, err := cm.startContainer(services[serviceName], serviceName, []string{}, "", "")
+		containers = append(containers, runningContainer)
+		if err != nil {
+			return nil, fmt.Errorf("start service container (%s): %w", serviceName, err)
+		}
+	}
+
+	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], containers...)
+
+	for _, container := range containers {
+		if err := cm.healthCheckContainer(context.Background(), container.Name); err != nil {
+			return nil, fmt.Errorf("container health check: %w", err)
+		}
+	}
+
+	return containers, nil
 }
 
 func (cm *ContainerManager) GetWorkflowContainer(workflowID string) *RunningContainer {
@@ -176,9 +210,19 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	}
 
 	if container.Options != "" {
+		// This regex splits the string by spaces, but keeps quoted strings together
+		// For example --health-cmd "redis-cli ping" will be split into: "--health-cmd", "redis-cli ping"
+		r := regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
+		result := r.FindAllString(container.Options, -1)
+
+		// Remove quotes from the strings
+		var options []string
+		for _, result := range result {
+			options = append(options, strings.ReplaceAll(result, "\"", ""))
+		}
+
 		log.Infof("Container options: %s", container.Options)
-		optionsList := strings.Split(container.Options, " ")
-		dockerRunArgs = append(dockerRunArgs, optionsList...)
+		dockerRunArgs = append(dockerRunArgs, options...)
 	}
 
 	dockerRunArgs = append(dockerRunArgs,
@@ -199,9 +243,11 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		return nil, fmt.Errorf("run docker container: %w", err)
 	}
 
-	if err := cm.healthCheckContainer(err, name); err != nil {
+	if err := cm.ensureContainerRunning(context.Background(), name); err != nil {
 		return nil, fmt.Errorf("container unable to start properly: %w", err)
 	}
+
+	log.Infof("Container (%s) is running ✅", name)
 
 	runningContainer := &RunningContainer{
 		Name: name,
@@ -209,8 +255,34 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) healthCheckContainer(err error, name string) error {
-	containers, err := cm.client.ContainerList(context.Background(), types.ContainerListOptions{
+func (cm *ContainerManager) ensureContainerRunning(ctx context.Context, name string) error {
+	containers, err := cm.client.ContainerList(ctx, types.ContainerListOptions{
+		Filters: filters.NewArgs(filters.Arg("name", name)),
+	})
+	if err != nil {
+		return fmt.Errorf("list containers: %w", err)
+	}
+
+	if len(containers) != 1 {
+		return fmt.Errorf("multiple containers with the same name found: %s", name)
+	}
+
+	if containers[0].State != "running" {
+		containerFailedErr := errors.New("container failed to start")
+		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, types.ContainerLogsOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get container logs: %w", errors.Join(err, containerFailedErr))
+		}
+
+		cm.logger.Errorf("Failed container (%s) logs: %s", name, logs)
+		return containerFailedErr
+	}
+	return nil
+
+}
+
+func (cm *ContainerManager) healthCheckContainer(ctx context.Context, name string) error {
+	containers, err := cm.client.ContainerList(ctx, types.ContainerListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", name)),
 	})
 	if err != nil {
@@ -223,21 +295,19 @@ func (cm *ContainerManager) healthCheckContainer(err error, name string) error {
 
 	inspect, err := cm.client.ContainerInspect(context.Background(), containers[0].ID)
 	if err != nil {
-		return fmt.Errorf("inspect container: %w", err)
+		return fmt.Errorf("inspect container (%s): %w", name, err)
 	}
 
 	if inspect.State.Health == nil {
-		cm.logger.Infof("No healthcheck is defined for container, assuming healthy...")
+		cm.logger.Infof("No healthcheck is defined for container (%s), assuming healthy...", name)
 		return nil
 	}
 
 	retries := 0
 	for inspect.State.Health.Status != "healthy" {
-		if retries > 30 {
-			return fmt.Errorf("container unable to start properly: %w", err)
+		if inspect.State.Health.Status == "unhealthy" {
+			return fmt.Errorf("container (%s) is unhealthy", name)
 		}
-
-		// TODO: more sophisticated retry logic
 		// this solution prefers quick retries at the beginning and constant for the rest
 		sleep := 5
 		if retries < 5 {
@@ -245,10 +315,10 @@ func (cm *ContainerManager) healthCheckContainer(err error, name string) error {
 		}
 		time.Sleep(time.Duration(sleep) * time.Second)
 
-		cm.logger.Infof("Waiting for container (%s) to start...", name)
+		cm.logger.Infof("Waiting for container (%s) to be healthy... (retry: %d)", name, retries)
 		inspect, err = cm.client.ContainerInspect(context.Background(), containers[0].ID)
 		if err != nil {
-			return fmt.Errorf("inspect container: %w", err)
+			return fmt.Errorf("inspect container (%s): %w", name, err)
 		}
 		retries++
 
