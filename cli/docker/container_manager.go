@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -268,14 +267,13 @@ func (cm *ContainerManager) ensureContainerRunning(ctx context.Context, name str
 	}
 
 	if containers[0].State != "running" {
-		containerFailedErr := errors.New("container failed to start")
 		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, types.ContainerLogsOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get container logs: %w", errors.Join(err, containerFailedErr))
+			return fmt.Errorf("failed to get container logs: %w")
 		}
 
 		cm.logger.Errorf("Failed container (%s) logs: %s", name, logs)
-		return containerFailedErr
+		return fmt.Errorf("container (%s) is not running", name)
 	}
 	return nil
 
