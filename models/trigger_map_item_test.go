@@ -412,7 +412,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 			wantWithPrintTarget: "tag: 0.9.0 -> workflow: release",
 		},
 		{
-			name: "deprecated type - pr disabled", // TODO: should incorporate draft pr enabled control here?
+			name: "deprecated type - pr disabled",
 			triggerMapItem: TriggerMapItemModel{
 				Pattern:              "master",
 				IsPullRequestAllowed: false,
@@ -422,7 +422,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 			wantWithPrintTarget: "pattern: master && is_pull_request_allowed: false -> workflow: ci",
 		},
 		{
-			name: "deprecated type - pr enabled", // TODO: should incorporate draft pr enabled control here?
+			name: "deprecated type - pr enabled",
 			triggerMapItem: TriggerMapItemModel{
 				Pattern:              "master",
 				IsPullRequestAllowed: true,
@@ -487,14 +487,14 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 				WorkflowID: "workflow-1",
 			},
 			workflows: []string{"pipeline-1", "workflow-1"},
-			wantErr:   "invalid trigger item: (*), error: pipeline & workflow both defined",
+			wantErr:   "both pipeline and workflow are defined as trigger target: pattern: * && is_pull_request_allowed: false",
 		},
 		{
 			name: "it fails for invalid deprecated trigger item - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
 				Pattern: "*",
 			},
-			wantErr: "invalid trigger item: (*), error: empty pipeline & workflow",
+			wantErr: "no pipeline nor workflow is defined as a trigger target: pattern: * && is_pull_request_allowed: false",
 		},
 		{
 			name: "it fails for invalid deprecated trigger item - missing pattern",
@@ -535,7 +535,7 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 			triggerMapItem: TriggerMapItemModel{
 				PushBranch: "*",
 			},
-			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+			wantErr: "no pipeline nor workflow is defined as a trigger target: push_branch: *",
 		},
 		{
 			name: "it validates pull-request trigger item (with source branch) with triggered pipeline",
@@ -574,15 +574,15 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 			triggerMapItem: TriggerMapItemModel{
 				PullRequestTargetBranch: "*",
 			},
-			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+			wantErr: "no pipeline nor workflow is defined as a trigger target: pull_request_target_branch: * && draft_pull_request_enabled: true",
 		},
 		{
 			name: "it fails for invalid pull-request trigger item (target and source branch set) - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
-				PullRequestSourceBranch: "",
-				PullRequestTargetBranch: "",
+				PullRequestSourceBranch: "feature*",
+				PullRequestTargetBranch: "master",
 			},
-			wantErr: "invalid trigger item: (), error: empty pipeline & workflow",
+			wantErr: "no pipeline nor workflow is defined as a trigger target: pull_request_source_branch: feature* && pull_request_target_branch: master && draft_pull_request_enabled: true",
 		},
 		{
 			name: "it fails for mixed (mixed types) trigger item",

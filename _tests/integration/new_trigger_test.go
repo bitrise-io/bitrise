@@ -181,7 +181,6 @@ func Test_NewTrigger(t *testing.T) {
 		require.Equal(t, `{"pr-source-branch":"no_draft_pr","workflow":"no_draft_pr"}`, out)
 	}
 
-	// TODO: this shouldn't find a workflow, because of the draft pr state
 	t.Log("draft pr control test - draft pr disabled - draft pr trigger")
 	{
 		config := map[string]interface{}{
