@@ -568,7 +568,6 @@ func (r WorkflowRunner) runStep(
 type DockerManager interface {
 	Login(models.Container, map[string]string) error
 	StartWorkflowContainer(models.Container, string) (*docker.RunningContainer, error)
-	StartServiceContainer(service models.Container, workflowID string, serviceName string) (*docker.RunningContainer, error)
 	StartServiceContainers(services map[string]models.Container, workflowID string) ([]*docker.RunningContainer, error)
 	GetWorkflowContainer(string) *docker.RunningContainer
 	GetServiceContainers(string) []*docker.RunningContainer
