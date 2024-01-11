@@ -606,20 +606,20 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 	}()
 
-	err = tools.EnvmanInit(configs.InputEnvstorePath, true)
-	if err != nil {
-		log.Debugf("Couldn't initialize envman.")
-	}
-	err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
-	if err != nil {
-		log.Debugf("Couldn't add envs.")
-	}
-	list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-	if err != nil {
-		log.Debugf("Couldn't read envs from envman.")
-	}
-
 	if workflow.Container.Image != "" {
+		err = tools.EnvmanInit(configs.InputEnvstorePath, true)
+		if err != nil {
+			log.Debugf("Couldn't initialize envman.")
+		}
+		err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
+		if err != nil {
+			log.Debugf("Couldn't add envs.")
+		}
+		list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
+		if err != nil {
+			log.Debugf("Couldn't read envs from envman.")
+		}
+
 		if err := r.dockerManager.Login(workflow.Container, list); err != nil {
 			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
 		}
@@ -636,7 +636,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 			if err := runningContainer.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for container: %s", workflow.Title)
+				log.Errorf("Attempted to stop the docker container for container: %s: %s", workflow.Title, err.Error())
 			}
 		}()
 	}

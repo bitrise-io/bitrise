@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
@@ -33,7 +34,6 @@ type containerCreateOptions struct {
 func (rc *RunningContainer) Destroy() error {
 	_, err := command.New("docker", "rm", "--force", rc.Name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		// rc.logger.Errorf(out)
 		return fmt.Errorf("remove docker container: %w", err)
 	}
 	return nil
@@ -56,6 +56,9 @@ type ContainerManager struct {
 	workflowContainers map[string]*RunningContainer
 	serviceContainers  map[string][]*RunningContainer
 	client             *client.Client
+
+	mu       sync.Mutex
+	released bool
 }
 
 func NewContainerManager(logger log.Logger) *ContainerManager {
@@ -106,6 +109,8 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 }
 
 func (cm *ContainerManager) StartWorkflowContainer(container models.Container, workflowID string) (*RunningContainer, error) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 	// TODO: make sure the sleep command works across OS flavours
@@ -136,6 +141,8 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 
 func (cm *ContainerManager) StartServiceContainers(services map[string]models.Container, workflowID string) ([]*RunningContainer, error) {
 	var containers []*RunningContainer
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
 	failedServices := make(map[string]error)
 	for serviceName := range services {
 		// Naming the container other than the service name, can cause issues with network calls
@@ -155,7 +162,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 	if len(failedServices) != 0 {
 		errServices := fmt.Errorf("failed to start services")
 		for serviceName, err := range failedServices {
-			errServices = fmt.Errorf("%w: %w", errServices, err)
+			errServices = fmt.Errorf("%v: %w", errServices, err)
 			cm.logger.Errorf("Failed to start service container (%s): %s", serviceName, err)
 		}
 		return containers, errServices
@@ -179,7 +186,11 @@ func (cm *ContainerManager) GetServiceContainers(workflowID string) []*RunningCo
 }
 
 func (cm *ContainerManager) DestroyAllContainers() error {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.released = true
 	for _, container := range cm.workflowContainers {
+		cm.logger.Infof("ℹ️ Removing workflow container: %s", container.Name)
 		if err := container.Destroy(); err != nil {
 			return fmt.Errorf("destroy workflow container: %w", err)
 		}
@@ -187,6 +198,10 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 
 	for _, containers := range cm.serviceContainers {
 		for _, container := range containers {
+			if container == nil {
+				continue
+			}
+			cm.logger.Infof("Removing service container: %s", container.Name)
 			if err := container.Destroy(); err != nil {
 				return fmt.Errorf("destroy service container: %w", err)
 			}
@@ -205,6 +220,10 @@ func (cm *ContainerManager) startContainer(
 	container models.Container,
 	options containerCreateOptions,
 ) (*RunningContainer, error) {
+	if cm.released {
+		return nil, fmt.Errorf("container manager was released already.")
+	}
+
 	if err := cm.ensureNetwork(); err != nil {
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
 	}
