@@ -22,6 +22,14 @@ type RunningContainer struct {
 	Name string
 }
 
+type containerCreateOptions struct {
+	name       string
+	volumes    []string
+	command    string
+	workingDir string
+	user       string
+}
+
 func (rc *RunningContainer) Destroy() error {
 	_, err := command.New("docker", "rm", "--force", rc.Name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -101,7 +109,14 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 	// TODO: make sure the sleep command works across OS flavours
-	runningContainer, err := cm.startContainer(container, containerName, dockerMountOverrides, "sleep infinity", "/bitrise/src", "root")
+
+	runningContainer, err := cm.startContainer(container, containerCreateOptions{
+		name:       containerName,
+		volumes:    dockerMountOverrides,
+		command:    "sleep infinity",
+		workingDir: "/bitrise/src",
+		user:       "root",
+	})
 	if err != nil {
 		return runningContainer, fmt.Errorf("start workflow container: %w", err)
 	}
@@ -118,7 +133,9 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 	var containers []*RunningContainer
 	for serviceName := range services {
 		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.startContainer(services[serviceName], serviceName, []string{}, "", "", "")
+		runningContainer, err := cm.startContainer(services[serviceName], containerCreateOptions{
+			name: serviceName,
+		})
 		containers = append(containers, runningContainer)
 		if err != nil {
 			return containers, fmt.Errorf("start service container (%s): %w", serviceName, err)
@@ -167,10 +184,9 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 //     (hard to convert between sdk and cli api)
 //   - We'd like to support options generically,
 //     with the SDK we would need to parse the string ourselves to convert them properly to their own type
-func (cm *ContainerManager) startContainer(container models.Container,
-	name string,
-	volumes []string,
-	commandArgs, workingDir, user string,
+func (cm *ContainerManager) startContainer(
+	container models.Container,
+	options containerCreateOptions,
 ) (*RunningContainer, error) {
 	if err := cm.ensureNetwork(); err != nil {
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
@@ -181,7 +197,7 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		"--network=bitrise",
 	}
 
-	for _, o := range volumes {
+	for _, o := range options.volumes {
 		dockerRunArgs = append(dockerRunArgs, "-v", o)
 	}
 
@@ -195,12 +211,12 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		dockerRunArgs = append(dockerRunArgs, "-p", port)
 	}
 
-	if workingDir != "" {
-		dockerRunArgs = append(dockerRunArgs, "-w", workingDir)
+	if options.workingDir != "" {
+		dockerRunArgs = append(dockerRunArgs, "-w", options.workingDir)
 	}
 
-	if user != "" {
-		dockerRunArgs = append(dockerRunArgs, "-u", user)
+	if options.user != "" {
+		dockerRunArgs = append(dockerRunArgs, "-u", options.user)
 	}
 
 	if container.Options != "" {
@@ -219,13 +235,13 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	}
 
 	dockerRunArgs = append(dockerRunArgs,
-		fmt.Sprintf("--name=%s", name),
+		fmt.Sprintf("--name=%s", options.name),
 		container.Image,
 	)
 
 	// TODO: think about enabling setting this on the public UI as well
-	if commandArgs != "" {
-		commandArgsList := strings.Split(commandArgs, " ")
+	if options.command != "" {
+		commandArgsList := strings.Split(options.command, " ")
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
@@ -233,29 +249,29 @@ func (cm *ContainerManager) startContainer(container models.Container,
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
-		return nil, fmt.Errorf("create docker container (%s): %w", name, err)
+		return nil, fmt.Errorf("create docker container (%s): %w", options.name, err)
 	}
 
 	runningContainer := &RunningContainer{
-		Name: name,
+		Name: options.name,
 	}
 
-	log.Infof("ℹ️ Running command: docker start %s", name)
-	out, err = command.New("docker", "start", name).RunAndReturnTrimmedCombinedOutput()
+	log.Infof("ℹ️ Running command: docker start %s", options.name)
+	out, err = command.New("docker", "start", options.name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		log.Errorf(out)
-		return runningContainer, fmt.Errorf("start docker container (%s): %w", name, err)
+		return runningContainer, fmt.Errorf("start docker container (%s): %w", options.name, err)
 	}
 
-	result, err := cm.getRunningContainer(context.Background(), name)
+	result, err := cm.getRunningContainer(context.Background(), options.name)
 	if result != nil {
 		runningContainer.ID = result.ID
 	}
 	if err != nil {
-		return runningContainer, fmt.Errorf("container (%s) unable to start properly: %w", name, err)
+		return runningContainer, fmt.Errorf("container (%s) unable to start properly: %w", options.name, err)
 	}
 
-	log.Infof("✅ Container (%s) is running", name)
+	log.Infof("✅ Container (%s) is running", options.name)
 
 	return runningContainer, nil
 }
