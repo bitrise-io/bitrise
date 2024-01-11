@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -102,12 +103,12 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	// TODO: make sure the sleep command works across OS flavours
 	runningContainer, err := cm.startContainer(container, containerName, dockerMountOverrides, "sleep infinity", "/bitrise/src", "root")
 	if err != nil {
-		return nil, fmt.Errorf("start workflow container: %w", err)
+		return runningContainer, fmt.Errorf("start workflow container: %w", err)
 	}
 	cm.workflowContainers[workflowID] = runningContainer
 
 	if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
-		return nil, fmt.Errorf("container health check: %w", err)
+		return runningContainer, fmt.Errorf("container health check: %w", err)
 	}
 
 	return runningContainer, nil
@@ -120,7 +121,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 		runningContainer, err := cm.startContainer(services[serviceName], serviceName, []string{}, "", "", "")
 		containers = append(containers, runningContainer)
 		if err != nil {
-			return nil, fmt.Errorf("start service container (%s): %w", serviceName, err)
+			return containers, fmt.Errorf("start service container (%s): %w", serviceName, err)
 		}
 	}
 
@@ -272,12 +273,19 @@ func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string
 	}
 
 	if containers[0].State != "running" {
-		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, types.ContainerLogsOptions{})
+		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+		})
 		if err != nil {
-			return &containers[0], fmt.Errorf("failed to get container logs: %w")
+			return &containers[0], fmt.Errorf("container is not running: failed to get container logs: %w", err)
 		}
 
-		cm.logger.Errorf("Failed container (%s) logs: %s", name, logs)
+		content, err := io.ReadAll(logs)
+		if err != nil {
+			return &containers[0], fmt.Errorf("container is not running: failed to read container logs: %w", err)
+		}
+		cm.logger.Errorf("Failed container (%s) logs:\n %s\n", name, string(content))
 		return &containers[0], fmt.Errorf("container (%s) is not running", name)
 	}
 	return &containers[0], nil
