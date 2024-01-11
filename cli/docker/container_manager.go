@@ -117,10 +117,15 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 		workingDir: "/bitrise/src",
 		user:       "root",
 	})
+
+	// Even on failure we save the reference to make sure containers will be cleaned up
+	if runningContainer != nil {
+		cm.workflowContainers[workflowID] = runningContainer
+	}
+
 	if err != nil {
 		return runningContainer, fmt.Errorf("start workflow container: %w", err)
 	}
-	cm.workflowContainers[workflowID] = runningContainer
 
 	if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
 		return runningContainer, fmt.Errorf("container health check: %w", err)
@@ -131,18 +136,30 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 
 func (cm *ContainerManager) StartServiceContainers(services map[string]models.Container, workflowID string) ([]*RunningContainer, error) {
 	var containers []*RunningContainer
+	failedServices := make(map[string]error)
 	for serviceName := range services {
 		// Naming the container other than the service name, can cause issues with network calls
 		runningContainer, err := cm.startContainer(services[serviceName], containerCreateOptions{
 			name: serviceName,
 		})
-		containers = append(containers, runningContainer)
+		if runningContainer != nil {
+			containers = append(containers, runningContainer)
+		}
 		if err != nil {
-			return containers, fmt.Errorf("start service container (%s): %w", serviceName, err)
+			failedServices[serviceName] = err
 		}
 	}
-
+	// Even on failure we save the references to make sure containers will be cleaned up
 	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], containers...)
+
+	if len(failedServices) != 0 {
+		errServices := fmt.Errorf("failed to start services")
+		for serviceName, err := range failedServices {
+			errServices = fmt.Errorf("%w: %w", errServices, err)
+			cm.logger.Errorf("Failed to start service container (%s): %s", serviceName, err)
+		}
+		return containers, errServices
+	}
 
 	for _, container := range containers {
 		if err := cm.healthCheckContainer(context.Background(), container); err != nil {
