@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
@@ -72,6 +75,13 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
+	signalInterruptChan := make(chan os.Signal, 1)
+	signal.Notify(signalInterruptChan, syscall.SIGINT, syscall.SIGTERM)
+
+	shouldWaitForCleanup := false
+	cleanupSynchronCtx, cleanupSynchronCancelFunc := context.WithCancel(context.Background())
+	defer cleanupSynchronCancelFunc()
+
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
@@ -98,22 +108,40 @@ func run(c *cli.Context) error {
 	}
 
 	runner := NewWorkflowRunner(*config, agentConfig)
+
+	go func() {
+		<-signalInterruptChan
+		shouldWaitForCleanup = true
+		log.Info("Cancelling bitrise run...")
+		if err := runner.dockerManager.DestroyAllContainers(); err != nil {
+			log.Warnf("Failed to destroy all containers: %s", err)
+		}
+		cleanupSynchronCancelFunc()
+	}()
+
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
+		if shouldWaitForCleanup {
+			<-cleanupSynchronCtx.Done()
+		}
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-			// os.Exit(exitCode)
+			os.Exit(exitCode)
 		}
-
 		return fmt.Errorf(err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
 	printWorkflowRunStatusMessage(msg)
 	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
-	// os.Exit(0)
+
+	if shouldWaitForCleanup {
+		<-cleanupSynchronCtx.Done()
+	}
+
+	os.Exit(0)
 
 	return nil
 }
