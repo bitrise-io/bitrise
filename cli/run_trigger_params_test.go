@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,6 @@ func toJSON(t *testing.T, stringStringMap map[string]interface{}) string {
 	return string(bytes)
 }
 
-// TODO: test is Draft PR
 func TestParseRunAndTriggerJSONParams(t *testing.T) {
 	t.Log("it parses cli params")
 	{
@@ -30,7 +30,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 			PushBranchKey:     "deploy",
 			PRSourceBranchKey: "development",
 			PRTargetBranchKey: "release",
-			DraftPRKey:        false,
+			DraftPRKey:        true,
 			TagKey:            "0.9.0",
 
 			OuputFormatKey: "json",
@@ -50,6 +50,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "deploy", params.PushBranch)
 		require.Equal(t, "development", params.PRSourceBranch)
 		require.Equal(t, "release", params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, "0.9.0", params.Tag)
 
 		require.Equal(t, "json", params.Format)
@@ -72,6 +73,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, false, params.IsDraftPR)
 
 		require.Equal(t, "", params.Format)
 
@@ -83,7 +85,6 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 	}
 }
 
-// TODO: test is Draft PR
 func TestParseRunAndTriggerParams(t *testing.T) {
 	t.Log("it parses cli params")
 	{
@@ -93,7 +94,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := pointers.NewBoolPtr(true)
 		tag := "0.9.0"
 		format := "json"
 
@@ -123,6 +124,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -142,7 +144,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := true
 		tag := "0.9.0"
 		format := "json"
 
@@ -173,7 +175,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		jsonParams := toJSON(t, paramsMap)
 		base64JSONParams := ""
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", false, "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", nil, "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, workflow, params.WorkflowToRunID)
@@ -182,6 +184,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -201,7 +204,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := true
 		tag := "0.9.0"
 		format := "json"
 
@@ -232,7 +235,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		jsonParams := ""
 		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", false, "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", nil, "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, workflow, params.WorkflowToRunID)
@@ -241,6 +244,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -288,10 +292,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			InventoryBase64Key: inventoryBase64Data,
 		}
 
-		jsonParams := `{"workflow":"test"}`
+		jsonParams := `{"workflow":"test","draft-pr":true}`
 		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", false, "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", nil, "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, "test", params.WorkflowToRunID)
@@ -300,6 +304,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -319,7 +324,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := pointers.NewBoolPtr(true)
 		tag := "0.9.0"
 		format := "json"
 
@@ -349,6 +354,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -389,6 +395,7 @@ func TestParseRunParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, false, params.IsDraftPR)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -408,7 +415,7 @@ func TestParseTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := pointers.NewBoolPtr(true)
 		tag := "0.9.0"
 
 		bitriseConfigPath := "bitrise.yml"
@@ -435,6 +442,7 @@ func TestParseTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -454,7 +462,7 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		isDraftPR := false
+		isDraftPR := pointers.NewBoolPtr(true)
 		tag := "0.9.0"
 		format := "json"
 
@@ -483,6 +491,7 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, true, params.IsDraftPR)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)

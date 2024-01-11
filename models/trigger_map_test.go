@@ -26,6 +26,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				TriggerMapItemModel{
 					PullRequestSourceBranch: "develop",
 					PullRequestTargetBranch: "master",
+					DraftPullRequestEnabled: pointers.NewBoolPtr(false),
 					WorkflowID:              "ci",
 				},
 				TriggerMapItemModel{
