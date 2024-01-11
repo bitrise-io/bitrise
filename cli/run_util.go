@@ -595,7 +595,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID)
 	if err != nil {
-		log.Errorf("Failed to start services: %s", err.Error())
+		log.Errorf("❌ Some services failed to start properly!")
 	}
 
 	defer func() {
