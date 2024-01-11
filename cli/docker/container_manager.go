@@ -202,8 +202,6 @@ func (cm *ContainerManager) startContainer(container models.Container,
 		dockerRunArgs = append(dockerRunArgs, "-u", user)
 	}
 
-	log.Infof("XXXXXX Container: %+v", container)
-	log.Infof("Container options: %s", container.Options)
 	if container.Options != "" {
 		// This regex splits the string by spaces, but keeps quoted strings together
 		// For example --health-cmd "redis-cli ping" will be split into: "--health-cmd", "redis-cli ping"
@@ -292,7 +290,6 @@ func (cm *ContainerManager) healthCheckContainer(ctx context.Context, container 
 		return fmt.Errorf("inspect container (%s): %w", container.Name, err)
 	}
 
-	cm.logger.Infof("XXXXXX health (container %s, %s: %+v", container.Name, container.ID, inspect.State.Health)
 	if inspect.State.Health == nil {
 		cm.logger.Infof("✅ No healthcheck is defined for container (%s), assuming healthy...", container.Name)
 		return nil
