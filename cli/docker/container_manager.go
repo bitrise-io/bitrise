@@ -99,7 +99,7 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 	// TODO: make sure the sleep command works across OS flavours
-	runningContainer, err := cm.startContainer(container, containerName, dockerMountOverrides, "sleep infinity", "/bitrise/src")
+	runningContainer, err := cm.startContainer(container, containerName, dockerMountOverrides, "sleep infinity", "/bitrise/src", "root")
 	if err != nil {
 		return nil, fmt.Errorf("start workflow container: %w", err)
 	}
@@ -112,26 +112,11 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainer(service models.Container, workflowID string, serviceName string) (*RunningContainer, error) {
-	// Naming the container other than the service name, can cause issues with network calls
-	runningContainer, err := cm.startContainer(service, serviceName, []string{}, "", "")
-	if err != nil {
-		return nil, fmt.Errorf("start service container: %w", err)
-	}
-	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], runningContainer)
-
-	if err := cm.healthCheckContainer(context.Background(), serviceName); err != nil {
-		return nil, fmt.Errorf("container health check: %w", err)
-	}
-
-	return runningContainer, nil
-}
-
 func (cm *ContainerManager) StartServiceContainers(services map[string]models.Container, workflowID string) ([]*RunningContainer, error) {
 	var containers []*RunningContainer
 	for serviceName := range services {
 		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.startContainer(services[serviceName], serviceName, []string{}, "", "")
+		runningContainer, err := cm.startContainer(services[serviceName], serviceName, []string{}, "", "", "")
 		containers = append(containers, runningContainer)
 		if err != nil {
 			return nil, fmt.Errorf("start service container (%s): %w", serviceName, err)
@@ -178,7 +163,7 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 func (cm *ContainerManager) startContainer(container models.Container,
 	name string,
 	volumes []string,
-	commandArgs, workingDir string,
+	commandArgs, workingDir, user string,
 ) (*RunningContainer, error) {
 	if err := cm.ensureNetwork(); err != nil {
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
@@ -205,6 +190,10 @@ func (cm *ContainerManager) startContainer(container models.Container,
 
 	if workingDir != "" {
 		dockerRunArgs = append(dockerRunArgs, "-w", workingDir)
+	}
+
+	if user != "" {
+		dockerRunArgs = append(dockerRunArgs, "-u", user)
 	}
 
 	if container.Options != "" {
