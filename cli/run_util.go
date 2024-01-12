@@ -834,7 +834,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
 			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestDeployDirEnvKey), "test_result")
-			log.Warnf("XXXXX testDirPath: %s", testDirPath)
 			if err != nil {
 				log.Errorf("Failed to create test result dir, error: %s", err)
 			}
@@ -1011,13 +1010,11 @@ func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultSte
 	if empty, err := isDirEmpty(testDirPath); err != nil {
 		return fmt.Errorf("failed to check if dir empty: %s, error: %s", testDirPath, err)
 	} else if empty {
-		log.Warn("testdir folder was empty")
 		// if the test dir is empty then we need to remove the dir from the temp location to not to spam the system with empty dirs
 		if err := os.Remove(testDirPath); err != nil {
 			return fmt.Errorf("failed to remove dir: %s, error: %s", testDirPath, err)
 		}
 	} else {
-		log.Warn("testdir folder was NOT empty")
 		// if the step put files into the test dir(so it is used) then we won't need to remove the test dir, moreover we need to add extra info from the step parameters
 		stepInfoFilePath := filepath.Join(testDirPath, "step-info.json")
 		stepResultInfoFile, err := os.Create(stepInfoFilePath)
