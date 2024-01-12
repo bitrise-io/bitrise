@@ -162,7 +162,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 	if len(failedServices) != 0 {
 		errServices := fmt.Errorf("failed to start services")
 		for serviceName, err := range failedServices {
-			errServices = fmt.Errorf("%w: %w", errServices, err)
+			errServices = fmt.Errorf("%v: %w", errServices, err)
 			cm.logger.Errorf("Failed to start service container (%s): %s", serviceName, err)
 		}
 		return containers, errServices
