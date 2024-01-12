@@ -130,7 +130,7 @@ func run(c *cli.Context) error {
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
 			os.Exit(exitCode)
 		}
-		return fmt.Errorf(err.Error())
+		failf(err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
