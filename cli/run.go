@@ -88,12 +88,12 @@ func run(c *cli.Context) error {
 			if config != nil {
 				printAvailableWorkflows(config.Config)
 			}
-			return fmt.Errorf("No workflow specified")
+			failf("No workflow specified")
 		} else if err == utilityWorkflowSpecifiedErr {
 			printAboutUtilityWorkflowsText()
-			return fmt.Errorf("Utility workflows can't be triggered directly")
+			failf("Utility workflows can't be triggered directly")
 		}
-		return fmt.Errorf("Failed to process arguments: %s", err)
+		failf("Failed to process arguments: %s", err)
 	}
 
 	agentConfig, err := setupAgentConfig()
