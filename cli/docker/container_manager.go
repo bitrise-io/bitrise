@@ -113,7 +113,6 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	defer cm.mu.Unlock()
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
-	// TODO: make sure the sleep command works across OS flavours
 
 	runningContainer, err := cm.startContainer(container, containerCreateOptions{
 		name:       containerName,
@@ -275,7 +274,6 @@ func (cm *ContainerManager) startContainer(
 		container.Image,
 	)
 
-	// TODO: think about enabling setting this on the public UI as well
 	if options.command != "" {
 		commandArgsList := strings.Split(options.command, " ")
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
