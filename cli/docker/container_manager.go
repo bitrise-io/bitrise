@@ -1,7 +1,9 @@
 package docker
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -29,6 +31,16 @@ type containerCreateOptions struct {
 	command    string
 	workingDir string
 	user       string
+}
+
+type pullEvent struct {
+	Status         string `json:"status"`
+	Error          string `json:"error"`
+	Progress       string `json:"progress"`
+	ProgressDetail struct {
+		Current int `json:"current"`
+		Total   int `json:"total"`
+	} `json:"progressDetail"`
 }
 
 func (rc *RunningContainer) Destroy() error {
@@ -220,12 +232,19 @@ func (cm *ContainerManager) startContainer(
 	options containerCreateOptions,
 ) (*RunningContainer, error) {
 	if cm.released {
-		return nil, fmt.Errorf("container manager was released already.")
+		return nil, fmt.Errorf("container manager was released already")
 	}
 
 	if err := cm.ensureNetwork(); err != nil {
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
 	}
+
+	cm.logger.Infof("ℹ️ Pulling image: %s", container.Image)
+	err := cm.pullImageWithRetry(container)
+	if err != nil {
+		return nil, fmt.Errorf("pull docker image: %w", err)
+	}
+	cm.logger.Infof("✅ Docker image pulled: %s", container.Image)
 
 	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
@@ -310,6 +329,67 @@ func (cm *ContainerManager) startContainer(
 	return runningContainer, nil
 }
 
+func (cm *ContainerManager) pullImageWithRetry(container models.Container) error {
+	pulling := true
+	defer func() {
+		pulling = false
+	}()
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			if !pulling {
+				return
+			}
+			cm.logger.Infof("⏳ Still pulling image: %s ...", container.Image)
+		}
+	}()
+
+	// In case of pull error we retry 3 times
+	var err error
+	retries := 0
+	for retries < 3 {
+		err = cm.pullImage(container)
+		if err != nil {
+			cm.logger.Warnf("⏳ Failed to pull docker image, retrying (retry %d/3) ... ", retries+1)
+		} else {
+			break
+		}
+		retries++
+	}
+	return err
+}
+
+func (cm *ContainerManager) pullImage(container models.Container) error {
+	// We do not supply a timeout here, as customers might have large images
+	pullReader, err := cm.client.ImagePull(context.Background(), container.Image, types.ImagePullOptions{
+		Platform: "linux/amd64",
+	})
+	if err != nil {
+		return fmt.Errorf("request image pull (%s): %w", container.Image, err)
+	}
+	defer pullReader.Close()
+
+	// We need to read the results otherwise the pull will not finish
+	scanner := bufio.NewScanner(pullReader)
+	for scanner.Scan() {
+		event := pullEvent{}
+		err = json.Unmarshal(scanner.Bytes(), &event)
+		if err != nil {
+			cm.logger.Warnf("Failed to parse docker pull event: %s", scanner.Text())
+		}
+		if event.Error != "" {
+			return fmt.Errorf("pull docker image (%s): %s", container.Image, event.Error)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("pull docker image (%s): %w", container.Image, err)
+	}
+
+	return nil
+}
+
 func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string) (*types.Container, error) {
 	containers, err := cm.client.ContainerList(ctx, types.ContainerListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", name)),
@@ -362,7 +442,7 @@ func (cm *ContainerManager) healthCheckContainer(ctx context.Context, container 
 		// this solution prefers quick retries at the beginning and constant for the rest
 		sleep := 5
 		if retries < 5 {
-			sleep = retries
+			sleep = retries + 1
 		}
 		time.Sleep(time.Duration(sleep) * time.Second)
 
