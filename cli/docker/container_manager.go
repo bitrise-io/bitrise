@@ -1,9 +1,7 @@
 package docker
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -31,16 +29,6 @@ type containerCreateOptions struct {
 	command    string
 	workingDir string
 	user       string
-}
-
-type pullEvent struct {
-	Status         string `json:"status"`
-	Error          string `json:"error"`
-	Progress       string `json:"progress"`
-	ProgressDetail struct {
-		Current int `json:"current"`
-		Total   int `json:"total"`
-	} `json:"progressDetail"`
 }
 
 func (rc *RunningContainer) Destroy() error {
@@ -244,7 +232,7 @@ func (cm *ContainerManager) startContainer(
 	if err != nil {
 		return nil, fmt.Errorf("pull docker image: %w", err)
 	}
-	cm.logger.Infof("✅ Docker image pulled: %s", container.Image)
+	cm.logger.Infof("✅ Image pulled: %s", container.Image)
 
 	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
@@ -298,10 +286,10 @@ func (cm *ContainerManager) startContainer(
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
-	log.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
+	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		log.Errorf(out)
+		cm.logger.Errorf(out)
 		return nil, fmt.Errorf("create docker container (%s): %w", options.name, err)
 	}
 
@@ -309,10 +297,10 @@ func (cm *ContainerManager) startContainer(
 		Name: options.name,
 	}
 
-	log.Infof("ℹ️ Running command: docker start %s", options.name)
+	cm.logger.Infof("ℹ️ Running command: docker start %s", options.name)
 	out, err = command.New("docker", "start", options.name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		log.Errorf(out)
+		cm.logger.Errorf(out)
 		return runningContainer, fmt.Errorf("start docker container (%s): %w", options.name, err)
 	}
 
@@ -324,7 +312,7 @@ func (cm *ContainerManager) startContainer(
 		return runningContainer, fmt.Errorf("container (%s) unable to start properly: %w", options.name, err)
 	}
 
-	log.Infof("✅ Container (%s) is running", options.name)
+	cm.logger.Infof("✅ Container (%s) is running", options.name)
 
 	return runningContainer, nil
 }
@@ -351,8 +339,8 @@ func (cm *ContainerManager) pullImageWithRetry(container models.Container) error
 	for retries < 3 {
 		err = cm.pullImage(container)
 		if err != nil {
-			cm.logger.Infof("Failed docker pull: %s", err.Error())
-			cm.logger.Warnf("⏳ Failed to pull docker image, retrying (retry %d/3) ... ", retries+1)
+			cm.logger.Warnf("❌ Error during image pull: %s", err.Error())
+			cm.logger.Warnf("⏳ Failed to pull image, retrying (retry %d/3) ... ", retries+1)
 		} else {
 			break
 		}
@@ -362,32 +350,23 @@ func (cm *ContainerManager) pullImageWithRetry(container models.Container) error
 }
 
 func (cm *ContainerManager) pullImage(container models.Container) error {
-	// We do not supply a timeout here, as customers might have large images
-	pullReader, err := cm.client.ImagePull(context.Background(), container.Image, types.ImagePullOptions{
-		Platform: "linux/amd64",
+	images, err := cm.client.ImageList(context.Background(), types.ImageListOptions{
+		Filters: filters.NewArgs(filters.Arg("reference", container.Image)),
 	})
 	if err != nil {
-		return fmt.Errorf("request image pull (%s): %w", container.Image, err)
-	}
-	defer pullReader.Close()
-
-	// We need to read the results otherwise the pull will not finish
-	scanner := bufio.NewScanner(pullReader)
-	for scanner.Scan() {
-		event := pullEvent{}
-		err = json.Unmarshal(scanner.Bytes(), &event)
-		if err != nil {
-			cm.logger.Warnf("Failed to parse docker pull event: %s", scanner.Text())
-		}
-		if event.Error != "" {
-			return fmt.Errorf("pull docker image (%s): %s", container.Image, event.Error)
-		}
+		cm.logger.Warnf("Failed to check whether local image exist already, pulling...: %s", err.Error())
+	} else if len(images) > 0 {
+		cm.logger.Infof("ℹ️ Image (%s) already exists locally", container.Image)
+		return nil
 	}
 
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("pull docker image (%s): %w", container.Image, err)
+	dockerRunArgs := []string{"pull", "--platform", "linux/amd64", container.Image}
+	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
+	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		cm.logger.Errorf(out)
+		return fmt.Errorf("pull container (%s): %w", container.Image, err)
 	}
-
 	return nil
 }
 
