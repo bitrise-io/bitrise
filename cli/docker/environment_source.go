@@ -32,7 +32,6 @@ func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 		key, value := des.splitEnv(env)
 		_, allowed := dockerPassthroughEnvsMap[key]
 		if !strings.HasPrefix(key, "BITRISE") && (key == "" || !allowed) {
-			des.Logger.Debugf("disallowed env: %s", key)
 			continue
 		}
 
