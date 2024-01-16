@@ -351,6 +351,7 @@ func (cm *ContainerManager) pullImageWithRetry(container models.Container) error
 	for retries < 3 {
 		err = cm.pullImage(container)
 		if err != nil {
+			cm.logger.Infof("Failed docker pull: %s", err.Error())
 			cm.logger.Warnf("⏳ Failed to pull docker image, retrying (retry %d/3) ... ", retries+1)
 		} else {
 			break
