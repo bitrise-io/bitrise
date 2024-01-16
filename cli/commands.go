@@ -13,11 +13,11 @@ const (
 	PushBranchKey     = "push-branch"
 	PRSourceBranchKey = "pr-source-branch"
 	PRTargetBranchKey = "pr-target-branch"
+	DraftPRKey        = "draft-pr"
 
-	IncludeWorkflowMetaKey = "include-workflow-meta"
-	ConfigKey              = "config"
-	InventoryKey           = "inventory"
-	OuputFormatKey         = "format"
+	ConfigKey      = "config"
+	InventoryKey   = "inventory"
+	OuputFormatKey = "format"
 )
 
 var (
@@ -60,6 +60,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+				cli.BoolFlag{Name: DraftPRKey, Usage: "Is the pull request in draft state?"},
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
@@ -67,7 +68,6 @@ var (
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-
 
 				// should deprecate
 				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},

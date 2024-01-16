@@ -21,9 +21,9 @@ func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]str
 	return warnings, nil
 }
 
-func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch, tag string) (string, string, error) {
+func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch string, isDraftPR bool, tag string) (string, string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, isDraftPR, tag)
 		if err != nil {
 			return "", "", err
 		}
@@ -36,50 +36,17 @@ func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch
 }
 
 func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
-	triggerTypeItemMap := map[string][]TriggerMapItemModel{}
+	items := make(map[string]struct{})
 
 	for _, triggerItem := range triggerMap {
-		if triggerItem.Pattern == "" {
-			triggerType, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-			if err != nil {
-				return fmt.Errorf("trigger map item (%v) validate failed, error: %s", triggerItem, err)
-			}
+		content := triggerItem.String(false)
 
-			triggerItems := triggerTypeItemMap[string(triggerType)]
-
-			for _, item := range triggerItems {
-				switch triggerType {
-				case TriggerEventTypeCodePush:
-					if triggerItem.PushBranch == item.PushBranch {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				case TriggerEventTypePullRequest:
-					if triggerItem.PullRequestSourceBranch == item.PullRequestSourceBranch &&
-						triggerItem.PullRequestTargetBranch == item.PullRequestTargetBranch {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				case TriggerEventTypeTag:
-					if triggerItem.Tag == item.Tag {
-						return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-					}
-				}
-			}
-
-			triggerItems = append(triggerItems, triggerItem)
-			triggerTypeItemMap[string(triggerType)] = triggerItems
-		} else if triggerItem.Pattern != "" {
-			triggerItems := triggerTypeItemMap["deprecated"]
-
-			for _, item := range triggerItems {
-				if triggerItem.Pattern == item.Pattern &&
-					triggerItem.IsPullRequestAllowed == item.IsPullRequestAllowed {
-					return fmt.Errorf("duplicated trigger item found (%s)", triggerItem.String(false))
-				}
-			}
-
-			triggerItems = append(triggerItems, triggerItem)
-			triggerTypeItemMap["deprecated"] = triggerItems
+		_, ok := items[content]
+		if ok {
+			return fmt.Errorf("duplicated trigger item found (%s)", content)
 		}
+
+		items[content] = struct{}{}
 	}
 
 	return nil

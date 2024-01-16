@@ -65,7 +65,7 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 		params = migratePatternToParams(params, isPullRequestMode)
 	}
 
-	return triggerMap.FirstMatchingTarget(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
+	return triggerMap.FirstMatchingTarget(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.IsDraftPR, params.Tag)
 }
 
 // --------------------
@@ -90,6 +90,10 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	var isDraftPR *bool
+	if c.IsSet(DraftPRKey) {
+		isDraftPR = pointers.NewBoolPtr(c.Bool(DraftPRKey))
+	}
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
@@ -105,7 +109,7 @@ func triggerCheck(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tag,
+		pushBranch, prSourceBranch, prTargetBranch, isDraftPR, tag,
 		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,

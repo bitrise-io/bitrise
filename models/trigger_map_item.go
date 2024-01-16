@@ -16,15 +16,22 @@ const (
 	TriggerEventTypeUnknown     TriggerEventType = "unknown"
 )
 
+const defaultDraftPullRequestEnabled = true
+
 type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	// Trigger target
+	PipelineID string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
+	WorkflowID string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	// Commit push event criteria
+	PushBranch string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	// Tag push event criteria
+	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	// Pull Request event criteria
 	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+	DraftPullRequestEnabled *bool  `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
 
-	// deprecated
+	// Deprecated
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
 	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
 }
@@ -34,10 +41,10 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 
 	// Validate target
 	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
-		return warnings, fmt.Errorf("invalid trigger item: (%s), error: pipeline & workflow both defined", triggerItem.Pattern)
+		return warnings, fmt.Errorf("both pipeline and workflow are defined as trigger target: %s", triggerItem.String(false))
 	}
 	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return warnings, fmt.Errorf("invalid trigger item: (%s), error: empty pipeline & workflow", triggerItem.Pattern)
+		return warnings, fmt.Errorf("no pipeline nor workflow is defined as a trigger target: %s", triggerItem.String(false))
 	}
 
 	if strings.HasPrefix(triggerItem.WorkflowID, "_") {
@@ -83,7 +90,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	return warnings, nil
 }
 
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag string) (bool, error) {
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, isDraftPR bool, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
@@ -123,7 +130,12 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
-			return (sourceMatch && targetMatch), nil
+			prStateMatch := true
+			if !migratedTriggerItem.IsDraftPullRequestEnabled() && isDraftPR {
+				prStateMatch = false
+			}
+
+			return sourceMatch && targetMatch && prStateMatch, nil
 		case TriggerEventTypeTag:
 			match := glob.Glob(migratedTriggerItem.Tag, tag)
 			return match, nil
@@ -131,6 +143,14 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	}
 
 	return false, nil
+}
+
+func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
+	draftPullRequestEnabled := defaultDraftPullRequestEnabled
+	if triggerItem.DraftPullRequestEnabled != nil {
+		draftPullRequestEnabled = *triggerItem.DraftPullRequestEnabled
+	}
+	return draftPullRequestEnabled
 }
 
 func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
@@ -155,6 +175,8 @@ func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
 
 			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 		}
+
+		str += fmt.Sprintf(" && draft_pull_request_enabled: %v", triggerItem.IsDraftPullRequestEnabled())
 	}
 
 	if triggerItem.Tag != "" {

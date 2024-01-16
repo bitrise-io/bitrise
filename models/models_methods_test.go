@@ -384,6 +384,83 @@ workflows:
 	}
 }
 
+// Trigger map
+func TestTriggerMapItemValidate(t *testing.T) {
+	t.Log("utility workflow triggered - Warning")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: _deps-update
+
+workflows:
+  _deps-update:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		warnings, err := config.Validate()
+		require.NoError(t, err)
+		require.Equal(t, []string{"workflow (_deps-update) defined in trigger item (push_branch: /release -> workflow: _deps-update), but utility workflows can't be triggered directly"}, warnings)
+	}
+
+	t.Log("pipeline not exists")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  pipeline: release
+
+pipelines:
+  primary:
+    stages:
+    - ci-stage: {}
+
+stages:
+  ci-stage:
+    workflows:
+    - ci: {}
+
+workflows:
+  ci:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		_, err = config.Validate()
+		require.EqualError(t, err, "pipeline (release) defined in trigger item (push_branch: /release -> pipeline: release), but does not exist")
+	}
+
+	t.Log("workflow not exists")
+	{
+		configStr := `
+format_version: 1.3.1
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: "/release"
+  workflow: release
+
+workflows:
+  ci:
+`
+
+		config, err := configModelFromYAMLBytes([]byte(configStr))
+		require.NoError(t, err)
+
+		_, err = config.Validate()
+		require.EqualError(t, err, "workflow (release) defined in trigger item (push_branch: /release -> workflow: release), but does not exist")
+	}
+}
+
 // ----------------------------
 // --- Merge
 
