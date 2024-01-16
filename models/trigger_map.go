@@ -36,17 +36,17 @@ func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch
 }
 
 func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
-	for i := 0; i < len(triggerMap); i++ {
-		triggerItemI := triggerMap[i]
+	items := make(map[string]struct{})
 
-		for j := i + 1; j < len(triggerMap); j++ {
-			triggerItemJ := triggerMap[j]
+	for _, triggerItem := range triggerMap {
+		content := triggerItem.String(false)
 
-			if triggerItemI.String(false) == triggerItemJ.String(false) {
-				return fmt.Errorf("duplicated trigger item found (%s)", triggerItemI.String(false))
-			}
-
+		_, ok := items[content]
+		if ok {
+			return fmt.Errorf("duplicated trigger item found (%s)", content)
 		}
+
+		items[content] = struct{}{}
 	}
 
 	return nil
