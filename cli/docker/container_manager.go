@@ -88,8 +88,8 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 			args = append(args, container.Image)
 		}
 
-		// Do not log arguments as it contains the password
-		cm.logger.Infof("ℹ️ Running command: docker login (parameters REDACTED)")
+		safeArgs := strings.ReplaceAll(strings.Join(args, " "), resolvedPassword, "[REDACTED]")
+		cm.logger.Infof("ℹ️Running command: docker %s", safeArgs)
 
 		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {
@@ -294,9 +294,14 @@ func (cm *ContainerManager) createContainer(
 		dockerRunArgs = append(dockerRunArgs, "-v", o)
 	}
 
+	var envsToSanitize []string
 	for _, env := range container.Envs {
 		for name, value := range env {
-			resolvedValue := resolveEnvVariable(fmt.Sprintf("%s", value), envs)
+			valueStr := fmt.Sprintf("%s", value)
+			resolvedValue := resolveEnvVariable(valueStr, envs)
+			if resolvedValue != valueStr {
+				envsToSanitize = append(envsToSanitize, resolvedValue)
+			}
 			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, resolvedValue))
 		}
 	}
@@ -338,8 +343,12 @@ func (cm *ContainerManager) createContainer(
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
-	// Do not log the command as it might contain sensitive variables (env vars with secrets)
-	cm.logger.Infof("ℹ️ Running command: docker create (parameters REDACTED)")
+	safeArgs := strings.Join(dockerRunArgs, " ")
+	for _, env := range envsToSanitize {
+		safeArgs = strings.ReplaceAll(safeArgs, env, "[REDACTED]")
+	}
+	cm.logger.Infof("ℹ️ Running command: docker %s", safeArgs)
+
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		cm.logger.Errorf(out)
