@@ -49,23 +49,23 @@ workflows:
         - content: exit 0
   _start_mock_registry:
     steps:
-      - script:
-          title: setup mock registry
-          inputs:
-          - content: |-
-              docker pull --platform linux/amd64 registry:latest
-              docker run -d -p 5001:5000 --restart always --name registry registry
-              docker pull --platform linux/amd64 frolvlad/alpine-bash:latest
-              docker login localhost:5001 -u test -p test
-              docker tag frolvlad/alpine-bash:latest localhost:5001/frolvlad/alpine-bash:latest
-              docker push localhost:5001/frolvlad/alpine-bash:latest
-              docker logout localhost:5001
+    - script:
+        title: setup mock registry
+        inputs:
+        - content: |-
+            docker pull --platform linux/amd64 registry:latest
+            docker run -d -p 5001:5000 --restart always --name registry registry
+            docker pull --platform linux/amd64 frolvlad/alpine-bash:latest
+            docker login localhost:5001 -u test -p test
+            docker tag frolvlad/alpine-bash:latest localhost:5001/frolvlad/alpine-bash:latest
+            docker push localhost:5001/frolvlad/alpine-bash:latest
+            docker logout localhost:5001
   _cleanup_mock_registry:
     steps:
-      - script:
-          is_always_run: true
-          title: cleanup mock registry
-          inputs:
-          - content: |-
-              docker stop registry
-              docker rm registry
+    - script:
+        is_always_run: true
+        title: cleanup mock registry
+        inputs:
+        - content: |-
+            docker stop registry
+            docker rm registry

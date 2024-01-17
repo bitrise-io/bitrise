@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   docker-service-start-fails:
     before_run:
-      - _build-failing-image
+    - _build-failing-image
     services:
       failing-service:
         image: test-failing-image
@@ -14,7 +14,7 @@ workflows:
         - content: exit 0
   docker-service-start-succeeds-after-retries:
     before_run:
-      - _build-slow-starting-image
+    - _build-slow-starting-image
     services:
       slow-bootin-service:
         image: test-slow-booting-image
@@ -27,16 +27,15 @@ workflows:
 
   _build-failing-image:
     steps:
-      - script:
-          title: Build failing image
-          inputs:
-            - content: |-
-                docker build -t test-failing-image -f docker_test.Dockerfile.failing-container .
+    - script:
+        title: Build failing image
+        inputs:
+        - content: |-
+              docker build -t test-failing-image -f docker_test.Dockerfile.failing-container .
   _build-slow-starting-image:
     steps:
-      - script:
-          title: Build slow starting image
-          inputs:
-            - content: |-
-                docker build -t test-slow-booting-image -f docker_test.Dockerfile.slow-booting-container .
-
+    - script:
+        title: Build slow starting image
+        inputs:
+        - content: |-
+              docker build -t test-slow-booting-image -f docker_test.Dockerfile.slow-booting-container .
