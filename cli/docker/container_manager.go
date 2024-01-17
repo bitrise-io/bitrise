@@ -114,7 +114,7 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 
-	runningContainer, err := cm.startContainer(container, containerCreateOptions{
+	runningContainer, err := cm.runContainer(container, containerCreateOptions{
 		name:       containerName,
 		volumes:    dockerMountOverrides,
 		command:    "sleep infinity",
@@ -145,7 +145,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 	failedServices := make(map[string]error)
 	for serviceName := range services {
 		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.startContainer(services[serviceName], containerCreateOptions{
+		runningContainer, err := cm.runContainer(services[serviceName], containerCreateOptions{
 			name: serviceName,
 		})
 		if runningContainer != nil {
@@ -210,12 +210,14 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	return nil
 }
 
-// We are not using the docker sdk here for multiple reasons:
+// We are not using the docker sdk for pull, start and create commands because:
 //   - We want to make sure the end user can easily debug using the same docker command we issue
 //     (hard to convert between sdk and cli api)
 //   - We'd like to support options generically,
 //     with the SDK we would need to parse the string ourselves to convert them properly to their own type
-func (cm *ContainerManager) startContainer(
+//   - SDK differs from the CLI in some cases, for example pulling from private registry requires the exact token
+//     it can't automatically use the docker config
+func (cm *ContainerManager) runContainer(
 	container models.Container,
 	options containerCreateOptions,
 ) (*RunningContainer, error) {
@@ -227,13 +229,57 @@ func (cm *ContainerManager) startContainer(
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
 	}
 
-	cm.logger.Infof("ℹ️ Pulling image: %s", container.Image)
+	cm.logger.Infof("ℹ️ Pulling docker image: %s", container.Image)
 	err := cm.pullImageWithRetry(container)
 	if err != nil {
 		return nil, fmt.Errorf("pull docker image: %w", err)
 	}
-	cm.logger.Infof("✅ Image pulled: %s", container.Image)
+	cm.logger.Infof("✅ Docker image pulled: %s", container.Image)
 
+	cm.logger.Infof("ℹ️ Creating docker container: %s", container.Image)
+	err = cm.createContainer(container, options)
+	if err != nil {
+		return nil, fmt.Errorf("create docker container: %w", err)
+	}
+	cm.logger.Infof("✅ Docker container created: %s", container.Image)
+
+	cm.logger.Infof("ℹ️ Starting docker container: %s", container.Image)
+	runningContainer, err := cm.startContainer(options)
+	if err != nil {
+		return runningContainer, fmt.Errorf("start docker container: %w", err)
+	}
+	cm.logger.Infof("✅ Container (%s) is running (%s)", runningContainer.Name, runningContainer.ID)
+
+	return runningContainer, nil
+}
+
+func (cm *ContainerManager) startContainer(options containerCreateOptions) (*RunningContainer, error) {
+	// At this point the container has been created, but it's not running yet
+	// Even if we can't start it we need to return the container reference to make sure it will be cleaned up
+	runningContainer := &RunningContainer{
+		Name: options.name,
+	}
+
+	cm.logger.Infof("ℹ️ Running command: docker start %s", options.name)
+	out, err := command.New("docker", "start", options.name).RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		cm.logger.Errorf(out)
+		return runningContainer, fmt.Errorf("start docker container (%s): %w", options.name, err)
+	}
+
+	// We need to get the container ID to be able to check the health
+	// This also serves as a validation that the container is running
+	result, err := cm.getRunningContainer(context.Background(), options.name)
+	if result != nil {
+		runningContainer.ID = result.ID
+	}
+	if err != nil {
+		return runningContainer, fmt.Errorf("container (%s) unable to start properly: %w", options.name, err)
+	}
+	return runningContainer, nil
+}
+
+func (cm *ContainerManager) createContainer(container models.Container, options containerCreateOptions) error {
 	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
@@ -290,31 +336,10 @@ func (cm *ContainerManager) startContainer(
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		cm.logger.Errorf(out)
-		return nil, fmt.Errorf("create docker container (%s): %w", options.name, err)
+		return fmt.Errorf("create container (%s): %w", options.name, err)
 	}
 
-	runningContainer := &RunningContainer{
-		Name: options.name,
-	}
-
-	cm.logger.Infof("ℹ️ Running command: docker start %s", options.name)
-	out, err = command.New("docker", "start", options.name).RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		cm.logger.Errorf(out)
-		return runningContainer, fmt.Errorf("start docker container (%s): %w", options.name, err)
-	}
-
-	result, err := cm.getRunningContainer(context.Background(), options.name)
-	if result != nil {
-		runningContainer.ID = result.ID
-	}
-	if err != nil {
-		return runningContainer, fmt.Errorf("container (%s) unable to start properly: %w", options.name, err)
-	}
-
-	cm.logger.Infof("✅ Container (%s) is running", options.name)
-
-	return runningContainer, nil
+	return nil
 }
 
 func (cm *ContainerManager) pullImageWithRetry(container models.Container) error {
