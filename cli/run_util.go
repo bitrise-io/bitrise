@@ -567,8 +567,8 @@ func (r WorkflowRunner) runStep(
 
 type DockerManager interface {
 	Login(models.Container, map[string]string) error
-	StartWorkflowContainer(models.Container, string) (*docker.RunningContainer, error)
-	StartServiceContainers(services map[string]models.Container, workflowID string) ([]*docker.RunningContainer, error)
+	StartWorkflowContainer(models.Container, string, map[string]string) (*docker.RunningContainer, error)
+	StartServiceContainers(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
 	GetWorkflowContainer(string) *docker.RunningContainer
 	GetServiceContainers(string) []*docker.RunningContainer
 	DestroyAllContainers() error
@@ -593,7 +593,20 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID)
+	err := tools.EnvmanInit(configs.InputEnvstorePath, true)
+	if err != nil {
+		log.Debugf("Couldn't initialize envman.")
+	}
+	err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
+	if err != nil {
+		log.Debugf("Couldn't add envs.")
+	}
+	envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
+	if err != nil {
+		log.Debugf("Couldn't read envs from envman.")
+	}
+
+	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID, envList)
 	if err != nil {
 		log.Errorf("❌ Some services failed to start properly!")
 	}
@@ -607,24 +620,13 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}()
 
 	if workflow.Container.Image != "" {
-		err = tools.EnvmanInit(configs.InputEnvstorePath, true)
-		if err != nil {
-			log.Debugf("Couldn't initialize envman.")
-		}
-		err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
-		if err != nil {
-			log.Debugf("Couldn't add envs.")
-		}
-		list, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-		if err != nil {
-			log.Debugf("Couldn't read envs from envman.")
-		}
+		log.Infof("ℹ️ Running workflow in docker container: %s", workflow.Container.Image)
 
-		if err := r.dockerManager.Login(workflow.Container, list); err != nil {
+		if err := r.dockerManager.Login(workflow.Container, envList); err != nil {
 			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
 		}
 
-		runningContainer, err := r.dockerManager.StartWorkflowContainer(workflow.Container, workflowID)
+		runningContainer, err := r.dockerManager.StartWorkflowContainer(workflow.Container, workflowID, envList)
 		if err != nil {
 			log.Errorf("Could not start the specified docker image for workflow: %s", workflow.Title)
 		}
