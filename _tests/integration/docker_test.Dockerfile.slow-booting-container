@@ -1,0 +1,2 @@
+FROM frolvlad/alpine-bash:latest
+CMD ["bash", "-c", "sleep 3; touch /ready; echo 'Im healthy now'; sleep infinity"]
