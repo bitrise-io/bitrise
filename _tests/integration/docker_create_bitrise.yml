@@ -6,7 +6,7 @@ workflows:
     container:
       image: frolvlad/alpine-bash:latest
       ports:
-        - "80:80"
+      - 80:80
     steps:
     - script:
         title: Should fail
@@ -17,12 +17,12 @@ workflows:
     container:
       image: frolvlad/alpine-bash:latest
       ports:
-        - "12341:12341"
+      - 12341:12341
     steps:
     - script:
         title: Should succeed
         inputs:
-        - content: exit 0  
+        - content: exit 0
   docker-create-succeeds-with-false-unhealthy-container:
     title: Expected to log error on docker create, because healthcheck are wrong, however execution should continue
     container:
