@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/v2/redactwriter"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -52,7 +54,7 @@ func (rc *RunningContainer) ExecuteCommandArgs(envs []string) []string {
 }
 
 type ContainerManager struct {
-	logger             log.Logger
+	logger             DockerLogger
 	workflowContainers map[string]*RunningContainer
 	serviceContainers  map[string][]*RunningContainer
 	client             *client.Client
@@ -61,14 +63,57 @@ type ContainerManager struct {
 	released bool
 }
 
-func NewContainerManager(logger log.Logger) *ContainerManager {
+type DockerLogger struct {
+	logger  log.Logger
+	secrets []string
+}
+
+func (dl *DockerLogger) Infof(format string, args ...interface{}) {
+	log := fmt.Sprintf(format, args...)
+	redacted, _ := dl.Redact(log)
+	dl.logger.Info(redacted)
+}
+
+func (dl *DockerLogger) Errorf(format string, args ...interface{}) {
+	log := fmt.Sprintf(format, args...)
+	redacted, _ := dl.Redact(log)
+	dl.logger.Error(redacted)
+}
+
+func (dl *DockerLogger) Warnf(format string, args ...interface{}) {
+	log := fmt.Sprintf(format, args...)
+	redacted, _ := dl.Redact(log)
+	dl.logger.Warn(redacted)
+}
+
+func (dl *DockerLogger) Redact(s string) (string, error) {
+	src := bytes.NewReader([]byte(s))
+	dstBuf := new(bytes.Buffer)
+	logger := log.NewUtilsLogAdapter()
+	redactWriterDst := redactwriter.New(dl.secrets, dstBuf, &logger)
+
+	if _, err := io.Copy(redactWriterDst, src); err != nil {
+		return "", fmt.Errorf("failed to redact secrets, stream copy failed: %s", err)
+	}
+	if err := redactWriterDst.Close(); err != nil {
+		return "", fmt.Errorf("failed to redact secrets, closing the stream failed: %s", err)
+	}
+
+	redactedValue := dstBuf.String()
+	return redactedValue, nil
+}
+
+func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logger.Warnf("Docker client failed to initialize (possibly running on unsupported stack): %s", err)
 	}
 
 	return &ContainerManager{
-		logger:             logger,
+		logger: DockerLogger{
+			logger:  logger,
+			secrets: secrets,
+		},
 		workflowContainers: make(map[string]*RunningContainer),
 		serviceContainers:  make(map[string][]*RunningContainer),
 		client:             dockerClient,
@@ -78,18 +123,18 @@ func NewContainerManager(logger log.Logger) *ContainerManager {
 func (cm *ContainerManager) Login(container models.Container, envs map[string]string) error {
 	if container.Credentials.Username != "" && container.Credentials.Password != "" {
 		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
+		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
 		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
 		args := []string{"login", "--username", container.Credentials.Username, "--password", resolvedPassword}
 
 		if container.Credentials.Server != "" {
 			args = append(args, container.Credentials.Server)
-		} else if len(strings.Split(container.Image, "/")) > 2 {
+		} else {
 			args = append(args, container.Image)
 		}
 
-		safeArgs := strings.ReplaceAll(strings.Join(args, " "), resolvedPassword, "[REDACTED]")
-		cm.logger.Infof("ℹ️Running command: docker %s", safeArgs)
+		cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(args, " "))
 
 		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {
@@ -294,14 +339,9 @@ func (cm *ContainerManager) createContainer(
 		dockerRunArgs = append(dockerRunArgs, "-v", o)
 	}
 
-	var envsToSanitize []string
 	for _, env := range container.Envs {
 		for name, value := range env {
-			valueStr := fmt.Sprintf("%s", value)
-			resolvedValue := resolveEnvVariable(valueStr, envs)
-			if resolvedValue != valueStr {
-				envsToSanitize = append(envsToSanitize, resolvedValue)
-			}
+			resolvedValue := resolveEnvVariable(fmt.Sprintf("%s", value), envs)
 			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, resolvedValue))
 		}
 	}
@@ -343,11 +383,7 @@ func (cm *ContainerManager) createContainer(
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
-	safeArgs := strings.Join(dockerRunArgs, " ")
-	for _, env := range envsToSanitize {
-		safeArgs = strings.ReplaceAll(safeArgs, env, "[REDACTED]")
-	}
-	cm.logger.Infof("ℹ️ Running command: docker %s", safeArgs)
+	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
 
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -500,11 +536,10 @@ func (cm *ContainerManager) ensureNetwork() error {
 }
 
 func resolveEnvVariable(value string, envs map[string]string) string {
-	valueStr := fmt.Sprintf("%s", value)
-	if strings.HasPrefix(valueStr, "$") {
-		if value, ok := envs[strings.TrimPrefix(valueStr, "$")]; ok {
+	if strings.HasPrefix(value, "$") {
+		if value, ok := envs[strings.TrimPrefix(value, "$")]; ok {
 			return value
 		}
 	}
-	return valueStr
+	return value
 }

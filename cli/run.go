@@ -177,9 +177,10 @@ type WorkflowRunner struct {
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
+	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	return WorkflowRunner{
 		config:        config,
-		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts())),
+		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts()), stepSecretValues),
 		agentConfig:   agentConfig,
 	}
 }
