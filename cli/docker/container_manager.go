@@ -76,20 +76,11 @@ func NewContainerManager(logger log.Logger) *ContainerManager {
 }
 
 func (cm *ContainerManager) Login(container models.Container, envs map[string]string) error {
-	cm.logger.Infof("Running workflow in docker container: %s", container.Image)
-	cm.logger.Debugf("Docker cred: %s", container.Credentials)
-
 	if container.Credentials.Username != "" && container.Credentials.Password != "" {
-		cm.logger.Debugf("Logging into docker registry: %s", container.Image)
+		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
-		password := container.Credentials.Password
-		if strings.HasPrefix(password, "$") {
-			if value, ok := envs[strings.TrimPrefix(container.Credentials.Password, "$")]; ok {
-				password = value
-			}
-		}
-
-		args := []string{"login", "--username", container.Credentials.Username, "--password", password}
+		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
+		args := []string{"login", "--username", container.Credentials.Username, "--password", resolvedPassword}
 
 		if container.Credentials.Server != "" {
 			args = append(args, container.Credentials.Server)
@@ -97,7 +88,8 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 			args = append(args, container.Image)
 		}
 
-		cm.logger.Debugf("Running command: docker %s", strings.Join(args, " "))
+		// Do not log arguments as it contains the password
+		cm.logger.Infof("ℹ️ Running command: docker login (parameters REDACTED)")
 
 		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {
@@ -108,7 +100,11 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 	return nil
 }
 
-func (cm *ContainerManager) StartWorkflowContainer(container models.Container, workflowID string) (*RunningContainer, error) {
+func (cm *ContainerManager) StartWorkflowContainer(
+	container models.Container,
+	workflowID string,
+	envs map[string]string,
+) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
@@ -120,7 +116,7 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 		command:    "sleep infinity",
 		workingDir: "/bitrise/src",
 		user:       "root",
-	})
+	}, envs)
 
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
@@ -138,7 +134,11 @@ func (cm *ContainerManager) StartWorkflowContainer(container models.Container, w
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainers(services map[string]models.Container, workflowID string) ([]*RunningContainer, error) {
+func (cm *ContainerManager) StartServiceContainers(
+	services map[string]models.Container,
+	workflowID string,
+	envs map[string]string,
+) ([]*RunningContainer, error) {
 	var containers []*RunningContainer
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -147,7 +147,7 @@ func (cm *ContainerManager) StartServiceContainers(services map[string]models.Co
 		// Naming the container other than the service name, can cause issues with network calls
 		runningContainer, err := cm.runContainer(services[serviceName], containerCreateOptions{
 			name: serviceName,
-		})
+		}, envs)
 		if runningContainer != nil {
 			containers = append(containers, runningContainer)
 		}
@@ -220,6 +220,7 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 func (cm *ContainerManager) runContainer(
 	container models.Container,
 	options containerCreateOptions,
+	envs map[string]string,
 ) (*RunningContainer, error) {
 	if cm.released {
 		return nil, fmt.Errorf("container manager was released already")
@@ -237,7 +238,7 @@ func (cm *ContainerManager) runContainer(
 	cm.logger.Infof("✅ Docker image pulled: %s", container.Image)
 
 	cm.logger.Infof("ℹ️ Creating docker container: %s", container.Image)
-	err = cm.createContainer(container, options)
+	err = cm.createContainer(container, options, envs)
 	if err != nil {
 		return nil, fmt.Errorf("create docker container: %w", err)
 	}
@@ -279,7 +280,11 @@ func (cm *ContainerManager) startContainer(options containerCreateOptions) (*Run
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) createContainer(container models.Container, options containerCreateOptions) error {
+func (cm *ContainerManager) createContainer(
+	container models.Container,
+	options containerCreateOptions,
+	envs map[string]string,
+) error {
 	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
 		"--network=bitrise",
@@ -291,7 +296,8 @@ func (cm *ContainerManager) createContainer(container models.Container, options 
 
 	for _, env := range container.Envs {
 		for name, value := range env {
-			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, value))
+			resolvedValue := resolveEnvVariable(fmt.Sprintf("%s", value), envs)
+			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, resolvedValue))
 		}
 	}
 
@@ -332,7 +338,8 @@ func (cm *ContainerManager) createContainer(container models.Container, options 
 		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
 	}
 
-	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
+	// Do not log the command as it might contain sensitive variables (env vars with secrets)
+	cm.logger.Infof("ℹ️ Running command: docker create (parameters REDACTED)")
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		cm.logger.Errorf(out)
@@ -481,4 +488,14 @@ func (cm *ContainerManager) ensureNetwork() error {
 	}
 
 	return nil
+}
+
+func resolveEnvVariable(value string, envs map[string]string) string {
+	valueStr := fmt.Sprintf("%s", value)
+	if strings.HasPrefix(valueStr, "$") {
+		if value, ok := envs[strings.TrimPrefix(valueStr, "$")]; ok {
+			return value
+		}
+	}
+	return valueStr
 }
