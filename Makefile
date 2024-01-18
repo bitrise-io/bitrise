@@ -1,4 +1,5 @@
 DOCKER_COMPOSE_FILE=_tests/integration/local_docker_test_environment/docker-compose.yml
+SRC_DIR_IN_GOPATH=/bitrise/src
 
 docker-test: setup-test-environment
 	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; go test ./_tests/integration -tags linux_only"
