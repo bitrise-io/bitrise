@@ -123,7 +123,6 @@ func Test_Docker(t *testing.T) {
 			}
 
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-			t.Logf("Output: %s", out)
 			if testCase.requireErr {
 				require.Error(t, err)
 			} else {
