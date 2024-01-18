@@ -11,24 +11,25 @@ import (
 )
 
 var (
-	InputEnvstorePath string
-	OutputEnvstorePath string
-	FormattedOutputPath string
-	BitriseWorkDirPath string
+	InputEnvstorePath       string
+	OutputEnvstorePath      string
+	FormattedOutputPath     string
+	BitriseWorkDirPath      string
 	BitriseWorkStepsDirPath string
-	CurrentDir string
+	CurrentDir              string
 )
 
 const (
-	EnvstorePathEnvKey = "ENVMAN_ENVSTORE_PATH"
-	FormattedOutputPathEnvKey = "BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH"
-	BitriseDataHomeDirEnvKey = "BITRISE_DATA_HOME_DIR"
-	BitriseSourceDirEnvKey = "BITRISE_SOURCE_DIR"
-	BitriseDeployDirEnvKey = "BITRISE_DEPLOY_DIR"
+	EnvstorePathEnvKey         = "ENVMAN_ENVSTORE_PATH"
+	FormattedOutputPathEnvKey  = "BITRISE_STEP_FORMATTED_OUTPUT_FILE_PATH"
+	BitriseDataHomeDirEnvKey   = "BITRISE_DATA_HOME_DIR"
+	BitriseSourceDirEnvKey     = "BITRISE_SOURCE_DIR"
+	BitriseDeployDirEnvKey     = "BITRISE_DEPLOY_DIR"
 	BitriseTestDeployDirEnvKey = "BITRISE_TEST_DEPLOY_DIR"
 	// BitrisePerStepTestResultDirEnvKey is a unique subdirectory in BITRISE_TEST_DEPLOY_DIR for each step run, steps should place test reports and attachments into this directory
 	BitrisePerStepTestResultDirEnvKey = "BITRISE_TEST_RESULT_DIR"
-	BitriseTmpDirEnvKey = "BITRISE_TMP_DIR"
+	BitriseTmpDirEnvKey               = "BITRISE_TMP_DIR"
+	BitriseHtmlReportDirEnvKey        = "BITRISE_HTML_REPORT_DIR"
 )
 
 func GetBitriseHomeDirPath() string {
@@ -158,6 +159,18 @@ func InitPaths() error {
 
 		if err := os.Setenv(BitriseDeployDirEnvKey, deployDir); err != nil {
 			return fmt.Errorf("Failed to set BITRISE_DEPLOY_DIR, error: %s", err)
+		}
+	}
+
+	// BITRISE_HTML_REPORT_DIR
+	if os.Getenv(BitriseHtmlReportDirEnvKey) == "" {
+		reportDir, err := pathutil.NormalizedOSTempDirPath("html-reports")
+		if err != nil {
+			return fmt.Errorf("Failed to create html-reports dir, error: %s", err)
+		}
+
+		if err := os.Setenv(BitriseHtmlReportDirEnvKey, reportDir); err != nil {
+			return fmt.Errorf("Failed to set BITRISE_HTML_REPORT_DIR, error: %s", err)
 		}
 	}
 

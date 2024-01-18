@@ -7,8 +7,8 @@ import (
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/bitrise/log/logwriter"
+	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -32,6 +32,10 @@ func registerAgentOverrides(dirs configs.BitriseDirs) error {
 		{
 			dir:    dirs.TestDeployDir,
 			envKey: configs.BitriseTestDeployDirEnvKey,
+		},
+		{
+			dir:    dirs.HtmlReportDir,
+			envKey: configs.BitriseHtmlReportDirEnvKey,
 		},
 	}
 	for _, param := range params {
@@ -88,7 +92,7 @@ func cleanupDirs(dirs []string) error {
 	if len(dirs) == 0 {
 		return nil
 	}
-	
+
 	log.Print()
 	log.Infof("Run directory cleanups")
 	for _, dir := range dirs {

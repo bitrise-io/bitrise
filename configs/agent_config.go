@@ -34,6 +34,10 @@ type BitriseDirs struct {
 	// TestDeployDir is for deployable test result artifacts.
 	// It might be outside of BitriseDataHomeDir if the user has configured it so
 	TestDeployDir string `yaml:"BITRISE_TEST_DEPLOY_DIR"`
+
+	// HtmlReportDir is for deployable html reports.
+	// It might be outside of BitriseDataHomeDir if the user has configured it so
+	HtmlReportDir string `yaml:"BITRISE_HTML_REPORT_DIR"`
 }
 
 // AgentHooks are various hooks that are executed before and after the CLI runs a build.
