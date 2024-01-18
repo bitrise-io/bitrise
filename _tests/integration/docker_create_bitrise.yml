@@ -6,7 +6,7 @@ workflows:
     container:
       image: frolvlad/alpine-bash:latest
       ports:
-      - 80:80
+      - 22:22
     steps:
     - script:
         title: Should fail

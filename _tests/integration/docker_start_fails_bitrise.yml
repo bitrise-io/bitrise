@@ -18,6 +18,4 @@ workflows:
         title: Build failing image
         inputs:
         - content: |-
-            pwd
-            ls -la
             docker build -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.failing-container .
