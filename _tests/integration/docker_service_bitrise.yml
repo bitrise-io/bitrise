@@ -27,15 +27,21 @@ workflows:
 
   _build-failing-image:
     steps:
+    - change-workdir:
+        inputs:
+        - path: /bitrise/src
     - script:
         title: Build failing image
         inputs:
         - content: |-
-              docker build -t test-failing-image -f docker_test.Dockerfile.failing-container .
+              docker build -t test-failing-image -f ./_tests/integration/docker_test.Dockerfile.failing-container .
   _build-slow-starting-image:
     steps:
+    - change-workdir:
+        inputs:
+        - path: /bitrise/src
     - script:
         title: Build slow starting image
         inputs:
         - content: |-
-              docker build -t test-slow-booting-image -f docker_test.Dockerfile.slow-booting-container .
+              docker build -t test-slow-booting-image -f ./_tests/integration/docker_test.Dockerfile.slow-booting-container .
