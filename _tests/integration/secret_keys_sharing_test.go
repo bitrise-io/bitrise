@@ -1,9 +1,13 @@
+//go:build linux_and_mac
+// +build linux_and_mac
+
 package integration
 
 import (
+	"testing"
+
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSecretSharing(t *testing.T) {
