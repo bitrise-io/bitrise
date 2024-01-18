@@ -1,3 +1,6 @@
+//go:build linux_only
+// +build linux_only
+
 package integration
 
 import (
