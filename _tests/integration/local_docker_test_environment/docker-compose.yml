@@ -5,14 +5,15 @@ services:
       context: .
     platform: linux/amd64
     environment:
-      BITRISE_DOCKER_MOUNT_OVERRIDES: ${HOME}/.ssh:/root/.ssh,${PWD}/_containers/.bitrise:/root/.bitrise,${PWD}:/usr/src/bitrise,${PWD}/_local:/usr/local/bundle,${PWD}/_tmp:/usr/src/bitrise/_tmp,/tmp:/tmp
+      BITRISE_DOCKER_MOUNT_OVERRIDES: ${HOME}/.ssh:/root/.ssh,${PWD}/_containers/.bitrise:/root/.bitrise,${PWD}:/bitrise/src,${PWD}/_tmp:/bitrise/src/_tmp,/tmp:/tmp
+      SRC_DIR_IN_GOPATH: /bitrise/src
     volumes:
     - ${HOME}/.ssh:/root/.ssh
     - /tmp:/tmp
     - ../../../_containers/.bitrise:/root/.bitrise
-    - ../../../:/usr/src/bitrise
-    - ../../../_tmp:/usr/src/bitrise/_tmp
+    - ../../../:/bitrise/src
+    - ../../../_tmp:/bitrise/src/_tmp
     - /var/run/docker.sock:/var/run/docker.sock
     - ../../../_local:/usr/local/bundle
-    working_dir: /usr/src/bitrise
+    working_dir: /bitrise/src
     command: sleep infinity

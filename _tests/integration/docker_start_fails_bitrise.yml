@@ -14,13 +14,10 @@ workflows:
         - content: exit 0
   _build-failing-image:
     steps:
-    - change-workdir:
-        inputs:
-        - path: /bitrise/src
     - script:
         title: Build failing image
         inputs:
         - content: |-
             pwd
             ls -la
-            docker build -t test-failing-image -f ./_tests/integration/docker_test.Dockerfile.failing-container .
+            docker build -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.failing-container .
