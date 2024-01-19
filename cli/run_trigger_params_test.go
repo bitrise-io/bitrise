@@ -204,7 +204,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		prReadyState := true
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 		format := "json"
 
@@ -264,7 +264,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
-		prReadyState := false
+		prReadyState := models.PullRequestReadyStateReadyForReview
 		tag := "0.9.0"
 		format := "json"
 
