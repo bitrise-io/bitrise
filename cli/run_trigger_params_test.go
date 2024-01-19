@@ -30,7 +30,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 			PushBranchKey:     "deploy",
 			PRSourceBranchKey: "development",
 			PRTargetBranchKey: "release",
-			PRReadyStateKey:   "ready_for_review",
+			PRReadyStateKey:   models.PullRequestReadyStateReadyForReview,
 			TagKey:            "0.9.0",
 
 			OuputFormatKey: "json",
