@@ -73,7 +73,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
-		require.Equal(t, "", params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyState(""), params.PRReadyState)
 
 		require.Equal(t, "", params.Format)
 
@@ -184,7 +184,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyState("draft"), params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
