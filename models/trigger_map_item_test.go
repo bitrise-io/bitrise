@@ -27,7 +27,7 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 				PushBranch: aPattern,
 				WorkflowID: "primary",
 			}
-			match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+			match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 			require.NoError(t, err)
 			require.Equal(t, true, match, "(pattern: %s) (branch: %s)", aPattern, aPushBranch)
 		}
@@ -44,7 +44,7 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 			PushBranch: "deploy",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -60,7 +60,7 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 			PullRequestSourceBranch: "develop",
 			WorkflowID:              "test",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -76,7 +76,7 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -93,7 +93,7 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 			PullRequestTargetBranch: "master",
 			WorkflowID:              "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -245,7 +245,7 @@ func TestTriggerMapItemModel_MatchWithParams_PRParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.triggerMapItem.MatchWithParams(tt.pushBranch, tt.prSourceBranch, tt.prTargetBranch, tt.isDraftPR, tt.tag)
+			got, err := tt.triggerMapItem.MatchWithParams(tt.pushBranch, tt.prSourceBranch, tt.prTargetBranch, PullRequestReadyStateDraft, tt.tag)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {
@@ -268,7 +268,7 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 			Tag:        "0.9.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -284,7 +284,7 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 			Tag:        "0.9.0",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -300,7 +300,7 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 			Tag:        "0.9.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, true, match)
 	}
@@ -316,7 +316,7 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 			Tag:        "1.*",
 			WorkflowID: "deploy",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
@@ -332,7 +332,7 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 			PushBranch: "master",
 			WorkflowID: "primary",
 		}
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, false, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, PullRequestReadyStateReadyForReview, tag)
 		require.NoError(t, err)
 		require.Equal(t, false, match)
 	}
