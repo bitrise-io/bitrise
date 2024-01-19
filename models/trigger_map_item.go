@@ -16,6 +16,14 @@ const (
 	TriggerEventTypeUnknown     TriggerEventType = "unknown"
 )
 
+type PullRequestReadyState string
+
+const (
+	PullRequestReadyStateDraft                     PullRequestReadyState = "draft"
+	PullRequestReadyStateReadyForReview            PullRequestReadyState = "ready_for_review"
+	PullRequestReadyStateConvertedToReadyForReview PullRequestReadyState = "converted_to_ready_for_review"
+)
+
 const defaultDraftPullRequestEnabled = true
 
 type TriggerMapItemModel struct {
@@ -90,7 +98,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	return warnings, nil
 }
 
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, isDraftPR bool, tag string) (bool, error) {
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, prReadyState PullRequestReadyState, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
@@ -130,12 +138,22 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
-			prStateMatch := true
-			if !migratedTriggerItem.IsDraftPullRequestEnabled() && isDraftPR {
-				prStateMatch = false
+			// When a PR is converted to ready for review:
+			// - if draft PR trigger is enabled, this event is just a status change on the PR
+			// 	 and the given status of the code base already triggered a build.
+			// - if draft PR trigger is disabled, the given status of the code base didn't trigger a build yet.
+			stateMismatch := false
+			if migratedTriggerItem.IsDraftPullRequestEnabled() {
+				if prReadyState == PullRequestReadyStateConvertedToReadyForReview {
+					stateMismatch = true
+				}
+			} else {
+				if prReadyState == PullRequestReadyStateDraft {
+					stateMismatch = true
+				}
 			}
 
-			return sourceMatch && targetMatch && prStateMatch, nil
+			return sourceMatch && targetMatch && !stateMismatch, nil
 		case TriggerEventTypeTag:
 			match := glob.Glob(migratedTriggerItem.Tag, tag)
 			return match, nil
