@@ -138,18 +138,18 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
-			shouldSkipDraftPRTrigger := false
+			stateMismatch := false
 			if migratedTriggerItem.IsDraftPullRequestEnabled() {
 				if prReadyState == PullRequestReadyStateConvertedToReadyForReview {
-					shouldSkipDraftPRTrigger = true
+					stateMismatch = true
 				}
 			} else {
 				if prReadyState == PullRequestReadyStateDraft {
-					shouldSkipDraftPRTrigger = true
+					stateMismatch = true
 				}
 			}
 
-			return sourceMatch && targetMatch && !shouldSkipDraftPRTrigger, nil
+			return sourceMatch && targetMatch && !stateMismatch, nil
 		case TriggerEventTypeTag:
 			match := glob.Glob(migratedTriggerItem.Tag, tag)
 			return match, nil
