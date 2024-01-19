@@ -138,6 +138,10 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
+			// When a PR is converted to ready for review:
+			// - if draft PR trigger is enabled, this event is just a status change on the PR
+			// 	 and the given status of the code base already triggered a build.
+			// - if draft PR trigger is disabled, the given status of the code base didn't trigger a build yet.
 			stateMismatch := false
 			if migratedTriggerItem.IsDraftPullRequestEnabled() {
 				if prReadyState == PullRequestReadyStateConvertedToReadyForReview {
