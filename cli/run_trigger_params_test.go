@@ -244,7 +244,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyState("draft"), params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -292,7 +292,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			InventoryBase64Key: inventoryBase64Data,
 		}
 
-		jsonParams := `{"workflow":"test","draft-pr":true}`
+		jsonParams := `{"workflow":"test","pr-ready-state":"draft"}`
 		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
 
 		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
@@ -304,7 +304,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -354,7 +354,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
