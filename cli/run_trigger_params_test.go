@@ -50,7 +50,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "deploy", params.PushBranch)
 		require.Equal(t, "development", params.PRSourceBranch)
 		require.Equal(t, "release", params.PRTargetBranch)
-		require.Equal(t, "ready_for_review", params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateReadyForReview, params.PRReadyState)
 		require.Equal(t, "0.9.0", params.Tag)
 
 		require.Equal(t, "json", params.Format)
@@ -124,7 +124,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateReadyForReview, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -395,7 +395,7 @@ func TestParseRunParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
-		require.Equal(t, false, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyState(""), params.PRReadyState)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -442,7 +442,7 @@ func TestParseTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -491,7 +491,7 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
-		require.Equal(t, true, params.PRReadyState)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
