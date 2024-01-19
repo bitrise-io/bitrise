@@ -16,6 +16,14 @@ const (
 	TriggerEventTypeUnknown     TriggerEventType = "unknown"
 )
 
+type PullRequestReadyState string
+
+const (
+	PullRequestReadyStateDraft                     PullRequestReadyState = "draft"
+	PullRequestReadyStateReadyForReview            PullRequestReadyState = "ready_for_review"
+	PullRequestReadyStateConvertedToReadyForReview PullRequestReadyState = "converted_to_ready_for_review"
+)
+
 const defaultDraftPullRequestEnabled = true
 
 type TriggerMapItemModel struct {
@@ -90,7 +98,7 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	return warnings, nil
 }
 
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, tag string) (bool, error) {
+func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, prReadyState PullRequestReadyState, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
@@ -130,7 +138,15 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
 			}
 
-			return sourceMatch && targetMatch, nil
+			prReadyStateMatch := true
+			// TODO: explain this if statement
+			if migratedTriggerItem.IsDraftPullRequestEnabled() {
+				prReadyStateMatch = prReadyState != PullRequestReadyStateConvertedToReadyForReview
+			} else {
+				prReadyStateMatch = prReadyState != PullRequestReadyStateDraft
+			}
+
+			return sourceMatch && targetMatch && prReadyStateMatch, nil
 		case TriggerEventTypeTag:
 			match := glob.Glob(migratedTriggerItem.Tag, tag)
 			return match, nil

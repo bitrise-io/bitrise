@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -26,19 +25,10 @@ func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]str
 
 func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch, prTargetBranch string, prReadyState string, tag string) (string, string, error) {
 	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, tag)
+		match, err := item.MatchWithParams(pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag)
 		if err != nil {
 			return "", "", err
 		}
-		if match {
-			if item.IsDraftPullRequestEnabled() == true && prReadyState == "converted_to_ready_for_review" {
-				return "", "", errors.New("skipped")
-			}
-			if item.IsDraftPullRequestEnabled() == false && prReadyState == "draft" {
-				return "", "", errors.New("skipped")
-			}
-		}
-
 		if match {
 			return item.PipelineID, item.WorkflowID, nil
 		}
