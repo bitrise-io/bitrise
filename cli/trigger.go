@@ -28,7 +28,7 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-		cli.StringFlag{Name: PRReadyState, Usage: "Git pull request ready state"}, //TODO: list values
+		cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 		// cli params used in CI mode
@@ -101,7 +101,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := c.String(PRReadyState)
+	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)

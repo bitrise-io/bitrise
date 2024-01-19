@@ -186,7 +186,7 @@ func Test_NewTrigger(t *testing.T) {
 		config := map[string]interface{}{
 			"config":           configPth,
 			"pr-source-branch": "no_draft_pr",
-			"draft-pr":         true,
+			"pr-ready-state":   "draft",
 			"format":           "json",
 		}
 

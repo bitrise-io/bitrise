@@ -13,7 +13,7 @@ const (
 	PushBranchKey     = "push-branch"
 	PRSourceBranchKey = "pr-source-branch"
 	PRTargetBranchKey = "pr-target-branch"
-	PRReadyState      = "pr-ready-state"
+	PRReadyStateKey   = "pr-ready-state"
 
 	ConfigKey      = "config"
 	InventoryKey   = "inventory"
@@ -60,7 +60,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-				cli.StringFlag{Name: PRReadyState, Usage: "Git pull request ready state"}, //TODO: list values
+				cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},

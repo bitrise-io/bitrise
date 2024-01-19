@@ -90,7 +90,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := c.String(PRReadyState)
+	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
