@@ -52,7 +52,7 @@ func Test_Docker(t *testing.T) {
 				"--password [REDACTED]",
 			},
 		},
-		"docker create fails when alread-used port is provided": {
+		"docker create fails when already-used port is provided": {
 			configPath:   "docker_create_bitrise.yml",
 			workflowName: "docker-create-fails-invalid-port",
 			requireErr:   true,

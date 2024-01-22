@@ -13,7 +13,7 @@ workflows:
   docker-pull-fails-404:
     title: Expected to fail docker pull
     container:
-      image: nowhere/noimage:latest
+      image: localhost.hu/noimage:3cb48a46a66e
     steps:
     - script:
         title: Should fail

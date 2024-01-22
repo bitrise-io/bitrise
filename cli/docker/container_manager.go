@@ -106,7 +106,7 @@ func (dl *DockerLogger) Redact(s string) (string, error) {
 func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logger.Warnf("Docker client failed to initialize (possibly running on unsupported stack): %s", err)
+		logger.Warnf("Docker client failed to initialize (possibly running on unsupported environment): %s", err)
 	}
 
 	return &ContainerManager{
@@ -153,6 +153,8 @@ func (cm *ContainerManager) StartWorkflowContainer(
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	containerName := fmt.Sprintf("workflow-%s", workflowID)
+
+	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 
 	runningContainer, err := cm.runContainer(container, containerCreateOptions{

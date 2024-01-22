@@ -593,17 +593,19 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	err := tools.EnvmanInit(configs.InputEnvstorePath, true)
-	if err != nil {
-		log.Debugf("Couldn't initialize envman.")
-	}
-	err = tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments)
-	if err != nil {
-		log.Debugf("Couldn't add envs.")
-	}
-	envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-	if err != nil {
-		log.Debugf("Couldn't read envs from envman.")
+	envList := envmanModels.EnvsJSONListModel{}
+	if workflow.Container.Image != "" || len(workflow.Services) > 0 {
+		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
+			log.Debugf("Couldn't initialize envman.")
+		}
+		if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
+			log.Debugf("Couldn't add envs.")
+		}
+
+		var err error
+		if envList, err = tools.EnvmanReadEnvList(configs.InputEnvstorePath); err != nil {
+			log.Debugf("Couldn't read envs from envman.")
+		}
 	}
 
 	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID, envList)

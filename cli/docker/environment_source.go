@@ -12,6 +12,14 @@ type DockerEnvironmentSource struct {
 	Logger log.Logger
 }
 
+// GetEnvironment ...
+// Where envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, env.EnvironmentSource) is called,
+// and we are in the context of using containers, we cannot use the default env.EnvironmentSource
+// implementation, as it promotes all the envs from the host to the container, which is not what we want.
+// for instance, we may have envs inherited from Bitrise stacks, altering default behavior of certain
+// containers (for instance Java).
+// Instead, we have our own implementation, filtering for envs that are whitelisted, and that are the envs
+// starting with BITRISE_, and additionally the PATH, PR, and ENVMAN_ENVSTORE_PATH envs.
 func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
 	passthroughEnvsList = append(passthroughEnvsList, "PATH", "PR", "ENVMAN_ENVSTORE_PATH")
