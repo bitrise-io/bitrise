@@ -22,7 +22,7 @@ type DockerEnvironmentSource struct {
 // starting with BITRISE_, and additionally the PATH, PR, CI and ENVMAN_ENVSTORE_PATH envs.
 func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
-	passthroughEnvsList = append(passthroughEnvsList, "PATH", "PR", "CI", "ENVMAN_ENVSTORE_PATH")
+	passthroughEnvsList = append(passthroughEnvsList, "PR", "CI", "ENVMAN_ENVSTORE_PATH")
 	dockerPassthroughEnvsMap := make(map[string]bool)
 	for _, k := range passthroughEnvsList {
 		dockerPassthroughEnvsMap[k] = true
