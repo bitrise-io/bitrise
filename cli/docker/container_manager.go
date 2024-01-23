@@ -34,7 +34,7 @@ type containerCreateOptions struct {
 }
 
 func (rc *RunningContainer) Destroy() error {
-	_, err := command.New("docker", "rm", "--force", rc.Name).RunAndReturnTrimmedCombinedOutput()
+	_, err := command.New("docker", "rm", "--force", "--volumes", rc.Name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return fmt.Errorf("remove docker container: %w", err)
 	}
