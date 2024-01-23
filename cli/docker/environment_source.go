@@ -36,10 +36,12 @@ func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 	// From https://pubs.opengroup.org/onlinepubs/9699919799/:
 	// > "There is no meaning associated with the order of strings in the environment.
 	// > If more than one string in an environment of a process has the same name, the consequences are undefined."
+	des.Logger.Infof("**** all envs: %+v", processEnvs)
 	for _, env := range processEnvs {
 		key, value := des.splitEnv(env)
 		_, allowed := dockerPassthroughEnvsMap[key]
 		if !strings.HasPrefix(key, "BITRISE") && (key == "" || !allowed) {
+			des.Logger.Infof("**** disallowed env: %s", key)
 			continue
 		}
 
