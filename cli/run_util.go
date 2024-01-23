@@ -616,7 +616,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 	defer func() {
 		for _, container := range serviceContainers {
 			if err := container.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for service: %s", container.Name)
+				log.Errorf("Attempted to stop the docker container for service: %s: %w", container.Name, err.Error())
 			}
 		}
 	}()
@@ -640,7 +640,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 			if err := runningContainer.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for container: %s: %s", workflow.Title, err.Error())
+				log.Errorf("Attempted to stop the docker container for workflow: %s: %w", workflow.Title, err.Error())
 			}
 		}()
 	}

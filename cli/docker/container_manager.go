@@ -53,6 +53,8 @@ func (rc *RunningContainer) ExecuteCommandArgs(envs []string) []string {
 	return args
 }
 
+const bitriseNetwork = "bitrise"
+
 type ContainerManager struct {
 	logger             DockerLogger
 	workflowContainers map[string]*RunningContainer
@@ -123,7 +125,6 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 func (cm *ContainerManager) Login(container models.Container, envs map[string]string) error {
 	if container.Credentials.Username != "" && container.Credentials.Password != "" {
 		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
-		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
 		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
 		args := []string{"login", "--username", container.Credentials.Username, "--password", resolvedPassword}
@@ -152,7 +153,7 @@ func (cm *ContainerManager) StartWorkflowContainer(
 ) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	containerName := fmt.Sprintf("workflow-%s", workflowID)
+	containerName := fmt.Sprintf("bitrise-workflow-%s", workflowID)
 
 	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
@@ -334,7 +335,7 @@ func (cm *ContainerManager) createContainer(
 ) error {
 	dockerRunArgs := []string{"create",
 		"--platform", "linux/amd64",
-		"--network=bitrise",
+		fmt.Sprintf("--network=%s", bitriseNetwork),
 	}
 
 	for _, o := range options.volumes {
@@ -520,7 +521,7 @@ func (cm *ContainerManager) healthCheckContainer(ctx context.Context, container 
 
 func (cm *ContainerManager) ensureNetwork() error {
 	networks, err := cm.client.NetworkList(context.Background(), types.NetworkListOptions{
-		Filters: filters.NewArgs(filters.Arg("name", "bitrise")),
+		Filters: filters.NewArgs(filters.Arg("name", bitriseNetwork)),
 	})
 	if err != nil {
 		return fmt.Errorf("list networks: %w", err)
@@ -530,7 +531,7 @@ func (cm *ContainerManager) ensureNetwork() error {
 		return nil
 	}
 
-	if _, err := cm.client.NetworkCreate(context.Background(), "bitrise", types.NetworkCreate{}); err != nil {
+	if _, err := cm.client.NetworkCreate(context.Background(), bitriseNetwork, types.NetworkCreate{}); err != nil {
 		return fmt.Errorf("create network: %w", err)
 	}
 
