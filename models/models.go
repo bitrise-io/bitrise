@@ -44,6 +44,8 @@ type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
+	Container    Container                           `json:"container,omitempty" yaml:"container,omitempty"`
+	Services     map[string]Container                `json:"services,omitempty" yaml:"services,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
@@ -52,6 +54,20 @@ type WorkflowModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
 	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
+}
+
+type DockerCredentials struct {
+	Username string `json:"username,omitempty" yaml:"username,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
+	Server   string `json:"server,omitempty" yaml:"server,omitempty"`
+}
+
+type Container struct {
+	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
+	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 // AppModel ...

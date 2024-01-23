@@ -15,6 +15,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/cli/docker"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/logwriter"
@@ -387,7 +388,10 @@ func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData models.StepIDData,
 	stepAbsDirPath, bitriseSourceDir string,
-	secrets []string) (int, error) {
+	secrets []string,
+	workflow models.WorkflowModel,
+	workflowID string,
+) (int, error) {
 
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
@@ -426,18 +430,45 @@ func (r WorkflowRunner) executeStep(
 	logger := log.NewLogger(opts)
 	stdout := logwriter.NewLogWriter(logger)
 
-	name := cmdArgs[0]
+	var name string
 	var args []string
-	if len(cmdArgs) > 1 {
-		args = cmdArgs[1:]
+	var envs []string
+
+	if workflow.Container.Image != "" {
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.DockerEnvironmentSource{
+			Logger: logger,
+		})
+		if err != nil {
+			return 1, fmt.Errorf("failed to read command environment: %w", err)
+		}
+
+		name = "docker"
+		container := r.dockerManager.GetWorkflowContainer(workflowID)
+		if container == nil {
+			return 1, fmt.Errorf("Docker container does not exist")
+		}
+
+		args = container.ExecuteCommandArgs(envs)
+		args = append(args, cmdArgs...)
+
+		cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+
+		logger.Infof("Step is running in container: %s", workflow.Container.Image)
+		return cmd.Run()
 	}
 
-	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
 
+	name = cmdArgs[0]
+	if len(cmdArgs) > 1 {
+		args = cmdArgs[1:]
+	}
+
 	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
+
 	return cmd.Run()
 }
 
@@ -447,7 +478,10 @@ func (r WorkflowRunner) runStep(
 	stepIDData models.StepIDData,
 	stepDir string,
 	environments []envmanModels.EnvironmentItemModel,
-	secrets []string) (int, []envmanModels.EnvironmentItemModel, error) {
+	secrets []string,
+	workflow models.WorkflowModel,
+	workflowID string,
+) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	// Check & Install Step Dependencies
@@ -484,7 +518,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets, workflow, workflowID); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -531,6 +565,15 @@ func (r WorkflowRunner) runStep(
 	return 0, updatedStepOutputs, nil
 }
 
+type DockerManager interface {
+	Login(models.Container, map[string]string) error
+	StartWorkflowContainer(models.Container, string, map[string]string) (*docker.RunningContainer, error)
+	StartServiceContainers(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
+	GetWorkflowContainer(string) *docker.RunningContainer
+	GetServiceContainers(string) []*docker.RunningContainer
+	DestroyAllContainers() error
+}
+
 func (r WorkflowRunner) activateAndRunSteps(
 	plan models.WorkflowExecutionPlan,
 	workflow models.WorkflowModel,
@@ -540,12 +583,66 @@ func (r WorkflowRunner) activateAndRunSteps(
 	secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool,
 	tracker analytics.Tracker,
-	workflowIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
+	workflowIDProperties coreanalytics.Properties,
+	workflowID string,
+) models.BuildRunResultsModel {
 	log.Debug("[BITRISE_CLI] - Activating and running steps")
 
 	if len(workflow.Steps) == 0 {
 		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", workflow.Title)
 		return buildRunResults
+	}
+
+	envList := envmanModels.EnvsJSONListModel{}
+	if workflow.Container.Image != "" || len(workflow.Services) > 0 {
+		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
+			log.Debugf("Couldn't initialize envman.")
+		}
+		if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
+			log.Debugf("Couldn't add envs.")
+		}
+
+		var err error
+		if envList, err = tools.EnvmanReadEnvList(configs.InputEnvstorePath); err != nil {
+			log.Debugf("Couldn't read envs from envman.")
+		}
+	}
+
+	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID, envList)
+	if err != nil {
+		log.Errorf("❌ Some services failed to start properly!")
+	}
+
+	defer func() {
+		for _, container := range serviceContainers {
+			if err := container.Destroy(); err != nil {
+				log.Errorf("Attempted to stop the docker container for service: %s: %w", container.Name, err.Error())
+			}
+		}
+	}()
+
+	if workflow.Container.Image != "" {
+		log.Infof("ℹ️ Running workflow in docker container: %s", workflow.Container.Image)
+
+		if err := r.dockerManager.Login(workflow.Container, envList); err != nil {
+			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
+		}
+
+		runningContainer, err := r.dockerManager.StartWorkflowContainer(workflow.Container, workflowID, envList)
+		if err != nil {
+			log.Errorf("Could not start the specified docker image for workflow: %s", workflow.Title)
+		}
+
+		defer func() {
+			if runningContainer == nil {
+				return
+			}
+
+			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
+			if err := runningContainer.Destroy(); err != nil {
+				log.Errorf("Attempted to stop the docker container for workflow: %s: %w", workflow.Title, err.Error())
+			}
+		}()
 	}
 
 	// ------------------------------------------
@@ -805,7 +902,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
-			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues)
+			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, workflow, workflowID)
 
 			if testDirPath != "" {
 				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -878,7 +975,7 @@ func (r WorkflowRunner) runWorkflow(
 	bitrise.PrintRunningWorkflow(workflow.Title)
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflowID, workflow.Title)
 	*environments = append(*environments, workflow.Environments...)
-	results := r.activateAndRunSteps(plan, workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	results := r.activateAndRunSteps(plan, workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties, workflowID)
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	collectToolVersions(tracker)
 	return results

@@ -1,0 +1,19 @@
+services:
+  main-container:
+    container_name: bitrise-main-container
+    build:
+      context: .
+    platform: linux/amd64
+    environment:
+      BITRISE_DOCKER_MOUNT_OVERRIDES: ${HOME}/.ssh:/root/.ssh,${PWD}/_containers/.bitrise:/root/.bitrise,${PWD}:/bitrise/src,${PWD}/_tmp:/bitrise/src/_tmp,/tmp:/tmp
+      SRC_DIR_IN_GOPATH: /bitrise/src
+    volumes:
+    - ${HOME}/.ssh:/root/.ssh
+    - /tmp:/tmp
+    - ../../../_containers/.bitrise:/root/.bitrise
+    - ../../../:/bitrise/src
+    - ../../../_tmp:/bitrise/src/_tmp
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ../../../_local:/usr/local/bundle
+    working_dir: /bitrise/src
+    command: sleep infinity
