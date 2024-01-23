@@ -25,7 +25,7 @@ workflows:
         - content: exit 0
   docker-create-succeeds-with-false-unhealthy-container:
     title: Expected to log error on docker create
-    description: Expected to log error on docker create, because healthcheck are wrong, however execution should continue
+    description: Expected to log error on docker create, because healthchecks are wrong, however execution should continue
     container:
       image: frolvlad/alpine-bash:latest
       options: --health-cmd "redis-cli ping" --health-interval 1s --health-timeout 3s --health-retries 2

@@ -74,7 +74,7 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-create-succeeds-with-false-unhealthy-container",
 			requireErr:   false,
 			requireLogs: []string{
-				"Container (workflow-docker-create-succeeds-with-false-unhealthy-container) is unhealthy...",
+				"Container (bitrise-workflow-docker-create-succeeds-with-false-unhealthy-container) is unhealthy...",
 				"Step is running in container: frolvlad/alpine-bash:latest",
 			},
 		},
