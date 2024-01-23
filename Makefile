@@ -1,3 +1,6 @@
+# this is intended to be used only for local testing of container related integration tests
+# everything else CI related is in the bitrise.yml
+
 DOCKER_COMPOSE_FILE=_tests/integration/local_docker_test_environment/docker-compose.yml
 SRC_DIR_IN_GOPATH=/bitrise/src
 
