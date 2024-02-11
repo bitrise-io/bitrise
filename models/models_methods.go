@@ -779,7 +779,7 @@ func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepM
 // --- WorkflowIDData
 
 // GetWorkflowIDFromListItemModel ...
-func GetWorkflowIDFromListItemModel(workflowListItem WorkflowListItemModel) (string, error) {
+func GetWorkflowIDFromListItemModel(workflowListItem StageWorkflowListItemModel) (string, error) {
 	if len(workflowListItem) > 1 {
 		return "", errors.New("WorkflowListItem contains more than 1 key-value pair")
 	}
