@@ -6,12 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 // ----------------------------
@@ -643,7 +642,7 @@ func TestGetWorkflowIDFromListItemModel(t *testing.T) {
 			"workflow1": workflowData,
 		}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.NoError(t, err)
 		require.Equal(t, "workflow1", id)
 	}
@@ -655,7 +654,7 @@ func TestGetWorkflowIDFromListItemModel(t *testing.T) {
 			"workflow2": workflowData,
 		}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -664,7 +663,7 @@ func TestGetWorkflowIDFromListItemModel(t *testing.T) {
 	{
 		workflowListItem := StageWorkflowListItemModel{}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -682,7 +681,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 			"stage1": stageData,
 		}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.NoError(t, err)
 		require.Equal(t, "stage1", id)
 	}
@@ -694,7 +693,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 			"stage2": stageData,
 		}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -703,7 +702,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 	{
 		stageListItem := StageListItemModel{}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
