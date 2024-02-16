@@ -38,27 +38,27 @@ func TestValidateConfig(t *testing.T) {
 			},
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow1": WorkflowModel{}},
-						WorkflowListItemModel{"workflow2": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						StageWorkflowListItemModel{"workflow2": StageWorkflowModel{}},
 					},
 				},
 				"stage2": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow3": WorkflowModel{}},
-						WorkflowListItemModel{"workflow4": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow3": StageWorkflowModel{}},
+						StageWorkflowListItemModel{"workflow4": StageWorkflowModel{}},
 					},
 				},
 				"stage3": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow5": WorkflowModel{}},
-						WorkflowListItemModel{"workflow6": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow5": StageWorkflowModel{}},
+						StageWorkflowListItemModel{"workflow6": StageWorkflowModel{}},
 					},
 				},
 				"stage4": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow7": WorkflowModel{}},
-						WorkflowListItemModel{"workflow8": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow7": StageWorkflowModel{}},
+						StageWorkflowListItemModel{"workflow8": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -105,8 +105,8 @@ func TestValidateConfig(t *testing.T) {
 			},
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -163,8 +163,8 @@ func TestValidateConfig(t *testing.T) {
 			},
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -197,8 +197,8 @@ func TestValidateConfig(t *testing.T) {
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
 				"st/id": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow1": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -218,7 +218,7 @@ func TestValidateConfig(t *testing.T) {
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{},
+					Workflows: []StageWorkflowListItemModel{},
 				},
 			},
 		}
@@ -248,8 +248,8 @@ func TestValidateConfig(t *testing.T) {
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"workflow2": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow2": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -269,8 +269,8 @@ func TestValidateConfig(t *testing.T) {
 			FormatVersion: "12",
 			Stages: map[string]StageModel{
 				"stage1": StageModel{
-					Workflows: []WorkflowListItemModel{
-						WorkflowListItemModel{"_utility_workflow": WorkflowModel{}},
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"_utility_workflow": StageWorkflowModel{}},
 					},
 				},
 			},
@@ -634,36 +634,36 @@ func TestGetInputByKey(t *testing.T) {
 // --- WorkflowIDData
 
 func TestGetWorkflowIDFromListItemModel(t *testing.T) {
-	workflowData := WorkflowModel{}
+	workflowData := StageWorkflowModel{}
 
 	t.Log("valid workflowlist item")
 	{
-		workflowListItem := WorkflowListItemModel{
+		workflowListItem := StageWorkflowListItemModel{
 			"workflow1": workflowData,
 		}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.NoError(t, err)
 		require.Equal(t, "workflow1", id)
 	}
 
 	t.Log("invalid workflowlist item - more than 1 workflow")
 	{
-		workflowListItem := WorkflowListItemModel{
+		workflowListItem := StageWorkflowListItemModel{
 			"workflow1": workflowData,
 			"workflow2": workflowData,
 		}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
 
 	t.Log("invalid workflowlist item - no workflow")
 	{
-		workflowListItem := WorkflowListItemModel{}
+		workflowListItem := StageWorkflowListItemModel{}
 
-		id, err := GetWorkflowIDFromListItemModel(workflowListItem)
+		id, err := getWorkflowID(workflowListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -681,7 +681,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 			"stage1": stageData,
 		}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.NoError(t, err)
 		require.Equal(t, "stage1", id)
 	}
@@ -693,7 +693,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 			"stage2": stageData,
 		}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -702,7 +702,7 @@ func TestGetStageIDFromListItemModel(t *testing.T) {
 	{
 		stageListItem := StageListItemModel{}
 
-		id, err := GetStageIDFromListItemModel(stageListItem)
+		id, err := getStageID(stageListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
