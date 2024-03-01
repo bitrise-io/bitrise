@@ -30,14 +30,6 @@ func getGoEnv(cmdRunner commandRunner, goBinaryPath string, envKey string) (stri
 	return goEnvs[envKey], nil
 }
 
-func isGoPathModeSupported(mode string) bool {
-	if mode == "" || mode == "on" {
-		return false
-	}
-
-	return true
-}
-
 func isGoPathModeStep(projectDir string) bool {
 	goModPath := filepath.Join(projectDir, "go.mod")
 	_, err := os.Stat(goModPath)
