@@ -15,7 +15,6 @@ const (
 	trueEnv = "true"
 )
 
-// StateChecker ...
 type StateChecker interface {
 	Enabled() bool
 	UseAsync() bool
@@ -25,12 +24,10 @@ type stateChecker struct {
 	envRepository env.Repository
 }
 
-// NewStateChecker ...
 func NewStateChecker(repository env.Repository) StateChecker {
 	return stateChecker{envRepository: repository}
 }
 
-// Enabled ...
 func (s stateChecker) Enabled() bool {
 	if s.envRepository.Get(V2DisabledEnvKey) == trueEnv {
 		return false

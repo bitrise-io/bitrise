@@ -1,15 +1,19 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/cli/docker"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -64,9 +68,6 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 		cli.StringFlag{Name: OutputFormatKey, Usage: "Log format. Available values: json, console"},
 
-		// deprecated
-		flPath,
-
 		// should deprecate
 		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
 		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
@@ -74,6 +75,13 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
+	signalInterruptChan := make(chan os.Signal, 1)
+	signal.Notify(signalInterruptChan, syscall.SIGINT, syscall.SIGTERM)
+
+	shouldWaitForCleanup := false
+	cleanupSynchronCtx, cleanupSynchronCancelFunc := context.WithCancel(context.Background())
+	defer cleanupSynchronCancelFunc()
+
 	config, err := processArgs(c)
 	if err != nil {
 		if err == workflowNotSpecifiedErr {
@@ -88,33 +96,93 @@ func run(c *cli.Context) error {
 		failf("Failed to process arguments: %s", err)
 	}
 
-	runner := NewWorkflowRunner(*config)
+	agentConfig, err := setupAgentConfig()
+	if err != nil {
+		failf("Failed to process agent config: %w", err)
+	}
+	if agentConfig != nil && os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
+		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.
+		log.Warn("Bitrise is configured to run in agent mode, but this is a nested execution.")
+		log.Warn("Hooks and directory cleanups won't be executed in this process to avoid running them multiple times.")
+		agentConfig = nil
+	}
+
+	runner := NewWorkflowRunner(*config, agentConfig)
+
+	go func() {
+		<-signalInterruptChan
+		shouldWaitForCleanup = true
+		log.Info("Cancelling bitrise run...")
+		if err := runner.dockerManager.DestroyAllContainers(); err != nil {
+			log.Warnf("Failed to destroy all containers: %s", err)
+		}
+		cleanupSynchronCancelFunc()
+	}()
+
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
+		if shouldWaitForCleanup {
+			<-cleanupSynchronCtx.Done()
+		}
 		if err == workflowRunFailedErr {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
 			os.Exit(exitCode)
 		}
-
 		failf(err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
 	printWorkflowRunStatusMessage(msg)
 	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
+
+	if shouldWaitForCleanup {
+		<-cleanupSynchronCtx.Done()
+	}
+
 	os.Exit(0)
 
 	return nil
 }
 
-type WorkflowRunner struct {
-	config RunConfig
+func setupAgentConfig() (*configs.AgentConfig, error) {
+	if !configs.HasAgentConfig() {
+		return nil, nil
+	}
+
+	configFile := configs.GetAgentConfigPath()
+	config, err := configs.ReadAgentConfig(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("agent config file: %w", err)
+	}
+
+	log.Print()
+	log.Info("Running in agent mode")
+	log.Printf("Config file: %s", configFile)
+
+	if err := registerAgentOverrides(config.BitriseDirs); err != nil {
+		return nil, fmt.Errorf("apply Bitrise dirs: %s", err)
+	}
+
+	return &config, nil
 }
 
-func NewWorkflowRunner(config RunConfig) WorkflowRunner {
-	return WorkflowRunner{config: config}
+type WorkflowRunner struct {
+	config RunConfig
+
+	// agentConfig is only non-nil if the CLI is configured to run in agent mode
+	agentConfig   *configs.AgentConfig
+	dockerManager DockerManager
+}
+
+func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
+	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
+	return WorkflowRunner{
+		config:        config,
+		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts()), stepSecretValues),
+		agentConfig:   agentConfig,
+	}
 }
 
 func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
@@ -133,6 +201,23 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 	if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
+	}
+
+	if r.agentConfig != nil {
+		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
+			return 1, fmt.Errorf("build start hooks: %s", err)
+		}
+		if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildStart); err != nil {
+			return 1, fmt.Errorf("build start dir cleanup: %s", err)
+		}
+		defer func() {
+			if err := runBuildEndHooks(r.agentConfig.Hooks); err != nil {
+				log.Errorf("build end hooks: %s", err)
+			}
+			if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildEnd); err != nil {
+				log.Errorf("build end dir cleanup: %s", err)
+			}
+		}()
 	}
 
 	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
@@ -283,11 +368,6 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		log.Warn("'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)

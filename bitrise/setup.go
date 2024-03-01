@@ -170,7 +170,7 @@ func doSetupBitriseCoreTools() error {
 
 func doSetupOnOSX(isMinimalSetupMode bool) error {
 	log.Print()
-	log.Infof("Doing OS X specific setup")
+	log.Infof("Doing macOS-specific setup")
 	log.Printf("Checking required tools...")
 
 	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {

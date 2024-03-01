@@ -108,19 +108,16 @@ func saveBitriseConfig(config ConfigModel) error {
 	return fileutil.WriteBytesToFile(configPth, bytes)
 }
 
-// DeleteBitriseConfigDir ...
 func DeleteBitriseConfigDir() error {
 	confDirPth := GetBitriseHomeDirPath()
 	return os.RemoveAll(confDirPth)
 }
 
-// EnsureBitriseConfigDirExists ...
 func EnsureBitriseConfigDirExists() error {
 	confDirPth := GetBitriseHomeDirPath()
 	return pathutil.EnsureDirExist(confDirPth)
 }
 
-// CheckIsCLIUpdateCheckRequired ...
 func CheckIsCLIUpdateCheckRequired() bool {
 	config, err := loadBitriseConfig()
 	if err != nil {
@@ -135,7 +132,6 @@ func CheckIsCLIUpdateCheckRequired() bool {
 	return false
 }
 
-// SaveCLIUpdateCheck ...
 func SaveCLIUpdateCheck() error {
 	config, err := loadBitriseConfig()
 	if err != nil {
@@ -147,7 +143,6 @@ func SaveCLIUpdateCheck() error {
 	return saveBitriseConfig(config)
 }
 
-// CheckIsPluginUpdateCheckRequired ...
 func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 	config, err := loadBitriseConfig()
 	if err != nil {
@@ -162,7 +157,6 @@ func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 	return false
 }
 
-// SavePluginUpdateCheck ...
 func SavePluginUpdateCheck(plugin string) error {
 	config, err := loadBitriseConfig()
 	if err != nil {
@@ -178,7 +172,6 @@ func SavePluginUpdateCheck(plugin string) error {
 	return saveBitriseConfig(config)
 }
 
-// CheckIsSetupWasDoneForVersion ...
 func CheckIsSetupWasDoneForVersion(ver string) bool {
 	config, err := loadBitriseConfig()
 	if err != nil {
@@ -187,7 +180,6 @@ func CheckIsSetupWasDoneForVersion(ver string) bool {
 	return (config.SetupVersion == ver)
 }
 
-// SaveSetupSuccessForVersion ...
 func SaveSetupSuccessForVersion(ver string) error {
 	config, err := loadBitriseConfig()
 	if err != nil {

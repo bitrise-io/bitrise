@@ -19,7 +19,7 @@ func toBase64(t *testing.T, str string) string {
 	return string(bytes)
 }
 
-func toJSON(t *testing.T, stringStringMap map[string]string) string {
+func toJSON(t *testing.T, stringStringMap map[string]interface{}) string {
 	bytes, err := json.Marshal(stringStringMap)
 	require.NoError(t, err)
 	return string(bytes)

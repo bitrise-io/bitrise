@@ -28,14 +28,12 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+		cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-
-		// deprecated
-		flPath,
 
 		// should deprecate
 		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
@@ -103,15 +101,11 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
-	deprecatedBitriseConfigPath := c.String(PathKey)
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		log.Warn("'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
@@ -121,7 +115,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tag,
+		pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
@@ -196,8 +190,12 @@ func trigger(c *cli.Context) error {
 		Workflow: workflowToRunID,
 		Secrets:  inventoryEnvironments,
 	}
+	agentConfig, err := setupAgentConfig()
+	if err != nil {
+		failf("Failed to process agent config: %w", err)
+	}
 
-	runner := NewWorkflowRunner(runConfig)
+	runner := NewWorkflowRunner(runConfig, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == workflowRunFailedErr {

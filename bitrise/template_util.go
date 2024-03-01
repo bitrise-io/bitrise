@@ -62,6 +62,9 @@ func EvaluateTemplateToString(expStr string, isCI, isPR bool, buildResults model
 		"enveq": func(key, expectedValue string) bool {
 			return (getEnv(key, envList) == expectedValue)
 		},
+		"envcontain": func(key, subString string) bool {
+			return strings.Contains(getEnv(key, envList), subString)
+		},
 	}
 
 	tmpl := template.New("EvaluateTemplateToBool").Funcs(templateFuncMap)

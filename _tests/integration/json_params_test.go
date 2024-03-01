@@ -1,3 +1,6 @@
+//go:build linux_and_mac
+// +build linux_and_mac
+
 package integration
 
 import (
@@ -12,7 +15,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("run test")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":   configPth,
 			"workflow": "json_params_test_target",
 		}
@@ -24,7 +27,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("run test - param override")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":   configPth,
 			"workflow": "exit_code_test_fail",
 		}
@@ -36,7 +39,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("trigger test")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":  configPth,
 			"pattern": "json_params_test_target",
 		}
@@ -48,7 +51,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("trigger test - param override")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":  configPth,
 			"pattern": "exit_code_test_fail",
 		}
@@ -60,7 +63,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("run test base64")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":   configPth,
 			"workflow": "json_params_test_target",
 		}
@@ -72,7 +75,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("trigger test base64")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":  configPth,
 			"pattern": "json_params_test_target",
 		}
@@ -84,7 +87,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("trigger check test")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":  configPth,
 			"pattern": "json_params_test_target",
 			"format":  "json",
@@ -98,7 +101,7 @@ func Test_JsonParams(t *testing.T) {
 
 	t.Log("trigger check test - param override")
 	{
-		config := map[string]string{
+		config := map[string]interface{}{
 			"config":  configPth,
 			"pattern": "json_params_test_target",
 			"format":  "raw",

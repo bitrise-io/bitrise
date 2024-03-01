@@ -30,13 +30,21 @@ type StageListItemModel map[string]StageModel
 
 // StageModel ...
 type StageModel struct {
-	Title           string                  `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary         string                  `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description     string                  `json:"description,omitempty" yaml:"description,omitempty"`
-	ShouldAlwaysRun bool                    `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
-	AbortOnFail     bool                    `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
-	RunIf           string                  `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Workflows       []WorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	Title           string                       `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary         string                       `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description     string                       `json:"description,omitempty" yaml:"description,omitempty"`
+	ShouldAlwaysRun bool                         `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+	AbortOnFail     bool                         `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           string                       `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Workflows       []StageWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+}
+
+// StageWorkflowListItemModel ...
+type StageWorkflowListItemModel map[string]StageWorkflowModel
+
+// StageWorkflowModel ...
+type StageWorkflowModel struct {
+	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 }
 
 // WorkflowListItemModel ...
@@ -44,6 +52,8 @@ type WorkflowListItemModel map[string]WorkflowModel
 
 // WorkflowModel ...
 type WorkflowModel struct {
+	Container    Container                           `json:"container,omitempty" yaml:"container,omitempty"`
+	Services     map[string]Container                `json:"services,omitempty" yaml:"services,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
@@ -54,6 +64,20 @@ type WorkflowModel struct {
 	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
+type DockerCredentials struct {
+	Username string `json:"username,omitempty" yaml:"username,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
+	Server   string `json:"server,omitempty" yaml:"server,omitempty"`
+}
+
+type Container struct {
+	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
+	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
+}
+
 // AppModel ...
 type AppModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -61,37 +85,6 @@ type AppModel struct {
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
-
-// TriggerEventType ...
-type TriggerEventType string
-
-const (
-	// TriggerEventTypeCodePush ...
-	TriggerEventTypeCodePush TriggerEventType = "code-push"
-	// TriggerEventTypePullRequest ...
-	TriggerEventTypePullRequest TriggerEventType = "pull-request"
-	// TriggerEventTypeTag ...
-	TriggerEventTypeTag TriggerEventType = "tag"
-	// TriggerEventTypeUnknown ...
-	TriggerEventTypeUnknown TriggerEventType = "unknown"
-)
-
-// TriggerMapItemModel ...
-type TriggerMapItemModel struct {
-	PushBranch              string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	Tag                     string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	PipelineID              string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
-	WorkflowID              string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
-
-	// deprecated
-	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
-}
-
-// TriggerMapModel ...
-type TriggerMapModel []TriggerMapItemModel
 
 // BitriseDataModel ...
 type BitriseDataModel struct {

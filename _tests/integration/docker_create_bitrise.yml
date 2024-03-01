@@ -1,0 +1,47 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+workflows:
+  docker-create-fails-invalid-port:
+    title: Expected to fail on docker create, invalid port provided
+    container:
+      image: frolvlad/alpine-bash:latest
+      ports:
+      - 22:22
+    steps:
+    - script:
+        title: Should not run due to prev error
+        inputs:
+        - content: exit 0
+  docker-create-succeeds-valid-port:
+    title: Expected to pass on docker create, valid port provided
+    container:
+      image: frolvlad/alpine-bash:latest
+      ports:
+      - 12341:12341
+    steps:
+    - script:
+        title: Should succeed
+        inputs:
+        - content: exit 0
+  docker-create-succeeds-with-false-unhealthy-container:
+    title: Expected to log error on docker create
+    description: Expected to log error on docker create, because healthchecks are wrong, however execution should continue
+    container:
+      image: frolvlad/alpine-bash:latest
+      options: --health-cmd "redis-cli ping" --health-interval 1s --health-timeout 3s --health-retries 2
+    steps:
+    - script:
+        title: Should succceed
+        inputs:
+        - content: exit 0
+  docker-create-fails-invalid-option:
+    title: Expected to log error on docker create
+    description: Expected to log error on docker create, because healthcheck are wrong, however execution should continue
+    container:
+      image: frolvlad/alpine-bash:latest
+      options: --invalid-option "fail now!"
+    steps:
+    - script:
+        title: Should fail
+        inputs:
+        - content: exit 0

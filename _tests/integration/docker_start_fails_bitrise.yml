@@ -1,0 +1,21 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+workflows:
+  docker-start-fails:
+    before_run:
+    - _build-failing-image
+    title: Expected to fail on docker start, failing image is used
+    container:
+      image: test-failing-image:latest
+    steps:
+    - script:
+        title: Should not run due to prev error
+        inputs:
+        - content: exit 0
+  _build-failing-image:
+    steps:
+    - script:
+        title: Build failing image
+        inputs:
+        - content: |-
+            docker build -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.failing-container .

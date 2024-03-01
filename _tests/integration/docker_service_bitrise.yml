@@ -1,0 +1,41 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+workflows:
+  docker-service-start-fails:
+    before_run:
+    - _build-failing-image
+    services:
+      failing-service:
+        image: test-failing-image
+    steps:
+    - script:
+        title: Should succeed, but services related errors are logged
+        inputs:
+        - content: exit 0
+  docker-service-start-succeeds-after-retries:
+    before_run:
+    - _build-slow-starting-image
+    services:
+      slow-bootin-service:
+        image: test-slow-booting-image
+        options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 16
+    steps:
+    - script:
+        title: Should succeed, but services related errors are logged
+        inputs:
+        - content: exit 0
+
+  _build-failing-image:
+    steps:
+    - script:
+        title: Build failing image
+        inputs:
+        - content: |-
+              docker build -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.failing-container .
+  _build-slow-starting-image:
+    steps:
+    - script:
+        title: Build slow starting image
+        inputs:
+        - content: |-
+              docker build -t test-slow-booting-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.slow-booting-container .

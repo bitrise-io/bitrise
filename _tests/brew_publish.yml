@@ -6,16 +6,16 @@ description: |-
   It might be a good idea to call `brew doctor` as well and
   fix the listed issues if any.
 
-  After this you can call `bitrise run -p brew_publish.yml edit-formula`.
+  After this you can call `bitrise run -c brew_publish.yml edit-formula`.
   This'll open the `bitrise` brew formula in the specified Editor.
 
   Update the tool versions (bitrise, stepman, envman) and save the file.
 
-  Run `bitrise run -p brew_publish.yml reinstall` to make sure the specified
+  Run `bitrise run -c brew_publish.yml reinstall` to make sure the specified
   versions do work.
 
   Last but not least, to run a brew audit and issue checking on the Formula
-  you should call: `bitrise run -p brew_publish.yml check`.
+  you should call: `bitrise run -c brew_publish.yml check`.
 
   *NOTE*: you might have to temporarily remove the GOPATH/bin from your
   PATH while calling `brew test`, as it might conflict with how

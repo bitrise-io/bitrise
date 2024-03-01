@@ -2,9 +2,7 @@ package timeoutcmd
 
 import (
 	"io"
-	"os"
 	"os/exec"
-	"os/signal"
 	"syscall"
 	"time"
 
@@ -62,15 +60,6 @@ func (c *Command) SetStandardIO(in io.Reader, out, err io.Writer) {
 
 // Start starts the command run.
 func (c *Command) Start() error {
-	// setting up notification for signals, so we can have separated logic to end the process
-	interruptChan := make(chan os.Signal)
-	signal.Notify(interruptChan, os.Interrupt, os.Kill)
-	var interrupted bool
-	go func() {
-		<-interruptChan
-		interrupted = true
-	}()
-
 	var hanged <-chan bool
 	if c.hangDetector != nil {
 		c.hangDetector.Start()
@@ -118,10 +107,6 @@ func (c *Command) Start() error {
 
 		return NewNoOutputTimeout(c.hangTimeout)
 	case err := <-done:
-		if interrupted {
-			os.Exit(ExitStatus(err))
-		}
-
 		return err
 	}
 }
