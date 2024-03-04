@@ -199,7 +199,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 }
 
 // CreateBitriseConfigFromCLIParams ...
-func CreateBitriseConfigFrom            CLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
 	warnings := []string{}
 
