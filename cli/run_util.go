@@ -836,7 +836,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			})
 
 			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
-			testDirPath, err := ioutil.TempDir(os.Getenv(configs.BitriseTestDeployDirEnvKey), "test_result")
+			testDirPath, err := os.MkdirTemp(os.Getenv(configs.BitriseTestDeployDirEnvKey), "test_result")
 			if err != nil {
 				log.Errorf("Failed to create test result dir, error: %s", err)
 			}
