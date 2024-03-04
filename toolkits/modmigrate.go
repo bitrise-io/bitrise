@@ -3,7 +3,6 @@ package toolkits
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -55,7 +54,7 @@ func migrateToGoModules(stepAbsDirPath, packageName string) error {
 	goModTemplate := `module %s
 go 1.16`
 	goModContents := fmt.Sprintf(goModTemplate, packageName)
-	if err := ioutil.WriteFile(filepath.Join(stepAbsDirPath, "go.mod"), []byte(goModContents), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(stepAbsDirPath, "go.mod"), []byte(goModContents), 0600); err != nil {
 		return fmt.Errorf("failed to write go.mod file: %v", err)
 	}
 

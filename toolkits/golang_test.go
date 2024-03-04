@@ -2,7 +2,6 @@ package toolkits
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -180,12 +179,11 @@ func Test_goBuildStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stepDir, err := ioutil.TempDir("", "")
-			require.NoError(t, err, "failed to create temp dir")
+			stepDir := t.TempDir()
 
 			goModPath := filepath.Join(stepDir, "go.mod")
 			if tt.isGoModStep {
-				err := ioutil.WriteFile(goModPath, []byte{}, 0600)
+				err := os.WriteFile(goModPath, []byte{}, 0600)
 				require.NoError(t, err, "failed to create file")
 			}
 
@@ -195,7 +193,7 @@ func Test_goBuildStep(t *testing.T) {
 				GOROOT:       "/goroot",
 			}
 
-			err = goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath)
+			err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath)
 
 			require.NoError(t, err, "goBuildStep()")
 			require.Equal(t, tt.wantCmds, mockRunner.cmds, "goBuildStep() run commands do not match")
@@ -216,7 +214,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 		b.Fatalf("Failed to select an appropriate Go installation for compiling the Step")
 	}
 
-	stepDir, err := ioutil.TempDir("", "")
+	stepDir := b.TempDir()
 	require.NoError(b, err)
 
 	defer func() {
@@ -224,7 +222,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	outputDir, err := ioutil.TempDir("", "")
+	outputDir := b.TempDir()
 	require.NoError(b, err)
 
 	defer func() {
@@ -247,7 +245,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 			b.Setenv("GO111MODULE", mode)
 
 			for i := 0; i < b.N; i++ {
-				stepPerTestDir, err := ioutil.TempDir("", "")
+				stepPerTestDir := b.TempDir()
 				require.NoError(b, err)
 
 				defer func() {
