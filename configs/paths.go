@@ -26,9 +26,9 @@ const (
 	BitriseSourceDirEnvKey     = "BITRISE_SOURCE_DIR"
 	BitriseDeployDirEnvKey     = "BITRISE_DEPLOY_DIR"
 	BitriseTestDeployDirEnvKey = "BITRISE_TEST_DEPLOY_DIR"
+
 	// BitrisePerStepTestResultDirEnvKey is a unique subdirectory in BITRISE_TEST_DEPLOY_DIR for each step run, steps should place test reports and attachments into this directory
 	BitrisePerStepTestResultDirEnvKey = "BITRISE_TEST_RESULT_DIR"
-	BitriseTmpDirEnvKey               = "BITRISE_TMP_DIR"
 	BitriseHtmlReportDirEnvKey        = "BITRISE_HTML_REPORT_DIR"
 )
 
@@ -183,18 +183,6 @@ func InitPaths() error {
 
 		if err := os.Setenv(BitriseTestDeployDirEnvKey, testsDir); err != nil {
 			return fmt.Errorf("Failed to set %s, error: %s", BitriseTestDeployDirEnvKey, err)
-		}
-	}
-
-	//BITRISE_TMP_DIR
-	if os.Getenv(BitriseTmpDirEnvKey) == "" {
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("tmp")
-		if err != nil {
-			return fmt.Errorf("Failed to set tmp dir, error: %s", err)
-		}
-
-		if err := os.Setenv(BitriseTmpDirEnvKey, tmpDir); err != nil {
-			return fmt.Errorf("Failed to set BITRISE_TMP_DIR, error: %s", err)
 		}
 	}
 
