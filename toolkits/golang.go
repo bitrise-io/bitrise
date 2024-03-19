@@ -20,7 +20,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
-	"github.com/bitrise-io/gows/gows"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -256,18 +255,6 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 
 	if isGoPathModeStep(stepAbsDirPath) {
 		log.Debugf("[Go deps] Step requires GOPATH mode")
-		// Go 1.17 will ignore GO111MODULE (https://blog.golang.org/go116-module-changes)
-		// GO111MODULE needs to be set to "on" when GOPATH is no longer supported.
-		// If GO111MODULE is not set, will be handled as it was "on".
-		mode, err := getGoEnv(cmdRunner, goConfig.GoBinaryPath, "GO111MODULE")
-		if err != nil {
-			log.Warnf("[Go deps] Could not determine if GOPATH mode is supported: %v", err)
-		}
-
-		log.Debugf("[Go deps] GO111MODULE='%s'", mode)
-		if isGoPathModeSupported(mode) {
-			return goBuildInGoPathMode(cmdRunner, goConfig, packageName, stepAbsDirPath, outputBinPath)
-		}
 
 		log.Debugf("[Go deps] Migrating Step to Go modules as Go installation does not support GOPATH mode")
 		if err := migrateToGoModules(stepAbsDirPath, packageName); err != nil {
@@ -286,36 +273,6 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 	buildCmd := cmdBuilder.goBuildInModuleMode(stepAbsDirPath, outputBinPath)
 	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
-	}
-
-	return nil
-}
-
-func goBuildInGoPathMode(cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, srcPath, outputBinPath string) error {
-	workspaceRootPath, err := pathutil.NormalizedOSTempDirPath("bitrise-go-toolkit")
-	if err != nil {
-		return fmt.Errorf("Failed to create root directory of isolated workspace, error: %s", err)
-	}
-
-	fullPackageWorkspacePath := filepath.Join(workspaceRootPath, "src", packageName)
-	if err := gows.CreateOrUpdateSymlink(srcPath, fullPackageWorkspacePath); err != nil {
-		return fmt.Errorf("Failed to create Project->Workspace symlink, error: %s", err)
-	}
-
-	cmd := gows.CreateCommand(workspaceRootPath, workspaceRootPath, goConfig.GoBinaryPath, "build", "-o", outputBinPath, packageName)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	cmd.Stdin = nil
-	cmd.Env = append(cmd.Env, "GOROOT="+goConfig.GOROOT)
-
-	buildCmd := command.NewWithCmd(cmd)
-
-	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
-		return fmt.Errorf("Failed to install package, error: %s", err)
-	}
-
-	if err := os.RemoveAll(workspaceRootPath); err != nil {
-		return fmt.Errorf("Failed to delete temporary isolated workspace, error: %s", err)
 	}
 
 	return nil
