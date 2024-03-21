@@ -448,8 +448,8 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, tt.triggerMapItem.String(false))
-			require.Equal(t, tt.wantWithPrintTarget, tt.triggerMapItem.String(true))
+			require.Equal(t, tt.want, tt.triggerMapItem.String())
+			require.Equal(t, tt.wantWithPrintTarget, tt.triggerMapItem.String())
 		})
 	}
 }
@@ -608,7 +608,7 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			warns, err := tt.triggerMapItem.Validate(tt.workflows, tt.pipelines)
+			warns, err := tt.triggerMapItem.Validate(0, tt.workflows, tt.pipelines)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {

@@ -8,16 +8,17 @@ type TriggerMapModel []TriggerMapItemModel
 
 func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]string, error) {
 	var warnings []string
-	for _, item := range triggerMap {
-		warns, err := item.Validate(workflows, pipelines)
+
+	if err := triggerMap.checkDuplicatedTriggerMapItems(); err != nil {
+		return warnings, err
+	}
+
+	for idx, item := range triggerMap {
+		warns, err := item.Validate(idx, workflows, pipelines)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err
 		}
-	}
-
-	if err := triggerMap.checkDuplicatedTriggerMapItems(); err != nil {
-		return warnings, err
 	}
 
 	return warnings, nil
@@ -38,17 +39,17 @@ func (triggerMap TriggerMapModel) FirstMatchingTarget(pushBranch, prSourceBranch
 }
 
 func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
-	items := make(map[string]struct{})
+	items := make(map[string]int)
 
-	for _, triggerItem := range triggerMap {
-		content := triggerItem.String(false)
+	for idx, triggerItem := range triggerMap {
+		itemStr := triggerItem.String()
 
-		_, ok := items[content]
+		storedItemIdx, ok := items[itemStr]
 		if ok {
-			return fmt.Errorf("duplicated trigger item found (%s)", content)
+			return fmt.Errorf("the %d. trigger item duplicates the %d. trigger item", idx+1, storedItemIdx)
 		}
 
-		items[content] = struct{}{}
+		items[itemStr] = idx
 	}
 
 	return nil
