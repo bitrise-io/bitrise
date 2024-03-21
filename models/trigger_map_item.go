@@ -50,6 +50,7 @@ type TriggerMapItemModel struct {
 	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// Code Push Item conditions
+	// TODO: introduce regex values
 	PushBranch    string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
 	CommitMessage string `json:"commit_message" yaml:"commit_message"`
 	ChangedFiles  string `json:"changed_files" yaml:"changed_files"`
@@ -87,6 +88,8 @@ func (triggerItem TriggerMapItemModel) Validate(idx int, workflows, pipelines []
 			return warnings, err
 		}
 	}
+
+	// TODO: validate condition values (regex or string literal)
 
 	return warnings, nil
 }
