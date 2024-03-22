@@ -141,7 +141,6 @@ func Test_goBuildStep(t *testing.T) {
 				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "on"}`,
 			},
 			wantCmds: []string{
-				`go "env" "-json" "GO111MODULE"`,
 				`go "build" "-mod=vendor" "-o" "/output"`,
 			},
 			wantGoMod: true,
@@ -156,24 +155,9 @@ func Test_goBuildStep(t *testing.T) {
 				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": ""}`,
 			},
 			wantCmds: []string{
-				`go "env" "-json" "GO111MODULE"`,
 				`go "build" "-mod=vendor" "-o" "/output"`,
 			},
 			wantGoMod: true,
-		},
-		{
-			name: "GOPATH step, GO111MODULES=auto -> Run in GOPATH mode",
-			args: args{
-				packageName:   "github.com/bitrise-steplib/my-step",
-				outputBinPath: "/output",
-			},
-			mockOutputs: map[string]string{
-				`go "env" "-json" "GO111MODULE"`: `{"GO111MODULE": "auto"}`,
-			},
-			wantCmds: []string{
-				`go "env" "-json" "GO111MODULE"`,
-				`go "build" "-o" "/output" "github.com/bitrise-steplib/my-step"`,
-			},
 		},
 	}
 

@@ -835,16 +835,26 @@ func (r WorkflowRunner) activateAndRunSteps(
 				"BITRISE_STEP_SOURCE_DIR": stepDir,
 			})
 
-			// ensure a new testDirPath and if created successfuly then attach it to the step process by and env
-			testDirPath, err := os.MkdirTemp(os.Getenv(configs.BitriseTestDeployDirEnvKey), "test_result")
+			testDeployDir := os.Getenv(configs.BitriseTestDeployDirEnvKey)
+			// If testDeployDir is empty, MkdirTemp() will use the default temp dir. But if it points to a path,
+			// we have to create it first.
+			if testDeployDir != "" {
+				err = os.MkdirAll(testDeployDir, 0755)
+				if err != nil {
+					log.Warnf("Failed to create %s, error: %s", configs.BitriseTestDeployDirEnvKey, err)
+					testDeployDir = ""
+				}
+			}
+			stepTestDir, err := os.MkdirTemp(testDeployDir, "step_test_result")
+
 			if err != nil {
-				log.Errorf("Failed to create test result dir, error: %s", err)
+				log.Errorf("Failed to create per-step test result dir: %s", err)
 			}
 
-			if testDirPath != "" {
+			if stepTestDir != "" {
 				// managed to create the test dir, set the env for it for the next step run
 				additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
-					configs.BitrisePerStepTestResultDirEnvKey: testDirPath,
+					configs.BitrisePerStepTestResultDirEnvKey: stepTestDir,
 				})
 			}
 
@@ -903,8 +913,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, workflow, workflowID)
 
-			if testDirPath != "" {
-				if err := addTestMetadata(testDirPath, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
+			if stepTestDir != "" {
+				if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
 					log.Errorf("Failed to normalize test result dir, error: %s", err)
 				}
 			}

@@ -10,7 +10,6 @@ github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316/go.mod h1:L4WQyg
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19 h1:zP9oZRZA9JGPELjBcWSzo/nd8g7apc7EBd7KZHHFdvs=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19/go.mod h1:/ueNOKnsjcUrlt8Ck75WRNspL7E6nAAylvl9oGJtYio=
 github.com/bitrise-io/go-utils v0.0.0-20200224122728-e212188d99b4/go.mod h1:tTEsKvbz1LbzuN/KpVFHXnLtcAPdEgIdM41s0lL407s=
-github.com/bitrise-io/go-utils v0.0.0-20210505121718-07411d72e36e/go.mod h1:nhdaDQFvaMny1CugVV6KjK92/q97ENo0RuKSW5I4fbA=
 github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils v1.0.11 h1:NJ9rRWif4C6nhdh/v6Y/sJZU1UJ+yj0mDgnxsDr71ho=
 github.com/bitrise-io/go-utils v1.0.11/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
@@ -20,8 +19,6 @@ github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zA
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN9g1FQ8W7nXxQAG7iwq1Cw+mUk5S9A=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef/go.mod h1:27ldH2bkCdYN5CEJ6x92EK+gkd5EcDBkA7dMrSKQFYU=
-github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88 h1:HObzyO+BJrTSLqxSUHnik0FS1lOHPmtqXLP0doAsE1g=
-github.com/bitrise-io/gows v0.0.0-20211005113107-14f65e686b88/go.mod h1:3Cp9ceJ8wHl1Av6oEE2ff1iWaYLliQuD+oaNdyM0NWQ=
 github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58 h1:xrEcHh9p9ZD/tEJLxv3dc/x4gS+GUsr/c1rVnkW8A6w=
 github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58/go.mod h1:4BBUXFxB5UlF/tZHXrNFjAy9yNvjZ7Lf/TeIpMwjsow=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
@@ -57,7 +54,6 @@ github.com/hashicorp/go-retryablehttp v0.7.1 h1:sUiuQAnLlbvmExtFQs72iFW/HXeUn8Z1
 github.com/hashicorp/go-retryablehttp v0.7.1/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-version v1.4.0 h1:aAQzgqIrRKRa7w75CKpbBxYsmUoPjzVm1W59ca1L0J4=
 github.com/hashicorp/go-version v1.4.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
-github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
@@ -88,7 +84,6 @@ github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMB
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
-github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.3.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
@@ -103,7 +98,6 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/urfave/cli v1.21.0/go.mod h1:lxDj6qX9Q6lWQxIrbrT0nwecwUtRnhVZAJjJZrVUZZQ=
 github.com/urfave/cli v1.22.5 h1:lNq9sAHXK2qfdI8W+GRItjCEkI+2oR4d+MEHy1CKXoU=
 github.com/urfave/cli v1.22.5/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
-github.com/whilp/git-urls v1.0.0/go.mod h1:J16SAmobsqc3Qcy98brfl5f5+e0clUvg1krgwk/qCfE=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
@@ -167,7 +161,6 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
-gopkg.in/viktorbenei/cobra.v0 v0.0.0-20160704194906-5513220bc3d9/go.mod h1:ES58JZUprnB7l7btSIgwT2KtWLFz7nleq84TF6wsCjg=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
