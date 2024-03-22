@@ -88,15 +88,6 @@ var (
 			},
 		},
 		{
-			Name:   "normalize",
-			Usage:  "Normalize the bitrise configuration.",
-			Action: normalize,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-			},
-		},
-		{
 			Name:    "step-info",
 			Aliases: []string{"i"},
 			Usage:   "Provides information (step ID, last version, given version) about specified step.",

@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -13,7 +13,7 @@ func TestReadAgentConfig(t *testing.T) {
 	t.Setenv("BITRISE_BUILD_SLUG", "80b66786-d011-430f-9c68-00e9416a7325")
 	tempDir := t.TempDir()
 	t.Setenv("HOOKS_DIR", tempDir)
-	err := ioutil.WriteFile(filepath.Join(tempDir, "cleanup.sh"), []byte("echo cleanup.sh"), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, "cleanup.sh"), []byte("echo cleanup.sh"), 0644)
 	require.NoError(t, err)
 
 	testCases := []struct {
