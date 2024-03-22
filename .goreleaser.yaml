@@ -30,6 +30,11 @@ archives:
     {{- if eq .Arch "amd64" }}x86_64
     {{- else }}{{ .Arch }}{{ end }}
 
+blobs:
+  - provider: gs
+    bucket: bitrise-cli-releases-prod
+    folder: "/{{ .Tag }}"
+
 release:
   github:
     owner: bitrise-io
@@ -44,7 +49,7 @@ release:
       ```bash
       curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
       ```
-    ℹ️ M1 machine: Please note by default `/usr/local/bin` does not exist on M1 machines and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
+    ℹ️ Apple Silicon: Please note by default `/usr/local/bin` does not exist and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
 
     Then:
 
