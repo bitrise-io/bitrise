@@ -4,6 +4,12 @@ linters:
   - unparam
   disable: []
 
+linters-settings:
+  revive:
+    rules:
+    - name: empty-block
+      disabled: true
+
 issues:
   exclude-rules:
   - path: cli/update.go
