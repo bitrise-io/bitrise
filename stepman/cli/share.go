@@ -180,7 +180,7 @@ func share(c *cli.Context) {
 	b.NewLine()
 	b.Plain("6. ").Plain(GuideTextForFinish()).NewLine()
 	b.NewLine()
-	fmt.Printf(b.String())
+	fmt.Print(b.String())
 }
 
 func getShareFilePath() string {

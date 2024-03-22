@@ -159,13 +159,13 @@ inputs:
 
 const localTestStepDefinitionJSON = `{"library":"path","id":"./test-step","info":{},"step":{"title":"STEP TEMPLATE","summary":"A short summary of the step. Don't make it too long ;)","description":"This is a Step template.\nContains everything what's required for a valid Stepman managed step.\n\nA Step's description (and generally any description property)\ncan be a [Markdown](https://en.wikipedia.org/wiki/Markdown) formatted text.\n\nTo create your own Step:\n\n1. Create a new repository on GitHub\n2. Copy the files from this folder into your repository\n3. That's all, you can use it on your own machine\n4. Once you're happy with it you can share it with others.","website":"https://github.com/...","source_code_url":"https://github.com/...","support_url":"https://github.com/.../issues","host_os_tags":["osx-10.10"],"project_type_tags":["ios","android","xamarin"],"type_tags":["script"],"deps":{"brew":[{"name":"git"},{"name":"wget"}],"apt_get":[{"name":"git"},{"name":"wget"}]},"is_requires_admin_user":true,"is_always_run":false,"is_skippable":false,"run_if":"","timeout":0,"meta":{"bitrise.io.addons.optional":[{"addon_id":"addons-testing"}],"bitrise.io.addons.required":[{"addon_id":"addons-testing","addon_options":{"required":true,"title":"Testing Addon"},"addon_params":"--token TOKEN"},{"addon_id":"addons-ship","addon_options":{"required":true,"title":"Ship Addon"},"addon_params":"--token TOKEN"}]},"inputs":[{"example_step_input":"Default Value - you can leave this empty if you want to","opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Input","description":"Description of this input.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":true,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}],"outputs":[{"EXAMPLE_STEP_OUTPUT":null,"opts":{"is_expand":true,"skip_if_empty":false,"title":"Example Step Output","description":"Description of this output.\n\nCan be Markdown formatted text.\n","summary":"Summary. No more than 2-3 sentences.","category":"","is_required":false,"is_dont_change_value":false,"is_template":false,"is_sensitive":false,"unset":false}}]},"definition_pth":"test-step/step.yml"}`
 
-const localTestStepDefinition = "\x1b[34;1m" + `Library:` + "\x1b[0m" + ` path
-` + "\x1b[34;1m" + `ID:` + "\x1b[0m" + ` ./test-step
-` + "\x1b[34;1m" + `Version:` + "\x1b[0m" + ` 
-` + "\x1b[34;1m" + `LatestVersion:` + "\x1b[0m" + ` 
-` + "\x1b[34;1m" + `Definition:` + "\x1b[0m" + `
+const localTestStepDefinition = `[34;1mLibrary:[0m path
+[34;1mID:[0m ./test-step
+[34;1mVersion:[0m 
+[34;1mLatestVersion:[0m 
+[34;1mDefinition:[0m
 
-title: "STEP TEMPLATE"
+title: STEP TEMPLATE
 summary: A short summary of the step. Don't make it too long ;)
 description: |-
   This is a Step template.
@@ -184,29 +184,29 @@ website: https://github.com/...
 source_code_url: https://github.com/...
 support_url: https://github.com/.../issues
 host_os_tags:
-  - osx-10.10
+- osx-10.10
 project_type_tags:
-  - ios
-  - android
-  - xamarin
+- ios
+- android
+- xamarin
 type_tags:
-  - script
+- script
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
 meta:
-  bitrise.io.addons.required: 
-    - addon_id: "addons-testing"
-      addon_params: "--token TOKEN"
-      addon_options: 
-        required: true
-        title: "Testing Addon"
-    - addon_id: "addons-ship"
-      addon_params: "--token TOKEN"
-      addon_options: 
-        required: true
-        title: "Ship Addon"
-  bitrise.io.addons.optional: [{"addon_id":"addons-testing"}]
+  bitrise.io.addons.required:
+  - addon_id: addons-testing
+    addon_params: --token TOKEN
+    addon_options:
+      required: true
+      title: Testing Addon
+  - addon_id: addons-ship
+    addon_params: --token TOKEN
+    addon_options:
+      required: true
+      title: Ship Addon
+  bitrise.io.addons.optional: [{ "addon_id": addons-testing }]
 deps:
   brew:
   - name: git
@@ -216,26 +216,26 @@ deps:
   - name: wget
 run_if: ""
 inputs:
-  - example_step_input: Default Value - you can leave this empty if you want to
-    opts:
-      title: "Example Step Input"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this input.
+- example_step_input: Default Value - you can leave this empty if you want to
+  opts:
+    title: Example Step Input
+    summary: Summary. No more than 2-3 sentences.
+    description: |
+      Description of this input.
 
-        Can be Markdown formatted text.
-      is_expand: true
-      is_required: true
-      value_options: []
+      Can be Markdown formatted text.
+    is_expand: true
+    is_required: true
+    value_options: []
 outputs:
-  - EXAMPLE_STEP_OUTPUT:
-    opts:
-      title: "Example Step Output"
-      summary: Summary. No more than 2-3 sentences.
-      description: |
-        Description of this output.
+- EXAMPLE_STEP_OUTPUT:
+  opts:
+    title: Example Step Output
+    summary: Summary. No more than 2-3 sentences.
+    description: |
+      Description of this output.
 
-        Can be Markdown formatted text.`
+      Can be Markdown formatted text.`
 
 const apkInfo104DefinitionJSON = `{"library":"https://github.com/bitrise-io/bitrise-steplib.git","id":"apk-info","version":"1.0.4","latest_version":"1.4.6","info":{"maintainer":"community"},"step":{"title":"APK info","summary":"APK Android info provider","description":"Provides all possible Android APK information as package name, version name or version code.","website":"https://github.com/thefuntasty/bitrise-step-apk-info","source_code_url":"https://github.com/thefuntasty/bitrise-step-apk-info","support_url":"https://github.com/thefuntasty/bitrise-step-apk-info/issues","published_at":"2016-10-19T15:35:00.882498804+02:00","source":{"git":"https://github.com/thefuntasty/bitrise-step-apk-info.git","commit":"104e26a8800fc9363658b5837cf4747e5f26b032"},"asset_urls":{"icon.svg":"https://bitrise-steplib-collection.s3.amazonaws.com/steps/apk-info/assets/icon.svg"},"project_type_tags":["android"],"type_tags":["android","apk"],"is_requires_admin_user":false,"is_always_run":false,"is_skippable":false,"run_if":"","timeout":0,"inputs":[{"apk_path":"$BITRISE_APK_PATH","opts":{"category":"","description":"File path to APK file to get info from.\n","is_dont_change_value":false,"is_expand":true,"is_required":true,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"APK file path","unset":false}}],"outputs":[{"ANDROID_APP_PACKAGE_NAME":null,"opts":{"category":"","description":"Android application package name, ex. com.package.my","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"Android application package name","unset":false}},{"ANDROID_APK_FILE_SIZE":null,"opts":{"category":"","description":"Android APK file size, in bytes","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"Android APK file size","unset":false}},{"ANDROID_APP_NAME":null,"opts":{"category":"","description":"Android application name from APK","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"Android application name","unset":false}},{"ANDROID_APP_VERSION_NAME":null,"opts":{"category":"","description":"Android application version name from APK, ex. 1.0.0","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"Android application version name","unset":false}},{"ANDROID_APP_VERSION_CODE":null,"opts":{"category":"","description":"Android application version code from APK, ex. 10","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"Android application version code","unset":false}},{"ANDROID_ICON_PATH":null,"opts":{"category":"","description":"File path to android application icon","is_dont_change_value":false,"is_expand":true,"is_required":false,"is_sensitive":false,"is_template":false,"skip_if_empty":false,"summary":"","title":"File path to icon","unset":false}}]}`
 

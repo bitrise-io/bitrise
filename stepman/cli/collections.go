@@ -59,9 +59,9 @@ func NewOutput(steplibInfos []models.SteplibInfoModel) OutputModel {
 }
 
 // NewErrorOutput ...
-func NewErrorOutput(format string, v ...interface{}) OutputModel {
+func NewErrorOutput(err error) OutputModel {
 	return OutputModel{
-		Error: fmt.Sprintf(format, v...),
+		Error: err.Error(),
 	}
 }
 
@@ -82,16 +82,29 @@ func collections(c *cli.Context) error {
 		failf("invalid format: %s", format)
 	}
 
-	steplibInfos := []models.SteplibInfoModel{}
+	steplibInfos, err := Collections()
+	if err != nil {
+		out := NewErrorOutput(err)
+		if format == OutputFormatJSON {
+			failf(out.JSON())
+		}
+		failf(out.String())
+	}
+
+	log.Print(NewOutput(steplibInfos))
+
+	return nil
+}
+
+// Collections returns SteplibInfoModels about the locally configured step collections.
+func Collections() ([]models.SteplibInfoModel, error) {
+	var steplibInfos []models.SteplibInfoModel
+
 	stepLibURIs := stepman.GetAllStepCollectionPath()
 	for _, steplibURI := range stepLibURIs {
 		route, found := stepman.ReadRoute(steplibURI)
 		if !found {
-			out := NewErrorOutput("No routing found for steplib: %s", steplibURI)
-			if format == OutputFormatJSON {
-				failf(out.JSON())
-			}
-			failf(out.String())
+			return nil, fmt.Errorf("no routing found for steplib: %s", steplibURI)
 		}
 
 		specPth := stepman.GetStepSpecPath(route)
@@ -102,7 +115,5 @@ func collections(c *cli.Context) error {
 		})
 	}
 
-	log.Print(NewOutput(steplibInfos))
-
-	return nil
+	return steplibInfos, nil
 }
