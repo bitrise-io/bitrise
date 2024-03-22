@@ -76,18 +76,6 @@ var (
 		},
 		triggerCommand,
 		{
-			Name:   "export",
-			Usage:  "Export the bitrise configuration.",
-			Action: export,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-				flFormat,
-				flOutputPath,
-				flPretty,
-			},
-		},
-		{
 			Name:   "step-list",
 			Usage:  "List of available steps.",
 			Action: stepList,
