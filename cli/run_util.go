@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -161,7 +160,7 @@ func registerSecretEnvsFiltering(filtering bool) error {
 }
 
 func isDirEmpty(path string) (bool, error) {
-	entries, err := ioutil.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return false, err
 	}
@@ -847,6 +846,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 				}
 			}
 			stepTestDir, err := os.MkdirTemp(testDeployDir, "step_test_result")
+
 			if err != nil {
 				log.Errorf("Failed to create per-step test result dir: %s", err)
 			}

@@ -3,7 +3,7 @@ package cli
 import (
 	"errors"
 	"io/fs"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -22,7 +22,7 @@ func TestCleanupDirs(t *testing.T) {
 			name: "Clean existing file",
 			dirs: []string{filepath.Join(tmpDir, "file")},
 			prepareFn: func() {
-				err := ioutil.WriteFile(filepath.Join(tmpDir, "file"), []byte("file"), 0644)
+				err := os.WriteFile(filepath.Join(tmpDir, "file"), []byte("file"), 0644)
 				require.NoError(t, err)
 			},
 			wantErr: false,
@@ -31,9 +31,9 @@ func TestCleanupDirs(t *testing.T) {
 			name: "Clean existing directory",
 			dirs: []string{filepath.Join(tmpDir, "dir")},
 			prepareFn: func() {
-				err := ioutil.WriteFile(filepath.Join(tmpDir, "dir", "file1"), []byte("file1"), 0644)
+				err := os.WriteFile(filepath.Join(tmpDir, "dir", "file1"), []byte("file1"), 0644)
 				require.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(tmpDir, "dir", "file2"), []byte("file2"), 0644)
+				err = os.WriteFile(filepath.Join(tmpDir, "dir", "file2"), []byte("file2"), 0644)
 				require.NoError(t, err)
 			},
 			wantErr: false,
@@ -63,9 +63,9 @@ func TestCleanupDirs(t *testing.T) {
 				t.Setenv("BITRISE_TEST_DEPLOY_DIR", dir1)
 				t.Setenv("BITRISE_DEPLOY_DIR", dir2)
 
-				err := ioutil.WriteFile(filepath.Join(dir1, "file1"), []byte("file1"), 0644)
+				err := os.WriteFile(filepath.Join(dir1, "file1"), []byte("file1"), 0644)
 				require.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(dir2, "file1"), []byte("file2"), 0644)
+				err = os.WriteFile(filepath.Join(dir2, "file1"), []byte("file2"), 0644)
 				require.NoError(t, err)
 			},
 			wantErr: false,
@@ -81,7 +81,7 @@ func TestCleanupDirs(t *testing.T) {
 			}
 
 			for _, dir := range tc.dirs {
-				_, err := ioutil.ReadDir(dir)
+				_, err := os.ReadDir(dir)
 				if err != nil && !errors.Is(err, fs.ErrNotExist) {
 					t.Errorf("Unexpected error: %v", err)
 				}
