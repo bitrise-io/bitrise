@@ -9,7 +9,7 @@ import (
 )
 
 func TestStatusReasonSuccess(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status: StepRunStatusCodeSuccess,
 	}
 	expectedStatusReason := ""
@@ -21,7 +21,7 @@ func TestStatusReasonSuccess(t *testing.T) {
 }
 
 func TestStatusReasonFailed(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:   StepRunStatusCodeFailed,
 		ExitCode: 25,
 		ErrorStr: "exit code: 25",
@@ -35,7 +35,7 @@ func TestStatusReasonFailed(t *testing.T) {
 }
 
 func TestStatusReasonPreparationFailed(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:   StepRunStatusCodePreparationFailed,
 		ExitCode: 30,
 		ErrorStr: "Failed to clone step.",
@@ -75,7 +75,7 @@ func TestStatusReasonSkipped(t *testing.T) {
 }
 
 func TestStatusReasonSkippedWithRunIf(t *testing.T) {
-	var runif string = "2+2==4"
+	var runif = "2+2==4"
 	var model models.StepModel = models.StepModel{
 		RunIf: &runif,
 	}

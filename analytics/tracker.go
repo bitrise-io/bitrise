@@ -57,7 +57,7 @@ const (
 	timeoutProperty               = "timeout"
 	runTimeProperty               = "runtime"
 	osProperty                    = "os"
-	stackRevIdProperty            = "stack_rev_id"
+	stackRevIDProperty            = "stack_rev_id"
 	snapshotProperty              = "snapshot"
 	toolVersionsProperty          = "tool_versions"
 
@@ -72,8 +72,8 @@ const (
 	buildSlugEnvKey       = "BITRISE_BUILD_SLUG"
 	appSlugEnvKey         = "BITRISE_APP_SLUG"
 	StepExecutionIDEnvKey = "BITRISE_STEP_EXECUTION_ID"
-	stackRevIdKey         = "BITRISE_STACK_REV_ID"
-	macStackRevIdKey      = "BITRISE_OSX_STACK_REV_ID"
+	stackRevIDKey         = "BITRISE_STACK_REV_ID"
+	macStackRevIDKey      = "BITRISE_OSX_STACK_REV_ID"
 
 	bitriseVersionKey = "bitrise"
 	envmanVersionKey  = "envman"
@@ -210,16 +210,16 @@ func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
 		return
 	}
 
-	stackRevId := t.envRepository.Get(stackRevIdKey)
-	if stackRevId == "" {
+	stackRevID := t.envRepository.Get(stackRevIDKey)
+	if stackRevID == "" {
 		// Legacy
-		stackRevId = t.envRepository.Get(macStackRevIdKey)
+		stackRevID = t.envRepository.Get(macStackRevIDKey)
 	}
 
 	properties := analytics.Properties{
 		ciModeProperty:       t.envRepository.Get(configs.CIModeEnvKey) == "true",
 		osProperty:           runtime.GOOS,
-		stackRevIdProperty:   stackRevId,
+		stackRevIDProperty:   stackRevID,
 		snapshotProperty:     snapshotType,
 		toolVersionsProperty: toolVersions,
 	}

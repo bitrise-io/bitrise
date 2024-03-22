@@ -60,7 +60,7 @@ func (toolkit BashToolkit) ToolkitName() string {
 }
 
 // PrepareForStepRun ...
-func (toolkit BashToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
+func (toolkit BashToolkit) PrepareForStepRun(_ stepmanModels.StepModel, _ models.StepIDData, _ string) error {
 	return nil
 }
 

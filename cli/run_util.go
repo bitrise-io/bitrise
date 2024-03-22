@@ -434,7 +434,7 @@ func (r WorkflowRunner) executeStep(
 	var envs []string
 
 	if workflow.Container.Image != "" {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.DockerEnvironmentSource{
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
 		if err != nil {
@@ -942,17 +942,17 @@ func (r WorkflowRunner) activateAndRunSteps(
 	return buildRunResults
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionId string, stepStartTime time.Time) {
+func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
 	}
 
 	params := log.StepStartedParams{
-		ExecutionId: stepExcutionId,
+		ExecutionID: stepExcutionID,
 		Position:    idx,
 		Title:       title,
-		Id:          stepInfo.ID,
+		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
 		Toolkit:     toolkits.ToolkitForStep(step).ToolkitName(),

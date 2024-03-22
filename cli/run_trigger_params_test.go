@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func toBase64(t *testing.T, str string) string {
+func toBase64(str string) string {
 	bytes := base64.StdEncoding.EncodeToString([]byte(str))
 	return string(bytes)
 }
@@ -36,10 +36,10 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 			OuputFormatKey: "json",
 
 			ConfigKey:       "bitrise.yml",
-			ConfigBase64Key: toBase64(t, "bitrise.yml"),
+			ConfigBase64Key: toBase64("bitrise.yml"),
 
 			InventoryKey:       ".secrets.bitrise.yml",
-			InventoryBase64Key: toBase64(t, ".secrets.bitrise.yml"),
+			InventoryBase64Key: toBase64(".secrets.bitrise.yml"),
 		}
 		params, err := parseRunAndTriggerJSONParams(toJSON(t, paramsMap))
 		require.NoError(t, err)
@@ -56,10 +56,10 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "json", params.Format)
 
 		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, toBase64(t, "bitrise.yml"), params.BitriseConfigBase64Data)
+		require.Equal(t, toBase64("bitrise.yml"), params.BitriseConfigBase64Data)
 
 		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, toBase64(t, ".secrets.bitrise.yml"), params.InventoryBase64Data)
+		require.Equal(t, toBase64(".secrets.bitrise.yml"), params.InventoryBase64Data)
 	}
 
 	t.Log("it fails for invalid json")
@@ -99,10 +99,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
@@ -149,10 +149,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
@@ -209,10 +209,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
@@ -233,7 +233,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		}
 
 		jsonParams := ""
-		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
+		base64JSONParams := toBase64(toJSON(t, paramsMap))
 
 		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
@@ -269,10 +269,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
@@ -293,7 +293,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		}
 
 		jsonParams := `{"workflow":"test","pr-ready-state":"draft"}`
-		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
+		base64JSONParams := toBase64(toJSON(t, paramsMap))
 
 		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
@@ -329,10 +329,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := `{"workflow":"test","pattern":"feature/","config":"test.bitrise.yml","inventory":".test.secrets.bitrise.yml"}`
 		base64JSONParams := ""
@@ -373,10 +373,10 @@ func TestParseRunParams(t *testing.T) {
 		workflow := "primary"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
@@ -419,10 +419,10 @@ func TestParseTriggerParams(t *testing.T) {
 		tag := "0.9.0"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
@@ -467,10 +467,10 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""

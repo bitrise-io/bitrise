@@ -226,7 +226,7 @@ func (s StepRunResultsModel) error() []StepError {
 }
 
 func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
-	var remaining int = int(timeInterval / time.Second)
+	var remaining = int(timeInterval / time.Second)
 	h := int(remaining / 3600)
 	remaining = remaining - h*3600
 	m := int(remaining / 60)

@@ -21,10 +21,10 @@ func TestStepHeaderPrinting(t *testing.T) {
 		{
 			name: "Only prints the values which need to appear in the console output",
 			params: StepStartedParams{
-				ExecutionId: "ExecutionId is not needed",
+				ExecutionID: "ExecutionId is not needed",
 				Position:    0,
 				Title:       "xcode-test@4.1.2",
-				Id:          "xcode-test",
+				ID:          "xcode-test",
 				Version:     "4.1.2",
 				Collection:  "Steplib",
 				Toolkit:     "Go",
@@ -46,10 +46,10 @@ func TestStepHeaderPrinting(t *testing.T) {
 		{
 			name: "Long step parameter values are truncated",
 			params: StepStartedParams{
-				ExecutionId: "random-uuid",
+				ExecutionID: "random-uuid",
 				Position:    1,
 				Title:       "Very long step name - Very long step name - Very long step name - Very long step name - Very long step name",
-				Id:          "this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step",
+				ID:          "this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step",
 				Version:     "1.1.2",
 				Collection:  "Steplib",
 				Toolkit:     "Go",
@@ -71,10 +71,10 @@ func TestStepHeaderPrinting(t *testing.T) {
 		{
 			name: "Prints empty fields",
 			params: StepStartedParams{
-				ExecutionId: "another-random-uuid",
+				ExecutionID: "another-random-uuid",
 				Position:    2,
 				Title:       "git::https://github.com/org/repo",
-				Id:          "https://github.com/org/repo",
+				ID:          "https://github.com/org/repo",
 				Version:     "",
 				Collection:  "Git",
 				Toolkit:     "",
