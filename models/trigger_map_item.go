@@ -50,19 +50,18 @@ type TriggerMapItemModel struct {
 	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// Code Push Item conditions
-	// TODO: introduce regex values
-	PushBranch    string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	CommitMessage string `json:"commit_message" yaml:"commit_message"`
-	ChangedFiles  string `json:"changed_files" yaml:"changed_files"`
+	PushBranch    interface{} `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	CommitMessage interface{} `json:"commit_message" yaml:"commit_message"`
+	ChangedFiles  interface{} `json:"changed_files" yaml:"changed_files"`
 
 	// Tag Push Item conditions
-	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	Tag interface{} `json:"tag,omitempty" yaml:"tag,omitempty"`
 
 	// Pull Request Item conditions
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	DraftPullRequestEnabled *bool  `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
-	PullRequestLabel        string `json:"pull_request_label" yaml:"pull_request_label"`
+	PullRequestSourceBranch interface{} `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch interface{} `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	DraftPullRequestEnabled *bool       `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
+	PullRequestLabel        interface{} `json:"pull_request_label" yaml:"pull_request_label"`
 
 	// Deprecated properties
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
@@ -87,9 +86,10 @@ func (triggerItem TriggerMapItemModel) Validate(idx int, workflows, pipelines []
 		if err := triggerItem.validateTypeOfItemWithExplicitType(idx); err != nil {
 			return warnings, err
 		}
+		if err := triggerItem.validateValuesOfItemWithExplicitType(idx); err != nil {
+			return warnings, err
+		}
 	}
-
-	// TODO: validate condition values (regex or string literal)
 
 	return warnings, nil
 }
@@ -140,39 +140,61 @@ func (triggerItem TriggerMapItemModel) validateTypeOfItem(idx int) error {
 func (triggerItem TriggerMapItemModel) validateTypeOfItemWithExplicitType(idx int) error {
 	switch triggerItem.Type {
 	case CodePushType:
-		if triggerItem.PullRequestSourceBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
 			return fmt.Errorf("pull_request_source_branch defined for a push type trigger item in the %d. trigger item", idx+1)
 		}
-		if triggerItem.PullRequestTargetBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
 			return fmt.Errorf("pull_request_target_branch defined for a push type trigger item in the %d. trigger item", idx+1)
 		}
-		if triggerItem.Tag != "" {
+		if isStringLiteralOrRegexSet(triggerItem.Tag) {
 			return fmt.Errorf("tag defined for a push type trigger item in the %d. trigger item", idx+1)
 		}
 
 		// TODO: check other fields too (label)
 	case PullRequestType:
-		if triggerItem.PushBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
 			return fmt.Errorf("push_branch defined for a pull request type trigger item in the %d. trigger item", idx+1)
 		}
-		if triggerItem.Tag != "" {
+		if isStringLiteralOrRegexSet(triggerItem.Tag) {
 			return fmt.Errorf("tag defined for a pull request type item in the %d. trigger item", idx+1)
 		}
 
 		// TODO: check other fields too (file_changes, commit_message)
 	case TagPushType:
-		if triggerItem.PullRequestSourceBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
 			return fmt.Errorf("pull_request_source_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
 		}
-		if triggerItem.PullRequestTargetBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
 			return fmt.Errorf("pull_request_target_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
 		}
-		if triggerItem.PushBranch != "" {
+		if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
 			return fmt.Errorf("push_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
 		}
 		// TODO: check other fields too (file_changes, commit_message)
 	}
 	return nil
+}
+
+func (triggerItem TriggerMapItemModel) validateValuesOfItemWithExplicitType(idx int) error {
+	return nil
+}
+
+func isStringLiteralOrRegexSet(condition interface{}) bool {
+	if condition == nil {
+		return false
+	}
+
+	str, ok := condition.(TriggerItemConditionStringValue)
+	if ok {
+		return len(str) > 0
+	}
+
+	regex, ok := condition.(TriggerItemConditionRegexValue)
+	if ok {
+		return len(regex.Regex) > 0
+	}
+
+	return false
 }
 
 func (triggerItem TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []string) ([]string, error) {
@@ -215,7 +237,10 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	}
 
 	for _, migratedTriggerItem := range migratedTriggerItems {
-		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch, migratedTriggerItem.Tag)
+		itemEventType, err := triggerEventType(stringFromTriggerCondition(migratedTriggerItem.PushBranch),
+			stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch),
+			stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch),
+			stringFromTriggerCondition(migratedTriggerItem.Tag))
 		if err != nil {
 			return false, err
 		}
@@ -226,21 +251,21 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 
 		switch itemEventType {
 		case TriggerEventTypeCodePush:
-			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
+			match := glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PushBranch), pushBranch)
 			return match, nil
 		case TriggerEventTypePullRequest:
 			sourceMatch := false
 			if migratedTriggerItem.PullRequestSourceBranch == "" {
 				sourceMatch = true
 			} else {
-				sourceMatch = glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
+				sourceMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch), prSourceBranch)
 			}
 
 			targetMatch := false
 			if migratedTriggerItem.PullRequestTargetBranch == "" {
 				targetMatch = true
 			} else {
-				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
+				targetMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch), prTargetBranch)
 			}
 
 			// When a PR is converted to ready for review:
@@ -260,12 +285,19 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 
 			return sourceMatch && targetMatch && !stateMismatch, nil
 		case TriggerEventTypeTag:
-			match := glob.Glob(migratedTriggerItem.Tag, tag)
+			match := glob.Glob(stringFromTriggerCondition(migratedTriggerItem.Tag), tag)
 			return match, nil
 		}
 	}
 
 	return false, nil
+}
+
+func stringFromTriggerCondition(condition interface{}) string {
+	if condition == nil {
+		return ""
+	}
+	return condition.(string)
 }
 
 func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
