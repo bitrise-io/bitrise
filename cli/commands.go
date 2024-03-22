@@ -125,7 +125,6 @@ var (
 			},
 		},
 		pluginCommand,
-		stepmanCommand,
 		envmanCommand,
 	}
 )
