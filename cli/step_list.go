@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
@@ -64,4 +66,27 @@ func stepList(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func registerFatal(errorMsg string, warnings []string, format string) {
+	message := ValidationItemModel{
+		IsValid:  (len(errorMsg) > 0),
+		Error:    errorMsg,
+		Warnings: warnings,
+	}
+
+	if format == output.FormatRaw {
+		for _, warning := range message.Warnings {
+			log.Warnf("warning: %s", warning)
+		}
+		failf(message.Error)
+	} else {
+		bytes, err := json.Marshal(message)
+		if err != nil {
+			failf("Failed to parse error model, error: %s", err)
+		}
+
+		log.Print(string(bytes))
+		os.Exit(1)
+	}
 }

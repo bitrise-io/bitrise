@@ -3,8 +3,6 @@ package models
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ryanuber/go-glob"
 )
 
 type TriggerEventType string
@@ -96,71 +94,6 @@ func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) (
 	}
 
 	return warnings, nil
-}
-
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, prReadyState PullRequestReadyState, tag string) (bool, error) {
-	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
-	if err != nil {
-		return false, err
-	}
-
-	migratedTriggerItems := []TriggerMapItemModel{triggerItem}
-	if triggerItem.Pattern != "" {
-		migratedTriggerItems = migrateDeprecatedTriggerItem(triggerItem)
-	}
-
-	for _, migratedTriggerItem := range migratedTriggerItems {
-		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch, migratedTriggerItem.Tag)
-		if err != nil {
-			return false, err
-		}
-
-		if paramsEventType != itemEventType {
-			continue
-		}
-
-		switch itemEventType {
-		case TriggerEventTypeCodePush:
-			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
-			return match, nil
-		case TriggerEventTypePullRequest:
-			sourceMatch := false
-			if migratedTriggerItem.PullRequestSourceBranch == "" {
-				sourceMatch = true
-			} else {
-				sourceMatch = glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
-			}
-
-			targetMatch := false
-			if migratedTriggerItem.PullRequestTargetBranch == "" {
-				targetMatch = true
-			} else {
-				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
-			}
-
-			// When a PR is converted to ready for review:
-			// - if draft PR trigger is enabled, this event is just a status change on the PR
-			// 	 and the given status of the code base already triggered a build.
-			// - if draft PR trigger is disabled, the given status of the code base didn't trigger a build yet.
-			stateMismatch := false
-			if migratedTriggerItem.IsDraftPullRequestEnabled() {
-				if prReadyState == PullRequestReadyStateConvertedToReadyForReview {
-					stateMismatch = true
-				}
-			} else {
-				if prReadyState == PullRequestReadyStateDraft {
-					stateMismatch = true
-				}
-			}
-
-			return sourceMatch && targetMatch && !stateMismatch, nil
-		case TriggerEventTypeTag:
-			match := glob.Glob(migratedTriggerItem.Tag, tag)
-			return match, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {

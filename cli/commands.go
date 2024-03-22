@@ -48,34 +48,6 @@ var (
 		updateCommand,
 		runCommand,
 		{
-			Name:   "trigger-check",
-			Usage:  "Prints out which workflow will triggered by specified pattern.",
-			Action: triggerCheck,
-			Flags: []cli.Flag{
-				// cli params
-				cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
-				cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
-				cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-
-				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
-				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
-				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-				cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
-				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
-
-				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
-
-				// cli params used in CI mode
-				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
-				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-
-				// should deprecate
-				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
-			},
-		},
-		triggerCommand,
-		{
 			Name:   "export",
 			Usage:  "Export the bitrise configuration.",
 			Action: export,
