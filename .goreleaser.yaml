@@ -31,9 +31,9 @@ archives:
     {{- else }}{{ .Arch }}{{ end }}
 
 blobs:
-  - provider: gs
-    bucket: bitrise-cli-releases-prod
-    folder: "/{{ .Tag }}"
+- provider: gs
+  bucket: bitrise-cli-releases-prod
+  folder: /{{ .Tag }}
 
 release:
   github:
