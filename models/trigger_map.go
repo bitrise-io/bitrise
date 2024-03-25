@@ -42,7 +42,7 @@ func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
 	items := make(map[string]int)
 
 	for idx, triggerItem := range triggerMap {
-		itemStr := triggerItem.String()
+		itemStr := triggerItem.conditionsString()
 
 		storedItemIdx, ok := items[itemStr]
 		if ok {
