@@ -39,7 +39,7 @@ const (
 type TriggerMapItemModel struct {
 	// Trigger Item shared properties
 	Type       TriggerItemType `json:"type,omitempty" yaml:"type,omitempty"`
-	Enabled    bool            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Enabled    *bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	PipelineID string          `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
 	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
