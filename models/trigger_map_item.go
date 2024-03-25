@@ -35,9 +35,9 @@ type TriggerItemConditionRegexValue struct {
 type TriggerItemType string
 
 const (
-	CodePushType    TriggerItemType = "code-push"
-	PullRequestType TriggerItemType = "pull-request"
-	TagPushType     TriggerItemType = "tag-push"
+	CodePushType    TriggerItemType = "push"
+	PullRequestType TriggerItemType = "pull_request"
+	TagPushType     TriggerItemType = "tag"
 )
 
 type TriggerMapItemModel struct {
