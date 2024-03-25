@@ -38,15 +38,15 @@ const (
 
 type TriggerMapItemModel struct {
 	// Trigger Item shared properties
-	Type       TriggerItemType `json:"type" yaml:"type"`
-	Enabled    bool            `json:"enabled" yaml:"enabled"`
+	Type       TriggerItemType `json:"type,omitempty" yaml:"type,omitempty"`
+	Enabled    bool            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	PipelineID string          `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
 	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// Code Push Item conditions
 	PushBranch    interface{} `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	CommitMessage interface{} `json:"commit_message" yaml:"commit_message"`
-	ChangedFiles  interface{} `json:"changed_files" yaml:"changed_files"`
+	CommitMessage interface{} `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
+	ChangedFiles  interface{} `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
 
 	// Tag Push Item conditions
 	Tag interface{} `json:"tag,omitempty" yaml:"tag,omitempty"`
@@ -55,7 +55,7 @@ type TriggerMapItemModel struct {
 	PullRequestSourceBranch interface{} `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch interface{} `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
 	DraftPullRequestEnabled *bool       `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
-	PullRequestLabel        interface{} `json:"pull_request_label" yaml:"pull_request_label"`
+	PullRequestLabel        interface{} `json:"pull_request_label,omitempty" yaml:"pull_request_label,omitempty"`
 
 	// Deprecated properties
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
