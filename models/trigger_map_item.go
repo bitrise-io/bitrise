@@ -95,42 +95,48 @@ func (triggerItem TriggerMapItemModel) Validate(idx int, workflows, pipelines []
 }
 
 func (triggerItem TriggerMapItemModel) validateTypeOfLegacyItem(idx int) error {
-	if triggerItem.PushBranch != "" {
-		return fmt.Errorf("both pattern and push_branch defined in the %d. trigger item", idx+1)
+	if err := triggerItem.validateNoCodePushConditionsSet(idx, "pattern"); err != nil {
+		return err
 	}
-	if triggerItem.PullRequestSourceBranch != "" {
-		return fmt.Errorf("both pattern and pull_request_source_branch defined in the %d. trigger item", idx+1)
+	if err := triggerItem.validateNoTagPushConditionsSet(idx, "pattern"); err != nil {
+		return err
 	}
-	if triggerItem.PullRequestTargetBranch != "" {
-		return fmt.Errorf("both pattern and pull_request_target_branch defined in the %d. trigger item", idx+1)
+	if err := triggerItem.validateNoPullRequestConditionsSet(idx, "pattern"); err != nil {
+		return err
 	}
-	if triggerItem.Tag != "" {
-		return fmt.Errorf("both pattern and tag defined in the %d. trigger item", idx+1)
-	}
-	// TODO: check other fields
 	return nil
 }
 
 func (triggerItem TriggerMapItemModel) validateTypeOfItem(idx int) error {
-	if triggerItem.PushBranch != "" {
-		if triggerItem.PullRequestSourceBranch != "" {
-			return fmt.Errorf("both push_branch and pull_request_source_branch defined in the %d. trigger item", idx+1)
+	if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
+		if err := triggerItem.validateNoTagPushConditionsSet(idx, "push_branch"); err != nil {
+			return err
 		}
-		if triggerItem.PullRequestTargetBranch != "" {
-			return fmt.Errorf("both push_branch and pull_request_target_branch defined in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoPullRequestConditionsSet(idx, "push_branch"); err != nil {
+			return err
 		}
-		if triggerItem.Tag != "" {
-			return fmt.Errorf("both push_branch and tag defined in the %d. trigger item", idx+1)
+	} else if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
+		if err := triggerItem.validateNoCodePushConditionsSet(idx, "pull_request_source_branch"); err != nil {
+			return err
 		}
-	} else if triggerItem.PullRequestSourceBranch != "" {
-		if triggerItem.Tag != "" {
-			return fmt.Errorf("both pull_request_source_branch and tag defined in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoTagPushConditionsSet(idx, "pull_request_source_branch"); err != nil {
+			return err
 		}
-	} else if triggerItem.PullRequestTargetBranch != "" {
-		if triggerItem.Tag != "" {
-			return fmt.Errorf("both pull_request_target_branch and tag defined in the %d. trigger item", idx+1)
+	} else if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
+		if err := triggerItem.validateNoCodePushConditionsSet(idx, "pull_request_target_branch"); err != nil {
+			return err
 		}
-	} else if triggerItem.Tag == "" {
+		if err := triggerItem.validateNoTagPushConditionsSet(idx, "pull_request_target_branch"); err != nil {
+			return err
+		}
+	} else if isStringLiteralOrRegexSet(triggerItem.Tag) {
+		if err := triggerItem.validateNoCodePushConditionsSet(idx, "tag"); err != nil {
+			return err
+		}
+		if err := triggerItem.validateNoPullRequestConditionsSet(idx, "tag"); err != nil {
+			return err
+		}
+	} else if !isStringLiteralOrRegexSet(triggerItem.Tag) {
 		return fmt.Errorf("no trigger condition defined defined in the %d. trigger item", idx+1)
 	}
 
@@ -140,37 +146,62 @@ func (triggerItem TriggerMapItemModel) validateTypeOfItem(idx int) error {
 func (triggerItem TriggerMapItemModel) validateTypeOfItemWithExplicitType(idx int) error {
 	switch triggerItem.Type {
 	case CodePushType:
-		if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
-			return fmt.Errorf("pull_request_source_branch defined for a push type trigger item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoTagPushConditionsSet(idx, fmt.Sprintf("%s type", CodePushType)); err != nil {
+			return err
 		}
-		if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
-			return fmt.Errorf("pull_request_target_branch defined for a push type trigger item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoPullRequestConditionsSet(idx, fmt.Sprintf("%s type", CodePushType)); err != nil {
+			return err
 		}
-		if isStringLiteralOrRegexSet(triggerItem.Tag) {
-			return fmt.Errorf("tag defined for a push type trigger item in the %d. trigger item", idx+1)
-		}
-
-		// TODO: check other fields too (label)
 	case PullRequestType:
-		if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
-			return fmt.Errorf("push_branch defined for a pull request type trigger item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoCodePushConditionsSet(idx, fmt.Sprintf("%s type", PullRequestType)); err != nil {
+			return err
 		}
-		if isStringLiteralOrRegexSet(triggerItem.Tag) {
-			return fmt.Errorf("tag defined for a pull request type item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoTagPushConditionsSet(idx, fmt.Sprintf("%s type", PullRequestType)); err != nil {
+			return err
 		}
-
-		// TODO: check other fields too (file_changes, commit_message)
 	case TagPushType:
-		if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
-			return fmt.Errorf("pull_request_source_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoCodePushConditionsSet(idx, fmt.Sprintf("%s type", TagPushType)); err != nil {
+			return err
 		}
-		if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
-			return fmt.Errorf("pull_request_target_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
+		if err := triggerItem.validateNoPullRequestConditionsSet(idx, fmt.Sprintf("%s type", TagPushType)); err != nil {
+			return err
 		}
-		if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
-			return fmt.Errorf("push_branch defined for a tag type trigger item in the %d. trigger item", idx+1)
-		}
-		// TODO: check other fields too (file_changes, commit_message)
+	}
+	return nil
+}
+
+func (triggerItem TriggerMapItemModel) validateNoCodePushConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(triggerItem.PushBranch) {
+		return fmt.Errorf("both %s and push_branch defined in the %d. trigger item", field, idx+1)
+	}
+	if isStringLiteralOrRegexSet(triggerItem.CommitMessage) {
+		return fmt.Errorf("both %s and commit_message defined in the %d. trigger item", field, idx+1)
+	}
+	if isStringLiteralOrRegexSet(triggerItem.ChangedFiles) {
+		return fmt.Errorf("both %s and changed_files defined in the %d. trigger item", field, idx+1)
+	}
+	return nil
+}
+
+func (triggerItem TriggerMapItemModel) validateNoTagPushConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(triggerItem.Tag) {
+		return fmt.Errorf("both %s and tag defined in the %d. trigger item", field, idx+1)
+	}
+	return nil
+}
+
+func (triggerItem TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(triggerItem.PullRequestSourceBranch) {
+		return fmt.Errorf("both %s and pull_request_source_branch defined in the %d. trigger item", field, idx+1)
+	}
+	if isStringLiteralOrRegexSet(triggerItem.PullRequestTargetBranch) {
+		return fmt.Errorf("both %s and pull_request_target_branch defined in the %d. trigger item", field, idx+1)
+	}
+	if triggerItem.IsDraftPullRequestEnabled() != defaultDraftPullRequestEnabled {
+		return fmt.Errorf("both %s and draft_pull_request_enabled defined in the %d. trigger item", field, idx+1)
+	}
+	if isStringLiteralOrRegexSet(triggerItem.PullRequestLabel) {
+		return fmt.Errorf("both %s and pull_request_label defined in the %d. trigger item", field, idx+1)
 	}
 	return nil
 }
@@ -179,22 +210,31 @@ func (triggerItem TriggerMapItemModel) validateValuesOfItemWithExplicitType(idx 
 	return nil
 }
 
-func isStringLiteralOrRegexSet(condition interface{}) bool {
+func stringFromTriggerCondition(condition interface{}) string {
 	if condition == nil {
-		return false
+		return ""
 	}
+	return condition.(string)
+}
 
-	str, ok := condition.(TriggerItemConditionStringValue)
+func stringLiteralOrRegex(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+	str, ok := value.(TriggerItemConditionStringValue)
 	if ok {
-		return len(str) > 0
+		return string(str)
 	}
 
-	regex, ok := condition.(TriggerItemConditionRegexValue)
+	regex, ok := value.(TriggerItemConditionRegexValue)
 	if ok {
-		return len(regex.Regex) > 0
+		return regex.Regex
 	}
+	return ""
+}
 
-	return false
+func isStringLiteralOrRegexSet(value interface{}) bool {
+	return stringLiteralOrRegex(value) != ""
 }
 
 func (triggerItem TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []string) ([]string, error) {
@@ -291,13 +331,6 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	}
 
 	return false, nil
-}
-
-func stringFromTriggerCondition(condition interface{}) string {
-	if condition == nil {
-		return ""
-	}
-	return condition.(string)
 }
 
 func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
