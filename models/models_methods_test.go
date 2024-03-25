@@ -385,6 +385,109 @@ workflows:
 }
 
 // Trigger map
+func TestValidateTriggerMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "valid legacy trigger map",
+			config: `
+format_version: 13
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- pattern: main
+  workflow: deploy
+- pattern: "*"
+  is_pull_request_allowed: true
+  workflow: test
+
+workflows:
+  deploy:
+  test:
+`,
+		},
+		{
+			name: "valid trigger map",
+			config: `
+format_version: 13
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: main
+  workflow: deploy
+- pull_request_target_branch: main
+  workflow: test
+- pull_request_target_branch: '*'
+  workflow: check
+- tag: '*'
+  workflow: deploy
+
+workflows:
+  deploy:
+  test:
+  check:
+`,
+		},
+		{
+			name: "valid advanced trigger map",
+			config: `
+format_version: 13
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: main
+  enabled: false
+  workflow: deploy
+- push_branch: main
+  commit_message: "[workflow: test]"
+  workflow: test
+- push_branch: main
+  changed_files:
+    regex: '^ios\/.*'
+  workflow: ios-deploy
+- pull_request_target_branch: main
+  draft_pull_request_enabled: false
+  workflow: test
+- pull_request_target_branch: '*'
+  pull_request_label: "[workflow: check]"
+  workflow: check
+- tag: '*'
+  workflow: deploy
+
+workflows:
+  wip-deploy:
+  ios-deploy:
+  deploy:
+  test:
+  check:
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			if len(tt.wantWarns) > 0 {
+				require.Equal(t, tt.wantWarns, warns)
+			} else {
+				require.Empty(t, warns)
+			}
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestTriggerMapItemValidate(t *testing.T) {
 	t.Log("utility workflow triggered - Warning")
 	{
