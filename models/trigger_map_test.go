@@ -63,7 +63,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 			},
 			workflows: []string{"ci", "release"},
-			wantErr:   "duplicated trigger item found (push_branch: master)",
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 		{
 			name: "Pull Request trigger items",
@@ -92,7 +92,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 			},
 			workflows: []string{"ci", "release"},
-			wantErr:   "duplicated trigger item found (pull_request_source_branch: develop && draft_pull_request_enabled: true)",
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 		{
 			name: "Pull Request trigger items - duplicated (target branch)",
@@ -107,7 +107,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 			},
 			workflows: []string{"ci", "release"},
-			wantErr:   "duplicated trigger item found (pull_request_target_branch: master && draft_pull_request_enabled: true)",
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 		{
 			name: "Pull Request trigger items - duplicated (source & target branch)",
@@ -124,7 +124,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 			},
 			workflows: []string{"ci", "release"},
-			wantErr:   "duplicated trigger item found (pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true)",
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 		{
 			name: "Pull Request trigger items - different draft pr enabled",
@@ -157,7 +157,7 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 			},
 			workflows: []string{"ci", "release"},
-			wantErr:   "duplicated trigger item found (tag: 0.9.0)",
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 	}
 	for _, tt := range tests {

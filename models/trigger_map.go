@@ -46,7 +46,7 @@ func (triggerMap TriggerMapModel) checkDuplicatedTriggerMapItems() error {
 
 		storedItemIdx, ok := items[itemStr]
 		if ok {
-			return fmt.Errorf("the %d. trigger item duplicates the %d. trigger item", idx+1, storedItemIdx)
+			return fmt.Errorf("the %d. trigger item duplicates the %d. trigger item", idx+1, storedItemIdx+1)
 		}
 
 		items[itemStr] = idx

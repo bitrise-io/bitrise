@@ -28,8 +28,6 @@ const (
 
 const defaultDraftPullRequestEnabled = true
 
-type TriggerItemConditionStringValue string
-
 type TriggerItemConditionRegexValue struct {
 	Regex string `json:"regex" yaml:"regex"`
 }
@@ -98,14 +96,14 @@ func (item TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTa
 			return match, nil
 		case TriggerEventTypePullRequest:
 			sourceMatch := false
-			if migratedTriggerItem.PullRequestSourceBranch == "" {
+			if stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch) == "" {
 				sourceMatch = true
 			} else {
 				sourceMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch), prSourceBranch)
 			}
 
 			targetMatch := false
-			if migratedTriggerItem.PullRequestTargetBranch == "" {
+			if stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch) == "" {
 				targetMatch = true
 			} else {
 				targetMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch), prTargetBranch)
@@ -370,11 +368,37 @@ func (item TriggerMapItemModel) conditionsString() string {
 		}
 
 		value := rv.FieldByName(field.Name).Interface()
-		str += fmt.Sprintf("%s:%v", tag, value)
-
-		if i < rt.NumField()-1 {
-			str += "&"
+		if value == nil {
+			continue
 		}
+
+		if tag == "draft_pull_request_enabled" {
+			if boolPtrValue, ok := value.(*bool); ok {
+				if boolPtrValue == nil || *boolPtrValue == defaultDraftPullRequestEnabled {
+					continue
+				}
+				value = *boolPtrValue
+			}
+		}
+
+		if strValue, ok := value.(string); ok {
+			if strValue == "" {
+				continue
+			}
+		}
+
+		if tag == "is_pull_request_allowed" {
+			if boolPtrValue, ok := value.(bool); ok {
+				if !boolPtrValue {
+					continue
+				}
+			}
+		}
+
+		if str != "" {
+			str += " & "
+		}
+		str += fmt.Sprintf("%s: %v", tag, value)
 	}
 
 	return str
@@ -384,7 +408,7 @@ func validateStringType(idx int, field string, value interface{}) error {
 	if value == nil {
 		return nil
 	}
-	_, ok := value.(TriggerItemConditionStringValue)
+	_, ok := value.(string)
 	if ok {
 		return nil
 	}
@@ -395,7 +419,7 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	if value == nil {
 		return nil
 	}
-	_, ok := value.(TriggerItemConditionStringValue)
+	_, ok := value.(string)
 	if ok {
 		return nil
 	}
@@ -406,18 +430,18 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	return fmt.Errorf("string literal or regex value is expected for %s in the %d. trigger item", field, idx+1)
 }
 
-func stringFromTriggerCondition(condition interface{}) string {
-	if condition == nil {
+func stringFromTriggerCondition(value interface{}) string {
+	if value == nil {
 		return ""
 	}
-	return condition.(string)
+	return value.(string)
 }
 
 func stringLiteralOrRegex(value interface{}) string {
 	if value == nil {
 		return ""
 	}
-	str, ok := value.(TriggerItemConditionStringValue)
+	str, ok := value.(string)
 	if ok {
 		return string(str)
 	}
