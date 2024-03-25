@@ -28,10 +28,6 @@ const (
 
 const defaultDraftPullRequestEnabled = true
 
-type TriggerItemConditionRegexValue struct {
-	Regex string `json:"regex" yaml:"regex"`
-}
-
 type TriggerItemType string
 
 const (
@@ -425,7 +421,8 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	if ok {
 		return nil
 	}
-	_, ok = value.(TriggerItemConditionRegexValue)
+	// TODO: check key
+	_, ok = value.(map[string]string)
 	if ok {
 		return nil
 	}
@@ -448,9 +445,9 @@ func stringLiteralOrRegex(value interface{}) string {
 		return string(str)
 	}
 
-	regex, ok := value.(TriggerItemConditionRegexValue)
+	regex, ok := value.(map[string]string)
 	if ok {
-		return regex.Regex
+		return regex["regex"]
 	}
 	return ""
 }
