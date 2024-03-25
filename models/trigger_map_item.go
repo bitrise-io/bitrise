@@ -422,13 +422,13 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 		return nil
 	}
 
-	valueStringMap, ok := value.(map[string]string)
+	valueMap, ok := value.(map[interface{}]interface{})
 	if ok {
-		if len(valueStringMap) != 1 {
+		if len(valueMap) != 1 {
 			return fmt.Errorf("single 'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
 		}
 
-		_, ok := valueStringMap["regex"]
+		_, ok := valueMap["regex"]
 		if !ok {
 			return fmt.Errorf("'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
 		}
@@ -455,6 +455,20 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 		return nil
 	}
 
+	valueStringMap, ok := value.(map[string]string)
+	if ok {
+		if len(valueStringMap) != 1 {
+			return fmt.Errorf("single 'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+		}
+
+		_, ok := valueStringMap["regex"]
+		if !ok {
+			return fmt.Errorf("'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+		}
+
+		return nil
+	}
+
 	return fmt.Errorf("string literal or regex value is expected for %s in the %d. trigger item", field, idx+1)
 }
 
@@ -474,9 +488,12 @@ func stringLiteralOrRegex(value interface{}) string {
 		return string(str)
 	}
 
-	valueStringMap, ok := value.(map[string]string)
+	valueMap, ok := value.(map[interface{}]interface{})
 	if ok {
-		return valueStringMap["regex"]
+		regex, ok := valueMap["regex"]
+		if ok {
+			return regex.(string)
+		}
 	}
 
 	valueInterfaceMap, ok := value.(map[string]interface{})
@@ -485,6 +502,11 @@ func stringLiteralOrRegex(value interface{}) string {
 		if ok {
 			return regex.(string)
 		}
+	}
+
+	valueStringMap, ok := value.(map[string]string)
+	if ok {
+		return valueStringMap["regex"]
 	}
 
 	return ""
