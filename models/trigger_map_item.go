@@ -145,21 +145,14 @@ func (item TriggerMapItemModel) Validate(idx int, workflows, pipelines []string)
 	}
 
 	if item.Pattern != "" {
-		if err := item.validateTypeOfLegacyItem(idx); err != nil {
-			return warnings, err
-		}
-	} else if item.Type == "" {
-		if err := item.validateTypeOfItem(idx); err != nil {
-			return warnings, err
-		}
-		if err := item.validateConditionValuesOfItem(idx); err != nil {
+		if err := item.validateLegacyItemType(idx); err != nil {
 			return warnings, err
 		}
 	} else {
-		if err := item.validateTypeOfItemWithExplicitType(idx); err != nil {
+		if err := item.validateType(idx); err != nil {
 			return warnings, err
 		}
-		if err := item.validateConditionValuesOfItemWithExplicitType(idx); err != nil {
+		if err := item.validateConditionValues(idx); err != nil {
 			return warnings, err
 		}
 	}
@@ -195,7 +188,7 @@ func (item TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []s
 	return warnings, nil
 }
 
-func (item TriggerMapItemModel) validateTypeOfLegacyItem(idx int) error {
+func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
 	if err := item.validateNoCodePushConditionsSet(idx, "pattern"); err != nil {
 		return err
 	}
@@ -208,86 +201,42 @@ func (item TriggerMapItemModel) validateTypeOfLegacyItem(idx int) error {
 	return nil
 }
 
-func (item TriggerMapItemModel) validateTypeOfItem(idx int) error {
-	if isStringLiteralOrRegexSet(item.PushBranch) {
+func (item TriggerMapItemModel) validateType(idx int) error {
+	// TODO: fix error message (not necessarily condition defines the type)
+
+	if isStringLiteralOrRegexSet(item.PushBranch) || item.Type == CodePushType {
 		if err := item.validateNoTagPushConditionsSet(idx, "push_branch"); err != nil {
 			return err
 		}
 		if err := item.validateNoPullRequestConditionsSet(idx, "push_branch"); err != nil {
 			return err
 		}
-	} else if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) {
+
+		return nil
+	} else if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) || isStringLiteralOrRegexSet(item.PullRequestTargetBranch) || item.Type == PullRequestType {
 		if err := item.validateNoCodePushConditionsSet(idx, "pull_request_source_branch"); err != nil {
 			return err
 		}
 		if err := item.validateNoTagPushConditionsSet(idx, "pull_request_source_branch"); err != nil {
 			return err
 		}
-	} else if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
-		if err := item.validateNoCodePushConditionsSet(idx, "pull_request_target_branch"); err != nil {
-			return err
-		}
-		if err := item.validateNoTagPushConditionsSet(idx, "pull_request_target_branch"); err != nil {
-			return err
-		}
-	} else if isStringLiteralOrRegexSet(item.Tag) {
+
+		return nil
+	} else if isStringLiteralOrRegexSet(item.Tag) || item.Type == TagPushType {
 		if err := item.validateNoCodePushConditionsSet(idx, "tag"); err != nil {
 			return err
 		}
 		if err := item.validateNoPullRequestConditionsSet(idx, "tag"); err != nil {
 			return err
 		}
-	} else if !isStringLiteralOrRegexSet(item.Tag) {
-		return fmt.Errorf("no trigger condition defined defined in the %d. trigger item", idx+1)
+
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("no trigger condition defined defined in the %d. trigger item", idx+1)
 }
 
-func (item TriggerMapItemModel) validateTypeOfItemWithExplicitType(idx int) error {
-	switch item.Type {
-	case CodePushType:
-		if err := item.validateNoTagPushConditionsSet(idx, fmt.Sprintf("%s type", CodePushType)); err != nil {
-			return err
-		}
-		if err := item.validateNoPullRequestConditionsSet(idx, fmt.Sprintf("%s type", CodePushType)); err != nil {
-			return err
-		}
-	case PullRequestType:
-		if err := item.validateNoCodePushConditionsSet(idx, fmt.Sprintf("%s type", PullRequestType)); err != nil {
-			return err
-		}
-		if err := item.validateNoTagPushConditionsSet(idx, fmt.Sprintf("%s type", PullRequestType)); err != nil {
-			return err
-		}
-	case TagPushType:
-		if err := item.validateNoCodePushConditionsSet(idx, fmt.Sprintf("%s type", TagPushType)); err != nil {
-			return err
-		}
-		if err := item.validateNoPullRequestConditionsSet(idx, fmt.Sprintf("%s type", TagPushType)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (item TriggerMapItemModel) validateConditionValuesOfItem(idx int) error {
-	if err := validateStringType(idx, "push_branch", item.PushBranch); err != nil {
-		return err
-	}
-	if err := validateStringType(idx, "tag", item.Tag); err != nil {
-		return err
-	}
-	if err := validateStringType(idx, "pull_request_source_branch", item.PullRequestSourceBranch); err != nil {
-		return err
-	}
-	if err := validateStringType(idx, "pull_request_target_branch", item.PullRequestTargetBranch); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (item TriggerMapItemModel) validateConditionValuesOfItemWithExplicitType(idx int) error {
+func (item TriggerMapItemModel) validateConditionValues(idx int) error {
 	if err := validateStringOrRegexType(idx, "push_branch", item.PushBranch); err != nil {
 		return err
 	}
@@ -400,17 +349,6 @@ func (item TriggerMapItemModel) conditionsString() string {
 	}
 
 	return str
-}
-
-func validateStringType(idx int, field string, value interface{}) error {
-	if value == nil {
-		return nil
-	}
-	_, ok := value.(string)
-	if ok {
-		return nil
-	}
-	return fmt.Errorf("string literal value is expected for %s in the %d. trigger item", field, idx+1)
 }
 
 func validateStringOrRegexType(idx int, field string, value interface{}) error {
