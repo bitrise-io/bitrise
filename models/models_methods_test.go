@@ -581,7 +581,7 @@ workflows:
 
 		warnings, err := config.Validate()
 		require.NoError(t, err)
-		require.Equal(t, []string{"utility workflow (_deps-update) defined as trigger target for the 1. trigger item, but utility workflows can't be triggered directly"}, warnings)
+		require.Equal(t, []string{"trigger item #1: utility workflow (_deps-update) defined as trigger target, but utility workflows can't be triggered directly"}, warnings)
 	}
 
 	t.Log("pipeline not exists")
@@ -612,7 +612,7 @@ workflows:
 		require.NoError(t, err)
 
 		_, err = config.Validate()
-		require.EqualError(t, err, "pipeline (release) defined in the 1. trigger item, but does not exist")
+		require.EqualError(t, err, "trigger item #1: non-existent pipeline defined as trigger target: release")
 	}
 
 	t.Log("workflow not exists")
@@ -633,7 +633,7 @@ workflows:
 		require.NoError(t, err)
 
 		_, err = config.Validate()
-		require.EqualError(t, err, "workflow (release) defined in the 1. trigger item, but does not exist")
+		require.EqualError(t, err, "trigger item #1: non-existent workflow defined as trigger target: release")
 	}
 }
 

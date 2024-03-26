@@ -234,23 +234,23 @@ func (item TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []s
 
 	// Validate target
 	if item.PipelineID != "" && item.WorkflowID != "" {
-		return warnings, fmt.Errorf("both pipeline and workflow are defined as trigger target for the %d. trigger item", idx+1)
+		return warnings, fmt.Errorf("trigger item #%d: both pipeline and workflow are defined as trigger target", idx+1)
 	}
 	if item.PipelineID == "" && item.WorkflowID == "" {
-		return warnings, fmt.Errorf("no pipeline nor workflow is defined as a trigger target for the %d. trigger item", idx+1)
+		return warnings, fmt.Errorf("trigger item #%d: no pipeline nor workflow is defined as trigger target", idx+1)
 	}
 
 	if strings.HasPrefix(item.WorkflowID, "_") {
-		warnings = append(warnings, fmt.Sprintf("utility workflow (%s) defined as trigger target for the %d. trigger item, but utility workflows can't be triggered directly", item.WorkflowID, idx+1))
+		warnings = append(warnings, fmt.Sprintf("trigger item #%d: utility workflow (%s) defined as trigger target, but utility workflows can't be triggered directly", idx+1, item.WorkflowID))
 	}
 
 	if item.PipelineID != "" {
 		if !sliceutil.IsStringInSlice(item.PipelineID, pipelines) {
-			return warnings, fmt.Errorf("pipeline (%s) defined in the %d. trigger item, but does not exist", item.PipelineID, idx+1)
+			return warnings, fmt.Errorf("trigger item #%d: non-existent pipeline defined as trigger target: %s", idx+1, item.PipelineID)
 		}
 	} else {
 		if !sliceutil.IsStringInSlice(item.WorkflowID, workflows) {
-			return warnings, fmt.Errorf("workflow (%s) defined in the %d. trigger item, but does not exist", item.WorkflowID, idx+1)
+			return warnings, fmt.Errorf("trigger item #%d: non-existent workflow defined as trigger target: %s", idx+1, item.WorkflowID)
 		}
 	}
 
@@ -273,7 +273,7 @@ func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
 func (item TriggerMapItemModel) validateType(idx int) error {
 	if item.Type != "" {
 		if !sliceutil.IsStringInSlice(string(item.Type), []string{string(CodePushType), string(PullRequestType), string(TagPushType)}) {
-			return fmt.Errorf("invalid type (%s) set in the %d. trigger item, valid types are: push, pull_request and tag", item.Type, idx+1)
+			return fmt.Errorf("trigger item #%d: invalid type (%s) defined, valid types are: push, pull_request and tag", idx+1, item.Type)
 		}
 	}
 
@@ -335,7 +335,7 @@ func (item TriggerMapItemModel) validateType(idx int) error {
 		return nil
 	}
 
-	return fmt.Errorf("no type or trigger condition defined in the %d. trigger item", idx+1)
+	return fmt.Errorf("trigger item #%d: no type or relevant trigger condition defined", idx+1)
 }
 
 func (item TriggerMapItemModel) validateConditionValues(idx int) error {
@@ -367,37 +367,37 @@ func (item TriggerMapItemModel) validateConditionValues(idx int) error {
 
 func (item TriggerMapItemModel) validateNoCodePushConditionsSet(idx int, field string) error {
 	if isStringLiteralOrRegexSet(item.PushBranch) {
-		return fmt.Errorf("both %s and push_branch defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and push_branch defined", idx+1, field)
 	}
 	if isStringLiteralOrRegexSet(item.CommitMessage) {
-		return fmt.Errorf("both %s and commit_message defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d:  both %s and commit_message defined", idx+1, field)
 	}
 	if isStringLiteralOrRegexSet(item.ChangedFiles) {
-		return fmt.Errorf("both %s and changed_files defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d:  both %s and changed_files defined", idx+1, field)
 	}
 	return nil
 }
 
 func (item TriggerMapItemModel) validateNoTagPushConditionsSet(idx int, field string) error {
 	if isStringLiteralOrRegexSet(item.Tag) {
-		return fmt.Errorf("both %s and tag defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and tag defined", idx+1, field)
 	}
 	return nil
 }
 
 func (item TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, field string) error {
 	if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) {
-		return fmt.Errorf("both %s and pull_request_source_branch defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_source_branch defined", idx+1, field)
 	}
 	if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
-		return fmt.Errorf("both %s and pull_request_target_branch defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_target_branch defined", idx+1, field)
 	}
 	//nolint:gosimple
 	if item.IsDraftPullRequestEnabled() != defaultDraftPullRequestEnabled {
-		return fmt.Errorf("both %s and draft_pull_request_enabled defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and draft_pull_request_enabled defined", idx+1, field)
 	}
 	if isStringLiteralOrRegexSet(item.PullRequestLabel) {
-		return fmt.Errorf("both %s and pull_request_label defined in the %d. trigger item", field, idx+1)
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_label defined", idx+1, field)
 	}
 	return nil
 }
@@ -471,12 +471,12 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	valueMap, ok := value.(map[interface{}]interface{})
 	if ok {
 		if len(valueMap) != 1 {
-			return fmt.Errorf("single 'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		_, ok := valueMap["regex"]
 		if !ok {
-			return fmt.Errorf("'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		return nil
@@ -485,17 +485,17 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	valueInterfaceMap, ok := value.(map[string]interface{})
 	if ok {
 		if len(valueInterfaceMap) != 1 {
-			return fmt.Errorf("single 'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		regex, ok := valueInterfaceMap["regex"]
 		if !ok {
-			return fmt.Errorf("'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		_, ok = regex.(string)
 		if !ok {
-			return fmt.Errorf("'regex' key is expected to have a string value in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected to have a string value in %s field", idx+1, field)
 		}
 
 		return nil
@@ -504,18 +504,18 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 	valueStringMap, ok := value.(map[string]string)
 	if ok {
 		if len(valueStringMap) != 1 {
-			return fmt.Errorf("single 'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		_, ok := valueStringMap["regex"]
 		if !ok {
-			return fmt.Errorf("'regex' key is expected for regex condition in %s field of the %d. trigger item", field, idx+1)
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
 		return nil
 	}
 
-	return fmt.Errorf("string literal or regex value is expected for %s in the %d. trigger item", field, idx+1)
+	return fmt.Errorf("trigger item #%d: string literal or regex value is expected for %s field", idx+1, field)
 }
 
 func stringFromTriggerCondition(value interface{}) string {
@@ -613,7 +613,7 @@ func castInterfaceKeysToStringKeys(idx int, field string, value map[interface{}]
 	for key, value := range value {
 		keyStr, ok := key.(string)
 		if !ok {
-			return nil, fmt.Errorf("%s should be a string literal or a hash with a single 'regex' key in the %d. trigger item", field, idx+1)
+			return nil, fmt.Errorf("trigger item #%d: %s field should be a string literal or a hash with a single 'regex' key", idx+1, field)
 		}
 		mapString[keyStr] = value
 	}
