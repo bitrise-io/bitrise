@@ -281,31 +281,58 @@ func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
 }
 
 func (item TriggerMapItemModel) validateType(idx int) error {
-	// TODO: fix error message (not necessarily condition defines the type)
-
 	if isStringLiteralOrRegexSet(item.PushBranch) || item.Type == CodePushType {
-		if err := item.validateNoTagPushConditionsSet(idx, "push_branch"); err != nil {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			field = "push_branch"
+		}
+
+		if err := item.validateNoTagPushConditionsSet(idx, field); err != nil {
 			return err
 		}
-		if err := item.validateNoPullRequestConditionsSet(idx, "push_branch"); err != nil {
+		if err := item.validateNoPullRequestConditionsSet(idx, field); err != nil {
 			return err
 		}
 
 		return nil
 	} else if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) || isStringLiteralOrRegexSet(item.PullRequestTargetBranch) || item.Type == PullRequestType {
-		if err := item.validateNoCodePushConditionsSet(idx, "pull_request_source_branch"); err != nil {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) {
+				field = "pull_request_source_branch"
+			}
+			if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
+				if field != "" {
+					field += " and "
+				}
+				field += "pull_request_target_branch"
+			}
+		}
+
+		if err := item.validateNoCodePushConditionsSet(idx, field); err != nil {
 			return err
 		}
-		if err := item.validateNoTagPushConditionsSet(idx, "pull_request_source_branch"); err != nil {
+		if err := item.validateNoTagPushConditionsSet(idx, field); err != nil {
 			return err
 		}
 
 		return nil
 	} else if isStringLiteralOrRegexSet(item.Tag) || item.Type == TagPushType {
-		if err := item.validateNoCodePushConditionsSet(idx, "tag"); err != nil {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			field = "tag"
+		}
+
+		if err := item.validateNoCodePushConditionsSet(idx, field); err != nil {
 			return err
 		}
-		if err := item.validateNoPullRequestConditionsSet(idx, "tag"); err != nil {
+		if err := item.validateNoPullRequestConditionsSet(idx, field); err != nil {
 			return err
 		}
 

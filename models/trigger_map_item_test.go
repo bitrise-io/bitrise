@@ -499,7 +499,7 @@ func TestTriggerMapItemModel_Validate_LegacyItem(t *testing.T) {
 				WorkflowID: "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "no trigger condition defined defined in the 1. trigger item",
+			wantErr:   "no type or trigger condition defined in the 1. trigger item",
 		},
 		{
 			name: "it fails for mixed (mixed new and legacy properties) trigger item",
@@ -724,17 +724,6 @@ func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
 			wantErr: "no pipeline nor workflow is defined as a trigger target for the 1. trigger item",
 		},
 		{
-			name: "it fails for mixed (mixed types) trigger item",
-			triggerMapItem: TriggerMapItemModel{
-				Tag:                     "master",
-				PullRequestSourceBranch: "feature/*",
-				PullRequestTargetBranch: "",
-				WorkflowID:              "primary",
-			},
-			workflows: []string{"primary"},
-			wantErr:   "both pull_request_source_branch and tag defined in the 1. trigger item",
-		},
-		{
 			name: "tag can be a regex",
 			triggerMapItem: TriggerMapItemModel{
 				Tag: map[interface{}]interface{}{
@@ -870,6 +859,47 @@ func TestTriggerMapItemModel_Validate_PullRequestItem(t *testing.T) {
 				PipelineID: "primary",
 			},
 			pipelines: []string{"primary"},
+		},
+		{
+			name: "it fails for mixed type trigger item (pull_request_source_branch + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "feature/*",
+				Tag:                     "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "both pull_request_source_branch and tag defined in the 1. trigger item",
+		},
+		{
+			name: "it fails for mixed type trigger item (pull_request_target_branch + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: "feature/*",
+				Tag:                     "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "both pull_request_target_branch and tag defined in the 1. trigger item",
+		},
+		{
+			name: "it fails for mixed type trigger item (pull_request_source_branch + pull_request_target_branch + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "main",
+				PullRequestTargetBranch: "feature/*",
+				Tag:                     "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "both pull_request_source_branch and pull_request_target_branch and tag defined in the 1. trigger item",
+		},
+		{
+			name: "it fails for mixed type trigger item (type + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       PullRequestType,
+				Tag:        "master",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "both type: pull_request and tag defined in the 1. trigger item",
 		},
 	}
 	for _, tt := range tests {
