@@ -8,8 +8,8 @@ type TriggerMapModel []TriggerMapItemModel
 
 func (triggerMap TriggerMapModel) Normalised() ([]TriggerMapItemModel, error) {
 	var items []TriggerMapItemModel
-	for _, item := range triggerMap {
-		normalizedItem, err := item.Normalized()
+	for idx, item := range triggerMap {
+		normalizedItem, err := item.Normalized(idx)
 		if err != nil {
 			return nil, err
 		}

@@ -138,10 +138,10 @@ func (item TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
 	return draftPullRequestEnabled
 }
 
-func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
+func (item TriggerMapItemModel) Normalized(idx int) (TriggerMapItemModel, error) {
 	mapInterface, ok := item.PushBranch.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("push_branch", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "push_branch", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -150,7 +150,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.CommitMessage.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("commit_message", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "commit_message", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -159,7 +159,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.ChangedFiles.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("changed_files", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "changed_files", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -168,7 +168,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.Tag.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("tag", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "tag", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -177,7 +177,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.PullRequestSourceBranch.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("pull_request_source_branch", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_source_branch", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -186,7 +186,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.PullRequestTargetBranch.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("pull_request_target_branch", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_target_branch", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -195,7 +195,7 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 
 	mapInterface, ok = item.PullRequestLabel.(map[interface{}]interface{})
 	if ok {
-		value, err := castInterfaceKeysToStringKeys("pull_request_label", mapInterface)
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_label", mapInterface)
 		if err != nil {
 			return TriggerMapItemModel{}, err
 		}
@@ -205,12 +205,12 @@ func (item TriggerMapItemModel) Normalized() (TriggerMapItemModel, error) {
 	return item, nil
 }
 
-func castInterfaceKeysToStringKeys(field string, value map[interface{}]interface{}) (map[string]interface{}, error) {
+func castInterfaceKeysToStringKeys(idx int, field string, value map[interface{}]interface{}) (map[string]interface{}, error) {
 	mapString := map[string]interface{}{}
 	for key, value := range value {
 		keyStr, ok := key.(string)
 		if !ok {
-			return nil, fmt.Errorf("%s should be a string literal or a hash with a single 'regex' key", field)
+			return nil, fmt.Errorf("%s should be a string literal or a hash with a single 'regex' key in the %d. trigger item", field, idx+1)
 		}
 		mapString[keyStr] = value
 	}
