@@ -660,6 +660,15 @@ func TestTriggerMapItemModel_Validate_CodePushItem(t *testing.T) {
 			workflows: []string{"primary"},
 			wantErr:   "single 'regex' key is expected for regex condition in changed_files field of the 1. trigger item",
 		},
+		{
+			name: "invalid type",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       "code-push",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "invalid type (code-push) set in the 1. trigger item, valid types are: push, pull_request and tag",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

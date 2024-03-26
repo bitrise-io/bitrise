@@ -207,18 +207,6 @@ func (item TriggerMapItemModel) Normalized(idx int) (TriggerMapItemModel, error)
 	return item, nil
 }
 
-func castInterfaceKeysToStringKeys(idx int, field string, value map[interface{}]interface{}) (map[string]interface{}, error) {
-	mapString := map[string]interface{}{}
-	for key, value := range value {
-		keyStr, ok := key.(string)
-		if !ok {
-			return nil, fmt.Errorf("%s should be a string literal or a hash with a single 'regex' key in the %d. trigger item", field, idx+1)
-		}
-		mapString[keyStr] = value
-	}
-	return mapString, nil
-}
-
 func (item TriggerMapItemModel) Validate(idx int, workflows, pipelines []string) ([]string, error) {
 	warnings, err := item.validateTarget(idx, workflows, pipelines)
 	if err != nil {
@@ -283,6 +271,12 @@ func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
 }
 
 func (item TriggerMapItemModel) validateType(idx int) error {
+	if item.Type != "" {
+		if !sliceutil.IsStringInSlice(string(item.Type), []string{string(CodePushType), string(PullRequestType), string(TagPushType)}) {
+			return fmt.Errorf("invalid type (%s) set in the %d. trigger item, valid types are: push, pull_request and tag", item.Type, idx+1)
+		}
+	}
+
 	if isStringLiteralOrRegexSet(item.PushBranch) || item.Type == CodePushType {
 		var field string
 		if item.Type != "" {
@@ -612,4 +606,16 @@ func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapI
 		})
 	}
 	return migratedItems
+}
+
+func castInterfaceKeysToStringKeys(idx int, field string, value map[interface{}]interface{}) (map[string]interface{}, error) {
+	mapString := map[string]interface{}{}
+	for key, value := range value {
+		keyStr, ok := key.(string)
+		if !ok {
+			return nil, fmt.Errorf("%s should be a string literal or a hash with a single 'regex' key in the %d. trigger item", field, idx+1)
+		}
+		mapString[keyStr] = value
+	}
+	return mapString, nil
 }
