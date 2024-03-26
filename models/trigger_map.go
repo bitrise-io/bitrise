@@ -6,6 +6,18 @@ import (
 
 type TriggerMapModel []TriggerMapItemModel
 
+func (triggerMap TriggerMapModel) Normalised() ([]TriggerMapItemModel, error) {
+	var items []TriggerMapItemModel
+	for _, item := range triggerMap {
+		normalizedItem, err := item.Normalized()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, normalizedItem)
+	}
+	return items, nil
+}
+
 func (triggerMap TriggerMapModel) Validate(workflows, pipelines []string) ([]string, error) {
 	var warnings []string
 

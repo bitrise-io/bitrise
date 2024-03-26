@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -15,6 +16,78 @@ import (
 
 // ----------------------------
 // --- Validate
+
+func TestJSONMarshal(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "valid legacy trigger map",
+			config: `format_version: "13"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: 'echo "Hello $NAME!"'
+          opts:
+            is_expand: false`,
+		},
+		{
+			name: "valid legacy trigger map",
+			config: `format_version: 13
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+trigger_map:
+- push_branch: main
+  enabled: false
+  workflow: deploy
+- push_branch: main
+  commit_message: "[workflow: test]"
+  workflow: test
+- push_branch: main
+  changed_files:
+    regex: '^ios\/.*'
+  workflow: ios-deploy
+- pull_request_target_branch: main
+  draft_pull_request_enabled: false
+  workflow: test
+- pull_request_target_branch: '*'
+  pull_request_label: "[workflow: check]"
+  workflow: check
+- tag: '*'
+  workflow: deploy
+
+workflows:
+  wip-deploy:
+  ios-deploy:
+  deploy:
+  test:
+  check:`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			require.Empty(t, warns)
+			require.NoError(t, err)
+
+			err = config.Normalize()
+			require.NoError(t, err)
+
+			_, err = json.Marshal(config)
+			require.NoError(t, err)
+		})
+	}
+}
 
 // Config
 func TestValidateConfig(t *testing.T) {
