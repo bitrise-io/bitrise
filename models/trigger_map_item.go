@@ -233,7 +233,7 @@ func (item TriggerMapItemModel) validateType(idx int) error {
 		return nil
 	}
 
-	return fmt.Errorf("no trigger condition defined defined in the %d. trigger item", idx+1)
+	return fmt.Errorf("no type or trigger condition defined in the %d. trigger item", idx+1)
 }
 
 func (item TriggerMapItemModel) validateConditionValues(idx int) error {
@@ -346,6 +346,12 @@ func (item TriggerMapItemModel) conditionsString() string {
 			str += " & "
 		}
 		str += fmt.Sprintf("%s: %v", tag, value)
+	}
+
+	if str == "" && item.Type != "" {
+		// Trigger Item without any condition is valid,
+		// this case we use the type to differentiate push, pull-request and tag items
+		str = "type: " + string(item.Type)
 	}
 
 	return str
