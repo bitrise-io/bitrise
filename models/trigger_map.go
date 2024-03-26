@@ -6,7 +6,7 @@ import (
 
 type TriggerMapModel []TriggerMapItemModel
 
-func (triggerMap TriggerMapModel) Normalised() ([]TriggerMapItemModel, error) {
+func (triggerMap TriggerMapModel) Normalized() ([]TriggerMapItemModel, error) {
 	var items []TriggerMapItemModel
 	for idx, item := range triggerMap {
 		normalizedItem, err := item.Normalized(idx)

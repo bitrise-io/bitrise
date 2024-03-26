@@ -142,7 +142,7 @@ func (config *BitriseDataModel) Normalize() error {
 		return err
 	}
 
-	normalizedTriggerMap, err := config.TriggerMap.Normalised()
+	normalizedTriggerMap, err := config.TriggerMap.Normalized()
 	if err != nil {
 		return err
 	}
