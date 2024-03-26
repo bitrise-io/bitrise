@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/models"
+
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
@@ -21,11 +23,11 @@ func Test_VersionOutput(t *testing.T) {
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
 		expectedVersionOut := fmt.Sprintf(`version: %s
-format version: 13
+format version: %s
 os: %s
 go: %s
 build number: 
-commit: (devel)`, version.VERSION, expectedOSVersion, runtime.Version())
+commit: (devel)`, version.VERSION, models.FormatVersion, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
 	}
