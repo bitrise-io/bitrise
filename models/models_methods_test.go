@@ -25,7 +25,7 @@ func TestJSONMarshal(t *testing.T) {
 		wantErr   string
 	}{
 		{
-			name: "valid legacy trigger map",
+			name: "Step inputs are normalized",
 			config: `format_version: "13"
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -39,7 +39,7 @@ workflows:
             is_expand: false`,
 		},
 		{
-			name: "valid legacy trigger map",
+			name: "Trigger map items are normalized",
 			config: `format_version: 13
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 

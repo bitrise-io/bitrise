@@ -138,6 +138,8 @@ func (item TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
 	return draftPullRequestEnabled
 }
 
+// Normalized casts trigger item values from map[interface{}]interface{} to map[string]interface{}
+// to support JSON marshalling of the bitrise.yml.
 func (item TriggerMapItemModel) Normalized(idx int) (TriggerMapItemModel, error) {
 	mapInterface, ok := item.PushBranch.(map[interface{}]interface{})
 	if ok {
