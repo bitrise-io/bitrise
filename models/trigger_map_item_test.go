@@ -340,10 +340,9 @@ func TestTriggerMapItemModel_MatchWithParams_TagParams(t *testing.T) {
 
 func TestTriggerMapItemModel_String(t *testing.T) {
 	tests := []struct {
-		name                string
-		triggerMapItem      TriggerMapItemModel
-		want                string
-		wantWithPrintTarget string
+		name           string
+		triggerMapItem TriggerMapItemModel
+		want           string
 	}{
 		{
 			name: "triggering pipeline",
@@ -351,8 +350,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PushBranch: "master",
 				PipelineID: "pipeline-1",
 			},
-			want:                "push_branch: master",
-			wantWithPrintTarget: "push_branch: master -> pipeline: pipeline-1",
+			want: "push_branch: master",
 		},
 		{
 			name: "push event",
@@ -360,8 +358,15 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PushBranch: "master",
 				WorkflowID: "ci",
 			},
-			want:                "push_branch: master",
-			wantWithPrintTarget: "push_branch: master -> workflow: ci",
+			want: "push_branch: master",
+		},
+		{
+			name: "push event - type only",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       "push",
+				WorkflowID: "ci",
+			},
+			want: "type: push",
 		},
 		{
 			name: "pull request event - pr source branch",
@@ -369,8 +374,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestSourceBranch: "develop",
 				WorkflowID:              "ci",
 			},
-			want:                "pull_request_source_branch: develop && draft_pull_request_enabled: true",
-			wantWithPrintTarget: "pull_request_source_branch: develop && draft_pull_request_enabled: true -> workflow: ci",
+			want: "pull_request_source_branch: develop",
 		},
 		{
 			name: "pull request event - pr target branch",
@@ -378,8 +382,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "ci",
 			},
-			want:                "pull_request_target_branch: master && draft_pull_request_enabled: true",
-			wantWithPrintTarget: "pull_request_target_branch: master && draft_pull_request_enabled: true -> workflow: ci",
+			want: "pull_request_target_branch: master",
 		},
 		{
 			name: "pull request event - pr target and source branch",
@@ -388,8 +391,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "ci",
 			},
-			want:                "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true",
-			wantWithPrintTarget: "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true -> workflow: ci",
+			want: "pull_request_source_branch: develop & pull_request_target_branch: master",
 		},
 		{
 			name: "pull request event - pr target and source branch and disable draft prs",
@@ -399,8 +401,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
 				WorkflowID:              "ci",
 			},
-			want:                "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: false",
-			wantWithPrintTarget: "pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: false -> workflow: ci",
+			want: "pull_request_source_branch: develop & pull_request_target_branch: master & draft_pull_request_enabled: false",
 		},
 		{
 			name: "tag event",
@@ -408,8 +409,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				Tag:        "0.9.0",
 				WorkflowID: "release",
 			},
-			want:                "tag: 0.9.0",
-			wantWithPrintTarget: "tag: 0.9.0 -> workflow: release",
+			want: "tag: 0.9.0",
 		},
 		{
 			name: "deprecated type - pr disabled",
@@ -418,8 +418,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				IsPullRequestAllowed: false,
 				WorkflowID:           "ci",
 			},
-			want:                "pattern: master && is_pull_request_allowed: false",
-			wantWithPrintTarget: "pattern: master && is_pull_request_allowed: false -> workflow: ci",
+			want: "pattern: master",
 		},
 		{
 			name: "deprecated type - pr enabled",
@@ -428,8 +427,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				IsPullRequestAllowed: true,
 				WorkflowID:           "ci",
 			},
-			want:                "pattern: master && is_pull_request_allowed: true",
-			wantWithPrintTarget: "pattern: master && is_pull_request_allowed: true -> workflow: ci",
+			want: "pattern: master & is_pull_request_allowed: true",
 		},
 		{
 			name: "mixed",
@@ -442,19 +440,17 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				IsPullRequestAllowed:    true,
 				WorkflowID:              "ci",
 			},
-			want:                "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true tag: 0.9.0 pattern: * && is_pull_request_allowed: true",
-			wantWithPrintTarget: "push_branch: master pull_request_source_branch: develop && pull_request_target_branch: master && draft_pull_request_enabled: true tag: 0.9.0 pattern: * && is_pull_request_allowed: true -> workflow: ci",
+			want: "push_branch: master & tag: 0.9.0 & pull_request_source_branch: develop & pull_request_target_branch: master & pattern: * & is_pull_request_allowed: true",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, tt.triggerMapItem.String(false))
-			require.Equal(t, tt.wantWithPrintTarget, tt.triggerMapItem.String(true))
+			require.Equal(t, tt.want, tt.triggerMapItem.conditionsString())
 		})
 	}
 }
 
-func TestTriggerMapItemModel_Validate(t *testing.T) {
+func TestTriggerMapItemModel_Validate_LegacyItem(t *testing.T) {
 	tests := []struct {
 		name           string
 		triggerMapItem TriggerMapItemModel
@@ -487,14 +483,14 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 				WorkflowID: "workflow-1",
 			},
 			workflows: []string{"pipeline-1", "workflow-1"},
-			wantErr:   "both pipeline and workflow are defined as trigger target: pattern: * && is_pull_request_allowed: false",
+			wantErr:   "trigger item #1: both pipeline and workflow are defined as trigger target",
 		},
 		{
 			name: "it fails for invalid deprecated trigger item - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
 				Pattern: "*",
 			},
-			wantErr: "no pipeline nor workflow is defined as a trigger target: pattern: * && is_pull_request_allowed: false",
+			wantErr: "trigger item #1: no pipeline nor workflow is defined as trigger target",
 		},
 		{
 			name: "it fails for invalid deprecated trigger item - missing pattern",
@@ -503,8 +499,41 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 				WorkflowID: "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "trigger map item ( -> workflow: primary) validate failed, error: failed to determin trigger event from params: push-branch: , pr-source-branch: , pr-target-branch: , tag: ",
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
 		},
+		{
+			name: "it fails for mixed (mixed new and legacy properties) trigger item",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: "master",
+				Pattern:    "*",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both pattern and push_branch defined",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.triggerMapItem.Validate(0, tt.workflows, tt.pipelines)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantWarns, warns)
+		})
+	}
+}
+
+func TestTriggerMapItemModel_Validate_CodePushItem(t *testing.T) {
+	tests := []struct {
+		name           string
+		triggerMapItem TriggerMapItemModel
+		workflows      []string
+		pipelines      []string
+		wantWarns      []string
+		wantErr        string
+	}{
 		{
 			name: "it validates code-push trigger item with triggered pipeline",
 			triggerMapItem: TriggerMapItemModel{
@@ -522,21 +551,220 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 			workflows: []string{"primary"},
 		},
 		{
-			name: "it fails for invalid code-push trigger item - missing push-branch",
+			name: "type is required, when no condition defined",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       CodePushType,
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "type is required, when no push_branch defined",
 			triggerMapItem: TriggerMapItemModel{
 				PushBranch: "",
 				WorkflowID: "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "trigger map item ( -> workflow: primary) validate failed, error: failed to determin trigger event from params: push-branch: , pr-source-branch: , pr-target-branch: , tag: ",
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "type is required, when no push_branch defined (commit_message)",
+			triggerMapItem: TriggerMapItemModel{
+				CommitMessage: "CI",
+				WorkflowID:    "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "type is required, when no push_branch defined (changed_files)",
+			triggerMapItem: TriggerMapItemModel{
+				ChangedFiles: "./ios/",
+				WorkflowID:   "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
 		},
 		{
 			name: "it fails for invalid code-push trigger item - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
 				PushBranch: "*",
 			},
-			wantErr: "no pipeline nor workflow is defined as a trigger target: push_branch: *",
+			wantErr: "trigger item #1: no pipeline nor workflow is defined as trigger target",
 		},
+		{
+			name: "it fails for mixed (mixed types) trigger item",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch:              "master",
+				PullRequestSourceBranch: "feature/*",
+				PullRequestTargetBranch: "",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both push_branch and pull_request_source_branch defined",
+		},
+		{
+			name: "push_branch can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				PushBranch: map[interface{}]interface{}{
+					"regex": "feature-.*",
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "commit_message can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: CodePushType,
+				CommitMessage: map[string]interface{}{
+					"regex": `^\[CI]\.*`,
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "changed_files can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: CodePushType,
+				ChangedFiles: map[string]string{
+					"regex": `^\/ios/.*`,
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "condition value can be a hash with a regex key",
+			triggerMapItem: TriggerMapItemModel{
+				Type: CodePushType,
+				ChangedFiles: map[string]string{
+					"glob": `^\/ios/.*`,
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: 'regex' key is expected for regex condition in changed_files field",
+		},
+		{
+			name: "condition value can be a hash with a single key",
+			triggerMapItem: TriggerMapItemModel{
+				Type: CodePushType,
+				ChangedFiles: map[string]string{
+					"glob":  `^\/ios/*`,
+					"regex": `^\/ios/.*`,
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: single 'regex' key is expected for regex condition in changed_files field",
+		},
+		{
+			name: "invalid type",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       "code-push",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: invalid type (code-push) defined, valid types are: push, pull_request and tag",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.triggerMapItem.Validate(0, tt.workflows, tt.pipelines)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantWarns, warns)
+		})
+	}
+}
+
+func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
+	tests := []struct {
+		name           string
+		triggerMapItem TriggerMapItemModel
+		workflows      []string
+		pipelines      []string
+		wantWarns      []string
+		wantErr        string
+	}{
+		{
+			name: "it validates tag trigger item with triggered pipeline",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:        "*",
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it validates tag trigger item with triggered workflow",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:        "*",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "type is required, when no condition defined",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       TagPushType,
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
+			name: "type is required, when no push_branch defined",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:        "",
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "it fails for invalid code-push trigger item - missing pipeline & workflow",
+			triggerMapItem: TriggerMapItemModel{
+				Tag: "*",
+			},
+			wantErr: "trigger item #1: no pipeline nor workflow is defined as trigger target",
+		},
+		{
+			name: "tag can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Tag: map[interface{}]interface{}{
+					"regex": "feature-.*",
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.triggerMapItem.Validate(0, tt.workflows, tt.pipelines)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantWarns, warns)
+		})
+	}
+}
+
+func TestTriggerMapItemModel_Validate_PullRequestItem(t *testing.T) {
+	tests := []struct {
+		name           string
+		triggerMapItem TriggerMapItemModel
+		workflows      []string
+		pipelines      []string
+		wantWarns      []string
+		wantErr        string
+	}{
 		{
 			name: "it validates pull-request trigger item (with source branch) with triggered pipeline",
 			triggerMapItem: TriggerMapItemModel{
@@ -570,11 +798,37 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 			workflows: []string{"primary"},
 		},
 		{
+			name: "type is required, when no condition defined",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       PullRequestType,
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "type is required, when no pull_request_source_branch defined (pull_request_label)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestLabel: "CI",
+				PipelineID:       "primary",
+			},
+			pipelines: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "type is required, when no pull_request_source_branch defined (draft_pull_request_enabled)",
+			triggerMapItem: TriggerMapItemModel{
+				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
+				PipelineID:              "primary",
+			},
+			pipelines: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
 			name: "it fails for invalid pull-request trigger item (target branch set) - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
 				PullRequestTargetBranch: "*",
 			},
-			wantErr: "no pipeline nor workflow is defined as a trigger target: pull_request_target_branch: * && draft_pull_request_enabled: true",
+			wantErr: "trigger item #1: no pipeline nor workflow is defined as trigger target",
 		},
 		{
 			name: "it fails for invalid pull-request trigger item (target and source branch set) - missing pipeline & workflow",
@@ -582,33 +836,84 @@ func TestTriggerMapItemModel_Validate(t *testing.T) {
 				PullRequestSourceBranch: "feature*",
 				PullRequestTargetBranch: "master",
 			},
-			wantErr: "no pipeline nor workflow is defined as a trigger target: pull_request_source_branch: feature* && pull_request_target_branch: master && draft_pull_request_enabled: true",
+			wantErr: "trigger item #1: no pipeline nor workflow is defined as trigger target",
 		},
 		{
-			name: "it fails for mixed (mixed types) trigger item",
+			name: "pull_request_source_branch can be a regex",
 			triggerMapItem: TriggerMapItemModel{
-				PushBranch:              "master",
+				PullRequestSourceBranch: map[interface{}]interface{}{
+					"regex": "feature-.*",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "pull_request_target_branch can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestTargetBranch: map[string]interface{}{
+					"regex": "feature-.*",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "pull_request_label can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: PullRequestType,
+				PullRequestLabel: map[string]string{
+					"regex": "CI",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "it fails for mixed type trigger item (pull_request_source_branch + tag)",
+			triggerMapItem: TriggerMapItemModel{
 				PullRequestSourceBranch: "feature/*",
-				PullRequestTargetBranch: "",
+				Tag:                     "master",
 				WorkflowID:              "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "trigger map item (push_branch: master pull_request_source_branch: feature/* && draft_pull_request_enabled: true -> workflow: primary) validate failed, error: push_branch (master) selects code-push trigger event, but pull_request_source_branch (feature/*) also provided",
+			wantErr:   "trigger item #1: both pull_request_source_branch and tag defined",
 		},
 		{
-			name: "it fails for mixed (mixed new and legacy properties) trigger item",
+			name: "it fails for mixed type trigger item (pull_request_target_branch + tag)",
 			triggerMapItem: TriggerMapItemModel{
-				PushBranch: "master",
-				Pattern:    "*",
+				PullRequestTargetBranch: "feature/*",
+				Tag:                     "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both pull_request_target_branch and tag defined",
+		},
+		{
+			name: "it fails for mixed type trigger item (pull_request_source_branch + pull_request_target_branch + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestSourceBranch: "main",
+				PullRequestTargetBranch: "feature/*",
+				Tag:                     "master",
+				WorkflowID:              "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both pull_request_source_branch and pull_request_target_branch and tag defined",
+		},
+		{
+			name: "it fails for mixed type trigger item (type + tag)",
+			triggerMapItem: TriggerMapItemModel{
+				Type:       PullRequestType,
+				Tag:        "master",
 				WorkflowID: "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "deprecated trigger item (pattern defined), mixed with trigger params (push_branch: master, pull_request_source_branch: , pull_request_target_branch: , tag: )",
+			wantErr:   "trigger item #1: both type: pull_request and tag defined",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			warns, err := tt.triggerMapItem.Validate(tt.workflows, tt.pipelines)
+			warns, err := tt.triggerMapItem.Validate(0, tt.workflows, tt.pipelines)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {

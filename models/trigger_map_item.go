@@ -2,8 +2,10 @@ package models
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/ryanuber/go-glob"
 )
 
@@ -26,91 +28,56 @@ const (
 
 const defaultDraftPullRequestEnabled = true
 
-type TriggerMapItemModel struct {
-	// Trigger target
-	PipelineID string `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
-	WorkflowID string `json:"workflow,omitempty" yaml:"workflow,omitempty"`
-	// Commit push event criteria
-	PushBranch string `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
-	// Tag push event criteria
-	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	// Pull Request event criteria
-	PullRequestSourceBranch string `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch string `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	DraftPullRequestEnabled *bool  `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
+type TriggerItemType string
 
-	// Deprecated
+const (
+	CodePushType    TriggerItemType = "push"
+	PullRequestType TriggerItemType = "pull_request"
+	TagPushType     TriggerItemType = "tag"
+)
+
+type TriggerMapItemModel struct {
+	// Trigger Item shared properties
+	Type       TriggerItemType `json:"type,omitempty" yaml:"type,omitempty"`
+	Enabled    *bool           `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	PipelineID string          `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
+	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
+
+	// Code Push Item conditions
+	PushBranch    interface{} `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	CommitMessage interface{} `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
+	ChangedFiles  interface{} `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
+
+	// Tag Push Item conditions
+	Tag interface{} `json:"tag,omitempty" yaml:"tag,omitempty"`
+
+	// Pull Request Item conditions
+	PullRequestSourceBranch interface{} `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
+	PullRequestTargetBranch interface{} `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
+	DraftPullRequestEnabled *bool       `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
+	PullRequestLabel        interface{} `json:"pull_request_label,omitempty" yaml:"pull_request_label,omitempty"`
+
+	// Deprecated properties
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
 	IsPullRequestAllowed bool   `json:"is_pull_request_allowed,omitempty" yaml:"is_pull_request_allowed,omitempty"`
 }
 
-func (triggerItem TriggerMapItemModel) Validate(workflows, pipelines []string) ([]string, error) {
-	var warnings []string
-
-	// Validate target
-	if triggerItem.PipelineID != "" && triggerItem.WorkflowID != "" {
-		return warnings, fmt.Errorf("both pipeline and workflow are defined as trigger target: %s", triggerItem.String(false))
-	}
-	if triggerItem.PipelineID == "" && triggerItem.WorkflowID == "" {
-		return warnings, fmt.Errorf("no pipeline nor workflow is defined as a trigger target: %s", triggerItem.String(false))
-	}
-
-	if strings.HasPrefix(triggerItem.WorkflowID, "_") {
-		warnings = append(warnings, fmt.Sprintf("workflow (%s) defined in trigger item (%s), but utility workflows can't be triggered directly", triggerItem.WorkflowID, triggerItem.String(true)))
-	}
-
-	found := false
-	if triggerItem.PipelineID != "" {
-		for _, pipelineID := range pipelines {
-			if pipelineID == triggerItem.PipelineID {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return warnings, fmt.Errorf("pipeline (%s) defined in trigger item (%s), but does not exist", triggerItem.PipelineID, triggerItem.String(true))
-		}
-	} else {
-		for _, workflowID := range workflows {
-			if workflowID == triggerItem.WorkflowID {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return warnings, fmt.Errorf("workflow (%s) defined in trigger item (%s), but does not exist", triggerItem.WorkflowID, triggerItem.String(true))
-		}
-	}
-
-	// Validate match criteria
-	if triggerItem.Pattern == "" {
-		_, err := triggerEventType(triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-		if err != nil {
-			return warnings, fmt.Errorf("trigger map item (%s) validate failed, error: %s", triggerItem.String(true), err)
-		}
-	} else if triggerItem.PushBranch != "" ||
-		triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" || triggerItem.Tag != "" {
-		return warnings, fmt.Errorf("deprecated trigger item (pattern defined), mixed with trigger params (push_branch: %s, pull_request_source_branch: %s, pull_request_target_branch: %s, tag: %s)", triggerItem.PushBranch, triggerItem.PullRequestSourceBranch, triggerItem.PullRequestTargetBranch, triggerItem.Tag)
-	}
-
-	return warnings, nil
-}
-
-func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, prReadyState PullRequestReadyState, tag string) (bool, error) {
+func (item TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranch, prTargetBranch string, prReadyState PullRequestReadyState, tag string) (bool, error) {
 	paramsEventType, err := triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag)
 	if err != nil {
 		return false, err
 	}
 
-	migratedTriggerItems := []TriggerMapItemModel{triggerItem}
-	if triggerItem.Pattern != "" {
-		migratedTriggerItems = migrateDeprecatedTriggerItem(triggerItem)
+	migratedTriggerItems := []TriggerMapItemModel{item}
+	if item.Pattern != "" {
+		migratedTriggerItems = migrateDeprecatedTriggerItem(item)
 	}
 
 	for _, migratedTriggerItem := range migratedTriggerItems {
-		itemEventType, err := triggerEventType(migratedTriggerItem.PushBranch, migratedTriggerItem.PullRequestSourceBranch, migratedTriggerItem.PullRequestTargetBranch, migratedTriggerItem.Tag)
+		itemEventType, err := triggerEventType(stringFromTriggerCondition(migratedTriggerItem.PushBranch),
+			stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch),
+			stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch),
+			stringFromTriggerCondition(migratedTriggerItem.Tag))
 		if err != nil {
 			return false, err
 		}
@@ -121,21 +88,21 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 
 		switch itemEventType {
 		case TriggerEventTypeCodePush:
-			match := glob.Glob(migratedTriggerItem.PushBranch, pushBranch)
+			match := glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PushBranch), pushBranch)
 			return match, nil
 		case TriggerEventTypePullRequest:
 			sourceMatch := false
-			if migratedTriggerItem.PullRequestSourceBranch == "" {
+			if stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch) == "" {
 				sourceMatch = true
 			} else {
-				sourceMatch = glob.Glob(migratedTriggerItem.PullRequestSourceBranch, prSourceBranch)
+				sourceMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestSourceBranch), prSourceBranch)
 			}
 
 			targetMatch := false
-			if migratedTriggerItem.PullRequestTargetBranch == "" {
+			if stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch) == "" {
 				targetMatch = true
 			} else {
-				targetMatch = glob.Glob(migratedTriggerItem.PullRequestTargetBranch, prTargetBranch)
+				targetMatch = glob.Glob(stringFromTriggerCondition(migratedTriggerItem.PullRequestTargetBranch), prTargetBranch)
 			}
 
 			// When a PR is converted to ready for review:
@@ -155,7 +122,7 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 
 			return sourceMatch && targetMatch && !stateMismatch, nil
 		case TriggerEventTypeTag:
-			match := glob.Glob(migratedTriggerItem.Tag, tag)
+			match := glob.Glob(stringFromTriggerCondition(migratedTriggerItem.Tag), tag)
 			return match, nil
 		}
 	}
@@ -163,65 +130,436 @@ func (triggerItem TriggerMapItemModel) MatchWithParams(pushBranch, prSourceBranc
 	return false, nil
 }
 
-func (triggerItem TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
+func (item TriggerMapItemModel) IsDraftPullRequestEnabled() bool {
 	draftPullRequestEnabled := defaultDraftPullRequestEnabled
-	if triggerItem.DraftPullRequestEnabled != nil {
-		draftPullRequestEnabled = *triggerItem.DraftPullRequestEnabled
+	if item.DraftPullRequestEnabled != nil {
+		draftPullRequestEnabled = *item.DraftPullRequestEnabled
 	}
 	return draftPullRequestEnabled
 }
 
-func (triggerItem TriggerMapItemModel) String(printTarget bool) string {
+// Normalized casts trigger item values from map[interface{}]interface{} to map[string]interface{}
+// to support JSON marshalling of the bitrise.yml.
+func (item TriggerMapItemModel) Normalized(idx int) (TriggerMapItemModel, error) {
+	mapInterface, ok := item.PushBranch.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "push_branch", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.PushBranch = value
+	}
+
+	mapInterface, ok = item.CommitMessage.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "commit_message", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.CommitMessage = value
+	}
+
+	mapInterface, ok = item.ChangedFiles.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "changed_files", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.ChangedFiles = value
+	}
+
+	mapInterface, ok = item.Tag.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "tag", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.Tag = value
+	}
+
+	mapInterface, ok = item.PullRequestSourceBranch.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_source_branch", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.PullRequestSourceBranch = value
+	}
+
+	mapInterface, ok = item.PullRequestTargetBranch.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_target_branch", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.PullRequestTargetBranch = value
+	}
+
+	mapInterface, ok = item.PullRequestLabel.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_label", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.PullRequestLabel = value
+	}
+
+	return item, nil
+}
+
+func (item TriggerMapItemModel) Validate(idx int, workflows, pipelines []string) ([]string, error) {
+	warnings, err := item.validateTarget(idx, workflows, pipelines)
+	if err != nil {
+		return warnings, err
+	}
+
+	if item.Pattern != "" {
+		if err := item.validateLegacyItemType(idx); err != nil {
+			return warnings, err
+		}
+	} else {
+		if err := item.validateType(idx); err != nil {
+			return warnings, err
+		}
+		if err := item.validateConditionValues(idx); err != nil {
+			return warnings, err
+		}
+	}
+
+	return warnings, nil
+}
+
+func (item TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []string) ([]string, error) {
+	var warnings []string
+
+	// Validate target
+	if item.PipelineID != "" && item.WorkflowID != "" {
+		return warnings, fmt.Errorf("trigger item #%d: both pipeline and workflow are defined as trigger target", idx+1)
+	}
+	if item.PipelineID == "" && item.WorkflowID == "" {
+		return warnings, fmt.Errorf("trigger item #%d: no pipeline nor workflow is defined as trigger target", idx+1)
+	}
+
+	if strings.HasPrefix(item.WorkflowID, "_") {
+		warnings = append(warnings, fmt.Sprintf("trigger item #%d: utility workflow (%s) defined as trigger target, but utility workflows can't be triggered directly", idx+1, item.WorkflowID))
+	}
+
+	if item.PipelineID != "" {
+		if !sliceutil.IsStringInSlice(item.PipelineID, pipelines) {
+			return warnings, fmt.Errorf("trigger item #%d: non-existent pipeline defined as trigger target: %s", idx+1, item.PipelineID)
+		}
+	} else {
+		if !sliceutil.IsStringInSlice(item.WorkflowID, workflows) {
+			return warnings, fmt.Errorf("trigger item #%d: non-existent workflow defined as trigger target: %s", idx+1, item.WorkflowID)
+		}
+	}
+
+	return warnings, nil
+}
+
+func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
+	if err := item.validateNoCodePushConditionsSet(idx, "pattern"); err != nil {
+		return err
+	}
+	if err := item.validateNoTagPushConditionsSet(idx, "pattern"); err != nil {
+		return err
+	}
+	if err := item.validateNoPullRequestConditionsSet(idx, "pattern"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) validateType(idx int) error {
+	if item.Type != "" {
+		if !sliceutil.IsStringInSlice(string(item.Type), []string{string(CodePushType), string(PullRequestType), string(TagPushType)}) {
+			return fmt.Errorf("trigger item #%d: invalid type (%s) defined, valid types are: push, pull_request and tag", idx+1, item.Type)
+		}
+	}
+
+	if isStringLiteralOrRegexSet(item.PushBranch) || item.Type == CodePushType {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			field = "push_branch"
+		}
+
+		if err := item.validateNoTagPushConditionsSet(idx, field); err != nil {
+			return err
+		}
+		if err := item.validateNoPullRequestConditionsSet(idx, field); err != nil {
+			return err
+		}
+
+		return nil
+	} else if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) || isStringLiteralOrRegexSet(item.PullRequestTargetBranch) || item.Type == PullRequestType {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) {
+				field = "pull_request_source_branch"
+			}
+			if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
+				if field != "" {
+					field += " and "
+				}
+				field += "pull_request_target_branch"
+			}
+		}
+
+		if err := item.validateNoCodePushConditionsSet(idx, field); err != nil {
+			return err
+		}
+		if err := item.validateNoTagPushConditionsSet(idx, field); err != nil {
+			return err
+		}
+
+		return nil
+	} else if isStringLiteralOrRegexSet(item.Tag) || item.Type == TagPushType {
+		var field string
+		if item.Type != "" {
+			field = fmt.Sprintf("type: %s", item.Type)
+		} else {
+			field = "tag"
+		}
+
+		if err := item.validateNoCodePushConditionsSet(idx, field); err != nil {
+			return err
+		}
+		if err := item.validateNoPullRequestConditionsSet(idx, field); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("trigger item #%d: no type or relevant trigger condition defined", idx+1)
+}
+
+func (item TriggerMapItemModel) validateConditionValues(idx int) error {
+	if err := validateStringOrRegexType(idx, "push_branch", item.PushBranch); err != nil {
+		return err
+	}
+	if err := validateStringOrRegexType(idx, "commit_message", item.CommitMessage); err != nil {
+		return err
+	}
+	if err := validateStringOrRegexType(idx, "changed_files", item.ChangedFiles); err != nil {
+		return err
+	}
+
+	if err := validateStringOrRegexType(idx, "tag", item.Tag); err != nil {
+		return err
+	}
+
+	if err := validateStringOrRegexType(idx, "pull_request_source_branch", item.PullRequestSourceBranch); err != nil {
+		return err
+	}
+	if err := validateStringOrRegexType(idx, "pull_request_target_branch", item.PullRequestTargetBranch); err != nil {
+		return err
+	}
+	if err := validateStringOrRegexType(idx, "pull_request_label", item.PullRequestLabel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) validateNoCodePushConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(item.PushBranch) {
+		return fmt.Errorf("trigger item #%d: both %s and push_branch defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.CommitMessage) {
+		return fmt.Errorf("trigger item #%d:  both %s and commit_message defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.ChangedFiles) {
+		return fmt.Errorf("trigger item #%d:  both %s and changed_files defined", idx+1, field)
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) validateNoTagPushConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(item.Tag) {
+		return fmt.Errorf("trigger item #%d: both %s and tag defined", idx+1, field)
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) {
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_source_branch defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_target_branch defined", idx+1, field)
+	}
+	//nolint:gosimple
+	if item.IsDraftPullRequestEnabled() != defaultDraftPullRequestEnabled {
+		return fmt.Errorf("trigger item #%d: both %s and draft_pull_request_enabled defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.PullRequestLabel) {
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_label defined", idx+1, field)
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) conditionsString() string {
 	str := ""
 
-	if triggerItem.PushBranch != "" {
-		str = fmt.Sprintf("push_branch: %s", triggerItem.PushBranch)
-	}
-
-	if triggerItem.PullRequestSourceBranch != "" || triggerItem.PullRequestTargetBranch != "" {
-		if str != "" {
-			str += " "
+	rv := reflect.Indirect(reflect.ValueOf(&item))
+	rt := rv.Type()
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		tag := field.Tag.Get("yaml")
+		tag = strings.TrimSuffix(tag, ",omitempty")
+		if tag == "pipeline" || tag == "workflow" || tag == "type" || tag == "enabled" {
+			continue
 		}
 
-		if triggerItem.PullRequestSourceBranch != "" {
-			str += fmt.Sprintf("pull_request_source_branch: %s", triggerItem.PullRequestSourceBranch)
+		value := rv.FieldByName(field.Name).Interface()
+		if value == nil {
+			continue
 		}
-		if triggerItem.PullRequestTargetBranch != "" {
-			if triggerItem.PullRequestSourceBranch != "" {
-				str += " && "
+
+		if tag == "draft_pull_request_enabled" {
+			if boolPtrValue, ok := value.(*bool); ok {
+				//nolint:gosimple
+				if boolPtrValue == nil || *boolPtrValue == defaultDraftPullRequestEnabled {
+					continue
+				}
+				value = *boolPtrValue
 			}
-
-			str += fmt.Sprintf("pull_request_target_branch: %s", triggerItem.PullRequestTargetBranch)
 		}
 
-		str += fmt.Sprintf(" && draft_pull_request_enabled: %v", triggerItem.IsDraftPullRequestEnabled())
-	}
+		if strValue, ok := value.(string); ok {
+			if strValue == "" {
+				continue
+			}
+		}
 
-	if triggerItem.Tag != "" {
+		if tag == "is_pull_request_allowed" {
+			if boolPtrValue, ok := value.(bool); ok {
+				if !boolPtrValue {
+					continue
+				}
+			}
+		}
+
 		if str != "" {
-			str += " "
+			str += " & "
 		}
-
-		str += fmt.Sprintf("tag: %s", triggerItem.Tag)
+		str += fmt.Sprintf("%s: %v", tag, value)
 	}
 
-	if triggerItem.Pattern != "" {
-		if str != "" {
-			str += " "
-		}
-
-		str += fmt.Sprintf("pattern: %s && is_pull_request_allowed: %v", triggerItem.Pattern, triggerItem.IsPullRequestAllowed)
-	}
-
-	if printTarget {
-		if triggerItem.PipelineID != "" {
-			str += fmt.Sprintf(" -> pipeline: %s", triggerItem.PipelineID)
-		} else {
-			str += fmt.Sprintf(" -> workflow: %s", triggerItem.WorkflowID)
-		}
+	if str == "" && item.Type != "" {
+		// Trigger Item without any condition is valid,
+		// this case we use the type to differentiate push, pull-request and tag items
+		str = "type: " + string(item.Type)
 	}
 
 	return str
+}
+
+func validateStringOrRegexType(idx int, field string, value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	_, ok := value.(string)
+	if ok {
+		return nil
+	}
+
+	valueMap, ok := value.(map[interface{}]interface{})
+	if ok {
+		if len(valueMap) != 1 {
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		_, ok := valueMap["regex"]
+		if !ok {
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		return nil
+	}
+
+	valueInterfaceMap, ok := value.(map[string]interface{})
+	if ok {
+		if len(valueInterfaceMap) != 1 {
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		regex, ok := valueInterfaceMap["regex"]
+		if !ok {
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		_, ok = regex.(string)
+		if !ok {
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected to have a string value in %s field", idx+1, field)
+		}
+
+		return nil
+	}
+
+	valueStringMap, ok := value.(map[string]string)
+	if ok {
+		if len(valueStringMap) != 1 {
+			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		_, ok := valueStringMap["regex"]
+		if !ok {
+			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("trigger item #%d: string literal or regex value is expected for %s field", idx+1, field)
+}
+
+func stringFromTriggerCondition(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+	return value.(string)
+}
+
+func stringLiteralOrRegex(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+	str, ok := value.(string)
+	if ok {
+		return string(str)
+	}
+
+	valueMap, ok := value.(map[interface{}]interface{})
+	if ok {
+		regex, ok := valueMap["regex"]
+		if ok {
+			return regex.(string)
+		}
+	}
+
+	valueInterfaceMap, ok := value.(map[string]interface{})
+	if ok {
+		regex, ok := valueInterfaceMap["regex"]
+		if ok {
+			return regex.(string)
+		}
+	}
+
+	valueStringMap, ok := value.(map[string]string)
+	if ok {
+		return valueStringMap["regex"]
+	}
+
+	return ""
+}
+
+func isStringLiteralOrRegexSet(value interface{}) bool {
+	return stringLiteralOrRegex(value) != ""
 }
 
 func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag string) (TriggerEventType, error) {
@@ -268,4 +606,16 @@ func migrateDeprecatedTriggerItem(triggerItem TriggerMapItemModel) []TriggerMapI
 		})
 	}
 	return migratedItems
+}
+
+func castInterfaceKeysToStringKeys(idx int, field string, value map[interface{}]interface{}) (map[string]interface{}, error) {
+	mapString := map[string]interface{}{}
+	for key, value := range value {
+		keyStr, ok := key.(string)
+		if !ok {
+			return nil, fmt.Errorf("trigger item #%d: %s field should be a string literal or a hash with a single 'regex' key", idx+1, field)
+		}
+		mapString[keyStr] = value
+	}
+	return mapString, nil
 }
