@@ -44,7 +44,9 @@ type TriggerMapItemModel struct {
 	WorkflowID string          `json:"workflow,omitempty" yaml:"workflow,omitempty"`
 
 	// Code Push Item conditions
-	PushBranch    interface{} `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	PushBranch interface{} `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+
+	// Code Push and Pull Request Item conditions
 	CommitMessage interface{} `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
 	ChangedFiles  interface{} `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
 
@@ -56,6 +58,7 @@ type TriggerMapItemModel struct {
 	PullRequestTargetBranch interface{} `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
 	DraftPullRequestEnabled *bool       `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
 	PullRequestLabel        interface{} `json:"pull_request_label,omitempty" yaml:"pull_request_label,omitempty"`
+	PullRequestComment      interface{} `json:"pull_request_comment,omitempty" yaml:"pull_request_comment,omitempty"`
 
 	// Deprecated properties
 	Pattern              string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
@@ -157,6 +160,15 @@ func (item TriggerMapItemModel) Normalized(idx int) (TriggerMapItemModel, error)
 			return TriggerMapItemModel{}, err
 		}
 		item.CommitMessage = value
+	}
+
+	mapInterface, ok = item.PullRequestComment.(map[interface{}]interface{})
+	if ok {
+		value, err := castInterfaceKeysToStringKeys(idx, "pull_request_comment", mapInterface)
+		if err != nil {
+			return TriggerMapItemModel{}, err
+		}
+		item.PullRequestComment = value
 	}
 
 	mapInterface, ok = item.ChangedFiles.(map[interface{}]interface{})
@@ -362,6 +374,9 @@ func (item TriggerMapItemModel) validateConditionValues(idx int) error {
 	if err := validateStringOrRegexType(idx, "pull_request_label", item.PullRequestLabel); err != nil {
 		return err
 	}
+	if err := validateStringOrRegexType(idx, "pull_request_comment", item.PullRequestComment); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -398,6 +413,9 @@ func (item TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, fiel
 	}
 	if isStringLiteralOrRegexSet(item.PullRequestLabel) {
 		return fmt.Errorf("trigger item #%d: both %s and pull_request_label defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.PullRequestComment) {
+		return fmt.Errorf("trigger item #%d: both %s and pull_request_comment defined", idx+1, field)
 	}
 	return nil
 }

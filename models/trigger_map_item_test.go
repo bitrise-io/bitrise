@@ -870,6 +870,17 @@ func TestTriggerMapItemModel_Validate_PullRequestItem(t *testing.T) {
 			pipelines: []string{"primary"},
 		},
 		{
+			name: "pull_request_comment can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: PullRequestType,
+				PullRequestComment: map[string]string{
+					"regex": "CI",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
 			name: "it fails for mixed type trigger item (pull_request_source_branch + tag)",
 			triggerMapItem: TriggerMapItemModel{
 				PullRequestSourceBranch: "feature/*",
