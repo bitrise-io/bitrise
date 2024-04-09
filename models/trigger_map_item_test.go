@@ -748,6 +748,46 @@ func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
 			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
 		},
 		{
+			name: "it fails when not tag related condition provided - commit message",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:           "1.0",
+				CommitMessage: "msg",
+				WorkflowID:    "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both tag and commit_message defined",
+		},
+		{
+			name: "it fails when not tag related condition provided - PR comment",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:                "1.0",
+				PullRequestComment: "msg",
+				WorkflowID:         "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both tag and pull_request_comment defined",
+		},
+		{
+			name: "it fails when not tag related condition provided - PR label",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:              "1.0",
+				PullRequestLabel: "label",
+				WorkflowID:       "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both tag and pull_request_label defined",
+		},
+		{
+			name: "it fails when not tag related condition provided - changed files",
+			triggerMapItem: TriggerMapItemModel{
+				Tag:          "1.0",
+				ChangedFiles: "file",
+				WorkflowID:   "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: both tag and changed_files defined",
+		},
+		{
 			name: "it fails for invalid code-push trigger item - missing pipeline & workflow",
 			triggerMapItem: TriggerMapItemModel{
 				Tag: "*",

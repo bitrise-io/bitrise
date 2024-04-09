@@ -343,6 +343,9 @@ func (item TriggerMapItemModel) validateType(idx int) error {
 		if err := item.validateNoPullRequestConditionsSet(idx, field); err != nil {
 			return err
 		}
+		if err := item.validateNoCodePushOrPullRequestCommonConditionsSet(idx, field); err != nil {
+			return err
+		}
 
 		return nil
 	}
@@ -376,6 +379,16 @@ func (item TriggerMapItemModel) validateConditionValues(idx int) error {
 	}
 	if err := validateStringOrRegexType(idx, "pull_request_comment", item.PullRequestComment); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (item TriggerMapItemModel) validateNoCodePushOrPullRequestCommonConditionsSet(idx int, field string) error {
+	if isStringLiteralOrRegexSet(item.CommitMessage) {
+		return fmt.Errorf("trigger item #%d: both %s and commit_message defined", idx+1, field)
+	}
+	if isStringLiteralOrRegexSet(item.ChangedFiles) {
+		return fmt.Errorf("trigger item #%d: both %s and changed_files defined", idx+1, field)
 	}
 	return nil
 }
