@@ -384,12 +384,6 @@ func (item TriggerMapItemModel) validateNoCodePushConditionsSet(idx int, field s
 	if isStringLiteralOrRegexSet(item.PushBranch) {
 		return fmt.Errorf("trigger item #%d: both %s and push_branch defined", idx+1, field)
 	}
-	if isStringLiteralOrRegexSet(item.CommitMessage) {
-		return fmt.Errorf("trigger item #%d:  both %s and commit_message defined", idx+1, field)
-	}
-	if isStringLiteralOrRegexSet(item.ChangedFiles) {
-		return fmt.Errorf("trigger item #%d:  both %s and changed_files defined", idx+1, field)
-	}
 	return nil
 }
 

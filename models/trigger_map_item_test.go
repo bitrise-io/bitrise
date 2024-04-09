@@ -442,6 +442,28 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 			},
 			want: "push_branch: master & tag: 0.9.0 & pull_request_source_branch: develop & pull_request_target_branch: master & pattern: * & is_pull_request_allowed: true",
 		},
+		{
+			name: "pr event - all conditions",
+			triggerMapItem: TriggerMapItemModel{
+				Type:               "pull_request",
+				WorkflowID:         "ci",
+				PullRequestComment: "my comment",
+				PullRequestLabel:   "my label",
+				CommitMessage:      "my commit",
+				ChangedFiles:       "my file",
+			},
+			want: "commit_message: my commit & changed_files: my file & pull_request_label: my label & pull_request_comment: my comment",
+		},
+		{
+			name: "push event - all conditions",
+			triggerMapItem: TriggerMapItemModel{
+				Type:          "push",
+				WorkflowID:    "ci",
+				CommitMessage: "my commit",
+				ChangedFiles:  "my file",
+			},
+			want: "commit_message: my commit & changed_files: my file",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -815,6 +837,33 @@ func TestTriggerMapItemModel_Validate_PullRequestItem(t *testing.T) {
 			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
 		},
 		{
+			name: "type is required, when no pull_request_source_branch defined (pull_request_comment)",
+			triggerMapItem: TriggerMapItemModel{
+				PullRequestComment: "comment",
+				PipelineID:         "primary",
+			},
+			pipelines: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "type is required, when no pull_request_source_branch defined (commit_message)",
+			triggerMapItem: TriggerMapItemModel{
+				CommitMessage: "commit",
+				PipelineID:    "primary",
+			},
+			pipelines: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
+			name: "type is required, when no pull_request_source_branch defined (changed_files)",
+			triggerMapItem: TriggerMapItemModel{
+				ChangedFiles: "my file",
+				PipelineID:   "primary",
+			},
+			pipelines: []string{"primary"},
+			wantErr:   "trigger item #1: no type or relevant trigger condition defined",
+		},
+		{
 			name: "type is required, when no pull_request_source_branch defined (draft_pull_request_enabled)",
 			triggerMapItem: TriggerMapItemModel{
 				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
@@ -864,6 +913,28 @@ func TestTriggerMapItemModel_Validate_PullRequestItem(t *testing.T) {
 				Type: PullRequestType,
 				PullRequestLabel: map[string]string{
 					"regex": "CI",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "commit_message can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: PullRequestType,
+				CommitMessage: map[string]string{
+					"regex": "commit msg",
+				},
+				PipelineID: "primary",
+			},
+			pipelines: []string{"primary"},
+		},
+		{
+			name: "changed_files can be a regex",
+			triggerMapItem: TriggerMapItemModel{
+				Type: PullRequestType,
+				ChangedFiles: map[string]string{
+					"regex": "files",
 				},
 				PipelineID: "primary",
 			},
