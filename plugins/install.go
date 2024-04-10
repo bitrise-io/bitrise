@@ -157,6 +157,12 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 	if err != nil {
 		return Plugin{}, fmt.Errorf("failed to create tmp plugin dir, error: %s", err)
 	}
+	defer func() {
+		err = os.RemoveAll(tmpPluginDir)
+		if err != nil {
+			log.Warnf("Failed to clean up temp dir after plugin installation, error: %s", err)
+		}
+	}()
 
 	// Install plugin executable
 	executableURL := newPlugin.ExecutableURL()
@@ -213,11 +219,6 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 			}
 			return Plugin{}, fmt.Errorf("failed to make plugin bin executable, error: %s", err)
 		}
-	}
-
-	err = os.RemoveAll(tmpPluginDir)
-	if err != nil {
-		log.Warnf("Failed to clean up temp dir after plugin installation, error: %s", err)
 	}
 
 	return newPlugin, nil
