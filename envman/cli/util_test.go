@@ -8,25 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func countOfEnvInEnvSlice(env models.EnvironmentItemModel, envSlice []models.EnvironmentItemModel) (cnt int, err error) {
-	for _, e := range envSlice {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return 0, err
-		}
-
-		k, v, err := e.GetKeyValuePair()
-		if err != nil {
-			return 0, err
-		}
-
-		if key == k && value == v {
-			cnt++
-		}
-	}
-	return
-}
-
 func countOfEnvKeyInEnvSlice(env models.EnvironmentItemModel, envSlice []models.EnvironmentItemModel) (cnt int, err error) {
 	for _, e := range envSlice {
 		key, _, err := env.GetKeyValuePair()

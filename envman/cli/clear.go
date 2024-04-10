@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clear(c *cli.Context) error {
+func clear(_ *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
 
 	if err := ClearEnvs(CurrentEnvStoreFilePath); err != nil {

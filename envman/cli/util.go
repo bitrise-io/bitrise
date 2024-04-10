@@ -59,7 +59,6 @@ func UpdateOrAddToEnvlist(oldEnvSlice []models.EnvironmentItemModel, newEnv mode
 				break
 			case "append":
 				replace = false
-				break
 			default:
 				return []models.EnvironmentItemModel{}, errors.New("Failed to parse answer: '" + answer + "' use ['replace/append']!")
 			}

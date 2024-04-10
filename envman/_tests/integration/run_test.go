@@ -40,10 +40,17 @@ func TestRun(t *testing.T) {
 			gotOut, err := parseEnvRawOut(output)
 			require.NoError(t, err, "parseEnvRawOut()")
 
+			// Envman and this test process run in different folders,
+			// so we can't compare the PWD env var.
+			delete(gotOut, "PWD")
+
 			// Want envs
 			envsWant := make(map[string]string)
 			for _, envVar := range os.Environ() {
 				key, value := env.SplitEnv(envVar)
+				if key == "PWD" {
+					continue
+				}
 				envsWant[key] = value
 			}
 

@@ -57,9 +57,6 @@ func TestValidateEnv(t *testing.T) {
 
 	// List oversize + too big value
 	str10Kbytes := strings.Repeat("a", (10 * 1024))
-	env1 = models.EnvironmentItemModel{
-		"key": str10Kbytes,
-	}
 	envs = []models.EnvironmentItemModel{}
 	for i := 0; i < 8; i++ {
 		env := models.EnvironmentItemModel{

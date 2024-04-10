@@ -43,7 +43,7 @@ func TestGetKeyValuePair(t *testing.T) {
 		OptionsKey:  EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")},
 	}
 
-	key, value, err = env.GetKeyValuePair()
+	_, _, err = env.GetKeyValuePair()
 	require.EqualError(t, err, `more than 2 keys specified: [opts test_key test_key1]`)
 
 	// 2 key-value fields
@@ -52,7 +52,7 @@ func TestGetKeyValuePair(t *testing.T) {
 		"test_key1": "test_value1",
 	}
 
-	key, value, err = env.GetKeyValuePair()
+	_, _, err = env.GetKeyValuePair()
 	require.EqualError(t, err, `more than 1 environment key specified: [test_key test_key1]`)
 
 	// Not string value
@@ -67,13 +67,13 @@ func TestGetKeyValuePair(t *testing.T) {
 	// Empty key
 	env = EnvironmentItemModel{"": "test_value"}
 
-	key, value, err = env.GetKeyValuePair()
+	_, _, err = env.GetKeyValuePair()
 	require.EqualError(t, err, "no environment key found, keys: []")
 
 	// Missing key-value
 	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
 
-	key, value, err = env.GetKeyValuePair()
+	_, _, err = env.GetKeyValuePair()
 	require.EqualError(t, err, "no environment key found, keys: [opts]")
 }
 
@@ -109,7 +109,7 @@ func TestGetKeyValuePairWithType(t *testing.T) {
 		OptionsKey:  EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")},
 	}
 
-	key, value, err = env.GetKeyValuePairWithType()
+	_, _, err = env.GetKeyValuePairWithType()
 	require.EqualError(t, err, `more than 2 keys specified: [opts test_key test_key1]`)
 
 	// 2 key-value fields
@@ -118,7 +118,7 @@ func TestGetKeyValuePairWithType(t *testing.T) {
 		"test_key1": "test_value1",
 	}
 
-	key, value, err = env.GetKeyValuePairWithType()
+	_, _, err = env.GetKeyValuePairWithType()
 	require.EqualError(t, err, `more than 1 environment key specified: [test_key test_key1]`)
 
 	// String value
@@ -133,13 +133,13 @@ func TestGetKeyValuePairWithType(t *testing.T) {
 	// Empty key
 	env = EnvironmentItemModel{"": "test_value"}
 
-	key, value, err = env.GetKeyValuePairWithType()
+	_, _, err = env.GetKeyValuePairWithType()
 	require.EqualError(t, err, "no environment key found, keys: []")
 
 	// Missing key-value
 	env = EnvironmentItemModel{OptionsKey: EnvironmentItemOptionsModel{Title: pointers.NewStringPtr("test_title")}}
 
-	key, value, err = env.GetKeyValuePairWithType()
+	_, _, err = env.GetKeyValuePairWithType()
 	require.EqualError(t, err, "no environment key found, keys: [opts]")
 }
 

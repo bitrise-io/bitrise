@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func print(c *cli.Context) error {
+func printCmd(c *cli.Context) error {
 	// Input validation
 	format := c.String(FormatKey)
 	if format == "" {
