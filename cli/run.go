@@ -312,6 +312,14 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	log.PrintBitriseStartedEvent(plan)
 
+	if tracker.IsTracking() {
+		log.Print()
+		log.Print("Bitrise collects anonymous usage stats to improve the product.")
+		env := fmt.Sprintf("%s=%s", analytics.DisabledEnvKey, "true")
+		log.Printf("If you want to opt out, define the env var %s", colorstring.Cyan(env))
+		log.Print()
+	}
+
 	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
