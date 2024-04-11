@@ -75,49 +75,6 @@ var (
 			},
 		},
 		triggerCommand,
-		{
-			Name:   "export",
-			Usage:  "Export the bitrise configuration.",
-			Action: export,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-				flFormat,
-				flOutputPath,
-				flPretty,
-			},
-		},
-		{
-			Name:   "normalize",
-			Usage:  "Normalize the bitrise configuration.",
-			Action: normalize,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-			},
-		},
-		{
-			Name:   "step-list",
-			Usage:  "List of available steps.",
-			Action: stepList,
-			Flags: []cli.Flag{
-				flCollection,
-				flFormat,
-			},
-		},
-		{
-			Name:    "step-info",
-			Aliases: []string{"i"},
-			Usage:   "Provides information (step ID, last version, given version) about specified step.",
-			Action:  stepInfo,
-			Flags: []cli.Flag{
-				flCollection,
-				flVersion,
-				flFormat,
-				flShort,
-				flStepYML,
-			},
-		},
 		workflowListCommand,
 		{
 			Name:   "share",

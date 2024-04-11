@@ -150,7 +150,7 @@ type fakeCommandLocator struct {
 	path string
 }
 
-func (f fakeCommandLocator) LookPath(name string) (string, error) {
+func (f fakeCommandLocator) LookPath(_ string) (string, error) {
 	return f.path, nil
 }
 
@@ -159,7 +159,7 @@ type fakeCommandFactory struct {
 	exitCode int
 }
 
-func (f fakeCommandFactory) Create(name string, args []string, opts *command.Opts) command.Command {
+func (f fakeCommandFactory) Create(name string, args []string, _ *command.Opts) command.Command {
 	return fakeCommand{
 		command:  fmt.Sprintf("%s %s", name, strings.Join(args, " ")),
 		stdout:   f.stdout,

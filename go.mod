@@ -1,6 +1,6 @@
 module github.com/bitrise-io/bitrise
 
-go 1.18
+go 1.21
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192

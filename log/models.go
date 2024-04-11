@@ -4,10 +4,10 @@ import "github.com/bitrise-io/bitrise/models"
 
 // StepStartedParams ...
 type StepStartedParams struct {
-	ExecutionId string `json:"uuid"`
+	ExecutionID string `json:"uuid"`
 	Position    int    `json:"idx"`
 	Title       string `json:"title"`
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Version     string `json:"version"`
 	Collection  string `json:"collection"`
 	Toolkit     string `json:"toolkit"`
@@ -30,7 +30,7 @@ type StepUpdate struct {
 
 // StepFinishedParams ...
 type StepFinishedParams struct {
-	ExecutionId   string             `json:"uuid"`
+	ExecutionID   string             `json:"uuid"`
 	Status        string             `json:"status"`
 	StatusReason  string             `json:"status_reason,omitempty"`
 	Title         string             `json:"title"`

@@ -45,7 +45,7 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 }
 
 // PrepareForStepRun ...
-func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ models.StepIDData, stepAbsDirPath string) error {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return nil

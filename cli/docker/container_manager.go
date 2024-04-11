@@ -56,7 +56,7 @@ func (rc *RunningContainer) ExecuteCommandArgs(envs []string) []string {
 const bitriseNetwork = "bitrise"
 
 type ContainerManager struct {
-	logger             DockerLogger
+	logger             Logger
 	workflowContainers map[string]*RunningContainer
 	serviceContainers  map[string][]*RunningContainer
 	client             *client.Client
@@ -65,30 +65,30 @@ type ContainerManager struct {
 	released bool
 }
 
-type DockerLogger struct {
+type Logger struct {
 	logger  log.Logger
 	secrets []string
 }
 
-func (dl *DockerLogger) Infof(format string, args ...interface{}) {
+func (dl *Logger) Infof(format string, args ...interface{}) {
 	log := fmt.Sprintf(format, args...)
 	redacted, _ := dl.Redact(log)
 	dl.logger.Info(redacted)
 }
 
-func (dl *DockerLogger) Errorf(format string, args ...interface{}) {
+func (dl *Logger) Errorf(format string, args ...interface{}) {
 	log := fmt.Sprintf(format, args...)
 	redacted, _ := dl.Redact(log)
 	dl.logger.Error(redacted)
 }
 
-func (dl *DockerLogger) Warnf(format string, args ...interface{}) {
+func (dl *Logger) Warnf(format string, args ...interface{}) {
 	log := fmt.Sprintf(format, args...)
 	redacted, _ := dl.Redact(log)
 	dl.logger.Warn(redacted)
 }
 
-func (dl *DockerLogger) Redact(s string) (string, error) {
+func (dl *Logger) Redact(s string) (string, error) {
 	src := bytes.NewReader([]byte(s))
 	dstBuf := new(bytes.Buffer)
 	logger := log.NewUtilsLogAdapter()
@@ -112,7 +112,7 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 	}
 
 	return &ContainerManager{
-		logger: DockerLogger{
+		logger: Logger{
 			logger:  logger,
 			secrets: secrets,
 		},

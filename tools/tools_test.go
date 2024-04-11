@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,8 +37,7 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 	ramdiskName := "RAMDISK"
 	volumeName := ""
 	if runtime.GOOS == "linux" {
-		tmpDir, err := ioutil.TempDir("", ramdiskName)
-		require.NoError(t, err)
+		tmpDir := t.TempDir()
 
 		ramdiskPath = tmpDir
 		require.NoError(t, exec.Command("mount", "-t", "tmpfs", "-o", "size=12m", "tmpfs", ramdiskPath).Run())

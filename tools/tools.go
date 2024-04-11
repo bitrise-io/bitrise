@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -301,12 +300,12 @@ func MoveFile(oldpath, newpath string) error {
 				return err
 			}
 
-			data, err := ioutil.ReadFile(oldpath)
+			data, err := os.ReadFile(oldpath)
 			if err != nil {
 				return err
 			}
 
-			err = ioutil.WriteFile(newpath, data, info.Mode())
+			err = os.WriteFile(newpath, data, info.Mode())
 			if err != nil {
 				return err
 			}
