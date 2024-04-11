@@ -8,7 +8,7 @@ import (
 )
 
 // implementing env.EnvironmentSource
-type DockerEnvironmentSource struct {
+type EnvironmentSource struct {
 	Logger log.Logger
 }
 
@@ -20,7 +20,7 @@ type DockerEnvironmentSource struct {
 // containers (for instance Java).
 // Instead, we have our own implementation, filtering for envs that are whitelisted, and that are the envs
 // starting with BITRISE_, and additionally the PATH, PR, CI and ENVMAN_ENVSTORE_PATH envs.
-func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
+func (des *EnvironmentSource) GetEnvironment() map[string]string {
 	passthroughEnvsList := strings.Split(os.Getenv("BITRISE_DOCKER_PASSTHROUGH_ENVS"), ",")
 	passthroughEnvsList = append(passthroughEnvsList, "PATH", "PR", "CI", "ENVMAN_ENVSTORE_PATH")
 	dockerPassthroughEnvsMap := make(map[string]bool)
@@ -50,7 +50,7 @@ func (des *DockerEnvironmentSource) GetEnvironment() map[string]string {
 }
 
 // SplitEnv splits an env returned by os.Environ
-func (des *DockerEnvironmentSource) splitEnv(env string) (key string, value string) {
+func (des *EnvironmentSource) splitEnv(env string) (key string, value string) {
 	const sep = "="
 	split := strings.SplitAfterN(env, sep, 2)
 	if split == nil {

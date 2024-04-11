@@ -40,9 +40,9 @@ const (
 	secretFilteringFlag = "secret-filtering"
 )
 
-var workflowNotSpecifiedErr = errors.New("workflow not specified")
-var utilityWorkflowSpecifiedErr = errors.New("utility workflow specified")
-var workflowRunFailedErr = errors.New("workflow run failed")
+var errWorkflowNotSpecified = errors.New("workflow not specified")
+var errUtilityWorkflowSpecified = errors.New("utility workflow specified")
+var errWorkflowRunFailed = errors.New("workflow run failed")
 
 type RunConfig struct {
 	Modes    models.WorkflowRunModes
@@ -84,12 +84,12 @@ func run(c *cli.Context) error {
 
 	config, err := processArgs(c)
 	if err != nil {
-		if err == workflowNotSpecifiedErr {
+		if err == errWorkflowNotSpecified {
 			if config != nil {
 				printAvailableWorkflows(config.Config)
 			}
 			failf("No workflow specified")
-		} else if err == utilityWorkflowSpecifiedErr {
+		} else if err == errUtilityWorkflowSpecified {
 			printAboutUtilityWorkflowsText()
 			failf("Utility workflows can't be triggered directly")
 		}
@@ -124,7 +124,7 @@ func run(c *cli.Context) error {
 		if shouldWaitForCleanup {
 			<-cleanupSynchronCtx.Done()
 		}
-		if err == workflowRunFailedErr {
+		if err == errWorkflowRunFailed {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
@@ -187,7 +187,7 @@ func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) Workf
 
 func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	if r.config.Workflow == "" {
-		return 1, workflowNotSpecifiedErr
+		return 1, errWorkflowNotSpecified
 	}
 	_, exist := r.config.Config.Workflows[r.config.Workflow]
 	if !exist {
@@ -223,7 +223,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
 		return 1, fmt.Errorf("failed to run workflow: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
-		return buildRunResults.ExitCode(), workflowRunFailedErr
+		return buildRunResults.ExitCode(), errWorkflowRunFailed
 	}
 
 	if err := checkUpdate(); err != nil {
@@ -312,6 +312,14 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	log.PrintBitriseStartedEvent(plan)
 
+	if tracker.IsTracking() {
+		log.Print()
+		log.Print("Bitrise collects anonymous usage stats to improve the product, detect and respond to Step error conditions.")
+		env := fmt.Sprintf("%s=%s", analytics.DisabledEnvKey, "true")
+		log.Printf("If you want to opt out, define the env var %s", colorstring.Cyan(env))
+		log.Print()
+	}
+
 	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
@@ -385,10 +393,10 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 	}
 
 	if runParams.WorkflowToRunID == "" {
-		return nil, workflowNotSpecifiedErr
+		return nil, errWorkflowNotSpecified
 	}
 	if strings.HasPrefix(runParams.WorkflowToRunID, "_") {
-		return nil, utilityWorkflowSpecifiedErr
+		return nil, errUtilityWorkflowSpecified
 	}
 
 	inventoryEnvironments, err := CreateInventoryFromCLIParams(runParams.InventoryBase64Data, runParams.InventoryPath)

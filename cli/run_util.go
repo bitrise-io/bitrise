@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -161,7 +160,7 @@ func registerSecretEnvsFiltering(filtering bool) error {
 }
 
 func isDirEmpty(path string) (bool, error) {
-	entries, err := ioutil.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return false, err
 	}
@@ -435,7 +434,7 @@ func (r WorkflowRunner) executeStep(
 	var envs []string
 
 	if workflow.Container.Image != "" {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.DockerEnvironmentSource{
+		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
 		if err != nil {
@@ -847,6 +846,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 				}
 			}
 			stepTestDir, err := os.MkdirTemp(testDeployDir, "step_test_result")
+
 			if err != nil {
 				log.Errorf("Failed to create per-step test result dir: %s", err)
 			}
@@ -942,17 +942,17 @@ func (r WorkflowRunner) activateAndRunSteps(
 	return buildRunResults
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionId string, stepStartTime time.Time) {
+func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
 	}
 
 	params := log.StepStartedParams{
-		ExecutionId: stepExcutionId,
+		ExecutionID: stepExcutionID,
 		Position:    idx,
 		Title:       title,
-		Id:          stepInfo.ID,
+		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
 		Toolkit:     toolkits.ToolkitForStep(step).ToolkitName(),

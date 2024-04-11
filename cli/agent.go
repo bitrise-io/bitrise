@@ -34,7 +34,7 @@ func registerAgentOverrides(dirs configs.BitriseDirs) error {
 			envKey: configs.BitriseTestDeployDirEnvKey,
 		},
 		{
-			dir:    dirs.HtmlReportDir,
+			dir:    dirs.HTMLReportDir,
 			envKey: configs.BitriseHtmlReportDirEnvKey,
 		},
 	}
