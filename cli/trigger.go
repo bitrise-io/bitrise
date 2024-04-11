@@ -28,6 +28,7 @@ var triggerCommand = cli.Command{
 		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+		cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 		// cli params used in CI mode
@@ -100,6 +101,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
@@ -113,7 +115,7 @@ func trigger(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tag,
+		pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
@@ -196,7 +198,7 @@ func trigger(c *cli.Context) error {
 	runner := NewWorkflowRunner(runConfig, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
-		if err == workflowRunFailedErr {
+		if err == errWorkflowRunFailed {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)

@@ -36,11 +36,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 	"workflow-editor": {
 		Source:     "https://github.com/bitrise-io/bitrise-workflow-editor.git",
-		MinVersion: "1.3.246",
-	},
-	"analytics": {
-		Source:     "https://github.com/bitrise-io/bitrise-plugins-analytics.git",
-		MinVersion: "0.13.1",
+		MinVersion: "1.3.305",
 	},
 }
 

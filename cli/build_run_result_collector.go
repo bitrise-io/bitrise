@@ -134,12 +134,12 @@ func (r buildRunResultCollector) registerStepRunResults(
 	logStepFinished(stepResults, stepExecutionId, isLastStep)
 }
 
-func logStepFinished(stepResults models.StepRunResultsModel, stepExecutionId string, isLastStep bool) {
-	params := stepFinishedParamsFromResults(stepResults, stepExecutionId, isLastStep)
+func logStepFinished(stepResults models.StepRunResultsModel, stepExecutionID string, isLastStep bool) {
+	params := stepFinishedParamsFromResults(stepResults, stepExecutionID, isLastStep)
 	log.PrintStepFinishedEvent(params)
 }
 
-func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecutionId string, isLastStep bool) log.StepFinishedParams {
+func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecutionID string, isLastStep bool) log.StepFinishedParams {
 	title := ""
 	if results.StepInfo.Step.Title != nil {
 		title = *results.StepInfo.Step.Title
@@ -175,7 +175,7 @@ func stepFinishedParamsFromResults(results models.StepRunResultsModel, stepExecu
 	}
 
 	params := log.StepFinishedParams{
-		ExecutionId:   stepExecutionId,
+		ExecutionID:   stepExecutionID,
 		Status:        results.Status.String(),
 		Title:         title,
 		RunTime:       results.RunTime.Milliseconds(),

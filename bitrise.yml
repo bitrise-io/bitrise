@@ -44,13 +44,27 @@ workflows:
 
             $current_bitrise setup
 
-            go test -v ./_tests/integration/
+            go test -v ./_tests/integration/ --tags linux_and_mac
+
+            if [ "$(uname)" == "Linux" ]; then
+                go test -v ./_tests/integration/ --tags linux_only
+            fi
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:
     - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
     steps:
+    - script:
+        title: Fetch GCS bucket credentials
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
+            # Goreleaser expects this env var:
+            envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
     - script:
         title: Goreleaser (create binaries + publish to GH)
         deps:

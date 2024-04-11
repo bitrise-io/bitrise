@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/stretchr/testify/require"
 )
 
-func toBase64(t *testing.T, str string) string {
+func toBase64(str string) string {
 	bytes := base64.StdEncoding.EncodeToString([]byte(str))
 	return string(bytes)
 }
 
-func toJSON(t *testing.T, stringStringMap map[string]string) string {
+func toJSON(t *testing.T, stringStringMap map[string]interface{}) string {
 	bytes, err := json.Marshal(stringStringMap)
 	require.NoError(t, err)
 	return string(bytes)
@@ -22,22 +23,23 @@ func toJSON(t *testing.T, stringStringMap map[string]string) string {
 func TestParseRunAndTriggerJSONParams(t *testing.T) {
 	t.Log("it parses cli params")
 	{
-		paramsMap := map[string]string{
+		paramsMap := map[string]interface{}{
 			WorkflowKey: "primary",
 
 			PatternKey:        "master",
 			PushBranchKey:     "deploy",
 			PRSourceBranchKey: "development",
 			PRTargetBranchKey: "release",
+			PRReadyStateKey:   models.PullRequestReadyStateReadyForReview,
 			TagKey:            "0.9.0",
 
 			OuputFormatKey: "json",
 
 			ConfigKey:       "bitrise.yml",
-			ConfigBase64Key: toBase64(t, "bitrise.yml"),
+			ConfigBase64Key: toBase64("bitrise.yml"),
 
 			InventoryKey:       ".secrets.bitrise.yml",
-			InventoryBase64Key: toBase64(t, ".secrets.bitrise.yml"),
+			InventoryBase64Key: toBase64(".secrets.bitrise.yml"),
 		}
 		params, err := parseRunAndTriggerJSONParams(toJSON(t, paramsMap))
 		require.NoError(t, err)
@@ -48,15 +50,16 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "deploy", params.PushBranch)
 		require.Equal(t, "development", params.PRSourceBranch)
 		require.Equal(t, "release", params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateReadyForReview, params.PRReadyState)
 		require.Equal(t, "0.9.0", params.Tag)
 
 		require.Equal(t, "json", params.Format)
 
 		require.Equal(t, "bitrise.yml", params.BitriseConfigPath)
-		require.Equal(t, toBase64(t, "bitrise.yml"), params.BitriseConfigBase64Data)
+		require.Equal(t, toBase64("bitrise.yml"), params.BitriseConfigBase64Data)
 
 		require.Equal(t, ".secrets.bitrise.yml", params.InventoryPath)
-		require.Equal(t, toBase64(t, ".secrets.bitrise.yml"), params.InventoryBase64Data)
+		require.Equal(t, toBase64(".secrets.bitrise.yml"), params.InventoryBase64Data)
 	}
 
 	t.Log("it fails for invalid json")
@@ -70,6 +73,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyState(""), params.PRReadyState)
 
 		require.Equal(t, "", params.Format)
 
@@ -90,14 +94,15 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateReadyForReview
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
@@ -105,7 +110,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		params, err := parseRunAndTriggerParams(
 			workflow,
 			pattern,
-			pushBranch, prSourceBranch, prTargetBranch, tag,
+			pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 			format,
 			bitriseConfigPath, bitriseConfigBase64Data,
 			inventoryPath, inventoryBase64Data,
@@ -119,6 +124,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateReadyForReview, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -138,22 +144,24 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
-		paramsMap := map[string]string{
+		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
 
 			PatternKey:        pattern,
 			PushBranchKey:     pushBranch,
 			PRSourceBranchKey: prSourceBranch,
 			PRTargetBranchKey: prTargetBranch,
+			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
 			OuputFormatKey:    format,
 
@@ -167,7 +175,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		jsonParams := toJSON(t, paramsMap)
 		base64JSONParams := ""
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, workflow, params.WorkflowToRunID)
@@ -176,6 +184,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyState("draft"), params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -195,22 +204,24 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
-		paramsMap := map[string]string{
+		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
 
 			PatternKey:        pattern,
 			PushBranchKey:     pushBranch,
 			PRSourceBranchKey: prSourceBranch,
 			PRTargetBranchKey: prTargetBranch,
+			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
 			OuputFormatKey:    format,
 
@@ -222,9 +233,9 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		}
 
 		jsonParams := ""
-		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
+		base64JSONParams := toBase64(toJSON(t, paramsMap))
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, workflow, params.WorkflowToRunID)
@@ -233,6 +244,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyState("draft"), params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -252,22 +264,24 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateReadyForReview
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
-		paramsMap := map[string]string{
+		paramsMap := map[string]interface{}{
 			WorkflowKey: workflow,
 
 			PatternKey:        pattern,
 			PushBranchKey:     pushBranch,
 			PRSourceBranchKey: prSourceBranch,
 			PRTargetBranchKey: prTargetBranch,
+			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
 			OuputFormatKey:    format,
 
@@ -278,10 +292,10 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			InventoryBase64Key: inventoryBase64Data,
 		}
 
-		jsonParams := `{"workflow":"test"}`
-		base64JSONParams := toBase64(t, toJSON(t, paramsMap))
+		jsonParams := `{"workflow":"test","pr-ready-state":"draft"}`
+		base64JSONParams := toBase64(toJSON(t, paramsMap))
 
-		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
+		params, err := parseRunAndTriggerParams("", "", "", "", "", "", "", "", "", "", "", "", jsonParams, base64JSONParams)
 		require.NoError(t, err)
 
 		require.Equal(t, "test", params.WorkflowToRunID)
@@ -290,6 +304,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -309,14 +324,15 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := `{"workflow":"test","pattern":"feature/","config":"test.bitrise.yml","inventory":".test.secrets.bitrise.yml"}`
 		base64JSONParams := ""
@@ -324,7 +340,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		params, err := parseRunAndTriggerParams(
 			workflow,
 			pattern,
-			pushBranch, prSourceBranch, prTargetBranch, tag,
+			pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 			format,
 			bitriseConfigPath, bitriseConfigBase64Data,
 			inventoryPath, inventoryBase64Data,
@@ -338,6 +354,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)
@@ -356,10 +373,10 @@ func TestParseRunParams(t *testing.T) {
 		workflow := "primary"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
@@ -378,6 +395,7 @@ func TestParseRunParams(t *testing.T) {
 		require.Equal(t, "", params.PushBranch)
 		require.Equal(t, "", params.PRSourceBranch)
 		require.Equal(t, "", params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyState(""), params.PRReadyState)
 		require.Equal(t, "", params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -397,20 +415,21 @@ func TestParseTriggerParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
 
 		params, err := parseTriggerParams(
 			pattern,
-			pushBranch, prSourceBranch, prTargetBranch, tag,
+			pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 			bitriseConfigPath, bitriseConfigBase64Data,
 			inventoryPath, inventoryBase64Data,
 			jsonParams, base64JSONParams,
@@ -423,6 +442,7 @@ func TestParseTriggerParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, "", params.Format)
@@ -442,21 +462,22 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		pushBranch := "master"
 		prSourceBranch := "develop"
 		prTargetBranch := "master"
+		prReadyState := models.PullRequestReadyStateDraft
 		tag := "0.9.0"
 		format := "json"
 
 		bitriseConfigPath := "bitrise.yml"
-		bitriseConfigBase64Data := toBase64(t, "bitrise.yml")
+		bitriseConfigBase64Data := toBase64("bitrise.yml")
 
 		inventoryPath := ".secrets.bitrise.yml"
-		inventoryBase64Data := toBase64(t, ".secrets.bitrise.yml")
+		inventoryBase64Data := toBase64(".secrets.bitrise.yml")
 
 		jsonParams := ""
 		base64JSONParams := ""
 
 		params, err := parseTriggerCheckParams(
 			pattern,
-			pushBranch, prSourceBranch, prTargetBranch, tag,
+			pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 			format,
 			bitriseConfigPath, bitriseConfigBase64Data,
 			inventoryPath, inventoryBase64Data,
@@ -470,6 +491,7 @@ func TestParseTriggerCheckParams(t *testing.T) {
 		require.Equal(t, pushBranch, params.PushBranch)
 		require.Equal(t, prSourceBranch, params.PRSourceBranch)
 		require.Equal(t, prTargetBranch, params.PRTargetBranch)
+		require.Equal(t, models.PullRequestReadyStateDraft, params.PRReadyState)
 		require.Equal(t, tag, params.Tag)
 
 		require.Equal(t, format, params.Format)

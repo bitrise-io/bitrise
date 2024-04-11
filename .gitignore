@@ -1,5 +1,6 @@
 _temp/
 _tmp/
+_local/
 .bitrise
 .bitrise.secrets.yml
 _bin

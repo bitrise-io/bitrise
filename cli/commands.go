@@ -13,11 +13,11 @@ const (
 	PushBranchKey     = "push-branch"
 	PRSourceBranchKey = "pr-source-branch"
 	PRTargetBranchKey = "pr-target-branch"
+	PRReadyStateKey   = "pr-ready-state"
 
-	IncludeWorkflowMetaKey = "include-workflow-meta"
-	ConfigKey              = "config"
-	InventoryKey           = "inventory"
-	OuputFormatKey         = "format"
+	ConfigKey      = "config"
+	InventoryKey   = "inventory"
+	OuputFormatKey = "format"
 )
 
 var (
@@ -60,6 +60,7 @@ var (
 				cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
 				cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
 				cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
+				cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
 				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
@@ -68,56 +69,12 @@ var (
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
 				cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
 
-
 				// should deprecate
 				cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
 				cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
 			},
 		},
 		triggerCommand,
-		{
-			Name:   "export",
-			Usage:  "Export the bitrise configuration.",
-			Action: export,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-				flFormat,
-				flOutputPath,
-				flPretty,
-			},
-		},
-		{
-			Name:   "normalize",
-			Usage:  "Normalize the bitrise configuration.",
-			Action: normalize,
-			Flags: []cli.Flag{
-				flConfig,
-				flConfigBase64,
-			},
-		},
-		{
-			Name:   "step-list",
-			Usage:  "List of available steps.",
-			Action: stepList,
-			Flags: []cli.Flag{
-				flCollection,
-				flFormat,
-			},
-		},
-		{
-			Name:    "step-info",
-			Aliases: []string{"i"},
-			Usage:   "Provides information (step ID, last version, given version) about specified step.",
-			Action:  stepInfo,
-			Flags: []cli.Flag{
-				flCollection,
-				flVersion,
-				flFormat,
-				flShort,
-				flStepYML,
-			},
-		},
 		workflowListCommand,
 		{
 			Name:   "share",

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -180,7 +179,7 @@ func download(version string) error {
 	}
 	url := fmt.Sprintf(downloadURL, version, strings.Title(runtime.GOOS))
 
-	tmpfile, err := ioutil.TempFile("", "bitrise")
+	tmpfile, err := os.CreateTemp("", "bitrise")
 	if err != nil {
 		return fmt.Errorf("can't create temporary file: %s", err)
 	}

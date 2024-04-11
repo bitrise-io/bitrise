@@ -1,42 +1,10 @@
 package toolkits
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/bitrise-io/go-utils/command"
 )
-
-func getGoEnv(cmdRunner commandRunner, goBinaryPath string, envKey string) (string, error) {
-	envCmd := command.New(goBinaryPath, "env", "-json", envKey)
-
-	outputData, err := cmdRunner.runForOutput(envCmd)
-	if err != nil {
-		return "", err
-	}
-
-	goEnvs := make(map[string]string)
-	if err := json.Unmarshal([]byte(outputData), &goEnvs); err != nil {
-		return "", fmt.Errorf("failed to unmarshall go env output (%s): %v", outputData, err)
-	}
-
-	if _, ok := goEnvs[envKey]; !ok {
-		return "", nil
-	}
-
-	return goEnvs[envKey], nil
-}
-
-func isGoPathModeSupported(mode string) bool {
-	if mode == "" || mode == "on" {
-		return false
-	}
-
-	return true
-}
 
 func isGoPathModeStep(projectDir string) bool {
 	goModPath := filepath.Join(projectDir, "go.mod")
@@ -55,7 +23,7 @@ func migrateToGoModules(stepAbsDirPath, packageName string) error {
 	goModTemplate := `module %s
 go 1.16`
 	goModContents := fmt.Sprintf(goModTemplate, packageName)
-	if err := ioutil.WriteFile(filepath.Join(stepAbsDirPath, "go.mod"), []byte(goModContents), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(stepAbsDirPath, "go.mod"), []byte(goModContents), 0600); err != nil {
 		return fmt.Errorf("failed to write go.mod file: %v", err)
 	}
 

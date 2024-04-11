@@ -5,7 +5,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func finish(c *cli.Context) error {
+func finish(_ *cli.Context) error {
 	if err := tools.StepmanShareFinish(); err != nil {
 		failf("Bitrise share finish failed, error: %s", err)
 	}

@@ -20,7 +20,7 @@ const (
 	// the -4 value is the four `|` separator characters in the line
 	footerTitleBoxWidth   = stepRunSummaryBoxWidthInChars - footerIconBoxWidth - footerExecutionTimeBoxWidth - 4
 	deprecatedPrefix      = "[Deprecated]"
-	missingUrlPlaceholder = "Not provided"
+	missingURLPlaceholder = "Not provided"
 	removalDateTitle      = "Removal date:"
 	removalNotesTitle     = "Removal notes:"
 	updateAvailableTitle  = "Update available"
@@ -36,7 +36,7 @@ func generateStepStartedHeaderLines(params StepStartedParams) []string {
 	lines = append(lines, separator)
 	lines = append(lines, getHeaderTitle(params.Position, params.Title))
 	lines = append(lines, separator)
-	lines = append(lines, getHeaderSubsection("id", params.Id))
+	lines = append(lines, getHeaderSubsection("id", params.ID))
 	lines = append(lines, getHeaderSubsection("version", params.Version))
 	lines = append(lines, getHeaderSubsection("collection", params.Collection))
 	lines = append(lines, getHeaderSubsection("toolkit", params.Toolkit))
@@ -63,7 +63,7 @@ func getHeaderLine(content string) string {
 	return widthConstrainedStringWithBorder(content, contentMaxWidth)
 }
 
-func widthConstrainedStringWithBorder(content string, width int) string {
+func widthConstrainedStringWithBorder(content string, width int) string { //nolint:unparam // Width always receives contentMaxWidth
 	return fmt.Sprintf("| %s |", widthConstrainedString(content, width))
 }
 
@@ -233,21 +233,21 @@ func getFooterExecutionTime(duration int64) string {
 	return fmt.Sprintf(" %s ", executionTime)
 }
 
-func getIssueAndSourceSection(issueUrl, sourceUrl string) []string {
-	if issueUrl == "" {
-		issueUrl = missingUrlPlaceholder
+func getIssueAndSourceSection(issueURL, sourceURL string) []string {
+	if issueURL == "" {
+		issueURL = missingURLPlaceholder
 	}
-	if sourceUrl == "" {
-		sourceUrl = missingUrlPlaceholder
+	if sourceURL == "" {
+		sourceURL = missingURLPlaceholder
 	}
 
 	contentMaxWidth := stepRunSummaryBoxWidthInChars - 4
-	issueRow := widthConstrainedStringWithBorder(fmt.Sprintf("Issue tracker: %s", issueUrl), contentMaxWidth)
-	sourceRow := widthConstrainedStringWithBorder(fmt.Sprintf("Source: %s", sourceUrl), contentMaxWidth)
+	issueRow := widthConstrainedStringWithBorder(fmt.Sprintf("Issue tracker: %s", issueURL), contentMaxWidth)
+	sourceRow := widthConstrainedStringWithBorder(fmt.Sprintf("Source: %s", sourceURL), contentMaxWidth)
 
-	coloredPlaceholder := corelog.AddColor(corelog.WarnLevel, missingUrlPlaceholder)
-	issueRow = strings.ReplaceAll(issueRow, missingUrlPlaceholder, coloredPlaceholder)
-	sourceRow = strings.ReplaceAll(sourceRow, missingUrlPlaceholder, coloredPlaceholder)
+	coloredPlaceholder := corelog.AddColor(corelog.WarnLevel, missingURLPlaceholder)
+	issueRow = strings.ReplaceAll(issueRow, missingURLPlaceholder, coloredPlaceholder)
+	sourceRow = strings.ReplaceAll(sourceRow, missingURLPlaceholder, coloredPlaceholder)
 
 	return []string{issueRow, sourceRow}
 }

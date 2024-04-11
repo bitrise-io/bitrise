@@ -58,20 +58,6 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 	return params
 }
 
-func getPipelineAndWorkflowIDByParams(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel) (string, string, error) {
-	for _, item := range triggerMap {
-		match, err := item.MatchWithParams(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
-		if err != nil {
-			return "", "", err
-		}
-		if match {
-			return item.PipelineID, item.WorkflowID, nil
-		}
-	}
-
-	return "", "", fmt.Errorf("no matching pipeline & workflow found with trigger params: push-branch: %s, pr-source-branch: %s, pr-target-branch: %s, tag: %s", params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.Tag)
-}
-
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
 // and returns the triggered workflow id
 func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, string, error) {
@@ -79,7 +65,7 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 		params = migratePatternToParams(params, isPullRequestMode)
 	}
 
-	return getPipelineAndWorkflowIDByParams(triggerMap, params)
+	return triggerMap.FirstMatchingTarget(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.PRReadyState, params.Tag)
 }
 
 // --------------------
@@ -104,6 +90,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
+	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
@@ -119,7 +106,7 @@ func triggerCheck(c *cli.Context) error {
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,
-		pushBranch, prSourceBranch, prTargetBranch, tag,
+		pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag,
 		format,
 		bitriseConfigPath, bitriseConfigBase64Data,
 		inventoryPath, inventoryBase64Data,

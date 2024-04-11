@@ -1730,4 +1730,6 @@ func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.St
 func (n noOpTracker) SendCLIWarning(string)                                               {}
 func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string)            {}
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool)                     {}
+func (n noOpTracker) SendToolVersionSnapshot(string, string)                              {}
 func (n noOpTracker) Wait()                                                               {}
+func (n noOpTracker) IsTracking() bool                                                    { return false }

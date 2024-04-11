@@ -3,6 +3,8 @@ package cli
 import (
 	"encoding/base64"
 	"encoding/json"
+
+	"github.com/bitrise-io/bitrise/models"
 )
 
 // --------------------
@@ -17,10 +19,11 @@ type RunAndTriggerParamsModel struct {
 	// Trigger Params
 	TriggerPattern string `json:"pattern"`
 
-	PushBranch     string `json:"push-branch"`
-	PRSourceBranch string `json:"pr-source-branch"`
-	PRTargetBranch string `json:"pr-target-branch"`
-	Tag            string `json:"tag"`
+	PushBranch     string                       `json:"push-branch"`
+	PRSourceBranch string                       `json:"pr-source-branch"`
+	PRTargetBranch string                       `json:"pr-target-branch"`
+	PRReadyState   models.PullRequestReadyState `json:"pr-ready-state"`
+	Tag            string                       `json:"tag"`
 
 	// Trigger Check Params
 	Format string `json:"format"`
@@ -44,7 +47,7 @@ func parseRunAndTriggerJSONParams(jsonParams string) (RunAndTriggerParamsModel, 
 func parseRunAndTriggerParams(
 	workflowToRunID,
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
@@ -68,7 +71,7 @@ func parseRunAndTriggerParams(
 		}
 	}
 
-	// Owerride params
+	// Override params
 	if workflowToRunID != "" {
 		params.WorkflowToRunID = workflowToRunID
 	}
@@ -85,6 +88,9 @@ func parseRunAndTriggerParams(
 	}
 	if prTargetBranch != "" {
 		params.PRTargetBranch = prTargetBranch
+	}
+	if prReadyState != "" {
+		params.PRReadyState = prReadyState
 	}
 	if tag != "" {
 		params.Tag = tag
@@ -115,24 +121,24 @@ func parseRunParams(
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams(workflowToRunID, "", "", "", "", "", "", "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 func parseTriggerParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, tag, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
 
 func parseTriggerCheckParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, tag, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
+	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
