@@ -33,7 +33,7 @@ github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/command
