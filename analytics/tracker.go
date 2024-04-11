@@ -108,6 +108,7 @@ type Tracker interface {
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
 	SendCLIWarning(message string)
 	SendToolVersionSnapshot(toolVersions, snapshotType string)
+	IsTracking() bool
 	Wait()
 }
 
@@ -128,9 +129,6 @@ func NewDefaultTracker() Tracker {
 
 	logger := log.NewUtilsLogAdapter()
 	tracker := analytics.NewDefaultTracker(&logger)
-	if stateChecker.UseAsync() {
-		tracker = analytics.NewDefaultTracker(&logger)
-	}
 
 	return NewTracker(tracker, envRepository, stateChecker, &logger)
 }
@@ -276,6 +274,10 @@ func (t tracker) SendCLIWarning(message string) {
 
 func (t tracker) Wait() {
 	t.tracker.Wait()
+}
+
+func (t tracker) IsTracking() bool {
+	return t.stateChecker.Enabled()
 }
 
 func prepareStartProperties(info StepInfo) analytics.Properties {
