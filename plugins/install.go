@@ -146,9 +146,9 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		}
 
 		if installedPluginVersionPtr != nil {
-			log.Warnf("installed plugin found with version (%s), overriding it...", (*installedPluginVersionPtr).String())
+			log.Warnf("installed plugin found with version %s, upgrading...", (*installedPluginVersionPtr).String())
 		} else {
-			log.Warnf("installed local plugin found, overriding it...")
+			log.Warnf("installed local plugin found, upgrading...")
 		}
 	}
 	// ---
@@ -157,6 +157,12 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 	if err != nil {
 		return Plugin{}, fmt.Errorf("failed to create tmp plugin dir, error: %s", err)
 	}
+	defer func() {
+		err = os.RemoveAll(tmpPluginDir)
+		if err != nil {
+			log.Warnf("Failed to clean up temp dir after plugin installation, error: %s", err)
+		}
+	}()
 
 	// Install plugin executable
 	executableURL := newPlugin.ExecutableURL()

@@ -56,6 +56,16 @@ workflows:
     - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
     steps:
     - script:
+        title: Fetch GCS bucket credentials
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
+            # Goreleaser expects this env var:
+            envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
+    - script:
         title: Goreleaser (create binaries + publish to GH)
         deps:
           brew:
