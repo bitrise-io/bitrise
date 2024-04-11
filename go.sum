@@ -13,8 +13,8 @@ github.com/bitrise-io/go-utils v0.0.0-20200224122728-e212188d99b4/go.mod h1:tTEs
 github.com/bitrise-io/go-utils v1.0.3/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils v1.0.11 h1:NJ9rRWif4C6nhdh/v6Y/sJZU1UJ+yj0mDgnxsDr71ho=
 github.com/bitrise-io/go-utils v1.0.11/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19 h1:55as5Iv0N4btuRP3YwRzN+BCMtKO210MnJ8mpxmeI7o=
-github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19/go.mod h1:Laih4ji980SQkRgdnMCH0g4u2GZI/5nnbqmYT9UfKFQ=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21 h1:iwNnwOGg8VP8eqhse68Fxt5ZnfEYosgV2gRZB7LKfHg=
+github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21/go.mod h1:Laih4ji980SQkRgdnMCH0g4u2GZI/5nnbqmYT9UfKFQ=
 github.com/bitrise-io/goinp v0.0.0-20210504152833-8559b0680ab1/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20211005113137-305e91b481f4/go.mod h1:iRbd8zAXLeNy+0gic0eqNCxXvDGe8ZEY/uYX2CCeAoo=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN9g1FQ8W7nXxQAG7iwq1Cw+mUk5S9A=
@@ -31,8 +31,6 @@ github.com/distribution/reference v0.5.0 h1:/FUIFXtfc/x2gpa5/VGfiGLuOIdYa1t65IKK
 github.com/distribution/reference v0.5.0/go.mod h1:BbU0aIcezP1/5jX/8MP0YiH4SdvB5Y4f/wlDRiLyi3E=
 github.com/docker/distribution v2.8.3+incompatible h1:AtKxIZ36LoNK51+Z6RpzLpddBirtxJnzDrHLEKxTAYk=
 github.com/docker/distribution v2.8.3+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v24.0.7+incompatible h1:Wo6l37AuwP3JaMnZa226lzVXGA3F9Ig1seQen0cKYlM=
-github.com/docker/docker v24.0.7+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker v24.0.9+incompatible h1:HPGzNmwfLZWdxHqK9/II92pyi1EpYKsAqcl4G0Of9v0=
 github.com/docker/docker v24.0.9+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj1Br63c=

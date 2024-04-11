@@ -7,7 +7,7 @@ require (
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.11
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
 	github.com/gofrs/uuid v4.3.1+incompatible
