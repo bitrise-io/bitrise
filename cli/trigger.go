@@ -198,7 +198,7 @@ func trigger(c *cli.Context) error {
 	runner := NewWorkflowRunner(runConfig, agentConfig)
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
-		if err == workflowRunFailedErr {
+		if err == errWorkflowRunFailed {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
 			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)

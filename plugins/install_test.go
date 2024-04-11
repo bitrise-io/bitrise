@@ -11,7 +11,7 @@ import (
 )
 
 const examplePluginGitURL = "https://github.com/bitrise-io/bitrise-plugins-example.git"
-const analyticsPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-analytics/releases/download/0.9.1/analytics-Darwin-x86_64"
+const testPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-step/releases/download/0.10.4/bitrise-plugins-step-Darwin-arm64"
 
 func TestIsLocalURL(t *testing.T) {
 	t.Log("local url - absolute")
@@ -199,7 +199,6 @@ func TestValidateRequirements(t *testing.T) {
 func TestDownloadPluginBin(t *testing.T) {
 	t.Log("example plugin bin - ")
 	{
-		pluginBinURL := analyticsPluginBinURL
 		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestDownloadPluginBin")
 		require.NoError(t, err)
 
@@ -214,7 +213,7 @@ func TestDownloadPluginBin(t *testing.T) {
 
 		destinationPth := filepath.Join(destinationDir, "example")
 
-		require.NoError(t, downloadPluginBin(pluginBinURL, destinationPth))
+		require.NoError(t, downloadPluginBin(testPluginBinURL, destinationPth))
 
 		exist, err = pathutil.IsPathExists(destinationPth)
 		require.NoError(t, err)
@@ -228,12 +227,12 @@ func Test_isSourceURIChanged(t *testing.T) {
 		new       string
 		want      bool
 	}{
-		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: false},
-		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: false},
-		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/myorg/bitrise-plugins-analytics.git", want: true},
-		{installed: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-team/bitrise-plugins-analytics.git", want: true},
-		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-core/bitrise-plugins-analytics.git", want: true},
-		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-analytics.git", new: "https://github.com/bitrise-io/bitrise-plugins-analytics.git", want: true},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-step.git", new: "https://github.com/bitrise-core/bitrise-plugins-step.git", want: false},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-step.git", new: "https://github.com/bitrise-io/bitrise-plugins-step.git", want: false}, // resolves to same real URL
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-step.git", new: "https://github.com/myorg/bitrise-plugins-step.git", want: true},
+		{installed: "https://github.com/bitrise-core/bitrise-plugins-step.git", new: "https://github.com/bitrise-team/bitrise-plugins-step.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-step.git", new: "https://github.com/bitrise-core/bitrise-plugins-step.git", want: true},
+		{installed: "https://github.com/bitrise-custom-org/bitrise-plugins-step.git", new: "https://github.com/bitrise-io/bitrise-plugins-step.git", want: true},
 	} {
 		t.Run("", func(t *testing.T) {
 			if got := isSourceURIChanged(tt.installed, tt.new); got != tt.want {

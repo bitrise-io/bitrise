@@ -17,10 +17,10 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 		{
 			name: "Every field is serialised",
 			params: StepStartedParams{
-				ExecutionId: "ExecutionId",
+				ExecutionID: "ExecutionId",
 				Position:    0,
 				Title:       "Title",
-				Id:          "Id",
+				ID:          "Id",
 				Version:     "Version",
 				Collection:  "Collection",
 				Toolkit:     "Toolkit",
@@ -31,10 +31,10 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 		{
 			name: "Empty fields are kept",
 			params: StepStartedParams{
-				ExecutionId: "ExecutionId",
+				ExecutionID: "ExecutionId",
 				Position:    0,
 				Title:       "Title",
-				Id:          "Id",
+				ID:          "Id",
 				Version:     "",
 				Collection:  "Collection",
 				Toolkit:     "",
@@ -63,7 +63,7 @@ func TestStepFinishedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 		{
 			name: "Fields are serialising correctly",
 			params: StepFinishedParams{
-				ExecutionId:   "ExecutionId",
+				ExecutionID:   "ExecutionId",
 				Status:        models.StepRunStatusCodeFailed.String(),
 				StatusReason:  "StatusReason",
 				Title:         "Title",
@@ -93,7 +93,7 @@ func TestStepFinishedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 		{
 			name: "Optional fields are omitted when empty",
 			params: StepFinishedParams{
-				ExecutionId:   "ExecutionId",
+				ExecutionID:   "ExecutionId",
 				Status:        models.StepRunStatusCodeSkipped.String(),
 				StatusReason:  "",
 				Title:         "Title",
