@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/sliceutil"
@@ -499,12 +500,12 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
-		_, ok := valueMap["regex"]
+		regex, ok := valueMap["regex"]
 		if !ok {
 			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
-		return nil
+		return validateRegexInterface(idx, field, regex)
 	}
 
 	valueInterfaceMap, ok := value.(map[string]interface{})
@@ -518,12 +519,7 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
-		_, ok = regex.(string)
-		if !ok {
-			return fmt.Errorf("trigger item #%d: 'regex' key is expected to have a string value in %s field", idx+1, field)
-		}
-
-		return nil
+		return validateRegexInterface(idx, field, regex)
 	}
 
 	valueStringMap, ok := value.(map[string]string)
@@ -532,12 +528,12 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 			return fmt.Errorf("trigger item #%d: single 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
-		_, ok := valueStringMap["regex"]
+		regex, ok := valueStringMap["regex"]
 		if !ok {
 			return fmt.Errorf("trigger item #%d: 'regex' key is expected for regex condition in %s field", idx+1, field)
 		}
 
-		return nil
+		return validateRegexString(idx, field, regex)
 	}
 
 	return fmt.Errorf("trigger item #%d: string literal or regex value is expected for %s field", idx+1, field)
@@ -585,6 +581,22 @@ func stringLiteralOrRegex(value interface{}) string {
 
 func isStringLiteralOrRegexSet(value interface{}) bool {
 	return stringLiteralOrRegex(value) != ""
+}
+
+func validateRegexInterface(idx int, field string, regex interface{}) error {
+	regexStr, ok := regex.(string)
+	if !ok {
+		return fmt.Errorf("trigger item #%d: 'regex' key is expected to have a string value in %s field", idx+1, field)
+	}
+	return validateRegexString(idx, field, regexStr)
+}
+
+func validateRegexString(idx int, field string, regex string) error {
+	_, err := regexp.Compile(regex)
+	if err != nil {
+		return fmt.Errorf("trigger item #%d: invalid regex value in %s field: %w", idx+1, field, err)
+	}
+	return nil
 }
 
 func triggerEventType(pushBranch, prSourceBranch, prTargetBranch, tag string) (TriggerEventType, error) {

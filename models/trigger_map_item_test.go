@@ -804,6 +804,17 @@ func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
 			},
 			workflows: []string{"primary"},
 		},
+		{
+			name: "regex is validated",
+			triggerMapItem: TriggerMapItemModel{
+				Tag: map[interface{}]interface{}{
+					"regex": "(invalid expression",
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+			wantErr:   "trigger item #1: invalid regex value in tag field: error parsing regexp: missing closing ): `(invalid expression`",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
