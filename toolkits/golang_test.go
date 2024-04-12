@@ -6,8 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
+	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/stretchr/testify/require"
 )
 
@@ -214,12 +216,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	stepmanCmd := command.New("stepman", "activate",
-		"--collection", "https://github.com/bitrise-io/bitrise-steplib",
-		"--id", "xcode-test",
-		"--version", "2.5.0", "--update",
-		"--path", stepDir)
-	err = stepmanCmd.Run()
+	err = stepman.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, log.NewLogger(log.GetGlobalLoggerOpts()))
 	require.NoError(b, err)
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"
