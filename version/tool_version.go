@@ -66,7 +66,7 @@ func ToolVersionMap(binPath string) (map[string]version.Version, error) {
 		return map[string]version.Version{}, err
 	}
 
-	stepmanVersion, err := StepmanVersion(binPath)
+	stepmanVersion, err := StepmanVersion()
 	if err != nil {
 		return map[string]version.Version{}, err
 	}
