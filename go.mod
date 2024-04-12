@@ -7,7 +7,7 @@ require (
 	github.com/bitrise-io/envman v0.0.0-20221010094751-a03ce30a5316
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.11
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.19
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/bitrise-io/stepman v0.0.0-20221010110437-a88e9a915b58
 	github.com/gofrs/uuid v4.3.1+incompatible
@@ -41,7 +41,7 @@ require (
 require (
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v24.0.9+incompatible
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/moby/term v0.5.0 // indirect

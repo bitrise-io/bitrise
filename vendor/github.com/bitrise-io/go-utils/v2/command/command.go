@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/env"
@@ -156,7 +155,7 @@ func (c command) Wait() error {
 func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	var cmdArgsDecorated []string
 	for idx, anArg := range fullCommandArgs {
-		quotedArg := strconv.Quote(anArg)
+		quotedArg := fmt.Sprintf("\"%s\"", anArg)
 		if idx == 0 && !isQuoteFirst {
 			quotedArg = anArg
 		}

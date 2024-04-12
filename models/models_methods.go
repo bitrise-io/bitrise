@@ -142,6 +142,12 @@ func (config *BitriseDataModel) Normalize() error {
 		return err
 	}
 
+	normalizedTriggerMap, err := config.TriggerMap.Normalized()
+	if err != nil {
+		return err
+	}
+	config.TriggerMap = normalizedTriggerMap
+
 	for _, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return err

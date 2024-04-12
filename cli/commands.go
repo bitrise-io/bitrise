@@ -75,19 +75,6 @@ var (
 			},
 		},
 		triggerCommand,
-		{
-			Name:    "step-info",
-			Aliases: []string{"i"},
-			Usage:   "Provides information (step ID, last version, given version) about specified step.",
-			Action:  stepInfo,
-			Flags: []cli.Flag{
-				flCollection,
-				flVersion,
-				flFormat,
-				flShort,
-				flStepYML,
-			},
-		},
 		workflowListCommand,
 		{
 			Name:   "share",
