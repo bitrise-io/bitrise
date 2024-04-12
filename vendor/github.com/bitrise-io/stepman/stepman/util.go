@@ -170,7 +170,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 				return nil
 			}
 		case "binary":
-			if err := downloadBinaryAndMakeExecutable(downloadLocation.Src, stepPth); err != nil {
+			if err := DownloadBinaryAndMakeExecutable(downloadLocation.Src, stepPth); err != nil {
 				log.Warnf("Failed to download step binary: %s", err)
 
 				continue
@@ -188,7 +188,19 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	return nil
 }
 
-func downloadBinaryAndMakeExecutable(url, pth string) error {
+func PrepareStepBinaryReleases(binaryURLs []string, stepDir string) error {
+	if len(binaryURLs) != 0 {
+		for _, binaryURL := range binaryURLs {
+			if err := DownloadBinaryAndMakeExecutable(binaryURL, stepDir); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func DownloadBinaryAndMakeExecutable(url, pth string) error {
 	binaryName := filepath.Base(pth)
 	binary, err := os.Create(filepath.Join(pth, binaryName))
 	if err != nil {

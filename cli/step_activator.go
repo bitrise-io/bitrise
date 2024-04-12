@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/tools"
@@ -15,6 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepman"
 )
 
 type stepActivator struct {
@@ -92,6 +94,16 @@ even if the repository is open source!`)
 		}
 
 		if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
+			return "", "", err
+		}
+
+		// Workaround to test binary releases
+		stepInfo, err := bitrise.ReadSpecStep(stepYMLPth)
+		if err != nil {
+			return "", "", err
+		}
+
+		if err := stepman.PrepareStepBinaryReleases(stepInfo.Source.BinaryURLs, stepDir); err != nil {
 			return "", "", err
 		}
 	} else if stepIDData.SteplibSource == "_" {
