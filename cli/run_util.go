@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -391,19 +392,27 @@ func (r WorkflowRunner) executeStep(
 	workflow models.WorkflowModel,
 	workflowID string,
 ) (int, error) {
+	var cmdArgs []string
+	var err error
 
 	toolkitForStep := toolkits.ToolkitForStep(step)
-	toolkitName := toolkitForStep.ToolkitName()
+	if len(step.Source.BinaryURLs) != 0 {
+		binaryURL := step.Source.BinaryURLs[0]
+		binaryName := path.Base(binaryURL)
+		cmdArgs = []string{path.Join(stepAbsDirPath, binaryName)}
+	} else {
+		toolkitName := toolkitForStep.ToolkitName()
 
-	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
-		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
-			toolkitName, err)
-	}
+		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
+				toolkitName, err)
+		}
 
-	cmdArgs, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
-	if err != nil {
-		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
-			toolkitName, err)
+		cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
+		if err != nil {
+			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
+				toolkitName, err)
+		}
 	}
 
 	timeout := time.Duration(-1)

@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -166,6 +169,14 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 				success = true
 				return nil
 			}
+		case "binary":
+			if err := downloadBinaryAndMakeExecutable(downloadLocation.Src, stepPth); err != nil {
+				log.Warnf("Failed to download step binary: %s", err)
+
+				continue
+			}
+			return nil
+
 		default:
 			return fmt.Errorf("Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
 		}
@@ -174,6 +185,44 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	if !success {
 		return errors.New("Failed to download step")
 	}
+	return nil
+}
+
+func downloadBinaryAndMakeExecutable(url, pth string) error {
+	binaryName := filepath.Base(pth)
+	binary, err := os.Create(filepath.Join(pth, binaryName))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := binary.Close(); err != nil {
+			log.Fatal("Failed to close srcFile:", err)
+		}
+	}()
+
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.Fatal("Failed to close response body:", err)
+		}
+	}()
+
+	if response.StatusCode != http.StatusOK {
+		errorMsg := "Failed to download target from: " + url
+		return errors.New(errorMsg)
+	}
+
+	if _, err := io.Copy(binary, response.Body); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(binary.Name(), 0700); err != nil {
+		return fmt.Errorf("Failed to make binary executable: %s", err)
+	}
+
 	return nil
 }
 

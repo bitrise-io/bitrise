@@ -6,10 +6,16 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
+// type StepBinaryReleaseModel struct {
+// 	PlatformToURL map[string]string `json:"platform_to_url,omitempty" yaml:"platform_to_url,omitempty"`
+// }
+
 // StepSourceModel ...
 type StepSourceModel struct {
-	Git    string `json:"git,omitempty" yaml:"git,omitempty"`
-	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Git        string   `json:"git,omitempty" yaml:"git,omitempty"`
+	Commit     string   `json:"commit,omitempty" yaml:"commit,omitempty"`
+	BinaryURLs []string `json:"urls,omitempty" yaml:"urls,omitempty"`
+	// BinaryRelease StepBinaryReleaseModel `json:"binary_release,omitempty" yaml:"binary_release,omitempty"`
 }
 
 // DependencyModel ...
