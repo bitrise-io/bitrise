@@ -277,7 +277,7 @@ func update(c *cli.Context) error {
 		return err
 	}
 
-	return bitrise.RunSetup(versionFlag, false, false)
+	return bitrise.RunSetup(versionFlag, bitrise.SetupModeDefault, false)
 }
 
 // CopyFile ...
