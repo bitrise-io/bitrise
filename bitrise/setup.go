@@ -78,7 +78,7 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 		switch runtime.GOOS {
 		case "darwin":
 			if err := doSetupOnOSX(); err != nil {
-				return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
+				return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
 			}
 		case "linux":
 		default:
