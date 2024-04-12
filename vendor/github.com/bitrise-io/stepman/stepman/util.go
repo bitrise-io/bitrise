@@ -169,13 +169,20 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 				return nil
 			}
 		case "binary":
-			if err := DownloadBinaryAndMakeExecutable(log, downloadLocation.Src, stepPth); err != nil {
-				log.Warnf("Failed to download step binary: %s", err)
+			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				if err := DownloadBinaryAndMakeExecutable(log, downloadLocation.Src, stepPth); err != nil {
+					log.Warnf("Failed to download step binary: %s", err)
 
+					return err
+				}
+
+				return nil
+			})
+			if err != nil {
 				continue
 			}
-			return nil
 
+			return nil
 		default:
 			return fmt.Errorf("Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
 		}
@@ -209,7 +216,7 @@ func DownloadBinaryAndMakeExecutable(log Logger, url, pth string) error {
 	log.Warnf("Downloading binary from: %s to: %s", url, binaryPath)
 	defer func() {
 		if err := binary.Close(); err != nil {
-			// log.Fatal("Failed to close srcFile:", err)
+			log.Warnf("Failed to close srcFile:", err)
 		}
 	}()
 
@@ -219,7 +226,7 @@ func DownloadBinaryAndMakeExecutable(log Logger, url, pth string) error {
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			// log.Fatal("Failed to close response body:", err)
+			log.Warnf("Failed to close response body:", err)
 		}
 	}()
 
