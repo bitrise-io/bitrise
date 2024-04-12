@@ -13,10 +13,10 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
-type SetupMode int
+type SetupMode string
 const (
-	SetupModeDefault SetupMode = iota
-	SetupModeMinimal
+	SetupModeDefault SetupMode = "default"
+	SetupModeMinimal SetupMode = "minimal"
 )
 
 const (
@@ -55,14 +55,7 @@ func RunSetupIfNeeded() error {
 func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	log.Infof("Setup Bitrise tools...")
 	log.Printf("Clean before setup: %v", doCleanSetup)
-	var setupName string
-	switch setupMode {
-	case SetupModeDefault:
-		setupName = "default"
-	case SetupModeMinimal:
-		setupName = "minimal"
-	}
-	log.Printf("Setup mode: %v", setupName)
+	log.Printf("Setup mode: %s", setupMode)
 	log.Printf("System: %s/%s", runtime.GOOS, runtime.GOARCH)
 
 	if doCleanSetup {
