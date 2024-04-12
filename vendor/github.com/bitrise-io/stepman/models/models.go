@@ -10,6 +10,7 @@ import (
 type StepSourceModel struct {
 	Git    string `json:"git,omitempty" yaml:"git,omitempty"`
 	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	BinaryURLs []string `json:"urls,omitempty" yaml:"urls,omitempty"`
 }
 
 // DependencyModel ...

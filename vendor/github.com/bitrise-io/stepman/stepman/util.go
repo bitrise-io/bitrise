@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"io"
+	"net/http"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
@@ -127,6 +129,19 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	success := false
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
+		case "binary":
+			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				return downloadBinaryAndMakeExecutable(log, downloadLocation.Src, stepPth)
+			})
+
+			if err != nil {
+				log.Warnf("Failed to download step binary: %s", err)
+				continue
+			}
+
+			success = true
+
+			return nil
 		case "zip":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
 				return command.DownloadAndUnZIP(downloadLocation.Src, stepPth)
@@ -174,6 +189,47 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	if !success {
 		return errors.New("Failed to download step")
 	}
+	return nil
+}
+
+
+func downloadBinaryAndMakeExecutable(log Logger, url, pth string) error {
+	binaryName := filepath.Base(url)
+	binaryPath := filepath.Join(pth, binaryName)
+	binary, err := os.Create(binaryPath)
+	if err != nil {
+		return err
+	}
+	log.Warnf("Downloading binary from: %s to: %s", url, binaryPath)
+	defer func() {
+		if err := binary.Close(); err != nil {
+			// log.Fatal("Failed to close srcFile:", err)
+		}
+	}()
+
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			// log.Fatal("Failed to close response body:", err)
+		}
+	}()
+
+	if response.StatusCode != http.StatusOK {
+		errorMsg := "Failed to download target from: " + url
+		return errors.New(errorMsg)
+	}
+
+	if _, err := io.Copy(binary, response.Body); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(binary.Name(), 0700); err != nil {
+		return fmt.Errorf("Failed to make binary executable: %s", err)
+	}
+
 	return nil
 }
 

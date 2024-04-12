@@ -300,6 +300,14 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 	}
 
 	locations := []DownloadLocationModel{}
+
+	if len(step.Source.BinaryURLs) != 0 {
+		locations = append(locations, DownloadLocationModel{
+			Type: "binary",
+			Src:  step.Source.BinaryURLs[0],
+		})
+	}
+
 	for _, downloadLocation := range collection.DownloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
