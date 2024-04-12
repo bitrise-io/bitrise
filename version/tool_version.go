@@ -8,10 +8,10 @@ import (
 )
 
 // StepmanVersion ...
-func StepmanVersion(binPath string) (version.Version, error) {
-	args := []string{"stepman", "--version"}
+func StepmanVersion() (version.Version, error) {
+	args := []string{"--version"}
 
-	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, args...)
+	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
 		return version.Version{}, err
 	}
