@@ -100,7 +100,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 }
 
 // CheckIsHomebrewInstalled ...
-func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
+func CheckIsHomebrewInstalled() error {
 	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 	officialSiteURL := "http://brew.sh/"
 
@@ -119,21 +119,6 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 	if err != nil {
 		log.Infof("")
 		return errors.New("Failed to get version")
-	}
-
-	if isFullSetupMode {
-		// brew doctor
-		doctorOutput := ""
-		var err error
-		progress.ShowIndicator("brew doctor", func() {
-			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
-		})
-		if err != nil {
-			log.Print()
-			log.Warnf("brew doctor returned an error:")
-			log.Warnf("%s", doctorOutput)
-			return errors.New("command failed: brew doctor")
-		}
 	}
 
 	verSplit := strings.Split(verStr, "\n")

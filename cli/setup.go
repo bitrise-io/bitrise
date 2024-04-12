@@ -27,14 +27,23 @@ var setupCommand = cli.Command{
 			Name:  "clean",
 			Usage: "Removes bitrise's workdir before setup.",
 		},
+		cli.BoolFlag{
+			Name:  "minimal",
+			Usage: "Only installs the required tools for running in CI mode.",
+		},
 	},
 }
 
 func setup(c *cli.Context) error {
-	fullMode := c.Bool("full")
-	cleanMode := c.Bool("clean")
+	clean := c.Bool("clean")
+	minimal := c.Bool("minimal")
 
-	if err := bitrise.RunSetup(c.App.Version, fullMode, cleanMode); err != nil {
+	var setupMode = bitrise.SetupModeDefault
+	if minimal {
+		setupMode = bitrise.SetupModeMinimal
+	}
+
+	if err := bitrise.RunSetup(c.App.Version, setupMode, clean); err != nil {
 		return err
 	}
 

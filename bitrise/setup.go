@@ -13,18 +13,20 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
+type SetupMode int
+
 const (
+	SetupModeDefault SetupMode = iota
+	SetupModeMinimal
 	minEnvmanVersion  = "2.4.2"
 	minStepmanVersion = "0.16.1"
 )
 
-// PluginDependency ..
 type PluginDependency struct {
 	Source     string
 	MinVersion string
 }
 
-// PluginDependencyMap ...
 var PluginDependencyMap = map[string]PluginDependency{
 	"init": {
 		Source:     "https://github.com/bitrise-io/bitrise-plugins-init.git",
@@ -40,23 +42,21 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 }
 
-// RunSetupIfNeeded ...
-func RunSetupIfNeeded(appVersion string, isFullSetupMode bool) error {
+func RunSetupIfNeeded(appVersion string) error {
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnf("Setup was not performed for this version of bitrise, doing it now...")
-		return RunSetup(version.VERSION, false, false)
+		return RunSetup(version.VERSION, SetupModeDefault, false)
 	}
 	return nil
 }
 
-// RunSetup ...
-func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) error {
-	log.Infof("Setup")
-	log.Printf("Full setup: %v", isFullSetupMode)
-	log.Printf("Clean setup: %v", isCleanSetupMode)
-	log.Printf("Detected OS: %s", runtime.GOOS)
+func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
+	log.Infof("Setup Bitrise tools...")
+	log.Printf("Clean before setup: %v", doCleanSetup)
+	log.Printf("Minimal setup: %v", setupMode == SetupModeMinimal)
+	log.Printf("System: %s/%s", runtime.GOOS, runtime.GOARCH)
 
-	if isCleanSetupMode {
+	if doCleanSetup {
 		if err := configs.DeleteBitriseConfigDir(); err != nil {
 			return err
 		}
@@ -70,22 +70,23 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 		}
 	}
 
-	if err := doSetupBitriseCoreTools(); err != nil {
+	if err := doSetupBitriseCoreTools(setupMode); err != nil {
 		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
 	}
 
-	switch runtime.GOOS {
-	case "darwin":
-		if err := doSetupOnOSX(isFullSetupMode); err != nil {
-			return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
+	if setupMode != SetupModeMinimal {
+		switch runtime.GOOS {
+		case "darwin":
+			if err := doSetupOnOSX(); err != nil {
+				return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
+			}
+		case "linux":
+		default:
+			return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 		}
-	case "linux":
-	default:
-		return errors.New("unsupported platform :(")
-	}
-
-	if err := doSetupPlugins(); err != nil {
-		return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
+		if err := doSetupPlugins(); err != nil {
+			return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
+		}
 	}
 
 	if err := doSetupToolkits(); err != nil {
@@ -149,7 +150,7 @@ func doSetupPlugins() error {
 	return nil
 }
 
-func doSetupBitriseCoreTools() error {
+func doSetupBitriseCoreTools(mode SetupMode) error {
 	log.Print()
 	log.Infof("Checking Bitrise Core tools...")
 
@@ -157,19 +158,21 @@ func doSetupBitriseCoreTools() error {
 		return fmt.Errorf("Envman failed to install: %s", err)
 	}
 
-	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return fmt.Errorf("Stepman failed to install: %s", err)
+	if mode == SetupModeMinimal {
+		if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
+			return fmt.Errorf("Stepman failed to install: %s", err)
+		}
 	}
 
 	return nil
 }
 
-func doSetupOnOSX(isMinimalSetupMode bool) error {
+func doSetupOnOSX() error {
 	log.Print()
 	log.Infof("Doing macOS-specific setup")
 	log.Printf("Checking required tools...")
 
-	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {
+	if err := CheckIsHomebrewInstalled(); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
 

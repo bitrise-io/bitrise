@@ -91,7 +91,7 @@ func Run() {
 				return fmt.Errorf("Plugin (%s) not installed", pluginName)
 			}
 
-			if err := bitrise.RunSetupIfNeeded(version.VERSION, false); err != nil {
+			if err := bitrise.RunSetupIfNeeded(version.VERSION); err != nil {
 				failf("Setup failed, error: %s", err)
 			}
 
