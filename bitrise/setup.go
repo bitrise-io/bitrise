@@ -79,7 +79,7 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 		}
 	}
 
-	if err := doSetupBitriseCoreTools(setupMode); err != nil {
+	if err := doSetupBitriseCoreTools(); err != nil {
 		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
 	}
 
@@ -160,7 +160,7 @@ func doSetupPlugins() error {
 	return nil
 }
 
-func doSetupBitriseCoreTools(mode SetupMode) error {
+func doSetupBitriseCoreTools() error {
 	log.Print()
 	log.Infof("Checking Bitrise Core tools...")
 
@@ -168,10 +168,8 @@ func doSetupBitriseCoreTools(mode SetupMode) error {
 		return fmt.Errorf("Envman failed to install: %s", err)
 	}
 
-	if mode == SetupModeMinimal {
-		if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-			return fmt.Errorf("Stepman failed to install: %s", err)
-		}
+	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
+		return fmt.Errorf("Stepman failed to install: %s", err)
 	}
 
 	return nil
