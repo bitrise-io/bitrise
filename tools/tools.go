@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -151,26 +150,6 @@ func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error 
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
-}
-
-// StepmanRawStepList ...
-func StepmanRawStepList(collection string) (string, error) {
-	args := []string{"step-list", "--collection", collection, "--format", "raw"}
-	return command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
-}
-
-// StepmanJSONStepList ...
-func StepmanJSONStepList(collection string) (string, error) {
-	args := []string{"step-list", "--collection", collection, "--format", "json"}
-
-	var outBuffer bytes.Buffer
-	var errBuffer bytes.Buffer
-
-	if err := command.RunCommandWithWriters(io.Writer(&outBuffer), io.Writer(&errBuffer), "stepman", args...); err != nil {
-		return outBuffer.String(), fmt.Errorf("Error: %s, details: %s", err, errBuffer.String())
-	}
-
-	return outBuffer.String(), nil
 }
 
 //
