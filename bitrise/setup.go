@@ -184,8 +184,5 @@ func doSetupOnOSX() error {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
 
-	if err := PrintInstalledXcodeInfos(); err != nil {
-		return errors.New(fmt.Sprint("Failed to detect installed Xcode and Xcode Command Line Tools infos. Err:", err))
-	}
 	return nil
 }
