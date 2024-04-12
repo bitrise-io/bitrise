@@ -14,10 +14,12 @@ import (
 )
 
 type SetupMode int
-
 const (
 	SetupModeDefault SetupMode = iota
 	SetupModeMinimal
+)
+
+const (
 	minEnvmanVersion  = "2.4.2"
 	minStepmanVersion = "0.16.1"
 )
@@ -42,7 +44,7 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 }
 
-func RunSetupIfNeeded(appVersion string) error {
+func RunSetupIfNeeded() error {
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnf("Setup was not performed for this version of bitrise, doing it now...")
 		return RunSetup(version.VERSION, SetupModeDefault, false)
@@ -53,7 +55,14 @@ func RunSetupIfNeeded(appVersion string) error {
 func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	log.Infof("Setup Bitrise tools...")
 	log.Printf("Clean before setup: %v", doCleanSetup)
-	log.Printf("Minimal setup: %v", setupMode == SetupModeMinimal)
+	var setupName string
+	switch setupMode {
+	case SetupModeDefault:
+		setupName = "default"
+	case SetupModeMinimal:
+		setupName = "minimal"
+	}
+	log.Printf("Setup mode: %v", setupName)
 	log.Printf("System: %s/%s", runtime.GOOS, runtime.GOARCH)
 
 	if doCleanSetup {
@@ -74,16 +83,17 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
 	}
 
-	if setupMode != SetupModeMinimal {
-		switch runtime.GOOS {
-		case "darwin":
-			if err := doSetupOnOSX(); err != nil {
-				return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
-			}
-		case "linux":
-		default:
-			return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	switch runtime.GOOS {
+	case "darwin":
+		if err := doSetupOnOSX(); err != nil {
+			return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
 		}
+	case "linux":
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+
+	if setupMode != SetupModeMinimal {
 		if err := doSetupPlugins(); err != nil {
 			return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
 		}

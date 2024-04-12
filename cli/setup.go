@@ -38,7 +38,7 @@ func setup(c *cli.Context) error {
 	clean := c.Bool("clean")
 	minimal := c.Bool("minimal")
 
-	var setupMode = bitrise.SetupModeDefault
+	setupMode := bitrise.SetupModeDefault
 	if minimal {
 		setupMode = bitrise.SetupModeMinimal
 	}
