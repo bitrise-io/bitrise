@@ -100,7 +100,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 }
 
 // CheckIsHomebrewInstalled ...
-func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
+func CheckIsHomebrewInstalled() error {
 	brewRubyInstallCmdString := `$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 	officialSiteURL := "http://brew.sh/"
 
@@ -121,68 +121,12 @@ func CheckIsHomebrewInstalled(isFullSetupMode bool) error {
 		return errors.New("Failed to get version")
 	}
 
-	if isFullSetupMode {
-		// brew doctor
-		doctorOutput := ""
-		var err error
-		progress.ShowIndicator("brew doctor", func() {
-			doctorOutput, err = command.RunCommandAndReturnCombinedStdoutAndStderr("brew", "doctor")
-		})
-		if err != nil {
-			log.Print()
-			log.Warnf("brew doctor returned an error:")
-			log.Warnf("%s", doctorOutput)
-			return errors.New("command failed: brew doctor")
-		}
-	}
-
 	verSplit := strings.Split(verStr, "\n")
 	if len(verSplit) == 2 {
 		log.Printf("%s %s: %s", colorstring.Green("[OK]"), verSplit[0], progInstallPth)
 		log.Printf("%s %s", colorstring.Green("[OK]"), verSplit[1])
 	} else {
 		log.Printf("%s %s: %s", colorstring.Green("[OK]"), verStr, progInstallPth)
-	}
-
-	return nil
-}
-
-// PrintInstalledXcodeInfos ...
-func PrintInstalledXcodeInfos() error {
-	xcodeSelectPth, err := command.RunCommandAndReturnStdout("xcode-select", "--print-path")
-	if err != nil {
-		xcodeSelectPth = "xcode-select --print-path failed to detect the location of activate Xcode Command Line Tools path"
-	}
-
-	progInstallPth, err := utils.CheckProgramInstalledPath("xcodebuild")
-	if err != nil {
-		return errors.New("xcodebuild is not installed")
-	}
-
-	isFullXcodeAvailable := false
-	verStr, err := command.RunCommandAndReturnCombinedStdoutAndStderr("xcodebuild", "-version")
-	if err != nil {
-		// No full Xcode available, only the Command Line Tools
-		// verStr is something like "xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance"
-		isFullXcodeAvailable = false
-	} else {
-		// version OK - full Xcode available
-		//  we'll just format it a bit to fit into one line
-		isFullXcodeAvailable = true
-		verStr = strings.Join(strings.Split(verStr, "\n"), " | ")
-	}
-
-	if !isFullXcodeAvailable {
-		log.Printf("%s xcodebuild (%s): %s", colorstring.Green("[OK]"), colorstring.Yellow(verStr), progInstallPth)
-	} else {
-		log.Printf("%s xcodebuild (%s): %s", colorstring.Green("[OK]"), verStr, progInstallPth)
-	}
-
-	log.Printf("%s active Xcode (Command Line Tools) path (xcode-select --print-path): %s", colorstring.Green("[OK]"), xcodeSelectPth)
-
-	if !isFullXcodeAvailable {
-		log.Warnf("No Xcode found, only the Xcode Command Line Tools are available!")
-		log.Warnf("Full Xcode is required to build, test and archive iOS apps!")
 	}
 
 	return nil
