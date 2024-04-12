@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -170,7 +169,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 				return nil
 			}
 		case "binary":
-			if err := DownloadBinaryAndMakeExecutable(downloadLocation.Src, stepPth); err != nil {
+			if err := DownloadBinaryAndMakeExecutable(log, downloadLocation.Src, stepPth); err != nil {
 				log.Warnf("Failed to download step binary: %s", err)
 
 				continue
@@ -188,10 +187,10 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	return nil
 }
 
-func PrepareStepBinaryReleases(binaryURLs []string, stepDir string) error {
+func PrepareStepBinaryReleases(log Logger, binaryURLs []string, stepDir string) error {
 	if len(binaryURLs) != 0 {
 		for _, binaryURL := range binaryURLs {
-			if err := DownloadBinaryAndMakeExecutable(binaryURL, stepDir); err != nil {
+			if err := DownloadBinaryAndMakeExecutable(log, binaryURL, stepDir); err != nil {
 				return err
 			}
 		}
@@ -200,15 +199,17 @@ func PrepareStepBinaryReleases(binaryURLs []string, stepDir string) error {
 	return nil
 }
 
-func DownloadBinaryAndMakeExecutable(url, pth string) error {
-	binaryName := filepath.Base(pth)
-	binary, err := os.Create(filepath.Join(pth, binaryName))
+func DownloadBinaryAndMakeExecutable(log Logger, url, pth string) error {
+	binaryName := filepath.Base(url)
+	binaryPath := filepath.Join(pth, binaryName)
+	binary, err := os.Create(binaryPath)
 	if err != nil {
 		return err
 	}
+	log.Warnf("Downloading binary from: %s to: %s", url, binaryPath)
 	defer func() {
 		if err := binary.Close(); err != nil {
-			log.Fatal("Failed to close srcFile:", err)
+			// log.Fatal("Failed to close srcFile:", err)
 		}
 	}()
 
@@ -218,7 +219,7 @@ func DownloadBinaryAndMakeExecutable(url, pth string) error {
 	}
 	defer func() {
 		if err := response.Body.Close(); err != nil {
-			log.Fatal("Failed to close response body:", err)
+			// log.Fatal("Failed to close response body:", err)
 		}
 	}()
 

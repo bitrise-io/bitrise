@@ -131,5 +131,5 @@ workflows:
   test-bin-step:
     title: Test binary step relase
     steps:
-    - git::https://github.com/lpusok/go-step@main:
+    - git::https://github.com/lpusok/go-step@patch-1:
         title: Test binary step

@@ -103,7 +103,8 @@ even if the repository is open source!`)
 			return "", "", err
 		}
 
-		if err := stepman.PrepareStepBinaryReleases(stepInfo.Source.BinaryURLs, stepDir); err != nil {
+		logger := log.NewUtilsLogAdapter()
+		if err := stepman.PrepareStepBinaryReleases(logger, stepInfo.Source.BinaryURLs, stepDir); err != nil {
 			return "", "", err
 		}
 	} else if stepIDData.SteplibSource == "_" {
