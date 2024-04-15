@@ -7,18 +7,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-var stepmanCommand = cli.Command{
-	Name:            "stepman",
-	Usage:           "Runs a stepman command.",
-	SkipFlagParsing: true,
-	Action: func(c *cli.Context) error {
-		if err := runCommandWith("stepman", c); err != nil {
-			failf("Command failed, error: %s", err)
-		}
-		return nil
-	},
-}
-
 var envmanCommand = cli.Command{
 	Name:            "envman",
 	Usage:           "Runs an envman command.",
