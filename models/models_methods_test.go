@@ -62,6 +62,12 @@ trigger_map:
   workflow: check
 - tag: '*'
   workflow: deploy
+- type: pull_request
+  pull_request_label: label
+  pull_request_comment: comment
+  commit_message: message
+  changed_files: file
+  workflow: deploy
 
 workflows:
   wip-deploy:
@@ -527,6 +533,10 @@ trigger_map:
   workflow: test
 - pull_request_target_branch: '*'
   pull_request_label: "[workflow: check]"
+  changed_files:
+    regex: '^ios\/.*'
+  pull_request_comment: comment
+  commit_message: message
   workflow: check
 - tag: '*'
   workflow: deploy
