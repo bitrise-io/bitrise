@@ -13,18 +13,22 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 )
 
+type SetupMode string
 const (
-	minEnvmanVersion  = "2.4.2"
-	minStepmanVersion = "0.16.1"
+	SetupModeDefault SetupMode = "default"
+	SetupModeMinimal SetupMode = "minimal"
 )
 
-// PluginDependency ..
+const (
+	minEnvmanVersion  = "2.4.3"
+	minStepmanVersion = "0.16.3"
+)
+
 type PluginDependency struct {
 	Source     string
 	MinVersion string
 }
 
-// PluginDependencyMap ...
 var PluginDependencyMap = map[string]PluginDependency{
 	"init": {
 		Source:     "https://github.com/bitrise-io/bitrise-plugins-init.git",
@@ -40,23 +44,21 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 }
 
-// RunSetupIfNeeded ...
-func RunSetupIfNeeded(appVersion string, isFullSetupMode bool) error {
+func RunSetupIfNeeded() error {
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnf("Setup was not performed for this version of bitrise, doing it now...")
-		return RunSetup(version.VERSION, false, false)
+		return RunSetup(version.VERSION, SetupModeDefault, false)
 	}
 	return nil
 }
 
-// RunSetup ...
-func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) error {
-	log.Infof("Setup")
-	log.Printf("Full setup: %v", isFullSetupMode)
-	log.Printf("Clean setup: %v", isCleanSetupMode)
-	log.Printf("Detected OS: %s", runtime.GOOS)
+func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
+	log.Infof("Setup Bitrise tools...")
+	log.Printf("Clean before setup: %v", doCleanSetup)
+	log.Printf("Setup mode: %s", setupMode)
+	log.Printf("System: %s/%s", runtime.GOOS, runtime.GOARCH)
 
-	if isCleanSetupMode {
+	if doCleanSetup {
 		if err := configs.DeleteBitriseConfigDir(); err != nil {
 			return err
 		}
@@ -76,16 +78,18 @@ func RunSetup(appVersion string, isFullSetupMode bool, isCleanSetupMode bool) er
 
 	switch runtime.GOOS {
 	case "darwin":
-		if err := doSetupOnOSX(isFullSetupMode); err != nil {
-			return fmt.Errorf("Failed to do MacOS specific setup, error: %s", err)
+		if err := doSetupOnOSX(); err != nil {
+			return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
 		}
 	case "linux":
 	default:
-		return errors.New("unsupported platform :(")
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
-	if err := doSetupPlugins(); err != nil {
-		return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
+	if setupMode != SetupModeMinimal {
+		if err := doSetupPlugins(); err != nil {
+			return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
+		}
 	}
 
 	if err := doSetupToolkits(); err != nil {
@@ -164,17 +168,14 @@ func doSetupBitriseCoreTools() error {
 	return nil
 }
 
-func doSetupOnOSX(isMinimalSetupMode bool) error {
+func doSetupOnOSX() error {
 	log.Print()
 	log.Infof("Doing macOS-specific setup")
 	log.Printf("Checking required tools...")
 
-	if err := CheckIsHomebrewInstalled(isMinimalSetupMode); err != nil {
+	if err := CheckIsHomebrewInstalled(); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
 	}
 
-	if err := PrintInstalledXcodeInfos(); err != nil {
-		return errors.New(fmt.Sprint("Failed to detect installed Xcode and Xcode Command Line Tools infos. Err:", err))
-	}
 	return nil
 }
