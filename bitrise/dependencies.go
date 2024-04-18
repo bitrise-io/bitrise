@@ -165,27 +165,27 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		}
 		return doInstall()
 	}
-	verStr, err := command.RunCommandAndReturnStdout(toolname, "-version")
+	versionOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr(toolname, "-version")
 	if err != nil {
-		log.Infof("")
-		return errors.New("Failed to get version")
+		log.Print(versionOutput)
+		return fmt.Errorf("run %s -version", toolname)
 	}
 
 	// version check
-	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minVersion)
+	isVersionOk, err := versions.IsVersionGreaterOrEqual(versionOutput, minVersion)
 	if err != nil {
 		log.Errorf("Failed to validate installed version")
 		return err
 	}
 	if !isVersionOk {
 		if !isInstall {
-			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, verStr)
+			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, versionOutput)
 			return errors.New("Failed to install required version")
 		}
 		return doInstall()
 	}
 
-	log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolname, verStr, progInstallPth)
+	log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolname, versionOutput, progInstallPth)
 	return nil
 }
 
