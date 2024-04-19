@@ -14,7 +14,7 @@ func redactStepInputs(environment map[string]string, inputs []models.Environment
 	redactedStepInputs := make(map[string]string)
 	redactedOriginalInputs := map[string]string{}
 
-	// Filter inputs from enviroments
+	// Filter inputs from environments
 	for _, input := range inputs {
 		inputKey, originalValue, err := input.GetKeyValuePair()
 		if err != nil {
