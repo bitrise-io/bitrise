@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -201,7 +200,6 @@ func trigger(c *cli.Context) error {
 		if err == errWorkflowRunFailed {
 			msg := createWorkflowRunStatusMessage(exitCode)
 			printWorkflowRunStatusMessage(msg)
-			analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
 			os.Exit(exitCode)
 		}
 
@@ -210,7 +208,6 @@ func trigger(c *cli.Context) error {
 
 	msg := createWorkflowRunStatusMessage(0)
 	printWorkflowRunStatusMessage(msg)
-	analytics.LogMessage("info", "bitrise-cli", "exit", map[string]interface{}{"build_slug": os.Getenv("BITRISE_BUILD_SLUG")}, msg)
 	os.Exit(0)
 
 	return nil
