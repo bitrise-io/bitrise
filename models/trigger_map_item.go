@@ -282,6 +282,17 @@ func (item TriggerMapItemModel) validateLegacyItemType(idx int) error {
 	return nil
 }
 
+func (item TriggerMapItemModel) getType() TriggerItemType {
+	if isStringLiteralOrRegexSet(item.PushBranch) || item.Type == CodePushType {
+		return CodePushType
+	} else if isStringLiteralOrRegexSet(item.PullRequestSourceBranch) || isStringLiteralOrRegexSet(item.PullRequestTargetBranch) || item.Type == PullRequestType {
+		return PullRequestType
+	} else if isStringLiteralOrRegexSet(item.Tag) || item.Type == TagPushType {
+		return TagPushType
+	}
+	return ""
+}
+
 func (item TriggerMapItemModel) validateType(idx int) error {
 	if item.Type != "" {
 		if !sliceutil.IsStringInSlice(string(item.Type), []string{string(CodePushType), string(PullRequestType), string(TagPushType)}) {
@@ -428,7 +439,10 @@ func (item TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, fiel
 }
 
 func (item TriggerMapItemModel) conditionsString() string {
-	str := ""
+	var str string
+	if t := item.getType(); t != "" {
+		str = fmt.Sprintf("type: %s", item.getType())
+	}
 
 	rv := reflect.Indirect(reflect.ValueOf(&item))
 	rt := rv.Type()
@@ -436,7 +450,7 @@ func (item TriggerMapItemModel) conditionsString() string {
 		field := rt.Field(i)
 		tag := field.Tag.Get("yaml")
 		tag = strings.TrimSuffix(tag, ",omitempty")
-		if tag == "pipeline" || tag == "workflow" || tag == "type" || tag == "enabled" {
+		if tag == "pipeline" || tag == "workflow" || tag == "enabled" || tag == "type" {
 			continue
 		}
 
@@ -452,6 +466,12 @@ func (item TriggerMapItemModel) conditionsString() string {
 					continue
 				}
 				value = *boolPtrValue
+			}
+		}
+
+		if itemType, ok := value.(TriggerItemType); ok {
+			if itemType == "" {
+				continue
 			}
 		}
 
