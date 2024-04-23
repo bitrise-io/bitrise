@@ -450,7 +450,7 @@ func (item TriggerMapItemModel) conditionsString() string {
 		field := rt.Field(i)
 		tag := field.Tag.Get("yaml")
 		tag = strings.TrimSuffix(tag, ",omitempty")
-		if tag == "pipeline" || tag == "workflow" || tag == "enabled" || tag == "type" {
+		if tag == "pipeline" || tag == "workflow" || tag == "type" || tag == "enabled" {
 			continue
 		}
 
@@ -466,12 +466,6 @@ func (item TriggerMapItemModel) conditionsString() string {
 					continue
 				}
 				value = *boolPtrValue
-			}
-		}
-
-		if itemType, ok := value.(TriggerItemType); ok {
-			if itemType == "" {
-				continue
 			}
 		}
 
