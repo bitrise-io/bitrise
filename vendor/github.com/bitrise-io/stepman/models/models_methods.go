@@ -301,7 +301,7 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 
 	locations := []DownloadLocationModel{}
 	// step.yml can override the download location with a precompiled binary URL
-	if len(step.Source.BinaryURLs) != 0 {
+	if step.Source.BinaryReleases != nil {
 		locations = append(locations, DownloadLocationModel{
 			Type: "binary",
 			Src:  step.Source.BinaryURLs[0],

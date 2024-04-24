@@ -6,16 +6,28 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
-// type StepBinaryReleaseModel struct {
-// 	PlatformToURL map[string]string `json:"platform_to_url,omitempty" yaml:"platform_to_url,omitempty"`
-// }
+type ReleasePlatformType string
+
+const (
+	linuxAmd64  ReleasePlatformType = "linux-amd64"
+	darwinArm64 ReleasePlatformType = "darwin-arm64"
+	darwinAmd64 ReleasePlatformType = "darwin-amd64"
+)
+
+type StepBinaryReleaseModel struct {
+	DownloadURL    string `json:"download_url,omitempty" yaml:"download_url,omitempty"`
+	ChecksumSHA256 string `json:"checksum,omitempty" yaml:"checksum,omitempty"`
+}
+
+type StepBinaryReleasesModel struct {
+	PlatformToRelease map[ReleasePlatformType]StepBinaryReleaseModel `json:"platform_to_url,omitempty" yaml:"platform_to_url,omitempty"`
+}
 
 // StepSourceModel ...
 type StepSourceModel struct {
-	Git        string   `json:"git,omitempty" yaml:"git,omitempty"`
-	Commit     string   `json:"commit,omitempty" yaml:"commit,omitempty"`
-	BinaryURLs []string `json:"urls,omitempty" yaml:"urls,omitempty"`
-	// BinaryRelease StepBinaryReleaseModel `json:"binary_release,omitempty" yaml:"binary_release,omitempty"`
+	Git            string                   `json:"git,omitempty" yaml:"git,omitempty"`
+	Commit         string                   `json:"commit,omitempty" yaml:"commit,omitempty"`
+	BinaryReleases *StepBinaryReleasesModel `json:"binary_releases,omitempty" yaml:"binary_releases,omitempty"`
 }
 
 // DependencyModel ...
