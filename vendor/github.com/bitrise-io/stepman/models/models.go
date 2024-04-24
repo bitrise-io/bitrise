@@ -179,14 +179,15 @@ type EnvInfoModel struct {
 
 // StepInfoModel ...
 type StepInfoModel struct {
-	Library         string             `json:"library,omitempty" yaml:"library,omitempty"`
-	ID              string             `json:"id,omitempty" yaml:"id,omitempty"`
-	Version         string             `json:"version,omitempty" yaml:"version,omitempty"`
-	OriginalVersion string             `json:"original_version,omitempty" yaml:"original_version,omitempty"`
-	LatestVersion   string             `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
-	GroupInfo       StepGroupInfoModel `json:"info,omitempty" yaml:"info,omitempty"`
-	Step            StepModel          `json:"step,omitempty" yaml:"step,omitempty"`
-	DefinitionPth   string             `json:"definition_pth,omitempty" yaml:"definition_pth,omitempty"`
+	Library             string             `json:"library,omitempty" yaml:"library,omitempty"`
+	ID                  string             `json:"id,omitempty" yaml:"id,omitempty"`
+	Version             string             `json:"version,omitempty" yaml:"version,omitempty"`
+	OriginalVersion     string             `json:"original_version,omitempty" yaml:"original_version,omitempty"`
+	LatestVersion       string             `json:"latest_version,omitempty" yaml:"latest_version,omitempty"`
+	GroupInfo           StepGroupInfoModel `json:"info,omitempty" yaml:"info,omitempty"`
+	Step                StepModel          `json:"step,omitempty" yaml:"step,omitempty"`
+	DefinitionPth       string             `json:"definition_pth,omitempty" yaml:"definition_pth,omitempty"`
+	LocalExecutablePath string             `json:"local_executable_path,omitempty" yaml:"local_executable_path,omitempty"`
 }
 
 // StepListModel ...

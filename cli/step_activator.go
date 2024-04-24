@@ -17,6 +17,15 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+type activatedStep struct {
+	stepYMLPth, origStepYMLPth string
+
+	// stepDir is the local step source directory
+	stepDir string
+	// localExecutablePath if set, is a path to a precompiled executable
+	localExecutablePath string
+}
+
 type stepActivator struct {
 }
 
@@ -31,21 +40,23 @@ func (a stepActivator) activateStep(
 	workDir string,
 	workflowStep *stepmanModels.StepModel,
 	stepInfoPtr *stepmanModels.StepInfoModel,
-) (stepYMLPth string, origStepYMLPth string, err error) {
-	stepYMLPth = filepath.Join(workDir, "current_step.yml")
+) (activatedStep, error) {
+	stepYMLPth := filepath.Join(workDir, "current_step.yml")
+	origStepYMLPth := ""
+	localExecutablePath := ""
 
 	if stepIDData.SteplibSource == "path" {
 		log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 		stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
 		if err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 
 		exist, err := pathutil.IsDirExists(stepAbsLocalPth)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to activate local step: failed to check if a directory exists at %s: %w", stepAbsLocalPth, err)
+			return activatedStep{}, fmt.Errorf("failed to activate local step: failed to check if a directory exists at %s: %w", stepAbsLocalPth, err)
 		} else if !exist {
-			return "", "", fmt.Errorf("failed to activate local step: the provided directory doesn't exist: %s", stepAbsLocalPth)
+			return activatedStep{}, fmt.Errorf("failed to activate local step: the provided directory doesn't exist: %s", stepAbsLocalPth)
 		}
 
 		log.Debug("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
@@ -53,23 +64,23 @@ func (a stepActivator) activateStep(
 		origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
 		exist, err = pathutil.IsPathExists(origStepYMLPth)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to activate local step: failed to check if step.yml exists at %s: %w", origStepYMLPth, err)
+			return activatedStep{}, fmt.Errorf("failed to activate local step: failed to check if step.yml exists at %s: %w", origStepYMLPth, err)
 		} else if !exist {
-			return "", "", fmt.Errorf("failed to activate local step: step.yml doesn't exist at %s", origStepYMLPth)
+			return activatedStep{}, fmt.Errorf("failed to activate local step: step.yml doesn't exist at %s", origStepYMLPth)
 		}
 
 		if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 
 		if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 		repo, err := git.New(stepDir)
 		if err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 		var cloneCmd *command.Model
 		if stepIDData.Version == "" {
@@ -86,13 +97,13 @@ even if the repository is open source!`)
 			}
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
-				return "", "", fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
+				return activatedStep{}, fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
 			}
-			return "", "", err
+			return activatedStep{}, err
 		}
 
 		if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 	} else if stepIDData.SteplibSource == "_" {
 		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -100,15 +111,15 @@ even if the repository is open source!`)
 		// Steplib independent steps are completly defined in workflow
 		stepYMLPth = ""
 		if err := workflowStep.FillMissingDefaults(); err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 
 		repo, err := git.New(stepDir)
 		if err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 		if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 	} else if stepIDData.SteplibSource != "" {
 		isUpdated := buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
@@ -116,6 +127,7 @@ even if the repository is open source!`)
 		if didUpdate {
 			buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 		}
+		localExecutablePath = stepInfo.LocalExecutablePath
 
 		stepInfoPtr.ID = stepInfo.ID
 		if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
@@ -127,13 +139,18 @@ even if the repository is open source!`)
 		stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 		if err != nil {
-			return "", "", err
+			return activatedStep{}, err
 		}
 	} else {
-		return "", "", fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
+		return activatedStep{}, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 
-	return stepYMLPth, origStepYMLPth, nil
+	return activatedStep{
+		stepYMLPth:          stepYMLPth,
+		origStepYMLPth:      origStepYMLPth,
+		stepDir:             stepDir,
+		localExecutablePath: localExecutablePath,
+	}, nil
 }
 
 func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
