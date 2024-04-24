@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -223,6 +224,34 @@ func GetAllStepCollectionPath() []string {
 // Step's Cache dir path, where it's code lives.
 func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
 	return filepath.Join(GetCacheBaseDir(route), id, version)
+}
+
+// GetStepGitCacheDirPath stores the full git history of the step
+func GetStepGitCacheDirPath(route SteplibRoute, id string) string {
+	return filepath.Join(GetCacheBaseDir(route), id, "git")
+}
+
+// GetStepCacheCompressedBinDirPath stores the precompiled binaries of the step (compressed and uncompressed)
+func GetStepCacheCompressedBinDirPath(route SteplibRoute, id string) string {
+	return filepath.Join(GetCacheBaseDir(route), id, "binrepo")
+}
+
+func executableBinaryName() string {
+	return fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
+}
+
+func executableChecksumName() string {
+	return "sha256sum"
+}
+
+// GetStepCacheExecutablePathForVersion stores the uncompressed precompiled binaries of the step
+func GetStepCacheExecutablePathForVersion(route SteplibRoute, id, version string) string {
+	return filepath.Join(GetStepCacheCompressedBinDirPath(route, id), version, executableBinaryName())
+}
+
+// GetStepCacheExecutableChecksumPathForVersion stores the checksum of the uncompressed precompiled binaries of the step
+func GetStepCacheExecutableChecksumPathForVersion(route SteplibRoute, id, version string) string {
+	return filepath.Join(GetStepCacheCompressedBinDirPath(route, id), version, executableChecksumName())
 }
 
 // GetStepGlobalInfoPath ...

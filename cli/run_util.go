@@ -386,7 +386,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData models.StepIDData,
-	activatedStep activatedStep,
+	activatedStep stepmanModels.ActivatedStep,
 	bitriseSourceDir string,
 	secrets []string,
 	workflow models.WorkflowModel,
@@ -395,17 +395,17 @@ func (r WorkflowRunner) executeStep(
 	var cmdArgs []string
 	var err error
 
-	if activatedStep.localExecutablePath != "" {
-		cmdArgs = []string{activatedStep.localExecutablePath}
+	if activatedStep.ExecutablePath != "" {
+		cmdArgs = []string{activatedStep.ExecutablePath}
 	} else {
 		toolkitForStep := toolkits.ToolkitForStep(step)
 		toolkitName := toolkitForStep.ToolkitName()
-		if err := toolkitForStep.PrepareForStepRun(step, sIDData, activatedStep.stepDir); err != nil {
+		if err := toolkitForStep.PrepareForStepRun(step, sIDData, activatedStep.SourceAbsDirPath); err != nil {
 			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
 				toolkitName, err)
 		}
 
-		cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, activatedStep.stepDir)
+		cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, activatedStep.SourceAbsDirPath)
 		if err != nil {
 			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
 				toolkitName, err)
@@ -481,7 +481,7 @@ func (r WorkflowRunner) runStep(
 	stepUUID string,
 	step stepmanModels.StepModel,
 	stepIDData models.StepIDData,
-	activatedStep activatedStep,
+	activatedStep stepmanModels.ActivatedStep,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
 	workflow models.WorkflowModel,
@@ -726,7 +726,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepDir := configs.BitriseWorkStepsDirPath
 
 		activator := newStepActivator()
-		activatedStep, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr)
+		activatedStep, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr)
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
@@ -735,15 +735,15 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		// Fill step info with default step info, if exist
 		mergedStep := workflowStep
-		if activatedStep.stepYMLPth != "" {
-			specStep, err := bitrise.ReadSpecStep(activatedStep.stepYMLPth)
+		if activatedStep.StepYMLPath != "" {
+			specStep, err := bitrise.ReadSpecStep(activatedStep.StepYMLPath)
 			log.Debugf("Spec read from YML: %#v", specStep)
 			if err != nil {
-				ymlPth := activatedStep.stepYMLPth
-				if activatedStep.origStepYMLPth != "" {
+				ymlPth := activatedStep.StepYMLPath
+				if origStepYMLPth != "" {
 					// in case of local step (path:./) we use the original step definition path,
 					// instead of the activated step's one.
-					ymlPth = activatedStep.origStepYMLPth
+					ymlPth = origStepYMLPth
 				}
 				runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 					models.StepRunStatusCodePreparationFailed, 1, fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err),

@@ -70,38 +70,54 @@ func activate(c *cli.Context) error {
 	version := c.String(VersionKey)
 	copyYML := c.String(CopyYMLKey)
 	update := c.Bool(UpdateKey)
+	logger := log.NewDefaultLogger(false)
 
-	return Activate(stepLibURI, id, version, path, copyYML, update, log.NewDefaultLogger(false))
+	output, err := Activate(stepLibURI, id, version, path, copyYML, update, logger)
+	if err != nil {
+		return err
+	}
+
+	logger.Printf("%v+", output)
+
+	return nil
 }
 
 // Activate ...
-func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger) error {
+func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger) (models.ActivatedStep, error) {
+	output := models.ActivatedStep{}
+
 	stepLib, err := stepman.ReadStepSpec(stepLibURI)
 	if err != nil {
-		return fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
+		return output, fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
 	}
 
 	step, version, err := queryStep(stepLib, stepLibURI, id, version, updateLibrary, log)
 	if err != nil {
-		return fmt.Errorf("failed to find step: %s", err)
+		return output, fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, err := downloadStep(stepLib, stepLibURI, id, version, step, log)
+	srcFolder, executablePath, err := downloadStep(stepLib, stepLibURI, id, version, step, log)
 	if err != nil {
-		return fmt.Errorf("failed to download step: %s", err)
+		return output, fmt.Errorf("failed to download step: %s", err)
 	}
 
-	if err := copyStep(srcFolder, destination); err != nil {
-		return fmt.Errorf("copy step failed: %s", err)
+	if srcFolder != "" {
+		if err := copyStep(srcFolder, destination); err != nil {
+			return output, fmt.Errorf("copy step failed: %s", err)
+		}
 	}
 
 	if destinationStepYML != "" {
 		if err := copyStepYML(stepLibURI, id, version, destinationStepYML); err != nil {
-			return fmt.Errorf("copy step.yml failed: %s", err)
+			return output, fmt.Errorf("copy step.yml failed: %s", err)
 		}
 	}
 
-	return nil
+	return models.ActivatedStep{
+		StepYMLPath:      destinationStepYML,
+		SourceAbsDirPath: destination,
+		ExecutablePath:   executablePath,
+	}, nil
 }
 
 func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string, updateLibrary bool, log stepman.Logger) (models.StepModel, string, error) {
@@ -133,22 +149,38 @@ func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, versio
 	return step, version, nil
 }
 
-func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, error) {
+func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
-		return "", fmt.Errorf("no route found for %s steplib", stepLibURI)
+		return "", "", fmt.Errorf("no route found for %s steplib", stepLibURI)
 	}
+
+	// is precompiled uncompressed step version in cache?
+	executablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
+	if exist, err := pathutil.IsPathExists(executablePath); err != nil {
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", executablePath, err)
+	} else if exist {
+		// check checksum
+		return "", executablePath, nil
+	}
+
+	// is precompiled compressed step in cache?
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
-		return "", fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
-	} else if !exist {
-		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
-			return "", fmt.Errorf("download failed: %s", err)
-		}
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
+	} else if exist { // version specific source cache exists
+		return stepCacheDir, "", nil
 	}
 
-	return stepCacheDir, nil
+	// is step git dir in cache?
+
+	// version specific source cache not exists
+	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+		return "", "", fmt.Errorf("download failed: %s", err)
+	}
+
+	return stepCacheDir, "", nil
 }
 
 func copyStep(src, dst string) error {
