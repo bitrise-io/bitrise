@@ -14,18 +14,18 @@ workflows:
     - script:
         title: Setup Onigmo lib
         summary: |-
-          [Onigmo](https://github.com/k-takata/Onigmo) is a dependency of [go-onigmo](https://github.com/go-enry/go-onigmo), 
+          [Onigmo](https://github.com/k-takata/Onigmo) is a dependency of [go-onigmo](https://github.com/go-enry/go-onigmo),
           that Bitrise CLI uses for validating Trigger Item's regex conditions.
-          
+
           This is needed because Trigger Items are matched against incoming webhook event parameters by a Ruby code.
           Regex conditions are matched using Ruby's standard Regex package, which uses the Onigmo lib.
-          
+
           This script uses sudo, because Onigmo setup scripts, are writing `/usr/local/include` and `/usr/local/lib` directories.
         inputs:
         - content: |-
             #!/usr/bin/env bash
             set -euxo pipefail
-            
+
             if [ -f "/usr/local/include/onigmo.h" ]; then
               echo "onigmo is already set up"
               exit 0
