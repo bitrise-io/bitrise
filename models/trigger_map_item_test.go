@@ -350,7 +350,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PushBranch: "master",
 				PipelineID: "pipeline-1",
 			},
-			want: "push_branch: master",
+			want: "type: push & push_branch: master",
 		},
 		{
 			name: "push event",
@@ -358,7 +358,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PushBranch: "master",
 				WorkflowID: "ci",
 			},
-			want: "push_branch: master",
+			want: "type: push & push_branch: master",
 		},
 		{
 			name: "push event - type only",
@@ -374,7 +374,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestSourceBranch: "develop",
 				WorkflowID:              "ci",
 			},
-			want: "pull_request_source_branch: develop",
+			want: "type: pull_request & pull_request_source_branch: develop",
 		},
 		{
 			name: "pull request event - pr target branch",
@@ -382,7 +382,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "ci",
 			},
-			want: "pull_request_target_branch: master",
+			want: "type: pull_request & pull_request_target_branch: master",
 		},
 		{
 			name: "pull request event - pr target and source branch",
@@ -391,7 +391,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				PullRequestTargetBranch: "master",
 				WorkflowID:              "ci",
 			},
-			want: "pull_request_source_branch: develop & pull_request_target_branch: master",
+			want: "type: pull_request & pull_request_source_branch: develop & pull_request_target_branch: master",
 		},
 		{
 			name: "pull request event - pr target and source branch and disable draft prs",
@@ -401,7 +401,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				DraftPullRequestEnabled: pointers.NewBoolPtr(false),
 				WorkflowID:              "ci",
 			},
-			want: "pull_request_source_branch: develop & pull_request_target_branch: master & draft_pull_request_enabled: false",
+			want: "type: pull_request & pull_request_source_branch: develop & pull_request_target_branch: master & draft_pull_request_enabled: false",
 		},
 		{
 			name: "tag event",
@@ -409,7 +409,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				Tag:        "0.9.0",
 				WorkflowID: "release",
 			},
-			want: "tag: 0.9.0",
+			want: "type: tag & tag: 0.9.0",
 		},
 		{
 			name: "deprecated type - pr disabled",
@@ -440,7 +440,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				IsPullRequestAllowed:    true,
 				WorkflowID:              "ci",
 			},
-			want: "push_branch: master & tag: 0.9.0 & pull_request_source_branch: develop & pull_request_target_branch: master & pattern: * & is_pull_request_allowed: true",
+			want: "type: push & push_branch: master & tag: 0.9.0 & pull_request_source_branch: develop & pull_request_target_branch: master & pattern: * & is_pull_request_allowed: true",
 		},
 		{
 			name: "pr event - all conditions",
@@ -452,7 +452,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				CommitMessage:      "my commit",
 				ChangedFiles:       "my file",
 			},
-			want: "commit_message: my commit & changed_files: my file & pull_request_label: my label & pull_request_comment: my comment",
+			want: "type: pull_request & commit_message: my commit & changed_files: my file & pull_request_label: my label & pull_request_comment: my comment",
 		},
 		{
 			name: "push event - all conditions",
@@ -462,7 +462,7 @@ func TestTriggerMapItemModel_String(t *testing.T) {
 				CommitMessage: "my commit",
 				ChangedFiles:  "my file",
 			},
-			want: "commit_message: my commit & changed_files: my file",
+			want: "type: push & commit_message: my commit & changed_files: my file",
 		},
 	}
 	for _, tt := range tests {

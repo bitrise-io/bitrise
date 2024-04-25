@@ -51,6 +51,54 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 			workflows: []string{"ci", "release"},
 		},
 		{
+			name: "Pull Request trigger items",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "feature*",
+					WorkflowID:              "ci",
+				},
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "master",
+					WorkflowID:              "release",
+				},
+			},
+			workflows: []string{"ci", "release"},
+		},
+		{
+			name: "Pull Request trigger items - different draft pr enabled",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "develop",
+					PullRequestTargetBranch: "master",
+					DraftPullRequestEnabled: pointers.NewBoolPtr(false),
+					WorkflowID:              "release",
+				},
+				TriggerMapItemModel{
+					PullRequestSourceBranch: "develop",
+					PullRequestTargetBranch: "master",
+					DraftPullRequestEnabled: pointers.NewBoolPtr(true),
+					WorkflowID:              "ci",
+				},
+			},
+			workflows: []string{"ci", "release"},
+		},
+		{
+			name: "Trigger items with same conditions but different type",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					Type:         PullRequestType,
+					ChangedFiles: "*.md",
+					WorkflowID:   "ci",
+				},
+				TriggerMapItemModel{
+					Type:         CodePushType,
+					ChangedFiles: "*.md",
+					WorkflowID:   "release",
+				},
+			},
+			workflows: []string{"ci", "release"},
+		},
+		{
 			name: "Push trigger items - duplication",
 			triggerMap: TriggerMapModel{
 				TriggerMapItemModel{
@@ -64,20 +112,6 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 			},
 			workflows: []string{"ci", "release"},
 			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
-		},
-		{
-			name: "Pull Request trigger items",
-			triggerMap: TriggerMapModel{
-				TriggerMapItemModel{
-					PullRequestSourceBranch: "feature*",
-					WorkflowID:              "ci",
-				},
-				TriggerMapItemModel{
-					PullRequestSourceBranch: "master",
-					WorkflowID:              "release",
-				},
-			},
-			workflows: []string{"ci", "release"},
 		},
 		{
 			name: "Pull Request trigger items - duplicated (source branch)",
@@ -127,24 +161,6 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
 		},
 		{
-			name: "Pull Request trigger items - different draft pr enabled",
-			triggerMap: TriggerMapModel{
-				TriggerMapItemModel{
-					PullRequestSourceBranch: "develop",
-					PullRequestTargetBranch: "master",
-					DraftPullRequestEnabled: pointers.NewBoolPtr(false),
-					WorkflowID:              "release",
-				},
-				TriggerMapItemModel{
-					PullRequestSourceBranch: "develop",
-					PullRequestTargetBranch: "master",
-					DraftPullRequestEnabled: pointers.NewBoolPtr(true),
-					WorkflowID:              "ci",
-				},
-			},
-			workflows: []string{"ci", "release"},
-		},
-		{
 			name: "Tag trigger items - duplicated",
 			triggerMap: TriggerMapModel{
 				TriggerMapItemModel{
@@ -153,6 +169,22 @@ func TestTriggerMapModel_Validate(t *testing.T) {
 				},
 				TriggerMapItemModel{
 					Tag:        "0.9.0",
+					WorkflowID: "release",
+				},
+			},
+			workflows: []string{"ci", "release"},
+			wantErr:   "the 2. trigger item duplicates the 1. trigger item",
+		},
+		{
+			name: "Same conditions considered as a duplicate",
+			triggerMap: TriggerMapModel{
+				TriggerMapItemModel{
+					Type:       CodePushType,
+					PushBranch: "*",
+					WorkflowID: "ci",
+				},
+				TriggerMapItemModel{
+					PushBranch: "*",
 					WorkflowID: "release",
 				},
 			},
