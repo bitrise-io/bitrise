@@ -10,6 +10,7 @@ workflows:
   setup:
     envs:
     - ONIG_VERSION: 6.1.3
+    - CGO_LDFLAGS: /usr/local/lib/libonigmo.a
     steps:
     - script:
         title: Setup Onigmo lib
