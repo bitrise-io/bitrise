@@ -91,6 +91,9 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.4.0
 ## explicit
 github.com/docker/go-units
+# github.com/go-enry/go-onigmo v0.0.0-20210518020254-1b99997f3cf1
+## explicit; go 1.14
+github.com/go-enry/go-onigmo
 # github.com/gofrs/uuid v4.3.1+incompatible
 ## explicit
 github.com/gofrs/uuid

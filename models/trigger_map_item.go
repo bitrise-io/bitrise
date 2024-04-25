@@ -3,10 +3,10 @@ package models
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/sliceutil"
+	"github.com/go-enry/go-onigmo"
 	"github.com/ryanuber/go-glob"
 )
 
@@ -592,7 +592,9 @@ func validateRegexInterface(idx int, field string, regex interface{}) error {
 }
 
 func validateRegexString(idx int, field string, regex string) error {
-	_, err := regexp.Compile(regex)
+	re, err := onigmo.Compile(regex)
+	re.Free()
+	//_, err := regexp.Compile(regex)
 	if err != nil {
 		return fmt.Errorf("trigger item #%d: invalid regex value in %s field: %w", idx+1, field, err)
 	}

@@ -7,6 +7,47 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
+  setup:
+    envs:
+    - ONIG_VERSION: 6.1.3
+    steps:
+    - script:
+        title: Setup Onigmo lib
+        summary: |-
+          [Onigmo](https://github.com/k-takata/Onigmo) is a dependency of [go-onigmo](https://github.com/go-enry/go-onigmo), 
+          that Bitrise CLI uses for validating Trigger Item's regex conditions.
+          
+          This is needed because Trigger Items are matched against incoming webhook event parameters by a Ruby code.
+          Regex conditions are matched using Ruby's standard Regex package, which uses the Onigmo lib.
+          
+          This script uses sudo, because Onigmo setup scripts, are writing `/usr/local/include` and `/usr/local/lib` directories.
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -euxo pipefail
+            
+            if [ -f "/usr/local/include/onigmo.h" ]; then
+              echo "onigmo is already set up"
+              exit 0
+            fi
+
+            tmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+            cd $tmpdir && \
+              curl -sLO https://github.com/k-takata/Onigmo/releases/download/Onigmo-${ONIG_VERSION}/onigmo-${ONIG_VERSION}.tar.gz && \
+              tar xfz onigmo-${ONIG_VERSION}.tar.gz && \
+              cd onigmo-${ONIG_VERSION} && \
+              ./configure && \
+              make && \
+              sudo make install
+
+  test:
+    title: Runs tests
+    before_run:
+    - setup
+    after_run:
+    - check
+    - integration-test
+
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:
@@ -18,12 +59,6 @@ workflows:
         title: Go test
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
-
-  test:
-    title: Runs tests
-    after_run:
-    - check
-    - integration-test
 
   integration-test:
     title: Runs integration tests
@@ -49,6 +84,21 @@ workflows:
             if [ "$(uname)" == "Linux" ]; then
                 go test -v ./_tests/integration/ --tags linux_only
             fi
+
+  test-binary-build:
+    description: Tests the release build process by creating a snapshot release (without publishing)
+    steps:
+    - script:
+        title: Goreleaser (create snapshot binaries)
+        deps:
+          brew:
+          - name: goreleaser
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+
+            goreleaser release --snapshot --rm-dist
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
@@ -76,21 +126,6 @@ workflows:
             set -ex
 
             goreleaser release
-
-  test-binary-build:
-    description: Tests the release build process by creating a snapshot release (without publishing)
-    steps:
-    - script:
-        title: Goreleaser (create snapshot binaries)
-        deps:
-          brew:
-          - name: goreleaser
-        inputs:
-        - content: |
-            #!/usr/bin/env bash
-            set -ex
-
-            goreleaser release --snapshot --rm-dist
 
   noop:
     title: Noop

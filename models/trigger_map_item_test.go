@@ -805,6 +805,16 @@ func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
 			workflows: []string{"primary"},
 		},
 		{
+			name: "regex with negative lookahead is supported",
+			triggerMapItem: TriggerMapItemModel{
+				Tag: map[interface{}]interface{}{
+					"regex": "^(?!.SprintPreparationJob).$",
+				},
+				WorkflowID: "primary",
+			},
+			workflows: []string{"primary"},
+		},
+		{
 			name: "regex is validated",
 			triggerMapItem: TriggerMapItemModel{
 				Tag: map[interface{}]interface{}{
@@ -813,7 +823,7 @@ func TestTriggerMapItemModel_Validate_TagPushItem(t *testing.T) {
 				WorkflowID: "primary",
 			},
 			workflows: []string{"primary"},
-			wantErr:   "trigger item #1: invalid regex value in tag field: error parsing regexp: missing closing ): `(invalid expression`",
+			wantErr:   "trigger item #1: invalid regex value in tag field: end pattern with unmatched parenthesis",
 		},
 	}
 	for _, tt := range tests {
