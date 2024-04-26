@@ -20,8 +20,8 @@ var setupCommand = cli.Command{
 	},
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name:  "full",
-			Usage: "Also calls 'brew doctor'.",
+			Name:  "preload-steps",
+			Usage: "Also makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
 		},
 		cli.BoolFlag{
 			Name:  "clean",
@@ -37,10 +37,13 @@ var setupCommand = cli.Command{
 func setup(c *cli.Context) error {
 	clean := c.Bool("clean")
 	minimal := c.Bool("minimal")
+	preloadSteps := c.Bool("preload-steps")
 
 	setupMode := bitrise.SetupModeDefault
 	if minimal {
 		setupMode = bitrise.SetupModeMinimal
+	} else if preloadSteps {
+		setupMode = bitrise.SetupModePreloadSteps
 	}
 
 	if err := bitrise.RunSetup(c.App.Version, setupMode, clean); err != nil {
