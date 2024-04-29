@@ -17,15 +17,6 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-type activatedStep struct {
-	stepYMLPth, origStepYMLPth string
-
-	// stepDir is the local step source directory
-	stepDir string
-	// localExecutablePath if set, is a path to a precompiled executable
-	localExecutablePath string
-}
-
 type stepActivator struct {
 }
 
