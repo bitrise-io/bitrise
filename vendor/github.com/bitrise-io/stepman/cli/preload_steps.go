@@ -1,4 +1,4 @@
-package bitrise
+package cli
 
 import (
 	"fmt"
@@ -20,8 +20,8 @@ const (
 
 type GoBuilder func(stepSourceAbsPath, packageName, targetExecutablePath string) error
 
-// preloadBitriseSteps preloads the cache with Bitrise owned steps
-func preloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
+// PreloadBitriseSteps preloads the cache with Bitrise owned steps
+func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 	// Check if setup was done for collection
 	if exist, err := stepman.RootExistForLibrary(bitriseStepLibURL); err != nil {
 		return err

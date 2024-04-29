@@ -236,29 +236,3 @@ func copyStepYML(libraryURL, id, version, dest string) error {
 	}
 	return nil
 }
-
-func compressStep(patchFromPath, stepLibURI, stepID, version, targetExecutablePathLatest, targetExecutablePath string) error {
-	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
-		return nil
-	}
-
-	route, found := stepman.ReadRoute(stepLibURI)
-	if !found {
-		return fmt.Errorf("no route found for %s steplib", stepLibURI)
-	}
-
-	patchFile := stepman.GetStepCompressedExecutablePathForVersion(patchFromPath, route, stepID, version)
-
-	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFile)
-	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
-	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		log.Warnf("Failed to compress step %s (%s): %s", stepID, compressCmd.PrintableCommandArgs(), out)
-	}
-
-	if err := os.Remove(targetExecutablePath); err != nil {
-		log.Warnf("Failed to remove uncompressed step executable %s: %s", stepID, err)
-	}
-
-	return nil
-}

@@ -11,6 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/stepman/cli"
 )
 
 type SetupMode string
@@ -100,7 +101,7 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 
 	if setupMode == SetupModePreloadSteps {
 		logger := log.NewLogger(log.GetGlobalLoggerOpts())
-		if err := preloadBitriseSteps(toolkits.GoBuildStep, logger); err != nil {
+		if err := cli.PreloadBitriseSteps(toolkits.GoBuildStep, logger); err != nil {
 			return fmt.Errorf("Failed to preload Bitrise maintained Steps: %s", err)
 		}
 	}
