@@ -97,13 +97,13 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 		return output, fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, executablePath, err := downloadStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
+	activatedStep, err := activateStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
 	if err != nil {
 		return output, fmt.Errorf("failed to download step: %s", err)
 	}
 
-	if srcFolder != "" {
-		if err := copyStep(srcFolder, destination); err != nil {
+	if activatedStep.SourceAbsDirPath != "" {
+		if err := copyStep(activatedStep.SourceAbsDirPath, destination); err != nil {
 			return output, fmt.Errorf("copy step failed: %s", err)
 		}
 	}
@@ -112,13 +112,11 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 		if err := copyStepYML(stepLibURI, id, version, destinationStepYML); err != nil {
 			return output, fmt.Errorf("copy step.yml failed: %s", err)
 		}
+
+		activatedStep.StepYMLPath = destinationStepYML
 	}
 
-	return models.ActivatedStep{
-		StepYMLPath:      destinationStepYML,
-		SourceAbsDirPath: destination,
-		ExecutablePath:   executablePath,
-	}, nil
+	return activatedStep, nil
 }
 
 func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string, updateLibrary bool, log stepman.Logger) (models.StepModel, string, error) {
@@ -150,69 +148,65 @@ func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, versio
 	return step, version, nil
 }
 
-func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger, isOfflineMode bool) (string, string, error) {
+func getExecutableFromCache(executablePath, checkSumPath string) error {
+	for _, path := range []string{executablePath, checkSumPath} {
+		exist, err := pathutil.IsPathExists(path)
+		if err != nil {
+			return fmt.Errorf("failed to check if path (%s) exist: %w", path, err)
+		}
+
+		if !exist {
+			return fmt.Errorf("executable not found in cache, path (%s) missing", path)
+		}
+	}
+
+	return checkChecksum(executablePath, checkSumPath)
+}
+
+func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger, isOfflineMode bool) (models.ActivatedStep, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
-		return "", "", fmt.Errorf("no route found for %s steplib", stepLibURI)
+		return models.ActivatedStep{}, fmt.Errorf("no route found for %s steplib", stepLibURI)
 	}
 
 	// is precompiled uncompressed step version in cache?
 	executablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
 	checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
 
-	executableExist, err := pathutil.IsPathExists(executablePath)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to check if %s path exist: %s", executablePath, err)
+	err := getExecutableFromCache(executablePath, checkSumPath)
+	if err == nil {
+		return models.ActivatedStep{ExecutablePath: executablePath}, nil
 	}
-
-	checkSumExist, err := pathutil.IsPathExists(checkSumPath)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to check if %s path exist: %s", checkSumPath, err)
-	}
-
-	if executableExist && checkSumExist {
-		if err := checkChecksum(executablePath, checkSumPath); err != nil {
-			return "", "", err
-		}
-
-		return "", executablePath, nil
-	}
+	log.Warnf("[Stepman] %s", err)
 
 	// is precompiled binary patch in cache?
 	fromPatchVersion := stepLib.Steps[id].LatestVersionNumber
 	fromPatchExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, fromPatchVersion)
-	if exist, err := pathutil.IsPathExists(fromPatchExecutablePath); err != nil {
-		return "", "", fmt.Errorf("failed to check if %s path exist: %s", fromPatchExecutablePath, err)
-	} else if exist {
-		binaryPatchPath := stepman.GetStepCompressedExecutablePathForVersion(fromPatchVersion, route, id, version)
-		if exist, err := pathutil.IsPathExists(binaryPatchPath); err != nil {
-			return "", "", fmt.Errorf("failed to check if %s path exist: %s", binaryPatchPath, err)
-		} else if exist {
-			if err := uncompressStep(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath); err != nil {
-				return "", "", fmt.Errorf("failed to uncompress step: %s", err)
-			}
+	binaryPatchPath := stepman.GetStepCompressedExecutablePathForVersion(fromPatchVersion, route, id, version)
 
-			return "", executablePath, nil
-		}
+	err = uncompressStepFromCache(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath)
+	if err == nil {
+		return models.ActivatedStep{ExecutablePath: executablePath}, nil
 	}
+	log.Warnf("[Stepman] %s", err)
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
-		return "", "", fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
+		return models.ActivatedStep{}, fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
 	} else if exist { // version specific source cache exists
-		return stepCacheDir, "", nil
+		return models.ActivatedStep{SourceAbsDirPath: stepCacheDir}, nil
 	}
 
 	// version specific source cache not exists
-	if !isOfflineMode {
-		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
-			return "", "", fmt.Errorf("download failed: %s", err)
-		}
-	} else {
-		return "", "", fmt.Errorf("step not found in cache, and offline mode is enabled")
+	if isOfflineMode {
+		return models.ActivatedStep{}, fmt.Errorf("step not found in cache, and offline mode is enabled")
 	}
 
-	return stepCacheDir, "", nil
+	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+		return models.ActivatedStep{}, fmt.Errorf("download failed: %s", err)
+	}
+
+	return models.ActivatedStep{SourceAbsDirPath: stepCacheDir}, nil
 }
 
 func copyStep(src, dst string) error {
