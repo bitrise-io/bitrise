@@ -157,10 +157,23 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 
 	// is precompiled uncompressed step version in cache?
 	executablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
-	if exist, err := pathutil.IsPathExists(executablePath); err != nil {
+	checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
+
+	executableExist, err := pathutil.IsPathExists(executablePath)
+	if err != nil {
 		return "", "", fmt.Errorf("failed to check if %s path exist: %s", executablePath, err)
-	} else if exist {
-		// check checksum
+	}
+
+	checkSumExist, err := pathutil.IsPathExists(checkSumPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", checkSumPath, err)
+	}
+
+	if executableExist && checkSumExist {
+		if err := checkChecksum(executablePath, checkSumPath); err != nil {
+			return "", "", err
+		}
+
 		return "", executablePath, nil
 	}
 
@@ -174,15 +187,10 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 		if exist, err := pathutil.IsPathExists(binaryPatchPath); err != nil {
 			return "", "", fmt.Errorf("failed to check if %s path exist: %s", binaryPatchPath, err)
 		} else if exist {
-			// apply patch
-			decompressCmd := command.New("zstd", "-d", "--patch-from", fromPatchExecutablePath, binaryPatchPath, "-o", executablePath)
-			decompressCmd.SetStdout(nil).SetStderr(nil)
-			exit, err := decompressCmd.RunAndReturnExitCode()
-			if err != nil {
-				return "", "", fmt.Errorf("failed to apply patch with command (%s), exit code: %d: %s", decompressCmd.PrintableCommandArgs(), exit, err)
+			if err := uncompressStep(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath); err != nil {
+				return "", "", fmt.Errorf("failed to uncompress step: %s", err)
 			}
 
-			// check checksum
 			return "", executablePath, nil
 		}
 	}

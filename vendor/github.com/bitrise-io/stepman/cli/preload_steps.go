@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"io/fs"
 	"os"
 	"sync"
 	"time"
@@ -66,7 +68,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 				log.Warnf("Failed to download step %s@%s: %w", stepID, latestVersionNumber, err)
 			}
 
-			// project-scanner takes up the most space, and it is only used internally
+			// keep only latest version, as it is only used internally and takes up the most space
 			if stepID == "project-scanner" {
 				return
 			}
@@ -95,8 +97,14 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 					log.Warnf("Compression step %s@%s", stepID, version)
 
 					patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
-					if err := compressStep(patchFilePath, stepID, targetExecutablePathLatest, targetExecutablePath); err != nil {
+					if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
 						log.Warnf("Failed to compress step  %s@%s: %w", stepID, version, err)
+					}
+
+					checkSumpath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, stepID, version)
+					if err := writeChecksum(patchFilePath, checkSumpath); err != nil {
+						// return err
+						log.Warnf("%s", err)
 					}
 				}
 			}
@@ -106,6 +114,29 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 	}
 
 	waitGroup.Wait()
+
+	return nil
+}
+
+func writeChecksum(patchFilePath, checksumPath string) error {
+	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte(patchFilePath)))
+	if err := os.WriteFile(checksumPath, []byte(checksum), fs.FileMode(os.O_RDONLY)); err != nil {
+		return fmt.Errorf("Failed to write checksum (%s) to file %s: %w", checksum, checksumPath, err)
+	}
+
+	return nil
+}
+
+func checkChecksum(executablePath, checksumPath string) error {
+	checksum, err := os.ReadFile(checksumPath)
+	if err != nil {
+		return fmt.Errorf("Failed to read checksum from file %s: %w", checksumPath, err)
+	}
+
+	calculatedChecksum := fmt.Sprintf("%x", sha256.Sum256([]byte(executablePath)))
+	if string(checksum) != calculatedChecksum {
+		return fmt.Errorf("Checksum mismatch: expected %s, got %s", checksum, calculatedChecksum)
+	}
 
 	return nil
 }
@@ -150,7 +181,7 @@ func filterPreloadedStepVersions(steps map[string]models.StepModel) (map[string]
 	return filteredSteps, nil
 }
 
-func compressStep(patchFilePath, stepID, targetExecutablePathLatest, targetExecutablePath string) error {
+func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath string) error {
 	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
 		return nil
 	}
@@ -159,14 +190,34 @@ func compressStep(patchFilePath, stepID, targetExecutablePathLatest, targetExecu
 	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		log.Warnf("Failed to compress step %s (%s): %s", stepID, compressCmd.PrintableCommandArgs(), out)
+		return fmt.Errorf("Failed to compress with command (%s), output: %s", compressCmd.PrintableCommandArgs(), out)
 	}
 
 	if err := os.Remove(targetExecutablePath); err != nil {
-		log.Warnf("Failed to remove uncompressed step executable %s: %s", stepID, err)
+		return fmt.Errorf("Failed to remove uncompressed step executable %s: %s", err)
 	}
 
 	return nil
+}
+
+func uncompressStep(patchFromPath, targetVersionPatchPath, targetExecutablePath, checkSumPath string) error {
+	decompressCmd := command.New("zstd", "-d", "--patch-from", patchFromPath, targetVersionPatchPath, "-o", targetExecutablePath)
+	decompressCmd.SetStdout(nil).SetStderr(nil)
+
+	exit, err := decompressCmd.RunAndReturnExitCode()
+	if err != nil {
+		return fmt.Errorf("failed to apply patch with command (%s), exit code: %d: %s", decompressCmd.PrintableCommandArgs(), exit, err)
+	}
+
+	checksumExist, err := pathutil.IsPathExists(checkSumPath)
+	if err != nil {
+		return fmt.Errorf("failed to check if %s path exist: %s", checkSumPath, err)
+	}
+	if !checksumExist {
+		return fmt.Errorf("checksum file not found for %s", targetExecutablePath)
+	}
+
+	return checkChecksum(targetExecutablePath, checkSumPath)
 }
 
 func preloadStep(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
