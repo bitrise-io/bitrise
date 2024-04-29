@@ -242,7 +242,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 	}
 
 	// Clean precompiled uncompressed step version
-	targetExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
+	targetExecutablePath := stepman.GetStepExecutablePathForVersion(route, id, version)
 	exists, err := pathutil.IsPathExists(targetExecutablePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if %s path exist: %s", targetExecutablePath, err)
@@ -278,7 +278,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 		return "", fmt.Errorf("failed to build step: %s", err)
 	}
 
-	checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
+	checkSumPath := stepman.GetStepExecutableChecksumPathForVersion(route, id, version)
 	checksumExist, err := pathutil.IsPathExists(checkSumPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to check if %s path exist: %s", checkSumPath, err)

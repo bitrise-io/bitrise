@@ -169,26 +169,33 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 		return models.ActivatedStep{}, fmt.Errorf("no route found for %s steplib", stepLibURI)
 	}
 
-	// is precompiled uncompressed step version in cache?
-	executablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
-	checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
-
-	err := getExecutableFromCache(executablePath, checkSumPath)
-	if err == nil {
-		return models.ActivatedStep{ExecutablePath: executablePath}, nil
+	stepBinDir := stepman.GetStepBinDirPathForVersion(route, id, version)
+	stepBinDirExist, err := pathutil.IsPathExists(stepBinDir)
+	if err != nil {
+		return models.ActivatedStep{}, fmt.Errorf("failed to check if %s path exist: %s", stepBinDir, err)
 	}
-	log.Warnf("[Stepman] %s", err)
+	if stepBinDirExist {
+		// is precompiled uncompressed step version in cache?
+		executablePath := stepman.GetStepExecutablePathForVersion(route, id, version)
+		checkSumPath := stepman.GetStepExecutableChecksumPathForVersion(route, id, version)
 
-	// is precompiled binary patch in cache?
-	fromPatchVersion := stepLib.Steps[id].LatestVersionNumber
-	fromPatchExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, fromPatchVersion)
-	binaryPatchPath := stepman.GetStepCompressedExecutablePathForVersion(fromPatchVersion, route, id, version)
+		err := getExecutableFromCache(executablePath, checkSumPath)
+		if err == nil {
+			return models.ActivatedStep{ExecutablePath: executablePath}, nil
+		}
+		log.Warnf("[Stepman] %s", err)
 
-	err = uncompressStepFromCache(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath)
-	if err == nil {
-		return models.ActivatedStep{ExecutablePath: executablePath}, nil
+		// is precompiled binary patch in cache?
+		fromPatchVersion := stepLib.Steps[id].LatestVersionNumber
+		fromPatchExecutablePath := stepman.GetStepExecutablePathForVersion(route, id, fromPatchVersion)
+		binaryPatchPath := stepman.GetStepCompressedExecutablePathForVersion(fromPatchVersion, route, id, version)
+
+		err = uncompressStepFromCache(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath)
+		if err == nil {
+			return models.ActivatedStep{ExecutablePath: executablePath}, nil
+		}
+		log.Warnf("[Stepman] %s", err)
 	}
-	log.Warnf("[Stepman] %s", err)
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
