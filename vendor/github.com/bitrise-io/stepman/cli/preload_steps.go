@@ -1,14 +1,10 @@
 package cli
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"sync"
-	"time"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -26,53 +22,6 @@ type preloadResult struct {
 	stepID  string
 	version string
 	err     error
-}
-
-func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel) error {
-	route, found := stepman.ReadRoute(bitriseStepLibURL)
-	if !found {
-		return fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
-	}
-
-	latestVersionNumber := step.LatestVersionNumber
-	latestVersion, found := step.LatestVersion()
-	if !found {
-		return fmt.Errorf("failed to find latest version for step %s", stepID)
-	}
-
-	log.Infof("Preloading step %s@%s", stepID, latestVersionNumber)
-	targetExecutablePathLatest, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log, false)
-	if err != nil {
-		return fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
-	}
-
-	filteredSteps, err := filterPreloadedStepVersions(stepID, step.Versions)
-	if err != nil {
-		return fmt.Errorf("failed to filter preloaded step versions: %w", err)
-	}
-
-	// Iterate over all versions and compress them if golang step
-	for version, step := range filteredSteps {
-		if version == latestVersionNumber {
-			continue
-		}
-
-		log.Infof("Preloading step %s@%s", stepID, version)
-		targetExecutablePath, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log, true)
-		if err != nil {
-			log.Warnf("failed to preload step %s@%s: %w", stepID, version, err)
-		}
-
-		if targetExecutablePath != "" && targetExecutablePathLatest != "" {
-			log.Infof("Compressing step %s@%s", stepID, version)
-			patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
-			if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
-				return fmt.Errorf("failed to compress step %s@%s: %w", stepID, version, err)
-			}
-		}
-	}
-
-	return nil
 }
 
 // PreloadBitriseSteps preloads the cache with Bitrise owned steps
@@ -136,186 +85,51 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 	return nil
 }
 
-func writeChecksum(patchFilePath, checksumPath string) error {
-	checksumExist, err := pathutil.IsPathExists(checksumPath)
-	if err != nil {
-		return fmt.Errorf("failed to check if path (%s) exist: %w", checksumPath, err)
+func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel) error {
+	route, found := stepman.ReadRoute(bitriseStepLibURL)
+	if !found {
+		return fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
 	}
-	if checksumExist {
-		if err := os.Remove(checksumPath); err != nil {
-			return fmt.Errorf("failed to remove checksum file: %w", err)
+
+	latestVersionNumber := step.LatestVersionNumber
+	latestVersion, found := step.LatestVersion()
+	if !found {
+		return fmt.Errorf("failed to find latest version for step %s", stepID)
+	}
+
+	log.Infof("Preloading step %s@%s", stepID, latestVersionNumber)
+	targetExecutablePathLatest, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log, false)
+	if err != nil {
+		return fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
+	}
+
+	filteredSteps, err := filterPreloadedStepVersions(stepID, step.Versions)
+	if err != nil {
+		return fmt.Errorf("failed to filter preloaded step versions: %w", err)
+	}
+
+	// Iterate over all versions and compress them if golang step
+	for version, step := range filteredSteps {
+		if version == latestVersionNumber {
+			continue
 		}
-	}
 
-	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte(patchFilePath)))
-	if err := os.WriteFile(checksumPath, []byte(checksum), 0400); err != nil {
-		return fmt.Errorf("Failed to write checksum (%s) to file %s: %w", checksum, checksumPath, err)
-	}
-
-	return nil
-}
-
-func checkChecksum(executablePath, checksumPath string) error {
-	checksum, err := os.ReadFile(checksumPath)
-	if err != nil {
-		return fmt.Errorf("Failed to read checksum from file %s: %w", checksumPath, err)
-	}
-
-	calculatedChecksum := fmt.Sprintf("%x", sha256.Sum256([]byte(executablePath)))
-	if string(checksum) != calculatedChecksum {
-		return fmt.Errorf("Checksum mismatch %s expected %s, got %s", executablePath, checksum, calculatedChecksum)
-	}
-
-	return nil
-}
-
-func filterPreloadedStepVersions(stepID string, steps map[string]models.StepModel) (map[string]models.StepModel, error) {
-	filteredSteps := map[string]models.StepModel{}
-	allMajorMinor := map[uint64]map[uint64]models.Semver{}
-	allLatestNMinor := map[uint64][]uint64{}
-
-	// keep no version, as it is only used internally and takes up the most space
-	if stepID == "project-scanner" {
-		return filteredSteps, nil
-	}
-
-	for stepVersion, _ := range steps {
-		// Releases in the last year
-		// if time.Since(*step.PublishedAt) < 24*time.Hour*365 {
-		// 	filteredSteps[stepVersion] = step
-		// }
-
-		// All minor versions
-		version, err := models.ParseSemver(stepVersion)
+		log.Infof("Preloading step %s@%s", stepID, version)
+		targetExecutablePath, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log, true)
 		if err != nil {
-			return filteredSteps, fmt.Errorf("failed to parse version %s: %w", stepVersion, err)
+			log.Warnf("failed to preload step %s@%s: %w", stepID, version, err)
 		}
 
-		if _, found := allMajorMinor[version.Major]; !found {
-			allMajorMinor[version.Major] = map[uint64]models.Semver{}
-			allMajorMinor[version.Major][version.Minor] = version
-
-			continue
-		}
-
-		curVersion, found := allMajorMinor[version.Major][version.Minor]
-		if !found {
-			allMajorMinor[version.Major][version.Minor] = version
-
-			continue
-		} else if version.Patch > curVersion.Patch {
-			allMajorMinor[version.Major][version.Minor] = version
-		}
-	}
-
-	const numMajors = 3
-	const numMinors = 2
-	latestNMajors := make([]uint64, 0, numMajors)
-	for major, minorToVersion := range allMajorMinor {
-		latestNMajors = insertLatestNVersions(latestNMajors, major)
-		latestNMinors := make([]uint64, 0, numMinors)
-		for minor, version := range minorToVersion {
-			latestNMinors = insertLatestNVersions(latestNMinors, minor)
-
-			// Any minor version in the last two years
-			if time.Since(*steps[version.String()].PublishedAt) < 24*time.Hour*365*2 {
-				filteredSteps[version.String()] = steps[version.String()]
-			}
-		}
-
-		allLatestNMinor[major] = latestNMinors
-	}
-
-	for _, major := range latestNMajors {
-		for _, minor := range allLatestNMinor[major] {
-			latestPatch := allMajorMinor[major][minor]
-			filteredSteps[latestPatch.String()] = steps[latestPatch.String()]
-		}
-	}
-
-	return filteredSteps, nil
-}
-
-func insertLatestNVersions(latests []uint64, newVersion uint64) []uint64 {
-	if len(latests) > 1 {
-		for i, cur := range latests {
-			if newVersion > cur {
-				if len(latests) < cap(latests) {
-					latests = append(latests[:i], append([]uint64{newVersion}, latests[i:]...)...)
-					return latests
-				}
-
-				latests = append(latests[:i], append([]uint64{newVersion}, latests[i:len(latests)-1]...)...)
-				return latests
+		if targetExecutablePath != "" && targetExecutablePathLatest != "" {
+			log.Infof("Compressing step %s@%s", stepID, version)
+			patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
+			if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
+				return fmt.Errorf("failed to compress step %s@%s: %w", stepID, version, err)
 			}
 		}
 	}
 
-	if len(latests) < cap(latests) {
-		latests = append(latests, newVersion)
-	}
-
-	return latests
-}
-
-func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath string) error {
-	patchFileExist, err := pathutil.IsPathExists(patchFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to check if %s path exist: %w", patchFilePath, err)
-	}
-	if patchFileExist {
-		if err := os.Remove(patchFilePath); err != nil {
-			return fmt.Errorf("failed to remove existing patch file: %w", err)
-		}
-	}
-
-	patchFromexist, err := pathutil.IsPathExists(targetExecutablePathLatest)
-	if err != nil {
-		return fmt.Errorf("failed to check if %s path exist: %s", targetExecutablePathLatest, err)
-	}
-	if !patchFromexist {
-		return fmt.Errorf("Latest Step version used for patch (%s) not found", targetExecutablePathLatest)
-	}
-
-	if targetExecutablePath == "" {
-		return nil
-	}
-
-	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
-	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
-	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to compress with command (%s), output: %s", compressCmd.PrintableCommandArgs(), out)
-	}
-
-	if err := os.Remove(targetExecutablePath); err != nil {
-		return fmt.Errorf("failed to remove uncompressed step executable: %w", err)
-	}
-
 	return nil
-}
-
-func uncompressStepFromCache(patchFromPath, targetVersionPatchPath, targetExecutablePath, checkSumPath string) error {
-	for _, path := range []string{patchFromPath, targetVersionPatchPath, checkSumPath} {
-		exist, err := pathutil.IsPathExists(path)
-		if err != nil {
-			return fmt.Errorf("failed to check if %s path exist: %s", path, err)
-		}
-
-		if !exist {
-			return fmt.Errorf("%s not found in cache", path)
-		}
-	}
-
-	decompressCmd := command.New("zstd", "-d", "--patch-from", patchFromPath, targetVersionPatchPath, "-o", targetExecutablePath)
-	decompressCmd.SetStdout(nil).SetStderr(nil)
-
-	exit, err := decompressCmd.RunAndReturnExitCode()
-	if err != nil {
-		return fmt.Errorf("failed to apply patch with command (%s), exit code: %d: %s", decompressCmd.PrintableCommandArgs(), exit, err)
-	}
-
-	return checkChecksum(targetExecutablePath, checkSumPath)
 }
 
 func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger, cleanupSrc bool) (string, error) {
