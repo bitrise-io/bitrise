@@ -141,9 +141,9 @@ func StepmanUpdate(collection string) error {
 }
 
 // StepmanActivate ...
-func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) (stepmanModels.ActivatedStep, error) {
+func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) (stepmanModels.ActivatedStep, error) {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log)
+	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
 }
 
 // StepmanStepInfo ...

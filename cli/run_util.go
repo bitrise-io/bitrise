@@ -159,6 +159,11 @@ func registerSecretEnvsFiltering(filtering bool) error {
 	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
 }
 
+func isSteplibOfflineMode() bool {
+	isSteplibOfflineMode := os.Getenv(configs.IsSteplibOfflineMode)
+	return isSteplibOfflineMode == "true"
+}
+
 func isDirEmpty(path string) (bool, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -726,7 +731,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepDir := configs.BitriseWorkStepsDirPath
 
 		activator := newStepActivator()
-		activatedStep, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr)
+		activatedStep, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr, plan.IsSteplibOfflineMode)
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)

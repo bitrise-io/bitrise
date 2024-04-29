@@ -9,6 +9,7 @@ type WorkflowRunModes struct {
 	SecretFilteringMode     bool
 	SecretEnvsFilteringMode bool
 	NoOutputTimeout         time.Duration
+	IsSteplibOfflineMode    bool
 }
 
 type StepExecutionPlan struct {
@@ -20,6 +21,8 @@ type WorkflowExecutionPlan struct {
 	UUID       string              `json:"uuid"`
 	WorkflowID string              `json:"workflow_id"`
 	Steps      []StepExecutionPlan `json:"steps"`
+
+	IsSteplibOfflineMode bool
 }
 
 type WorkflowRunPlan struct {
@@ -29,6 +32,7 @@ type WorkflowRunPlan struct {
 	CIMode                  bool `json:"ci_mode"`
 	PRMode                  bool `json:"pr_mode"`
 	DebugMode               bool `json:"debug_mode"`
+	IsSteplibOfflineMode    bool
 	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`

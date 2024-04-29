@@ -430,6 +430,8 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		return nil, fmt.Errorf("failed to check Secret Envs Filtering mode: %s", err)
 	}
 
+	isSteplibOfflineMode := isSteplibOfflineMode()
+
 	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
 
 	return &RunConfig{
@@ -440,6 +442,7 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 			NoOutputTimeout:         noOutputTimeout,
 			SecretFilteringMode:     enabledFiltering,
 			SecretEnvsFilteringMode: enabledEnvsFiltering,
+			IsSteplibOfflineMode:    isSteplibOfflineMode,
 		},
 		Config:   bitriseConfig,
 		Workflow: runParams.WorkflowToRunID,
@@ -483,9 +486,10 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		}
 
 		executionPlan = append(executionPlan, models.WorkflowExecutionPlan{
-			UUID:       uuidProvider(),
-			WorkflowID: workflowID,
-			Steps:      stepPlan,
+			UUID:                 uuidProvider(),
+			WorkflowID:           workflowID,
+			Steps:                stepPlan,
+			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
 		})
 	}
 
@@ -500,6 +504,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		CIMode:                  modes.CIMode,
 		PRMode:                  modes.PRMode,
 		DebugMode:               modes.DebugMode,
+		IsSteplibOfflineMode:    modes.IsSteplibOfflineMode,
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,

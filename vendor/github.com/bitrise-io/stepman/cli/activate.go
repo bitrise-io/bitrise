@@ -71,8 +71,9 @@ func activate(c *cli.Context) error {
 	copyYML := c.String(CopyYMLKey)
 	update := c.Bool(UpdateKey)
 	logger := log.NewDefaultLogger(false)
+	isOfflineMode := false
 
-	output, err := Activate(stepLibURI, id, version, path, copyYML, update, logger)
+	output, err := Activate(stepLibURI, id, version, path, copyYML, update, logger, isOfflineMode)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func activate(c *cli.Context) error {
 }
 
 // Activate ...
-func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger) (models.ActivatedStep, error) {
+func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger, isOfflineMode bool) (models.ActivatedStep, error) {
 	output := models.ActivatedStep{}
 
 	stepLib, err := stepman.ReadStepSpec(stepLibURI)
@@ -96,7 +97,7 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 		return output, fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, executablePath, err := downloadStep(stepLib, stepLibURI, id, version, step, log)
+	srcFolder, executablePath, err := downloadStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
 	if err != nil {
 		return output, fmt.Errorf("failed to download step: %s", err)
 	}
@@ -149,7 +150,7 @@ func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, versio
 	return step, version, nil
 }
 
-func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
+func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger, isOfflineMode bool) (string, string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", "", fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -203,8 +204,12 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	}
 
 	// version specific source cache not exists
-	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
-		return "", "", fmt.Errorf("download failed: %s", err)
+	if !isOfflineMode {
+		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+			return "", "", fmt.Errorf("download failed: %s", err)
+		}
+	} else {
+		return "", "", fmt.Errorf("step not found in cache, and offline mode is enabled")
 	}
 
 	return stepCacheDir, "", nil

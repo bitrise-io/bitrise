@@ -53,6 +53,8 @@ const (
 	IsSecretEnvsFilteringKey = "BITRISE_SECRET_ENVS_FILTERING"
 	// NoOutputTimeoutEnvKey ...
 	NoOutputTimeoutEnvKey = "BITRISE_NO_OUTPUT_TIMEOUT"
+	// IsSteplibOfflineMode can be used to disable steplib udpate even when using non exact (latest minor or major) step version
+	IsSteplibOfflineMode = "BITRISE_OFFLINE_MODE"
 
 	// --- Debug Options
 
