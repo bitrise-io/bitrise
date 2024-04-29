@@ -216,8 +216,9 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	err = stepman.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, log.NewLogger(log.GetGlobalLoggerOpts()))
+	step, err := stepman.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, log.NewLogger(log.GetGlobalLoggerOpts()))
 	require.NoError(b, err)
+	require.NotEmpty(b, step.SourceAbsDirPath, "if empty step is already precompiled")
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"
 
