@@ -19,6 +19,7 @@ const filePathPrefix = "file://"
 type Logger interface {
 	Debugf(format string, v ...interface{})
 	Warnf(format string, v ...interface{})
+	Infof(format string, v ...interface{})
 }
 
 // SetupLibrary ...
