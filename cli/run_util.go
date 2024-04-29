@@ -594,7 +594,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	envList := envmanModels.EnvsJSONListModel{}
-	// TODO: validate if container has image property set
 	containerDef := r.ContainerDefinition(workflow.ContainerID)
 	servicesDefs := r.ServiceDefinitions(workflow.ServiceIDs...)
 	if containerDef != nil || len(servicesDefs) > 0 {
