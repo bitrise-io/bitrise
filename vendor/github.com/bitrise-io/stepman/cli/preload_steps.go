@@ -3,7 +3,6 @@ package cli
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/fs"
 	"os"
 	"sync"
 	"time"
@@ -63,7 +62,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 				log.Warnf("Failed to find latest version for step %s", stepID)
 			}
 
-			_, targetExecutablePathLatest, err := preloadStep(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log)
+			_, targetExecutablePathLatest, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log)
 			if err != nil {
 				log.Warnf("Failed to download step %s@%s: %w", stepID, latestVersionNumber, err)
 			}
@@ -86,7 +85,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 
 				log.Warnf("Preloading step %s@%s", stepID, version)
 
-				_, targetExecutablePath, err := preloadStep(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log)
+				_, targetExecutablePath, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log)
 				if err != nil {
 					log.Warnf("Failed to preload step %s@%s: %w", stepID, version, err)
 				}
@@ -99,12 +98,6 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 					patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
 					if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
 						log.Warnf("Failed to compress step  %s@%s: %w", stepID, version, err)
-					}
-
-					checkSumpath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, stepID, version)
-					if err := writeChecksum(patchFilePath, checkSumpath); err != nil {
-						// return err
-						log.Warnf("%s", err)
 					}
 				}
 			}
@@ -120,7 +113,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 
 func writeChecksum(patchFilePath, checksumPath string) error {
 	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte(patchFilePath)))
-	if err := os.WriteFile(checksumPath, []byte(checksum), fs.FileMode(os.O_RDONLY)); err != nil {
+	if err := os.WriteFile(checksumPath, []byte(checksum), 0400); err != nil {
 		return fmt.Errorf("Failed to write checksum (%s) to file %s: %w", checksum, checksumPath, err)
 	}
 
@@ -186,7 +179,7 @@ func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePat
 		return nil
 	}
 
-	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
+	compressCmd := command.New("zstd", "-f", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
 	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -220,44 +213,60 @@ func uncompressStep(patchFromPath, targetVersionPatchPath, targetExecutablePath,
 	return checkChecksum(targetExecutablePath, checkSumPath)
 }
 
-func preloadStep(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
+func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", "", fmt.Errorf("no route found for %s steplib", stepLibURI)
 	}
 
-	// // is precompiled uncompressed step version in cache?
+	// is precompiled uncompressed step version in cache?
 	targetExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
-	// checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
-	// exists, err := pathutil.IsPathExists(targetExecutablePath)
-	// if err != nil {
-	// 	return "", "", fmt.Errorf("failed to check if %s path exist: %s", targetExecutablePath, err)
-	// }
+	exists, err := pathutil.IsPathExists(targetExecutablePath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", targetExecutablePath, err)
+	}
+	if exists {
+		if err := os.Remove(targetExecutablePath); err != nil {
+			return "", "", fmt.Errorf("failed to remove %s: %s", targetExecutablePath, err)
+		}
+	}
 
-	// Compile Step, calclulate checksum
+	// Fetch source, compile step (if golang), calclulate checksum
 	stepSourceDir := stepman.GetStepCacheDirPath(route, id, version)
 	sourceExist, err := pathutil.IsPathExists(stepSourceDir)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to check if %s path exist: %s", stepSourceDir, err)
-	} else if sourceExist { // version specific source cache exists
-		// return stepSourceDir, "", nil
 	}
-
-	// version specific source cache not exists
-	if !sourceExist {
-		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
-			return "", "", fmt.Errorf("download failed: %s", err)
+	if sourceExist {
+		if err := os.RemoveAll(stepSourceDir); err != nil {
+			return "", "", fmt.Errorf("failed to remove step source dir: %s", err)
 		}
 	}
 
+	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+		return "", "", fmt.Errorf("download failed: %s", err)
+	}
+
 	if step.Toolkit == nil || step.Toolkit.Go == nil {
-		// log.Warnf("Step %s does has no Go toolkit, skipping build", id)
 		return "", "", nil
 	}
 
-	// Build step
 	if err := goBuilder(stepSourceDir, step.Toolkit.Go.PackageName, targetExecutablePath); err != nil {
-		log.Warnf("failed to build step: %s", err)
+		return "", "", fmt.Errorf("failed to build step: %s", err)
+	}
+
+	checkSumPath := stepman.GetStepCacheExecutableChecksumPathForVersion(route, id, version)
+	checksumExist, err := pathutil.IsPathExists(checkSumPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", checkSumPath, err)
+	}
+	if checksumExist {
+		if err := os.Remove(checkSumPath); err != nil {
+			return "", "", fmt.Errorf("failed to remove checksum file: %s", err)
+		}
+	}
+	if err := writeChecksum(targetExecutablePath, checkSumPath); err != nil {
+		return "", "", fmt.Errorf("failed to write checksum: %s", err)
 	}
 
 	// remove stepSourceDir as build is successful
