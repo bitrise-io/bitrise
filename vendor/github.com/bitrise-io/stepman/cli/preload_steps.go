@@ -28,7 +28,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 		return err
 	} else if !exist {
 		if err := stepman.SetupLibrary(bitriseStepLibURL, log); err != nil {
-			return fmt.Errorf("Failed to setup steplib: %w", err)
+			return fmt.Errorf("failed to setup steplib: %w", err)
 		}
 	}
 
@@ -62,6 +62,7 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 				log.Warnf("Failed to find latest version for step %s", stepID)
 			}
 
+			log.Warnf("Preloading step %s@%s", stepID, latestVersionNumber)
 			targetExecutablePathLatest, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log)
 			if err != nil {
 				log.Warnf("Failed to download step %s@%s: %w", stepID, latestVersionNumber, err)
@@ -79,23 +80,19 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 				}
 
 				log.Warnf("Preloading step %s@%s", stepID, version)
-
 				targetExecutablePath, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log)
 				if err != nil {
 					log.Warnf("Failed to preload step %s@%s: %w", stepID, version, err)
 				}
 
-				log.Warnf("targetExecutablePathLatest: %s", targetExecutablePathLatest)
-				log.Warnf("targetExecutablePath: %s", targetExecutablePath)
 				if targetExecutablePath != "" && targetExecutablePathLatest != "" {
-					log.Warnf("Compression step %s@%s", stepID, version)
+					log.Warnf("Compressing step %s@%s", stepID, version)
 
 					patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
 					if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
 						log.Warnf("Failed to compress step  %s@%s: %w", stepID, version, err)
 					}
 				}
-
 			}
 
 			waitGroup.Done()
@@ -124,7 +121,7 @@ func checkChecksum(executablePath, checksumPath string) error {
 
 	calculatedChecksum := fmt.Sprintf("%x", sha256.Sum256([]byte(executablePath)))
 	if string(checksum) != calculatedChecksum {
-		return fmt.Errorf("Checksum mismatch: expected %s, got %s", checksum, calculatedChecksum)
+		return fmt.Errorf("Checksum mismatch %s expected %s, got %s", executablePath, checksum, calculatedChecksum)
 	}
 
 	return nil
@@ -187,11 +184,11 @@ func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePat
 	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Failed to compress with command (%s), output: %s", compressCmd.PrintableCommandArgs(), out)
+		return fmt.Errorf("failed to compress with command (%s), output: %s", compressCmd.PrintableCommandArgs(), out)
 	}
 
 	if err := os.Remove(targetExecutablePath); err != nil {
-		return fmt.Errorf("Failed to remove uncompressed step executable %s: %s", err)
+		return fmt.Errorf("failed to remove uncompressed step executable: %s", err)
 	}
 
 	return nil
