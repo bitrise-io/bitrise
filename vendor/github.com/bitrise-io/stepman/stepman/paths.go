@@ -231,8 +231,8 @@ func GetStepGitCacheDirPath(route SteplibRoute, id string) string {
 	return filepath.Join(GetCacheBaseDir(route), id, "git")
 }
 
-// GetStepCacheCompressedBinDirPath stores the precompiled binaries of the step (compressed and uncompressed)
-func GetStepCacheCompressedBinDirPath(route SteplibRoute, id string) string {
+// GetStepBinDirPath stores the precompiled binaries of the step (compressed and uncompressed)
+func GetStepBinDirPath(route SteplibRoute, id string) string {
 	return filepath.Join(GetCacheBaseDir(route), id, "binrepo")
 }
 
@@ -244,14 +244,19 @@ func executableChecksumName() string {
 	return "sha256sum"
 }
 
+// GetStepCompressedExecutablePathForVersion stores the binary patch to restore the precompiled binaries of the step from the latest version
+func GetStepCompressedExecutablePathForVersion(route SteplibRoute, id, version string) string {
+	return filepath.Join(GetStepBinDirPath(route, id), version, executableBinaryName()+".patch")
+}
+
 // GetStepCacheExecutablePathForVersion stores the uncompressed precompiled binaries of the step
 func GetStepCacheExecutablePathForVersion(route SteplibRoute, id, version string) string {
-	return filepath.Join(GetStepCacheCompressedBinDirPath(route, id), version, executableBinaryName())
+	return filepath.Join(GetStepBinDirPath(route, id), version, executableBinaryName())
 }
 
 // GetStepCacheExecutableChecksumPathForVersion stores the checksum of the uncompressed precompiled binaries of the step
 func GetStepCacheExecutableChecksumPathForVersion(route SteplibRoute, id, version string) string {
-	return filepath.Join(GetStepCacheCompressedBinDirPath(route, id), version, executableChecksumName())
+	return filepath.Join(GetStepBinDirPath(route, id), version, executableChecksumName())
 }
 
 // GetStepGlobalInfoPath ...

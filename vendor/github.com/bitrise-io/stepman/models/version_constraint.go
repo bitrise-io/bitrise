@@ -16,7 +16,7 @@ func (v *Semver) String() string {
 	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-func parseSemver(version string) (Semver, error) {
+func ParseSemver(version string) (Semver, error) {
 	versionParts := strings.Split(version, ".")
 	if len(versionParts) != 3 {
 		return Semver{}, fmt.Errorf("parse %s: should consist by 3 components", version)
@@ -150,7 +150,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 			latestStep := StepModel{}
 
 			for fullVersion, step := range stepVersions.Versions {
-				stepVersion, err := parseSemver(fullVersion)
+				stepVersion, err := ParseSemver(fullVersion)
 				if err != nil {
 					continue
 				}
@@ -179,7 +179,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 			latestStep := StepModel{}
 
 			for fullVersion, step := range stepVersions.Versions {
-				stepVersion, err := parseSemver(fullVersion)
+				stepVersion, err := ParseSemver(fullVersion)
 				if err != nil {
 					continue
 				}

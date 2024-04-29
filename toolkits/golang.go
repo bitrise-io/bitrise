@@ -334,6 +334,26 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 	return goBuildStep(&defaultRunner{}, goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
 }
 
+func GoBuildStep(goConfig GoConfigurationModel, stepAbsDirPath string, step stepmanModels.StepModel, fullStepBinPath string) error {
+	if step.Toolkit == nil {
+		return errors.New("No Toolkit information specified in step")
+	}
+	if step.Toolkit.Go == nil {
+		return errors.New("No Toolkit.Go information specified in step")
+	}
+
+	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	if err != nil {
+		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
+	}
+	if isInstallRequired {
+		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s",
+			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
+	}
+
+	return goBuildStep(&defaultRunner{}, goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
+}
+
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
