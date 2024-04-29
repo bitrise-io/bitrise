@@ -220,7 +220,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 		return "", fmt.Errorf("no route found for %s steplib", stepLibURI)
 	}
 
-	// is precompiled uncompressed step version in cache?
+	// Clean precompiled uncompressed step version
 	targetExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, version)
 	exists, err := pathutil.IsPathExists(targetExecutablePath)
 	if err != nil {
@@ -232,7 +232,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 		}
 	}
 
-	// Fetch source, compile step (if golang), calclulate checksum
+	// Clean existing step source
 	stepSourceDir := stepman.GetStepCacheDirPath(route, id, version)
 	sourceExist, err := pathutil.IsPathExists(stepSourceDir)
 	if err != nil {
@@ -244,6 +244,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 		}
 	}
 
+	// Fetch source, compile step (if golang), calclulate checksum
 	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
 		return "", fmt.Errorf("download failed: %s", err)
 	}
@@ -270,7 +271,7 @@ func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string
 		return "", fmt.Errorf("failed to write checksum: %s", err)
 	}
 
-	// remove stepSourceDir as build is successful
+	// remove step source as build is successful
 	// also remove if not successful, as propably old step source does not work anymore
 	if err := os.RemoveAll(stepSourceDir); err != nil {
 		return "", fmt.Errorf("failed to remove step source dir: %s", err)

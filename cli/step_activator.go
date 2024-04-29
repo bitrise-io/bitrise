@@ -67,7 +67,8 @@ func (a stepActivator) activateStep(
 		}
 
 		return stepmanModels.ActivatedStep{
-			StepYMLPath: stepYMLPth,
+			SourceAbsDirPath: stepDir,
+			StepYMLPath:      stepYMLPth,
 		}, origStepYMLPth, nil
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -100,13 +101,12 @@ even if the repository is open source!`)
 		}
 
 		return stepmanModels.ActivatedStep{
-			StepYMLPath: stepYMLPth,
+			SourceAbsDirPath: stepDir,
+			StepYMLPath:      stepYMLPth,
 		}, "", nil
 	} else if stepIDData.SteplibSource == "_" {
 		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
-		// Steplib independent steps are completly defined in workflow
-		stepYMLPth = ""
 		if err := workflowStep.FillMissingDefaults(); err != nil {
 			return stepmanModels.ActivatedStep{}, "", err
 		}
@@ -118,6 +118,12 @@ even if the repository is open source!`)
 		if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
 			return stepmanModels.ActivatedStep{}, "", err
 		}
+
+		return stepmanModels.ActivatedStep{
+				SourceAbsDirPath: stepDir,
+				StepYMLPath:      "", // Steplib independent steps are completly defined in workflow
+			},
+			"", nil
 	} else if stepIDData.SteplibSource != "" {
 		isUpdated := buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
 		stepInfo, activatedStep, didUpdate, err := activateStepLibStep(stepIDData, stepDir, stepYMLPth, isUpdated)
