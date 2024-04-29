@@ -100,7 +100,7 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 
 	if setupMode == SetupModePreloadSteps {
 		logger := log.NewLogger(log.GetGlobalLoggerOpts())
-		if err := preloadBitriseSteps(logger); err != nil {
+		if err := preloadBitriseSteps(toolkits.GoBuildStep, logger); err != nil {
 			return fmt.Errorf("Failed to preload Bitrise maintained Steps: %s", err)
 		}
 	}

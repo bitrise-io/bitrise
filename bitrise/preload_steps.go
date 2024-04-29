@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
@@ -19,8 +18,10 @@ const (
 	bitriseMaintainer = "bitrise"
 )
 
+type GoBuilder func(stepSourceAbsPath, packageName, targetExecutablePath string) error
+
 // preloadBitriseSteps preloads the cache with Bitrise owned steps
-func preloadBitriseSteps(log stepman.Logger) error {
+func preloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 	// Check if setup was done for collection
 	if exist, err := stepman.RootExistForLibrary(bitriseStepLibURL); err != nil {
 		return err
@@ -60,7 +61,7 @@ func preloadBitriseSteps(log stepman.Logger) error {
 				log.Warnf("Failed to find latest version for step %s", stepID)
 			}
 
-			_, targetExecutablePathLatest, err := preloadStep(stepLib, bitriseStepLibURL, stepID, step.LatestVersionNumber, latestVersion, log)
+			_, targetExecutablePathLatest, err := preloadStep(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log)
 			if err != nil {
 				log.Warnf("Failed to download step %s@%s: %w", stepID, latestVersionNumber, err)
 			}
@@ -83,7 +84,7 @@ func preloadBitriseSteps(log stepman.Logger) error {
 
 				log.Warnf("Preloading step %s@%s", stepID, version)
 
-				_, targetExecutablePath, err := preloadStep(stepLib, bitriseStepLibURL, stepID, version, step, log)
+				_, targetExecutablePath, err := preloadStep(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log)
 				if err != nil {
 					log.Warnf("Failed to preload step %s@%s: %w", stepID, version, err)
 				}
@@ -94,7 +95,7 @@ func preloadBitriseSteps(log stepman.Logger) error {
 					log.Warnf("Compression step %s@%s", stepID, version)
 
 					patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
-					if err := compressStep(latestVersionNumber, patchFilePath, stepID, version, targetExecutablePathLatest, targetExecutablePath); err != nil {
+					if err := compressStep(patchFilePath, stepID, targetExecutablePathLatest, targetExecutablePath); err != nil {
 						log.Warnf("Failed to compress step  %s@%s: %w", stepID, version, err)
 					}
 				}
@@ -149,7 +150,7 @@ func filterPreloadedStepVersions(steps map[string]models.StepModel) (map[string]
 	return filteredSteps, nil
 }
 
-func compressStep(fromPatchVersion, patchFilePath, stepID, version, targetExecutablePathLatest, targetExecutablePath string) error {
+func compressStep(patchFilePath, stepID, targetExecutablePathLatest, targetExecutablePath string) error {
 	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
 		return nil
 	}
@@ -168,7 +169,7 @@ func compressStep(fromPatchVersion, patchFilePath, stepID, version, targetExecut
 	return nil
 }
 
-func preloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
+func preloadStep(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger) (string, string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", "", fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -203,8 +204,8 @@ func preloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version str
 		return "", "", nil
 	}
 
-	err = toolkits.GoBuildStep(toolkits.GoConfigurationModel{}, stepSourceDir, step, targetExecutablePath)
-	if err != nil {
+	// Build step
+	if err := goBuilder(stepSourceDir, step.Toolkit.Go.PackageName, targetExecutablePath); err != nil {
 		log.Warnf("failed to build step: %s", err)
 	}
 
