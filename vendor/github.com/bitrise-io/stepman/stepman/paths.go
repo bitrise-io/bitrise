@@ -244,9 +244,13 @@ func executableChecksumName() string {
 	return "sha256sum"
 }
 
+func binaryPatchName(patchFromVersion string) string {
+	return fmt.Sprintf("%s-%s.binpatch", executableBinaryName(), patchFromVersion)
+}
+
 // GetStepCompressedExecutablePathForVersion stores the binary patch to restore the precompiled binaries of the step from the latest version
-func GetStepCompressedExecutablePathForVersion(route SteplibRoute, id, version string) string {
-	return filepath.Join(GetStepBinDirPath(route, id), version, executableBinaryName()+".patch")
+func GetStepCompressedExecutablePathForVersion(fromPatchVersion string, route SteplibRoute, id, version string) string {
+	return filepath.Join(GetStepBinDirPath(route, id), version, binaryPatchName(fromPatchVersion))
 }
 
 // GetStepCacheExecutablePathForVersion stores the uncompressed precompiled binaries of the step

@@ -35,6 +35,11 @@ func preloadBitriseSteps(log stepman.Logger) error {
 		return err
 	}
 
+	route, found := stepman.ReadRoute(bitriseStepLibURL)
+	if !found {
+		return fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
+	}
+
 	waitGroup := &sync.WaitGroup{}
 
 	for stepID, step := range stepLib.Steps {
@@ -87,7 +92,9 @@ func preloadBitriseSteps(log stepman.Logger) error {
 				log.Warnf("targetExecutablePath: %s", targetExecutablePath)
 				if targetExecutablePath != "" && targetExecutablePathLatest != "" {
 					log.Warnf("Compression step %s@%s", stepID, version)
-					if err := compressStep(bitriseStepLibURL, stepID, version, targetExecutablePathLatest, targetExecutablePath); err != nil {
+
+					patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
+					if err := compressStep(latestVersionNumber, patchFilePath, stepID, version, targetExecutablePathLatest, targetExecutablePath); err != nil {
 						log.Warnf("Failed to compress step  %s@%s: %w", stepID, version, err)
 					}
 				}
@@ -142,19 +149,12 @@ func filterPreloadedStepVersions(steps map[string]models.StepModel) (map[string]
 	return filteredSteps, nil
 }
 
-func compressStep(stepLibURI, stepID, version, targetExecutablePathLatest, targetExecutablePath string) error {
+func compressStep(fromPatchVersion, patchFilePath, stepID, version, targetExecutablePathLatest, targetExecutablePath string) error {
 	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
 		return nil
 	}
 
-	route, found := stepman.ReadRoute(stepLibURI)
-	if !found {
-		return fmt.Errorf("no route found for %s steplib", stepLibURI)
-	}
-
-	patchFile := stepman.GetStepCompressedExecutablePathForVersion(route, stepID, version)
-
-	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFile)
+	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
 	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {

@@ -164,7 +164,28 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 		return "", executablePath, nil
 	}
 
-	// is precompiled compressed step in cache?
+	// is precompiled binary patch in cache?
+	fromPatchVersion := stepLib.Steps[id].LatestVersionNumber
+	fromPatchExecutablePath := stepman.GetStepCacheExecutablePathForVersion(route, id, fromPatchVersion)
+	if exist, err := pathutil.IsPathExists(fromPatchExecutablePath); err != nil {
+		return "", "", fmt.Errorf("failed to check if %s path exist: %s", fromPatchExecutablePath, err)
+	} else if exist {
+		binaryPatchPath := stepman.GetStepCompressedExecutablePathForVersion(fromPatchVersion, route, id, version)
+		if exist, err := pathutil.IsPathExists(binaryPatchPath); err != nil {
+			return "", "", fmt.Errorf("failed to check if %s path exist: %s", binaryPatchPath, err)
+		} else if exist {
+			// apply patch
+			decompressCmd := command.New("zstd", "-d", "--patch-from", fromPatchExecutablePath, binaryPatchPath, "-o", executablePath)
+			decompressCmd.SetStdout(nil).SetStderr(nil)
+			exit, err := decompressCmd.RunAndReturnExitCode()
+			if err != nil {
+				return "", "", fmt.Errorf("failed to apply patch with command (%s), exit code: %d: %s", decompressCmd.PrintableCommandArgs(), exit, err)
+			}
+
+			// check checksum
+			return "", executablePath, nil
+		}
+	}
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
@@ -172,8 +193,6 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	} else if exist { // version specific source cache exists
 		return stepCacheDir, "", nil
 	}
-
-	// is step git dir in cache?
 
 	// version specific source cache not exists
 	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
@@ -215,5 +234,31 @@ func copyStepYML(libraryURL, id, version, dest string) error {
 	if err := command.CopyFile(stepYMLSrc, dest); err != nil {
 		return fmt.Errorf("copy command failed: %s", err)
 	}
+	return nil
+}
+
+func compressStep(patchFromPath, stepLibURI, stepID, version, targetExecutablePathLatest, targetExecutablePath string) error {
+	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
+		return nil
+	}
+
+	route, found := stepman.ReadRoute(stepLibURI)
+	if !found {
+		return fmt.Errorf("no route found for %s steplib", stepLibURI)
+	}
+
+	patchFile := stepman.GetStepCompressedExecutablePathForVersion(patchFromPath, route, stepID, version)
+
+	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFile)
+	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
+	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		log.Warnf("Failed to compress step %s (%s): %s", stepID, compressCmd.PrintableCommandArgs(), out)
+	}
+
+	if err := os.Remove(targetExecutablePath); err != nil {
+		log.Warnf("Failed to remove uncompressed step executable %s: %s", stepID, err)
+	}
+
 	return nil
 }
