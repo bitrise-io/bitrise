@@ -176,11 +176,29 @@ func filterPreloadedStepVersions(stepID string, steps map[string]models.StepMode
 }
 
 func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath string) error {
-	if targetExecutablePath == "" || targetExecutablePathLatest == "" {
+	patchFileExist, err := pathutil.IsPathExists(patchFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to check if %s path exist: %w", patchFilePath, err)
+	}
+	if patchFileExist {
+		if err := os.Remove(patchFilePath); err != nil {
+			return fmt.Errorf("failed to remove existing patch file: %w", err)
+		}
+	}
+
+	patchFromexist, err := pathutil.IsPathExists(targetExecutablePathLatest)
+	if err != nil {
+		return fmt.Errorf("failed to check if %s path exist: %s", targetExecutablePathLatest, err)
+	}
+	if !patchFromexist {
+		return fmt.Errorf("Latest Step version used for patch (%s) not found", targetExecutablePathLatest)
+	}
+
+	if targetExecutablePath == "" {
 		return nil
 	}
 
-	compressCmd := command.New("zstd", "-f", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
+	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
 	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -188,7 +206,7 @@ func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePat
 	}
 
 	if err := os.Remove(targetExecutablePath); err != nil {
-		return fmt.Errorf("failed to remove uncompressed step executable: %s", err)
+		return fmt.Errorf("failed to remove uncompressed step executable: %w", err)
 	}
 
 	return nil
