@@ -7,16 +7,7 @@ import (
 	"github.com/bitrise-io/stepman/models"
 )
 
-const (
-	numMajors           = 2
-	numMinors           = 1
-	includeMinorsSince  = 24 * time.Hour * 31 * 0
-	includePatchesSince = 24 * time.Hour * 31 * 0
-	// includeMinorsSince  = 24 * time.Hour * 31 * 12 // 12 months
-	// includePatchesSince = 24 * time.Hour * 31 * 6  // 6 months
-)
-
-func filterPreloadedStepVersions(stepID string, steps map[string]models.StepModel) (map[string]models.StepModel, error) {
+func filterPreloadedStepVersions(stepID string, steps map[string]models.StepModel, opts PreloadOpts) (map[string]models.StepModel, error) {
 	filteredSteps := map[string]models.StepModel{}
 	allMajorMinor := map[uint64]map[uint64]models.Semver{}
 	allLatestNMinor := map[uint64][]uint64{}
@@ -28,7 +19,7 @@ func filterPreloadedStepVersions(stepID string, steps map[string]models.StepMode
 
 	for stepVersion, step := range steps {
 		// Include all patch version releases
-		if time.Since(*step.PublishedAt) < includePatchesSince {
+		if time.Since(*step.PublishedAt) < opts.PatchesSince {
 			filteredSteps[stepVersion] = step
 		}
 
@@ -55,15 +46,15 @@ func filterPreloadedStepVersions(stepID string, steps map[string]models.StepMode
 		}
 	}
 
-	latestNMajors := make([]uint64, 0, numMajors)
+	latestNMajors := make([]uint64, 0, opts.NumMajor)
 	for major, minorToVersion := range allMajorMinor {
 		latestNMajors = insertLatestNVersions(latestNMajors, major)
-		latestNMinors := make([]uint64, 0, numMinors)
+		latestNMinors := make([]uint64, 0, opts.NumMinor)
 		for minor, version := range minorToVersion {
 			latestNMinors = insertLatestNVersions(latestNMinors, minor)
 
 			// The latest patch of any minor version
-			if time.Since(*steps[version.String()].PublishedAt) < includeMinorsSince {
+			if time.Since(*steps[version.String()].PublishedAt) < opts.LatestMinorsSince {
 				filteredSteps[version.String()] = steps[version.String()]
 			}
 		}
