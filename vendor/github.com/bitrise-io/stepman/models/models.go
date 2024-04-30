@@ -177,12 +177,6 @@ type EnvInfoModel struct {
 	IsSensitive  bool     `json:"is_sensitive" yaml:"is_sensitive"`
 }
 
-type ActivatedStep struct {
-	SourceAbsDirPath string `json:"source_abs_dir_path,omitempty" yaml:"source_abs_dir_path,omitempty"`
-	ExecutablePath   string `json:"executable_path,omitempty" yaml:"executable_path,omitempty"`
-	StepYMLPath      string `json:"step_yml_path,omitempty" yaml:"step_yml_path,omitempty"`
-}
-
 // StepInfoModel ...
 type StepInfoModel struct {
 	Library         string             `json:"library,omitempty" yaml:"library,omitempty"`
@@ -205,4 +199,33 @@ type StepListModel struct {
 type SteplibInfoModel struct {
 	URI      string `json:"uri,omitempty" yaml:"uri,omitempty"`
 	SpecPath string `json:"spec_path,omitempty" yaml:"spec_path,omitempty"`
+}
+
+type ActivatedStepType string
+
+const (
+	ActivatedStepTypeUnknown    ActivatedStepType = "unknown"
+	ActivatedStepTypeSourceDir  ActivatedStepType = "source"
+	ActivatedStepTypeExecutable ActivatedStepType = "executable"
+)
+
+type ActivatedStep struct {
+	Type             ActivatedStepType
+	SourceAbsDirPath string
+	ExecutablePath   string
+	StepYMLPath      string
+}
+
+func NewActivatedStepFromSourceDir(sourceDir string) ActivatedStep {
+	return ActivatedStep{
+		Type:             ActivatedStepTypeSourceDir,
+		SourceAbsDirPath: sourceDir,
+	}
+}
+
+func NewActivatedStepFromExecutable(executablePath string) ActivatedStep {
+	return ActivatedStep{
+		Type:           ActivatedStepTypeExecutable,
+		ExecutablePath: executablePath,
+	}
 }

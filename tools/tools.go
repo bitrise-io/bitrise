@@ -143,7 +143,22 @@ func StepmanUpdate(collection string) error {
 // StepmanActivate ...
 func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) (stepmanModels.ActivatedStep, error) {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
+	activatedStep, err := stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
+
+	switch activatedStep.Type {
+	case stepmanModels.ActivatedStepTypeUnknown:
+		return activatedStep, fmt.Errorf("activated step is unknown type") // should never happen
+	case stepmanModels.ActivatedStepTypeSourceDir:
+		if activatedStep.SourceAbsDirPath == "" {
+			return activatedStep, fmt.Errorf("activated step has empty source dir")
+		}
+	case stepmanModels.ActivatedStepTypeExecutable:
+		if activatedStep.ExecutablePath == "" {
+			return activatedStep, fmt.Errorf("activated step has empty executable")
+		}
+	}
+
+	return activatedStep, err
 }
 
 // StepmanStepInfo ...

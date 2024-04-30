@@ -163,6 +163,12 @@ func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models
 		return results, fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
 	}
 
+	results = append(results, preloadResult{
+		stepID:  stepID,
+		version: latestVersionNumber,
+		status:  "OK",
+	})
+
 	filteredSteps, err := filterPreloadedStepVersions(stepID, step.Versions, opts)
 	if err != nil {
 		return results, fmt.Errorf("failed to filter preloaded step versions: %w", err)

@@ -13,6 +13,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+var errStepNotAvailableOfflineMode error = fmt.Errorf("step not available in offline mode")
+
 var activateCommand = cli.Command{
 	Name:  "activate",
 	Usage: "Copy the step with specified --id, and --version, into provided path. If --version flag is not set, the latest version of the step will be used. If --copyyml flag is set, step.yml will be copied to the given path.",
@@ -99,6 +101,17 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 
 	activatedStep, err := activateStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
 	if err != nil {
+		if err == errStepNotAvailableOfflineMode {
+			availableVersions := listCachedStepVersion(log, stepLib, stepLibURI, id)
+			versionList := "Other versions available in the local cache:"
+			for _, version := range availableVersions {
+				versionList = versionList + fmt.Sprintf("\n- %s", version)
+			}
+
+			errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_BETA_OFFLINE_MODE is set. %s", versionList)
+			return models.ActivatedStep{}, fmt.Errorf("failed to download step: %s", errMsg)
+		}
+
 		return output, fmt.Errorf("failed to download step: %s", err)
 	}
 
@@ -181,7 +194,7 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 
 		err := getExecutableFromCache(executablePath, checkSumPath)
 		if err == nil {
-			return models.ActivatedStep{ExecutablePath: executablePath}, nil
+			return models.NewActivatedStepFromExecutable(executablePath), nil
 		}
 		log.Warnf("[Stepman] %s", err)
 
@@ -192,7 +205,7 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 
 		err = uncompressStepFromCache(fromPatchExecutablePath, binaryPatchPath, executablePath, checkSumPath)
 		if err == nil {
-			return models.ActivatedStep{ExecutablePath: executablePath}, nil
+			return models.NewActivatedStepFromExecutable(executablePath), nil
 		}
 		log.Warnf("[Stepman] %s", err)
 	}
@@ -201,19 +214,31 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		return models.ActivatedStep{}, fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
 	} else if exist { // version specific source cache exists
-		return models.ActivatedStep{SourceAbsDirPath: stepCacheDir}, nil
+		return models.NewActivatedStepFromSourceDir(stepCacheDir), nil
 	}
 
 	// version specific source cache not exists
 	if isOfflineMode {
-		return models.ActivatedStep{}, fmt.Errorf("step not found in cache, and offline mode is enabled")
+		return models.ActivatedStep{}, errStepNotAvailableOfflineMode
 	}
 
 	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
 		return models.ActivatedStep{}, fmt.Errorf("download failed: %s", err)
 	}
 
-	return models.ActivatedStep{SourceAbsDirPath: stepCacheDir}, nil
+	return models.NewActivatedStepFromSourceDir(stepCacheDir), nil
+}
+
+func listCachedStepVersion(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
+	versions := []string{}
+	for version, step := range stepLib.Steps[stepID].Versions {
+		_, err := activateStep(stepLib, stepLibURI, stepID, version, step, log, true)
+		if err == nil {
+			versions = append(versions, version)
+		}
+	}
+
+	return versions
 }
 
 func copyStep(src, dst string) error {

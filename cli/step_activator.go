@@ -211,6 +211,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	if err != nil {
 		return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, didStepLibUpdate, err
 	}
+
 	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return info, activatedStep, didStepLibUpdate, nil

@@ -9,7 +9,7 @@ require (
 	github.com/bitrise-io/go-utils v1.0.11
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.0.0-20240430103927-f489b9467789
+	github.com/bitrise-io/stepman v0.0.0-20240430131446-6fb493cffeec
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-version v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
@@ -49,3 +49,5 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
+
+replace github.com/bitrise-io/stepman => /Users/lpusok/Develop/go/src/github.com/bitrise-io/stepman

@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/toolkits"
 	stepman "github.com/bitrise-io/stepman/cli"
@@ -10,8 +12,9 @@ import (
 )
 
 var prelaodStepsCommand = cli.Command{
-	Name:  "beta-preload-steps",
-	Usage: "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
+	Name:      "beta-preload-steps",
+	Usage:     "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
+	UsageText: fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineMode),
 	Action: func(c *cli.Context) error {
 		if err := preloadSteps(c); err != nil {
 			log.Errorf("Preload failed: %s", err)
