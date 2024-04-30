@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
@@ -17,6 +18,11 @@ const (
 )
 
 type GoBuilder func(stepSourceAbsPath, packageName, targetExecutablePath string) error
+
+type stepWorkInfo struct {
+	stepID string
+	step   models.StepGroupModel
+}
 
 type preloadResult struct {
 	stepID  string
@@ -40,27 +46,27 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 		return err
 	}
 
-	// channel to collect preload results
-	// preloadResults := make(chan preloadResult, len(stepLib.Steps))
-	// channel to kick off 10 steps preloading at a time
-	type stepWorkInfo struct {
-		stepID string
-		step   models.StepGroupModel
-	}
 	preloadQueue := make(chan stepWorkInfo, workers)
+	preloadResults := make(chan preloadResult)
+	errC := make(chan error)
 
-	// start preload workers
-	waitGroup := &sync.WaitGroup{}
+	workersWaitGroup := &sync.WaitGroup{}
+	resultsWaitGroup := &sync.WaitGroup{}
 	for i := 0; i < workers; i++ {
-		waitGroup.Add(1)
+		workersWaitGroup.Add(1)
 		go func() {
 			for s := range preloadQueue {
-				if err := preloadStepVersions(log, goBuilder, stepLib, s.stepID, s.step); err != nil {
-					log.Warnf("%w", err)
+				results, err := preloadStepVersions(log, goBuilder, stepLib, s.stepID, s.step)
+				if err != nil {
+					errC <- err
+				}
+
+				for _, result := range results {
+					preloadResults <- result
 				}
 			}
 
-			waitGroup.Done()
+			workersWaitGroup.Done()
 		}()
 	}
 
@@ -79,33 +85,71 @@ func PreloadBitriseSteps(goBuilder GoBuilder, log stepman.Logger) error {
 			step:   step,
 		}
 	}
-	close(preloadQueue)
 
-	waitGroup.Wait()
+	results := map[string][]preloadResult{}
+	resultsWaitGroup.Add(1)
+	go func() {
+		for r := range preloadResults {
+			if r.err != nil {
+				log.Warnf("Failed to preload step %s@%s: %s", r.stepID, r.version, r.err)
+			}
+
+			results[r.stepID] = append(results[r.stepID], r)
+		}
+
+		resultsWaitGroup.Done()
+	}()
+
+	close(preloadQueue)
+	workersWaitGroup.Wait()
+	close(preloadResults)
+	resultsWaitGroup.Wait()
+
+	close(errC)
+	for err := range errC {
+		return err
+	}
+
+	log.Infof("=== Results ===")
+	for _, stepResults := range results {
+		for _, result := range stepResults {
+			status := colorstring.Green("OK")
+			if result.err != nil {
+				status = colorstring.Red(fmt.Sprintf("Failed: %s", result.err))
+			}
+			log.Infof("Preloading step %s@%s finished: %s", result.stepID, result.version, status)
+			if result.err != nil {
+				return result.err
+			}
+		}
+	}
+
 	return nil
 }
 
-func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel) error {
+func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel) ([]preloadResult, error) {
+	results := []preloadResult{}
+
 	route, found := stepman.ReadRoute(bitriseStepLibURL)
 	if !found {
-		return fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
+		return results, fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
 	}
 
 	latestVersionNumber := step.LatestVersionNumber
 	latestVersion, found := step.LatestVersion()
 	if !found {
-		return fmt.Errorf("failed to find latest version for step %s", stepID)
+		return results, fmt.Errorf("failed to find latest version for step %s", stepID)
 	}
 
 	log.Infof("Preloading step %s@%s", stepID, latestVersionNumber)
 	targetExecutablePathLatest, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, log, false)
 	if err != nil {
-		return fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
+		return results, fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
 	}
 
 	filteredSteps, err := filterPreloadedStepVersions(stepID, step.Versions)
 	if err != nil {
-		return fmt.Errorf("failed to filter preloaded step versions: %w", err)
+		return results, fmt.Errorf("failed to filter preloaded step versions: %w", err)
 	}
 
 	// Iterate over all versions and compress them if golang step
@@ -117,19 +161,25 @@ func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models
 		log.Infof("Preloading step %s@%s", stepID, version)
 		targetExecutablePath, err := preloadStepExecutable(stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, log, true)
 		if err != nil {
-			log.Warnf("failed to preload step %s@%s: %w", stepID, version, err)
+			results = append(results, preloadResult{
+				stepID:  stepID,
+				version: version,
+				err:     fmt.Errorf("failed to preload step %s@%s: %w", stepID, version, err),
+			})
+
+			continue
 		}
 
 		if targetExecutablePath != "" && targetExecutablePathLatest != "" {
 			log.Infof("Compressing step %s@%s", stepID, version)
 			patchFilePath := stepman.GetStepCompressedExecutablePathForVersion(latestVersionNumber, route, stepID, version)
 			if err := compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath); err != nil {
-				return fmt.Errorf("failed to compress step %s@%s: %w", stepID, version, err)
+				return results, fmt.Errorf("failed to compress step %s@%s: %w", stepID, version, err)
 			}
 		}
 	}
 
-	return nil
+	return results, nil
 }
 
 func preloadStepExecutable(stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, log stepman.Logger, cleanupSrc bool) (string, error) {

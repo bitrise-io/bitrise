@@ -14,7 +14,6 @@ func Test_insertLatestNVersions(t *testing.T) {
 		want       []uint64
 	}{
 		{
-			name:       "insertLatestNVersions",
 			latests:    []uint64{3, 2, 1},
 			newVersion: 4,
 			want:       []uint64{4, 3, 2},
