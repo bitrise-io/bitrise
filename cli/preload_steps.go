@@ -27,24 +27,28 @@ var prelaodStepsCommand = cli.Command{
 		cli.UintFlag{
 			Name:  "majors",
 			Usage: "Include X latest major versions",
+			Value: 2,
 		},
 		cli.UintFlag{
 			Name:  "minors",
 			Usage: "Include X latest minor versions for each major version",
+			Value: 1,
 		},
 		cli.UintFlag{
 			Name:  "minors-since",
 			Usage: "Include latest patch version of minors that were released in the last X months",
+			Value: 2,
 		},
 		cli.UintFlag{
-			Name:  "pathces-since",
+			Name:  "patches-since",
 			Usage: "Include all patch version that were released in the last X months",
+			Value: 1,
 		},
 	},
 }
 
 func preloadSteps(c *cli.Context) error {
-	opts := stepman.DefaultPreloadOpts()
+	opts := stepman.PreloadOpts{}
 	shouldCompile := c.Bool("binary")
 	opts.UseBinaryExecutable = shouldCompile
 	numMajor := c.Uint("majors")
@@ -55,18 +59,18 @@ func preloadSteps(c *cli.Context) error {
 	if numMinor != 0 {
 		opts.NumMinor = numMinor
 	}
-	minorsSince := c.Duration("minors-since")
+	minorsSince := c.Int("minors-since")
 	if minorsSince != 0 {
-		opts.LatestMinorsSince = minorsSince
+		opts.LatestMinorsSinceMonths = minorsSince
 	}
-	patchesSince := c.Duration("patches-since")
+	patchesSince := c.Int("patches-since")
 	if patchesSince != 0 {
-		opts.PatchesSince = patchesSince
+		opts.PatchesSinceMonths = patchesSince
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	log.Info("Preloading Bitrise maintained Steps...")
-	log.Printf("Options: %#v", opts)
+	log.Printf("Options: %#v\n", opts)
 
 	if err := stepman.PreloadBitriseSteps(logger, toolkits.GoBuildStep, opts); err != nil {
 		return err

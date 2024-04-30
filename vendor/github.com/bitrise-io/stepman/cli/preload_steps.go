@@ -16,28 +16,18 @@ const (
 	bitriseStepLibURL = "https://github.com/bitrise-io/bitrise-steplib.git"
 	bitriseMaintainer = "bitrise"
 	workers           = 10
-	MonthDuration     = 24 * time.Hour * 31
+	monthDuration     = 24 * time.Hour * 31
 )
 
 type PreloadOpts struct {
-	NumMajor            uint
-	NumMinor            uint
-	LatestMinorsSince   time.Duration
-	PatchesSince        time.Duration
-	UseBinaryExecutable bool
+	NumMajor                uint
+	NumMinor                uint
+	LatestMinorsSinceMonths int
+	PatchesSinceMonths      int
+	UseBinaryExecutable     bool
 }
 
 type GoBuilder func(stepSourceAbsPath, packageName, targetExecutablePath string) error
-
-func DefaultPreloadOpts() PreloadOpts {
-	return PreloadOpts{
-		NumMajor:            2,
-		NumMinor:            1,
-		LatestMinorsSince:   2 * MonthDuration,
-		PatchesSince:        1 * MonthDuration,
-		UseBinaryExecutable: false,
-	}
-}
 
 type stepWorkInfo struct {
 	stepID string
@@ -168,7 +158,7 @@ func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models
 	}
 
 	log.Infof("Preloading step %s", stepID)
-	targetExecutablePathLatest, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, false)
+	targetExecutablePathLatest, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, goBuilder, stepID, step.LatestVersionNumber, latestVersion, opts.UseBinaryExecutable)
 	if err != nil {
 		return results, fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
 	}
@@ -185,7 +175,7 @@ func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models
 		}
 
 		log.Debugf("Preloading step %s@%s", stepID, version)
-		targetExecutablePath, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, true)
+		targetExecutablePath, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, goBuilder, stepID, version, step, opts.UseBinaryExecutable)
 		if err != nil {
 			results = append(results, preloadResult{
 				stepID:  stepID,
@@ -222,12 +212,33 @@ func preloadStepVersions(log stepman.Logger, goBuilder GoBuilder, stepLib models
 			version: version,
 			status:  "OK (compressed)",
 		})
+
+		// remove step source as build is successful
+		// also remove if not successful, as propably old step source does not work anymore
+		if _, err := cleanStepSourceDir(route, stepID, version); err != nil {
+			return results, fmt.Errorf("failed to clean step source dir: %w", err)
+		}
 	}
 
 	return results, nil
 }
 
-func preloadStepExecutable(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, cleanupSrc bool) (string, error) {
+func cleanStepSourceDir(route stepman.SteplibRoute, id, version string) (string, error) {
+	stepSourceDir := stepman.GetStepCacheDirPath(route, id, version)
+	sourceExist, err := pathutil.IsPathExists(stepSourceDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to check if %s path exist: %s", stepSourceDir, err)
+	}
+	if sourceExist {
+		if err := os.RemoveAll(stepSourceDir); err != nil {
+			return "", fmt.Errorf("failed to remove step source dir: %s", err)
+		}
+	}
+
+	return stepSourceDir, nil
+}
+
+func preloadStepExecutable(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI string, goBuilder GoBuilder, id, version string, step models.StepModel, useBinaryExecutable bool) (string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -245,24 +256,20 @@ func preloadStepExecutable(log stepman.Logger, stepLib models.StepCollectionMode
 		}
 	}
 
-	// Clean existing step source
-	stepSourceDir := stepman.GetStepCacheDirPath(route, id, version)
-	sourceExist, err := pathutil.IsPathExists(stepSourceDir)
+	// Fetch source, compile step (if golang), calclulate checksum
+	stepSourceDir, err := cleanStepSourceDir(route, id, version)
 	if err != nil {
-		return "", fmt.Errorf("failed to check if %s path exist: %s", stepSourceDir, err)
-	}
-	if sourceExist {
-		if err := os.RemoveAll(stepSourceDir); err != nil {
-			return "", fmt.Errorf("failed to remove step source dir: %s", err)
-		}
+		return "", err
 	}
 
-	// Fetch source, compile step (if golang), calclulate checksum
 	log.Debugf("Downloading step %s@%s", id, version)
 	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
 		return "", fmt.Errorf("download failed: %s", err)
 	}
 
+	if !useBinaryExecutable {
+		return "", nil
+	}
 	if step.Toolkit == nil || step.Toolkit.Go == nil {
 		return "", nil
 	}
@@ -275,14 +282,6 @@ func preloadStepExecutable(log stepman.Logger, stepLib models.StepCollectionMode
 	checkSumPath := stepman.GetStepExecutableChecksumPathForVersion(route, id, version)
 	if err := writeChecksum(targetExecutablePath, checkSumPath); err != nil {
 		return "", fmt.Errorf("failed to write checksum: %s", err)
-	}
-
-	if cleanupSrc {
-		// remove step source as build is successful
-		// also remove if not successful, as propably old step source does not work anymore
-		if err := os.RemoveAll(stepSourceDir); err != nil {
-			return "", fmt.Errorf("failed to remove step source dir: %s", err)
-		}
 	}
 
 	return targetExecutablePath, nil
