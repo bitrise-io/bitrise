@@ -14,7 +14,6 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/progress"
-	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -229,7 +228,7 @@ func (toolkit GoToolkit) Install() error {
 			if attempt > 0 {
 				log.Warnf("==> Download failed, retrying ...")
 			}
-			return tools.DownloadFile(downloadURL, goArchiveDownloadPath)
+			return DownloadFile(downloadURL, goArchiveDownloadPath)
 		})
 	})
 	if downloadErr != nil {

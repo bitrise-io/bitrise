@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/progress"
-	"github.com/bitrise-io/bitrise/tools"
+	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
@@ -145,7 +145,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 				if attempt > 0 {
 					log.Warnf("Download failed, retrying ...")
 				}
-				return tools.InstallToolFromGitHub(toolname, "bitrise-io", minVersion)
+				return toolkits.InstallToolFromGitHub(toolname, "bitrise-io", minVersion)
 			})
 		})
 

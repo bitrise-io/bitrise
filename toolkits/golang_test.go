@@ -1,15 +1,12 @@
 package toolkits
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
-	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/stretchr/testify/require"
 )
 
@@ -187,63 +184,6 @@ func Test_goBuildStep(t *testing.T) {
 			if tt.wantGoMod {
 				_, err := os.Stat(goModPath)
 				require.NoError(t, err, "go.mod was not created")
-			}
-		})
-	}
-}
-
-func Benchmark_goBuildStep(b *testing.B) {
-	isInstallRequired, _, goConfig, err := selectGoConfiguration()
-	require.NoError(b, err, "Failed to select an appropriate Go installation for compiling the Step")
-
-	if isInstallRequired {
-		b.Fatalf("Failed to select an appropriate Go installation for compiling the Step")
-	}
-
-	stepDir := b.TempDir()
-	require.NoError(b, err)
-
-	defer func() {
-		err := os.RemoveAll(stepDir)
-		require.NoError(b, err)
-	}()
-
-	outputDir := b.TempDir()
-	require.NoError(b, err)
-
-	defer func() {
-		err := os.RemoveAll(outputDir)
-		require.NoError(b, err)
-	}()
-
-	step, err := stepman.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, log.NewLogger(log.GetGlobalLoggerOpts()), false)
-	require.NoError(b, err)
-	require.NotEmpty(b, step.SourceAbsDirPath, "if empty step is already precompiled")
-
-	packageName := "github.com/bitrise-steplib/steps-xcode-test"
-
-	for _, mode := range []string{"on", "auto"} {
-		b.Run(fmt.Sprintf("Benchmarking GO111MODULE=%s", mode), func(b *testing.B) {
-			b.Setenv("GO111MODULE", mode)
-
-			for i := 0; i < b.N; i++ {
-				stepPerTestDir := b.TempDir()
-				require.NoError(b, err)
-
-				defer func() {
-					err := os.RemoveAll(stepPerTestDir)
-					require.NoError(b, err)
-				}()
-
-				err = command.CopyDir(stepDir, stepPerTestDir, true)
-				require.NoError(b, err)
-
-				err = goBuildStep(&defaultRunner{},
-					goConfig,
-					packageName,
-					stepPerTestDir,
-					filepath.Join(outputDir, fmt.Sprintf("%s_%d", mode, i)))
-				require.NoError(b, err)
 			}
 		})
 	}
