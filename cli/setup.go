@@ -20,10 +20,6 @@ var setupCommand = cli.Command{
 	},
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name:  "preload-steps",
-			Usage: "Also makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
-		},
-		cli.BoolFlag{
 			Name:  "clean",
 			Usage: "Removes bitrise's workdir before setup.",
 		},
@@ -37,13 +33,10 @@ var setupCommand = cli.Command{
 func setup(c *cli.Context) error {
 	clean := c.Bool("clean")
 	minimal := c.Bool("minimal")
-	preloadSteps := c.Bool("preload-steps")
 
 	setupMode := bitrise.SetupModeDefault
 	if minimal {
 		setupMode = bitrise.SetupModeMinimal
-	} else if preloadSteps {
-		setupMode = bitrise.SetupModePreloadSteps
 	}
 
 	if err := bitrise.RunSetup(c.App.Version, setupMode, clean); err != nil {
