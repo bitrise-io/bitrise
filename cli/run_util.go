@@ -398,23 +398,19 @@ func (r WorkflowRunner) executeStep(
 	workflowID string,
 ) (int, error) {
 	var cmdArgs []string
-	var err error
 
-	if activatedStep.ExecutablePath != "" {
-		cmdArgs = []string{activatedStep.ExecutablePath}
-	} else {
-		toolkitForStep := toolkits.ToolkitForStep(step)
-		toolkitName := toolkitForStep.ToolkitName()
-		if err := toolkitForStep.PrepareForStepRun(step, sIDData, activatedStep.SourceAbsDirPath); err != nil {
-			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
-				toolkitName, err)
-		}
+	toolkitForStep := toolkits.ToolkitForStep(step)
+	toolkitName := toolkitForStep.ToolkitName()
+	activatedStep, err := toolkitForStep.PrepareForStepRun(step, sIDData, activatedStep)
+	if err != nil {
+		return 1, fmt.Errorf("Failed to prepare the step (%#v) for execution through the required toolkit (%s): %w",
+			activatedStep, toolkitName, err)
+	}
 
-		cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, activatedStep.SourceAbsDirPath)
-		if err != nil {
-			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
-				toolkitName, err)
-		}
+	cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, activatedStep)
+	if err != nil {
+		return 1, fmt.Errorf("Toolkit (%s) rejected the step (%#v): %w",
+			toolkitName, activatedStep, err)
 	}
 
 	timeout := time.Duration(-1)

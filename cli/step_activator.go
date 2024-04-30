@@ -9,11 +9,11 @@ import (
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	stepman "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -154,7 +154,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	didStepLibUpdate := false
 
 	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
-	if err := tools.StepmanSetup(stepIDData.SteplibSource); err != nil {
+	if err := StepmanSetup(stepIDData.SteplibSource); err != nil {
 		return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, false, err
 	}
 
@@ -173,14 +173,14 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 		(versionConstraint.VersionLockType == stepmanModels.MajorLocked)
 	if !isStepLibUpdated && isStepLibUpdateNeeded && !isOfflineMode {
 		log.Print("Step uses latest version, updating StepLib...")
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+		if err := StepmanUpdate(stepIDData.SteplibSource); err != nil {
 			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
 		} else {
 			didStepLibUpdate = true
 		}
 	}
 
-	info, err := tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+	info, err := StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 	if err != nil {
 		if isStepLibUpdated || isOfflineMode {
 			return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, didStepLibUpdate,
@@ -189,13 +189,13 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 
 		// May StepLib should be updated
 		log.Infof("Step info not found in StepLib (%s) -- Updating ...", stepIDData.SteplibSource)
-		if err := tools.StepmanUpdate(stepIDData.SteplibSource); err != nil {
+		if err := StepmanUpdate(stepIDData.SteplibSource); err != nil {
 			return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, didStepLibUpdate, err
 		}
 
 		didStepLibUpdate = true
 
-		info, err = tools.StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
+		info, err = StepmanStepInfo(stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)
 		if err != nil {
 			return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, didStepLibUpdate,
 				fmt.Errorf("stepman JSON steplib step info failed: %s", err)
@@ -207,7 +207,7 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	}
 	info.OriginalVersion = stepIDData.Version
 
-	activatedStep, err := tools.StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, info.Version, destination, stepYMLCopyPth, isOfflineMode)
+	activatedStep, err := StepmanActivate(stepIDData.SteplibSource, stepIDData.IDorURI, info.Version, destination, stepYMLCopyPth, isOfflineMode)
 	if err != nil {
 		return stepmanModels.StepInfoModel{}, stepmanModels.ActivatedStep{}, didStepLibUpdate, err
 	}
@@ -215,4 +215,39 @@ func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyP
 	log.Debugf("[BITRISE_CLI] - Step activated: (ID:%s) (version:%s)", stepIDData.IDorURI, stepIDData.Version)
 
 	return info, activatedStep, didStepLibUpdate, nil
+}
+
+func StepmanSetup(collection string) error {
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.Setup(collection, "", log)
+}
+
+func StepmanUpdate(collection string) error {
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.UpdateLibrary(collection, log)
+}
+
+func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) (stepmanModels.ActivatedStep, error) {
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	activatedStep, err := stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
+
+	switch activatedStep.Type {
+	case stepmanModels.ActivatedStepTypeUnknown:
+		return activatedStep, fmt.Errorf("activated step is unknown type") // should never happen
+	case stepmanModels.ActivatedStepTypeSourceDir:
+		if activatedStep.SourceAbsDirPath == "" {
+			return activatedStep, fmt.Errorf("activated step has empty source dir")
+		}
+	case stepmanModels.ActivatedStepTypeExecutable:
+		if activatedStep.ExecutablePath == "" {
+			return activatedStep, fmt.Errorf("activated step has empty executable")
+		}
+	}
+
+	return activatedStep, err
+}
+
+func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
+	log := log.NewLogger(log.GetGlobalLoggerOpts())
+	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
 }

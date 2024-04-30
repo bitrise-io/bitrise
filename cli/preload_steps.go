@@ -6,7 +6,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/toolkits"
 	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/urfave/cli"
 )
@@ -75,7 +74,7 @@ func preloadSteps(c *cli.Context) error {
 	log.Info("Preloading Bitrise maintained Steps...")
 	log.Printf("Options: %#v\n", opts)
 
-	if err := stepman.PreloadBitriseSteps(logger, toolkits.GoBuildStep, opts); err != nil {
+	if err := stepman.PreloadBitriseSteps(logger, opts); err != nil {
 		return err
 	}
 

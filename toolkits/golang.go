@@ -301,8 +301,32 @@ func stepBinaryCacheFullPath(sIDData models.StepIDData) string {
 	return filepath.Join(goToolkitCacheRootPath(), stepBinaryFilename(sIDData))
 }
 
-// PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
+func (toolkit GoToolkit) CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, packageName, targetBinPath string) (stepmanModels.ActivatedStep, error) {
+	if activatedStep.Type != stepmanModels.ActivatedStepTypeSourceDir || activatedStep.SourceAbsDirPath == "" {
+		return stepmanModels.ActivatedStep{}, fmt.Errorf("invalid activated Go step, missing source dir path")
+	}
+
+	if packageName == "" {
+		return stepmanModels.ActivatedStep{}, errors.New("No PackageName specified")
+	}
+
+	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	if err != nil {
+		return stepmanModels.ActivatedStep{}, fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
+	}
+	if isInstallRequired {
+		return stepmanModels.ActivatedStep{}, fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s",
+			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
+	}
+
+	err = goBuildStep(&defaultRunner{}, goConfig, packageName, activatedStep.SourceAbsDirPath, targetBinPath)
+	activatedStep.Type = stepmanModels.ActivatedStepTypeExecutable
+	activatedStep.ExecutablePath = targetBinPath
+
+	return activatedStep, err
+}
+
+func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error) {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 
 	// try to use cached binary, if possible
@@ -310,51 +334,29 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
 			log.Warnf("Failed to check cached binary for step, error: %s", err)
 		} else if exists {
-			return nil
+			return activatedStep, nil
 		}
 	}
 
 	// it's not cached, so compile it
 	if step.Toolkit == nil {
-		return errors.New("No Toolkit information specified in step")
+		return activatedStep, fmt.Errorf("No Toolkit information specified in step")
 	}
 	if step.Toolkit.Go == nil {
-		return errors.New("No Toolkit.Go information specified in step")
+		return activatedStep, fmt.Errorf("No Toolkit.Go information specified in step")
 	}
 
-	isInstallRequired, _, goConfig, err := selectGoConfiguration()
-	if err != nil {
-		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
-	}
-	if isInstallRequired {
-		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s",
-			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
-	}
-
-	return goBuildStep(&defaultRunner{}, goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
-}
-
-func GoBuildStep(stepAbsDirPath string, packageName string, fullStepBinPath string) error {
-	if packageName == "" {
-		return errors.New("No PackageName specified")
-	}
-
-	isInstallRequired, _, goConfig, err := selectGoConfiguration()
-	if err != nil {
-		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s", err)
-	}
-	if isInstallRequired {
-		return fmt.Errorf("Failed to select an appropriate Go installation for compiling the Step: %s",
-			"Found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
-	}
-
-	return goBuildStep(&defaultRunner{}, goConfig, packageName, stepAbsDirPath, fullStepBinPath)
+	return toolkit.CompileStepExecutable(activatedStep, step.Toolkit.Go.PackageName, fullStepBinPath)
 }
 
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
-func (toolkit GoToolkit) StepRunCommandArguments(_ stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit GoToolkit) StepRunCommandArguments(_ stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error) {
+	if activatedStep.Type == stepmanModels.ActivatedStepTypeExecutable {
+		return []string{activatedStep.ExecutablePath}, nil
+	}
+
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }

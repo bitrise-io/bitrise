@@ -15,8 +15,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	stepman "github.com/bitrise-io/stepman/cli"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"golang.org/x/sys/unix"
 )
 
@@ -126,49 +124,7 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 }
 
 // ------------------
-// --- Stepman
-
-// StepmanSetup ...
-func StepmanSetup(collection string) error {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Setup(collection, "", log)
-}
-
-// StepmanUpdate ...
-func StepmanUpdate(collection string) error {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.UpdateLibrary(collection, log)
-}
-
-// StepmanActivate ...
-func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) (stepmanModels.ActivatedStep, error) {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	activatedStep, err := stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
-
-	switch activatedStep.Type {
-	case stepmanModels.ActivatedStepTypeUnknown:
-		return activatedStep, fmt.Errorf("activated step is unknown type") // should never happen
-	case stepmanModels.ActivatedStepTypeSourceDir:
-		if activatedStep.SourceAbsDirPath == "" {
-			return activatedStep, fmt.Errorf("activated step has empty source dir")
-		}
-	case stepmanModels.ActivatedStepTypeExecutable:
-		if activatedStep.ExecutablePath == "" {
-			return activatedStep, fmt.Errorf("activated step has empty executable")
-		}
-	}
-
-	return activatedStep, err
-}
-
-// StepmanStepInfo ...
-func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
-}
-
-//
-// Share
+// --- Stepman share
 
 // StepmanShare ...
 func StepmanShare() error {

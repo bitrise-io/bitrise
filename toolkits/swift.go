@@ -1,6 +1,7 @@
 package toolkits
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -44,22 +45,30 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	return len(binPath) > 0
 }
 
+func (toolkit SwiftToolkit) CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, packageName string, targetExecutablePath string) (stepmanModels.ActivatedStep, error) {
+	return activatedStep, nil
+}
+
 // PrepareForStepRun ...
-func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ models.StepIDData, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error) {
+	if activatedStep.Type != stepmanModels.ActivatedStepTypeSourceDir || activatedStep.SourceAbsDirPath == "" {
+		return activatedStep, fmt.Errorf("invalid activated Swift step, missing source dir path")
+	}
+
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
-		return nil
+		return activatedStep, nil
 	}
 
 	resp, err := http.Get(binaryLocation)
 	if err != nil {
-		return err
+		return activatedStep, err
 	}
 
-	executablePath := filepath.Join(stepAbsDirPath, step.Toolkit.Swift.ExecutableName)
+	executablePath := filepath.Join(activatedStep.SourceAbsDirPath, step.Toolkit.Swift.ExecutableName)
 	out, err := os.Create(executablePath)
 	if err != nil {
-		return err
+		return activatedStep, err
 	}
 
 	_, err = io.Copy(out, resp.Body)
@@ -67,15 +76,19 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ mo
 
 	err = resp.Body.Close()
 	err = out.Close()
-	return err
+	return activatedStep, err
 }
 
 // StepRunCommandArguments ...
-func (toolkit SwiftToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit SwiftToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error) {
+	if activatedStep.Type != stepmanModels.ActivatedStepTypeSourceDir || activatedStep.SourceAbsDirPath == "" {
+		return []string{}, fmt.Errorf("invalid activated Swift step, missing source dir path")
+	}
+
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
-		return []string{"swift", "run", "--package-path", stepAbsDirPath, "-c", "release"}, nil
+		return []string{"swift", "run", "--package-path", activatedStep.SourceAbsDirPath, "-c", "release"}, nil
 	}
-	executablePath := filepath.Join(stepAbsDirPath, step.Toolkit.Swift.ExecutableName)
+	executablePath := filepath.Join(activatedStep.SourceAbsDirPath, step.Toolkit.Swift.ExecutableName)
 	return []string{executablePath}, nil
 }

@@ -59,19 +59,24 @@ func (toolkit BashToolkit) ToolkitName() string {
 	return "bash"
 }
 
+// CompileStepExecutable ...
+func (toolkit BashToolkit) CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, _, _ string) (stepmanModels.ActivatedStep, error) {
+	return activatedStep, nil
+}
+
 // PrepareForStepRun ...
-func (toolkit BashToolkit) PrepareForStepRun(_ stepmanModels.StepModel, _ models.StepIDData, _ string) error {
-	return nil
+func (toolkit BashToolkit) PrepareForStepRun(_ stepmanModels.StepModel, _ models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error) {
+	return activatedStep, nil
 }
 
 // StepRunCommandArguments ...
-func (toolkit BashToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit BashToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error) {
 	entryFile := "step.sh"
 	if step.Toolkit != nil && step.Toolkit.Bash != nil && step.Toolkit.Bash.EntryFile != "" {
 		entryFile = step.Toolkit.Bash.EntryFile
 	}
 
-	stepFilePath := filepath.Join(stepAbsDirPath, entryFile)
+	stepFilePath := filepath.Join(activatedStep.SourceAbsDirPath, entryFile)
 	cmd := []string{"bash", stepFilePath}
 	return cmd, nil
 }

@@ -30,7 +30,7 @@ type Toolkit interface {
 	// Return true even if the version is older than the required version for this toolkit,
 	// you can pick / init the right version later. This function only checks
 	// whether the system has a pre-installed version of the toolkit's tool or not,
-	// no compability check is required!
+	// no compatibility check is required!
 	IsToolAvailableInPATH() bool
 
 	// Bootstrap : initialize the toolkit for use, ONLY IF THERE'S NO SYSTEM INSTALLED VERSION!
@@ -46,16 +46,18 @@ type Toolkit interface {
 	// the toolkit should be "enforced" there, BUT ONLY FOR THAT FUNCTION (e.g. don't call os.Setenv there!)
 	Bootstrap() error
 
+	CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, packageName string, targetExecutablePath string) (stepmanModels.ActivatedStep, error)
+
 	// PrepareForStepRun can be used to pre-compile or otherwise prepare for the step's execution.
 	//
 	// Important: do NOT enforce the toolkit for subsequent / unrelated steps or functions,
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
+	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error)
 
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error)
+	StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error)
 }
 
 //
