@@ -96,6 +96,17 @@ func insertLatestNVersions(latests []uint64, newVersion uint64) []uint64 {
 		}
 	}
 
+	if len(latests) == 1 {
+		if newVersion > latests[0] {
+			if len(latests) < cap(latests) {
+				latests = append([]uint64{newVersion}, latests...)
+				return latests
+			}
+			latests[0] = newVersion
+			return latests
+		}
+	}
+
 	if len(latests) < cap(latests) {
 		latests = append(latests, newVersion)
 	}

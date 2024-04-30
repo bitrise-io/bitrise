@@ -6,11 +6,11 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/stepman"
 )
 
-func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePath string) error {
+func compressStep(log stepman.Logger, patchFilePath, targetExecutablePathLatest, targetExecutablePath string) error {
 	patchFileExist, err := pathutil.IsPathExists(patchFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to check if %s path exist: %w", patchFilePath, err)
@@ -34,7 +34,7 @@ func compressStep(patchFilePath, targetExecutablePathLatest, targetExecutablePat
 	}
 
 	compressCmd := command.New("zstd", "--patch-from="+targetExecutablePathLatest, targetExecutablePath, "-o", patchFilePath)
-	log.Warnf("$ %s", compressCmd.PrintableCommandArgs())
+	log.Debugf("[Stepman] compressing step $ %s", compressCmd.PrintableCommandArgs())
 	out, err := compressCmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to compress with command (%s), output: %s", compressCmd.PrintableCommandArgs(), out)

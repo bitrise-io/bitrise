@@ -29,6 +29,12 @@ func Test_insertLatestNVersions(t *testing.T) {
 			cap:        3,
 			want:       []uint64{5, 4, 2},
 		},
+		{
+			latests:    []uint64{2},
+			newVersion: 4,
+			cap:        1,
+			want:       []uint64{4},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
