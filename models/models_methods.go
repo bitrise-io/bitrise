@@ -269,15 +269,6 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// ---
 
 	// containers
-	for serviceID, serviceDef := range config.Services {
-		if serviceID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
-		}
-		if serviceDef.Image == "" {
-			return nil, fmt.Errorf("service (%s) has no image defined", serviceID)
-		}
-	}
-
 	for containerID, containerDef := range config.Containers {
 		if containerID == "" {
 			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
@@ -287,12 +278,23 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		}
 	}
 
-	serviceIDs := map[string]bool{}
+	for serviceID, serviceDef := range config.Services {
+		if serviceID == "" {
+			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
+		}
+		if serviceDef.Image == "" {
+			return nil, fmt.Errorf("service (%s) has no image defined", serviceID)
+		}
+	}
+
 	for workflowID, workflow := range config.Workflows {
-		if _, ok := config.Containers[workflow.ContainerID]; !ok {
-			return nil, fmt.Errorf("container (%s) referenced in workflow (%s) but doesn't defined in the config", workflow.ContainerID, workflowID)
+		if workflow.ContainerID != "" {
+			if _, ok := config.Containers[workflow.ContainerID]; !ok {
+				return nil, fmt.Errorf("container (%s) referenced in workflow (%s) but doesn't defined in the config", workflow.ContainerID, workflowID)
+			}
 		}
 
+		serviceIDs := map[string]bool{}
 		for _, serviceID := range workflow.ServiceIDs {
 			if _, ok := config.Services[serviceID]; !ok {
 				return nil, fmt.Errorf("service (%s) referenced in workflow (%s) but doesn't defined in the config", serviceID, workflowID)
