@@ -10,14 +10,32 @@ import (
 	"github.com/urfave/cli"
 )
 
-var prelaodStepsCommand = cli.Command{
-	Name: "beta-steps",
+const (
+	bitriseStepLibURL = "https://github.com/bitrise-io/bitrise-steplib.git"
+	bitriseMaintainer = "bitrise"
+)
+
+var stepsCommand = cli.Command{
+	Name:  "beta-steps",
+	Usage: "Manage Steps cache.",
 	Subcommands: []cli.Command{
 		{
 			Name:  "list",
 			Usage: "List all the cached steps",
 			Action: func(c *cli.Context) error {
 				return listCachedSteps(c)
+			},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "steplib-url",
+					Usage: "URL of the steplib to list or preload steps from",
+					Value: bitriseStepLibURL,
+				},
+				cli.StringFlag{
+					Name:  "maintainer",
+					Usage: "Maintainer of the steps to list or preload",
+					Value: bitriseMaintainer,
+				},
 			},
 		},
 		{
@@ -32,6 +50,16 @@ var prelaodStepsCommand = cli.Command{
 				return nil
 			},
 			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "steplib-url",
+					Usage: "URL of the steplib to list or preload steps from",
+					Value: bitriseStepLibURL,
+				},
+				cli.StringFlag{
+					Name:  "maintainer",
+					Usage: "Maintainer of the steps to list or preload",
+					Value: bitriseMaintainer,
+				},
 				cli.BoolFlag{
 					Name:  "binary",
 					Usage: "Compile and compress steps executables to take up less space",
@@ -62,16 +90,26 @@ var prelaodStepsCommand = cli.Command{
 }
 
 func listCachedSteps(c *cli.Context) error {
+	steplibURL := c.String("steplib-url")
+	maintaner := c.String("maintainer")
+
 	log.Infof("Listing cached steps...")
+	log.Infof("Steplib: %s", steplibURL)
+	if maintaner != "" {
+		log.Infof("Filtering Steps by maintaner: %s", maintaner)
+	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	if err := stepman.ListCachedSteps(logger); err != nil {
+	if err := stepman.ListCachedSteps(steplibURL, maintaner, logger); err != nil {
 		return err
 	}
 	return nil
 }
 
 func preloadSteps(c *cli.Context) error {
+	steplibURL := c.String("steplib-url")
+	maintaner := c.String("maintainer")
+
 	opts := stepman.PreloadOpts{}
 	shouldCompile := c.Bool("binary")
 	opts.UseBinaryExecutable = shouldCompile
@@ -93,10 +131,14 @@ func preloadSteps(c *cli.Context) error {
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	log.Info("Preloading Bitrise maintained Steps...")
+	log.Info("Preloading...")
+	log.Info("Steplib: %s", steplibURL)
+	if maintaner != "" {
+		log.Infof("Filtering Steps by maintaner: %s", maintaner)
+	}
 	log.Printf("Options: %#v\n", opts)
 
-	if err := stepman.PreloadBitriseSteps(logger, opts); err != nil {
+	if err := stepman.PreloadBitriseSteps(logger, bitriseStepLibURL, bitriseMaintainer, opts); err != nil {
 		return err
 	}
 

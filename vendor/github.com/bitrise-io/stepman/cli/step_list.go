@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/log"
@@ -13,47 +14,49 @@ import (
 	"github.com/urfave/cli"
 )
 
-func ListCachedSteps(log stepman.Logger) error {
+func ListCachedSteps(steplibURI, maintaner string, log stepman.Logger) error {
 	// Check if setup was done for collection
-	if exist, err := stepman.RootExistForLibrary(bitriseStepLibURL); err != nil {
+	if exist, err := stepman.RootExistForLibrary(steplibURI); err != nil {
 		return err
 	} else if !exist {
-		if err := stepman.SetupLibrary(bitriseStepLibURL, log); err != nil {
+		if err := stepman.SetupLibrary(steplibURI, log); err != nil {
 			failf("Failed to setup steplib")
 		}
 	}
 
-	listSteplibURIs(log, []string{bitriseStepLibURL}, bitriseMaintainer, OutputFormatRaw, true)
+	listSteplibURIs(log, []string{steplibURI}, maintaner, OutputFormatRaw, true)
 
 	return nil
+}
+
+func printInMaxNChars(text string, maxChars int) string {
+	buf := make([]rune, maxChars)
+	for i := range buf {
+		if i < len(text) {
+			buf[i] = rune(text[i])
+		} else {
+			buf[i] = ' '
+		}
+	}
+
+	return string(buf)
 }
 
 func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, stepLib models.StepCollectionModel, isShort bool) {
 	fmt.Println(colorstring.Bluef("Steps in StepLib (%s):", stepLibURI))
 	fmt.Println()
+
+	skipped := []string{}
 	for stepID, stepGroupInfo := range stepLib.Steps {
 		if maintaner != "" && stepGroupInfo.Info.Maintainer != maintaner {
+			skipped = append(skipped, stepID)
 			continue
 		}
 
-		if isShort { // print only step IDs and version
-			versions := ""
+		if isShort { // print only step IDs and cached versions
 			cachedVersions := listCachedStepVersion(log, stepLib, stepLibURI, stepID)
-			for _, version := range cachedVersions {
-				versions += fmt.Sprintf("%s, ", version)
-			}
-
 			id := fmt.Sprintf("%s (%s)", stepID, stepGroupInfo.Info.Maintainer)
-			buf := make([]rune, 50)
-			for i := range buf {
-				if i < len(id) {
-					buf[i] = rune(id[i])
-				} else {
-					buf[i] = ' '
-				}
-			}
-
-			fmt.Printf("%s cached versions:  %s\n", string(buf), versions)
+			fmt.Printf("%s cached versions:  %s\n", printInMaxNChars(id, 55), strings.Join(cachedVersions, ", "))
 
 			continue
 		}
@@ -76,6 +79,8 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 		fmt.Printf("   Summary: %s\n", summaryText)
 		fmt.Println()
 	}
+
+	fmt.Printf("\nSkipped steps (maintainer filter): %s\n", strings.Join(skipped, ", "))
 	fmt.Println()
 }
 

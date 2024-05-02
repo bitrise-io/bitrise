@@ -14,10 +14,8 @@ import (
 )
 
 const (
-	bitriseStepLibURL = "https://github.com/bitrise-io/bitrise-steplib.git"
-	bitriseMaintainer = "bitrise"
-	workers           = 10
-	monthDuration     = 24 * time.Hour * 31
+	workers       = 10
+	monthDuration = 24 * time.Hour * 31
 )
 
 type Compiler interface {
@@ -45,17 +43,17 @@ type preloadResult struct {
 }
 
 // PreloadBitriseSteps preloads the cache with Bitrise owned steps
-func PreloadBitriseSteps(log stepman.Logger, opts PreloadOpts) error {
+func PreloadBitriseSteps(log stepman.Logger, steplibURL, maintaner string, opts PreloadOpts) error {
 	// Check if setup was done for collection
-	if exist, err := stepman.RootExistForLibrary(bitriseStepLibURL); err != nil {
+	if exist, err := stepman.RootExistForLibrary(steplibURL); err != nil {
 		return err
 	} else if !exist {
-		if err := stepman.SetupLibrary(bitriseStepLibURL, log); err != nil {
+		if err := stepman.SetupLibrary(steplibURL, log); err != nil {
 			return fmt.Errorf("failed to setup steplib: %w", err)
 		}
 	}
 
-	stepLib, err := stepman.ReadStepSpec(bitriseStepLibURL)
+	stepLib, err := stepman.ReadStepSpec(steplibURL)
 	if err != nil {
 		return err
 	}
@@ -70,7 +68,7 @@ func PreloadBitriseSteps(log stepman.Logger, opts PreloadOpts) error {
 		workersWaitGroup.Add(1)
 		go func() {
 			for s := range preloadQueue {
-				results, err := preloadStepVersions(log, stepLib, s.stepID, s.step, opts)
+				results, err := preloadStepVersions(log, steplibURL, stepLib, s.stepID, s.step, opts)
 				if err != nil {
 					log.Debugf("Failed to preload step %s: %s", s.stepID, err)
 					errC <- err
@@ -88,8 +86,8 @@ func PreloadBitriseSteps(log stepman.Logger, opts PreloadOpts) error {
 
 	go func() {
 		for stepID, step := range stepLib.Steps {
-			if step.Info.Maintainer != bitriseMaintainer {
-				log.Infof("Skipping step %s as it is not maintained by Bitrise", stepID)
+			if maintaner != "" && step.Info.Maintainer != maintaner {
+				log.Infof("Skipping step %s as maintaner is not '%s'", stepID, maintaner)
 				continue
 			}
 			if step.Info.DeprecateNotes != "" {
@@ -146,12 +144,12 @@ func PreloadBitriseSteps(log stepman.Logger, opts PreloadOpts) error {
 	return nil
 }
 
-func preloadStepVersions(log stepman.Logger, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel, opts PreloadOpts) ([]preloadResult, error) {
+func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel, opts PreloadOpts) ([]preloadResult, error) {
 	results := []preloadResult{}
 
-	route, found := stepman.ReadRoute(bitriseStepLibURL)
+	route, found := stepman.ReadRoute(steplibURL)
 	if !found {
-		return results, fmt.Errorf("no route found for %s steplib", bitriseStepLibURL)
+		return results, fmt.Errorf("no route found for %s steplib", steplibURL)
 	}
 
 	latestVersionNumber := step.LatestVersionNumber
@@ -161,7 +159,7 @@ func preloadStepVersions(log stepman.Logger, stepLib models.StepCollectionModel,
 	}
 
 	log.Infof("Preloading step %s", stepID)
-	targetExecutablePathLatest, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, stepID, step.LatestVersionNumber, latestVersion, opts.UseBinaryExecutable)
+	targetExecutablePathLatest, err := preloadStepExecutable(log, stepLib, steplibURL, stepID, step.LatestVersionNumber, latestVersion, opts.UseBinaryExecutable)
 	if err != nil {
 		return results, fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
 	}
@@ -184,7 +182,7 @@ func preloadStepVersions(log stepman.Logger, stepLib models.StepCollectionModel,
 		}
 
 		log.Debugf("Preloading step %s@%s", stepID, version)
-		targetExecutablePath, err := preloadStepExecutable(log, stepLib, bitriseStepLibURL, stepID, version, step, opts.UseBinaryExecutable)
+		targetExecutablePath, err := preloadStepExecutable(log, stepLib, steplibURL, stepID, version, step, opts.UseBinaryExecutable)
 		if err != nil {
 			results = append(results, preloadResult{
 				stepID:  stepID,
