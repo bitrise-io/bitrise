@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
@@ -198,7 +199,7 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 		if err == nil {
 			return models.NewActivatedStepFromExecutable(executablePath), nil
 		}
-		log.Warnf("[Stepman] %s", err)
+		log.Debugf("[Stepman] %s", err)
 
 		// is precompiled binary patch in cache?
 		fromPatchVersion := stepLib.Steps[id].LatestVersionNumber
@@ -209,7 +210,7 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 		if err == nil {
 			return models.NewActivatedStepFromExecutable(executablePath), nil
 		}
-		log.Warnf("[Stepman] %s", err)
+		log.Debugf("[Stepman] %s", err)
 	}
 
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
@@ -232,15 +233,30 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 }
 
 func listCachedStepVersion(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
-	versions := []string{}
+	versions := []models.Semver{}
+
 	for version, step := range stepLib.Steps[stepID].Versions {
 		_, err := activateStep(stepLib, stepLibURI, stepID, version, step, log, true)
-		if err == nil {
-			versions = append(versions, version)
+		if err != nil {
+			continue
 		}
+
+		v, err := models.ParseSemver(version)
+		if err != nil {
+			log.Warnf("failed to parse version (%s): %s", version, err)
+		}
+
+		versions = append(versions, v)
 	}
 
-	return versions
+	slices.SortFunc(versions, models.LessSemver)
+
+	versionsStr := make([]string, len(versions))
+	for i, v := range versions {
+		versionsStr[i] = v.String()
+	}
+
+	return versionsStr
 }
 
 func copyStep(src, dst string) error {

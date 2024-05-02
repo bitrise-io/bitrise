@@ -16,6 +16,31 @@ func (v *Semver) String() string {
 	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
+func LessSemver(a, b Semver) int {
+	if a.Major < b.Major {
+		return -1
+	}
+	if a.Major > b.Major {
+		return 1
+	}
+
+	if a.Minor < b.Minor {
+		return -1
+	}
+	if a.Minor > b.Minor {
+		return 1
+	}
+
+	if a.Patch < b.Patch {
+		return -1
+	}
+	if a.Patch > b.Patch {
+		return 1
+	}
+
+	return 0
+}
+
 func ParseSemver(version string) (Semver, error) {
 	versionParts := strings.Split(version, ".")
 	if len(versionParts) != 3 {
