@@ -562,14 +562,15 @@ func Test_activateStepLibStep(t *testing.T) {
 			if err != nil {
 				return
 			}
-			YMLPath := filepath.Join(destination, "step.yml")
-			require.Equal(t, YMLPath, activatedStep.StepYMLPath)
-			if exist, err := pathutil.IsPathExists(YMLPath); err != nil || !exist {
-				t.Errorf("step not activated at: %s", destination)
-			}
 
+			require.Equal(t, stepYMLCopyPth, activatedStep.StepYMLPath)
 			if exist, err := pathutil.IsPathExists(stepYMLCopyPth); err != nil || !exist {
 				t.Errorf("step.yml not copied at: %s", stepYMLCopyPth)
+			}
+
+			YMLPath := filepath.Join(destination, "step.yml")
+			if exist, err := pathutil.IsPathExists(YMLPath); err != nil || !exist {
+				t.Errorf("step not activated at: %s", destination)
 			}
 		})
 	}

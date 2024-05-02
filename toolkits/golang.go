@@ -302,7 +302,7 @@ func stepBinaryCacheFullPath(sIDData models.StepIDData) string {
 
 func (toolkit GoToolkit) CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, packageName, targetBinPath string) (stepmanModels.ActivatedStep, error) {
 	if activatedStep.Type != stepmanModels.ActivatedStepTypeSourceDir || activatedStep.SourceAbsDirPath == "" {
-		return stepmanModels.ActivatedStep{}, fmt.Errorf("invalid activated Go step, missing source dir path")
+		return stepmanModels.ActivatedStep{}, fmt.Errorf("cannot compile activated Go step, missing source dir path")
 	}
 
 	if packageName == "" {
@@ -326,13 +326,19 @@ func (toolkit GoToolkit) CompileStepExecutable(activatedStep stepmanModels.Activ
 }
 
 func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error) {
-	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
+	if activatedStep.Type == stepmanModels.ActivatedStepTypeExecutable {
+		return activatedStep, nil
+	}
+
+	fullStepBinCachePath := stepBinaryCacheFullPath(sIDData)
 
 	// try to use cached binary, if possible
 	if sIDData.IsUniqueResourceID() {
-		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
+		if exists, err := pathutil.IsPathExists(fullStepBinCachePath); err != nil {
 			log.Warnf("Failed to check cached binary for step, error: %s", err)
 		} else if exists {
+			activatedStep.Type = stepmanModels.ActivatedStepTypeExecutable
+			activatedStep.ExecutablePath = fullStepBinCachePath
 			return activatedStep, nil
 		}
 	}
@@ -345,7 +351,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step stepmanModels.StepModel, sIDData
 		return activatedStep, fmt.Errorf("No Toolkit.Go information specified in step")
 	}
 
-	return toolkit.CompileStepExecutable(activatedStep, step.Toolkit.Go.PackageName, fullStepBinPath)
+	return toolkit.CompileStepExecutable(activatedStep, step.Toolkit.Go.PackageName, fullStepBinCachePath)
 }
 
 // === Toolkit: Step Run ===

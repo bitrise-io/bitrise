@@ -14,7 +14,7 @@ func (g goCmdBuilder) goBuildArgs(outputBin string, explicitlyVendor bool) []str
 	if explicitlyVendor {
 		args = append(args, "-mod=vendor")
 	}
-	args = append(args, "-ldflags", "-w")
+	//args = append(args, "-ldflags", "-w")
 
 	args = append(args, "-o", outputBin)
 

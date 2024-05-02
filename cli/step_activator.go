@@ -68,6 +68,7 @@ func (a stepActivator) activateStep(
 		}
 
 		return stepmanModels.ActivatedStep{
+			Type:             stepmanModels.ActivatedStepTypeSourceDir,
 			SourceAbsDirPath: stepDir,
 			StepYMLPath:      stepYMLPth,
 		}, origStepYMLPth, nil
@@ -102,6 +103,7 @@ even if the repository is open source!`)
 		}
 
 		return stepmanModels.ActivatedStep{
+			Type:             stepmanModels.ActivatedStepTypeSourceDir,
 			SourceAbsDirPath: stepDir,
 			StepYMLPath:      stepYMLPth,
 		}, "", nil
