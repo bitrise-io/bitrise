@@ -166,6 +166,8 @@ func isSteplibOfflineMode() bool {
 
 func registerSteplibOfflineMode(offlineMode bool) {
 	configs.IsSteplibOfflineMode = offlineMode
+	// Disable analytics if running in Offline mode
+	os.Setenv(analytics.DisabledEnvKey, strconv.FormatBool(offlineMode))
 }
 
 func isDirEmpty(path string) (bool, error) {
