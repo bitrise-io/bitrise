@@ -160,8 +160,12 @@ func registerSecretEnvsFiltering(filtering bool) error {
 }
 
 func isSteplibOfflineMode() bool {
-	isSteplibOfflineMode := os.Getenv(configs.IsSteplibOfflineMode)
+	isSteplibOfflineMode := os.Getenv(configs.IsSteplibOfflineModeEnvKey)
 	return isSteplibOfflineMode == "true"
+}
+
+func registerSteplibOfflineMode(offlineMode bool) {
+	configs.IsSteplibOfflineMode = offlineMode
 }
 
 func isDirEmpty(path string) (bool, error) {

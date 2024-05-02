@@ -467,6 +467,8 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 		return fmt.Errorf("failed to register Secret Envs Filtering mode: %s", err)
 	}
 
+	registerSteplibOfflineMode(modes.IsSteplibOfflineMode)
+
 	return nil
 }
 
