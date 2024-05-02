@@ -121,6 +121,8 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 		}
 	}
 
+	activatedStep.SourceAbsDirPath = destination
+
 	if destinationStepYML != "" {
 		if err := copyStepYML(stepLibURI, id, version, destinationStepYML); err != nil {
 			return output, fmt.Errorf("copy step.yml failed: %s", err)
