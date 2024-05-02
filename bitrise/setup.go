@@ -17,9 +17,8 @@ import (
 type SetupMode string
 
 const (
-	SetupModeDefault      SetupMode = "default"
-	SetupModeMinimal      SetupMode = "minimal"
-	SetupModePreloadSteps SetupMode = "preload-steps"
+	SetupModeDefault SetupMode = "default"
+	SetupModeMinimal SetupMode = "minimal"
 )
 
 const (

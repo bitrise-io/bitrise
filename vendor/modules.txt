@@ -45,7 +45,7 @@ github.com/bitrise-io/go-utils/v2/retryhttp
 # github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 ## explicit; go 1.18
 github.com/bitrise-io/goinp/goinp
-# github.com/bitrise-io/stepman v0.0.0-20240502174635-dc296f9069c2
+# github.com/bitrise-io/stepman v0.0.0-20240502210515-79ac31b80016
 ## explicit; go 1.21
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models

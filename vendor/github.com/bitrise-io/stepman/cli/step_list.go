@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -46,8 +47,15 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 	fmt.Println(colorstring.Bluef("Steps in StepLib (%s):", stepLibURI))
 	fmt.Println()
 
+	stepIDs := []string{}
+	for stepID := range stepLib.Steps {
+		stepIDs = append(stepIDs, stepID)
+	}
+	sort.Sort(sort.StringSlice(stepIDs))
+
 	skipped := []string{}
-	for stepID, stepGroupInfo := range stepLib.Steps {
+	for _, stepID := range stepIDs {
+		stepGroupInfo := stepLib.Steps[stepID]
 		if maintaner != "" && stepGroupInfo.Info.Maintainer != maintaner {
 			skipped = append(skipped, stepID)
 			continue
