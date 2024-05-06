@@ -273,7 +273,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		if containerID == "" {
 			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
 		}
-		if containerDef.Image == "" {
+		if strings.TrimSpace(containerDef.Image) == "" {
 			return nil, fmt.Errorf("service (%s) has no image defined", containerID)
 		}
 	}
@@ -282,7 +282,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		if serviceID == "" {
 			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
 		}
-		if serviceDef.Image == "" {
+		if strings.TrimSpace(serviceDef.Image) == "" {
 			return nil, fmt.Errorf("service (%s) has no image defined", serviceID)
 		}
 	}

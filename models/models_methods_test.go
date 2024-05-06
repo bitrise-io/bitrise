@@ -466,6 +466,16 @@ services:
 			wantErr: "service (postgres) has no image defined",
 		},
 		{
+			name: "Invalid bitrise.yml: missing service image (whitespace)",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  "postgres":
+    image: " "`),
+			wantErr: "service (postgres) has no image defined",
+		},
+		{
 			name: "Invalid bitrise.yml: missing container id",
 			config: createConfig(t, `
 format_version: '11'
@@ -486,6 +496,16 @@ containers:
 			wantErr: "service (ruby) has no image defined",
 		},
 		{
+			name: "Invalid bitrise.yml: missing container image (whitespace)",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  "ruby":
+    image: " "`),
+			wantErr: "service (ruby) has no image defined",
+		},
+		{
 			name: "Invalid bitrise.yml: non-existing container referenced",
 			config: createConfig(t, `
 format_version: '11'
@@ -496,7 +516,7 @@ containers:
 workflows:
   primary:
     container: ruby_3_2`),
-			wantErr: "container (ruby_3_2) referenced in workflow (primary) but doesn't defined in the config",
+			wantErr: "container (ruby_3_2) referenced in workflow (primary), but this container is not defined",
 		},
 		{
 			name: "Invalid bitrise.yml: non-existing service referenced",
