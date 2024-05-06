@@ -10,7 +10,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
-func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {
+func getNoOutputTimeoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {
 	for _, env := range inventoryEnvironments {
 		key, value, err := env.GetKeyValuePair()
 		if err != nil {
@@ -25,9 +25,9 @@ func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItem
 	return os.Getenv(configs.NoOutputTimeoutEnvKey), nil
 }
 
-func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.EnvironmentItemModel) time.Duration {
+func readNoOutputTimeoutConfiguration(inventoryEnvironments []envmanModels.EnvironmentItemModel) time.Duration {
 	const defaultTimeout = -1
-	envVal, err := getNoOutputTimoutValue(inventoryEnvironments)
+	envVal, err := getNoOutputTimeoutValue(inventoryEnvironments)
 	if err != nil {
 		log.Errorf("Failed to read value of %s: %s", configs.NoOutputTimeoutEnvKey, err)
 		return defaultTimeout

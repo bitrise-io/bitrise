@@ -430,7 +430,7 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		return nil, fmt.Errorf("failed to check Secret Envs Filtering mode: %s", err)
 	}
 
-	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
+	noOutputTimeout := readNoOutputTimeoutConfiguration(inventoryEnvironments)
 
 	return &RunConfig{
 		Modes: models.WorkflowRunModes{
