@@ -476,7 +476,7 @@ containers:
 			wantErr: "service (image: ruby:3.2) has empty ID defined",
 		},
 		{
-			name: "Invalid bitrise.yml: missing container id",
+			name: "Invalid bitrise.yml: missing container image",
 			config: createConfig(t, `
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -513,7 +513,7 @@ workflows:
 			wantErr: "service (postgres_13) referenced in workflow (primary) but doesn't defined in the config",
 		},
 		{
-			name: "Invalid bitrise.yml: non-existing service referenced",
+			name: "Invalid bitrise.yml: service referenced multiple times",
 			config: createConfig(t, `
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
