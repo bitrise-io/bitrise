@@ -126,7 +126,7 @@ func Test_Docker(t *testing.T) {
 			if testCase.requireErr {
 				require.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, out)
 			}
 			for _, log := range testCase.requireLogs {
 				require.Contains(t, out, log)
