@@ -290,7 +290,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	for workflowID, workflow := range config.Workflows {
 		if workflow.ContainerID != "" {
 			if _, ok := config.Containers[workflow.ContainerID]; !ok {
-				return nil, fmt.Errorf("container (%s) referenced in workflow (%s) but doesn't defined in the config", workflow.ContainerID, workflowID)
+				return nil, fmt.Errorf("container (%s) referenced in workflow (%s), but this container is not defined", workflow.ContainerID, workflowID)
 			}
 		}
 
