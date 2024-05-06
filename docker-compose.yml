@@ -1,4 +1,5 @@
-app:
-  build: .
-  volumes:
-  - .:/go/src/github.com/bitrise-io/bitrise
+services:
+  app:
+    build: .
+    volumes:
+    - .:/go/src/github.com/bitrise-io/bitrise
