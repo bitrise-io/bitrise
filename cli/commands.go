@@ -17,7 +17,7 @@ const (
 
 	ConfigKey      = "config"
 	InventoryKey   = "inventory"
-	OuputFormatKey = "format"
+	OutputFormatKey = "format"
 )
 
 var (
@@ -63,7 +63,7 @@ var (
 				cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
 				cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
 
-				cli.StringFlag{Name: OuputFormatKey, Usage: "Output format. Accepted: json, yml."},
+				cli.StringFlag{Name: OutputFormatKey, Usage: "Output format. Accepted: json, yml."},
 
 				// cli params used in CI mode
 				cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
