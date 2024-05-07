@@ -530,7 +530,7 @@ workflows:
   primary:
     services:
     - postgres_13`),
-			wantErr: "service (postgres_13) referenced in workflow (primary) but doesn't defined in the config",
+			wantErr: "service (postgres_13) referenced in workflow (primary), but this service is not defined",
 		},
 		{
 			name: "Invalid bitrise.yml: service referenced multiple times",

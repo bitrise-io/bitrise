@@ -297,7 +297,7 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 		serviceIDs := map[string]bool{}
 		for _, serviceID := range workflow.ServiceIDs {
 			if _, ok := config.Services[serviceID]; !ok {
-				return nil, fmt.Errorf("service (%s) referenced in workflow (%s) but doesn't defined in the config", serviceID, workflowID)
+				return nil, fmt.Errorf("service (%s) referenced in workflow (%s), but this service is not defined", serviceID, workflowID)
 			}
 
 			if _, ok := serviceIDs[serviceID]; ok {
