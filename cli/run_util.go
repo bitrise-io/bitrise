@@ -445,7 +445,8 @@ func (r WorkflowRunner) executeStep(
 	var args []string
 	var envs []string
 
-	if workflow.Container.Image != "" {
+	containerDef := r.ContainerDefinition(workflow.ContainerID)
+	if containerDef != nil {
 		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
@@ -454,17 +455,17 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		container := r.dockerManager.GetWorkflowContainer(workflowID)
-		if container == nil {
+		runningContainer := r.dockerManager.GetWorkflowContainer(workflowID)
+		if runningContainer == nil {
 			return 1, fmt.Errorf("Docker container does not exist")
 		}
 
-		args = container.ExecuteCommandArgs(envs)
+		args = runningContainer.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
 
 		cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
-		logger.Infof("Step is running in container: %s", workflow.Container.Image)
+		logger.Infof("Step is running in container: %s", containerDef.Image)
 		return cmd.Run()
 	}
 
@@ -605,7 +606,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	envList := envmanModels.EnvsJSONListModel{}
-	if workflow.Container.Image != "" || len(workflow.Services) > 0 {
+	containerDef := r.ContainerDefinition(workflow.ContainerID)
+	servicesDefs := r.ServiceDefinitions(workflow.ServiceIDs...)
+	if containerDef != nil || len(servicesDefs) > 0 {
 		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 			log.Debugf("Couldn't initialize envman.")
 		}
@@ -619,7 +622,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 	}
 
-	serviceContainers, err := r.dockerManager.StartServiceContainers(workflow.Services, workflowID, envList)
+	serviceContainers, err := r.dockerManager.StartServiceContainers(servicesDefs, workflowID, envList)
 	if err != nil {
 		log.Errorf("❌ Some services failed to start properly!")
 	}
@@ -632,14 +635,14 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 	}()
 
-	if workflow.Container.Image != "" {
-		log.Infof("ℹ️ Running workflow in docker container: %s", workflow.Container.Image)
+	if containerDef != nil {
+		log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
-		if err := r.dockerManager.Login(workflow.Container, envList); err != nil {
+		if err := r.dockerManager.Login(*containerDef, envList); err != nil {
 			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
 		}
 
-		runningContainer, err := r.dockerManager.StartWorkflowContainer(workflow.Container, workflowID, envList)
+		runningContainer, err := r.dockerManager.StartWorkflowContainer(*containerDef, workflowID, envList)
 		if err != nil {
 			log.Errorf("Could not start the specified docker image for workflow: %s", workflow.Title)
 		}
