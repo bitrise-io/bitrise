@@ -110,7 +110,7 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-service-start-succeeds-after-retries",
 			requireErr:   false,
 			requireLogs: []string{
-				"Waiting for container (slow-bootin-service) to be healthy",
+				"Waiting for container (slow-booting-service) to be healthy",
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func Test_Docker(t *testing.T) {
 			if testCase.requireErr {
 				require.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, out)
 			}
 			for _, log := range testCase.requireLogs {
 				require.Contains(t, out, log)

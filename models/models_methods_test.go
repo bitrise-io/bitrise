@@ -391,6 +391,183 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
+func TestValidateConfig_Containers(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  BitriseDataModel
+		wantErr string
+	}{
+		{
+			name: "Valid bitrise.yml with a service and container",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+    envs:
+    - POSTGRES_PASSWORD: password
+    ports:
+    - 5435:5432
+    options: >-
+      --health-cmd pg_isready
+      --health-interval 10s
+      --health-timeout 5s
+      --health-retries 5
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    container: ruby
+    services:
+    - postgres
+    steps:
+    - script:
+        title: Setup DB
+        inputs:
+        - content: bundle exec rails db:setup
+    - script:
+        title: Run tests
+        inputs:
+        - content: bundle exec rspec
+  test_features:
+    container: ruby
+    services:
+    - postgres
+    steps:
+    - script:
+        title: Setup DB
+        inputs:
+        - content: bundle exec rails db:setup
+    - script:
+        title: Run tests
+        inputs:
+        - content: bundle exec rspec spec/features/`),
+		},
+		{
+			name: "Invalid bitrise.yml: missing service id",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  "":
+    image: postgres:13`),
+			wantErr: "service (image: postgres:13) has empty ID defined",
+		},
+		{
+			name: "Invalid bitrise.yml: missing service image",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  "postgres":
+    image: ""`),
+			wantErr: "service (postgres) has no image defined",
+		},
+		{
+			name: "Invalid bitrise.yml: missing service image (whitespace)",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  "postgres":
+    image: " "`),
+			wantErr: "service (postgres) has no image defined",
+		},
+		{
+			name: "Invalid bitrise.yml: missing container id",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  "":
+    image: ruby:3.2`),
+			wantErr: "service (image: ruby:3.2) has empty ID defined",
+		},
+		{
+			name: "Invalid bitrise.yml: missing container image",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  "ruby":
+    image: ""`),
+			wantErr: "service (ruby) has no image defined",
+		},
+		{
+			name: "Invalid bitrise.yml: missing container image (whitespace)",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  "ruby":
+    image: " "`),
+			wantErr: "service (ruby) has no image defined",
+		},
+		{
+			name: "Invalid bitrise.yml: non-existing container referenced",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  primary:
+    container: ruby_3_2`),
+			wantErr: "container (ruby_3_2) referenced in workflow (primary), but this container is not defined",
+		},
+		{
+			name: "Invalid bitrise.yml: non-existing service referenced",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+workflows:
+  primary:
+    services:
+    - postgres_13`),
+			wantErr: "service (postgres_13) referenced in workflow (primary), but this service is not defined",
+		},
+		{
+			name: "Invalid bitrise.yml: service referenced multiple times",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+workflows:
+  primary:
+    services:
+    - postgres
+    - postgres`),
+			wantErr: "service (postgres) specified multiple times for workflow (primary)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.config.Validate()
+			require.Empty(t, warns)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func createConfig(t *testing.T, yamlContent string) BitriseDataModel {
+	config := BitriseDataModel{}
+	require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &config))
+	return config
+}
+
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
 	t.Log("before-after test")

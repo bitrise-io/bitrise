@@ -340,6 +340,25 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	return buildRunResults, nil
 }
 
+func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
+	container, ok := r.config.Config.Containers[id]
+	if ok {
+		return &container
+	}
+	return nil
+}
+
+func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
+	services := map[string]models.Container{}
+	for _, id := range ids {
+		service, ok := r.config.Config.Services[id]
+		if ok {
+			services[id] = service
+		}
+	}
+	return services
+}
+
 func processArgs(c *cli.Context) (*RunConfig, error) {
 	workflowToRunID := c.String(WorkflowKey)
 	if workflowToRunID == "" && len(c.Args()) > 0 {

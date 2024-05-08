@@ -1,10 +1,24 @@
 format_version: 1.3.0
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  success:
+    image: frolvlad/alpine-bash:latest
+  fails-404:
+    image: localhost.hu/noimage:3cb48a46a66e
+  login-fail:
+    image: us-central1-docker.pkg.dev/ip-kubernetes-dev/sandbox/ruby:zstd
+    credentials:
+      username: _json_key_base64
+      password: bad pw
+  login-success:
+    image: localhost:5001/frolvlad/alpine-bash:latest
+    credentials:
+      username: test
+      password: $DOCKER_PW
 workflows:
   docker-pull-success:
     title: Expected to pass docker pull
-    container:
-      image: frolvlad/alpine-bash:latest
+    container: success
     steps:
     - script:
         title: Should pass
@@ -12,8 +26,7 @@ workflows:
         - content: exit 0
   docker-pull-fails-404:
     title: Expected to fail docker pull
-    container:
-      image: localhost.hu/noimage:3cb48a46a66e
+    container: fails-404
     steps:
     - script:
         title: Should fail
@@ -21,11 +34,7 @@ workflows:
         - content: exit 0
   docker-login-fail:
     title: Expected to fail on docker login
-    container:
-      image: us-central1-docker.pkg.dev/ip-kubernetes-dev/sandbox/ruby:zstd
-      credentials:
-        username: _json_key_base64
-        password: bad pw
+    container: login-fail
     steps:
     - script:
         title: Should fail
@@ -37,11 +46,7 @@ workflows:
     after_run:
     - _cleanup_mock_registry
     title: Expected to pass docker login
-    container:
-      image: localhost:5001/frolvlad/alpine-bash:latest
-      credentials:
-        username: test
-        password: $DOCKER_PW
+    container: login-success
     steps:
     - script:
         title: Should pass
