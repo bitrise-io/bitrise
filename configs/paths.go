@@ -44,6 +44,7 @@ func GetBitriseToolsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "tools")
 }
 
+// TODO: remove after move
 func GetBitriseToolkitsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "toolkits")
 }

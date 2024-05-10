@@ -4,48 +4,40 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/utils"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/models"
 )
 
-// SwiftToolkit ...
 type SwiftToolkit struct {
 }
 
-// Bootstrap ...
 func (toolkit SwiftToolkit) Bootstrap() error {
 	return nil
 }
 
-// Install ...
 func (toolkit SwiftToolkit) Install() error {
 	return nil
 }
 
-// ToolkitName ...
 func (toolkit SwiftToolkit) ToolkitName() string {
 	return "swift"
 }
 
-// Check ...
 func (toolkit SwiftToolkit) Check() (bool, ToolkitCheckResult, error) {
 	return false, ToolkitCheckResult{}, nil
 }
 
-// IsToolAvailableInPATH ...
 func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
-	binPath, err := utils.CheckProgramInstalledPath("swift")
+	binPath, err := exec.LookPath("swift")
 	if err != nil {
 		return false
 	}
 	return len(binPath) > 0
 }
 
-// PrepareForStepRun ...
-func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ models.StepIDData, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ models.StepIDData, stepAbsDirPath string) error {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return nil
@@ -55,23 +47,28 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step stepmanModels.StepModel, _ mo
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	executablePath := filepath.Join(stepAbsDirPath, step.Toolkit.Swift.ExecutableName)
 	out, err := os.Create(executablePath)
 	if err != nil {
 		return err
 	}
+	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
 	err = os.Chmod(executablePath, 0755)
+	if err != nil {
+		return err
+	}
 
-	err = resp.Body.Close()
-	err = out.Close()
-	return err
+	return nil
 }
 
-// StepRunCommandArguments ...
-func (toolkit SwiftToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return []string{"swift", "run", "--package-path", stepAbsDirPath, "-c", "release"}, nil

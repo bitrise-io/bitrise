@@ -2,7 +2,6 @@ package stepman
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -98,19 +97,6 @@ func RootExistForLibrary(collectionURI string) (bool, error) {
 
 	_, found := routes.GetRoute(collectionURI)
 	return found, nil
-}
-
-func getAlias(uri string) (string, error) {
-	routes, err := readRouteMap()
-	if err != nil {
-		return "", err
-	}
-
-	route, found := routes.GetRoute(uri)
-	if found == false {
-		return "", errors.New("No routes exist for uri:" + uri)
-	}
-	return route.FolderAlias, nil
 }
 
 // RemoveRoute ...

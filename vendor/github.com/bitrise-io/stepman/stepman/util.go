@@ -124,7 +124,6 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 		return nil
 	}
 
-	success := false
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
@@ -135,7 +134,6 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			if err != nil {
 				log.Warnf("Failed to download step.zip: %s", err)
 			} else {
-				success = true
 				return nil
 			}
 		case "git":
@@ -163,7 +161,6 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			if err != nil {
 				log.Warnf("Failed to clone step (%s): %v", downloadLocation.Src, err)
 			} else {
-				success = true
 				return nil
 			}
 		default:
@@ -171,10 +168,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 		}
 	}
 
-	if !success {
-		return errors.New("Failed to download step")
-	}
-	return nil
+	return errors.New("Failed to download step")
 }
 
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
@@ -286,7 +280,6 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 				stepGroup.Info = stepGroupInfo
 
 				stepHash[stepID] = stepGroup
-			} else {
 			}
 		}
 
