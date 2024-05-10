@@ -8,16 +8,13 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 )
 
-// commandRunner ...
 type commandRunner interface {
 	runForOutput(c *command.Model) (string, error)
 }
 
-// defaultRunner ...
 type defaultRunner struct {
 }
 
-// runForOutput ...
 func (r *defaultRunner) runForOutput(c *command.Model) (string, error) {
 	log.Debugf("$ %s", c.PrintableCommandArgs())
 

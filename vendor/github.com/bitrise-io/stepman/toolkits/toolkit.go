@@ -1,6 +1,9 @@
 package toolkits
 
 import (
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -84,4 +87,21 @@ func toolkitDir() string {
 		return filepath.Join(os.TempDir(), "bitrise-toolkits")
 	}
 	return filepath.Join(userHome, ".bitrise", "toolkits")
+}
+
+func downloadFile(url string, targetPath string) error {
+	outFile, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("downloading %s failed: %s", url, err)
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(outFile, resp.Body)
+	return err
 }

@@ -31,7 +31,6 @@ func (toolkit BashToolkit) Check() (bool, ToolkitCheckResult, error) {
 	}, nil
 }
 
-// TODO: rename to IsToolAvailable()?
 func (toolkit BashToolkit) IsToolAvailableInPATH() bool {
 	_, err := exec.LookPath("bash")
 	return err != nil

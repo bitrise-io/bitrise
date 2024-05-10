@@ -1,8 +1,7 @@
 package toolkits
 
 import (
-	"io"
-	"net/http"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,23 +42,13 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ models.St
 		return nil
 	}
 
-	resp, err := http.Get(binaryLocation)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
 	executablePath := filepath.Join(stepAbsDirPath, step.Toolkit.Swift.ExecutableName)
-	out, err := os.Create(executablePath)
+	
+	err := downloadFile(binaryLocation, executablePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("download precompiled step binary: %s", err)
 	}
-	defer out.Close()
 
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
 	err = os.Chmod(executablePath, 0755)
 	if err != nil {
 		return err

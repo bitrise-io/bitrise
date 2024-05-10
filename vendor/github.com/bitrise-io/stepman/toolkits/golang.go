@@ -3,8 +3,6 @@ package toolkits
 import (
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -152,8 +150,6 @@ func (toolkit GoToolkit) Bootstrap() error {
 		return nil
 	}
 
-	// TODO
-	// pthWithGoBins := configs.GeneratePATHEnvString(os.Getenv("PATH"), goToolkitBinsPath())
 	pathWithGoBins := fmt.Sprintf("%s:%s", goToolkitBinsPath(), os.Getenv("PATH"))
 	if err := os.Setenv("PATH", pathWithGoBins); err != nil {
 		return fmt.Errorf("set PATH to include the Go toolkit bins, error: %s", err)
@@ -347,21 +343,4 @@ func goToolkitBinsPath() string {
 
 func goBinaryInToolkitFullPath() string {
 	return filepath.Join(goToolkitBinsPath(), "go")
-}
-
-func downloadFile(url string, targetPath string) error {
-	outFile, err := os.Create(targetPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("downloading %s failed: %s", url, err)
-	}
-	defer resp.Body.Close()
-
-	_, err = io.Copy(outFile, resp.Body)
-	return err
 }
