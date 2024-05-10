@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 type SwiftToolkit struct {
@@ -36,7 +37,7 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	return len(binPath) > 0
 }
 
-func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ models.StepIDData, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.CanonicalID, stepAbsDirPath string) error {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return nil
@@ -57,7 +58,7 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ models.St
 	return nil
 }
 
-func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return []string{"swift", "run", "--package-path", stepAbsDirPath, "-c", "release"}, nil

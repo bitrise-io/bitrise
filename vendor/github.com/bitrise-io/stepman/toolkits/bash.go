@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/stringutil"
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 type BashToolkit struct {
@@ -48,11 +49,11 @@ func (toolkit BashToolkit) ToolkitName() string {
 	return "bash"
 }
 
-func (toolkit BashToolkit) PrepareForStepRun(_ models.StepModel, _ models.StepIDData, _ string) error {
+func (toolkit BashToolkit) PrepareForStepRun(_ models.StepModel, _ stepid.CanonicalID, _ string) error {
 	return nil
 }
 
-func (toolkit BashToolkit) StepRunCommandArguments(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit BashToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
 	entryFile := "step.sh"
 	if step.Toolkit != nil && step.Toolkit.Bash != nil && step.Toolkit.Bash.EntryFile != "" {
 		entryFile = step.Toolkit.Bash.EntryFile

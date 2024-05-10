@@ -10,6 +10,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 func containsWorkflowName(title string, workflowStack []string) bool {
@@ -180,7 +181,7 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 
-		if err := stepmanModels.ValidateStepID(stepID); err != nil {
+		if err := stepid.Validate(stepID); err != nil {
 			return warnings, err
 		}
 

@@ -38,6 +38,7 @@ import (
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/toolkits"
 )
 
@@ -385,7 +386,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 
 func (r WorkflowRunner) executeStep(
 	stepUUID string,
-	step stepmanModels.StepModel, sIDData stepmanModels.StepIDData,
+	step stepmanModels.StepModel, sIDData stepid.CanonicalID,
 	stepAbsDirPath, bitriseSourceDir string,
 	secrets []string,
 	workflow models.WorkflowModel,
@@ -474,7 +475,7 @@ func (r WorkflowRunner) executeStep(
 func (r WorkflowRunner) runStep(
 	stepUUID string,
 	step stepmanModels.StepModel,
-	stepIDData stepmanModels.StepIDData,
+	stepIDData stepid.CanonicalID,
 	stepDir string,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
@@ -702,7 +703,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
 		}
 
-		stepIDData, err := stepmanModels.CreateStepIDDataFromString(compositeStepIDStr, defaultStepLibSource)
+		stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)

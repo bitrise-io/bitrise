@@ -17,6 +17,7 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 type GoToolkit struct {
@@ -253,7 +254,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 }
 
 // stepIDorURI : doesn't work for "path::./" yet!!
-func stepBinaryFilename(sIDData models.StepIDData) string {
+func stepBinaryFilename(sIDData stepid.CanonicalID) string {
 	//
 	replaceRexp, err := regexp.Compile("[^A-Za-z0-9.-]")
 	if err != nil {
@@ -271,12 +272,12 @@ func stepBinaryFilename(sIDData models.StepIDData) string {
 	return safeStepID
 }
 
-func stepBinaryCacheFullPath(sIDData models.StepIDData) string {
+func stepBinaryCacheFullPath(sIDData stepid.CanonicalID) string {
 	return filepath.Join(goToolkitCacheRootPath(), stepBinaryFilename(sIDData))
 }
 
 // PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error {
+func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 
 	// try to use cached binary, if possible
@@ -311,7 +312,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData models
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
-func (toolkit GoToolkit) StepRunCommandArguments(_ models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error) {
+func (toolkit GoToolkit) StepRunCommandArguments(_ models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }
@@ -319,7 +320,7 @@ func (toolkit GoToolkit) StepRunCommandArguments(_ models.StepModel, sIDData mod
 // === Toolkit path utility function ===
 
 func goToolkitRootPath() string {
-	return filepath.Join(toolkitDir(), "go")
+	return toolkitDir("go")
 }
 
 func goToolkitTmpDirPath() string {

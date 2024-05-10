@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 type ToolkitCheckResult struct {
@@ -55,10 +56,10 @@ type Toolkit interface {
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
+	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error
 
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(step models.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error)
+	StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error)
 }
 
 //
@@ -81,12 +82,12 @@ func AllSupportedToolkits() []Toolkit {
 	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
 }
 
-func toolkitDir() string {
+func toolkitDir(toolkitName string) string {
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "bitrise-toolkits")
+		return filepath.Join(os.TempDir(), "bitrise-toolkits", toolkitName)
 	}
-	return filepath.Join(userHome, ".bitrise", "toolkits")
+	return filepath.Join(userHome, ".bitrise", "toolkits", toolkitName)
 }
 
 func downloadFile(url string, targetPath string) error {
