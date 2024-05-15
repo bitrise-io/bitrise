@@ -124,9 +124,10 @@ func (workflow *WorkflowModel) Normalize() error {
 			}
 			stepListItem[stepID] = step
 		}
-		if with != nil {
-			// TODO: Normalize with
-		}
+		// TODO: Normalize with
+		//if with != nil {
+		//
+		//}
 	}
 
 	return nil
@@ -214,9 +215,10 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 			stepListItem[stepID] = step
 		}
 
-		if with != nil {
-			// TODO: validate with
-		}
+		// TODO: validate with
+		//if with != nil {
+		//
+		//}
 	}
 
 	return warnings, nil
