@@ -14,8 +14,47 @@ const (
 	FormatVersion = "14"
 )
 
+// TODO: rename these structs
+type WithStepListItem struct{}
+
+type WithStepListItemModel map[string]WithStepListItem
+
+type StepStepListItemModel map[string]stepmanModels.StepModel
+
 // StepListItemModel ...
-type StepListItemModel map[string]stepmanModels.StepModel
+type StepListItemModel map[string]interface{}
+
+func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var stepItem StepStepListItemModel
+	if err := unmarshal(&stepItem); err == nil {
+		var key string
+		for k := range stepItem {
+			key = k
+			break
+		}
+
+		item := map[string]interface{}{}
+		item[key] = stepItem[key]
+		*stepListItem = item
+		return nil
+	}
+
+	var withItem WithStepListItemModel
+	if err := unmarshal(&withItem); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range withItem {
+		key = k
+		break
+	}
+
+	item := map[string]interface{}{}
+	item[key] = withItem[key]
+	*stepListItem = item
+	return nil
+}
 
 // PipelineModel ...
 type PipelineModel struct {

@@ -494,7 +494,8 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 
 		var stepPlan []models.StepExecutionPlan
 		for _, stepItem := range workflow.Steps {
-			stepID, _ := stepItem.GetStepIDAndStep()
+			// TODO: handle with
+			stepID, _, _ := stepItem.GetStepIDAndStep()
 			stepPlan = append(stepPlan, models.StepExecutionPlan{
 				UUID:   uuidProvider(),
 				StepID: stepID,

@@ -1080,7 +1080,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 		}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := GetStepIDStepDataPair(stepListItem)
 		require.NoError(t, err)
 		require.Equal(t, "step1", id)
 	}
@@ -1092,7 +1092,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step2": stepData,
 		}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := GetStepIDStepDataPair(stepListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1101,7 +1101,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	{
 		stepListItem := StepListItemModel{}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := GetStepIDStepDataPair(stepListItem)
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1298,7 +1298,7 @@ workflows:
 		}
 
 		for _, stepListItem := range workflow.Steps {
-			_, step, err := GetStepIDStepDataPair(stepListItem)
+			_, step, _, err := GetStepIDStepDataPair(stepListItem)
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)

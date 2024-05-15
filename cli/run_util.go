@@ -693,7 +693,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 
 		// Get step id & version data
-		compositeStepIDStr, workflowStep, err := models.GetStepIDStepDataPair(stepListItm)
+		// TODO: handle with
+		compositeStepIDStr, workflowStepPtr, _, err := models.GetStepIDStepDataPair(stepListItm)
+		workflowStep := *workflowStepPtr
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
