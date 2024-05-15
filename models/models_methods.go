@@ -114,7 +114,7 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, with, err := GetStepIDStepDataPair(stepListItem)
+		stepID, step, _, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
 			return err
 		}
@@ -182,7 +182,7 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 
 	var warnings []string
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, with, err := GetStepIDStepDataPair(stepListItem)
+		stepID, step, _, err := GetStepIDStepDataPair(stepListItem)
 		if err != nil {
 			return warnings, err
 		}
