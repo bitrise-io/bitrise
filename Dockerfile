@@ -8,8 +8,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install curl git mercurial rsync r
 RUN mkdir -p /go/src/github.com/bitrise-io/$PROJ_NAME
 COPY . /go/src/github.com/bitrise-io/$PROJ_NAME
 
-RUN go install github.com/bitrise-io/stepman@latest
-
 WORKDIR /go/src/github.com/bitrise-io/$PROJ_NAME
 RUN go install
 RUN bitrise setup

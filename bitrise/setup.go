@@ -14,6 +14,7 @@ import (
 )
 
 type SetupMode string
+
 const (
 	SetupModeDefault SetupMode = "default"
 	SetupModeMinimal SetupMode = "minimal"
@@ -21,7 +22,7 @@ const (
 
 const (
 	minEnvmanVersion  = "2.4.3"
-	minStepmanVersion = "0.16.3"
+	minStepmanVersion = "0.17.0"
 )
 
 type PluginDependency struct {
