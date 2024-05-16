@@ -44,37 +44,24 @@ func TestConsoleLogCanBeRestoredFromJSONLog(t *testing.T) {
 }
 
 func createConsoleLog(t *testing.T, workflow string) (string, error) {
-	{
-		cmd := exec.Command(binPath(), "setup")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
-	{
-		cmd := exec.Command(binPath(), ":analytics", "off")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
+	cmd := exec.Command(binPath(), "setup")
+	outBytes, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(outBytes))
 
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml")
+	cmd.Env = append(cmd.Env, "BITRISE_ANALYTICS_DISABLED=true")
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
 
 func createJSONLog(t *testing.T, workflow string) ([]byte, error) {
-	{
-		cmd := exec.Command(binPath(), "setup")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
-	{
-		cmd := exec.Command(binPath(), ":analytics", "off")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
+	cmd := exec.Command(binPath(), "setup")
+	outBytes, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(outBytes))
 
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml", "--output-format", "json")
+	cmd.Env = append(cmd.Env, "BITRISE_ANALYTICS_DISABLED=true")
+	
 	return cmd.CombinedOutput()
 }
 
