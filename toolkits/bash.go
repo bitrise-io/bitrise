@@ -2,7 +2,6 @@ package toolkits
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/utils"
@@ -60,23 +59,23 @@ func (toolkit BashToolkit) ToolkitName() string {
 }
 
 // CompileStepExecutable ...
-func (toolkit BashToolkit) CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, _, _ string) (stepmanModels.ActivatedStep, error) {
-	return activatedStep, nil
+func (toolkit BashToolkit) CompileStepExecutable(stepAbsSourceDir string, _, _ string) (StepExecutor, error) {
+	return nil, fmt.Errorf("Not implemented")
 }
 
 // PrepareForStepRun ...
-func (toolkit BashToolkit) PrepareForStepRun(_ stepmanModels.StepModel, _ models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error) {
-	return activatedStep, nil
+func (toolkit BashToolkit) PrepareForStepRun(_ stepmanModels.StepModel, _ models.StepIDData, stepAbsSourceDir string) (StepExecutor, error) {
+	return toolkit.CompileStepExecutable(stepAbsSourceDir, "", "")
 }
 
-// StepRunCommandArguments ...
-func (toolkit BashToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error) {
-	entryFile := "step.sh"
-	if step.Toolkit != nil && step.Toolkit.Bash != nil && step.Toolkit.Bash.EntryFile != "" {
-		entryFile = step.Toolkit.Bash.EntryFile
-	}
+// // StepRunCommandArguments ...
+// func (toolkit BashToolkit) StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error) {
+// 	entryFile := "step.sh"
+// 	if step.Toolkit != nil && step.Toolkit.Bash != nil && step.Toolkit.Bash.EntryFile != "" {
+// 		entryFile = step.Toolkit.Bash.EntryFile
+// 	}
 
-	stepFilePath := filepath.Join(activatedStep.SourceAbsDirPath, entryFile)
-	cmd := []string{"bash", stepFilePath}
-	return cmd, nil
-}
+// 	stepFilePath := filepath.Join(activatedStep.SourceAbsDirPath, entryFile)
+// 	cmd := []string{"bash", stepFilePath}
+// 	return cmd, nil
+// }

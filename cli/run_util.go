@@ -397,7 +397,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData models.StepIDData,
-	activatedStep stepmanModels.ActivatedStep,
+	activatedStep toolkits.ActivatedStep,
 	bitriseSourceDir string,
 	secrets []string,
 	workflow models.WorkflowModel,
@@ -407,13 +407,8 @@ func (r WorkflowRunner) executeStep(
 
 	toolkitForStep := toolkits.ToolkitForStep(step)
 	toolkitName := toolkitForStep.ToolkitName()
-	activatedStep, err := toolkitForStep.PrepareForStepRun(step, sIDData, activatedStep)
-	if err != nil {
-		return 1, fmt.Errorf("Failed to prepare the step (%#v) for execution through the required toolkit (%s): %w",
-			activatedStep, toolkitName, err)
-	}
 
-	cmdArgs, err = toolkitForStep.StepRunCommandArguments(step, sIDData, activatedStep)
+	cmdArgs, err := activatedStep.StepExecutor.GetStepRunCommand(step)
 	if err != nil {
 		return 1, fmt.Errorf("Toolkit (%s) rejected the step (%#v): %w",
 			toolkitName, activatedStep, err)
@@ -488,7 +483,7 @@ func (r WorkflowRunner) runStep(
 	stepUUID string,
 	step stepmanModels.StepModel,
 	stepIDData models.StepIDData,
-	activatedStep stepmanModels.ActivatedStep,
+	activatedStep toolkits.ActivatedStep,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
 	workflow models.WorkflowModel,

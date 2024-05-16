@@ -46,7 +46,7 @@ type Toolkit interface {
 	// the toolkit should be "enforced" there, BUT ONLY FOR THAT FUNCTION (e.g. don't call os.Setenv there!)
 	Bootstrap() error
 
-	CompileStepExecutable(activatedStep stepmanModels.ActivatedStep, packageName string, targetExecutablePath string) (stepmanModels.ActivatedStep, error)
+	CompileStepExecutable(stepSourceDir string, packageName string, targetExecutablePath string) (StepExecutor, error)
 
 	// PrepareForStepRun can be used to pre-compile or otherwise prepare for the step's execution.
 	//
@@ -54,10 +54,10 @@ type Toolkit interface {
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) (stepmanModels.ActivatedStep, error)
+	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) (StepExecutor, error)
 
-	// StepRunCommandArguments ...
-	StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error)
+	// // StepRunCommandArguments ...
+	// StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, activatedStep stepmanModels.ActivatedStep) ([]string, error)
 }
 
 //
@@ -70,14 +70,14 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 		stepToolkit := step.Toolkit
 		if stepToolkit.Go != nil {
 			toolkit = GoToolkit{}
-		} else if stepToolkit.Swift != nil {
+		} /* else if stepToolkit.Swift != nil {
 			toolkit = SwiftToolkit{}
-		}
+		}*/
 	}
 	return toolkit
 }
 
 // AllSupportedToolkits ...
 func AllSupportedToolkits() []Toolkit {
-	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
+	return []Toolkit{GoToolkit{}, BashToolkit{} /*SwiftToolkit{}*/}
 }
