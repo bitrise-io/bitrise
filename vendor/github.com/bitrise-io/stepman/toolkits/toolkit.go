@@ -1,17 +1,21 @@
 package toolkits
 
 import (
-	"github.com/bitrise-io/bitrise/models"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
-// ToolkitCheckResult ...
 type ToolkitCheckResult struct {
 	Path    string
 	Version string
 }
 
-// Toolkit ...
 type Toolkit interface {
 	// ToolkitName : a one liner name/id of the toolkit, for logging purposes
 	ToolkitName() string
@@ -52,17 +56,16 @@ type Toolkit interface {
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) error
+	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error
 
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(step stepmanModels.StepModel, sIDData models.StepIDData, stepAbsDirPath string) ([]string, error)
+	StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error)
 }
 
 //
 // === Utils ===
 
-// ToolkitForStep ...
-func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
+func ToolkitForStep(step models.StepModel) Toolkit {
 	var toolkit Toolkit = BashToolkit{}
 	if step.Toolkit != nil {
 		stepToolkit := step.Toolkit
@@ -75,7 +78,31 @@ func ToolkitForStep(step stepmanModels.StepModel) Toolkit {
 	return toolkit
 }
 
-// AllSupportedToolkits ...
 func AllSupportedToolkits() []Toolkit {
 	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
+}
+
+func toolkitDir(toolkitName string) string {
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(os.TempDir(), "bitrise-toolkits", toolkitName)
+	}
+	return filepath.Join(userHome, ".bitrise", "toolkits", toolkitName)
+}
+
+func downloadFile(url string, targetPath string) error {
+	outFile, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("downloading %s failed: %s", url, err)
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(outFile, resp.Body)
+	return err
 }

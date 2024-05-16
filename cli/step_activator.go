@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepid"
 )
 
 type stepActivator struct {
@@ -25,7 +26,7 @@ func newStepActivator() stepActivator {
 }
 
 func (a stepActivator) activateStep(
-	stepIDData models.StepIDData,
+	stepIDData stepid.CanonicalID,
 	buildRunResults *models.BuildRunResultsModel,
 	stepDir string,
 	workDir string,
@@ -136,7 +137,7 @@ even if the repository is open source!`)
 	return stepYMLPth, origStepYMLPth, nil
 }
 
-func activateStepLibStep(stepIDData models.StepIDData, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
+func activateStepLibStep(stepIDData stepid.CanonicalID, destination, stepYMLCopyPth string, isStepLibUpdated bool) (stepmanModels.StepInfoModel, bool, error) {
 	didStepLibUpdate := false
 
 	log.Debugf("[BITRISE_CLI] - Steplib (%s) step (id:%s) (version:%s) found, activating step", stepIDData.SteplibSource, stepIDData.IDorURI, stepIDData.Version)

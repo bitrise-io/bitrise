@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -24,7 +25,7 @@ const (
 
 func TestStepDebugLogMessagesAppear(t *testing.T) {
 	consoleLog, consoleErr := createConsoleLog(t, "debug_log")
-	require.NoError(t, consoleErr)
+	require.NoError(t, consoleErr, consoleLog)
 	require.True(t, strings.Contains(consoleLog, debugLogMessage))
 
 	jsonLog, jsonErr := createJSONLog(t, "debug_log")
@@ -50,13 +51,8 @@ func createConsoleLog(t *testing.T, workflow string) (string, error) {
 		require.NoError(t, err, string(outBytes))
 	}
 
-	{
-		cmd := exec.Command(binPath(), ":analytics", "off")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml")
+	cmd.Env = append(os.Environ(), "BITRISE_ANALYTICS_DISABLED=true")
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
@@ -68,13 +64,9 @@ func createJSONLog(t *testing.T, workflow string) ([]byte, error) {
 		require.NoError(t, err, string(outBytes))
 	}
 
-	{
-		cmd := exec.Command(binPath(), ":analytics", "off")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
 	cmd := exec.Command(binPath(), "run", workflow, "--config", "log_format_test_bitrise.yml", "--output-format", "json")
+	cmd.Env = append(os.Environ(), "BITRISE_ANALYTICS_DISABLED=true")
+	
 	return cmd.CombinedOutput()
 }
 
