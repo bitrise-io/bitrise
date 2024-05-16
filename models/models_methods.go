@@ -864,13 +864,39 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 // ----------------------------
 // --- StepIDData
 
+func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var stepItem StepListStepItemModel
+	if err := unmarshal(&stepItem); err == nil {
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+		return nil
+	}
+
+	var withItem StepListWithItemModel
+	if err := unmarshal(&withItem); err != nil {
+		return err
+	}
+
+	*stepListItem = map[string]interface{}{}
+	for k, v := range withItem {
+		(*stepListItem)[k] = v
+	}
+	return nil
+}
+
 // GetStepIDAndStep returns the Step ID and Step model described by the stepListItem.
 // Use this on validated BitriseDataModels.
 // TODO: refactor this to reflect the new return values
-func (stepListItem StepListItemModel) GetStepIDAndStep() (string, *stepmanModels.StepModel, *WithStepListItem) {
-	for key, value := range stepListItem {
+func (stepListItem *StepListItemModel) GetStepIDAndStep() (string, *stepmanModels.StepModel, *WithModel) {
+	if stepListItem == nil {
+		return "", nil, nil
+	}
+
+	for key, value := range *stepListItem {
 		if key == "with" {
-			with := value.(WithStepListItem)
+			with := value.(WithModel)
 			return key, nil, &with
 		} else {
 			step, ok := value.(stepmanModels.StepModel)
@@ -878,8 +904,8 @@ func (stepListItem StepListItemModel) GetStepIDAndStep() (string, *stepmanModels
 				return key, &step, nil
 			}
 
-			// TODO: why is the pointer type casting needed?
-			// Sometimes a step is a stepmanModels.StepModel, other times *stepmanModels.StepModel
+			// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
+			// the StepModel has a pointer type.
 			stepPtr, ok := value.(*stepmanModels.StepModel)
 			if ok {
 				return key, stepPtr, nil
@@ -893,7 +919,7 @@ func (stepListItem StepListItemModel) GetStepIDAndStep() (string, *stepmanModels
 
 // GetStepIDStepDataPair ...
 // TODO: refactor this to reflect the new return values
-func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, *stepmanModels.StepModel, *WithStepListItem, error) {
+func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, *stepmanModels.StepModel, *WithModel, error) {
 	if len(stepListItem) == 0 {
 		return "", nil, nil, errors.New("StepListItem does not contain a key-value pair")
 	}

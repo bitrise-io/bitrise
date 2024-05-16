@@ -14,47 +14,21 @@ const (
 	FormatVersion = "14"
 )
 
-// TODO: rename these structs
-type WithStepListItem struct{}
+// WithModel ...
+type WithModel struct {
+	ContainerID string                  `json:"container,omitempty" yaml:"container,omitempty"`
+	ServiceIDs  []string                `json:"services,omitempty" yaml:"services,omitempty"`
+	Steps       []StepListStepItemModel `json:"steps,omitempty" yaml:"steps,omitempty"`
+}
 
-type WithStepListItemModel map[string]WithStepListItem
+// StepListWithItemModel ..
+type StepListWithItemModel map[string]WithModel
 
-type StepStepListItemModel map[string]stepmanModels.StepModel
+// StepListStepItemModel ...
+type StepListStepItemModel map[string]stepmanModels.StepModel
 
 // StepListItemModel ...
 type StepListItemModel map[string]interface{}
-
-func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var stepItem StepStepListItemModel
-	if err := unmarshal(&stepItem); err == nil {
-		var key string
-		for k := range stepItem {
-			key = k
-			break
-		}
-
-		item := map[string]interface{}{}
-		item[key] = stepItem[key]
-		*stepListItem = item
-		return nil
-	}
-
-	var withItem WithStepListItemModel
-	if err := unmarshal(&withItem); err != nil {
-		return err
-	}
-
-	var key string
-	for k := range withItem {
-		key = k
-		break
-	}
-
-	item := map[string]interface{}{}
-	item[key] = withItem[key]
-	*stepListItem = item
-	return nil
-}
 
 // PipelineModel ...
 type PipelineModel struct {
