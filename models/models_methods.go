@@ -188,10 +188,8 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 		}
 
 		if step != nil {
-			if ver, src := getStepVersion(stepID), getStepSource(stepID); len(ver) > 0 && isStepLibSource(src) {
-				if _, err := stepmanModels.ParseRequiredVersion(ver); err != nil {
-					return warnings, fmt.Errorf("invalid version format (%s) specified for step ID: %s", ver, stepID)
-				}
+			if err := stepid.Validate(stepID); err != nil {
+				return warnings, err
 			}
 
 			if err := step.ValidateInputAndOutputEnvs(false); err != nil {
@@ -929,126 +927,6 @@ func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, *stepmanMode
 	}
 	stepID, step, with := stepListItem.GetStepIDAndStep()
 	return stepID, step, with, nil
-}
-
-// detaches source from the step node
-// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> "git"
-func getStepSource(compositeVersionStr string) string {
-	if s := strings.SplitN(string(compositeVersionStr), "::", 2); len(s) == 2 {
-		if src := s[0]; len(src) > 0 {
-			return src
-		}
-	}
-	return ""
-}
-
-// detaches step id and version composite from the step node
-// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> "git@github.com:bitrise-steplib/steps-script.git@master"
-func getStepComposite(compositeVersionStr string) string {
-	if s := strings.SplitN(compositeVersionStr, "::", 2); len(s) == 2 {
-		return s[1]
-	}
-	return compositeVersionStr
-}
-
-// splits step node composite into it's parts by taking care of extra "@" when using SSH git URL
-// e.g.: "git::git@github.com:bitrise-steplib/steps-script.git@master" -> ["git@github.com:bitrise-steplib/steps-script.git" "master"]
-func splitCompositeComponents(composite string) []string {
-	s := strings.Split(composite, "@")
-	if item := s[0]; item == "git" {
-		s = s[1:]
-		s[0] = item + "@" + s[0]
-	}
-	return s
-}
-
-// returns step version from compositeString
-// e.g.: "git::https://github.com/bitrise-steplib/steps-script.git@master" -> "master"
-func getStepVersion(compositeVersionStr string) string {
-	composite := getStepComposite(compositeVersionStr)
-
-	if s := splitCompositeComponents(composite); len(s) > 1 {
-		return s[len(s)-1]
-	}
-
-	return ""
-}
-
-// returns step ID from compositeString
-// e.g.: "git::https://github.com/bitrise-steplib/steps-script.git@master" -> "https://github.com/bitrise-steplib/steps-script.git"
-func getStepID(compositeVersionStr string) string {
-	composite := getStepComposite(compositeVersionStr)
-	return splitCompositeComponents(composite)[0]
-}
-
-// returns true if step source is StepLib
-func isStepLibSource(source string) bool {
-	switch source {
-	case "path", "git", "_", "":
-		return false
-	default:
-		return true
-	}
-}
-
-// CreateStepIDDataFromString ...
-// compositeVersionStr examples:
-//   - local path:
-//   - path::~/path/to/step/dir
-//   - direct git url and branch or tag:
-//   - git::https://github.com/bitrise-io/steps-timestamp.git@master
-//   - Steplib independent step:
-//   - _::https://github.com/bitrise-io/steps-bash-script.git@2.0.0:
-//   - full ID with steplib, stepid and version:
-//   - https://github.com/bitrise-io/bitrise-steplib.git::script@2.0.0
-//   - only stepid and version (requires a default steplib source to be provided):
-//   - script@2.0.0
-//   - only stepid, latest version will be used (requires a default steplib source to be provided):
-//   - script
-func CreateStepIDDataFromString(compositeVersionStr, defaultStepLibSource string) (StepIDData, error) {
-	src := getStepSource(compositeVersionStr)
-	if src == "" {
-		if defaultStepLibSource == "" {
-			return StepIDData{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
-		}
-		src = defaultStepLibSource
-	}
-
-	id := getStepID(compositeVersionStr)
-	if id == "" {
-		return StepIDData{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
-	}
-
-	version := getStepVersion(compositeVersionStr)
-
-	return StepIDData{
-		IDorURI:       id,
-		SteplibSource: string(src),
-		Version:       version,
-	}, nil
-}
-
-// IsUniqueResourceID : true if this ID is a unique resource ID, which is true
-// if the ID refers to the exact same step code/data every time.
-// Practically, this is only true for steps from StepLibrary collections,
-// a local path or direct git step ID is never guaranteed to identify the
-// same resource every time, the step's behaviour can change at every execution!
-//
-// __If the ID is a Unique Resource ID then the step can be cached (locally)__,
-// as it won't change between subsequent step execution.
-func (sIDData StepIDData) IsUniqueResourceID() bool {
-	if !isStepLibSource(sIDData.SteplibSource) {
-		return false
-	}
-
-	// in any other case, it's a StepLib URL
-	// but it's only unique if StepID and Step Version are all defined!
-	if len(sIDData.IDorURI) > 0 && len(sIDData.Version) > 0 {
-		return true
-	}
-
-	// in every other case, it's not unique, not even if it's from a StepLib
-	return false
 }
 
 // ----------------------------
