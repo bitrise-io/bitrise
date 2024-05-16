@@ -44,10 +44,6 @@ func GetBitriseToolsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "tools")
 }
 
-func GetBitriseToolkitsDirPath() string {
-	return filepath.Join(GetBitriseHomeDirPath(), "toolkits")
-}
-
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {

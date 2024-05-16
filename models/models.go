@@ -104,19 +104,6 @@ type BitriseDataModel struct {
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
-// StepIDData ...
-// structured representation of a composite-step-id
-//
-//	a composite step id is: step-lib-source::step-id@1.0.0
-type StepIDData struct {
-	// SteplibSource : steplib source uri, or in case of local path just "path", and in case of direct git url just "git"
-	SteplibSource string
-	// IDOrURI : ID if steplib is provided, URI if local step or in case a direct git url provided
-	IDorURI string
-	// Version : version in the steplib, or in case of a direct git step the tag-or-branch to use
-	Version string
-}
-
 // BuildRunStartModel ...
 type BuildRunStartModel struct {
 	EventName   string    `json:"event_name" yaml:"event_name"`
