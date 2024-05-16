@@ -158,7 +158,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	// check whether installed
-	progInstallPth, err := exec.LookPath(toolname)
+	progInstallPth, err := utils.CheckProgramInstalledPath(toolname)
 	if err != nil {
 		if !isInstall {
 			return err
