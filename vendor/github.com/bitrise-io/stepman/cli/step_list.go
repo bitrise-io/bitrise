@@ -78,12 +78,10 @@ func listSteps(stepLibURI, format string, log stepman.Logger) error {
 	switch format {
 	case OutputFormatRaw:
 		printRawStepList(stepLibURI, stepLib, false)
-		break
 	case OutputFormatJSON:
 		if err := printJSONStepList(stepLibURI, stepLib, false); err != nil {
 			return err
 		}
-		break
 	default:
 		return fmt.Errorf("Invalid format: %s", format)
 	}
@@ -92,7 +90,7 @@ func listSteps(stepLibURI, format string, log stepman.Logger) error {
 
 func stepList(c *cli.Context) error {
 	// Input validation
-	stepLibURIs := []string{}
+	var stepLibURIs []string
 	stepLibURI := c.String(CollectionKey)
 	if stepLibURI == "" {
 		stepLibURIs = stepman.GetAllStepCollectionPath()

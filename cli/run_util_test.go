@@ -13,6 +13,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -461,13 +462,13 @@ func TestAddTestMetadata(t *testing.T) {
 func Test_activateStepLibStep(t *testing.T) {
 	tests := []struct {
 		name        string
-		stepIDData  models.StepIDData
+		stepIDData  stepid.CanonicalID
 		wantVersion string
 		wantErr     bool
 	}{
 		{
 			name: "Major version lock",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "1",
@@ -477,7 +478,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Major version lock (long form)",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "1.x.x",
@@ -487,7 +488,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Minor version lock",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "2.3",
@@ -497,7 +498,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Minor version lock (long form)",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "2.3.x",
@@ -507,7 +508,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Patch version lock",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "2.3.2",
@@ -517,7 +518,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Invalid version lock",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "1.2.3.4",
@@ -527,7 +528,7 @@ func Test_activateStepLibStep(t *testing.T) {
 		},
 		{
 			name: "Latest version (not supported at the moment)",
-			stepIDData: models.StepIDData{
+			stepIDData: stepid.CanonicalID{
 				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
 				IDorURI:       "xcode-archive",
 				Version:       "x.x.x",

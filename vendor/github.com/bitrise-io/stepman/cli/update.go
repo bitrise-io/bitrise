@@ -9,7 +9,7 @@ import (
 )
 
 func update(c *cli.Context) error {
-	collectionURIs := []string{}
+	var collectionURIs []string
 
 	// StepSpec collection path
 	collectionURI := c.String(CollectionKey)
