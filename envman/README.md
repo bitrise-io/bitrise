@@ -87,7 +87,7 @@ envman run bash -c 'echo "Environment test: $MY_TEST_ENV_KEY"'
 Add/store an environment variable:
 
 ```
-envman add --key MY_SECERT_ENV_KEY --value 'this is a secret value' --sensitive
+envman add --key MY_SECRET_ENV_KEY --value 'this is a secret value' --sensitive
 ```
 
 *Why `bash -c` is required? Because `echo` in itself
