@@ -389,7 +389,7 @@ func (r WorkflowRunner) executeStep(
 	step stepmanModels.StepModel, sIDData stepid.CanonicalID,
 	stepAbsDirPath, bitriseSourceDir string,
 	secrets []string,
-	workflow models.WorkflowModel,
+	containerID string,
 	workflowID string,
 ) (int, error) {
 
@@ -434,7 +434,7 @@ func (r WorkflowRunner) executeStep(
 	var args []string
 	var envs []string
 
-	containerDef := r.ContainerDefinition(workflow.ContainerID)
+	containerDef := r.ContainerDefinition(containerID)
 	if containerDef != nil {
 		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
@@ -443,6 +443,7 @@ func (r WorkflowRunner) executeStep(
 			return 1, fmt.Errorf("failed to read command environment: %w", err)
 		}
 
+		// TODO: revisit why is workflowID needed here
 		name = "docker"
 		runningContainer := r.dockerManager.GetWorkflowContainer(workflowID)
 		if runningContainer == nil {
@@ -480,7 +481,7 @@ func (r WorkflowRunner) runStep(
 	stepDir string,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
-	workflow models.WorkflowModel,
+	containerID string,
 	workflowID string,
 ) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
@@ -519,7 +520,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets, workflow, workflowID); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets, containerID, workflowID); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -566,37 +567,11 @@ func (r WorkflowRunner) runStep(
 	return 0, updatedStepOutputs, nil
 }
 
-type DockerManager interface {
-	Login(models.Container, map[string]string) error
-	StartWorkflowContainer(models.Container, string, map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainers(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
-	GetWorkflowContainer(string) *docker.RunningContainer
-	GetServiceContainers(string) []*docker.RunningContainer
-	DestroyAllContainers() error
-}
-
-func (r WorkflowRunner) activateAndRunSteps(
-	plan models.WorkflowExecutionPlan,
-	workflow models.WorkflowModel,
-	defaultStepLibSource string,
-	buildRunResults models.BuildRunResultsModel,
-	environments *[]envmanModels.EnvironmentItemModel,
-	secrets []envmanModels.EnvironmentItemModel,
-	isLastWorkflow bool,
-	tracker analytics.Tracker,
-	workflowIDProperties coreanalytics.Properties,
-	workflowID string,
-) models.BuildRunResultsModel {
-	log.Debug("[BITRISE_CLI] - Activating and running steps")
-
-	if len(workflow.Steps) == 0 {
-		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", workflow.Title)
-		return buildRunResults
-	}
-
+// TODO: from now services and containers are assigned to the 'with' steplist, rather than to workflows, revisit how and for what the container manager uses these workflow properties
+func (r WorkflowRunner) bootstrapContainerAndServices(containerID string, serviceIDs []string, environments *[]envmanModels.EnvironmentItemModel, workflowID, workflowTitle string) {
 	envList := envmanModels.EnvsJSONListModel{}
-	containerDef := r.ContainerDefinition(workflow.ContainerID)
-	servicesDefs := r.ServiceDefinitions(workflow.ServiceIDs...)
+	containerDef := r.ContainerDefinition(containerID)
+	servicesDefs := r.ServiceDefinitions(serviceIDs...)
 	if containerDef != nil || len(servicesDefs) > 0 {
 		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 			log.Debugf("Couldn't initialize envman.")
@@ -628,12 +603,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 		log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
 		if err := r.dockerManager.Login(*containerDef, envList); err != nil {
-			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflow.Title)
+			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflowTitle)
 		}
 
 		runningContainer, err := r.dockerManager.StartWorkflowContainer(*containerDef, workflowID, envList)
 		if err != nil {
-			log.Errorf("Could not start the specified docker image for workflow: %s", workflow.Title)
+			log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 		}
 
 		defer func() {
@@ -643,9 +618,27 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 			if err := runningContainer.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for workflow: %s: %w", workflow.Title, err.Error())
+				log.Errorf("Attempted to stop the docker container for workflow: %s: %w", workflowTitle, err.Error())
 			}
 		}()
+	}
+}
+
+func (r WorkflowRunner) activateAndRunSteps(
+	plan models.WorkflowExecutionPlan,
+	defaultStepLibSource string,
+	buildRunResults models.BuildRunResultsModel,
+	environments *[]envmanModels.EnvironmentItemModel,
+	secrets []envmanModels.EnvironmentItemModel,
+	isLastWorkflow bool,
+	tracker analytics.Tracker,
+	workflowIDProperties coreanalytics.Properties,
+) models.BuildRunResultsModel {
+	log.Debug("[BITRISE_CLI] - Activating and running steps")
+
+	if len(plan.Steps) == 0 {
+		log.Warnf("%s workflow has no steps to run, moving on to the next workflow...", plan.WorkflowTitle)
+		return buildRunResults
 	}
 
 	// ------------------------------------------
@@ -655,14 +648,18 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
-	for idx, stepListItm := range workflow.Steps {
-		stepPlan := plan.Steps[idx]
+	for idx, stepPlan := range plan.Steps {
+		if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
+			// TODO: handle if next step uses the same container and/or services
+			r.bootstrapContainerAndServices(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, plan.WorkflowID, plan.WorkflowTitle)
+		}
+
 		stepExecutionID := stepPlan.UUID
 		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepExecutionID}
 		stepStartedProperties := workflowIDProperties.Merge(stepIDProperties)
 		// Per step variables
 		stepStartTime = time.Now()
-		isLastStep := isLastWorkflow && (idx == len(workflow.Steps)-1)
+		isLastStep := isLastWorkflow && (idx == len(plan.Steps)-1)
 		// TODO: stepInfoPtr.Step is not a real step, only stores presentation properties (printed in the step boxes)
 		stepInfoPtr := stepmanModels.StepInfoModel{}
 		stepIdxPtr := idx
@@ -692,15 +689,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 			continue
 		}
 
-		// Get step id & version data
-		// TODO: handle with
-		compositeStepIDStr, workflowStepPtr, _, err := models.GetStepIDStepDataPair(stepListItm)
-		workflowStep := *workflowStepPtr
-		if err != nil {
-			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
-				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)
-			continue
-		}
+		compositeStepIDStr := stepPlan.StepID
+		workflowStep := stepPlan.Step
+
 		stepInfoPtr.ID = compositeStepIDStr
 		if workflowStep.Title != nil && *workflowStep.Title != "" {
 			stepInfoPtr.Step.Title = pointers.NewStringPtr(*workflowStep.Title)
@@ -917,7 +908,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 			tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
-			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, workflow, workflowID)
+			exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, stepPlan.ContainerID, plan.WorkflowID)
 
 			if stepTestDir != "" {
 				if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: idx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -979,18 +970,15 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 
 func (r WorkflowRunner) runWorkflow(
 	plan models.WorkflowExecutionPlan,
-	workflowID string,
-	workflow models.WorkflowModel,
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties) models.BuildRunResultsModel {
 
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
-	bitrise.PrintRunningWorkflow(workflow.Title)
-	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), workflowID, workflow.Title)
-	*environments = append(*environments, workflow.Environments...)
-	results := r.activateAndRunSteps(plan, workflow, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties, workflowID)
+	bitrise.PrintRunningWorkflow(plan.WorkflowTitle)
+	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
+	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	collectToolVersions(tracker)
 	return results

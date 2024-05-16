@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	stepmanModels "github.com/bitrise-io/stepman/models"
+)
 
 type WorkflowRunModes struct {
 	CIMode                  bool
@@ -11,15 +15,22 @@ type WorkflowRunModes struct {
 	NoOutputTimeout         time.Duration
 }
 
+// TODO: dispatch Plans from JSON event logging and actual workflow execution
 type StepExecutionPlan struct {
 	UUID   string `json:"uuid"`
 	StepID string `json:"step_id"`
+
+	Step        stepmanModels.StepModel `json:"-"`
+	ContainerID string                  `json:"-"`
+	ServiceIDs  []string                `json:"-"`
 }
 
 type WorkflowExecutionPlan struct {
 	UUID       string              `json:"uuid"`
 	WorkflowID string              `json:"workflow_id"`
 	Steps      []StepExecutionPlan `json:"steps"`
+
+	WorkflowTitle string `json:"-"`
 }
 
 type WorkflowRunPlan struct {

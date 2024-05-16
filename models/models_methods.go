@@ -114,7 +114,7 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, _, err := GetStepIDStepDataPair(stepListItem)
+		stepID, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 		if err != nil {
 			return err
 		}
@@ -182,7 +182,7 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 
 	var warnings []string
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, _, err := GetStepIDStepDataPair(stepListItem)
+		stepID, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 		if err != nil {
 			return warnings, err
 		}
@@ -884,49 +884,66 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 	return nil
 }
 
-// GetStepIDAndStep returns the Step ID and Step model described by the stepListItem.
-// Use this on validated BitriseDataModels.
-// TODO: refactor this to reflect the new return values
-func (stepListItem *StepListItemModel) GetStepIDAndStep() (string, *stepmanModels.StepModel, *WithModel) {
+func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepmanModels.StepModel, error) {
+	if stepListStepItem == nil {
+		return "", stepmanModels.StepModel{}, nil
+	}
+
+	if len(*stepListStepItem) == 0 {
+		return "", stepmanModels.StepModel{}, errors.New("stepListStepItem does not contain a key-value pair")
+	}
+
+	if len(*stepListStepItem) > 1 {
+		return "", stepmanModels.StepModel{}, errors.New("stepListStepItem contains more than 1 key-value pair")
+	}
+
+	var stepID string
+	var step stepmanModels.StepModel
+	for k, v := range *stepListStepItem {
+		stepID = k
+		step = v
+		break
+	}
+
+	return stepID, step, nil
+}
+
+// GetStepListItemKeyAndValue returns the Step List Item key and value. The key is either a Step ID or 'with'.
+// If the key is 'with' it returns a non-nil WithModel, otherwise returns a non-nil stepmanModels.StepModel.
+func (stepListItem *StepListItemModel) GetStepListItemKeyAndValue() (string, *stepmanModels.StepModel, *WithModel, error) {
 	if stepListItem == nil {
-		return "", nil, nil
+		return "", nil, nil, nil
+	}
+
+	if len(*stepListItem) == 0 {
+		return "", nil, nil, errors.New("StepListItem does not contain a key-value pair")
+	}
+
+	if len(*stepListItem) > 1 {
+		return "", nil, nil, errors.New("StepListItem contains more than 1 key-value pair")
 	}
 
 	for key, value := range *stepListItem {
 		if key == "with" {
 			with := value.(WithModel)
-			return key, nil, &with
+			return key, nil, &with, nil
 		} else {
 			step, ok := value.(stepmanModels.StepModel)
 			if ok {
-				return key, &step, nil
+				return key, &step, nil, nil
 			}
 
 			// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
 			// the StepModel has a pointer type.
 			stepPtr, ok := value.(*stepmanModels.StepModel)
 			if ok {
-				return key, stepPtr, nil
+				return key, stepPtr, nil, nil
 			}
 
-			return key, &stepmanModels.StepModel{}, nil
+			return key, &stepmanModels.StepModel{}, nil, nil
 		}
 	}
-	return "", nil, nil
-}
-
-// GetStepIDStepDataPair ...
-// TODO: refactor this to reflect the new return values
-func GetStepIDStepDataPair(stepListItem StepListItemModel) (string, *stepmanModels.StepModel, *WithModel, error) {
-	if len(stepListItem) == 0 {
-		return "", nil, nil, errors.New("StepListItem does not contain a key-value pair")
-	}
-
-	if len(stepListItem) > 1 {
-		return "", nil, nil, errors.New("StepListItem contains more than 1 key-value pair")
-	}
-	stepID, step, with := stepListItem.GetStepIDAndStep()
-	return stepID, step, with, nil
+	return "", nil, nil, nil
 }
 
 // ----------------------------
