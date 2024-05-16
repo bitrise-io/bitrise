@@ -24,7 +24,7 @@ const (
 
 func TestStepDebugLogMessagesAppear(t *testing.T) {
 	consoleLog, consoleErr := createConsoleLog(t, "debug_log")
-	require.NoError(t, consoleErr)
+	require.NoError(t, consoleErr, consoleLog)
 	require.True(t, strings.Contains(consoleLog, debugLogMessage))
 
 	jsonLog, jsonErr := createJSONLog(t, "debug_log")
