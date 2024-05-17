@@ -530,7 +530,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 				stepPlan = append(stepPlan, models.StepExecutionPlan{
 					UUID:   uuidProvider(),
 					StepID: stepID,
-					Step:   step, // TODO: Step shouldn't be a pointer
+					Step:   step,
 				})
 			}
 		}
