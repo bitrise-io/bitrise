@@ -143,7 +143,8 @@ func StepmanUpdate(collection string) error {
 // StepmanActivate ...
 func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log)
+	// TODO: temporary
+	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, false)
 }
 
 // StepmanStepInfo ...
