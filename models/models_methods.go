@@ -908,24 +908,39 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 // --- StepIDData
 
 func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var stepItem StepListStepItemModel
-	if err := unmarshal(&stepItem); err == nil {
+	var raw map[string]interface{}
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if key == "with" {
+		var withItem StepListWithItemModel
+		if err := unmarshal(&withItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := unmarshal(&stepItem); err != nil {
+			return err
+		}
+
 		*stepListItem = map[string]interface{}{}
 		for k, v := range stepItem {
 			(*stepListItem)[k] = v
 		}
-		return nil
 	}
 
-	var withItem StepListWithItemModel
-	if err := unmarshal(&withItem); err != nil {
-		return err
-	}
-
-	*stepListItem = map[string]interface{}{}
-	for k, v := range withItem {
-		(*stepListItem)[k] = v
-	}
 	return nil
 }
 

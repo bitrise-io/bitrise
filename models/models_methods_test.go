@@ -419,31 +419,35 @@ containers:
     image: ruby:3.2
 workflows:
   test:
-    container: ruby
-    services:
-    - postgres
     steps:
-    - script:
-        title: Setup DB
-        inputs:
-        - content: bundle exec rails db:setup
-    - script:
-        title: Run tests
-        inputs:
-        - content: bundle exec rspec
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec
   test_features:
-    container: ruby
-    services:
-    - postgres
     steps:
-    - script:
-        title: Setup DB
-        inputs:
-        - content: bundle exec rails db:setup
-    - script:
-        title: Run tests
-        inputs:
-        - content: bundle exec rspec spec/features/`),
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec spec/features/`),
 		},
 		{
 			name: "Invalid bitrise.yml: missing service id",
@@ -515,7 +519,9 @@ containers:
     image: ruby:3.2
 workflows:
   primary:
-    container: ruby_3_2`),
+    steps:
+    - with:
+        container: ruby_3_2`),
 			wantErr: "container (ruby_3_2) referenced in workflow (primary), but this container is not defined",
 		},
 		{
@@ -528,8 +534,10 @@ services:
     image: postgres:13
 workflows:
   primary:
-    services:
-    - postgres_13`),
+    steps:
+    - with:
+        services:
+        - postgres_13`),
 			wantErr: "service (postgres_13) referenced in workflow (primary), but this service is not defined",
 		},
 		{
@@ -542,9 +550,11 @@ services:
     image: postgres:13
 workflows:
   primary:
-    services:
-    - postgres
-    - postgres`),
+    steps:
+    - with:
+        services:
+        - postgres
+        - postgres`),
 			wantErr: "service (postgres) specified multiple times for workflow (primary)",
 		},
 	}
