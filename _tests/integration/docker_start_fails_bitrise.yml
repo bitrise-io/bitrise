@@ -8,12 +8,14 @@ workflows:
     before_run:
     - _build-failing-image
     title: Expected to fail on docker start, failing image is used
-    container: failing-image
     steps:
-    - script:
-        title: Should not run due to prev error
-        inputs:
-        - content: exit 0
+    - with:
+        container: failing-image
+        steps:
+        - script:
+            title: Should not run due to prev error
+            inputs:
+            - content: exit 0
   _build-failing-image:
     steps:
     - script:

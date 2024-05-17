@@ -18,40 +18,48 @@ containers:
 workflows:
   docker-pull-success:
     title: Expected to pass docker pull
-    container: success
     steps:
-    - script:
-        title: Should pass
-        inputs:
-        - content: exit 0
+    - with:
+        container: success
+        steps:
+        - script:
+            title: Should pass
+            inputs:
+            - content: exit 0
   docker-pull-fails-404:
     title: Expected to fail docker pull
-    container: fails-404
     steps:
-    - script:
-        title: Should fail
-        inputs:
-        - content: exit 0
+    - with:
+        container: fails-404
+        steps:
+        - script:
+            title: Should fail
+            inputs:
+            - content: exit 0
   docker-login-fail:
     title: Expected to fail on docker login
-    container: login-fail
     steps:
-    - script:
-        title: Should fail
-        inputs:
-        - content: exit 0
+    - with:
+        container: login-fail
+        steps:
+        - script:
+            title: Should fail
+            inputs:
+            - content: exit 0
   docker-login-success:
     before_run:
     - _start_mock_registry
     after_run:
     - _cleanup_mock_registry
     title: Expected to pass docker login
-    container: login-success
     steps:
-    - script:
-        title: Should pass
-        inputs:
-        - content: exit 0
+    - with:
+        container: login-success
+        steps:
+        - script:
+            title: Should pass
+            inputs:
+            - content: exit 0
   _start_mock_registry:
     steps:
     - script:
