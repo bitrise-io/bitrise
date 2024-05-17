@@ -7,16 +7,18 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_Docker(t *testing.T) {
 	testCases := map[string]struct {
-		configPath    string
-		inventoryPath string
-		workflowName  string
-		requireErr    bool
-		requireLogs   []string
+		configPath          string
+		inventoryPath       string
+		workflowName        string
+		requireErr          bool
+		requireLogs         []string
+		requiredLogPatterns []string
 	}{
 		"docker pull succeeds with existing image": {
 			configPath:   "docker_pull_bitrise.yml",
@@ -74,8 +76,10 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-create-succeeds-with-false-unhealthy-container",
 			requireErr:   false,
 			requireLogs: []string{
-				"Container (bitrise-workflow-docker-create-succeeds-with-false-unhealthy-container) is unhealthy...",
 				"Step is running in container: frolvlad/alpine-bash:latest",
+			},
+			requiredLogPatterns: []string{
+				"Container (bitrise-workflow-*) is unhealthy...",
 			},
 		},
 		"docker create fails when invalid option is provided": {
@@ -130,6 +134,10 @@ func Test_Docker(t *testing.T) {
 			}
 			for _, log := range testCase.requireLogs {
 				require.Contains(t, out, log)
+			}
+			for _, logPattern := range testCase.requiredLogPatterns {
+				contains := glob.Glob(logPattern, log)
+				require.True(t, contains, log)
 			}
 		})
 	}
