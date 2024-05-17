@@ -11,7 +11,8 @@ import (
 
 const (
 	// FormatVersion ...
-	FormatVersion = "14"
+	FormatVersion       = "14"
+	StepListItemWithKey = "with"
 )
 
 // WithModel ...

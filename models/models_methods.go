@@ -114,20 +114,17 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 		if err != nil {
 			return err
 		}
-		if step != nil {
+		if key != StepListItemWithKey {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
-			stepListItem[stepID] = step
+			stepListItem[key] = step
 		}
-		// TODO: Normalize with
-		//if with != nil {
-		//
-		//}
+		// TODO: check if Normalize is needed for 'with'
 	}
 
 	return nil
@@ -221,15 +218,14 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		// TODO: validate with has a key with
 		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 		if err != nil {
 			return warnings, err
 		}
 
-		if step != nil {
+		if key != StepListItemWithKey {
 			stepID := key
-			warns, err := validateStep(stepID, *step)
+			warns, err := validateStep(stepID, step)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				return warnings, err
@@ -350,11 +346,11 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 
 	for workflowID, workflow := range config.Workflows {
 		for _, stepListItem := range workflow.Steps {
-			_, _, with, err := stepListItem.GetStepListItemKeyAndValue()
+			key, _, with, err := stepListItem.GetStepListItemKeyAndValue()
 			if err != nil {
 				return warnings, err
 			}
-			if with != nil {
+			if key == StepListItemWithKey {
 				warns, err := with.Validate(workflowID, config.Containers, config.Services)
 				warnings = append(warnings, warns...)
 				if err != nil {
@@ -919,7 +915,7 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 		break
 	}
 
-	if key == "with" {
+	if key == StepListItemWithKey {
 		var withItem StepListWithItemModel
 		if err := unmarshal(&withItem); err != nil {
 			return err
@@ -969,41 +965,41 @@ func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepm
 }
 
 // GetStepListItemKeyAndValue returns the Step List Item key and value. The key is either a Step ID or 'with'.
-// If the key is 'with' it returns a non-nil WithModel, otherwise returns a non-nil stepmanModels.StepModel.
-func (stepListItem *StepListItemModel) GetStepListItemKeyAndValue() (string, *stepmanModels.StepModel, *WithModel, error) {
+// If the key is 'with' the returned WithModel is relevant otherwise the StepModel.
+func (stepListItem *StepListItemModel) GetStepListItemKeyAndValue() (string, stepmanModels.StepModel, WithModel, error) {
 	if stepListItem == nil {
-		return "", nil, nil, nil
+		return "", stepmanModels.StepModel{}, WithModel{}, nil
 	}
 
 	if len(*stepListItem) == 0 {
-		return "", nil, nil, errors.New("StepListItem does not contain a key-value pair")
+		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem does not contain a key-value pair")
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", nil, nil, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem contains more than 1 key-value pair")
 	}
 
 	for key, value := range *stepListItem {
-		if key == "with" {
+		if key == StepListItemWithKey {
 			with := value.(WithModel)
-			return key, nil, &with, nil
+			return key, stepmanModels.StepModel{}, with, nil
 		} else {
 			step, ok := value.(stepmanModels.StepModel)
 			if ok {
-				return key, &step, nil, nil
+				return key, step, WithModel{}, nil
 			}
 
 			// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
 			// the StepModel has a pointer type.
 			stepPtr, ok := value.(*stepmanModels.StepModel)
 			if ok {
-				return key, stepPtr, nil, nil
+				return key, *stepPtr, WithModel{}, nil
 			}
 
-			return key, &stepmanModels.StepModel{}, nil, nil
+			return key, stepmanModels.StepModel{}, WithModel{}, nil
 		}
 	}
-	return "", nil, nil, nil
+	return "", stepmanModels.StepModel{}, WithModel{}, nil
 }
 
 // ----------------------------

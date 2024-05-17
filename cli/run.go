@@ -510,7 +510,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 				return models.WorkflowRunPlan{}, err
 			}
 
-			if key == "with" {
+			if key == models.StepListItemWithKey {
 				for _, stepListStepItem := range with.Steps {
 					stepID, step, err := stepListStepItem.GetStepIDAndStep()
 					if err != nil {
@@ -530,7 +530,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 				stepPlan = append(stepPlan, models.StepExecutionPlan{
 					UUID:   uuidProvider(),
 					StepID: stepID,
-					Step:   *step, // TODO: Step shouldn't be a pointer
+					Step:   step, // TODO: Step shouldn't be a pointer
 				})
 			}
 		}
