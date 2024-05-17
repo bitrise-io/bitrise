@@ -160,6 +160,17 @@ func registerSecretEnvsFiltering(filtering bool) error {
 	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
 }
 
+func isSteplibOfflineMode() bool {
+	isSteplibOfflineMode := os.Getenv(configs.IsSteplibOfflineModeEnvKey)
+	return isSteplibOfflineMode == "true"
+}
+
+func registerSteplibOfflineMode(offlineMode bool) {
+	configs.IsSteplibOfflineMode = offlineMode
+	// Disable analytics if running in Offline mode
+	os.Setenv(analytics.DisabledEnvKey, strconv.FormatBool(offlineMode))
+}
+
 func isDirEmpty(path string) (bool, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -721,7 +732,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepDir := configs.BitriseWorkStepsDirPath
 
 		activator := newStepActivator()
-		stepYMLPth, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr)
+		stepYMLPth, origStepYMLPth, err := activator.activateStep(stepIDData, &buildRunResults, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr, plan.IsSteplibOfflineMode)
 		if err != nil {
 			runResultCollector.registerStepRunResults(&buildRunResults, stepExecutionID, stepStartTime, stepmanModels.StepModel{}, stepInfoPtr, stepIdxPtr,
 				models.StepRunStatusCodePreparationFailed, 1, err, isLastStep, true, map[string]string{}, stepStartedProperties)

@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/toolkits"
 )
 
@@ -57,6 +58,8 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	log.Infof("Setup Bitrise tools...")
 	log.Printf("Clean before setup: %v", doCleanSetup)
 	log.Printf("Setup mode: %s", setupMode)
+	log.Printf("Is CI mode: %v", configs.IsCIMode)
+	log.Printf("Is offline Steplib mode: %v", configs.IsSteplibOfflineMode)
 	log.Printf("System: %s/%s", runtime.GOOS, runtime.GOARCH)
 
 	if doCleanSetup {
@@ -77,12 +80,20 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
 	}
 
+	deps := []string{}
+	if configs.IsSteplibOfflineMode {
+		deps = append(deps, "zstd")
+	}
+
 	switch runtime.GOOS {
 	case "darwin":
-		if err := doSetupOnOSX(); err != nil {
+		if err := doSetupOnOSX(false, deps); err != nil {
 			return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
 		}
 	case "linux":
+		if err := doSetupOnLinux(false, deps); err != nil {
+			return fmt.Errorf("Failed to do Linux-specific setup: %s", err)
+		}
 	default:
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
@@ -169,13 +180,39 @@ func doSetupBitriseCoreTools() error {
 	return nil
 }
 
-func doSetupOnOSX() error {
+func doSetupOnOSX(isCIMode bool, brewDeps []string) error {
 	log.Print()
 	log.Infof("Doing macOS-specific setup")
 	log.Printf("Checking required tools...")
 
 	if err := CheckIsHomebrewInstalled(); err != nil {
 		return errors.New(fmt.Sprint("Homebrew not installed or has some issues. Please fix these before calling setup again. Err:", err))
+	}
+
+	for _, dep := range brewDeps {
+		log.Printf("Checking brew dependency %s", dep)
+		if err := InstallWithBrewIfNeeded(models.BrewDepModel{Name: dep}, isCIMode); err != nil {
+			return fmt.Errorf("Failed to install package (%s): %w", dep, err)
+		}
+
+		log.Printf("%s %s", colorstring.Green("[OK]"), dep)
+	}
+
+	return nil
+}
+
+func doSetupOnLinux(isCIMode bool, deps []string) error {
+	log.Print()
+	log.Infof("Doing Linux-specific setup")
+	log.Printf("Checking required tools...")
+
+	for _, dep := range deps {
+		log.Printf("Checking APT dependency %s", dep)
+		if err := InstallWithAptGetIfNeeded(models.AptGetDepModel{Name: dep}, isCIMode); err != nil {
+			return fmt.Errorf("Failed to install package (%s): %w", dep, err)
+		}
+
+		log.Printf("%s %s", colorstring.Green("[OK]"), dep)
 	}
 
 	return nil
