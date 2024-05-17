@@ -172,51 +172,100 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
-// Validate ...
-func (workflow *WorkflowModel) Validate() ([]string, error) {
-	for _, env := range workflow.Environments {
-		if err := env.Validate(); err != nil {
-			return []string{}, err
+func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
+	var warnings []string
+
+	if with.ContainerID != "" {
+		if _, ok := containers[with.ContainerID]; !ok {
+			return warnings, fmt.Errorf("container (%s) referenced in workflow (%s), but this container is not defined", with.ContainerID, workflowID)
 		}
 	}
 
+	serviceIDs := map[string]bool{}
+	for _, serviceID := range with.ServiceIDs {
+		if _, ok := services[serviceID]; !ok {
+			return warnings, fmt.Errorf("service (%s) referenced in workflow (%s), but this service is not defined", serviceID, workflowID)
+		}
+
+		if _, ok := serviceIDs[serviceID]; ok {
+			return warnings, fmt.Errorf("service (%s) specified multiple times for workflow (%s)", serviceID, workflowID)
+		}
+		serviceIDs[serviceID] = true
+	}
+
+	for _, stepListItem := range with.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return warnings, err
+		}
+
+		warns, err := validateStep(stepID, step)
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, err
+		}
+	}
+
+	return warnings, nil
+
+}
+
+// Validate ...
+func (workflow *WorkflowModel) Validate() ([]string, error) {
 	var warnings []string
+
+	for _, env := range workflow.Environments {
+		if err := env.Validate(); err != nil {
+			return warnings, err
+		}
+	}
+
 	for _, stepListItem := range workflow.Steps {
-		stepID, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+		// TODO: validate with has a key with
+		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 		if err != nil {
 			return warnings, err
 		}
 
 		if step != nil {
-			if err := stepid.Validate(stepID); err != nil {
+			stepID := key
+			warns, err := validateStep(stepID, *step)
+			warnings = append(warnings, warns...)
+			if err != nil {
 				return warnings, err
 			}
 
-			if err := step.ValidateInputAndOutputEnvs(false); err != nil {
-				return warnings, err
-			}
-
-			stepInputMap := map[string]bool{}
-			for _, input := range step.Inputs {
-				key, _, err := input.GetKeyValuePair()
-				if err != nil {
-					return warnings, err
-				}
-
-				_, found := stepInputMap[key]
-				if found {
-					warnings = append(warnings, fmt.Sprintf("invalid step: duplicated input found: (%s)", key))
-				}
-				stepInputMap[key] = true
-			}
-
+			// TODO: Why is this assignment needed?
 			stepListItem[stepID] = step
 		}
+	}
 
-		// TODO: validate with
-		//if with != nil {
-		//
-		//}
+	return warnings, nil
+}
+
+func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error) {
+	var warnings []string
+
+	if err := stepid.Validate(stepID); err != nil {
+		return warnings, err
+	}
+
+	if err := step.ValidateInputAndOutputEnvs(false); err != nil {
+		return warnings, err
+	}
+
+	stepInputMap := map[string]bool{}
+	for _, input := range step.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return warnings, err
+		}
+
+		_, found := stepInputMap[key]
+		if found {
+			warnings = append(warnings, fmt.Sprintf("invalid step: duplicated input found: (%s)", key))
+		}
+		stepInputMap[key] = true
 	}
 
 	return warnings, nil
@@ -234,7 +283,7 @@ func (app *AppModel) Validate() error {
 
 // Validate ...
 func (config *BitriseDataModel) Validate() ([]string, error) {
-	warnings := []string{}
+	var warnings []string
 
 	if config.FormatVersion == "" {
 		return warnings, fmt.Errorf("missing format_version")
@@ -253,6 +302,26 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// app
 	if err := config.App.Validate(); err != nil {
 		return warnings, err
+	}
+	// ---
+
+	// containers
+	for containerID, containerDef := range config.Containers {
+		if containerID == "" {
+			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
+		}
+		if strings.TrimSpace(containerDef.Image) == "" {
+			return warnings, fmt.Errorf("service (%s) has no image defined", containerID)
+		}
+	}
+
+	for serviceID, serviceDef := range config.Services {
+		if serviceID == "" {
+			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
+		}
+		if strings.TrimSpace(serviceDef.Image) == "" {
+			return warnings, fmt.Errorf("service (%s) has no image defined", serviceID)
+		}
 	}
 	// ---
 
@@ -278,47 +347,23 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	if err != nil {
 		return warnings, err
 	}
-	// ---
-
-	// containers
-	for containerID, containerDef := range config.Containers {
-		if containerID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
-		}
-		if strings.TrimSpace(containerDef.Image) == "" {
-			return nil, fmt.Errorf("service (%s) has no image defined", containerID)
-		}
-	}
-
-	for serviceID, serviceDef := range config.Services {
-		if serviceID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
-		}
-		if strings.TrimSpace(serviceDef.Image) == "" {
-			return nil, fmt.Errorf("service (%s) has no image defined", serviceID)
-		}
-	}
 
 	for workflowID, workflow := range config.Workflows {
-		if workflow.ContainerID != "" {
-			if _, ok := config.Containers[workflow.ContainerID]; !ok {
-				return nil, fmt.Errorf("container (%s) referenced in workflow (%s), but this container is not defined", workflow.ContainerID, workflowID)
+		for _, stepListItem := range workflow.Steps {
+			_, _, with, err := stepListItem.GetStepListItemKeyAndValue()
+			if err != nil {
+				return warnings, err
 			}
-		}
-
-		serviceIDs := map[string]bool{}
-		for _, serviceID := range workflow.ServiceIDs {
-			if _, ok := config.Services[serviceID]; !ok {
-				return nil, fmt.Errorf("service (%s) referenced in workflow (%s), but this service is not defined", serviceID, workflowID)
+			if with != nil {
+				warns, err := with.Validate(workflowID, config.Containers, config.Services)
+				warnings = append(warnings, warns...)
+				if err != nil {
+					return warnings, err
+				}
 			}
-
-			if _, ok := serviceIDs[serviceID]; ok {
-				return nil, fmt.Errorf("service (%s) specified multiple times for workflow (%s)", serviceID, workflowID)
-			}
-			serviceIDs[serviceID] = true
 		}
 	}
-	//
+	// ---
 
 	return warnings, nil
 }
