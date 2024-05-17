@@ -21,6 +21,7 @@ type StepExecutionPlan struct {
 	StepID string `json:"step_id"`
 
 	Step        stepmanModels.StepModel `json:"-"`
+	GroupID     string                  `json:"-"`
 	ContainerID string                  `json:"-"`
 	ServiceIDs  []string                `json:"-"`
 }

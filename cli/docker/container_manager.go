@@ -146,14 +146,14 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 	return nil
 }
 
-func (cm *ContainerManager) StartWorkflowContainer(
+func (cm *ContainerManager) StartContainerFroStepGroup(
 	container models.Container,
-	workflowID string,
+	groupID string,
 	envs map[string]string,
 ) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	containerName := fmt.Sprintf("bitrise-workflow-%s", workflowID)
+	containerName := fmt.Sprintf("bitrise-workflow-%s", groupID)
 
 	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
@@ -168,7 +168,7 @@ func (cm *ContainerManager) StartWorkflowContainer(
 
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
-		cm.workflowContainers[workflowID] = runningContainer
+		cm.workflowContainers[groupID] = runningContainer
 	}
 
 	if err != nil {
@@ -182,9 +182,9 @@ func (cm *ContainerManager) StartWorkflowContainer(
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainers(
+func (cm *ContainerManager) StartServiceContainersFroStepGroup(
 	services map[string]models.Container,
-	workflowID string,
+	groupID string,
 	envs map[string]string,
 ) ([]*RunningContainer, error) {
 	var containers []*RunningContainer
@@ -204,7 +204,7 @@ func (cm *ContainerManager) StartServiceContainers(
 		}
 	}
 	// Even on failure we save the references to make sure containers will be cleaned up
-	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], containers...)
+	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], containers...)
 
 	if len(failedServices) != 0 {
 		errServices := fmt.Errorf("failed to start services")
@@ -224,12 +224,12 @@ func (cm *ContainerManager) StartServiceContainers(
 	return containers, nil
 }
 
-func (cm *ContainerManager) GetWorkflowContainer(workflowID string) *RunningContainer {
-	return cm.workflowContainers[workflowID]
+func (cm *ContainerManager) GetContainerFroStepGroup(groupID string) *RunningContainer {
+	return cm.workflowContainers[groupID]
 }
 
-func (cm *ContainerManager) GetServiceContainers(workflowID string) []*RunningContainer {
-	return cm.serviceContainers[workflowID]
+func (cm *ContainerManager) GetServiceContainersFroStepGroup(groupID string) []*RunningContainer {
+	return cm.serviceContainers[groupID]
 }
 
 func (cm *ContainerManager) DestroyAllContainers() error {

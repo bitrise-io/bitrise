@@ -390,7 +390,7 @@ func (r WorkflowRunner) executeStep(
 	stepAbsDirPath, bitriseSourceDir string,
 	secrets []string,
 	containerID string,
-	workflowID string,
+	groupID string,
 ) (int, error) {
 
 	toolkitForStep := toolkits.ToolkitForStep(step)
@@ -443,9 +443,8 @@ func (r WorkflowRunner) executeStep(
 			return 1, fmt.Errorf("failed to read command environment: %w", err)
 		}
 
-		// TODO: revisit why is workflowID needed here
 		name = "docker"
-		runningContainer := r.dockerManager.GetWorkflowContainer(workflowID)
+		runningContainer := r.dockerManager.GetContainerFroStepGroup(groupID)
 		if runningContainer == nil {
 			return 1, fmt.Errorf("Docker container does not exist")
 		}
@@ -567,60 +566,63 @@ func (r WorkflowRunner) runStep(
 	return 0, updatedStepOutputs, nil
 }
 
-// TODO: from now services and containers are assigned to the 'with' steplist, rather than to workflows, revisit how and for what the container manager uses these workflow properties
-func (r WorkflowRunner) bootstrapContainerAndServices(containerID string, serviceIDs []string, environments *[]envmanModels.EnvironmentItemModel, workflowID, workflowTitle string) {
-	envList := envmanModels.EnvsJSONListModel{}
-	containerDef := r.ContainerDefinition(containerID)
-	servicesDefs := r.ServiceDefinitions(serviceIDs...)
-	if containerDef != nil || len(servicesDefs) > 0 {
-		if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
-			log.Debugf("Couldn't initialize envman.")
-		}
-		if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
-			log.Debugf("Couldn't add envs.")
-		}
-
-		var err error
-		if envList, err = tools.EnvmanReadEnvList(configs.InputEnvstorePath); err != nil {
-			log.Debugf("Couldn't read envs from envman.")
-		}
+func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceIDs []string, environments *[]envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
+	if containerID == "" && len(serviceIDs) == 0 {
+		return
 	}
 
-	serviceContainers, err := r.dockerManager.StartServiceContainers(servicesDefs, workflowID, envList)
+	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
+		log.Debugf("Couldn't initialize envman.")
+	}
+	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
+		log.Debugf("Couldn't add envs.")
+	}
+
+	envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
 	if err != nil {
-		log.Errorf("❌ Some services failed to start properly!")
+		log.Debugf("Couldn't read envs from envman.")
 	}
 
-	defer func() {
-		for _, container := range serviceContainers {
-			if err := container.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for service: %s: %w", container.Name, err.Error())
+	if containerID != "" {
+		containerDef := r.ContainerDefinition(containerID)
+		if containerDef != nil {
+			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
+
+			// TODO: Why only login for step execution containers?
+			if err := r.dockerManager.Login(*containerDef, envList); err != nil {
+				log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflowTitle)
+			}
+
+			_, err := r.dockerManager.StartContainerFroStepGroup(*containerDef, groupID, envList)
+			if err != nil {
+				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 			}
 		}
-	}()
+	}
 
-	if containerDef != nil {
-		log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
-
-		if err := r.dockerManager.Login(*containerDef, envList); err != nil {
-			log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflowTitle)
-		}
-
-		runningContainer, err := r.dockerManager.StartWorkflowContainer(*containerDef, workflowID, envList)
+	if len(serviceIDs) > 0 {
+		servicesDefs := r.ServiceDefinitions(serviceIDs...)
+		_, err := r.dockerManager.StartServiceContainersFroStepGroup(servicesDefs, groupID, envList)
 		if err != nil {
-			log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
+			log.Errorf("❌ Some services failed to start properly!")
 		}
+	}
+}
 
-		defer func() {
-			if runningContainer == nil {
-				return
-			}
+func (r WorkflowRunner) stopContainersForStepGroup(groupID, workflowTitle string) {
+	if container := r.dockerManager.GetContainerFroStepGroup(groupID); container != nil {
+		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
+		if err := container.Destroy(); err != nil {
+			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
+		}
+	}
 
-			// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
-			if err := runningContainer.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for workflow: %s: %w", workflowTitle, err.Error())
+	if services := r.dockerManager.GetServiceContainersFroStepGroup(groupID); services != nil {
+		for _, container := range services {
+			if err := container.Destroy(); err != nil {
+				log.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
 			}
-		}()
+		}
 	}
 }
 
@@ -642,16 +644,29 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	// ------------------------------------------
-	// In function global variables - These are global for easy use in local register step run result methods.
+	// In function global variables
+
+	// These are global for easy use in local register step run result methods.
 	var stepStartTime time.Time
 	runResultCollector := newBuildRunResultCollector(tracker)
+
+	currentStepGroupID := ""
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-			// TODO: handle if next step uses the same container and/or services
-			r.bootstrapContainerAndServices(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, plan.WorkflowID, plan.WorkflowTitle)
+		if stepPlan.GroupID != currentStepGroupID {
+			if currentStepGroupID != "" {
+				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
+			}
+
+			if stepPlan.GroupID != "" {
+				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
+					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, stepPlan.GroupID, plan.WorkflowTitle)
+				}
+			}
+
+			currentStepGroupID = stepPlan.GroupID
 		}
 
 		stepExecutionID := stepPlan.UUID

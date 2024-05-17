@@ -168,10 +168,10 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 
 type DockerManager interface {
 	Login(models.Container, map[string]string) error
-	StartWorkflowContainer(models.Container, string, map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainers(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
-	GetWorkflowContainer(string) *docker.RunningContainer
-	GetServiceContainers(string) []*docker.RunningContainer
+	StartContainerFroStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
+	StartServiceContainersFroStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
+	GetContainerFroStepGroup(string) *docker.RunningContainer
+	GetServiceContainersFroStepGroup(string) []*docker.RunningContainer
 	DestroyAllContainers() error
 }
 
@@ -511,6 +511,8 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 			}
 
 			if key == models.StepListItemWithKey {
+				groupID := uuidProvider()
+
 				for _, stepListStepItem := range with.Steps {
 					stepID, step, err := stepListStepItem.GetStepIDAndStep()
 					if err != nil {
@@ -521,6 +523,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 						UUID:        uuidProvider(),
 						StepID:      stepID,
 						Step:        step,
+						GroupID:     groupID,
 						ContainerID: with.ContainerID,
 						ServiceIDs:  with.ServiceIDs,
 					})
