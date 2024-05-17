@@ -216,7 +216,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 	}()
 
 	logger := benchmarkLogger{b: b}
-	err = cli.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, logger)
+	err = cli.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, logger, true)
 	require.NoError(b, err)
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"
@@ -254,5 +254,17 @@ type benchmarkLogger struct {
 }
 
 func (l benchmarkLogger) Warnf(format string, v ...interface{}) {
+	l.b.Logf(format, v...)
+}
+
+func (l benchmarkLogger) Debugf(format string, v ...interface{}) {
+	l.b.Logf(format, v...)
+}
+
+func (l benchmarkLogger) Errorf(format string, v ...interface{}) {
+	l.b.Logf(format, v...)
+}
+
+func (l benchmarkLogger) Infof(format string, v ...interface{}) {
 	l.b.Logf(format, v...)
 }
