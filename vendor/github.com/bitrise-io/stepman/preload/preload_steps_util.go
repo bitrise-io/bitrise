@@ -24,7 +24,7 @@ func filterPreloadedStepVersions(stepID string, steps map[string]models.StepMode
 
 		// Include all patch version releases
 		publishDate := *(step.PublishedAt)
-		if time.Since(publishDate.AddDate(0, opts.PatchesSinceMonths, 0)) > 0 {
+		if time.Since(publishDate.AddDate(0, opts.PatchesSinceMonths, 0)) < 0 {
 			filteredSteps[stepVersion] = step
 		}
 
@@ -60,7 +60,7 @@ func filterPreloadedStepVersions(stepID string, steps map[string]models.StepMode
 
 			// The latest patch of any minor version
 			publishDate := *steps[version.String()].PublishedAt
-			if time.Since(publishDate.AddDate(0, opts.LatestMinorsSinceMonths, 0)) > 0 {
+			if time.Since(publishDate.AddDate(0, opts.LatestMinorsSinceMonths, 0)) < 0 {
 				filteredSteps[version.String()] = steps[version.String()]
 			}
 		}
