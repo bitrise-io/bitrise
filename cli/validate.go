@@ -225,7 +225,7 @@ func validate(c *cli.Context) error {
 	inventoryBase64Data := c.String(InventoryBase64Key)
 	inventoryPath := c.String(InventoryKey)
 
-	format := c.String(OuputFormatKey)
+	format := c.String(OutputFormatKey)
 	if format == "" {
 		format = output.FormatRaw
 	}

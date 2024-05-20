@@ -31,8 +31,8 @@ const (
 	MinimalModeKey = "minimal"
 	FullModeKey = "full"
 
-	ouputFormatKeyShort = "f"
-	OuputPathKey = "outpath"
+	outputFormatKeyShort = "f"
+	OutputPathKey = "outpath"
 	PrettyFormatKey = "pretty"
 
 	IDKey      = "id"
@@ -72,7 +72,7 @@ var (
 	}
 	// Command flags
 	flOutputFormat = cli.StringFlag{
-		Name:  OuputFormatKey + ", " + ouputFormatKeyShort,
+		Name:  OutputFormatKey + ", " + outputFormatKeyShort,
 		Usage: "Output format. Accepted: raw (default), json, yml",
 	}
 	flCollection = cli.StringFlag{
@@ -99,11 +99,11 @@ var (
 
 	// Export
 	flFormat = cli.StringFlag{
-		Name:  OuputFormatKey,
+		Name:  OutputFormatKey,
 		Usage: "Output format. Accepted: json, yml.",
 	}
 	flOutputPath = cli.StringFlag{
-		Name:  OuputPathKey,
+		Name:  OutputPathKey,
 		Usage: "Output path, where the exported file will be saved.",
 	}
 	flPretty = cli.BoolFlag{

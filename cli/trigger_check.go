@@ -102,7 +102,7 @@ func triggerCheck(c *cli.Context) error {
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
-	format := c.String(OuputFormatKey)
+	format := c.String(OutputFormatKey)
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,

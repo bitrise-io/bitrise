@@ -33,7 +33,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 			PRReadyStateKey:   models.PullRequestReadyStateReadyForReview,
 			TagKey:            "0.9.0",
 
-			OuputFormatKey: "json",
+			OutputFormatKey: "json",
 
 			ConfigKey:       "bitrise.yml",
 			ConfigBase64Key: toBase64("bitrise.yml"),
@@ -163,7 +163,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			PRTargetBranchKey: prTargetBranch,
 			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
-			OuputFormatKey:    format,
+			OutputFormatKey:    format,
 
 			ConfigKey:       bitriseConfigPath,
 			ConfigBase64Key: bitriseConfigBase64Data,
@@ -223,7 +223,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			PRTargetBranchKey: prTargetBranch,
 			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
-			OuputFormatKey:    format,
+			OutputFormatKey:    format,
 
 			ConfigKey:       bitriseConfigPath,
 			ConfigBase64Key: bitriseConfigBase64Data,
@@ -283,7 +283,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			PRTargetBranchKey: prTargetBranch,
 			PRReadyStateKey:   prReadyState,
 			TagKey:            tag,
-			OuputFormatKey:    format,
+			OutputFormatKey:    format,
 
 			ConfigKey:       bitriseConfigPath,
 			ConfigBase64Key: bitriseConfigBase64Data,
