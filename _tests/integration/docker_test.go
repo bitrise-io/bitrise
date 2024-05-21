@@ -136,8 +136,8 @@ func Test_Docker(t *testing.T) {
 				require.Contains(t, out, log)
 			}
 			for _, logPattern := range testCase.requiredLogPatterns {
-				contains := glob.Glob(logPattern, log)
-				require.True(t, contains, log)
+				contains := glob.Glob(logPattern, out)
+				require.True(t, contains, out)
 			}
 		})
 	}
