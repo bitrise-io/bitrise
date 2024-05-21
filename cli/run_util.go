@@ -650,7 +650,15 @@ func (r WorkflowRunner) activateAndRunSteps(
 	var stepStartTime time.Time
 	runResultCollector := newBuildRunResultCollector(tracker)
 
+	// Global variables for synchronising container's lifecycle
+	// and shutting down the last set of containers at the end of the workflow run
 	currentStepGroupID := ""
+	lastStepGroupID := ""
+	defer func() {
+		if lastStepGroupID != "" {
+			r.stopContainersForStepGroup(lastStepGroupID, plan.WorkflowTitle)
+		}
+	}()
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
@@ -667,6 +675,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 			}
 
 			currentStepGroupID = stepPlan.GroupID
+			if stepPlan.GroupID != "" {
+				lastStepGroupID = stepPlan.GroupID
+			}
 		}
 
 		stepExecutionID := stepPlan.UUID
