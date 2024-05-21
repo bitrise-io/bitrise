@@ -79,7 +79,7 @@ func Test_Docker(t *testing.T) {
 				"Step is running in container: frolvlad/alpine-bash:latest",
 			},
 			requiredLogPatterns: []string{
-				"Container (bitrise-workflow-*) is unhealthy...",
+				"*Container (bitrise-workflow-*) is unhealthy...*",
 			},
 		},
 		"docker create fails when invalid option is provided": {
