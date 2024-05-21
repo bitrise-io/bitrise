@@ -81,9 +81,6 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	}
 
 	deps := []string{}
-	if configs.IsSteplibOfflineMode {
-		deps = append(deps, "zstd")
-	}
 
 	switch runtime.GOOS {
 	case "darwin":
