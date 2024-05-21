@@ -17,7 +17,7 @@ const (
 )
 
 var stepsCommand = cli.Command{
-	Name:  "beta-steps",
+	Name:  "steps",
 	Usage: "Manage Steps cache.",
 	Subcommands: []cli.Command{
 		{

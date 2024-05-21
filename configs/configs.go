@@ -60,7 +60,8 @@ const (
 	// - StepLib update will be disabled when using non-exact step version (latest minor or major)
 	// - When a step or step version is not found in the cache, will not be downloaded. Instead will log
 	//  a error message (including what other Step versions are available).
-	IsSteplibOfflineModeEnvKey = "BITRISE_BETA_OFFLINE_MODE"
+	// - Analytics will be disabled
+	IsSteplibOfflineModeEnvKey = "BITRISE_OFFLINE_MODE"
 
 	// --- Debug Options
 
