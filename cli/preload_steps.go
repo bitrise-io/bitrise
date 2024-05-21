@@ -21,7 +21,7 @@ var stepsCommand = cli.Command{
 	Usage: "Manage Steps cache.",
 	Subcommands: []cli.Command{
 		{
-			Name:  "list",
+			Name:  "list-cached",
 			Usage: "List all the cached steps",
 			Action: func(c *cli.Context) error {
 				return listCachedSteps(c)
