@@ -84,11 +84,11 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 
 	switch runtime.GOOS {
 	case "darwin":
-		if err := doSetupOnOSX(false, deps); err != nil {
+		if err := doSetupOnOSX(configs.IsCIMode, deps); err != nil {
 			return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
 		}
 	case "linux":
-		if err := doSetupOnLinux(false, deps); err != nil {
+		if err := doSetupOnLinux(configs.IsCIMode, deps); err != nil {
 			return fmt.Errorf("Failed to do Linux-specific setup: %s", err)
 		}
 	default:
