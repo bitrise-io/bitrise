@@ -30,6 +30,7 @@ const (
 	stepSkippedEventName           = "step_skipped"
 	cliWarningEventName            = "cli_warning"
 	toolVersionSnapshotEventName   = "tool_version_snapshot"
+	cliCommandEventName            = "cli_command"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -60,6 +61,9 @@ const (
 	stackRevIDProperty            = "stack_rev_id"
 	snapshotProperty              = "snapshot"
 	toolVersionsProperty          = "tool_versions"
+	commandProperty               = "command"
+	subcommandProperty            = "subcommand"
+	flagsProperty                 = "flags"
 
 	failedValue                    = "failed"
 	successfulValue                = "successful"
@@ -108,6 +112,7 @@ type Tracker interface {
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
 	SendCLIWarning(message string)
 	SendToolVersionSnapshot(toolVersions, snapshotType string)
+	SendCommandInfo(command, subcommand string, flags []string)
 	IsTracking() bool
 	Wait()
 }
@@ -201,6 +206,25 @@ func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bo
 	}
 
 	t.tracker.Enqueue(workflowFinishedEventName, properties, analytics.Properties{statusProperty: statusMessage})
+}
+
+func (t tracker) SendCommandInfo(command, subcommand string, flags []string) {
+	if !t.stateChecker.Enabled() {
+		return
+	}
+
+	buildSlug := t.envRepository.Get(buildSlugEnvKey)
+	cliVersion, _ := version.BitriseCliVersion()
+
+	properties := analytics.Properties{
+		commandProperty:    command,
+		subcommandProperty: subcommand,
+		flagsProperty:      flags,
+		buildSlugProperty:  buildSlug,
+		cliVersionProperty: cliVersion.String(),
+	}
+
+	t.tracker.Enqueue(cliCommandEventName, properties)
 }
 
 func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {

@@ -192,11 +192,6 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		return 1, fmt.Errorf("specified Workflow (%s) does not exist", r.config.Workflow)
 	}
 
-	tracker := analytics.NewDefaultTracker()
-	defer func() {
-		tracker.Wait()
-	}()
-
 	if err := bitrise.RunSetupIfNeeded(); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
@@ -218,7 +213,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		}()
 	}
 
-	if buildRunResults, err := r.runWorkflows(tracker); err != nil {
+	if buildRunResults, err := r.runWorkflows(globalTracker); err != nil {
 		return 1, fmt.Errorf("failed to run workflow: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		return buildRunResults.ExitCode(), errWorkflowRunFailed
