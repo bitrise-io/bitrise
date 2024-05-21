@@ -20,6 +20,10 @@ var setupCommand = cli.Command{
 	},
 	Flags: []cli.Flag{
 		cli.BoolFlag{
+			Name:  "full",
+			Usage: "Also calls 'brew doctor'.",
+		},
+		cli.BoolFlag{
 			Name:  "clean",
 			Usage: "Removes bitrise's workdir before setup.",
 		},
