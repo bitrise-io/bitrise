@@ -61,10 +61,6 @@ var stepsCommand = cli.Command{
 					Usage: "Maintainer of the steps to list or preload",
 					Value: bitriseMaintainer,
 				},
-				// cli.BoolFlag{
-				// 	Name:  "binary",
-				// 	Usage: "Compile and compress steps executables to take up less space",
-				// },
 				cli.UintFlag{
 					Name:  "majors",
 					Usage: "Include X latest major versions",
@@ -112,8 +108,6 @@ func preloadSteps(c *cli.Context) error {
 	maintaner := c.String("maintainer")
 
 	opts := preload.CacheOpts{}
-	// shouldCompile := c.Bool("binary")
-	// opts.UseBinaryExecutable = shouldCompile
 	numMajor := c.Uint("majors")
 	if numMajor != 0 {
 		opts.NumMajor = numMajor
