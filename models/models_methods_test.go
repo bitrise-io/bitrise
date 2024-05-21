@@ -624,12 +624,6 @@ workflows:
 	}
 }
 
-func createConfig(t *testing.T, yamlContent string) BitriseDataModel {
-	config := BitriseDataModel{}
-	require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &config))
-	return config
-}
-
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
 	t.Log("before-after test")
@@ -825,8 +819,7 @@ workflows:
   _deps-update:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
 		warnings, err := config.Validate()
 		require.NoError(t, err)
@@ -857,10 +850,9 @@ workflows:
   ci:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
-		_, err = config.Validate()
+		_, err := config.Validate()
 		require.EqualError(t, err, "trigger item #1: non-existent pipeline defined as trigger target: release")
 	}
 
@@ -878,10 +870,9 @@ workflows:
   ci:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
-		_, err = config.Validate()
+		_, err := config.Validate()
 		require.EqualError(t, err, "trigger item #1: non-existent workflow defined as trigger target: release")
 	}
 }
@@ -1283,13 +1274,6 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 	}
 }
 
-func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {
-	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
-		return
-	}
-	return
-}
-
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
 	configStr := `format_version: 2
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -1314,10 +1298,9 @@ workflows:
         description: test
 `
 
-	config, err := configModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
+	config := createConfig(t, configStr)
 
-	err = config.RemoveRedundantFields()
+	err := config.RemoveRedundantFields()
 	require.NoError(t, err)
 
 	require.Equal(t, "2", config.FormatVersion)
@@ -1416,4 +1399,10 @@ func TestBitriseDataModelValidateWorkflowsCircularDependency(t *testing.T) {
 
 	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
+}
+
+func createConfig(t *testing.T, yamlContent string) BitriseDataModel {
+	config := BitriseDataModel{}
+	require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &config))
+	return config
 }
