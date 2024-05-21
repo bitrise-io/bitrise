@@ -8,20 +8,21 @@ import (
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/bitrise/toolkits"
 	"github.com/bitrise-io/bitrise/version"
 	"github.com/bitrise-io/go-utils/colorstring"
+	"github.com/bitrise-io/stepman/toolkits"
 )
 
 type SetupMode string
+
 const (
 	SetupModeDefault SetupMode = "default"
 	SetupModeMinimal SetupMode = "minimal"
 )
 
 const (
-	minEnvmanVersion  = "2.4.2"
-	minStepmanVersion = "0.16.1"
+	minEnvmanVersion  = "2.4.3"
+	minStepmanVersion = "0.16.3"
 )
 
 type PluginDependency struct {
