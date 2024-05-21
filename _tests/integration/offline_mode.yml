@@ -29,7 +29,7 @@ workflows:
     before_run:
     - prepare
     steps:
-    - fastlane@3.4.3: # not latest, will not be preloaded
+    - fastlane@3.4.3:  # not latest, will not be preloaded
         inputs:
         - lane: test_fastlane
         - work_dir: $TMP_DIR
@@ -42,7 +42,7 @@ workflows:
     before_run:
     - prepare
     steps:
-    - fastlane: # not latest, will not be preloaded
+    - fastlane:  # not latest, will not be preloaded
         inputs:
         - lane: test_fastlane
         - work_dir: $TMP_DIR
