@@ -124,7 +124,6 @@ func (workflow *WorkflowModel) Normalize() error {
 			}
 			stepListItem[key] = step
 		}
-		// TODO: check if Normalize is needed for 'with'
 	}
 
 	return nil

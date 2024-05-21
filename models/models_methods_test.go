@@ -76,6 +76,58 @@ workflows:
   test:
   check:`,
 		},
+		{
+			name: "Containers are normalized",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+    envs:
+    - POSTGRES_PASSWORD: password
+    ports:
+    - 5435:5432
+    options: >-
+      --health-cmd pg_isready
+      --health-interval 10s
+      --health-timeout 5s
+      --health-retries 5
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec
+  test_features:
+    steps:
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec spec/features/`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
