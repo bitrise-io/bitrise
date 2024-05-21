@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const configPath = "offline_mode.yml"
+const offlineModeConfigPath = "offline_mode.yml"
 
 func preloadSteps(t *testing.T) {
 	cmd := command.New(binPath(), "steps", "preload", "--majors=1", "--minors=1", "--minors-since=0", "--patches-since=0")
@@ -19,7 +19,7 @@ func preloadSteps(t *testing.T) {
 func Test_GivenOfflineMode_WhenStepNotCached_ThenFails(t *testing.T) {
 	preloadSteps(t)
 
-	cmd := command.New(binPath(), "run", "not_cached", "--config", configPath)
+	cmd := command.New(binPath(), "run", "not_cached", "--config", offlineModeConfigPath)
 	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
@@ -30,7 +30,7 @@ func Test_GivenOfflineMode_WhenStepNotCached_ThenFails(t *testing.T) {
 func Test_GivenOnlineMode_WhenStepNotCached_ThenSucceeds(t *testing.T) {
 	preloadSteps(t)
 
-	cmd := command.New(binPath(), "run", "not_cached", "--config", configPath)
+	cmd := command.New(binPath(), "run", "not_cached", "--config", offlineModeConfigPath)
 	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=false")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
@@ -40,7 +40,7 @@ func Test_GivenOnlineMode_WhenStepNotCached_ThenSucceeds(t *testing.T) {
 func Test_GivenOfflineMode_WhenStepCached_ThenSuceeds(t *testing.T) {
 	preloadSteps(t)
 
-	cmd := command.New(binPath(), "run", "cached", "--config", configPath)
+	cmd := command.New(binPath(), "run", "cached", "--config", offlineModeConfigPath)
 	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
