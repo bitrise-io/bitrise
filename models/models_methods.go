@@ -105,7 +105,6 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
-// Normalize ...
 func (workflow *WorkflowModel) Normalize() error {
 	for _, env := range workflow.Environments {
 		if err := env.Normalize(); err != nil {
@@ -129,7 +128,6 @@ func (workflow *WorkflowModel) Normalize() error {
 	return nil
 }
 
-// Normalize ...
 func (app *AppModel) Normalize() error {
 	for _, env := range app.Environments {
 		if err := env.Normalize(); err != nil {
@@ -139,7 +137,6 @@ func (app *AppModel) Normalize() error {
 	return nil
 }
 
-// Normalize ...
 func (config *BitriseDataModel) Normalize() error {
 	if err := config.App.Normalize(); err != nil {
 		return err
@@ -206,7 +203,6 @@ func (with WithModel) Validate(workflowID string, containers, services map[strin
 
 }
 
-// Validate ...
 func (workflow *WorkflowModel) Validate() ([]string, error) {
 	var warnings []string
 
@@ -266,7 +262,6 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 	return warnings, nil
 }
 
-// Validate ...
 func (app *AppModel) Validate() error {
 	for _, env := range app.Environments {
 		if err := env.Validate(); err != nil {
@@ -276,7 +271,6 @@ func (app *AppModel) Validate() error {
 	return nil
 }
 
-// Validate ...
 func (config *BitriseDataModel) Validate() ([]string, error) {
 	var warnings []string
 
@@ -485,7 +479,6 @@ func validateID(id, modelType string) (string, error) {
 // ----------------------------
 // --- FillMissingDefaults
 
-// FillMissingDefaults ...
 func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
 	// Don't call step.FillMissingDefaults()
 	// StepLib versions of steps (which are the default versions),
@@ -506,7 +499,6 @@ func (workflow *WorkflowModel) FillMissingDefaults(title string) error {
 	return nil
 }
 
-// FillMissingDefaults ...
 func (app *AppModel) FillMissingDefaults() error {
 	for _, env := range app.Environments {
 		if err := env.FillMissingDefaults(); err != nil {
@@ -516,7 +508,6 @@ func (app *AppModel) FillMissingDefaults() error {
 	return nil
 }
 
-// FillMissingDefaults ...
 func (config *BitriseDataModel) FillMissingDefaults() error {
 	if err := config.App.FillMissingDefaults(); err != nil {
 		return err
@@ -652,7 +643,6 @@ func (app *AppModel) removeRedundantFields() error {
 	return nil
 }
 
-// RemoveRedundantFields ...
 func (config *BitriseDataModel) RemoveRedundantFields() error {
 	if err := config.App.removeRedundantFields(); err != nil {
 		return err
@@ -668,7 +658,6 @@ func (config *BitriseDataModel) RemoveRedundantFields() error {
 // ----------------------------
 // --- Merge
 
-// MergeEnvironmentWith ...
 func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envmanModels.EnvironmentItemModel) error {
 	// merge key-value
 	key, _, err := env.GetKeyValuePair()
@@ -764,7 +753,6 @@ func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.Envi
 	return envmanModels.EnvironmentItemModel{}, false
 }
 
-// MergeStepWith ...
 func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepModel, error) {
 	if otherStep.Title != nil {
 		step.Title = pointers.NewStringPtr(*otherStep.Title)

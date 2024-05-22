@@ -168,7 +168,6 @@ func isDirEmpty(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-// GetBitriseConfigFromBase64Data ...
 func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
 	if err != nil {
@@ -183,7 +182,6 @@ func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataM
 	return config, warnings, nil
 }
 
-// GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	if bitriseConfigPath == "" {
 		bitriseConfigPath = filepath.Join(configs.CurrentDir, DefaultBitriseConfigFileName)
@@ -198,7 +196,6 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	return bitriseConfigPath, nil
 }
 
-// CreateBitriseConfigFromCLIParams ...
 func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
 	bitriseConfig := models.BitriseDataModel{}
 	warnings := []string{}
@@ -238,7 +235,6 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 	return bitriseConfig, warnings, nil
 }
 
-// GetInventoryFromBase64Data ...
 func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {
 	inventoryBase64Bytes, err := base64.StdEncoding.DecodeString(inventoryBase64Str)
 	if err != nil {
@@ -253,7 +249,6 @@ func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.Envir
 	return inventory.Envs, nil
 }
 
-// GetInventoryFilePath ...
 func GetInventoryFilePath(inventoryPath string) (string, error) {
 	if inventoryPath == "" {
 		log.Debug("[BITRISE_CLI] - Inventory path not defined, searching for " + DefaultSecretsFileName + " in current folder...")
@@ -269,7 +264,6 @@ func GetInventoryFilePath(inventoryPath string) (string, error) {
 	return inventoryPath, nil
 }
 
-// CreateInventoryFromCLIParams ...
 func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]envmanModels.EnvironmentItemModel, error) {
 	inventoryEnvironments := []envmanModels.EnvironmentItemModel{}
 

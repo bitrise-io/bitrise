@@ -30,11 +30,9 @@ import (
 )
 
 const (
-	// DefaultBitriseConfigFileName ...
 	DefaultBitriseConfigFileName = "bitrise.yml"
-	// DefaultSecretsFileName ...
-	DefaultSecretsFileName = ".bitrise.secrets.yml"
-	OutputFormatKey        = "output-format"
+	DefaultSecretsFileName       = ".bitrise.secrets.yml"
+	OutputFormatKey              = "output-format"
 
 	depManagerBrew      = "brew"
 	secretFilteringFlag = "secret-filtering"

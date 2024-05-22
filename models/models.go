@@ -10,28 +10,22 @@ import (
 )
 
 const (
-	// FormatVersion ...
 	FormatVersion       = "14"
 	StepListItemWithKey = "with"
 )
 
-// WithModel ...
 type WithModel struct {
 	ContainerID string                  `json:"container,omitempty" yaml:"container,omitempty"`
 	ServiceIDs  []string                `json:"services,omitempty" yaml:"services,omitempty"`
 	Steps       []StepListStepItemModel `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
-// StepListWithItemModel ..
 type StepListWithItemModel map[string]WithModel
 
-// StepListStepItemModel ...
 type StepListStepItemModel map[string]stepmanModels.StepModel
 
-// StepListItemModel ...
 type StepListItemModel map[string]interface{}
 
-// PipelineModel ...
 type PipelineModel struct {
 	Title       string               `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     string               `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -39,10 +33,8 @@ type PipelineModel struct {
 	Stages      []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
 }
 
-// StageListItemModel ...
 type StageListItemModel map[string]StageModel
 
-// StageModel ...
 type StageModel struct {
 	Title           string                       `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary         string                       `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -53,18 +45,14 @@ type StageModel struct {
 	Workflows       []StageWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
-// StageWorkflowListItemModel ...
 type StageWorkflowListItemModel map[string]StageWorkflowModel
 
-// StageWorkflowModel ...
 type StageWorkflowModel struct {
 	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 }
 
-// WorkflowListItemModel ...
 type WorkflowListItemModel map[string]WorkflowModel
 
-// WorkflowModel ...
 type WorkflowModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -90,7 +78,6 @@ type Container struct {
 	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
-// AppModel ...
 type AppModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -98,7 +85,6 @@ type AppModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
-// BitriseDataModel ...
 type BitriseDataModel struct {
 	FormatVersion        string `json:"format_version" yaml:"format_version"`
 	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
@@ -118,14 +104,12 @@ type BitriseDataModel struct {
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
-// BuildRunStartModel ...
 type BuildRunStartModel struct {
 	EventName   string    `json:"event_name" yaml:"event_name"`
 	ProjectType string    `json:"project_type" yaml:"project_type"`
 	StartTime   time.Time `json:"start_time" yaml:"start_time"`
 }
 
-// BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	WorkflowID           string                `json:"workflow_id" yaml:"workflow_id"`
 	EventName            string                `json:"event_name" yaml:"event_name"`
@@ -138,7 +122,6 @@ type BuildRunResultsModel struct {
 	SkippedSteps         []StepRunResultsModel `json:"skipped_steps" yaml:"skipped_steps"`
 }
 
-// StepRunResultsModel ...
 type StepRunResultsModel struct {
 	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
 	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
@@ -153,7 +136,6 @@ type StepRunResultsModel struct {
 	NoOutputTimeout time.Duration `json:"-"`
 }
 
-// StepError ...
 type StepError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -252,7 +234,6 @@ func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
 	return formattedTimeInterval
 }
 
-// TestResultStepInfo ...
 type TestResultStepInfo struct {
 	ID      string `json:"id" yaml:"id"`
 	Version string `json:"version" yaml:"version"`
