@@ -146,7 +146,7 @@ func (cm *ContainerManager) Login(container models.Container, envs map[string]st
 	return nil
 }
 
-func (cm *ContainerManager) StartContainerFroStepGroup(
+func (cm *ContainerManager) StartContainerForStepGroup(
 	container models.Container,
 	groupID string,
 	envs map[string]string,
@@ -182,7 +182,7 @@ func (cm *ContainerManager) StartContainerFroStepGroup(
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainersFroStepGroup(
+func (cm *ContainerManager) StartServiceContainersForStepGroup(
 	services map[string]models.Container,
 	groupID string,
 	envs map[string]string,
@@ -224,11 +224,11 @@ func (cm *ContainerManager) StartServiceContainersFroStepGroup(
 	return containers, nil
 }
 
-func (cm *ContainerManager) GetContainerFroStepGroup(groupID string) *RunningContainer {
+func (cm *ContainerManager) GetContainerForStepGroup(groupID string) *RunningContainer {
 	return cm.workflowContainers[groupID]
 }
 
-func (cm *ContainerManager) GetServiceContainersFroStepGroup(groupID string) []*RunningContainer {
+func (cm *ContainerManager) GetServiceContainersForStepGroup(groupID string) []*RunningContainer {
 	return cm.serviceContainers[groupID]
 }
 

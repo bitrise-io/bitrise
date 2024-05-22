@@ -438,7 +438,7 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.dockerManager.GetContainerFroStepGroup(groupID)
+		runningContainer := r.dockerManager.GetContainerForStepGroup(groupID)
 		if runningContainer == nil {
 			return 1, fmt.Errorf("Docker container does not exist")
 		}
@@ -587,7 +587,7 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 				log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflowTitle)
 			}
 
-			_, err := r.dockerManager.StartContainerFroStepGroup(*containerDef, groupID, envList)
+			_, err := r.dockerManager.StartContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
 				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 			}
@@ -596,7 +596,7 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 
 	if len(serviceIDs) > 0 {
 		servicesDefs := r.ServiceDefinitions(serviceIDs...)
-		_, err := r.dockerManager.StartServiceContainersFroStepGroup(servicesDefs, groupID, envList)
+		_, err := r.dockerManager.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
 		if err != nil {
 			log.Errorf("❌ Some services failed to start properly!")
 		}
@@ -604,14 +604,14 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 }
 
 func (r WorkflowRunner) stopContainersForStepGroup(groupID, workflowTitle string) {
-	if container := r.dockerManager.GetContainerFroStepGroup(groupID); container != nil {
+	if container := r.dockerManager.GetContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 		if err := container.Destroy(); err != nil {
 			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
 		}
 	}
 
-	if services := r.dockerManager.GetServiceContainersFroStepGroup(groupID); services != nil {
+	if services := r.dockerManager.GetServiceContainersForStepGroup(groupID); services != nil {
 		for _, container := range services {
 			if err := container.Destroy(); err != nil {
 				log.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
