@@ -19,10 +19,17 @@ type StepListItemModel map[string]stepmanModels.StepModel
 
 // PipelineModel ...
 type PipelineModel struct {
-	Title       string               `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string               `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
-	Stages      []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Title       string                           `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string                           `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string                           `json:"description,omitempty" yaml:"description,omitempty"`
+	Stages      []StageListItemModel             `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Workflows   map[string]PipelineWorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+}
+
+// PipelineWorkflowModel ...
+type PipelineWorkflowModel struct {
+	RunIf     string   `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	DependsOn []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 }
 
 // StageListItemModel ...

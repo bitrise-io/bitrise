@@ -6,7 +6,34 @@ app:
   envs:
   - BIN_NAME: bitrise
 
+pipelines:
+  pipeline1:
+    workflows:
+      A:
+        run_if: true
+      B:
+        depends_on:
+        - B
+#  pipeline2:
+#    stages:
+#    - stage1: { }
+#  pipeline3:
+#    stages:
+#    - stage1: { }
+#    workflows:
+#      A: { }
+#  pipeline4: { }
+
+stages:
+  stage1:
+    workflows:
+    - A: { }
+
 workflows:
+  A:
+    steps: [ ]
+  B:
+    steps: [ ]
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:

@@ -281,24 +281,45 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 			return pipelineWarnings, err
 		}
 
-		if len(pipeline.Stages) == 0 {
-			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+		hasStages := len(pipeline.Stages) > 0
+		hasWorkflows := len(pipeline.Workflows) > 0
+
+		if hasStages && hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has both stages and workflows defined", ID)
 		}
 
-		for _, pipelineStage := range pipeline.Stages {
-			pipelineStageID, err := getStageID(pipelineStage)
-			if err != nil {
-				return pipelineWarnings, err
-			}
-			found := false
-			for stageID := range config.Stages {
-				if stageID == pipelineStageID {
-					found = true
-					break
+		if !hasStages && !hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage or workflow defined", ID)
+		}
+
+		if hasStages {
+			for _, pipelineStage := range pipeline.Stages {
+				pipelineStageID, err := getStageID(pipelineStage)
+				if err != nil {
+					return pipelineWarnings, err
+				}
+				found := false
+				for stageID := range config.Stages {
+					if stageID == pipelineStageID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
 				}
 			}
-			if !found {
-				return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+		} else {
+			for pipelineWorkflowID, pipelineWorkflow := range pipeline.Workflows {
+				for _, parentID := range pipelineWorkflow.DependsOn {
+					if _, ok := pipeline.Workflows[parentID]; !ok {
+						return pipelineWarnings, fmt.Errorf("pipeline workflow (%s) depends on non existing workflow (%s)", pipelineWorkflowID, parentID)
+					}
+				}
+
+				if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
+					return pipelineWarnings, fmt.Errorf("pipeline workflow (%s) does not exist in the worklfow section", pipelineWorkflowID)
+				}
 			}
 		}
 	}
