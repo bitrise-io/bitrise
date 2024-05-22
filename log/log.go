@@ -154,6 +154,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		m.Printf("Debug mode: %v", colorstring.Cyan("%v", plan.DebugMode))
 		m.Printf("Secret filtering mode: %v", colorstring.Cyan("%v", plan.SecretFilteringMode))
 		m.Printf("Secret Envs filtering mode: %v", colorstring.Cyan("%v", plan.SecretEnvsFilteringMode))
+		m.Printf("Using Step library in offline mode: %v", colorstring.Cyan("%v", plan.IsSteplibOfflineMode))
 		m.Printf("No output timeout mode: %v", colorstring.Cyan("%v", plan.NoOutputTimeoutMode))
 		m.Print()
 		var workflowIDs []string
@@ -171,7 +172,6 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		m.Printf("%s: %s", prefix, colorstring.Cyan(strings.Join(workflowIDs, " → ")))
 	}
 }
-
 
 func (m *defaultLogger) PrintStepStartedEvent(params StepStartedParams) {
 	if m.opts.LoggerType == JSONLogger {

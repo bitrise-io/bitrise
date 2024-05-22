@@ -24,6 +24,7 @@ var (
 	commands = []cli.Command{
 		initCmd,
 		setupCommand,
+		stepsCommand,
 		{
 			Name:   "version",
 			Usage:  "Prints the version",
