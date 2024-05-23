@@ -122,31 +122,6 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 	}
 }
 
-func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
-	if container.Credentials.Username != "" && container.Credentials.Password != "" {
-		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
-
-		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
-		resolvedUsername := resolveEnvVariable(container.Credentials.Username, envs)
-		args := []string{"login", "--username", resolvedUsername, "--password", resolvedPassword}
-
-		if container.Credentials.Server != "" {
-			args = append(args, container.Credentials.Server)
-		} else {
-			args = append(args, container.Image)
-		}
-
-		cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(args, " "))
-
-		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
-			cm.logger.Errorf(out)
-			return fmt.Errorf("run docker login: %w", err)
-		}
-	}
-	return nil
-}
-
 func (cm *ContainerManager) StartContainerForStepGroup(
 	container models.Container,
 	groupID string,
@@ -271,6 +246,31 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 		}
 	}
 
+	return nil
+}
+
+func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
+	if container.Credentials.Username != "" && container.Credentials.Password != "" {
+		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
+
+		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
+		resolvedUsername := resolveEnvVariable(container.Credentials.Username, envs)
+		args := []string{"login", "--username", resolvedUsername, "--password", resolvedPassword}
+
+		if container.Credentials.Server != "" {
+			args = append(args, container.Credentials.Server)
+		} else {
+			args = append(args, container.Image)
+		}
+
+		cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(args, " "))
+
+		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			cm.logger.Errorf(out)
+			return fmt.Errorf("run docker login: %w", err)
+		}
+	}
 	return nil
 }
 

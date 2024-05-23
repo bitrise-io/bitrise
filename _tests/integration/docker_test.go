@@ -40,7 +40,7 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-login-fail",
 			requireErr:   true,
 			requireLogs: []string{
-				"workflow has docker credentials provided, but the authentication failed",
+				"docker credentials provided, but the authentication failed",
 			},
 		},
 		"docker login succeeds when correct credentials are provided": {
