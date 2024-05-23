@@ -12,11 +12,13 @@ services:
     credentials:
       username: $DOCKER_USR_SERVICE_1_CONTAINER
       password: $DOCKER_PW_SERVICE_1_CONTAINER
+    options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 3
   service_2_container:
     image: localhost:5003/frolvlad/alpine-bash:latest
     credentials:
       username: $DOCKER_USR_SERVICE_2_CONTAINER
       password: $DOCKER_PW_SERVICE_2_CONTAINER
+    options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 3
 workflows:
   docker-login-multiple-containers:
     before_run:
@@ -24,7 +26,9 @@ workflows:
     - _start_mock_registry_for_service_1_container
     - _start_mock_registry_for_service_2_container
     after_run:
-    - _cleanup_mock_registry
+    - _cleanup_mock_registry_for_step_execution_container
+    - _cleanup_mock_registry_for_service_1_container
+    - _cleanup_mock_registry_for_service_2_container
     title: Expected to pass docker login
     steps:
     - with:
@@ -71,6 +75,21 @@ workflows:
             docker tag frolvlad/alpine-bash:latest localhost:$PORT/frolvlad/alpine-bash:latest
             docker push localhost:$PORT/frolvlad/alpine-bash:latest
             docker logout localhost:$PORT
+  _cleanup_mock_registry_for_step_execution_container:
+    envs:
+    - PORT: 5001
+    after_run:
+    - _cleanup_mock_registry
+  _cleanup_mock_registry_for_service_1_container:
+    envs:
+    - PORT: 5002
+    after_run:
+    - _cleanup_mock_registry
+  _cleanup_mock_registry_for_service_2_container:
+    envs:
+    - PORT: 5003
+    after_run:
+    - _cleanup_mock_registry
   _cleanup_mock_registry:
     steps:
     - script:
@@ -78,5 +97,5 @@ workflows:
         title: cleanup mock registry
         inputs:
         - content: |-
-            docker stop registry
-            docker rm registry
+            docker stop registry_$PORT
+            docker rm registry_$PORT
