@@ -117,6 +117,15 @@ func Test_Docker(t *testing.T) {
 				"Waiting for container (slow-booting-service) to be healthy",
 			},
 		},
+		"docker start container and services with credentials": {
+			configPath:    "docker_multiple_containers_bitrise.yml",
+			workflowName:  "docker-login-multiple-containers",
+			inventoryPath: "docker_multiple_containers_secrets.yml",
+			requireErr:    false,
+			requireLogs: []string{
+				"Waiting for container (slow-booting-service) to be healthy",
+			},
+		},
 	}
 
 	for testName, testCase := range testCases {
