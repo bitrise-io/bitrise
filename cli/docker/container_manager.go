@@ -127,7 +127,8 @@ func (cm *ContainerManager) login(container models.Container, envs map[string]st
 		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
 		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
-		args := []string{"login", "--username", container.Credentials.Username, "--password", resolvedPassword}
+		resolvedUsername := resolveEnvVariable(container.Credentials.Username, envs)
+		args := []string{"login", "--username", resolvedUsername, "--password", resolvedPassword}
 
 		if container.Credentials.Server != "" {
 			args = append(args, container.Credentials.Server)
