@@ -165,7 +165,6 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 }
 
 type DockerManager interface {
-	Login(models.Container, map[string]string) error
 	StartContainerForStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
 	StartServiceContainersForStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
 	GetContainerForStepGroup(string) *docker.RunningContainer

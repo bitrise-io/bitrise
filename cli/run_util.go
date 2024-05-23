@@ -582,11 +582,6 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
-			// TODO: Why only login for step execution containers?
-			if err := r.dockerManager.Login(*containerDef, envList); err != nil {
-				log.Errorf("%s workflow has docker credentials provided, but the authentication failed.", workflowTitle)
-			}
-
 			_, err := r.dockerManager.StartContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
 				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)

@@ -122,7 +122,7 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 	}
 }
 
-func (cm *ContainerManager) Login(container models.Container, envs map[string]string) error {
+func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
 	if container.Credentials.Username != "" && container.Credentials.Password != "" {
 		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
@@ -153,6 +153,12 @@ func (cm *ContainerManager) StartContainerForStepGroup(
 ) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
+
+	if err := cm.login(container, envs); err != nil {
+		log.Errorf("docker credentials provided, but the authentication failed.")
+		return nil, fmt.Errorf("authentication failed: %w", err)
+	}
+
 	containerName := fmt.Sprintf("bitrise-workflow-%s", groupID)
 
 	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
@@ -187,13 +193,22 @@ func (cm *ContainerManager) StartServiceContainersForStepGroup(
 	groupID string,
 	envs map[string]string,
 ) ([]*RunningContainer, error) {
-	var containers []*RunningContainer
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
+
+	var containers []*RunningContainer
 	failedServices := make(map[string]error)
+
 	for serviceName := range services {
+		serviceContainer := services[serviceName]
+
+		if err := cm.login(serviceContainer, envs); err != nil {
+			failedServices[serviceName] = err
+			continue
+		}
+
 		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.runContainer(services[serviceName], containerCreateOptions{
+		runningContainer, err := cm.runContainer(serviceContainer, containerCreateOptions{
 			name: serviceName,
 		}, envs)
 		if runningContainer != nil {
