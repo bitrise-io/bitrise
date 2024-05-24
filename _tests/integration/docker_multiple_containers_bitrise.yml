@@ -68,8 +68,15 @@ workflows:
         title: setup mock registry for step execution container
         inputs:
         - content: |-
+            mkdir auth
+            docker run --entrypoint htpasswd httpd:2 -Bbn $USR $PASS > auth/htpasswd
             docker pull --platform linux/amd64 registry:latest
-            docker run -d -p $PORT:5000 --restart always --name registry_$PORT registry
+            docker run -d -p $PORT:5000 --restart always --name registry_$PORT \
+              -v "$(pwd)"/auth:/auth \
+              -e "REGISTRY_AUTH=htpasswd" \
+              -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+              -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+              registry
             docker login localhost:$PORT -u $USR -p $PASS
             docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.healthy-container .
             docker tag healthy-image localhost:$PORT/healthy-image
