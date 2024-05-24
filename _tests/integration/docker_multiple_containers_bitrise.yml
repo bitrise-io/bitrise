@@ -70,10 +70,10 @@ workflows:
         - content: |-
             docker pull --platform linux/amd64 registry:latest
             docker run -d -p $PORT:5000 --restart always --name registry_$PORT registry
-            docker pull --platform linux/amd64 frolvlad/alpine-bash:latest
             docker login localhost:$PORT -u $USR -p $PASS
-            docker tag frolvlad/alpine-bash:latest localhost:$PORT/frolvlad/alpine-bash:latest
-            docker push localhost:$PORT/frolvlad/alpine-bash:latest
+            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.healthy-container .
+            docker tag healthy-image localhost:$PORT/healthy-image
+            docker push localhost:$PORT/healthy-image
             docker logout localhost:$PORT
   _cleanup_mock_registry_for_step_execution_container:
     envs:
