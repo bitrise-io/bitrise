@@ -4,13 +4,13 @@ containers:
   step_execution_container:
     image: localhost:5001/healthy-image
     credentials:
-      username: $DOCKER_USR_STEP_EXECUTION_CONTAINER
+      username: invalid
       password: $DOCKER_PW_STEP_EXECUTION_CONTAINER
 services:
   service_1_container:
     image: localhost:5002/healthy-image
     credentials:
-      username: $DOCKER_USR_SERVICE_1_CONTAINER
+      username: invalid
       password: $DOCKER_PW_SERVICE_1_CONTAINER
     options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 3
   service_2_container:
