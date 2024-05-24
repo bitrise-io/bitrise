@@ -123,7 +123,9 @@ func Test_Docker(t *testing.T) {
 			inventoryPath: "docker_multiple_containers_secrets.yml",
 			requireErr:    false,
 			requireLogs: []string{
-				"Waiting for container (slow-booting-service) to be healthy",
+				"Container (service_1_container) is healthy...",
+				"Container (service_2_container) is healthy...",
+				"Step is running in container: localhost:5001/healthy-image",
 			},
 		},
 	}
