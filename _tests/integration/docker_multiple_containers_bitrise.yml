@@ -5,7 +5,7 @@ containers:
     image: localhost:5001/healthy-image
     credentials:
       username: $DOCKER_USR_STEP_EXECUTION_CONTAINER
-      password: $DOCKER_PW_STEP_EXECUTION_CONTAINER
+      password: invalid
 services:
   service_1_container:
     image: localhost:5002/healthy-image
@@ -17,7 +17,7 @@ services:
     image: localhost:5003/healthy-image
     credentials:
       username: $DOCKER_USR_SERVICE_2_CONTAINER
-      password: $DOCKER_PW_SERVICE_2_CONTAINER
+      password: invalid
     options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 3
 workflows:
   docker-login-multiple-containers:
