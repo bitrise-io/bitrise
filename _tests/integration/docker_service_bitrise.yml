@@ -10,24 +10,27 @@ workflows:
   docker-service-start-fails:
     before_run:
     - _build-failing-image
-    services:
-    - failing-service
     steps:
-    - script:
-        title: Should succeed, but services related errors are logged
-        inputs:
-        - content: exit 0
+    - with:
+        services:
+        - failing-service
+        steps:
+        - script:
+            title: Should succeed, but services related errors are logged
+            inputs:
+            - content: exit 0
   docker-service-start-succeeds-after-retries:
     before_run:
     - _build-slow-starting-image
-    services:
-    - slow-booting-service
     steps:
-    - script:
-        title: Should succeed, but services related errors are logged
-        inputs:
-        - content: exit 0
-
+    - with:
+        services:
+        - slow-booting-service
+        steps:
+        - script:
+            title: Should succeed, but services related errors are logged
+            inputs:
+            - content: exit 0
   _build-failing-image:
     steps:
     - script:

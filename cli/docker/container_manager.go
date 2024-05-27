@@ -122,38 +122,20 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 	}
 }
 
-func (cm *ContainerManager) Login(container models.Container, envs map[string]string) error {
-	if container.Credentials.Username != "" && container.Credentials.Password != "" {
-		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
-
-		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
-		args := []string{"login", "--username", container.Credentials.Username, "--password", resolvedPassword}
-
-		if container.Credentials.Server != "" {
-			args = append(args, container.Credentials.Server)
-		} else {
-			args = append(args, container.Image)
-		}
-
-		cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(args, " "))
-
-		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
-		if err != nil {
-			cm.logger.Errorf(out)
-			return fmt.Errorf("run docker login: %w", err)
-		}
-	}
-	return nil
-}
-
-func (cm *ContainerManager) StartWorkflowContainer(
+func (cm *ContainerManager) StartContainerForStepGroup(
 	container models.Container,
-	workflowID string,
+	groupID string,
 	envs map[string]string,
 ) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	containerName := fmt.Sprintf("bitrise-workflow-%s", workflowID)
+
+	if err := cm.login(container, envs); err != nil {
+		log.Errorf("docker credentials provided, but the authentication failed.")
+		return nil, fmt.Errorf("authentication failed: %w", err)
+	}
+
+	containerName := fmt.Sprintf("bitrise-workflow-%s", groupID)
 
 	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
@@ -168,7 +150,7 @@ func (cm *ContainerManager) StartWorkflowContainer(
 
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
-		cm.workflowContainers[workflowID] = runningContainer
+		cm.workflowContainers[groupID] = runningContainer
 	}
 
 	if err != nil {
@@ -182,18 +164,27 @@ func (cm *ContainerManager) StartWorkflowContainer(
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainers(
+func (cm *ContainerManager) StartServiceContainersForStepGroup(
 	services map[string]models.Container,
-	workflowID string,
+	groupID string,
 	envs map[string]string,
 ) ([]*RunningContainer, error) {
-	var containers []*RunningContainer
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
+
+	var containers []*RunningContainer
 	failedServices := make(map[string]error)
+
 	for serviceName := range services {
+		serviceContainer := services[serviceName]
+
+		if err := cm.login(serviceContainer, envs); err != nil {
+			failedServices[serviceName] = err
+			continue
+		}
+
 		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.runContainer(services[serviceName], containerCreateOptions{
+		runningContainer, err := cm.runContainer(serviceContainer, containerCreateOptions{
 			name: serviceName,
 		}, envs)
 		if runningContainer != nil {
@@ -204,7 +195,7 @@ func (cm *ContainerManager) StartServiceContainers(
 		}
 	}
 	// Even on failure we save the references to make sure containers will be cleaned up
-	cm.serviceContainers[workflowID] = append(cm.serviceContainers[workflowID], containers...)
+	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], containers...)
 
 	if len(failedServices) != 0 {
 		errServices := fmt.Errorf("failed to start services")
@@ -224,12 +215,12 @@ func (cm *ContainerManager) StartServiceContainers(
 	return containers, nil
 }
 
-func (cm *ContainerManager) GetWorkflowContainer(workflowID string) *RunningContainer {
-	return cm.workflowContainers[workflowID]
+func (cm *ContainerManager) GetContainerForStepGroup(groupID string) *RunningContainer {
+	return cm.workflowContainers[groupID]
 }
 
-func (cm *ContainerManager) GetServiceContainers(workflowID string) []*RunningContainer {
-	return cm.serviceContainers[workflowID]
+func (cm *ContainerManager) GetServiceContainersForStepGroup(groupID string) []*RunningContainer {
+	return cm.serviceContainers[groupID]
 }
 
 func (cm *ContainerManager) DestroyAllContainers() error {
@@ -255,6 +246,31 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 		}
 	}
 
+	return nil
+}
+
+func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
+	if container.Credentials.Username != "" && container.Credentials.Password != "" {
+		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
+
+		resolvedPassword := resolveEnvVariable(container.Credentials.Password, envs)
+		resolvedUsername := resolveEnvVariable(container.Credentials.Username, envs)
+		args := []string{"login", "--username", resolvedUsername, "--password", resolvedPassword}
+
+		if container.Credentials.Server != "" {
+			args = append(args, container.Credentials.Server)
+		} else {
+			args = append(args, container.Image)
+		}
+
+		cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(args, " "))
+
+		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			cm.logger.Errorf(out)
+			return fmt.Errorf("run docker login: %w", err)
+		}
+	}
 	return nil
 }
 

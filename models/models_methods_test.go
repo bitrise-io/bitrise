@@ -76,6 +76,58 @@ workflows:
   test:
   check:`,
 		},
+		{
+			name: "Containers are normalized",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+    envs:
+    - POSTGRES_PASSWORD: password
+    ports:
+    - 5435:5432
+    options: >-
+      --health-cmd pg_isready
+      --health-interval 10s
+      --health-timeout 5s
+      --health-retries 5
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec
+  test_features:
+    steps:
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec spec/features/`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -419,31 +471,35 @@ containers:
     image: ruby:3.2
 workflows:
   test:
-    container: ruby
-    services:
-    - postgres
     steps:
-    - script:
-        title: Setup DB
-        inputs:
-        - content: bundle exec rails db:setup
-    - script:
-        title: Run tests
-        inputs:
-        - content: bundle exec rspec
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec
   test_features:
-    container: ruby
-    services:
-    - postgres
     steps:
-    - script:
-        title: Setup DB
-        inputs:
-        - content: bundle exec rails db:setup
-    - script:
-        title: Run tests
-        inputs:
-        - content: bundle exec rspec spec/features/`),
+    - with:
+        container: ruby
+        services:
+        - postgres
+        steps:
+        - script:
+            title: Setup DB
+            inputs:
+            - content: bundle exec rails db:setup
+        - script:
+            title: Run tests
+            inputs:
+            - content: bundle exec rspec spec/features/`),
 		},
 		{
 			name: "Invalid bitrise.yml: missing service id",
@@ -515,7 +571,9 @@ containers:
     image: ruby:3.2
 workflows:
   primary:
-    container: ruby_3_2`),
+    steps:
+    - with:
+        container: ruby_3_2`),
 			wantErr: "container (ruby_3_2) referenced in workflow (primary), but this container is not defined",
 		},
 		{
@@ -528,8 +586,10 @@ services:
     image: postgres:13
 workflows:
   primary:
-    services:
-    - postgres_13`),
+    steps:
+    - with:
+        services:
+        - postgres_13`),
 			wantErr: "service (postgres_13) referenced in workflow (primary), but this service is not defined",
 		},
 		{
@@ -542,9 +602,11 @@ services:
     image: postgres:13
 workflows:
   primary:
-    services:
-    - postgres
-    - postgres`),
+    steps:
+    - with:
+        services:
+        - postgres
+        - postgres`),
 			wantErr: "service (postgres) specified multiple times for workflow (primary)",
 		},
 	}
@@ -560,12 +622,6 @@ workflows:
 			}
 		})
 	}
-}
-
-func createConfig(t *testing.T, yamlContent string) BitriseDataModel {
-	config := BitriseDataModel{}
-	require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &config))
-	return config
 }
 
 // Workflow
@@ -763,8 +819,7 @@ workflows:
   _deps-update:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
 		warnings, err := config.Validate()
 		require.NoError(t, err)
@@ -795,10 +850,9 @@ workflows:
   ci:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
-		_, err = config.Validate()
+		_, err := config.Validate()
 		require.EqualError(t, err, "trigger item #1: non-existent pipeline defined as trigger target: release")
 	}
 
@@ -816,10 +870,9 @@ workflows:
   ci:
 `
 
-		config, err := configModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
+		config := createConfig(t, configStr)
 
-		_, err = config.Validate()
+		_, err := config.Validate()
 		require.EqualError(t, err, "trigger item #1: non-existent workflow defined as trigger target: release")
 	}
 }
@@ -1080,7 +1133,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 		}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
 		require.NoError(t, err)
 		require.Equal(t, "step1", id)
 	}
@@ -1092,7 +1145,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step2": stepData,
 		}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1101,7 +1154,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	{
 		stepListItem := StepListItemModel{}
 
-		id, _, err := GetStepIDStepDataPair(stepListItem)
+		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
 		require.Error(t, err)
 		require.Equal(t, "", id)
 	}
@@ -1221,13 +1274,6 @@ func TestRemoveEnvironmentRedundantFields(t *testing.T) {
 	}
 }
 
-func configModelFromYAMLBytes(configBytes []byte) (bitriseData BitriseDataModel, err error) {
-	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
-		return
-	}
-	return
-}
-
 func TestRemoveWorkflowRedundantFields(t *testing.T) {
 	configStr := `format_version: 2
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -1252,10 +1298,9 @@ workflows:
         description: test
 `
 
-	config, err := configModelFromYAMLBytes([]byte(configStr))
-	require.NoError(t, err)
+	config := createConfig(t, configStr)
 
-	err = config.RemoveRedundantFields()
+	err := config.RemoveRedundantFields()
 	require.NoError(t, err)
 
 	require.Equal(t, "2", config.FormatVersion)
@@ -1298,7 +1343,7 @@ workflows:
 		}
 
 		for _, stepListItem := range workflow.Steps {
-			_, step, err := GetStepIDStepDataPair(stepListItem)
+			_, step, _, err := stepListItem.GetStepListItemKeyAndValue()
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)
@@ -1354,4 +1399,10 @@ func TestBitriseDataModelValidateWorkflowsCircularDependency(t *testing.T) {
 
 	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
 	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
+}
+
+func createConfig(t *testing.T, yamlContent string) BitriseDataModel {
+	config := BitriseDataModel{}
+	require.NoError(t, yaml.Unmarshal([]byte(yamlContent), &config))
+	return config
 }

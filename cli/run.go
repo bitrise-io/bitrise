@@ -30,11 +30,9 @@ import (
 )
 
 const (
-	// DefaultBitriseConfigFileName ...
 	DefaultBitriseConfigFileName = "bitrise.yml"
-	// DefaultSecretsFileName ...
-	DefaultSecretsFileName = ".bitrise.secrets.yml"
-	OutputFormatKey        = "output-format"
+	DefaultSecretsFileName       = ".bitrise.secrets.yml"
+	OutputFormatKey              = "output-format"
 
 	depManagerBrew      = "brew"
 	secretFilteringFlag = "secret-filtering"
@@ -166,6 +164,14 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 	return &config, nil
 }
 
+type DockerManager interface {
+	StartContainerForStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
+	StartServiceContainersForStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
+	GetContainerForStepGroup(string) *docker.RunningContainer
+	GetServiceContainersForStepGroup(string) []*docker.RunningContainer
+	DestroyAllContainers() error
+}
+
 type WorkflowRunner struct {
 	config RunConfig
 
@@ -231,7 +237,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %w", err)
 	}
 
 	targetWorkflow := r.config.Config.Workflows[r.config.Workflow]
@@ -241,25 +247,25 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	// Envman setup
 	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to add env, err: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.EnvstorePathEnvKey, err)
 	}
 
 	if err := os.Setenv(configs.FormattedOutputPathEnvKey, configs.FormattedOutputPath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to add env, err: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.FormattedOutputPathEnvKey, err)
 	}
 
 	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %w", err)
 	}
 
 	// App level environment
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
 	}
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %s", err)
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
 	}
 
 	environments = append(environments, targetWorkflow.Environments...)
@@ -272,8 +278,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 			// the toolkit's `PrepareForStepRun` can bootstrap for itself later if required
 			// or if the system installed version is not sufficient
 			if err := aToolkit.Bootstrap(); err != nil {
-				return models.BuildRunResultsModel{}, fmt.Errorf("failed to bootstrap the required toolkit for the step (%s), error: %s",
-					toolkitName, err)
+				return models.BuildRunResultsModel{}, fmt.Errorf("failed to bootstrap %s toolkit: %w", toolkitName, err)
 			}
 		}
 	}
@@ -285,7 +290,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		ProjectType: r.config.Config.ProjectType,
 	}
 	if err := plugins.TriggerEvent(plugins.WillStartRun, buildRunStartModel); err != nil {
-		log.Warnf("Failed to trigger WillStartRun, error: %s", err)
+		log.Warnf("Failed to trigger WillStartRun: %s", err)
 	}
 
 	// Prepare workflow run parameters
@@ -296,7 +301,10 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		ProjectType:    r.config.Config.ProjectType,
 	}
 
-	plan := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
+	plan, err := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
+	if err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to create workflow execution plan: %w", err)
+	}
 	if len(plan.ExecutionPlan) < 1 {
 		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
 	}
@@ -317,10 +325,8 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
 		workflowToRun := r.config.Config.Workflows[workflowRunPlan.WorkflowID]
-		if workflowToRun.Title == "" {
-			workflowToRun.Title = workflowRunPlan.WorkflowID
-		}
-		buildRunResults = r.runWorkflow(workflowRunPlan, workflowRunPlan.WorkflowID, workflowToRun, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
+		environments = append(environments, workflowToRun.Environments...)
+		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
 	}
 
 	// Build finished
@@ -329,7 +335,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	// Trigger WorkflowRunDidFinish
 	buildRunResults.EventName = string(plugins.DidFinishRun)
 	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
-		log.Warnf("Failed to trigger WorkflowRunDidFinish, error: %s", err)
+		log.Warnf("Failed to trigger WorkflowRunDidFinish: %s", err)
 	}
 
 	return buildRunResults, nil
@@ -483,25 +489,59 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 	return nil
 }
 
-func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) models.WorkflowRunPlan {
+func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) (models.WorkflowRunPlan, error) {
 	var executionPlan []models.WorkflowExecutionPlan
+
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
 		workflow := workflows[workflowID]
 
 		var stepPlan []models.StepExecutionPlan
-		for _, stepItem := range workflow.Steps {
-			stepID, _ := stepItem.GetStepIDAndStep()
-			stepPlan = append(stepPlan, models.StepExecutionPlan{
-				UUID:   uuidProvider(),
-				StepID: stepID,
-			})
+
+		for _, stepListItem := range workflow.Steps {
+			key, step, with, err := stepListItem.GetStepListItemKeyAndValue()
+			if err != nil {
+				return models.WorkflowRunPlan{}, err
+			}
+
+			if key == models.StepListItemWithKey {
+				groupID := uuidProvider()
+
+				for _, stepListStepItem := range with.Steps {
+					stepID, step, err := stepListStepItem.GetStepIDAndStep()
+					if err != nil {
+						return models.WorkflowRunPlan{}, err
+					}
+
+					stepPlan = append(stepPlan, models.StepExecutionPlan{
+						UUID:        uuidProvider(),
+						StepID:      stepID,
+						Step:        step,
+						GroupID:     groupID,
+						ContainerID: with.ContainerID,
+						ServiceIDs:  with.ServiceIDs,
+					})
+				}
+			} else {
+				stepID := key
+				stepPlan = append(stepPlan, models.StepExecutionPlan{
+					UUID:   uuidProvider(),
+					StepID: stepID,
+					Step:   step,
+				})
+			}
+		}
+
+		workflowTitle := workflow.Title
+		if workflowTitle == "" {
+			workflowTitle = workflowID
 		}
 
 		executionPlan = append(executionPlan, models.WorkflowExecutionPlan{
 			UUID:                 uuidProvider(),
 			WorkflowID:           workflowID,
 			Steps:                stepPlan,
+			WorkflowTitle:        workflowTitle,
 			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
 		})
 	}
@@ -522,7 +562,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
 		ExecutionPlan:           executionPlan,
-	}
+	}, nil
 }
 
 func walkWorkflows(workflowID string, workflows map[string]models.WorkflowModel, workflowStack []string) []string {
