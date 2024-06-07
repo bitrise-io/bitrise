@@ -94,8 +94,8 @@ type BitriseDataModel struct {
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
-	Services   map[string]Container     `json:"services" yaml:"services"`
-	Containers map[string]Container     `json:"containers" yaml:"containers"`
+	Services   map[string]Container     `json:"services,omitempty" yaml:"services,omitempty"`
+	Containers map[string]Container     `json:"containers,omitempty" yaml:"containers,omitempty"`
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
