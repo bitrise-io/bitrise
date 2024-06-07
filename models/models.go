@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	FormatVersion       = "14"
+	FormatVersion       = "15"
 	StepListItemWithKey = "with"
 )
 
