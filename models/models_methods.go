@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -113,16 +114,22 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
-		if key != StepListItemWithKey {
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return err
+			}
+
 			if err := step.Normalize(); err != nil {
 				return err
 			}
 			stepListItem[key] = step
 		}
+		// TODO: check if StepBundle needs to be normalised
 	}
 
 	return nil
@@ -213,14 +220,18 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return warnings, err
 		}
 
-		if key != StepListItemWithKey {
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return warnings, err
+			}
 			stepID := key
-			warns, err := validateStep(stepID, step)
+			warns, err := validateStep(stepID, *step)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				return warnings, err
@@ -229,6 +240,7 @@ func (workflow *WorkflowModel) Validate() ([]string, error) {
 			// TODO: Why is this assignment needed?
 			stepListItem[stepID] = step
 		}
+		// TODO: validate StepBundle
 	}
 
 	return warnings, nil
@@ -339,11 +351,17 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 
 	for workflowID, workflow := range config.Workflows {
 		for _, stepListItem := range workflow.Steps {
-			key, _, with, err := stepListItem.GetStepListItemKeyAndValue()
+			_, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
 				return warnings, err
 			}
-			if key == StepListItemWithKey {
+
+			if t == StepListItemTypeWith {
+				with, err := stepListItem.GetWith()
+				if err != nil {
+					return warnings, err
+				}
+
 				warns, err := with.Validate(workflowID, config.Containers, config.Services)
 				warnings = append(warnings, warns...)
 				if err != nil {
@@ -890,6 +908,53 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 // ----------------------------
 // --- StepIDData
 
+func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if key == StepListItemWithKey {
+		var withItem StepListWithItemModel
+		if err := json.Unmarshal(b, &withItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := json.Unmarshal(b, &stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
 func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw map[string]interface{}
 	if err := unmarshal(&raw); err != nil {
@@ -910,6 +975,16 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 
 		*stepListItem = map[string]interface{}{}
 		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := unmarshal(&stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
 			(*stepListItem)[k] = v
 		}
 	} else {
@@ -951,42 +1026,103 @@ func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepm
 	return stepID, step, nil
 }
 
-// GetStepListItemKeyAndValue returns the Step List Item key and value. The key is either a Step ID or 'with'.
-// If the key is 'with' the returned WithModel is relevant otherwise the StepModel.
-func (stepListItem *StepListItemModel) GetStepListItemKeyAndValue() (string, stepmanModels.StepModel, WithModel, error) {
+type StepListItemType int
+
+const (
+	StepListItemTypeUnknown StepListItemType = iota
+	StepListItemTypeStep
+	StepListItemTypeWith
+	StepListItemTypeBundle
+)
+
+func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType, error) {
 	if stepListItem == nil {
-		return "", stepmanModels.StepModel{}, WithModel{}, nil
+		return "", StepListItemTypeUnknown, nil
 	}
 
 	if len(*stepListItem) == 0 {
-		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem does not contain a key-value pair")
+		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", StepListItemTypeUnknown, errors.New("StepListItem contains more than 1 key-value pair")
 	}
 
-	for key, value := range *stepListItem {
-		if key == StepListItemWithKey {
-			with := value.(WithModel)
-			return key, stepmanModels.StepModel{}, with, nil
-		} else {
-			step, ok := value.(stepmanModels.StepModel)
-			if ok {
-				return key, step, WithModel{}, nil
-			}
-
-			// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
-			// the StepModel has a pointer type.
-			stepPtr, ok := value.(*stepmanModels.StepModel)
-			if ok {
-				return key, *stepPtr, WithModel{}, nil
-			}
-
-			return key, stepmanModels.StepModel{}, WithModel{}, nil
+	for key := range *stepListItem {
+		switch {
+		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+			return key, StepListItemTypeBundle, nil
+		case key == StepListItemWithKey:
+			return key, StepListItemTypeWith, nil
+		default:
+			return key, StepListItemTypeStep, nil
 		}
 	}
-	return "", stepmanModels.StepModel{}, WithModel{}, nil
+
+	return "", StepListItemTypeUnknown, nil
+}
+
+func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		bundle, ok := value.(StepBundleListItemModel)
+		if ok {
+			return &bundle, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a StepBundle")
+}
+
+func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		with, ok := value.(WithModel)
+		if ok {
+			return &with, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a With")
+}
+
+func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	var stepPtr *stepmanModels.StepModel
+	for _, value := range *stepListItem {
+		s, ok := value.(stepmanModels.StepModel)
+		if ok {
+			stepPtr = &s
+			break
+		}
+
+		// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
+		// the StepModel has a pointer type.
+		sPtr, ok := value.(*stepmanModels.StepModel)
+		if ok {
+			stepPtr = sPtr
+			break
+		}
+
+		break
+	}
+
+	if stepPtr == nil {
+		return nil, fmt.Errorf("stepListItem is not a Step")
+	}
+
+	return stepPtr, nil
 }
 
 // ----------------------------
