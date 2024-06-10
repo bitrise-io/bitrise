@@ -502,12 +502,17 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		var stepPlan []models.StepExecutionPlan
 
 		for _, stepListItem := range workflow.Steps {
-			key, step, with, err := stepListItem.GetStepListItemKeyAndValue()
+			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
 				return models.WorkflowRunPlan{}, err
 			}
 
-			if key == models.StepListItemWithKey {
+			if t == models.StepListItemTypeWith {
+				with, err := stepListItem.GetWith()
+				if err != nil {
+					return models.WorkflowRunPlan{}, err
+				}
+
 				groupID := uuidProvider()
 
 				for _, stepListStepItem := range with.Steps {
@@ -525,14 +530,20 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 						ServiceIDs:  with.ServiceIDs,
 					})
 				}
-			} else {
+			} else if t == models.StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err != nil {
+					return models.WorkflowRunPlan{}, err
+				}
+
 				stepID := key
 				stepPlan = append(stepPlan, models.StepExecutionPlan{
 					UUID:   uuidProvider(),
 					StepID: stepID,
-					Step:   step,
+					Step:   *step,
 				})
 			}
+			// TODO: Handle StepBundle
 		}
 
 		workflowTitle := workflow.Title
