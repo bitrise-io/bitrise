@@ -1133,9 +1133,15 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 		}
 
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.NoError(t, err)
-		require.Equal(t, "step1", id)
+		require.Equal(t, StepListItemTypeStep, itemType)
+
+		_, err = stepListItem.GetStep()
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, "step1", key)
 	}
 
 	t.Log("invalid steplist item - more than 1 step")
@@ -1145,18 +1151,19 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step2": stepData,
 		}
 
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.Error(t, err)
-		require.Equal(t, "", id)
+		require.Equal(t, "", key)
+		require.Equal(t, StepListItemTypeUnknown, itemType)
 	}
 
 	t.Log("invalid steplist item - no step")
 	{
 		stepListItem := StepListItemModel{}
-
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.Error(t, err)
-		require.Equal(t, "", id)
+		require.Equal(t, "", key)
+		require.Equal(t, StepListItemTypeUnknown, itemType)
 	}
 }
 
@@ -1343,7 +1350,11 @@ workflows:
 		}
 
 		for _, stepListItem := range workflow.Steps {
-			_, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+			_, itemType, err := stepListItem.GetKeyAndType()
+			require.NoError(t, err)
+			require.Equal(t, StepListItemTypeStep, itemType)
+
+			step, err := stepListItem.GetStep()
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)
