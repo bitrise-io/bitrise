@@ -640,43 +640,27 @@ func newActivateAndRunStepResult(step stepmanModels.StepModel, stepInfoPtr stepm
 	return activateAndRunStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepRunStatus: stepRunStatus, StepRunExitCode: stepRunExitCode, StepRunErr: stepRunErr, PrintStepHeader: printStepHeader, redactedStepInputs: redactedStepInputs}
 }
 
-func (r WorkflowRunner) activateAndRunStep(
+type activateStepResult struct {
+	Step        stepmanModels.StepModel
+	StepInfoPtr stepmanModels.StepInfoModel
+	StepIDData  stepid.CanonicalID
+	StepDir     string
+	Err         error
+}
+
+func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepIDData stepid.CanonicalID, stepDir string, err error) activateStepResult {
+	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepIDData: stepIDData, StepDir: stepDir, Err: err}
+}
+
+func (r WorkflowRunner) activateStep(
 	step stepmanModels.StepModel,
 	stepID string,
-	stepIDx int,
 	defaultStepLibSource string,
-	stepExecutionID string,
-	tracker analytics.Tracker,
-	environments *[]envmanModels.EnvironmentItemModel,
-	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
 	isStepLibOfflineMode bool,
-	containerID, groupID string,
-	stepStartTime time.Time,
-	stepStartedProperties coreanalytics.Properties,
-) activateAndRunStepResult {
-	// Per step variables
+) activateStepResult {
 	// TODO: stepInfoPtr.Step is not a real step, only stores presentation properties (printed in the step boxes)
 	stepInfoPtr := stepmanModels.StepInfoModel{}
-
-	// Per step cleanup
-	if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
-		log.Error("Failed to set Build Status envs")
-	}
-
-	if err := bitrise.CleanupStepWorkDir(); err != nil {
-		return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
-	}
-
-	//
-	// Preparing the step
-	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
-		return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
-	}
-
-	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
-		return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
-	}
 
 	compositeStepIDStr := stepID
 	workflowStep := step
@@ -690,7 +674,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 	if err != nil {
-		return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepid.CanonicalID{}, "", err)
 	}
 	stepInfoPtr.ID = stepIDData.IDorURI
 	if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
@@ -701,6 +685,10 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Activating the step
+	if err := bitrise.CleanupStepWorkDir(); err != nil {
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, "", err)
+	}
+
 	stepDir := configs.BitriseWorkStepsDirPath
 
 	isStepLibUpdated := false
@@ -714,7 +702,7 @@ func (r WorkflowRunner) activateAndRunStep(
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
 	if err != nil {
-		return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 	}
 
 	// Fill step info with default step info, if exist
@@ -730,12 +718,12 @@ func (r WorkflowRunner) activateAndRunStep(
 				ymlPth = origStepYMLPth
 			}
 			err = fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err)
-			return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 		}
 
 		mergedStep, err = models.MergeStepWith(specStep, workflowStep)
 		if err != nil {
-			return newActivateAndRunStepResult(stepmanModels.StepModel{}, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 		}
 	}
 
@@ -769,6 +757,48 @@ func (r WorkflowRunner) activateAndRunStep(
 		if mergedStep.Title != nil && *mergedStep.Title != "" {
 			*stepInfoPtr.Step.Title = *mergedStep.Title
 		}
+	}
+
+	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, nil)
+}
+func (r WorkflowRunner) activateAndRunStep(
+	step stepmanModels.StepModel,
+	stepID string,
+	stepIDx int,
+	defaultStepLibSource string,
+	stepExecutionID string,
+	tracker analytics.Tracker,
+	environments *[]envmanModels.EnvironmentItemModel,
+	secrets []envmanModels.EnvironmentItemModel,
+	buildRunResults models.BuildRunResultsModel,
+	isStepLibOfflineMode bool,
+	containerID, groupID string,
+	stepStartTime time.Time,
+	stepStartedProperties coreanalytics.Properties,
+) activateAndRunStepResult {
+	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	if activateResult.Err != nil {
+		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{})
+	}
+
+	stepInfoPtr := activateResult.StepInfoPtr
+	mergedStep := activateResult.Step
+	stepIDData := activateResult.StepIDData
+	stepDir := activateResult.StepDir
+
+	// Per step cleanup
+	if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
+		log.Error("Failed to set Build Status envs")
+	}
+
+	//
+	// Preparing the step
+	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
+		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+	}
+
+	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
+		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
 	}
 
 	//
@@ -819,7 +849,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	// If testDeployDir is empty, MkdirTemp() will use the default temp dir. But if it points to a path,
 	// we have to create it first.
 	if testDeployDir != "" {
-		err = os.MkdirAll(testDeployDir, 0755)
+		err := os.MkdirAll(testDeployDir, 0755)
 		if err != nil {
 			log.Warnf("Failed to create %s, error: %s", configs.BitriseTestDeployDirEnvKey, err)
 			testDeployDir = ""
