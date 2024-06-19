@@ -180,6 +180,22 @@ func CleanupStepWorkDir() error {
 	return nil
 }
 
+// GetBuildFailedEnvironments ...
+func GetBuildFailedEnvironments(failed bool) []string {
+	statusStr := "0"
+	if failed {
+		statusStr = "1"
+	}
+
+	environments := []string{}
+	steplibBuildStatusEnv := "STEPLIB_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, steplibBuildStatusEnv)
+
+	bitriseBuildStatusEnv := "BITRISE_BUILD_STATUS" + "=" + statusStr
+	environments = append(environments, bitriseBuildStatusEnv)
+	return environments
+}
+
 func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
 	if failed {
@@ -192,6 +208,7 @@ func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	}
 }
 
+// SetBuildFailedEnv ...
 func SetBuildFailedEnv(failed bool) error {
 	envs := BuildFailedEnvs(failed)
 	for _, env := range envs {

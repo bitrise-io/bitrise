@@ -5,7 +5,7 @@ github.com/Microsoft/go-winio/pkg/guid
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20240624065735-ca81d0a80500
+# github.com/bitrise-io/envman v0.0.0-20240618150448-85858fa73622
 ## explicit; go 1.21
 github.com/bitrise-io/envman/cli
 github.com/bitrise-io/envman/env
@@ -143,18 +143,18 @@ github.com/sirupsen/logrus
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/urfave/cli v1.22.15
+# github.com/urfave/cli v1.22.14
 ## explicit; go 1.11
 github.com/urfave/cli
-# golang.org/x/crypto v0.24.0
+# golang.org/x/crypto v0.21.0
 ## explicit; go 1.18
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.21.0
+# golang.org/x/sys v0.18.0
 ## explicit; go 1.18
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.21.0
+# golang.org/x/term v0.18.0
 ## explicit; go 1.18
 golang.org/x/term
 # golang.org/x/time v0.5.0
