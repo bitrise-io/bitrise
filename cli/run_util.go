@@ -82,16 +82,45 @@ func (r WorkflowRunner) activateAndRunSteps(
 	runResultCollector := newBuildRunResultCollector(tracker)
 	currentStepGroupID := ""
 
+	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
+	currentStepBundleUUID := ""
+	// TODO: add the last step bundle's envs to environments
+	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
+
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		if stepPlan.GroupID != currentStepGroupID {
-			if stepPlan.GroupID != "" {
+		if stepPlan.WithGroupUUID != currentStepGroupID {
+			if stepPlan.WithGroupUUID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.GroupID, plan.WorkflowTitle)
+					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
 				}
 			}
-			currentStepGroupID = stepPlan.GroupID
+
+			currentStepGroupID = stepPlan.WithGroupUUID
+		}
+
+		buildEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
+
+		if stepPlan.StepBundleUUID != currentStepBundleUUID {
+			switch {
+			case currentStepBundleUUID == "" && stepPlan.StepBundleUUID != "":
+				// case 1: no bundle -> new bundle
+				currentStepBundleEnvVars = append(buildEnvironments, stepPlan.StepBundleEnvs...)
+			case currentStepBundleUUID != "" && stepPlan.StepBundleUUID != "":
+				// case 2: previous bundle -> new bundle
+				currentStepBundleEnvVars = append(buildEnvironments, stepPlan.StepBundleEnvs...)
+			}
+
+			// case 3: previous bundle -> no bundle
+			currentStepBundleUUID = stepPlan.StepBundleUUID
+		}
+
+		var envsForStepRun []envmanModels.EnvironmentItemModel
+		if currentStepBundleUUID != "" {
+			envsForStepRun = currentStepBundleEnvVars
+		} else {
+			envsForStepRun = buildEnvironments
 		}
 
 		stepStartTime := time.Now()
@@ -105,30 +134,23 @@ func (r WorkflowRunner) activateAndRunSteps(
 			defaultStepLibSource,
 			stepPlan.UUID,
 			tracker,
-			*environments,
+			envsForStepRun,
 			secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
 			stepPlan.ContainerID,
-			stepPlan.GroupID,
+			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
 
-		isLastStepInWorkflow := idx == len(plan.Steps)-1
-
-		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
-		if currentStepGroupID != "" {
-			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].GroupID
-			if isLastStepInWorkflow || doesStepGroupChange {
-				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
-			}
+		if currentStepBundleUUID != "" {
+			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
 		}
 
-		isLastStep := isLastWorkflow && isLastStepInWorkflow
-
+		isLastStep := isLastWorkflow && (idx == len(plan.Steps)-1)
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
@@ -143,12 +165,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 type activateAndRunStepResult struct {
 	Step               stepmanModels.StepModel
 	StepInfoPtr        stepmanModels.StepInfoModel
-	StepRunStatus      models.StepRunStatus
-	StepRunExitCode    int
-	StepRunErr         error
 	PrintStepHeader    bool
 	RedactedStepInputs map[string]string
 	OutputEnvironments []envmanModels.EnvironmentItemModel
+	StepRunStatus      models.StepRunStatus
+	StepRunExitCode    int
+	StepRunErr         error
 }
 
 func newActivateAndRunStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepRunStatus models.StepRunStatus, stepRunExitCode int, stepRunErr error, printStepHeader bool, redactedStepInputs map[string]string, outputEnvironments []envmanModels.EnvironmentItemModel) activateAndRunStepResult {
