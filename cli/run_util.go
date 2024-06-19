@@ -139,7 +139,10 @@ func (r WorkflowRunner) activateAndRunSteps(
 		isLastStep := isLastWorkflow && (idx == len(plan.Steps)-1)
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.redactedStepInputs, stepStartedProperties)
-		continue
+
+		if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
+			log.Error("Failed to set Build Status envs")
+		}
 	}
 
 	return buildRunResults
@@ -405,10 +408,6 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel,
 ) prepareEnvsForStepRunResult {
-	if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
-		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
-	}
-
 	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
