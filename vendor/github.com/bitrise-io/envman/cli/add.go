@@ -3,7 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/bitrise-io/envman/envman"
@@ -53,7 +53,7 @@ func add(c *cli.Context) error {
 				log.Fatalf("[ENVMAN] Failed to load envman config: %s", err)
 			}
 
-			data, err := ioutil.ReadAll(os.Stdin)
+			data, err := io.ReadAll(os.Stdin)
 			if err != nil {
 				log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
 			}
@@ -181,7 +181,7 @@ func validateEnv(key, value string, envList []models.EnvironmentItemModel) (stri
 }
 
 func loadValueFromFile(pth string) (string, error) {
-	buf, err := ioutil.ReadFile(pth)
+	buf, err := os.ReadFile(pth)
 	if err != nil {
 		return "", err
 	}

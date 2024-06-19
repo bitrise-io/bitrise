@@ -196,18 +196,30 @@ func GetBuildFailedEnvironments(failed bool) []string {
 	return environments
 }
 
-// SetBuildFailedEnv ...
-func SetBuildFailedEnv(failed bool) error {
+func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
 	if failed {
 		statusStr = "1"
 	}
 
-	if err := os.Setenv("STEPLIB_BUILD_STATUS", statusStr); err != nil {
-		return err
+	return []envmanModels.EnvironmentItemModel{
+		{"STEPLIB_BUILD_STATUS": statusStr},
+		{"BITRISE_BUILD_STATUS": statusStr},
 	}
+}
 
-	return os.Setenv("BITRISE_BUILD_STATUS", statusStr)
+// SetBuildFailedEnv ...
+func SetBuildFailedEnv(failed bool) error {
+	envs := BuildFailedEnvs(failed)
+	for _, env := range envs {
+		key, value, err := env.GetKeyValuePair()
+		if err == nil {
+			if err := os.Setenv(key, value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) ([]string, error) {

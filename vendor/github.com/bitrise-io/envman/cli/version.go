@@ -24,7 +24,7 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	versionOutput := VersionOutputModel{
-		Version: version.VERSION,
+		Version: version.Version,
 	}
 
 	if fullVersion {

@@ -761,79 +761,42 @@ func (r WorkflowRunner) activateStep(
 
 	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, nil)
 }
-func (r WorkflowRunner) activateAndRunStep(
-	step stepmanModels.StepModel,
-	stepID string,
-	stepIDx int,
-	defaultStepLibSource string,
+
+type prepareEnvsForStepRunResult struct {
+	RedactedStepInputs       map[string]string
+	RedactedInputsWithType   map[string]interface{}
+	RedactedOriginalInputs   map[string]string
+	StepDeclaredEnvironments []envmanModels.EnvironmentItemModel
+	StepSecretValues         []string
+	StepTestDir              string
+	Err                      error
+}
+
+func newPrepareEnvsForStepRunResult(redactedStepInputs map[string]string, redactedInputsWithType map[string]interface{}, redactedOriginalInputs map[string]string, stepDeclaredEnvironments []envmanModels.EnvironmentItemModel, stepSecretValues []string, stepTestDir string, err error) prepareEnvsForStepRunResult {
+	return prepareEnvsForStepRunResult{RedactedStepInputs: redactedStepInputs, RedactedInputsWithType: redactedInputsWithType, RedactedOriginalInputs: redactedOriginalInputs, StepDeclaredEnvironments: stepDeclaredEnvironments, StepSecretValues: stepSecretValues, StepTestDir: stepTestDir, Err: err}
+}
+
+func (r WorkflowRunner) prepareEnvsForStepRun(
 	stepExecutionID string,
-	tracker analytics.Tracker,
-	environments *[]envmanModels.EnvironmentItemModel,
+	stepDir string,
+	stepInputs []envmanModels.EnvironmentItemModel,
 	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
-	isStepLibOfflineMode bool,
-	containerID, groupID string,
-	stepStartTime time.Time,
-	stepStartedProperties coreanalytics.Properties,
-) activateAndRunStepResult {
-	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
-	if activateResult.Err != nil {
-		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{})
-	}
-
-	stepInfoPtr := activateResult.StepInfoPtr
-	mergedStep := activateResult.Step
-	stepIDData := activateResult.StepIDData
-	stepDir := activateResult.StepDir
-
-	// Per step cleanup
-	if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
-		log.Error("Failed to set Build Status envs")
-	}
-
-	//
-	// Preparing the step
+	environments *[]envmanModels.EnvironmentItemModel,
+) prepareEnvsForStepRunResult {
 	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
-		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
+		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
 
 	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, *environments); err != nil {
-		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{})
-	}
-
-	//
-	// Run step
-	logStepStarted(stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
-
-	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-		envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-		if err != nil {
-			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
-			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
-		}
-
-		isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, envList)
-		if err != nil {
-			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
-		}
-		if !isRun {
-			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, false, map[string]string{})
-		}
-	}
-
-	isAlwaysRun := stepmanModels.DefaultIsAlwaysRun
-	if mergedStep.IsAlwaysRun != nil {
-		isAlwaysRun = *mergedStep.IsAlwaysRun
-	} else {
-		log.Warnf("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
-	}
-
-	if buildRunResults.IsBuildFailed() && !isAlwaysRun {
-		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeSkipped, 0, nil, false, map[string]string{})
+		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
 
 	// beside of the envs coming from the current parent process these will be added as an extra
 	var additionalEnvironments []envmanModels.EnvironmentItemModel
+
+	buildFailedEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
+	additionalEnvironments = append(additionalEnvironments, buildFailedEnvs...)
 
 	// add this environment variable so all child processes can connect their events to their step lifecycle events
 	additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
@@ -872,14 +835,14 @@ func (r WorkflowRunner) activateAndRunStep(
 	envSource := &env.DefaultEnvironmentSource{}
 	stepDeclaredEnvironments, expandedStepEnvironment, redactedInputsWithType, err := prepareStepEnvironment(prepareStepInputParams{
 		environment:       environmentItemModels,
-		inputs:            mergedStep.Inputs,
+		inputs:            stepInputs,
 		buildRunResults:   buildRunResults,
 		isCIMode:          configs.IsCIMode,
 		isPullRequestMode: configs.IsPullRequestMode,
 	}, envSource)
 	if err != nil {
 		err = fmt.Errorf("failed to prepare step environment variables: %s", err)
-		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
+		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
 
 	stepSecretKeys, stepSecretValues := tools.GetSecretKeysAndValues(secrets)
@@ -887,7 +850,7 @@ func (r WorkflowRunner) activateAndRunStep(
 		sensitiveEnvs, err := getSensitiveEnvs(stepDeclaredEnvironments, expandedStepEnvironment)
 		if err != nil {
 			err = fmt.Errorf("failed to get sensitive inputs: %s", err)
-			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
+			return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 		}
 
 		sensitiveEnvKeys, sensitiveEnvValues := tools.GetSecretKeysAndValues(sensitiveEnvs)
@@ -895,10 +858,10 @@ func (r WorkflowRunner) activateAndRunStep(
 		stepSecretValues = append(stepSecretValues, sensitiveEnvValues...)
 	}
 
-	redactedStepInputs, redactedOriginalInputs, err := redactStepInputs(expandedStepEnvironment, mergedStep.Inputs, stepSecretValues)
+	redactedStepInputs, redactedOriginalInputs, err := redactStepInputs(expandedStepEnvironment, stepInputs, stepSecretValues)
 	if err != nil {
 		err = fmt.Errorf("failed to redact step inputs: %s", err)
-		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
+		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
 
 	for key, value := range redactedStepInputs {
@@ -910,8 +873,86 @@ func (r WorkflowRunner) activateAndRunStep(
 	secretKeysEnv := secretEnvKeysEnvironment(stepSecretKeys)
 	stepDeclaredEnvironments = append(stepDeclaredEnvironments, secretKeysEnv)
 
+	return newPrepareEnvsForStepRunResult(redactedStepInputs, redactedInputsWithType, redactedOriginalInputs, stepDeclaredEnvironments, stepSecretValues, stepTestDir, nil)
+}
+
+func (r WorkflowRunner) activateAndRunStep(
+	step stepmanModels.StepModel,
+	stepID string,
+	stepIDx int,
+	defaultStepLibSource string,
+	stepExecutionID string,
+	tracker analytics.Tracker,
+	environments *[]envmanModels.EnvironmentItemModel,
+	secrets []envmanModels.EnvironmentItemModel,
+	buildRunResults models.BuildRunResultsModel,
+	isStepLibOfflineMode bool,
+	containerID, groupID string,
+	stepStartTime time.Time,
+	stepStartedProperties coreanalytics.Properties,
+) activateAndRunStepResult {
+	//
+	// Activate step
+	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	if activateResult.Err != nil {
+		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{})
+	}
+
+	stepInfoPtr := activateResult.StepInfoPtr
+	mergedStep := activateResult.Step
+	stepIDData := activateResult.StepIDData
+	stepDir := activateResult.StepDir
+
+	//
+	// Run step
+	logStepStarted(stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
+
+	// Evaluate run conditions
+	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
+		buildFailedEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
+		runIfEnvs := append(*environments, buildFailedEnvs...)
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(runIfEnvs, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		if err != nil {
+			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
+		}
+
+		isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+		if err != nil {
+			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{})
+		}
+		if !isRun {
+			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, false, map[string]string{})
+		}
+	}
+
+	isAlwaysRun := stepmanModels.DefaultIsAlwaysRun
+	if mergedStep.IsAlwaysRun != nil {
+		isAlwaysRun = *mergedStep.IsAlwaysRun
+	} else {
+		log.Warnf("Step (%s) mergedStep.IsAlwaysRun is nil, should not!", stepIDData.IDorURI)
+	}
+
+	if buildRunResults.IsBuildFailed() && !isAlwaysRun {
+		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeSkipped, 0, nil, false, map[string]string{})
+	}
+
+	// Prepare envs for the step run
+	prepareEnvsResult := r.prepareEnvsForStepRun(stepExecutionID, stepDir, mergedStep.Inputs, secrets, buildRunResults, environments)
+	if prepareEnvsResult.Err != nil {
+		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, prepareEnvsResult.Err, false, map[string]string{})
+	}
+
+	redactedInputsWithType := prepareEnvsResult.RedactedInputsWithType
+	redactedOriginalInputs := prepareEnvsResult.RedactedOriginalInputs
+	stepDeclaredEnvironments := prepareEnvsResult.StepDeclaredEnvironments
+	stepSecretValues := prepareEnvsResult.StepSecretValues
+	stepTestDir := prepareEnvsResult.StepTestDir
+	redactedStepInputs := prepareEnvsResult.RedactedStepInputs
+
 	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
 
+	// Run the step
 	exit, outEnvironments, err := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
 
 	if stepTestDir != "" {
