@@ -405,6 +405,10 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel,
 ) prepareEnvsForStepRunResult {
+	if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
+		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
+	}
+
 	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
@@ -415,9 +419,6 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 
 	// beside of the envs coming from the current parent process these will be added as an extra
 	var additionalEnvironments []envmanModels.EnvironmentItemModel
-
-	buildFailedEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
-	additionalEnvironments = append(additionalEnvironments, buildFailedEnvs...)
 
 	// add this environment variable so all child processes can connect their events to their step lifecycle events
 	additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
