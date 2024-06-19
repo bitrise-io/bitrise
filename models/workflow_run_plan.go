@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	envmanModels "github.com/bitrise-io/envman/models"
+
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
@@ -16,15 +18,20 @@ type WorkflowRunModes struct {
 	IsSteplibOfflineMode    bool
 }
 
-// TODO: dispatch Plans from JSON event logging and actual workflow execution
+// TODO: separate Plans from JSON event logging and actual workflow execution
+
 type StepExecutionPlan struct {
 	UUID   string `json:"uuid"`
 	StepID string `json:"step_id"`
 
-	Step        stepmanModels.StepModel `json:"-"`
-	GroupID     string                  `json:"-"`
-	ContainerID string                  `json:"-"`
-	ServiceIDs  []string                `json:"-"`
+	Step stepmanModels.StepModel `json:"-"`
+	// With (container) group
+	WithGroupUUID string   `json:"-"`
+	ContainerID   string   `json:"-"`
+	ServiceIDs    []string `json:"-"`
+	// Step Bundle group
+	StepBundleUUID string                              `json:"-"`
+	StepBundleEnvs []envmanModels.EnvironmentItemModel `json:"-"`
 }
 
 type WorkflowExecutionPlan struct {
