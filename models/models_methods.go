@@ -1051,7 +1051,7 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 	for key := range *stepListItem {
 		switch {
 		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
-			return key, StepListItemTypeBundle, nil
+			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
 		case key == StepListItemWithKey:
 			return key, StepListItemTypeWith, nil
 		default:
