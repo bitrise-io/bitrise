@@ -22,6 +22,8 @@ type MergeResponseModel struct {
 	Error  *string `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
+type YamlMap = map[any]any
+
 // JSON ...
 func (m MergeResponseModel) JSON() string {
 	bytes, err := json.Marshal(m)
@@ -86,19 +88,19 @@ func merge(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	config, err := runMerge(ymlTree)
+	mergeResult, err := runMerge(ymlTree)
 	if err != nil {
 		log.Print(NewMergeError(err.Error()))
 		os.Exit(1)
 	}
 
-	configString, err := yaml.Marshal(config)
+	mergedYml, err := yaml.Marshal(mergeResult)
 	if err != nil {
 		log.Print(NewMergeError(err.Error()))
 		os.Exit(1)
 	}
 
-	log.Print(NewMergeResponse(string(configString)))
+	log.Print(NewMergeResponse(string(mergedYml)))
 
 	return nil
 }
@@ -106,68 +108,78 @@ func merge(c *cli.Context) error {
 func decodeYmlTree(ymlTreeBase64Data string) (*YmlTreeModel, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(ymlTreeBase64Data)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+		return nil, fmt.Errorf("failed to decode base64 input, error: %s", err)
 	}
 
 	var ymlTree YmlTreeModel
-	if err = yaml.Unmarshal(configBase64Bytes, &ymlTree); err != nil {
-		return nil, fmt.Errorf("Failed to parse yml tree, error: %s", err)
+	if err = json.Unmarshal(configBase64Bytes, &ymlTree); err != nil {
+		return nil, fmt.Errorf("failed to parse YML files from JSON, error: %s", err)
 	}
 	return &ymlTree, nil
 }
 
-func runMerge(ymlTree *YmlTreeModel) (map[interface{}]interface{}, error) {
-	// In general, YAML could have a simple value or a list as root element,
-	// but we assume it's an object, otherwise it's not a valid bitrise.yml anyway.
-	initial := make(map[interface{}]interface{})
+func runMerge(ymlTree *YmlTreeModel) (YamlMap, error) {
+	// Initial state is an empty map (YAML root)
+	initial := make(YamlMap)
 
 	result, err := mergeTree(initial, ymlTree)
 	if err != nil {
-		return nil, err // TODO wrap? log?
+		return nil, fmt.Errorf("failed to merge YML files, error: %s", err)
 	}
 
-	resultMap := result.(map[interface{}]interface{})
-	return resultMap, nil
+	// Remove include list from result
+	delete(result, "include")
+
+	return result, nil
 }
 
-func mergeTree(existingValue interface{}, treeToMerge *YmlTreeModel) (interface{}, error) {
+func mergeTree(existingValue YamlMap, treeToMerge *YmlTreeModel) (YamlMap, error) {
 	var err error
+
 	// DFS: first the includes in the specified order, then the including file
-	for _, include := range treeToMerge.Includes {
-		existingValue, err = mergeTree(existingValue, &include)
+	for _, includedTree := range treeToMerge.Includes {
+		existingValue, err = mergeTree(existingValue, &includedTree)
 		if err != nil {
-			return nil, err // TODO wrap? log?
+			return nil, fmt.Errorf("failed to merge YML file, error: %s", err)
 		}
 	}
 
-	var parsedConfig interface{}
-	err = yaml.Unmarshal([]byte(treeToMerge.Config), &parsedConfig)
+	// We assume that each YML file has a map at root, it's invalid otherwise
+	var config YamlMap
+	err = yaml.Unmarshal([]byte(treeToMerge.Config), &config)
 	if err != nil {
-		return nil, err // TODO wrap? log?
+		return nil, fmt.Errorf("failed to parse YML file, error: %s", err)
 	}
 
-	config := reflect.ValueOf(parsedConfig)
+	if config == nil {
+		// File is empty
+		config = make(YamlMap)
+	}
 
-	return mergeValue(existingValue, config)
+	return mergeMap(existingValue, reflect.ValueOf(config))
 }
 
-func mergeValue(existingValue interface{}, valueToMerge reflect.Value) (interface{}, error) {
-	switch valueToMerge.Kind() {
-	case reflect.Interface:
-		return mergeValue(existingValue, valueToMerge.Elem())
+func mergeValue(existingValue any, valueToMerge reflect.Value) (any, error) {
+	valueKind := valueToMerge.Kind()
+
+	if valueKind == reflect.Interface {
+		// Skip one level of recursion by unwrapping interfaces
+		valueToMerge = valueToMerge.Elem()
+		valueKind = valueToMerge.Kind()
+	}
+
+	switch valueKind {
 	case reflect.Map:
-		existingMap := existingValue.(map[interface{}]interface{})
-		return mergeMap(existingMap, valueToMerge)
+		return mergeMap(existingValue.(YamlMap), valueToMerge)
 	case reflect.Slice, reflect.Array:
-		existingArray := existingValue.([]interface{})
-		return mergeArray(existingArray, valueToMerge)
+		return mergeArray(existingValue.([]any), valueToMerge)
 	default:
 		// Simple types
 		return valueToMerge.Interface(), nil
 	}
 }
 
-func mergeMap(existingMap map[interface{}]interface{}, mapToMerge reflect.Value) (map[interface{}]interface{}, error) {
+func mergeMap(existingMap YamlMap, mapToMerge reflect.Value) (YamlMap, error) {
 	var err error
 	iterator := mapToMerge.MapRange()
 	for iterator.Next() {
@@ -191,11 +203,11 @@ func mergeMap(existingMap map[interface{}]interface{}, mapToMerge reflect.Value)
 	return existingMap, nil
 }
 
-func mergeArray(existingArray []interface{}, valueToMerge reflect.Value) ([]interface{}, error) {
-	for i := 0; i < valueToMerge.Len(); i++ {
-		valueToAdd := valueToMerge.Index(i)
+func mergeArray(existingArray []any, arrayToAppend reflect.Value) ([]any, error) {
+	for i := 0; i < arrayToAppend.Len(); i++ {
+		valueToAdd := arrayToAppend.Index(i)
 
-		existingArray = append(existingArray, valueToAdd)
+		existingArray = append(existingArray, valueToAdd.Interface())
 	}
 
 	return existingArray, nil
