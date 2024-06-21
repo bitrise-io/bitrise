@@ -13,6 +13,7 @@ import (
 )
 
 type YmlTreeModel struct {
+	FileName string         `json:"fileName" yaml:"fileName"`
 	Config   string         `json:"contents,omitempty" yaml:"contents,omitempty"`
 	Includes []YmlTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
 }
@@ -140,7 +141,7 @@ func mergeTree(existingValue YamlMap, treeToMerge *YmlTreeModel) (YamlMap, error
 	for _, includedTree := range treeToMerge.Includes {
 		existingValue, err = mergeTree(existingValue, &includedTree)
 		if err != nil {
-			return nil, fmt.Errorf("failed to merge YML file, error: %s", err)
+			return nil, fmt.Errorf("failed to merge YML file %s, error: %s", includedTree.FileName, err)
 		}
 	}
 
@@ -148,7 +149,7 @@ func mergeTree(existingValue YamlMap, treeToMerge *YmlTreeModel) (YamlMap, error
 	var config YamlMap
 	err = yaml.Unmarshal([]byte(treeToMerge.Config), &config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse YML file, error: %s", err)
+		return nil, fmt.Errorf("failed to parse YML file %s, error: %s", treeToMerge.FileName, err)
 	}
 
 	if config == nil {
@@ -156,10 +157,10 @@ func mergeTree(existingValue YamlMap, treeToMerge *YmlTreeModel) (YamlMap, error
 		config = make(YamlMap)
 	}
 
-	return mergeMap(existingValue, reflect.ValueOf(config))
+	return mergeMap(existingValue, reflect.ValueOf(config)), nil
 }
 
-func mergeValue(existingValue any, valueToMerge reflect.Value) (any, error) {
+func mergeValue(existingValue any, valueToMerge reflect.Value) any {
 	valueKind := valueToMerge.Kind()
 
 	if valueKind == reflect.Interface {
@@ -170,17 +171,26 @@ func mergeValue(existingValue any, valueToMerge reflect.Value) (any, error) {
 
 	switch valueKind {
 	case reflect.Map:
-		return mergeMap(existingValue.(YamlMap), valueToMerge)
-	case reflect.Slice, reflect.Array:
-		return mergeArray(existingValue.([]any), valueToMerge)
+		existingMap, ok := existingValue.(YamlMap)
+		if !ok {
+			// Existing value is not a map, replace with new value
+			existingMap = make(YamlMap)
+		}
+		return mergeMap(existingMap, valueToMerge)
+	case reflect.Slice:
+		existingSlice, ok := existingValue.([]any)
+		if !ok {
+			// Existing value is not a slice, replace with new value
+			existingSlice = nil
+		}
+		return mergeSlice(existingSlice, valueToMerge)
 	default:
 		// Simple types
-		return valueToMerge.Interface(), nil
+		return valueToMerge.Interface()
 	}
 }
 
-func mergeMap(existingMap YamlMap, mapToMerge reflect.Value) (YamlMap, error) {
-	var err error
+func mergeMap(existingMap YamlMap, mapToMerge reflect.Value) YamlMap {
 	iterator := mapToMerge.MapRange()
 	for iterator.Next() {
 		key := iterator.Key().Interface()
@@ -189,26 +199,22 @@ func mergeMap(existingMap YamlMap, mapToMerge reflect.Value) (YamlMap, error) {
 		existingValue, exists := existingMap[key]
 		if exists {
 			// Key exists in result and merged maps
-			existingValue, err = mergeValue(existingValue, valueToMerge)
-			if err != nil {
-				return nil, err // TODO wrap? log?
-			}
-			existingMap[key] = existingValue
+			existingMap[key] = mergeValue(existingValue, valueToMerge)
 		} else {
 			// Key doesn't exist in result yet
 			existingMap[key] = valueToMerge.Interface()
 		}
 	}
 
-	return existingMap, nil
+	return existingMap
 }
 
-func mergeArray(existingArray []any, arrayToAppend reflect.Value) ([]any, error) {
+func mergeSlice(existingArray []any, arrayToAppend reflect.Value) []any {
 	for i := 0; i < arrayToAppend.Len(); i++ {
 		valueToAdd := arrayToAppend.Index(i)
 
 		existingArray = append(existingArray, valueToAdd.Interface())
 	}
 
-	return existingArray, nil
+	return existingArray
 }
