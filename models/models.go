@@ -240,3 +240,9 @@ type TestResultStepInfo struct {
 	Title   string `json:"title" yaml:"title"`
 	Number  int    `json:"number" yaml:"number"`
 }
+
+type ConfigFileTreeModel struct {
+	FileName string                `json:"fileName" yaml:"fileName"`
+	Config   string                `json:"contents,omitempty" yaml:"contents,omitempty"`
+	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
+}

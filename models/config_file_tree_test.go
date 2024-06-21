@@ -1,8 +1,7 @@
-package cli
+package models
 
 import (
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	"testing"
 )
 
@@ -11,14 +10,14 @@ func TestMerge_Success(t *testing.T) {
 
 	for _, test := range []struct {
 		name     string
-		ymlTree  YmlTreeModel
+		ymlTree  ConfigFileTreeModel
 		expected string
 	}{
 		{
 			name: "multiple included properties",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: "",
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 property1: 1
@@ -46,8 +45,8 @@ property7: 700
 `},
 		{
 			name: "multiple included lists",
-			ymlTree: YmlTreeModel{
-				Includes: []YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 list:
@@ -77,8 +76,8 @@ list:
 `},
 		{
 			name: "multiple included maps",
-			ymlTree: YmlTreeModel{
-				Includes: []YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 config:
@@ -111,18 +110,18 @@ config:
 `},
 		{
 			name: "nested included properties",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 property1: 1
 property2: 2
 property3: 3`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 property3: 30
 property4: 40
 property5: 50`,
-						Includes: []YmlTreeModel{
+						Includes: []ConfigFileTreeModel{
 							{
 								Config: `
 property3: 300
@@ -143,18 +142,18 @@ property7: 700
 `},
 		{
 			name: "nested included lists",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 list:
 - item1
 - item2`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 list:
 - item3
 - item4`,
-						Includes: []YmlTreeModel{
+						Includes: []ConfigFileTreeModel{
 							{
 								Config: `
 list:
@@ -176,20 +175,20 @@ list:
 `},
 		{
 			name: "nested included maps",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 config:
     property1: 1
     property2: 2
     property3: 3`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 config:
     property3: 30
     property4: 40
     property5: 50`,
-						Includes: []YmlTreeModel{
+						Includes: []ConfigFileTreeModel{
 							{
 								Config: `
 config:
@@ -212,7 +211,7 @@ config:
 `},
 		{
 			name: "complex",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 simple: 1
 map:
@@ -236,7 +235,7 @@ list:
     - 7
     - 8
 `,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 simple: 100
@@ -247,7 +246,7 @@ list:
 - more
 - items
 `,
-						Includes: []YmlTreeModel{
+						Includes: []ConfigFileTreeModel{
 							{
 								Config: `
 map:
@@ -308,7 +307,7 @@ list:
 `},
 		{
 			name: "RFC example",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `format_version: "13"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 include:
@@ -331,7 +330,7 @@ workflows:
     - _pull_apks
     after_run:
     - _run_tests`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{Config: `workflows:
   ui_test_on_phone:
     envs:
@@ -386,9 +385,9 @@ workflows:
 `},
 		{
 			name: "mismatching types - simple into map",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `item: value`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 item:
@@ -403,13 +402,13 @@ item:
 		},
 		{
 			name: "mismatching types - map into simple",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 item:
   value1: 1
   value2: 2
 `,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `item: value`,
 					},
@@ -423,9 +422,9 @@ item:
 		},
 		{
 			name: "mismatching types - simple into list",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `item: value`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 item:
@@ -440,13 +439,13 @@ item:
 		},
 		{
 			name: "mismatching types - list into simple",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 item:
   - value1
   - value2
 `,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `item: value`,
 					},
@@ -460,12 +459,12 @@ item:
 		},
 		{
 			name: "mismatching types - map into list",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 item:
   value1: 1
   value2: 2`,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `
 item:
@@ -482,13 +481,13 @@ item:
 		},
 		{
 			name: "mismatching types - list into map",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				Config: `
 item:
   - value1
   - value2
 `,
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						Config: `item:
   value1: 1
@@ -507,12 +506,10 @@ item:
 		t.Run(
 			test.name, func(t *testing.T) {
 				t.Parallel()
-				result, err := runMerge(&test.ymlTree)
+				result, err := test.ymlTree.Merge()
 				require.NoError(t, err)
 
-				resultString, err := yaml.Marshal(result)
-
-				require.YAMLEq(t, test.expected, string(resultString))
+				require.YAMLEq(t, test.expected, result)
 			})
 	}
 }
@@ -522,12 +519,12 @@ func TestMerge_Error(t *testing.T) {
 
 	for _, test := range []struct {
 		name          string
-		ymlTree       YmlTreeModel
+		ymlTree       ConfigFileTreeModel
 		expectedError string
 	}{
 		{
 			name: "parse error - invalid YML",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				FileName: "bitrise.yml",
 				Config:   `format_version: "13`,
 			},
@@ -535,9 +532,9 @@ func TestMerge_Error(t *testing.T) {
 		},
 		{
 			name: "parse error - tabs in YML",
-			ymlTree: YmlTreeModel{
+			ymlTree: ConfigFileTreeModel{
 				FileName: "bitrise.yml",
-				Includes: []YmlTreeModel{
+				Includes: []ConfigFileTreeModel{
 					{
 						FileName: "included.yml",
 						Config: `
@@ -554,9 +551,9 @@ workflows:
 			test.name, func(t *testing.T) {
 				t.Parallel()
 
-				result, err := runMerge(&test.ymlTree)
+				result, err := test.ymlTree.Merge()
 
-				require.Nil(t, result)
+				require.Empty(t, result)
 				require.ErrorContains(t, err, test.expectedError)
 			})
 	}
