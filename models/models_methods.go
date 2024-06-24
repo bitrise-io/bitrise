@@ -106,6 +106,33 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
+func (bundle *StepBundleListItemModel) Normalize() error {
+	for _, env := range bundle.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (bundle *StepBundleModel) Normalize() error {
+	for _, env := range bundle.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (container *Container) Normalize() error {
+	for _, env := range container.Envs {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (workflow *WorkflowModel) Normalize() error {
 	for _, env := range workflow.Environments {
 		if err := env.Normalize(); err != nil {
@@ -114,7 +141,7 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		key, t, err := stepListItem.GetKeyAndType()
+		_, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
@@ -127,9 +154,16 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
-			stepListItem[key] = step
+		} else if t == StepListItemTypeBundle {
+			bundle, err := stepListItem.GetBundle()
+			if err != nil {
+				return err
+			}
+
+			if err := bundle.Normalize(); err != nil {
+				return err
+			}
 		}
-		// TODO: check if StepBundle needs to be normalised
 	}
 
 	return nil
@@ -146,23 +180,42 @@ func (app *AppModel) Normalize() error {
 
 func (config *BitriseDataModel) Normalize() error {
 	if err := config.App.Normalize(); err != nil {
-		return err
+		return fmt.Errorf("failed to normalize app: %w", err)
 	}
 
 	normalizedTriggerMap, err := config.TriggerMap.Normalized()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to normalize trigger_map: %w", err)
 	}
 	config.TriggerMap = normalizedTriggerMap
 
-	for _, workflow := range config.Workflows {
-		if err := workflow.Normalize(); err != nil {
-			return err
+	for _, container := range config.Containers {
+		if err := container.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize container: %w", err)
 		}
 	}
+
+	for _, container := range config.Services {
+		if err := container.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize service: %w", err)
+		}
+	}
+
+	for _, stepBundle := range config.StepBundles {
+		if err := stepBundle.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize step_bundle: %w", err)
+		}
+	}
+
+	for _, workflow := range config.Workflows {
+		if err := workflow.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize workflow: %w", err)
+		}
+	}
+
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to normalize meta: %w", err)
 	}
 	config.Meta = normalizedMeta
 
