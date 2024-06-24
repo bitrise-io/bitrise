@@ -86,6 +86,8 @@ services:
     image: postgres:13
     envs:
     - POSTGRES_PASSWORD: password
+      opts:
+        is_expand: false
     ports:
     - 5435:5432
     options: >-
@@ -128,6 +130,40 @@ workflows:
             inputs:
             - content: bundle exec rspec spec/features/`,
 		},
+		{
+			name: "Step Bundles are normalized",
+			config: `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    envs:
+    - NAME: World
+      opts:
+        is_expand: false
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    envs:
+    - NAME: Bitrise
+    steps:
+    - bundle::print-hello: {}
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+    - bundle::print-hello:
+        envs:
+        - NAME: Universe
+          opts:
+            is_expand: false
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -145,6 +181,7 @@ workflows:
 			require.NoError(t, err)
 		})
 	}
+
 }
 
 // Config
