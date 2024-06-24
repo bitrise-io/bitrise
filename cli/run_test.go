@@ -478,17 +478,17 @@ workflows:
 }
 
 func TestEnvOrders(t *testing.T) {
-	t.Log("Only secret env - secret env should be use")
-	{
-		inventoryStr := `
+	tests := []struct {
+		name    string
+		secrets string
+		config  string
+	}{
+		{
+			name: "Only secret env - secret env should be use",
+			secrets: `
 envs:
-- ENV_ORDER_TEST: "should be the 1."
-`
-
-		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-		require.NoError(t, err)
-
-		configStr := `
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -501,34 +501,16 @@ workflows:
             #!/bin/bash
             set -v
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
-            if [[ "$ENV_ORDER_TEST" != "should be the 1." ]] ; then
+            if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
               exit 1
-            fi
-`
-
-		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-		require.Equal(t, 0, len(warnings))
-
-		require.NoError(t, configs.InitPaths())
-
-		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig, nil)
-		_, err = runner.runWorkflows(noOpTracker{})
-		require.NoError(t, err)
-	}
-
-	t.Log("Secret env & app env also defined - app env should be use")
-	{
-		inventoryStr := `
+            fi`,
+		},
+		{
+			name: "Secret env & app env also defined - app env should be use",
+			secrets: `
 envs:
-- ENV_ORDER_TEST: "should be the 1."
-`
-
-		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-		require.NoError(t, err)
-
-		configStr := `
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -547,33 +529,14 @@ workflows:
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
             if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
               exit 1
-            fi
-
-`
-
-		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-		require.Equal(t, 0, len(warnings))
-
-		require.NoError(t, configs.InitPaths())
-
-		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig, nil)
-		_, err = runner.runWorkflows(noOpTracker{})
-		require.NoError(t, err)
-	}
-
-	t.Log("Secret env & app env && workflow env also defined - workflow env should be use")
-	{
-		inventoryStr := `
+            fi`,
+		},
+		{
+			name: "Secret env & app env && workflow env also defined - workflow env should be use",
+			secrets: `
 envs:
-- ENV_ORDER_TEST: "should be the 1."
-`
-
-		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-		require.NoError(t, err)
-
-		configStr := `
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -594,32 +557,14 @@ workflows:
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
             if [[ "$ENV_ORDER_TEST" != "should be the 3." ]] ; then
               exit 1
-            fi
-`
-
-		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-		require.Equal(t, 0, len(warnings))
-
-		require.NoError(t, configs.InitPaths())
-
-		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig, nil)
-		_, err = runner.runWorkflows(noOpTracker{})
-		require.NoError(t, err)
-	}
-
-	t.Log("Secret env & app env && workflow env && step output env also defined - step output env should be use")
-	{
-		inventoryStr := `
+            fi`,
+		},
+		{
+			name: "Secret env & app env && workflow env && step output env also defined - step output env should be use",
+			secrets: `
 envs:
-- ENV_ORDER_TEST: "should be the 1."
-`
-
-		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
-		require.NoError(t, err)
-
-		configStr := `
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -643,19 +588,195 @@ workflows:
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
             if [[ "$ENV_ORDER_TEST" != "should be the 4." ]] ; then
               exit 1
+            fi`,
+		},
+		{
+			name: "Step Bundle definition's env var overrides secrets, app, workflow and step output env vars with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+step_bundles:
+  test-bundle:
+    envs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 5." ]] ; then
+              exit 1
             fi
-`
 
-		config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
-		require.NoError(t, err)
-		require.Equal(t, 0, len(warnings))
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle: {}`,
+		},
+		{
+			name: "Step Bundle list item's env var overrides secrets, app, workflow, step output and step bundle definition env vars with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-		require.NoError(t, configs.InitPaths())
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
 
-		runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
-		runner := NewWorkflowRunner(runConfig, nil)
-		_, err = runner.runWorkflows(noOpTracker{})
-		require.NoError(t, err)
+step_bundles:
+  test-bundle:
+    envs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 6." ]] ; then
+              exit 1
+            fi
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle:
+        envs:
+        - ENV_ORDER_TEST: "should be the 6."`,
+		},
+		{
+			name: "Step Bundle input envs are not shared with the workflow",
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+step_bundles:
+  test-bundle:
+    envs:
+    - ENV_ORDER_TEST: "should be the 2."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 1."
+    steps:
+    - bundle::test-bundle:
+        envs:
+        - ENV_ORDER_TEST: "should be the 3."
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 1." ]] ; then
+              exit 1
+            fi`,
+		},
+		{
+			name: "Step Bundle output envs are shared with the workflow",
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+step_bundles:
+  test-bundle-1:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            envman add --key ENV_ORDER_TEST --value "should be the 2."
+
+  test-bundle-2:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
+              exit 1
+            fi
+            envman add --key ENV_ORDER_TEST --value "should be the 3."
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 1."
+    steps:
+    - bundle::test-bundle-1: {}
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
+              exit 1
+            fi
+    - bundle::test-bundle-2: {}
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 3." ]] ; then
+              exit 1
+            fi`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(tt.secrets))
+			require.NoError(t, err)
+
+			config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(tt.config))
+			require.NoError(t, err)
+			require.Equal(t, 0, len(warnings))
+
+			require.NoError(t, configs.InitPaths())
+
+			runConfig := RunConfig{Config: config, Workflow: "test", Secrets: inventory.Envs}
+			runner := NewWorkflowRunner(runConfig, nil)
+			res, err := runner.runWorkflows(noOpTracker{})
+			require.NoError(t, err)
+			require.False(t, res.IsBuildFailed())
+		})
 	}
 }
 
