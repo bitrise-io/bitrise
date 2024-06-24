@@ -16,20 +16,20 @@ func TestMerge_Success(t *testing.T) {
 		{
 			name: "multiple included properties",
 			ymlTree: ConfigFileTreeModel{
-				Config: "",
+				Contents: "",
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 property1: 1
 property2: 2
 property3: 3`},
 					{
-						Config: `
+						Contents: `
 property3: 30
 property4: 40
 property5: 50`},
 					{
-						Config: `
+						Contents: `
 property3: 300
 property5: 500
 property7: 700`},
@@ -48,17 +48,17 @@ property7: 700
 			ymlTree: ConfigFileTreeModel{
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 list:
 - item1
 - item2`},
 					{
-						Config: `
+						Contents: `
 list:
 - item3
 - item4`},
 					{
-						Config: `
+						Contents: `
 list:
 - item5
 - item6`,
@@ -79,19 +79,19 @@ list:
 			ymlTree: ConfigFileTreeModel{
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 config:
     property1: 1
     property2: 2
     property3: 3`},
 					{
-						Config: `
+						Contents: `
 config:
     property3: 30
     property4: 40
     property5: 50`},
 					{
-						Config: `
+						Contents: `
 config:
     property3: 300
     property5: 500
@@ -111,19 +111,19 @@ config:
 		{
 			name: "nested included properties",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 property1: 1
 property2: 2
 property3: 3`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 property3: 30
 property4: 40
 property5: 50`,
 						Includes: []ConfigFileTreeModel{
 							{
-								Config: `
+								Contents: `
 property3: 300
 property5: 500
 property7: 700`,
@@ -143,19 +143,19 @@ property7: 700
 		{
 			name: "nested included lists",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 list:
 - item1
 - item2`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 list:
 - item3
 - item4`,
 						Includes: []ConfigFileTreeModel{
 							{
-								Config: `
+								Contents: `
 list:
 - item5
 - item6`,
@@ -176,21 +176,21 @@ list:
 		{
 			name: "nested included maps",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 config:
     property1: 1
     property2: 2
     property3: 3`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 config:
     property3: 30
     property4: 40
     property5: 50`,
 						Includes: []ConfigFileTreeModel{
 							{
-								Config: `
+								Contents: `
 config:
     property3: 300
     property5: 500
@@ -212,7 +212,7 @@ config:
 		{
 			name: "complex",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 simple: 1
 map:
   map_simple: 2
@@ -237,7 +237,7 @@ list:
 `,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 simple: 100
 another_simple: 200
 map:
@@ -248,7 +248,7 @@ list:
 `,
 						Includes: []ConfigFileTreeModel{
 							{
-								Config: `
+								Contents: `
 map:
   map_map:
     map_map_simple: 400
@@ -261,7 +261,7 @@ map:
 						},
 					},
 					{
-						Config: `
+						Contents: `
 another_simple: 300
 map:
   map_map:
@@ -308,7 +308,7 @@ list:
 		{
 			name: "RFC example",
 			ymlTree: ConfigFileTreeModel{
-				Config: `format_version: "13"
+				Contents: `format_version: "13"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 include:
   - path: included.yml
@@ -331,7 +331,7 @@ workflows:
     after_run:
     - _run_tests`,
 				Includes: []ConfigFileTreeModel{
-					{Config: `workflows:
+					{Contents: `workflows:
   ui_test_on_phone:
     envs:
     - EMULATOR_PROFILE: pixel_5
@@ -386,10 +386,10 @@ workflows:
 		{
 			name: "mismatching types - simple into map",
 			ymlTree: ConfigFileTreeModel{
-				Config: `item: value`,
+				Contents: `item: value`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 item:
   value1: 1
   value2: 2
@@ -403,14 +403,14 @@ item:
 		{
 			name: "mismatching types - map into simple",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 item:
   value1: 1
   value2: 2
 `,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `item: value`,
+						Contents: `item: value`,
 					},
 				},
 			},
@@ -423,10 +423,10 @@ item:
 		{
 			name: "mismatching types - simple into list",
 			ymlTree: ConfigFileTreeModel{
-				Config: `item: value`,
+				Contents: `item: value`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 item:
   - value1
   - value2
@@ -440,14 +440,14 @@ item:
 		{
 			name: "mismatching types - list into simple",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 item:
   - value1
   - value2
 `,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `item: value`,
+						Contents: `item: value`,
 					},
 				},
 			},
@@ -460,13 +460,13 @@ item:
 		{
 			name: "mismatching types - map into list",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 item:
   value1: 1
   value2: 2`,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `
+						Contents: `
 item:
   - value1
   - value2
@@ -482,14 +482,14 @@ item:
 		{
 			name: "mismatching types - list into map",
 			ymlTree: ConfigFileTreeModel{
-				Config: `
+				Contents: `
 item:
   - value1
   - value2
 `,
 				Includes: []ConfigFileTreeModel{
 					{
-						Config: `item:
+						Contents: `item:
   value1: 1
   value2: 2`,
 					},
@@ -525,8 +525,8 @@ func TestMerge_Error(t *testing.T) {
 		{
 			name: "parse error - invalid YML",
 			ymlTree: ConfigFileTreeModel{
-				Path:   "bitrise.yml",
-				Config: `format_version: "13`,
+				Path:     "bitrise.yml",
+				Contents: `format_version: "13`,
 			},
 			expectedError: "failed to merge YML files, error: failed to parse YML file bitrise.yml, error: yaml: found unexpected end of stream",
 		},
@@ -537,7 +537,7 @@ func TestMerge_Error(t *testing.T) {
 				Includes: []ConfigFileTreeModel{
 					{
 						Path: "included.yml",
-						Config: `
+						Contents: `
 workflows:
 	tabbed-item: invalid
 `},

@@ -50,7 +50,7 @@ func mergeTree(existingValue yamlMap, treeToMerge *ConfigFileTreeModel) (yamlMap
 
 	// We assume that each YML file has a map at root, it's invalid otherwise
 	var config yamlMap
-	err = yaml.Unmarshal([]byte(treeToMerge.Config), &config)
+	err = yaml.Unmarshal([]byte(treeToMerge.Contents), &config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse YML file %s, error: %s", treeToMerge.Path, err)
 	}

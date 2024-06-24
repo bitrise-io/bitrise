@@ -243,6 +243,6 @@ type TestResultStepInfo struct {
 
 type ConfigFileTreeModel struct {
 	Path     string                `json:"path" yaml:"path"`
-	Config   string                `json:"contents,omitempty" yaml:"contents,omitempty"`
+	Contents string                `json:"contents,omitempty" yaml:"contents,omitempty"`
 	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
 }
