@@ -181,7 +181,6 @@ workflows:
 			require.NoError(t, err)
 		})
 	}
-
 }
 
 // Config
