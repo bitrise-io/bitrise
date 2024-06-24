@@ -50,10 +50,10 @@ func ReadEnvsJSONList(envStorePth string, expand, sensitiveOnly bool, envSource 
 		return nil, fmt.Errorf("failed to read envs: %s", err)
 	}
 
-	return convertToEnvsJSONModel(envs, expand, sensitiveOnly, envSource)
+	return ConvertToEnvsJSONModel(envs, expand, sensitiveOnly, envSource)
 }
 
-func convertToEnvsJSONModel(envs []models.EnvironmentItemModel, expand, sensitiveOnly bool, envSource env.EnvironmentSource) (models.EnvsJSONListModel, error) {
+func ConvertToEnvsJSONModel(envs []models.EnvironmentItemModel, expand, sensitiveOnly bool, envSource env.EnvironmentSource) (models.EnvsJSONListModel, error) {
 	if sensitiveOnly {
 		var err error
 		envs, err = sensitiveEnvs(envs)
