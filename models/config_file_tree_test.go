@@ -525,18 +525,18 @@ func TestMerge_Error(t *testing.T) {
 		{
 			name: "parse error - invalid YML",
 			ymlTree: ConfigFileTreeModel{
-				FileName: "bitrise.yml",
-				Config:   `format_version: "13`,
+				Path:   "bitrise.yml",
+				Config: `format_version: "13`,
 			},
 			expectedError: "failed to merge YML files, error: failed to parse YML file bitrise.yml, error: yaml: found unexpected end of stream",
 		},
 		{
 			name: "parse error - tabs in YML",
 			ymlTree: ConfigFileTreeModel{
-				FileName: "bitrise.yml",
+				Path: "bitrise.yml",
 				Includes: []ConfigFileTreeModel{
 					{
-						FileName: "included.yml",
+						Path: "included.yml",
 						Config: `
 workflows:
 	tabbed-item: invalid

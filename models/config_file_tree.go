@@ -44,7 +44,7 @@ func mergeTree(existingValue yamlMap, treeToMerge *ConfigFileTreeModel) (yamlMap
 	for _, includedTree := range treeToMerge.Includes {
 		existingValue, err = mergeTree(existingValue, &includedTree)
 		if err != nil {
-			return nil, fmt.Errorf("failed to merge YML file %s, error: %s", includedTree.FileName, err)
+			return nil, fmt.Errorf("failed to merge YML file %s, error: %s", includedTree.Path, err)
 		}
 	}
 
@@ -52,7 +52,7 @@ func mergeTree(existingValue yamlMap, treeToMerge *ConfigFileTreeModel) (yamlMap
 	var config yamlMap
 	err = yaml.Unmarshal([]byte(treeToMerge.Config), &config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse YML file %s, error: %s", treeToMerge.FileName, err)
+		return nil, fmt.Errorf("failed to parse YML file %s, error: %s", treeToMerge.Path, err)
 	}
 
 	if config == nil {
