@@ -225,6 +225,47 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
+func (bundle *StepBundleListItemModel) Validate() error {
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (bundle *StepBundleModel) Validate() ([]string, error) {
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	var warnings []string
+	for _, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return warnings, err
+		}
+
+		warns, err := validateStep(stepID, step)
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, err
+		}
+	}
+	return warnings, nil
+}
+
+func (container *Container) Validate() error {
+	for _, env := range container.Envs {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
 	var warnings []string
 
@@ -263,37 +304,129 @@ func (with WithModel) Validate(workflowID string, containers, services map[strin
 
 }
 
-func (workflow *WorkflowModel) Validate() ([]string, error) {
-	var warnings []string
-
+func (workflow *WorkflowModel) Validate() error {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
-			return warnings, err
+			return err
+		}
+	}
+	return nil
+}
+
+func (app *AppModel) Validate() error {
+	for _, env := range app.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (config *BitriseDataModel) Validate() ([]string, error) {
+	var warnings []string
+
+	if config.FormatVersion == "" {
+		return warnings, fmt.Errorf("missing format_version")
+	}
+
+	// trigger map
+	workflows := config.getWorkflowIDs()
+	pipelines := config.getPipelineIDs()
+	triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
+	warnings = append(warnings, triggerMapWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// app
+	if err := config.App.Validate(); err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// containers
+	if err := validateContainers(*config); err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// step_bundles
+	stepBundleWarnings, err := validateStepBundles(*config)
+	warnings = append(warnings, stepBundleWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// pipelines
+	pipelineWarnings, err := validatePipelines(config)
+	warnings = append(warnings, pipelineWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// stages
+	stageWarnings, err := validateStages(config)
+	warnings = append(warnings, stageWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// workflows
+	workflowWarnings, err := validateWorkflows(config)
+	warnings = append(warnings, workflowWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	return warnings, nil
+}
+
+func validateContainers(config BitriseDataModel) error {
+	for containerID, containerDef := range config.Containers {
+		if containerID == "" {
+			return fmt.Errorf("container (image: %s) has empty ID defined", containerDef.Image)
+		}
+		if strings.TrimSpace(containerDef.Image) == "" {
+			return fmt.Errorf("container (%s) has no image defined", containerID)
+		}
+		if err := containerDef.Validate(); err != nil {
+			return fmt.Errorf("container (%s) has config issue: %w", containerID, err)
 		}
 	}
 
-	for _, stepListItem := range workflow.Steps {
-		key, t, err := stepListItem.GetKeyAndType()
+	for serviceID, serviceDef := range config.Services {
+		if serviceID == "" {
+			return fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
+		}
+		if strings.TrimSpace(serviceDef.Image) == "" {
+			return fmt.Errorf("service (%s) has no image defined", serviceID)
+		}
+		if err := serviceDef.Validate(); err != nil {
+			return fmt.Errorf("container (%s) has config issue: %w", serviceID, err)
+		}
+	}
+
+	return nil
+}
+
+func validateStepBundles(config BitriseDataModel) ([]string, error) {
+	var warnings []string
+
+	for bundleID, bundle := range config.StepBundles {
+		if bundleID == "" {
+			return warnings, fmt.Errorf("step bundle has empty ID defined")
+		}
+
+		warns, err := bundle.Validate()
+		warnings = append(warnings, warns...)
 		if err != nil {
-			return warnings, err
+			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)
 		}
-
-		if t == StepListItemTypeStep {
-			step, err := stepListItem.GetStep()
-			if err != nil {
-				return warnings, err
-			}
-			stepID := key
-			warns, err := validateStep(stepID, *step)
-			warnings = append(warnings, warns...)
-			if err != nil {
-				return warnings, err
-			}
-
-			// TODO: Why is this assignment needed?
-			stepListItem[stepID] = step
-		}
-		// TODO: validate StepBundle
 	}
 
 	return warnings, nil
@@ -323,107 +456,6 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 		}
 		stepInputMap[key] = true
 	}
-
-	return warnings, nil
-}
-
-func (app *AppModel) Validate() error {
-	for _, env := range app.Environments {
-		if err := env.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (config *BitriseDataModel) Validate() ([]string, error) {
-	var warnings []string
-
-	if config.FormatVersion == "" {
-		return warnings, fmt.Errorf("missing format_version")
-	}
-
-	// trigger map
-	workflows := config.getWorkflowIDs()
-	pipelines := config.getPipelineIDs()
-	warns, err := config.TriggerMap.Validate(workflows, pipelines)
-	warnings = append(warnings, warns...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// app
-	if err := config.App.Validate(); err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// containers
-	for containerID, containerDef := range config.Containers {
-		if containerID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
-		}
-		if strings.TrimSpace(containerDef.Image) == "" {
-			return warnings, fmt.Errorf("service (%s) has no image defined", containerID)
-		}
-	}
-
-	for serviceID, serviceDef := range config.Services {
-		if serviceID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
-		}
-		if strings.TrimSpace(serviceDef.Image) == "" {
-			return warnings, fmt.Errorf("service (%s) has no image defined", serviceID)
-		}
-	}
-	// ---
-
-	// pipelines
-	pipelineWarnings, err := validatePipelines(config)
-	warnings = append(warnings, pipelineWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// stages
-	stageWarnings, err := validateStages(config)
-	warnings = append(warnings, stageWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// workflows
-	workflowWarnings, err := validateWorkflows(config)
-	warnings = append(warnings, workflowWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-
-	for workflowID, workflow := range config.Workflows {
-		for _, stepListItem := range workflow.Steps {
-			_, t, err := stepListItem.GetKeyAndType()
-			if err != nil {
-				return warnings, err
-			}
-
-			if t == StepListItemTypeWith {
-				with, err := stepListItem.GetWith()
-				if err != nil {
-					return warnings, err
-				}
-
-				warns, err := with.Validate(workflowID, config.Containers, config.Services)
-				warnings = append(warnings, warns...)
-				if err != nil {
-					return warnings, err
-				}
-			}
-		}
-	}
-	// ---
 
 	return warnings, nil
 }
@@ -510,28 +542,75 @@ func isUtilityWorkflow(workflowID string) bool {
 }
 
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {
-	workflowWarnings := make([]string, 0)
-	for ID, workflow := range config.Workflows {
-		idWarning, err := validateID(ID, "workflow")
+	var warnings []string
+
+	for workflowID, workflow := range config.Workflows {
+		idWarning, err := validateID(workflowID, "workflow")
 		if idWarning != "" {
-			workflowWarnings = append(workflowWarnings, idWarning)
+			warnings = append(warnings, idWarning)
 		}
 		if err != nil {
-			return workflowWarnings, err
+			return warnings, err
 		}
 
-		warns, err := workflow.Validate()
-		workflowWarnings = append(workflowWarnings, warns...)
-		if err != nil {
-			return workflowWarnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
+		if err := checkWorkflowReferenceCycle(workflowID, workflow, *config, []string{}); err != nil {
+			return warnings, err
 		}
 
-		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
-			return workflowWarnings, err
+		if err := workflow.Validate(); err != nil {
+			return warnings, fmt.Errorf("validation error in workflow: %s: %s", workflowID, err)
+		}
+
+		for _, stepListItem := range workflow.Steps {
+			key, t, err := stepListItem.GetKeyAndType()
+			if err != nil {
+				return warnings, err
+			}
+
+			if t == StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err != nil {
+					return warnings, err
+				}
+				stepID := key
+				warns, err := validateStep(stepID, *step)
+				warnings = append(warnings, warns...)
+				if err != nil {
+					return warnings, err
+				}
+
+				// TODO: Why is this assignment needed?
+				stepListItem[stepID] = step
+			} else if t == StepListItemTypeWith {
+				with, err := stepListItem.GetWith()
+				if err != nil {
+					return warnings, err
+				}
+
+				warns, err := with.Validate(workflowID, config.Containers, config.Services)
+				warnings = append(warnings, warns...)
+				if err != nil {
+					return warnings, err
+				}
+			} else if t == StepListItemTypeBundle {
+				bundleID := strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix)
+				if _, ok := config.StepBundles[bundleID]; !ok {
+					return warnings, fmt.Errorf("step-bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
+				}
+
+				bundle, err := stepListItem.GetBundle()
+				if err != nil {
+					return warnings, err
+				}
+
+				if err := bundle.Validate(); err != nil {
+					return warnings, err
+				}
+			}
 		}
 	}
 
-	return workflowWarnings, nil
+	return warnings, nil
 }
 
 func validateID(id, modelType string) (string, error) {
