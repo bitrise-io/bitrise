@@ -98,7 +98,7 @@ even if the repository is open source!`)
 	} else if stepIDData.SteplibSource == "_" {
 		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
-		// StepLib independent steps are completely defined in workflow
+		// StepLib independent steps are completely defined in the workflow
 		stepYMLPth = ""
 		if err := workflowStep.FillMissingDefaults(); err != nil {
 			return "", "", false, err
@@ -112,8 +112,7 @@ even if the repository is open source!`)
 			return "", "", false, err
 		}
 	} else if stepIDData.SteplibSource != "" {
-		isUpdated := isStepLibUpdated
-		stepInfo, didUpdate, err := activateStepLibStep(stepIDData, stepDir, stepYMLPth, isUpdated, isSteplibOfflineMode)
+		stepInfo, didUpdate, err := activateStepLibStep(stepIDData, stepDir, stepYMLPth, isStepLibUpdated, isSteplibOfflineMode)
 		didStepLibUpdate = didUpdate
 
 		stepInfoPtr.ID = stepInfo.ID
