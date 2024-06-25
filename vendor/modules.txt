@@ -50,6 +50,7 @@ github.com/bitrise-io/goinp/goinp
 github.com/bitrise-io/stepman/activator
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models
+github.com/bitrise-io/stepman/preload
 github.com/bitrise-io/stepman/stepid
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/toolkits

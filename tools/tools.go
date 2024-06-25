@@ -141,10 +141,9 @@ func StepmanUpdate(collection string) error {
 }
 
 // StepmanActivate ...
-func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string) error {
+func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) error {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	// TODO: temporary until every related thing is moved over to stepman
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, false)
+	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
 }
 
 // StepmanStepInfo ...

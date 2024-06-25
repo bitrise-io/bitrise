@@ -7,16 +7,18 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_Docker(t *testing.T) {
 	testCases := map[string]struct {
-		configPath    string
-		inventoryPath string
-		workflowName  string
-		requireErr    bool
-		requireLogs   []string
+		configPath          string
+		inventoryPath       string
+		workflowName        string
+		requireErr          bool
+		requireLogs         []string
+		requiredLogPatterns []string
 	}{
 		"docker pull succeeds with existing image": {
 			configPath:   "docker_pull_bitrise.yml",
@@ -38,7 +40,7 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-login-fail",
 			requireErr:   true,
 			requireLogs: []string{
-				"workflow has docker credentials provided, but the authentication failed",
+				"docker credentials provided, but the authentication failed",
 			},
 		},
 		"docker login succeeds when correct credentials are provided": {
@@ -74,8 +76,10 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-create-succeeds-with-false-unhealthy-container",
 			requireErr:   false,
 			requireLogs: []string{
-				"Container (bitrise-workflow-docker-create-succeeds-with-false-unhealthy-container) is unhealthy...",
 				"Step is running in container: frolvlad/alpine-bash:latest",
+			},
+			requiredLogPatterns: []string{
+				"*Container (bitrise-workflow-*) is unhealthy...*",
 			},
 		},
 		"docker create fails when invalid option is provided": {
@@ -110,7 +114,18 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-service-start-succeeds-after-retries",
 			requireErr:   false,
 			requireLogs: []string{
-				"Waiting for container (slow-bootin-service) to be healthy",
+				"Waiting for container (slow-booting-service) to be healthy",
+			},
+		},
+		"docker start container and services with credentials": {
+			configPath:    "docker_multiple_containers_bitrise.yml",
+			workflowName:  "docker-login-multiple-containers",
+			inventoryPath: "docker_multiple_containers_secrets.yml",
+			requireErr:    false,
+			requireLogs: []string{
+				"Container (service_1_container) is healthy...",
+				"Container (service_2_container) is healthy...",
+				"Step is running in container: localhost:5001/healthy-image",
 			},
 		},
 	}
@@ -126,10 +141,14 @@ func Test_Docker(t *testing.T) {
 			if testCase.requireErr {
 				require.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				require.NoError(t, err, out)
 			}
 			for _, log := range testCase.requireLogs {
 				require.Contains(t, out, log)
+			}
+			for _, logPattern := range testCase.requiredLogPatterns {
+				contains := glob.Glob(logPattern, out)
+				require.True(t, contains, out)
 			}
 		})
 	}
