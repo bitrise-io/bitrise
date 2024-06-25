@@ -501,7 +501,7 @@ workflows:
             #!/bin/bash
             set -v
             echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
-            if [[ "$ENV_ORDER_TEST" != "should be the 2." ]] ; then
+            if [[ "$ENV_ORDER_TEST" != "should be the 1." ]] ; then
               exit 1
             fi`,
 		},
