@@ -1264,6 +1264,62 @@ workflows:
 	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
+// Checks if BuildStatusEnv is set correctly for Step Bundles
+func TestBuildFailedModeForStepBundles(t *testing.T) {
+	configStr := `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+step_bundles:
+  test-bundle-1:
+    steps:
+    - script:
+        inputs:
+        - content: exit 0
+
+  test-bundle-2:
+    steps:
+    - script:
+        is_always_run: true
+        inputs:
+        - content: exit 1
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle-1: {}
+    - script:
+        run_if: false
+        inputs:
+        - content: exit 1
+    - bundle::test-bundle-2: {}
+    - script:
+        inputs:
+        - content: exit 0`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test"}
+	runner := NewWorkflowRunner(runConfig, nil)
+	buildRunResults, err := runner.runWorkflows(noOpTracker{})
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(buildRunResults.SuccessSteps))
+	require.Equal(t, 2, len(buildRunResults.SkippedSteps))
+	require.Equal(t, 1, len(buildRunResults.FailedSteps))
+
+	require.Equal(t, 0, buildRunResults.SuccessSteps[0].Idx)
+	require.Equal(t, 1, buildRunResults.SkippedSteps[0].Idx)
+	require.Equal(t, 2, buildRunResults.FailedSteps[0].Idx)
+	require.Equal(t, 3, buildRunResults.SkippedSteps[1].Idx)
+
+	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
+	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
+}
+
 // Trivial test for workflow environment handling, before workflows env should be visible in target and after workflow
 func TestWorkflowEnvironments(t *testing.T) {
 	configStr := `
