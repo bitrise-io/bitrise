@@ -79,40 +79,19 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	// ------------------------------------------
-	// In function global variables
-
-	// These are global for easy use in local register step run result methods.
 	runResultCollector := newBuildRunResultCollector(tracker)
-
-	// Global variables for synchronising container's lifecycle
-	// and shutting down the last set of containers at the end of the workflow run
 	currentStepGroupID := ""
-	lastStepGroupID := ""
-	defer func() {
-		if lastStepGroupID != "" {
-			r.stopContainersForStepGroup(lastStepGroupID, plan.WorkflowTitle)
-		}
-	}()
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
 		if stepPlan.GroupID != currentStepGroupID {
-			if currentStepGroupID != "" {
-				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
-			}
-
 			if stepPlan.GroupID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
 					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.GroupID, plan.WorkflowTitle)
 				}
 			}
-
 			currentStepGroupID = stepPlan.GroupID
-			if stepPlan.GroupID != "" {
-				lastStepGroupID = stepPlan.GroupID
-			}
 		}
 
 		stepStartTime := time.Now()
@@ -138,7 +117,18 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		*environments = append(*environments, result.OutputEnvironments...)
 
-		isLastStep := isLastWorkflow && (idx == len(plan.Steps)-1)
+		isLastStepInWorkflow := idx == len(plan.Steps)-1
+
+		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
+		if currentStepGroupID != "" {
+			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].GroupID
+			if isLastStepInWorkflow || doesStepGroupChange {
+				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
+			}
+		}
+
+		isLastStep := isLastWorkflow && isLastStepInWorkflow
+
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
