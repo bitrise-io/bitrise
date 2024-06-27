@@ -103,16 +103,10 @@ func (r WorkflowRunner) activateAndRunSteps(
 		buildEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
 
 		if stepPlan.StepBundleUUID != currentStepBundleUUID {
-			switch {
-			case currentStepBundleUUID == "" && stepPlan.StepBundleUUID != "":
-				// case 1: no bundle -> new bundle
-				currentStepBundleEnvVars = append(buildEnvironments, stepPlan.StepBundleEnvs...)
-			case currentStepBundleUUID != "" && stepPlan.StepBundleUUID != "":
-				// case 2: previous bundle -> new bundle
+			if stepPlan.StepBundleUUID != "" {
 				currentStepBundleEnvVars = append(buildEnvironments, stepPlan.StepBundleEnvs...)
 			}
 
-			// case 3: previous bundle -> no bundle
 			currentStepBundleUUID = stepPlan.StepBundleUUID
 		}
 
