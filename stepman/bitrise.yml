@@ -60,4 +60,4 @@ workflows:
         - content: |
             #!/usr/bin/env bash
             set -ex
-            goreleaser release --snapshot --rm-dist
+            goreleaser release --snapshot --clean
