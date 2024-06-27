@@ -145,12 +145,22 @@ func (r WorkflowRunner) activateAndRunSteps(
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
-
 		if currentStepBundleUUID != "" {
 			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
 		}
 
-		isLastStep := isLastWorkflow && (idx == len(plan.Steps)-1)
+		isLastStepInWorkflow := idx == len(plan.Steps)-1
+
+		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
+		if currentStepGroupID != "" {
+			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
+			if isLastStepInWorkflow || doesStepGroupChange {
+				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
+			}
+		}
+
+		isLastStep := isLastWorkflow && isLastStepInWorkflow
+
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
