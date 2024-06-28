@@ -1,15 +1,11 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/activator"
@@ -53,33 +49,19 @@ func (a stepActivator) activateStep(
 		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-		repo, err := git.New(stepDir)
+
+		activatedStep, err := activator.ActivateGitRefStep(
+			stepmanLogger,
+			stepIDData,
+			stepDir,
+			workDir,
+		)
 		if err != nil {
-			return "", "", false, err
-		}
-		var cloneCmd *command.Model
-		if stepIDData.Version == "" {
-			cloneCmd = repo.Clone(stepIDData.IDorURI, "--depth=1")
-		} else {
-			cloneCmd = repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version, "--depth=1")
-		}
-		if out, err := cloneCmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
-			if strings.HasPrefix(stepIDData.IDorURI, "git@") {
-				log.Warnf(`Note: if the step's repository is an open source one,
-you should probably use a "https://..." git clone URL,
-instead of the "git@..." git clone URL which usually requires authentication
-even if the repository is open source!`)
-			}
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
-				return "", "", false, fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
-			}
-			return "", "", false, err
+			return "", "", false, fmt.Errorf("activate git step reference: %w", err)
 		}
 
-		if err := command.CopyFile(filepath.Join(stepDir, "step.yml"), stepYMLPth); err != nil {
-			return "", "", false, err
-		}
+		stepYMLPth = activatedStep.StepYMLPath
+		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else if stepIDData.SteplibSource == "_" {
 		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
