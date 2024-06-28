@@ -278,14 +278,9 @@ func (r WorkflowRunner) activateStep(
 	stepInfoPtr := stepmanModels.StepInfoModel{}
 
 	compositeStepIDStr := stepID
-	workflowStep := step
 
 	stepInfoPtr.ID = compositeStepIDStr
-	if workflowStep.Title != nil && *workflowStep.Title != "" {
-		stepInfoPtr.Step.Title = pointers.NewStringPtr(*workflowStep.Title)
-	} else {
-		stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
-	}
+	stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
 
 	stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 	if err != nil {
@@ -312,7 +307,7 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	activator := newStepActivator()
-	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr, isStepLibOfflineMode)
+	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
 	if didStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
@@ -321,44 +316,36 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	// Fill step info with default step info, if exist
-	mergedStep := workflowStep
-	if stepYMLPth != "" {
-		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
-		log.Debugf("Spec read from YML: %#v", specStep)
-		if err != nil {
-			ymlPth := stepYMLPth
-			if origStepYMLPth != "" {
-				// in case of local step (path:./) we use the original step definition path,
-				// instead of the activated step's one.
-				ymlPth = origStepYMLPth
-			}
-			err = fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err)
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
+	specStep, err := bitrise.ReadSpecStep(stepYMLPth)
+	log.Debugf("Spec read from YML: %#v", specStep)
+	if err != nil {
+		ymlPth := stepYMLPth
+		if origStepYMLPth != "" {
+			// in case of local step (path:./) we use the original step definition path,
+			// instead of the activated step's one.
+			ymlPth = origStepYMLPth
 		}
-
-		mergedStep, err = models.MergeStepWith(specStep, workflowStep)
-		if err != nil {
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
-		}
+		err = fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 	}
 
-	if mergedStep.SupportURL != nil {
-		stepInfoPtr.Step.SupportURL = pointers.NewStringPtr(*mergedStep.SupportURL)
+	if specStep.SupportURL != nil {
+		stepInfoPtr.Step.SupportURL = pointers.NewStringPtr(*specStep.SupportURL)
 	}
-	if mergedStep.SourceCodeURL != nil {
-		stepInfoPtr.Step.SourceCodeURL = pointers.NewStringPtr(*mergedStep.SourceCodeURL)
-	}
-
-	if mergedStep.RunIf != nil {
-		stepInfoPtr.Step.RunIf = pointers.NewStringPtr(*mergedStep.RunIf)
+	if specStep.SourceCodeURL != nil {
+		stepInfoPtr.Step.SourceCodeURL = pointers.NewStringPtr(*specStep.SourceCodeURL)
 	}
 
-	if mergedStep.Timeout != nil {
-		stepInfoPtr.Step.Timeout = pointers.NewIntPtr(*mergedStep.Timeout)
+	if specStep.RunIf != nil {
+		stepInfoPtr.Step.RunIf = pointers.NewStringPtr(*specStep.RunIf)
 	}
 
-	if mergedStep.NoOutputTimeout != nil {
-		stepInfoPtr.Step.NoOutputTimeout = pointers.NewIntPtr(*mergedStep.NoOutputTimeout)
+	if specStep.Timeout != nil {
+		stepInfoPtr.Step.Timeout = pointers.NewIntPtr(*specStep.Timeout)
+	}
+
+	if specStep.NoOutputTimeout != nil {
+		stepInfoPtr.Step.NoOutputTimeout = pointers.NewIntPtr(*specStep.NoOutputTimeout)
 	}
 
 	// At this point we have a filled up step info model and also have a step model which is contains the merged step
@@ -369,12 +356,12 @@ func (r WorkflowRunner) activateStep(
 	// git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git -> Simple Git Clone
 	// certificate-and-profile-installer@1 -> Certificate and profile installer
 	if stepInfoPtr.Step.Title != nil && (strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.ID) || strings.HasPrefix(*stepInfoPtr.Step.Title, stepInfoPtr.Library)) {
-		if mergedStep.Title != nil && *mergedStep.Title != "" {
-			*stepInfoPtr.Step.Title = *mergedStep.Title
+		if specStep.Title != nil && *specStep.Title != "" {
+			*stepInfoPtr.Step.Title = *specStep.Title
 		}
 	}
 
-	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, nil)
+	return newActivateStepResult(specStep, stepInfoPtr, stepIDData, stepDir, nil)
 }
 
 type prepareEnvsForStepRunResult struct {
