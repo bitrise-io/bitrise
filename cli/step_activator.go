@@ -24,7 +24,6 @@ func (a stepActivator) activateStep(
 	isStepLibUpdated bool,
 	stepDir string, // $TMPDIR/bitrise/step_src
 	workDir string, // $TMPDIR/bitrise
-	workflowStep *stepmanModels.StepModel,
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
 ) (stepYMLPth string, origStepYMLPth string, didStepLibUpdate bool, err error) {
