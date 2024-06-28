@@ -128,6 +128,11 @@ func Test_Docker(t *testing.T) {
 				"Step is running in container: localhost:5001/healthy-image",
 			},
 		},
+		"docker stops containers when needed": {
+			configPath:   "docker_stop_containers_bitrise.yml",
+			workflowName: "docker-stops-containers",
+			requireErr:   false,
+		},
 	}
 
 	for testName, testCase := range testCases {
