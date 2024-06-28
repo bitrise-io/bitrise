@@ -9,7 +9,7 @@ require (
 	github.com/bitrise-io/go-utils v1.0.13
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.21
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.0.0-20240628113544-1818e03ce8d2
+	github.com/bitrise-io/stepman v0.0.0-20240628133929-e1775d705289
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-version v1.4.0
 	github.com/ryanuber/go-glob v1.0.0

@@ -18,10 +18,14 @@ import (
 
 type buildRunResultCollector struct {
 	tracker analytics.Tracker
+	logger  log.Logger
 }
 
-func newBuildRunResultCollector(tracker analytics.Tracker) buildRunResultCollector {
-	return buildRunResultCollector{tracker: tracker}
+func newBuildRunResultCollector(logger log.Logger, tracker analytics.Tracker) buildRunResultCollector {
+	return buildRunResultCollector{
+		tracker: tracker,
+		logger:  logger,
+	}
 }
 
 func (r buildRunResultCollector) registerStepRunResults(
@@ -76,7 +80,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 	}
 
 	if printStepHeader {
-		logStepStarted(stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
+		logStepStarted(r.logger, stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
 	}
 
 	errStr := ""
