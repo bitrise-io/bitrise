@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
-	"reflect"
+	"slices"
 )
 
 func (ymlTree *ConfigFileTreeModel) Merge() (string, error) {
@@ -60,64 +60,47 @@ func mergeTree(existingValue yamlMap, treeToMerge *ConfigFileTreeModel) (yamlMap
 		config = make(yamlMap)
 	}
 
-	return mergeMap(existingValue, reflect.ValueOf(config)), nil
+	return mergeMap(existingValue, config), nil
 }
 
-func mergeValue(existingValue any, valueToMerge reflect.Value) any {
-	valueKind := valueToMerge.Kind()
+func mergeValue(existingValue any, valueToMerge any) any {
 
-	if valueKind == reflect.Interface {
-		// Skip one level of recursion by unwrapping interfaces
-		valueToMerge = valueToMerge.Elem()
-		valueKind = valueToMerge.Kind()
-	}
-
-	switch valueKind {
-	case reflect.Map:
+	switch valueToMerge.(type) {
+	case yamlMap:
 		existingMap, ok := existingValue.(yamlMap)
 		if !ok {
 			// Existing value is not a map, replace with new value
 			existingMap = make(yamlMap)
 		}
-		return mergeMap(existingMap, valueToMerge)
-	case reflect.Slice:
+		return mergeMap(existingMap, valueToMerge.(yamlMap))
+	case []any:
 		existingSlice, ok := existingValue.([]any)
 		if !ok {
 			// Existing value is not a slice, replace with new value
 			existingSlice = nil
 		}
-		return mergeSlice(existingSlice, valueToMerge)
+		return mergeSlice(existingSlice, valueToMerge.([]any))
 	default:
 		// Simple types
-		return valueToMerge.Interface()
+		return valueToMerge
 	}
 }
 
-func mergeMap(existingMap yamlMap, mapToMerge reflect.Value) yamlMap {
-	iterator := mapToMerge.MapRange()
-	for iterator.Next() {
-		key := iterator.Key().Interface()
-		valueToMerge := iterator.Value()
-
+func mergeMap(existingMap yamlMap, mapToMerge yamlMap) yamlMap {
+	for key, valueToMerge := range mapToMerge {
 		existingValue, exists := existingMap[key]
 		if exists {
 			// Key exists in result and merged maps
 			existingMap[key] = mergeValue(existingValue, valueToMerge)
 		} else {
 			// Key doesn't exist in result yet
-			existingMap[key] = valueToMerge.Interface()
+			existingMap[key] = valueToMerge
 		}
 	}
 
 	return existingMap
 }
 
-func mergeSlice(existingArray []any, arrayToAppend reflect.Value) []any {
-	for i := 0; i < arrayToAppend.Len(); i++ {
-		valueToAdd := arrayToAppend.Index(i)
-
-		existingArray = append(existingArray, valueToAdd.Interface())
-	}
-
-	return existingArray
+func mergeSlice(existingArray []any, arrayToAppend []any) []any {
+	return slices.Concat(existingArray, arrayToAppend)
 }
