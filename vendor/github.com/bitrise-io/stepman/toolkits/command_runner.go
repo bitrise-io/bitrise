@@ -5,7 +5,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
-	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/stepman/stepman"
 )
 
 type commandRunner interface {
@@ -13,10 +13,15 @@ type commandRunner interface {
 }
 
 type defaultRunner struct {
+	logger stepman.Logger
+}
+
+func newDefaultRunner(logger stepman.Logger) *defaultRunner {
+	return &defaultRunner{logger: logger}
 }
 
 func (r *defaultRunner) runForOutput(c *command.Model) (string, error) {
-	log.Debugf("$ %s", c.PrintableCommandArgs())
+	r.logger.Debugf("$ %s", c.PrintableCommandArgs())
 
 	out, err := c.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {

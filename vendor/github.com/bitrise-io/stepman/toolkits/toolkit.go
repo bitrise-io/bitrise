@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/stepman"
 )
 
 type ToolkitCheckResult struct {
@@ -65,12 +66,12 @@ type Toolkit interface {
 //
 // === Utils ===
 
-func ToolkitForStep(step models.StepModel) Toolkit {
+func ToolkitForStep(step models.StepModel, logger stepman.Logger) Toolkit {
 	var toolkit Toolkit = BashToolkit{}
 	if step.Toolkit != nil {
 		stepToolkit := step.Toolkit
 		if stepToolkit.Go != nil {
-			toolkit = GoToolkit{}
+			toolkit = NewGoToolkit(logger)
 		} else if stepToolkit.Swift != nil {
 			toolkit = SwiftToolkit{}
 		}
@@ -78,8 +79,8 @@ func ToolkitForStep(step models.StepModel) Toolkit {
 	return toolkit
 }
 
-func AllSupportedToolkits() []Toolkit {
-	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
+func AllSupportedToolkits(logger stepman.Logger) []Toolkit {
+	return []Toolkit{NewGoToolkit(logger), BashToolkit{}, SwiftToolkit{}}
 }
 
 func toolkitDir(toolkitName string) string {
