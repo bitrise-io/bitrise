@@ -279,8 +279,11 @@ func (r WorkflowRunner) activateStep(
 
 	compositeStepIDStr := stepID
 
-	stepInfoPtr.ID = compositeStepIDStr
-	stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
+	if step.Title != nil && *step.Title != "" {
+		stepInfoPtr.Step.Title = pointers.NewStringPtr(*step.Title)
+	} else {
+		stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
+	}
 
 	stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 	if err != nil {
