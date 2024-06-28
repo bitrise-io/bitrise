@@ -98,7 +98,7 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 				versionList = versionList + fmt.Sprintf("\n- %s", version)
 			}
 
-			errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_OFFLINE_MODE is set. %s", versionList)
+			errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_BETA_OFFLINE_MODE is set. %s", versionList)
 			return fmt.Errorf("failed to download step: %s", errMsg)
 		}
 

@@ -127,9 +127,3 @@ workflows:
         - content: |-
             set -ex
             exit 0
-
-  gotest:
-    title: Fails
-    description: Workflow will fail
-    steps:
-    - xcode-test: {}
