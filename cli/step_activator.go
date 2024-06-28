@@ -11,8 +11,8 @@ import (
 	"github.com/bitrise-io/bitrise/tools"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/stepman/activator"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 )
@@ -27,45 +27,30 @@ func newStepActivator() stepActivator {
 func (a stepActivator) activateStep(
 	stepIDData stepid.CanonicalID,
 	isStepLibUpdated bool,
-	stepDir string,
-	workDir string,
+	stepDir string, // $TMPDIR/bitrise/step_src
+	workDir string, // $TMPDIR/bitrise
 	workflowStep *stepmanModels.StepModel,
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
 ) (stepYMLPth string, origStepYMLPth string, didStepLibUpdate bool, err error) {
 	stepYMLPth = filepath.Join(workDir, "current_step.yml")
+	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
 		log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
-		stepAbsLocalPth, err := pathutil.AbsPath(stepIDData.IDorURI)
+
+		activatedStep, err := activator.ActivatePathRefStep(
+			stepmanLogger,
+			stepIDData,
+			stepDir,
+			workDir,
+		)
 		if err != nil {
-			return "", "", false, err
+			return "", "", false, fmt.Errorf("activate local step: %w", err)
 		}
 
-		exist, err := pathutil.IsDirExists(stepAbsLocalPth)
-		if err != nil {
-			return "", "", false, fmt.Errorf("failed to activate local step: failed to check if a directory exists at %s: %w", stepAbsLocalPth, err)
-		} else if !exist {
-			return "", "", false, fmt.Errorf("failed to activate local step: the provided directory doesn't exist: %s", stepAbsLocalPth)
-		}
-
-		log.Debug("stepAbsLocalPth:", stepAbsLocalPth, "|stepDir:", stepDir)
-
-		origStepYMLPth = filepath.Join(stepAbsLocalPth, "step.yml")
-		exist, err = pathutil.IsPathExists(origStepYMLPth)
-		if err != nil {
-			return "", "", false, fmt.Errorf("failed to activate local step: failed to check if step.yml exists at %s: %w", origStepYMLPth, err)
-		} else if !exist {
-			return "", "", false, fmt.Errorf("failed to activate local step: step.yml doesn't exist at %s", origStepYMLPth)
-		}
-
-		if err := command.CopyFile(origStepYMLPth, stepYMLPth); err != nil {
-			return "", "", false, err
-		}
-
-		if err := command.CopyDir(stepAbsLocalPth, stepDir, true); err != nil {
-			return "", "", false, err
-		}
+		stepYMLPth = activatedStep.StepYMLPath
+		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 		repo, err := git.New(stepDir)
