@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
-	"slices"
 )
 
 func (ymlTree *ConfigFileTreeModel) Merge() (string, error) {
@@ -102,5 +101,6 @@ func mergeMap(existingMap yamlMap, mapToMerge yamlMap) yamlMap {
 }
 
 func mergeSlice(existingArray []any, arrayToAppend []any) []any {
-	return slices.Concat(existingArray, arrayToAppend)
+	existingArray = append(existingArray, arrayToAppend...)
+	return existingArray
 }
