@@ -109,6 +109,8 @@ func (m *mockRunner) runForOutput(cmd *command.Model) (string, error) {
 }
 
 func Test_goBuildStep(t *testing.T) {
+	logger := testLogger{t: t}
+
 	type args struct {
 		packageName   string
 		outputBinPath string
@@ -178,7 +180,7 @@ func Test_goBuildStep(t *testing.T) {
 				GOROOT:       "/goroot",
 			}
 
-			err := goBuildStep(&mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath)
+			err := goBuildStep(logger, &mockRunner, goConfig, tt.args.packageName, stepDir, tt.args.outputBinPath)
 
 			require.NoError(t, err, "goBuildStep()")
 			require.Equal(t, tt.wantCmds, mockRunner.cmds, "goBuildStep() run commands do not match")
@@ -192,7 +194,9 @@ func Test_goBuildStep(t *testing.T) {
 }
 
 func Benchmark_goBuildStep(b *testing.B) {
-	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	logger := benchmarkLogger{b: b}
+
+	isInstallRequired, _, goConfig, err := selectGoConfiguration(logger)
 	require.NoError(b, err, "Failed to select an appropriate Go installation for compiling the Step")
 
 	if isInstallRequired {
@@ -215,8 +219,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	logger := benchmarkLogger{b: b}
-	err = cli.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, logger, true)
+	err = cli.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, logger, false)
 	require.NoError(b, err)
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"
@@ -237,7 +240,8 @@ func Benchmark_goBuildStep(b *testing.B) {
 				err = command.CopyDir(stepDir, stepPerTestDir, true)
 				require.NoError(b, err)
 
-				err = goBuildStep(&defaultRunner{},
+				err = goBuildStep(logger,
+					newDefaultRunner(logger),
 					goConfig,
 					packageName,
 					stepPerTestDir,
@@ -267,4 +271,25 @@ func (l benchmarkLogger) Errorf(format string, v ...interface{}) {
 
 func (l benchmarkLogger) Infof(format string, v ...interface{}) {
 	l.b.Logf(format, v...)
+}
+
+// A stepman.Logger impl for easier testing
+type testLogger struct {
+	t *testing.T
+}
+
+func (l testLogger) Warnf(format string, v ...interface{}) {
+	l.t.Logf(format, v...)
+}
+
+func (l testLogger) Debugf(format string, v ...interface{}) {
+	l.t.Logf(format, v...)
+}
+
+func (l testLogger) Errorf(format string, v ...interface{}) {
+	l.t.Logf(format, v...)
+}
+
+func (l testLogger) Infof(format string, v ...interface{}) {
+	l.t.Logf(format, v...)
 }

@@ -12,15 +12,22 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/stepman"
 )
 
 type GoToolkit struct {
+	logger stepman.Logger
+}
+
+func NewGoToolkit(logger stepman.Logger) GoToolkit {
+	return GoToolkit{
+		logger: logger,
+	}
 }
 
 func (toolkit GoToolkit) ToolkitName() string {
@@ -66,7 +73,7 @@ func checkGoConfiguration(goConfig GoConfigurationModel) (bool, ToolkitCheckResu
 	return false, checkRes, nil
 }
 
-func selectGoConfiguration() (bool, ToolkitCheckResult, GoConfigurationModel, error) {
+func selectGoConfiguration(logger stepman.Logger) (bool, ToolkitCheckResult, GoConfigurationModel, error) {
 	potentialGoConfigurations := []GoConfigurationModel{}
 	// from PATH
 	{
@@ -79,7 +86,7 @@ func selectGoConfiguration() (bool, ToolkitCheckResult, GoConfigurationModel, er
 	{
 		binPath := goBinaryInToolkitFullPath()
 		if isExist, err := pathutil.IsPathExists(binPath); err != nil {
-			log.Warnf("Failed to check the status of the 'go' binary inside the Bitrise Toolkit dir, error: %s", err)
+			logger.Warnf("Failed to check the status of the 'go' binary inside the Bitrise Toolkit dir, error: %s", err)
 		} else if isExist {
 			potentialGoConfigurations = append(potentialGoConfigurations, GoConfigurationModel{
 				GoBinaryPath: binPath,
@@ -105,14 +112,14 @@ func selectGoConfiguration() (bool, ToolkitCheckResult, GoConfigurationModel, er
 	}
 
 	if len(potentialGoConfigurations) > 0 && isRequireInstall {
-		log.Warnf("Installed go found (path: %s), but not a supported version: %s", checkResult.Path, checkResult.Version)
+		logger.Warnf("Installed go found (path: %s), but not a supported version: %s", checkResult.Path, checkResult.Version)
 	}
 
 	return isRequireInstall, checkResult, goConfig, checkError
 }
 
 func (toolkit GoToolkit) Check() (bool, ToolkitCheckResult, error) {
-	isInstallRequired, checkResult, _, err := selectGoConfiguration()
+	isInstallRequired, checkResult, _, err := selectGoConfiguration(toolkit.logger)
 	return isInstallRequired, checkResult, err
 }
 
@@ -163,7 +170,7 @@ func (toolkit GoToolkit) Bootstrap() error {
 	return nil
 }
 
-func installGoTar(goTarGzPath string) error {
+func installGoTar(logger stepman.Logger, goTarGzPath string) error {
 	installToPath := goToolkitInstallToPath()
 
 	if err := os.RemoveAll(installToPath); err != nil {
@@ -175,8 +182,8 @@ func installGoTar(goTarGzPath string) error {
 
 	cmd := command.New("tar", "-C", installToPath, "-xzf", goTarGzPath)
 	if combinedOut, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
-		log.Errorf(" [!] Failed to uncompress Go toolkit, output:")
-		log.Errorf(combinedOut)
+		logger.Errorf(" [!] Failed to uncompress Go toolkit, output:")
+		logger.Errorf(combinedOut)
 		return fmt.Errorf("uncompress Go toolkit: %s", err)
 	}
 	return nil
@@ -202,10 +209,10 @@ func (toolkit GoToolkit) Install() error {
 
 	var downloadErr error
 
-	log.Printf("=> Downloading ...")
+	toolkit.logger.Infof("=> Downloading ...")
 	downloadErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 		if attempt > 0 {
-			log.Warnf("==> Download failed, retrying ...")
+			toolkit.logger.Warnf("==> Download failed, retrying ...")
 		}
 		return downloadFile(downloadURL, goArchiveDownloadPath)
 	})
@@ -213,25 +220,25 @@ func (toolkit GoToolkit) Install() error {
 		return fmt.Errorf("download Go toolkit: %s", downloadErr)
 	}
 
-	log.Printf("=> Installing ...")
-	if err := installGoTar(goArchiveDownloadPath); err != nil {
+	toolkit.logger.Infof("=> Installing ...")
+	if err := installGoTar(toolkit.logger, goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("install Go toolkit: %s", err)
 	}
 	if err := os.Remove(goArchiveDownloadPath); err != nil {
 		return fmt.Errorf("remove the downloaded Go archive at %s: %s", goArchiveDownloadPath, err)
 	}
-	log.Printf("=> Installing DONE")
+	toolkit.logger.Infof("=> Installing DONE")
 
 	return nil
 }
 
-func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, stepAbsDirPath, outputBinPath string) error {
+func goBuildStep(logger stepman.Logger, cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, stepAbsDirPath, outputBinPath string) error {
 	cmdBuilder := goCmdBuilder{goConfig: goConfig}
 
 	if isGoPathModeStep(stepAbsDirPath) {
-		log.Debugf("[Go deps] Step requires GOPATH mode")
+		logger.Debugf("[Go deps] Step requires GOPATH mode")
 
-		log.Debugf("[Go deps] Migrating Step to Go modules as Go installation does not support GOPATH mode")
+		logger.Debugf("[Go deps] Migrating Step to Go modules as Go installation does not support GOPATH mode")
 		if err := migrateToGoModules(stepAbsDirPath, packageName); err != nil {
 			return fmt.Errorf("failed to migrate to go modules: %v", err)
 		}
@@ -244,7 +251,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 		return nil
 	}
 
-	log.Debugf("[Go deps] Step requires Go modules mode")
+	logger.Debugf("[Go deps] Step requires Go modules mode")
 	buildCmd := cmdBuilder.goBuildInModuleMode(stepAbsDirPath, outputBinPath)
 	if _, err := cmdRunner.runForOutput(buildCmd); err != nil {
 		return fmt.Errorf("failed to build Step in directory (%s): %v", stepAbsDirPath, err)
@@ -256,12 +263,7 @@ func goBuildStep(cmdRunner commandRunner, goConfig GoConfigurationModel, package
 // stepIDorURI : doesn't work for "path::./" yet!!
 func stepBinaryFilename(sIDData stepid.CanonicalID) string {
 	//
-	replaceRexp, err := regexp.Compile("[^A-Za-z0-9.-]")
-	if err != nil {
-		log.Warnf("Invalid regex, error: %s", err)
-		return ""
-	}
-
+	replaceRexp := regexp.MustCompile("[^A-Za-z0-9.-]")
 	compositeStepID := fmt.Sprintf("%s-%s", sIDData.SteplibSource, sIDData.IDorURI)
 	if sIDData.Version != "" {
 		compositeStepID += "-" + sIDData.Version
@@ -283,7 +285,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 	// try to use cached binary, if possible
 	if sIDData.IsUniqueResourceID() {
 		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
-			log.Warnf("Failed to check cached binary for step, error: %s", err)
+			toolkit.logger.Warnf("Failed to check cached binary for step, error: %s", err)
 		} else if exists {
 			return nil
 		}
@@ -297,7 +299,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 		return errors.New("no toolkit.go information specified in step")
 	}
 
-	isInstallRequired, _, goConfig, err := selectGoConfiguration()
+	isInstallRequired, _, goConfig, err := selectGoConfiguration(toolkit.logger)
 	if err != nil {
 		return fmt.Errorf("select an appropriate Go installation for compiling the Step: %s", err)
 	}
@@ -306,7 +308,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 			"found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
 	}
 
-	return goBuildStep(&defaultRunner{}, goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
+	return goBuildStep(toolkit.logger, newDefaultRunner(toolkit.logger), goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
 }
 
 // === Toolkit: Step Run ===
