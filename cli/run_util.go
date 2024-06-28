@@ -99,7 +99,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepStartedProperties := workflowIDProperties.Merge(stepIDProperties)
 
 		result := r.activateAndRunStep(
-			stepPlan.Step,
 			stepPlan.StepID,
 			idx,
 			defaultStepLibSource,
@@ -156,7 +155,6 @@ func newActivateAndRunStepResult(step stepmanModels.StepModel, stepInfoPtr stepm
 }
 
 func (r WorkflowRunner) activateAndRunStep(
-	step stepmanModels.StepModel,
 	stepID string,
 	stepIDx int,
 	defaultStepLibSource string,
@@ -172,7 +170,7 @@ func (r WorkflowRunner) activateAndRunStep(
 ) activateAndRunStepResult {
 	//
 	// Activate step
-	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
 	}
@@ -268,7 +266,6 @@ func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanMode
 }
 
 func (r WorkflowRunner) activateStep(
-	step stepmanModels.StepModel,
 	stepID string,
 	defaultStepLibSource string,
 	buildRunResults models.BuildRunResultsModel,
