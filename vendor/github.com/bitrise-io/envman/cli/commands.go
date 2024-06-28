@@ -59,7 +59,7 @@ var (
 			Name:    "print",
 			Aliases: []string{"p"},
 			Usage:   "Print out the environment variables in envstore.",
-			Action:  print,
+			Action:  printCmd,
 			Flags: []cli.Flag{
 				flFormat,
 				flExpand,

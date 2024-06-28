@@ -41,11 +41,11 @@ func before(c *cli.Context) error {
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true, TimestampFormat: "15:04:05"})
 
 	// Log level
-	if logLevel, err := log.ParseLevel(c.String(LogLevelKey)); err != nil {
+	logLevel, err := log.ParseLevel(c.String(LogLevelKey))
+	if err != nil {
 		log.Fatal("[BITRISE_CLI] - Failed to parse log level:", err)
-	} else {
-		log.SetLevel(logLevel)
 	}
+	log.SetLevel(logLevel)
 
 	// Before parsing cli, and running command
 	// we need to decide which path will be used by envman
@@ -81,7 +81,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Environment variable manager"
-	app.Version = version.VERSION
+	app.Version = version.Version
 
 	app.Author = ""
 	app.Email = ""

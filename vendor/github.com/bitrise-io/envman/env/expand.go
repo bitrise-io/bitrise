@@ -14,7 +14,7 @@ type Action int
 const (
 	// InvalidAction represents an unexpected state
 	InvalidAction Action = iota + 1
-	// SetAction is an environment variable assignement, like os.Setenv
+	// SetAction is an environment variable assignment, like os.Setenv
 	SetAction
 	// UnsetAction is an action to clear (if existing) an environment variable, like os.Unsetenv
 	UnsetAction
@@ -22,7 +22,7 @@ const (
 	SkipAction
 )
 
-// Command describes an action performed on an envrionment variable
+// Command describes an action performed on an environment variable
 type Command struct {
 	Action   Action
 	Variable Variable
@@ -125,7 +125,7 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 			delete(evaluatedNewEnvs, command.Variable.Key)
 		case SkipAction:
 		default:
-			return DeclarationSideEffects{}, fmt.Errorf("invalid case for environement declaration action: %#v", command)
+			return DeclarationSideEffects{}, fmt.Errorf("invalid case for environment declaration action: %#v", command)
 		}
 	}
 
@@ -136,7 +136,7 @@ func GetDeclarationsSideEffects(newEnvs []models.EnvironmentItemModel, envSource
 	}, nil
 }
 
-// getDeclarationCommand maps a variable to be daclered (env) to an expanded env key and value.
+// getDeclarationCommand maps a variable to be declared (env) to an expanded env key and value.
 // The current process environment is not changed.
 func getDeclarationCommand(env models.EnvironmentItemModel, envs map[string]string) (Command, error) {
 	envKey, envValue, err := env.GetKeyValuePair()
