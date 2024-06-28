@@ -173,6 +173,7 @@ type DockerManager interface {
 }
 
 type WorkflowRunner struct {
+	logger log.Logger
 	config RunConfig
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
@@ -182,9 +183,11 @@ type WorkflowRunner struct {
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	return WorkflowRunner{
+		logger:        logger,
 		config:        config,
-		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts()), stepSecretValues),
+		dockerManager: docker.NewContainerManager(logger, stepSecretValues),
 		agentConfig:   agentConfig,
 	}
 }
@@ -198,7 +201,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		return 1, fmt.Errorf("specified Workflow (%s) does not exist", r.config.Workflow)
 	}
 
-	if err := bitrise.RunSetupIfNeeded(); err != nil {
+	if err := bitrise.RunSetupIfNeeded(r.logger); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
 
@@ -274,7 +277,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	environments = append(environments, targetWorkflow.Environments...)
 
 	// Bootstrap Toolkits
-	for _, aToolkit := range toolkits.AllSupportedToolkits() {
+	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
 		toolkitName := aToolkit.ToolkitName()
 		if !aToolkit.IsToolAvailableInPATH() {
 			// don't bootstrap if any preinstalled version is available,
