@@ -24,6 +24,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
+	stepmanInstance "github.com/bitrise-io/stepman/instance"
 	"github.com/bitrise-io/stepman/toolkits"
 	"github.com/gofrs/uuid"
 	"github.com/urfave/cli"
@@ -105,7 +106,10 @@ func run(c *cli.Context) error {
 		agentConfig = nil
 	}
 
-	runner := NewWorkflowRunner(*config, agentConfig)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	stepman := stepmanInstance.NewInstance(logger)
+
+	runner := NewWorkflowRunner(*config, agentConfig, stepman)
 
 	go func() {
 		<-signalInterruptChan
@@ -178,14 +182,16 @@ type WorkflowRunner struct {
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig   *configs.AgentConfig
 	dockerManager DockerManager
+	stepman       stepmanInstance.Instance
 }
 
-func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
+func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, stepman stepmanInstance.Instance) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	return WorkflowRunner{
 		config:        config,
 		dockerManager: docker.NewContainerManager(log.NewLogger(log.GetGlobalLoggerOpts()), stepSecretValues),
 		agentConfig:   agentConfig,
+		stepman:       stepman,
 	}
 }
 

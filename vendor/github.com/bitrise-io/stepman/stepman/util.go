@@ -383,16 +383,10 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 }
 
 // ReadStepVersionInfo ...
-func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.StepVersionModel, error) {
+func ReadStepVersionInfo(collection models.StepCollectionModel, stepID, stepVersionID string) (models.StepVersionModel, error) {
 	// Input validation
 	if stepID == "" {
 		return models.StepVersionModel{}, errors.New("Missing required input: step id")
-	}
-
-	// Check if step exist in collection
-	collection, err := ReadStepSpec(collectionURI)
-	if err != nil {
-		return models.StepVersionModel{}, fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
 	}
 
 	stepWithVersion, stepFound, versionFound := collection.GetStepVersion(stepID, stepVersionID)

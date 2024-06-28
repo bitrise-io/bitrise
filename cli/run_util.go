@@ -311,7 +311,7 @@ func (r WorkflowRunner) activateStep(
 		isStepLibUpdated = buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
 	}
 
-	activator := newStepActivator()
+	activator := newStepActivator(r.stepman)
 	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr, isStepLibOfflineMode)
 	if didStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++

@@ -2,6 +2,8 @@ module github.com/bitrise-io/bitrise
 
 go 1.21
 
+replace github.com/bitrise-io/stepman => /Users/szabi/Dev/bitrise-io/stepman
+
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman v0.0.0-20240624065735-ca81d0a80500

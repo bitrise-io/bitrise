@@ -7,6 +7,17 @@ app:
   - BIN_NAME: bitrise
 
 workflows:
+  test-test:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            faaaaaaiiillll
+    - script: {}
+#        run_if: "false"
+    - script:
+        run_if: "false"
+
   check:
     steps:
     - git::https://github.com/bitrise-steplib/steps-check.git:

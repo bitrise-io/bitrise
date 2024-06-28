@@ -62,7 +62,7 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 		}
 
 		if isShort { // print only step IDs and cached versions
-			cachedVersions := listCachedStepVersion(log, stepLib, stepLibURI, stepID)
+			cachedVersions := stepman.ListCachedStepVersion(log, stepLib, stepLibURI, stepID)
 			id := fmt.Sprintf("%s (%s)", stepID, stepGroupInfo.Info.Maintainer)
 			fmt.Printf("%s cached versions:  %s\n", printInMaxNChars(id, 55), strings.Join(cachedVersions, ", "))
 

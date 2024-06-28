@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/pointers"
+	stepmanInstance "github.com/bitrise-io/stepman/instance"
 	"github.com/urfave/cli"
 )
 
@@ -194,7 +195,11 @@ func trigger(c *cli.Context) error {
 		failf("Failed to process agent config: %w", err)
 	}
 
-	runner := NewWorkflowRunner(runConfig, agentConfig)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	stepman := stepmanInstance.NewInstance(logger)
+
+	runner := NewWorkflowRunner(runConfig, agentConfig, stepman)
+
 	exitCode, err := runner.RunWorkflowsWithSetupAndCheckForUpdate()
 	if err != nil {
 		if err == errWorkflowRunFailed {
