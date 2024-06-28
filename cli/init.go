@@ -15,16 +15,17 @@ var initCmd = cli.Command{
 	Aliases: []string{"i"},
 	Usage:   "Init bitrise config.",
 	Action: func(c *cli.Context) error {
+		logger := log.NewLogger(log.GetGlobalLoggerOpts())
 		if err := initConfig(c); err != nil {
 
 			// If the plugin is not installed yet run the bitrise setup first and try it again
 			perr, ok := err.(plugins.NotInstalledError)
 			if ok {
-				log.Warn(perr)
-				log.Print("Running setup to install the default plugins")
-				log.Print()
+				logger.Warn(perr)
+				logger.Print("Running setup to install the default plugins")
+				logger.Print()
 
-				if err := bitrise.RunSetup(version.VERSION, bitrise.SetupModeDefault, false); err != nil {
+				if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false); err != nil {
 					return fmt.Errorf("Setup failed, error: %s", err)
 				}
 
