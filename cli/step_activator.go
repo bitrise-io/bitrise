@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/go-utils/command/git"
@@ -27,7 +26,6 @@ func (a stepActivator) activateStep(
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
 ) (stepYMLPth string, origStepYMLPth string, didStepLibUpdate bool, err error) {
-	stepYMLPth = filepath.Join(workDir, "current_step.yml")
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
@@ -86,8 +84,9 @@ func (a stepActivator) activateStep(
 			isSteplibOfflineMode,
 			stepInfoPtr,
 		)
+		didStepLibUpdate = activatedStep.DidStepLibUpdate
 		if err != nil {
-			return "", "", false, fmt.Errorf("activate steplib step reference: %w", err)
+			return "", "", didStepLibUpdate, fmt.Errorf("activate steplib step reference: %w", err)
 		}
 
 		stepYMLPth = activatedStep.StepYMLPath
