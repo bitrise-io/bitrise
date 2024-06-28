@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -874,6 +875,175 @@ workflows:
 		_, err := config.Validate()
 		require.EqualError(t, err, "trigger item #1: non-existent workflow defined as trigger target: release")
 	}
+}
+
+// ----------------------------
+// --- Merge
+
+func TestMergeEnvironmentWith(t *testing.T) {
+	diffEnv := envmanModels.EnvironmentItemModel{
+		"test_key": "test_value",
+		envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+			Title:             pointers.NewStringPtr("test_title"),
+			Description:       pointers.NewStringPtr("test_description"),
+			Summary:           pointers.NewStringPtr("test_summary"),
+			ValueOptions:      []string{"test_valu_options1", "test_valu_options2"},
+			IsRequired:        pointers.NewBoolPtr(true),
+			IsExpand:          pointers.NewBoolPtr(false),
+			IsDontChangeValue: pointers.NewBoolPtr(true),
+			IsTemplate:        pointers.NewBoolPtr(true),
+		},
+	}
+
+	t.Log("Different keys")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"test_key1": "test_value",
+		}
+		require.Error(t, MergeEnvironmentWith(&env, diffEnv))
+	}
+
+	t.Log("Normal merge")
+	{
+		env := envmanModels.EnvironmentItemModel{
+			"test_key": "test_value",
+			envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{
+				SkipIfEmpty: pointers.NewBoolPtr(true),
+				Category:    pointers.NewStringPtr("test"),
+			},
+		}
+		require.NoError(t, MergeEnvironmentWith(&env, diffEnv))
+
+		options, err := env.GetOptions()
+		require.NoError(t, err)
+
+		diffOptions, err := diffEnv.GetOptions()
+		require.NoError(t, err)
+
+		require.Equal(t, *diffOptions.Title, *options.Title)
+		require.Equal(t, *diffOptions.Description, *options.Description)
+		require.Equal(t, *diffOptions.Summary, *options.Summary)
+		require.Equal(t, len(diffOptions.ValueOptions), len(options.ValueOptions))
+		require.Equal(t, *diffOptions.IsRequired, *options.IsRequired)
+		require.Equal(t, *diffOptions.IsExpand, *options.IsExpand)
+		require.Equal(t, *diffOptions.IsDontChangeValue, *options.IsDontChangeValue)
+		require.Equal(t, *diffOptions.IsTemplate, *options.IsTemplate)
+
+		require.Equal(t, true, *options.SkipIfEmpty)
+		require.Equal(t, "test", *options.Category)
+	}
+}
+
+func TestMergeStepWith(t *testing.T) {
+	desc := "desc 1"
+	summ := "sum 1"
+	website := "web/1"
+	fork := "fork/1"
+	published := time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	stepData := stepmanModels.StepModel{
+		Description:         pointers.NewStringPtr(desc),
+		Summary:             pointers.NewStringPtr(summ),
+		Website:             pointers.NewStringPtr(website),
+		SourceCodeURL:       pointers.NewStringPtr(fork),
+		PublishedAt:         pointers.NewTimePtr(published),
+		HostOsTags:          []string{"osx"},
+		ProjectTypeTags:     []string{"ios"},
+		TypeTags:            []string{"test"},
+		IsRequiresAdminUser: pointers.NewBoolPtr(true),
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"KEY_1": "Value 1",
+			},
+			envmanModels.EnvironmentItemModel{
+				"KEY_2": "Value 2",
+			},
+		},
+		Outputs: []envmanModels.EnvironmentItemModel{},
+	}
+
+	diffTitle := "name 2"
+	newSuppURL := "supp"
+	runIfStr := ""
+	stepDiffToMerge := stepmanModels.StepModel{
+		Title:      pointers.NewStringPtr(diffTitle),
+		HostOsTags: []string{"linux"},
+		Source: &stepmanModels.StepSourceModel{
+			Git: "https://git.url",
+		},
+		Dependencies: []stepmanModels.DependencyModel{
+			stepmanModels.DependencyModel{
+				Manager: "brew",
+				Name:    "test",
+			},
+		},
+		SupportURL: pointers.NewStringPtr(newSuppURL),
+		RunIf:      pointers.NewStringPtr(runIfStr),
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"KEY_2": "Value 2 CHANGED",
+			},
+		},
+		Timeout: pointers.NewIntPtr(1),
+		Toolkit: &stepmanModels.StepToolkitModel{
+			Go: &stepmanModels.GoStepToolkitModel{
+				PackageName: "test",
+			},
+		},
+	}
+
+	mergedStepData, err := MergeStepWith(stepData, stepDiffToMerge)
+	require.NoError(t, err)
+
+	require.Equal(t, "name 2", *mergedStepData.Title)
+	require.Equal(t, "desc 1", *mergedStepData.Description)
+	require.Equal(t, "sum 1", *mergedStepData.Summary)
+	require.Equal(t, "web/1", *mergedStepData.Website)
+	require.Equal(t, "fork/1", *mergedStepData.SourceCodeURL)
+	require.Equal(t, true, (*mergedStepData.PublishedAt).Equal(time.Date(2012, time.January, 1, 0, 0, 0, 0, time.UTC)))
+	require.Equal(t, "linux", mergedStepData.HostOsTags[0])
+	require.Equal(t, "", *mergedStepData.RunIf)
+	require.Equal(t, 1, len(mergedStepData.Dependencies))
+	require.Equal(t, "test", mergedStepData.Toolkit.Go.PackageName)
+	require.Equal(t, 1, *mergedStepData.Timeout)
+
+	dep := mergedStepData.Dependencies[0]
+	require.Equal(t, "brew", dep.Manager)
+	require.Equal(t, "test", dep.Name)
+
+	// inputs
+	input0 := mergedStepData.Inputs[0]
+	key0, value0, err := input0.GetKeyValuePair()
+
+	require.NoError(t, err)
+	require.Equal(t, "KEY_1", key0)
+	require.Equal(t, "Value 1", value0)
+
+	input1 := mergedStepData.Inputs[1]
+	key1, value1, err := input1.GetKeyValuePair()
+
+	require.NoError(t, err)
+	require.Equal(t, "KEY_2", key1)
+	require.Equal(t, "Value 2 CHANGED", value1)
+}
+
+func TestGetInputByKey(t *testing.T) {
+	stepData := stepmanModels.StepModel{
+		Inputs: []envmanModels.EnvironmentItemModel{
+			envmanModels.EnvironmentItemModel{
+				"KEY_1": "Value 1",
+			},
+			envmanModels.EnvironmentItemModel{
+				"KEY_2": "Value 2",
+			},
+		},
+	}
+
+	_, found := getInputByKey(stepData, "KEY_1")
+	require.Equal(t, true, found)
+
+	_, found = getInputByKey(stepData, "KEY_3")
+	require.Equal(t, false, found)
 }
 
 // ----------------------------

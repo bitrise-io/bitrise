@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 )
@@ -652,6 +653,212 @@ func (config *BitriseDataModel) RemoveRedundantFields() error {
 		}
 	}
 	return nil
+}
+
+// ----------------------------
+// --- Merge
+
+func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envmanModels.EnvironmentItemModel) error {
+	// merge key-value
+	key, _, err := env.GetKeyValuePair()
+	if err != nil {
+		return err
+	}
+
+	otherKey, otherValue, err := otherEnv.GetKeyValuePair()
+	if err != nil {
+		return err
+	}
+
+	if otherKey != key {
+		return errors.New("Env keys are diferent")
+	}
+
+	(*env)[key] = otherValue
+
+	//merge options
+	options, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+
+	otherOptions, err := otherEnv.GetOptions()
+	if err != nil {
+		return err
+	}
+
+	if otherOptions.IsSensitive != nil {
+		options.IsSensitive = pointers.NewBoolPtr(*otherOptions.IsSensitive)
+	}
+	if otherOptions.IsExpand != nil {
+		options.IsExpand = pointers.NewBoolPtr(*otherOptions.IsExpand)
+	}
+	if otherOptions.SkipIfEmpty != nil {
+		options.SkipIfEmpty = pointers.NewBoolPtr(*otherOptions.SkipIfEmpty)
+	}
+
+	if otherOptions.Title != nil {
+		options.Title = pointers.NewStringPtr(*otherOptions.Title)
+	}
+	if otherOptions.Description != nil {
+		options.Description = pointers.NewStringPtr(*otherOptions.Description)
+	}
+	if otherOptions.Summary != nil {
+		options.Summary = pointers.NewStringPtr(*otherOptions.Summary)
+	}
+	if otherOptions.Category != nil {
+		options.Category = pointers.NewStringPtr(*otherOptions.Category)
+	}
+	if len(otherOptions.ValueOptions) > 0 {
+		options.ValueOptions = otherOptions.ValueOptions
+	}
+	if otherOptions.IsRequired != nil {
+		options.IsRequired = pointers.NewBoolPtr(*otherOptions.IsRequired)
+	}
+	if otherOptions.IsDontChangeValue != nil {
+		options.IsDontChangeValue = pointers.NewBoolPtr(*otherOptions.IsDontChangeValue)
+	}
+	if otherOptions.IsTemplate != nil {
+		options.IsTemplate = pointers.NewBoolPtr(*otherOptions.IsTemplate)
+	}
+	(*env)[envmanModels.OptionsKey] = options
+	return nil
+}
+
+func getInputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
+	for _, input := range step.Inputs {
+		k, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, false
+		}
+
+		if k == key {
+			return input, true
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, false
+}
+
+func getOutputByKey(step stepmanModels.StepModel, key string) (envmanModels.EnvironmentItemModel, bool) {
+	for _, output := range step.Outputs {
+		k, _, err := output.GetKeyValuePair()
+		if err != nil {
+			return envmanModels.EnvironmentItemModel{}, false
+		}
+
+		if k == key {
+			return output, true
+		}
+	}
+	return envmanModels.EnvironmentItemModel{}, false
+}
+
+func MergeStepWith(step, otherStep stepmanModels.StepModel) (stepmanModels.StepModel, error) {
+	if otherStep.Title != nil {
+		step.Title = pointers.NewStringPtr(*otherStep.Title)
+	}
+	if otherStep.Summary != nil {
+		step.Summary = pointers.NewStringPtr(*otherStep.Summary)
+	}
+	if otherStep.Description != nil {
+		step.Description = pointers.NewStringPtr(*otherStep.Description)
+	}
+
+	if otherStep.Website != nil {
+		step.Website = pointers.NewStringPtr(*otherStep.Website)
+	}
+	if otherStep.SourceCodeURL != nil {
+		step.SourceCodeURL = pointers.NewStringPtr(*otherStep.SourceCodeURL)
+	}
+	if otherStep.SupportURL != nil {
+		step.SupportURL = pointers.NewStringPtr(*otherStep.SupportURL)
+	}
+
+	if otherStep.PublishedAt != nil {
+		step.PublishedAt = pointers.NewTimePtr(*otherStep.PublishedAt)
+	}
+	if otherStep.Source != nil {
+		step.Source = new(stepmanModels.StepSourceModel)
+
+		if otherStep.Source.Git != "" {
+			step.Source.Git = otherStep.Source.Git
+		}
+		if otherStep.Source.Commit != "" {
+			step.Source.Commit = otherStep.Source.Commit
+		}
+	}
+	if len(otherStep.AssetURLs) > 0 {
+		step.AssetURLs = otherStep.AssetURLs
+	}
+
+	if len(otherStep.HostOsTags) > 0 {
+		step.HostOsTags = otherStep.HostOsTags
+	}
+	if len(otherStep.ProjectTypeTags) > 0 {
+		step.ProjectTypeTags = otherStep.ProjectTypeTags
+	}
+	if len(otherStep.TypeTags) > 0 {
+		step.TypeTags = otherStep.TypeTags
+	}
+	if len(otherStep.Dependencies) > 0 {
+		step.Dependencies = otherStep.Dependencies
+	}
+	if otherStep.Toolkit != nil {
+		step.Toolkit = new(stepmanModels.StepToolkitModel)
+		*step.Toolkit = *otherStep.Toolkit
+	}
+	if otherStep.Deps != nil && (len(otherStep.Deps.Brew) > 0 || len(otherStep.Deps.AptGet) > 0) {
+		step.Deps = otherStep.Deps
+	}
+	if otherStep.IsRequiresAdminUser != nil {
+		step.IsRequiresAdminUser = pointers.NewBoolPtr(*otherStep.IsRequiresAdminUser)
+	}
+
+	if otherStep.IsAlwaysRun != nil {
+		step.IsAlwaysRun = pointers.NewBoolPtr(*otherStep.IsAlwaysRun)
+	}
+	if otherStep.IsSkippable != nil {
+		step.IsSkippable = pointers.NewBoolPtr(*otherStep.IsSkippable)
+	}
+	if otherStep.RunIf != nil {
+		step.RunIf = pointers.NewStringPtr(*otherStep.RunIf)
+	}
+	if otherStep.Timeout != nil {
+		step.Timeout = pointers.NewIntPtr(*otherStep.Timeout)
+	}
+	if otherStep.NoOutputTimeout != nil {
+		step.NoOutputTimeout = pointers.NewIntPtr(*otherStep.NoOutputTimeout)
+	}
+
+	for _, input := range step.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return stepmanModels.StepModel{}, err
+		}
+		otherInput, found := getInputByKey(otherStep, key)
+		if found {
+			err := MergeEnvironmentWith(&input, otherInput)
+			if err != nil {
+				return stepmanModels.StepModel{}, err
+			}
+		}
+	}
+
+	for _, output := range step.Outputs {
+		key, _, err := output.GetKeyValuePair()
+		if err != nil {
+			return stepmanModels.StepModel{}, err
+		}
+		otherOutput, found := getOutputByKey(otherStep, key)
+		if found {
+			err := MergeEnvironmentWith(&output, otherOutput)
+			if err != nil {
+				return stepmanModels.StepModel{}, err
+			}
+		}
+	}
+
+	return step, nil
 }
 
 // ----------------------------
