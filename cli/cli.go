@@ -45,6 +45,7 @@ func Run() {
 		TimeProvider:    time.Now,
 	}
 	log.InitGlobalLogger(opts)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if isDebugMode {
 		// set for other tools, as an ENV
@@ -102,7 +103,7 @@ func Run() {
 				return fmt.Errorf("Plugin (%s) not installed", pluginName)
 			}
 
-			if err := bitrise.RunSetupIfNeeded(); err != nil {
+			if err := bitrise.RunSetupIfNeeded(logger); err != nil {
 				failf("Setup failed, error: %s", err)
 			}
 

@@ -79,7 +79,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	runResultCollector := newBuildRunResultCollector(tracker)
+	runResultCollector := newBuildRunResultCollector(r.logger, tracker)
 	currentStepGroupID := ""
 
 	// ------------------------------------------
@@ -184,7 +184,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Run step
-	logStepStarted(stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
+	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
 
 	// Evaluate run conditions
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
@@ -590,7 +590,7 @@ func (r WorkflowRunner) executeStep(
 	groupID string,
 ) (int, error) {
 
-	toolkitForStep := toolkits.ToolkitForStep(step)
+	toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 	toolkitName := toolkitForStep.ToolkitName()
 
 	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
@@ -1072,7 +1072,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
@@ -1085,7 +1085,7 @@ func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.Ste
 		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
-		Toolkit:     toolkits.ToolkitForStep(step).ToolkitName(),
+		Toolkit:     toolkits.ToolkitForStep(step, logger).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)
