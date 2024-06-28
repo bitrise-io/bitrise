@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -99,7 +98,7 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 				versionList = versionList + fmt.Sprintf("\n- %s", version)
 			}
 
-			errMsg := fmt.Sprintf("version is not available in the local cache and $%s is set. %s", configs.IsSteplibOfflineModeEnvKey, versionList)
+			errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_OFFLINE_MODE is set. %s", versionList)
 			return fmt.Errorf("failed to download step: %s", errMsg)
 		}
 
