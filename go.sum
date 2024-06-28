@@ -17,6 +17,8 @@ github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef/go.mod h1:27ldH2bkCdYN5CEJ6x92EK+gkd5EcDBkA7dMrSKQFYU=
 github.com/bitrise-io/stepman v0.0.0-20240625190612-34c5f93d1604 h1:ssvlwaczX2ANHGvMziuVN4v3UnbOTjg+PobD79lzMPA=
 github.com/bitrise-io/stepman v0.0.0-20240625190612-34c5f93d1604/go.mod h1:netRLDQD95IzWZbzmn7CBolzNqH1tErRKS31BrZKt9s=
+github.com/bitrise-io/stepman v0.0.0-20240628112805-9c6f3607780b h1:hPs0RP3yBCk+jaBvVTmbWkQmk6DeglRCyBvarHTHmVg=
+github.com/bitrise-io/stepman v0.0.0-20240628112805-9c6f3607780b/go.mod h1:netRLDQD95IzWZbzmn7CBolzNqH1tErRKS31BrZKt9s=
 github.com/cpuguy83/go-md2man/v2 v2.0.4 h1:wfIWP927BUkWJb2NmU/kNDYIBTh/ziUX91+lVfRxZq4=
 github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
