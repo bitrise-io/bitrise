@@ -6,7 +6,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/activator"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -62,22 +61,6 @@ func (a stepActivator) activateStep(
 
 		stepYMLPth = activatedStep.StepYMLPath
 		origStepYMLPth = activatedStep.OrigStepYMLPath
-	} else if stepIDData.SteplibSource == "_" {
-		log.Debugf("[BITRISE_CLI] - Steplib independent step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
-
-		// StepLib independent steps are completely defined in the workflow
-		stepYMLPth = ""
-		if err := workflowStep.FillMissingDefaults(); err != nil {
-			return "", "", false, err
-		}
-
-		repo, err := git.New(stepDir)
-		if err != nil {
-			return "", "", false, err
-		}
-		if err := repo.CloneTagOrBranch(stepIDData.IDorURI, stepIDData.Version).Run(); err != nil {
-			return "", "", false, err
-		}
 	} else if stepIDData.SteplibSource != "" {
 		stepInfo, didUpdate, err := activateStepLibStep(stepIDData, stepDir, stepYMLPth, isStepLibUpdated, isSteplibOfflineMode)
 		didStepLibUpdate = didUpdate
