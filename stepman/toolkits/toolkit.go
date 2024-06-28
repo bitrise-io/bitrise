@@ -71,7 +71,7 @@ func ToolkitForStep(step models.StepModel, logger stepman.Logger) Toolkit {
 	if step.Toolkit != nil {
 		stepToolkit := step.Toolkit
 		if stepToolkit.Go != nil {
-			toolkit = GoToolkit{}
+			toolkit = NewGoToolkit(logger)
 		} else if stepToolkit.Swift != nil {
 			toolkit = SwiftToolkit{}
 		}
@@ -80,7 +80,7 @@ func ToolkitForStep(step models.StepModel, logger stepman.Logger) Toolkit {
 }
 
 func AllSupportedToolkits(logger stepman.Logger) []Toolkit {
-	return []Toolkit{GoToolkit{}, BashToolkit{}, SwiftToolkit{}}
+	return []Toolkit{NewGoToolkit(logger), BashToolkit{}, SwiftToolkit{}}
 }
 
 func toolkitDir(toolkitName string) string {
