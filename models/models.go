@@ -15,13 +15,11 @@ const (
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
 
-// TODO: validate, normalise StepBundles
 type StepBundleModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListStepItemModel             `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
-// TODO: unify List items and Top level entity names
 type StepBundleListItemModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }

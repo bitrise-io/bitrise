@@ -169,12 +169,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 type activateAndRunStepResult struct {
 	Step               stepmanModels.StepModel
 	StepInfoPtr        stepmanModels.StepInfoModel
-	PrintStepHeader    bool
-	RedactedStepInputs map[string]string
-	OutputEnvironments []envmanModels.EnvironmentItemModel
 	StepRunStatus      models.StepRunStatus
 	StepRunExitCode    int
 	StepRunErr         error
+	PrintStepHeader    bool
+	RedactedStepInputs map[string]string
+	OutputEnvironments []envmanModels.EnvironmentItemModel
 }
 
 func newActivateAndRunStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepRunStatus models.StepRunStatus, stepRunExitCode int, stepRunErr error, printStepHeader bool, redactedStepInputs map[string]string, outputEnvironments []envmanModels.EnvironmentItemModel) activateAndRunStepResult {
