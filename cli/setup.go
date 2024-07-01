@@ -39,17 +39,18 @@ func setup(c *cli.Context) error {
 		setupMode = bitrise.SetupModeMinimal
 	}
 
-	if err := bitrise.RunSetup(c.App.Version, setupMode, clean); err != nil {
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	if err := bitrise.RunSetup(logger, c.App.Version, setupMode, clean); err != nil {
 		return err
 	}
 
-	log.Print()
-	log.Infof("To start using bitrise:")
-	log.Printf("* cd into your project's directory (if you're not there already)")
-	log.Printf("* call: bitrise init")
-	log.Printf("* follow the guide")
-	log.Print()
-	log.Donef("That's all :)")
+	logger.Print()
+	logger.Infof("To start using bitrise:")
+	logger.Printf("* cd into your project's directory (if you're not there already)")
+	logger.Printf("* call: bitrise init")
+	logger.Printf("* follow the guide")
+	logger.Print()
+	logger.Donef("That's all :)")
 
 	return nil
 }

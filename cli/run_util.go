@@ -79,7 +79,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	runResultCollector := newBuildRunResultCollector(tracker)
+	runResultCollector := newBuildRunResultCollector(r.logger, tracker)
 	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
@@ -210,7 +210,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Run step
-	logStepStarted(stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
+	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
 
 	// Evaluate run conditions
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
@@ -304,11 +304,9 @@ func (r WorkflowRunner) activateStep(
 	stepInfoPtr := stepmanModels.StepInfoModel{}
 
 	compositeStepIDStr := stepID
-	workflowStep := step
 
-	stepInfoPtr.ID = compositeStepIDStr
-	if workflowStep.Title != nil && *workflowStep.Title != "" {
-		stepInfoPtr.Step.Title = pointers.NewStringPtr(*workflowStep.Title)
+	if step.Title != nil && *step.Title != "" {
+		stepInfoPtr.Step.Title = pointers.NewStringPtr(*step.Title)
 	} else {
 		stepInfoPtr.Step.Title = pointers.NewStringPtr(compositeStepIDStr)
 	}
@@ -338,7 +336,7 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	activator := newStepActivator()
-	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &workflowStep, &stepInfoPtr, isStepLibOfflineMode)
+	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
 	if didStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
@@ -347,7 +345,7 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	// Fill step info with default step info, if exist
-	mergedStep := workflowStep
+	mergedStep := step
 	if stepYMLPth != "" {
 		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 		log.Debugf("Spec read from YML: %#v", specStep)
@@ -362,7 +360,7 @@ func (r WorkflowRunner) activateStep(
 			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 		}
 
-		mergedStep, err = models.MergeStepWith(specStep, workflowStep)
+		mergedStep, err = models.MergeStepWith(specStep, step)
 		if err != nil {
 			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 		}
@@ -616,7 +614,7 @@ func (r WorkflowRunner) executeStep(
 	groupID string,
 ) (int, error) {
 
-	toolkitForStep := toolkits.ToolkitForStep(step)
+	toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 	toolkitName := toolkitForStep.ToolkitName()
 
 	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
@@ -1098,7 +1096,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
@@ -1111,7 +1109,7 @@ func logStepStarted(stepInfo stepmanModels.StepInfoModel, step stepmanModels.Ste
 		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
-		Toolkit:     toolkits.ToolkitForStep(step).ToolkitName(),
+		Toolkit:     toolkits.ToolkitForStep(step, logger).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)

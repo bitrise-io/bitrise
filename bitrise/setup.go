@@ -45,15 +45,15 @@ var PluginDependencyMap = map[string]PluginDependency{
 	},
 }
 
-func RunSetupIfNeeded() error {
+func RunSetupIfNeeded(logger log.Logger) error {
 	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
 		log.Warnf("Setup was not performed for this version of bitrise, doing it now...")
-		return RunSetup(version.VERSION, SetupModeDefault, false)
+		return RunSetup(logger, version.VERSION, SetupModeDefault, false)
 	}
 	return nil
 }
 
-func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
+func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	log.Infof("Setup Bitrise tools...")
 	log.Printf("Clean before setup: %v", doCleanSetup)
 	log.Printf("Setup mode: %s", setupMode)
@@ -93,7 +93,7 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 		}
 	}
 
-	if err := doSetupToolkits(); err != nil {
+	if err := doSetupToolkits(logger); err != nil {
 		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
 	}
 
@@ -107,11 +107,11 @@ func RunSetup(appVersion string, setupMode SetupMode, doCleanSetup bool) error {
 	return nil
 }
 
-func doSetupToolkits() error {
+func doSetupToolkits(logger log.Logger) error {
 	log.Print()
 	log.Infof("Checking Bitrise Toolkits...")
 
-	coreToolkits := toolkits.AllSupportedToolkits()
+	coreToolkits := toolkits.AllSupportedToolkits(logger)
 
 	for _, aCoreTK := range coreToolkits {
 		toolkitName := aCoreTK.ToolkitName()
