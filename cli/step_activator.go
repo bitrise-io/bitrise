@@ -68,7 +68,7 @@ func (a stepActivator) activateStep(
 		)
 		didStepLibUpdate = activatedStep.DidStepLibUpdate
 		if err != nil {
-			return "", "", didStepLibUpdate, fmt.Errorf("activate steplib step reference: %w", err)
+			return "", "", didStepLibUpdate, fmt.Errorf("activate steplib step: %w", err)
 		}
 
 		stepYMLPth = activatedStep.StepYMLPath
