@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	stepmanModels "github.com/bitrise-io/stepman/models"
+)
 
 type WorkflowRunModes struct {
 	CIMode                  bool
@@ -9,17 +13,26 @@ type WorkflowRunModes struct {
 	SecretFilteringMode     bool
 	SecretEnvsFilteringMode bool
 	NoOutputTimeout         time.Duration
+	IsSteplibOfflineMode    bool
 }
 
+// TODO: dispatch Plans from JSON event logging and actual workflow execution
 type StepExecutionPlan struct {
 	UUID   string `json:"uuid"`
 	StepID string `json:"step_id"`
+
+	Step        stepmanModels.StepModel `json:"-"`
+	GroupID     string                  `json:"-"`
+	ContainerID string                  `json:"-"`
+	ServiceIDs  []string                `json:"-"`
 }
 
 type WorkflowExecutionPlan struct {
-	UUID       string              `json:"uuid"`
-	WorkflowID string              `json:"workflow_id"`
-	Steps      []StepExecutionPlan `json:"steps"`
+	UUID                 string              `json:"uuid"`
+	WorkflowID           string              `json:"workflow_id"`
+	Steps                []StepExecutionPlan `json:"steps"`
+	WorkflowTitle        string              `json:"-"`
+	IsSteplibOfflineMode bool                `json:"-"`
 }
 
 type WorkflowRunPlan struct {
@@ -29,6 +42,7 @@ type WorkflowRunPlan struct {
 	CIMode                  bool `json:"ci_mode"`
 	PRMode                  bool `json:"pr_mode"`
 	DebugMode               bool `json:"debug_mode"`
+	IsSteplibOfflineMode    bool `json:"-"`
 	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`

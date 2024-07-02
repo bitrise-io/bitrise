@@ -180,34 +180,29 @@ func CleanupStepWorkDir() error {
 	return nil
 }
 
-// GetBuildFailedEnvironments ...
-func GetBuildFailedEnvironments(failed bool) []string {
+func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
 	if failed {
 		statusStr = "1"
 	}
 
-	environments := []string{}
-	steplibBuildStatusEnv := "STEPLIB_BUILD_STATUS" + "=" + statusStr
-	environments = append(environments, steplibBuildStatusEnv)
-
-	bitriseBuildStatusEnv := "BITRISE_BUILD_STATUS" + "=" + statusStr
-	environments = append(environments, bitriseBuildStatusEnv)
-	return environments
+	return []envmanModels.EnvironmentItemModel{
+		{"STEPLIB_BUILD_STATUS": statusStr},
+		{"BITRISE_BUILD_STATUS": statusStr},
+	}
 }
 
-// SetBuildFailedEnv ...
 func SetBuildFailedEnv(failed bool) error {
-	statusStr := "0"
-	if failed {
-		statusStr = "1"
+	envs := BuildFailedEnvs(failed)
+	for _, env := range envs {
+		key, value, err := env.GetKeyValuePair()
+		if err == nil {
+			if err := os.Setenv(key, value); err != nil {
+				return err
+			}
+		}
 	}
-
-	if err := os.Setenv("STEPLIB_BUILD_STATUS", statusStr); err != nil {
-		return err
-	}
-
-	return os.Setenv("BITRISE_BUILD_STATUS", statusStr)
+	return nil
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) ([]string, error) {

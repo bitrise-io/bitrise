@@ -10,14 +10,22 @@ import (
 )
 
 const (
-	// FormatVersion ...
-	FormatVersion = "14"
+	FormatVersion       = "15"
+	StepListItemWithKey = "with"
 )
 
-// StepListItemModel ...
-type StepListItemModel map[string]stepmanModels.StepModel
+type WithModel struct {
+	ContainerID string                  `json:"container,omitempty" yaml:"container,omitempty"`
+	ServiceIDs  []string                `json:"services,omitempty" yaml:"services,omitempty"`
+	Steps       []StepListStepItemModel `json:"steps,omitempty" yaml:"steps,omitempty"`
+}
 
-// PipelineModel ...
+type StepListWithItemModel map[string]WithModel
+
+type StepListStepItemModel map[string]stepmanModels.StepModel
+
+type StepListItemModel map[string]interface{}
+
 type PipelineModel struct {
 	Title       string               `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     string               `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -25,10 +33,8 @@ type PipelineModel struct {
 	Stages      []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
 }
 
-// StageListItemModel ...
 type StageListItemModel map[string]StageModel
 
-// StageModel ...
 type StageModel struct {
 	Title           string                       `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary         string                       `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -39,21 +45,15 @@ type StageModel struct {
 	Workflows       []StageWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
-// StageWorkflowListItemModel ...
 type StageWorkflowListItemModel map[string]StageWorkflowModel
 
-// StageWorkflowModel ...
 type StageWorkflowModel struct {
 	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 }
 
-// WorkflowListItemModel ...
 type WorkflowListItemModel map[string]WorkflowModel
 
-// WorkflowModel ...
 type WorkflowModel struct {
-	Container    Container                           `json:"container,omitempty" yaml:"container,omitempty"`
-	Services     map[string]Container                `json:"services,omitempty" yaml:"services,omitempty"`
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
@@ -78,7 +78,6 @@ type Container struct {
 	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
-// AppModel ...
 type AppModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -86,7 +85,6 @@ type AppModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
-// BitriseDataModel ...
 type BitriseDataModel struct {
 	FormatVersion        string `json:"format_version" yaml:"format_version"`
 	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`
@@ -96,6 +94,8 @@ type BitriseDataModel struct {
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
+	Services   map[string]Container     `json:"services,omitempty" yaml:"services,omitempty"`
+	Containers map[string]Container     `json:"containers,omitempty" yaml:"containers,omitempty"`
 	App        AppModel                 `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta       map[string]interface{}   `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap TriggerMapModel          `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
@@ -104,14 +104,12 @@ type BitriseDataModel struct {
 	Workflows  map[string]WorkflowModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
-// BuildRunStartModel ...
 type BuildRunStartModel struct {
 	EventName   string    `json:"event_name" yaml:"event_name"`
 	ProjectType string    `json:"project_type" yaml:"project_type"`
 	StartTime   time.Time `json:"start_time" yaml:"start_time"`
 }
 
-// BuildRunResultsModel ...
 type BuildRunResultsModel struct {
 	WorkflowID           string                `json:"workflow_id" yaml:"workflow_id"`
 	EventName            string                `json:"event_name" yaml:"event_name"`
@@ -124,7 +122,6 @@ type BuildRunResultsModel struct {
 	SkippedSteps         []StepRunResultsModel `json:"skipped_steps" yaml:"skipped_steps"`
 }
 
-// StepRunResultsModel ...
 type StepRunResultsModel struct {
 	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
 	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
@@ -139,7 +136,6 @@ type StepRunResultsModel struct {
 	NoOutputTimeout time.Duration `json:"-"`
 }
 
-// StepError ...
 type StepError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -238,10 +234,15 @@ func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
 	return formattedTimeInterval
 }
 
-// TestResultStepInfo ...
 type TestResultStepInfo struct {
 	ID      string `json:"id" yaml:"id"`
 	Version string `json:"version" yaml:"version"`
 	Title   string `json:"title" yaml:"title"`
 	Number  int    `json:"number" yaml:"number"`
+}
+
+type ConfigFileTreeModel struct {
+	Path     string                `json:"path" yaml:"path"`
+	Contents string                `json:"contents,omitempty" yaml:"contents,omitempty"`
+	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
 }

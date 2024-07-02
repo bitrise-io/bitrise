@@ -5,8 +5,8 @@ github.com/Microsoft/go-winio/pkg/guid
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20230721122944-6b164ed0c2f8
-## explicit; go 1.18
+# github.com/bitrise-io/envman v0.0.0-20240624065735-ca81d0a80500
+## explicit; go 1.21
 github.com/bitrise-io/envman/cli
 github.com/bitrise-io/envman/env
 github.com/bitrise-io/envman/envman
@@ -16,7 +16,7 @@ github.com/bitrise-io/envman/version
 # github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/secretkeys
-# github.com/bitrise-io/go-utils v1.0.11
+# github.com/bitrise-io/go-utils v1.0.13
 ## explicit; go 1.13
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
@@ -45,15 +45,17 @@ github.com/bitrise-io/go-utils/v2/retryhttp
 # github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 ## explicit; go 1.18
 github.com/bitrise-io/goinp/goinp
-# github.com/bitrise-io/stepman v0.0.0-20240514090619-db15d602b74b
+# github.com/bitrise-io/stepman v0.0.0-20240628140527-5e941cdb67a1
 ## explicit; go 1.18
+github.com/bitrise-io/stepman/activator
 github.com/bitrise-io/stepman/cli
 github.com/bitrise-io/stepman/models
+github.com/bitrise-io/stepman/preload
 github.com/bitrise-io/stepman/stepid
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/toolkits
 github.com/bitrise-io/stepman/version
-# github.com/cpuguy83/go-md2man/v2 v2.0.2
+# github.com/cpuguy83/go-md2man/v2 v2.0.4
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
@@ -102,8 +104,8 @@ github.com/gogo/protobuf/proto
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-retryablehttp v0.7.4
-## explicit; go 1.13
+# github.com/hashicorp/go-retryablehttp v0.7.7
+## explicit; go 1.19
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
@@ -138,22 +140,22 @@ github.com/ryanuber/go-glob
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.8.4
-## explicit; go 1.20
+# github.com/stretchr/testify v1.9.0
+## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/urfave/cli v1.22.14
+# github.com/urfave/cli v1.22.15
 ## explicit; go 1.11
 github.com/urfave/cli
-# golang.org/x/crypto v0.17.0
+# golang.org/x/crypto v0.24.0
 ## explicit; go 1.18
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.15.0
+# golang.org/x/sys v0.21.0
 ## explicit; go 1.18
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.15.0
+# golang.org/x/term v0.21.0
 ## explicit; go 1.18
 golang.org/x/term
 # golang.org/x/time v0.5.0

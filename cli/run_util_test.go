@@ -551,7 +551,7 @@ func Test_activateStepLibStep(t *testing.T) {
 				t.Errorf("failed to create dir for step.yml: %s", err)
 			}
 
-			got, _, err := activateStepLibStep(tt.stepIDData, destination, stepYMLCopyPth, true)
+			got, _, err := activateStepLibStep(tt.stepIDData, destination, stepYMLCopyPth, true, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("activateStepLibStep() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/log"
@@ -70,12 +71,14 @@ func activate(c *cli.Context) error {
 	version := c.String(VersionKey)
 	copyYML := c.String(CopyYMLKey)
 	update := c.Bool(UpdateKey)
+	logger := log.NewDefaultLogger(false)
+	isOfflineMode := false
 
-	return Activate(stepLibURI, id, version, path, copyYML, update, log.NewDefaultLogger(false))
+	return Activate(stepLibURI, id, version, path, copyYML, update, logger, isOfflineMode)
 }
 
 // Activate ...
-func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger) error {
+func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger, isOfflineMode bool) error {
 	stepLib, err := stepman.ReadStepSpec(stepLibURI)
 	if err != nil {
 		return fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
@@ -86,8 +89,19 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 		return fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, err := downloadStep(stepLib, stepLibURI, id, version, step, log)
+	srcFolder, err := activateStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
 	if err != nil {
+		if err == errStepNotAvailableOfflineMode {
+			availableVersions := listCachedStepVersion(log, stepLib, stepLibURI, id)
+			versionList := "Other versions available in the local cache:"
+			for _, version := range availableVersions {
+				versionList = versionList + fmt.Sprintf("\n- %s", version)
+			}
+
+			errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_OFFLINE_MODE is set. %s", versionList)
+			return fmt.Errorf("failed to download step: %s", errMsg)
+		}
+
 		return fmt.Errorf("failed to download step: %s", err)
 	}
 
@@ -133,7 +147,7 @@ func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, versio
 	return step, version, nil
 }
 
-func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger) (string, error) {
+func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version string, step models.StepModel, log stepman.Logger, isOfflineMode bool) (string, error) {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return "", fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -142,13 +156,47 @@ func downloadStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	stepCacheDir := stepman.GetStepCacheDirPath(route, id, version)
 	if exist, err := pathutil.IsPathExists(stepCacheDir); err != nil {
 		return "", fmt.Errorf("failed to check if %s path exist: %s", stepCacheDir, err)
-	} else if !exist {
-		if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
-			return "", fmt.Errorf("download failed: %s", err)
-		}
+	} else if exist {
+		return stepCacheDir, nil
+	}
+
+	// version specific source cache not exists
+	if isOfflineMode {
+		return "", errStepNotAvailableOfflineMode
+	}
+
+	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+		return "", fmt.Errorf("download failed: %s", err)
 	}
 
 	return stepCacheDir, nil
+}
+
+func listCachedStepVersion(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
+	versions := []models.Semver{}
+
+	for version, step := range stepLib.Steps[stepID].Versions {
+		_, err := activateStep(stepLib, stepLibURI, stepID, version, step, log, true)
+		if err != nil {
+			continue
+		}
+
+		v, err := models.ParseSemver(version)
+		if err != nil {
+			log.Warnf("failed to parse version (%s): %s", version, err)
+		}
+
+		versions = append(versions, v)
+	}
+
+	slices.SortFunc(versions, models.CmpSemver)
+
+	versionsStr := make([]string, len(versions))
+	for i, v := range versions {
+		versionsStr[i] = v.String()
+	}
+
+	return versionsStr
 }
 
 func copyStep(src, dst string) error {
