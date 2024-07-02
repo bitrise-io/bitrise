@@ -307,7 +307,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		ProjectType:    r.config.Config.ProjectType,
 	}
 
-	plan, err := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, func() string { return uuid.Must(uuid.NewV4()).String() })
+	plan, err := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, r.config.Config.StepBundles, func() string { return uuid.Must(uuid.NewV4()).String() })
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to create workflow execution plan: %w", err)
 	}
@@ -495,22 +495,39 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 	return nil
 }
 
-func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, uuidProvider func() string) (models.WorkflowRunPlan, error) {
+func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, stepBundles map[string]models.StepBundleModel, uuidProvider func() string) (models.WorkflowRunPlan, error) {
 	var executionPlan []models.WorkflowExecutionPlan
 
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
 		workflow := workflows[workflowID]
 
-		var stepPlan []models.StepExecutionPlan
+		var stepPlans []models.StepExecutionPlan
 
 		for _, stepListItem := range workflow.Steps {
-			key, step, with, err := stepListItem.GetStepListItemKeyAndValue()
+			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
 				return models.WorkflowRunPlan{}, err
 			}
 
-			if key == models.StepListItemWithKey {
+			if t == models.StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err != nil {
+					return models.WorkflowRunPlan{}, err
+				}
+
+				stepID := key
+				stepPlans = append(stepPlans, models.StepExecutionPlan{
+					UUID:   uuidProvider(),
+					StepID: stepID,
+					Step:   *step,
+				})
+			} else if t == models.StepListItemTypeWith {
+				with, err := stepListItem.GetWith()
+				if err != nil {
+					return models.WorkflowRunPlan{}, err
+				}
+
 				groupID := uuidProvider()
 
 				for _, stepListStepItem := range with.Steps {
@@ -519,22 +536,49 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 						return models.WorkflowRunPlan{}, err
 					}
 
-					stepPlan = append(stepPlan, models.StepExecutionPlan{
-						UUID:        uuidProvider(),
-						StepID:      stepID,
-						Step:        step,
-						GroupID:     groupID,
-						ContainerID: with.ContainerID,
-						ServiceIDs:  with.ServiceIDs,
+					stepPlans = append(stepPlans, models.StepExecutionPlan{
+						UUID:          uuidProvider(),
+						StepID:        stepID,
+						Step:          step,
+						WithGroupUUID: groupID,
+						ContainerID:   with.ContainerID,
+						ServiceIDs:    with.ServiceIDs,
 					})
 				}
-			} else {
-				stepID := key
-				stepPlan = append(stepPlan, models.StepExecutionPlan{
-					UUID:   uuidProvider(),
-					StepID: stepID,
-					Step:   step,
-				})
+			} else if t == models.StepListItemTypeBundle {
+				bundleID := key
+				bundleOverride, err := stepListItem.GetBundle()
+				if err != nil {
+					return models.WorkflowRunPlan{}, err
+				}
+
+				bundleDefinition, ok := stepBundles[bundleID]
+				if !ok {
+					return models.WorkflowRunPlan{}, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
+				}
+
+				bundleEnvs := append(bundleDefinition.Environments, bundleOverride.Environments...)
+				bundleUUID := uuidProvider()
+
+				for idx, stepListStepItem := range bundleDefinition.Steps {
+					stepID, step, err := stepListStepItem.GetStepIDAndStep()
+					if err != nil {
+						return models.WorkflowRunPlan{}, err
+					}
+
+					stepPlan := models.StepExecutionPlan{
+						UUID:           uuidProvider(),
+						StepID:         stepID,
+						Step:           step,
+						StepBundleUUID: bundleUUID,
+					}
+
+					if idx == 0 {
+						stepPlan.StepBundleEnvs = bundleEnvs
+					}
+
+					stepPlans = append(stepPlans, stepPlan)
+				}
 			}
 		}
 
@@ -546,7 +590,7 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		executionPlan = append(executionPlan, models.WorkflowExecutionPlan{
 			UUID:                 uuidProvider(),
 			WorkflowID:           workflowID,
-			Steps:                stepPlan,
+			Steps:                stepPlans,
 			WorkflowTitle:        workflowTitle,
 			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
 		})
