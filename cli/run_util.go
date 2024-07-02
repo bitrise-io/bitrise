@@ -100,11 +100,11 @@ func (r WorkflowRunner) activateAndRunSteps(
 			currentStepGroupID = stepPlan.WithGroupUUID
 		}
 
-		buildEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
+		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
 
 		if stepPlan.StepBundleUUID != currentStepBundleUUID {
 			if stepPlan.StepBundleUUID != "" {
-				currentStepBundleEnvVars = append(buildEnvironments, stepPlan.StepBundleEnvs...)
+				currentStepBundleEnvVars = append(workflowEnvironments, stepPlan.StepBundleEnvs...)
 			}
 
 			currentStepBundleUUID = stepPlan.StepBundleUUID
@@ -114,7 +114,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		if currentStepBundleUUID != "" {
 			envsForStepRun = currentStepBundleEnvVars
 		} else {
-			envsForStepRun = buildEnvironments
+			envsForStepRun = workflowEnvironments
 		}
 
 		stepStartTime := time.Now()
