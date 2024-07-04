@@ -1,12 +1,15 @@
 package configmerge
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"gopkg.in/yaml.v2"
 )
 
@@ -47,9 +50,9 @@ func (m Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTre
 
 	ref := configReference{
 		Repository: m.repoInfo.defaultRemoteURL,
-		Branch:     m.repoInfo.branch,
 		Commit:     m.repoInfo.commit,
 		Tag:        m.repoInfo.tag,
+		Branch:     m.repoInfo.branch,
 		Path:       mainConfigPth,
 	}
 
@@ -81,7 +84,7 @@ func (m Merger) buildConfigTree(configReader io.Reader, reference configReferenc
 
 	var includedConfigs []models.ConfigFileTreeModel
 	for _, include := range config.Include {
-		reader, err := openConfigModule(include, m.repoInfo.defaultRemoteURL)
+		reader, err := openConfigModule(include, m.repoInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -101,12 +104,33 @@ func (m Merger) buildConfigTree(configReader io.Reader, reference configReferenc
 	}, nil
 }
 
-func openConfigModule(reference configReference, defaultRemoteURL string) (io.Reader, error) {
-	if reference.Repository == "" || reference.Repository == defaultRemoteURL {
+func openConfigModule(reference configReference, info repoInfo) (io.Reader, error) {
+	if isLocalReference(reference, info) {
 		return openLocalConfigModule(reference)
 	} else {
 		return openRemoteConfigModule(reference)
 	}
+}
+
+func isLocalReference(reference configReference, info repoInfo) bool {
+	if reference.Repository == "" {
+		return true
+	}
+
+	if getRepo(reference.Repository) != getRepo(info.defaultRemoteURL) {
+		return false
+	}
+
+	switch {
+	case reference.Commit != "":
+		return reference.Commit == info.commit || reference.Commit == info.commit[:7]
+	case reference.Tag != "":
+		return reference.Tag == info.tag
+	case reference.Branch != "":
+		return reference.Branch == info.branch
+	}
+
+	return false
 }
 
 func openLocalConfigModule(reference configReference) (io.Reader, error) {
@@ -122,18 +146,42 @@ func readRepoInfo(repo *git.Repository) (*repoInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	var branch string
-	var commit string
-	var tag string
 
+	// Get branch name
+	var branch string
 	if head.Name().IsBranch() {
 		branch = head.Name().Short()
-	} else if head.Name().IsTag() {
-		tag = head.Name().Short()
-	} else {
-		commit = head.Hash().String()
 	}
 
+	// Get commit hash
+	commitObj, err := repo.CommitObject(head.Hash())
+	if err != nil {
+		return nil, err
+	}
+	commit := commitObj.Hash.String()
+
+	// Get tag name
+	var tag string
+	iter, err := repo.Tags()
+	if err != nil {
+		return nil, err
+	}
+	if err := iter.ForEach(func(ref *plumbing.Reference) error {
+		obj, err := repo.TagObject(ref.Hash())
+		if err != nil && !errors.Is(err, plumbing.ErrObjectNotFound) {
+			return err
+		}
+
+		if obj.Target == head.Hash() {
+			tag = ref.Name().Short()
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	// Get remote URL
 	config, err := repo.Config()
 	if err != nil {
 		return nil, err
@@ -156,4 +204,28 @@ func readRepoInfo(repo *git.Repository) (*repoInfo, error) {
 		commit:           commit,
 		tag:              tag,
 	}, nil
+}
+
+func getRepo(url string) string {
+	var host, repo string
+	switch {
+	case strings.HasPrefix(url, "https://"):
+		url = strings.TrimPrefix(url, "https://")
+		idx := strings.Index(url, "/")
+		host, repo = url[:idx], url[idx+1:]
+	case strings.HasPrefix(url, "git@"):
+		url = url[strings.Index(url, "@")+1:]
+		idx := strings.Index(url, ":")
+		host, repo = url[:idx], url[idx+1:]
+	case strings.HasPrefix(url, "ssh://"):
+		url = url[strings.Index(url, "@")+1:]
+		if strings.Contains(url, ":") {
+			idxColon, idxSlash := strings.Index(url, ":"), strings.Index(url, "/")
+			host, repo = url[:idxColon], url[idxSlash+1:]
+		} else {
+			idx := strings.Index(url, "/")
+			host, repo = url[:idx], url[idx+1:]
+		}
+	}
+	return host + "/" + strings.TrimSuffix(repo, ".git")
 }
