@@ -23,7 +23,7 @@ func (a stepActivator) activateStep(
 	workDir string, // $TMPDIR/bitrise
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
-) (stepYMLPth string, origStepYMLPth string, didStepLibUpdate bool, err error) {
+) (stepYMLPth string, didStepLibUpdate bool, err error) {
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
@@ -36,11 +36,10 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return "", "", false, fmt.Errorf("activate local step: %w", err)
+			return "", false, fmt.Errorf("activate local step: %w", err)
 		}
 
 		stepYMLPth = activatedStep.StepYMLPath
-		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -51,11 +50,10 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return "", "", false, fmt.Errorf("activate git step reference: %w", err)
+			return "", false, fmt.Errorf("activate git step reference: %w", err)
 		}
 
 		stepYMLPth = activatedStep.StepYMLPath
-		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else if stepIDData.SteplibSource != "" {
 		activatedStep, err := activator.ActivateSteplibRefStep(
 			stepmanLogger,
@@ -68,14 +66,13 @@ func (a stepActivator) activateStep(
 		)
 		didStepLibUpdate = activatedStep.DidStepLibUpdate
 		if err != nil {
-			return "", "", didStepLibUpdate, fmt.Errorf("activate steplib step: %w", err)
+			return "", didStepLibUpdate, fmt.Errorf("activate steplib step: %w", err)
 		}
 
 		stepYMLPth = activatedStep.StepYMLPath
-		origStepYMLPth = activatedStep.OrigStepYMLPath
 	} else {
-		return "", "", didStepLibUpdate, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
+		return "", didStepLibUpdate, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 
-	return stepYMLPth, origStepYMLPth, didStepLibUpdate, nil
+	return stepYMLPth, didStepLibUpdate, nil
 }
