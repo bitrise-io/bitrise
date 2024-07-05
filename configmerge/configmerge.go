@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/models"
+	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"gopkg.in/yaml.v2"
 )
 
@@ -138,7 +140,43 @@ func openLocalConfigModule(reference configReference) (io.Reader, error) {
 }
 
 func openRemoteConfigModule(reference configReference) (io.Reader, error) {
-	return nil, nil
+	opts := git.CloneOptions{
+		URL: reference.Repository,
+	}
+	if reference.Branch != "" {
+		opts.ReferenceName = plumbing.NewBranchReferenceName(reference.Branch)
+	}
+
+	repo, err := git.Clone(memory.NewStorage(), memfs.New(), &opts)
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err := repo.Worktree()
+	if err != nil {
+		return nil, err
+	}
+
+	if reference.Commit != "" {
+		if err := tree.Checkout(&git.CheckoutOptions{
+			Hash: plumbing.NewHash(reference.Commit),
+		}); err != nil {
+			return nil, err
+		}
+	} else if reference.Tag != "" {
+		if err := tree.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewTagReferenceName(reference.Tag),
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	f, err := tree.Filesystem.Open(reference.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
 
 func readRepoInfo(repo *git.Repository) (*repoInfo, error) {

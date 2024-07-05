@@ -28,11 +28,38 @@ func ActivateSteplibRefStep(
 		DidStepLibUpdate: false,
 	}
 
-	stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
-	activationResult.DidStepLibUpdate = didUpdate
+	err := cli.Setup(id.SteplibSource, "", log)
+	if err != nil {
+		return activationResult, fmt.Errorf("setup %s: %s", id.SteplibSource, err)
+	}
+
+	versionConstraint, err := models.ParseRequiredVersion(id.Version)
 	if err != nil {
 		return activationResult, err
 	}
+	if versionConstraint.VersionLockType == models.InvalidVersionConstraint {
+		return activationResult, fmt.Errorf("version constraint is invalid: %s %s", id.IDorURI, id.Version)
+	}
+
+	if shouldUpdateStepLibForStep(versionConstraint, isOfflineMode, didStepLibUpdateInWorkflow) {
+		log.Infof("Step uses latest version, updating StepLib...")
+		_, err = stepman.UpdateLibrary(id.SteplibSource, log)
+		if err != nil {
+			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
+		} else {
+			activationResult.DidStepLibUpdate = true
+		}
+	}
+
+	stepInfo, err := cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
+	if err != nil {
+		return activationResult, err
+	}
+
+	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
+		stepInfo.Step.Title = pointers.NewStringPtr(stepInfo.ID)
+	}
+	stepInfo.OriginalVersion = id.Version
 
 	err = cli.Activate(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, false, log, isOfflineMode)
 	if err != nil {
@@ -50,48 +77,6 @@ func ActivateSteplibRefStep(
 	stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 	return activationResult, nil
-}
-
-func prepareStepLibForActivation(
-	log stepman.Logger,
-	id stepid.CanonicalID,
-	didStepLibUpdateInWorkflow bool,
-	isOfflineMode bool,
-) (stepInfo models.StepInfoModel, didUpdate bool, err error) {
-	err = cli.Setup(id.SteplibSource, "", log)
-	if err != nil {
-		return models.StepInfoModel{}, false, fmt.Errorf("setup %s: %s", id.SteplibSource, err)
-	}
-
-	versionConstraint, err := models.ParseRequiredVersion(id.Version)
-	if err != nil {
-		return models.StepInfoModel{}, false, err
-	}
-	if versionConstraint.VersionLockType == models.InvalidVersionConstraint {
-		return models.StepInfoModel{}, false, fmt.Errorf("version constraint is invalid: %s %s", id.IDorURI, id.Version)
-	}
-
-	if shouldUpdateStepLibForStep(versionConstraint, isOfflineMode, didStepLibUpdateInWorkflow) {
-		log.Infof("Step uses latest version, updating StepLib...")
-		_, err = stepman.UpdateLibrary(id.SteplibSource, log)
-		if err != nil {
-			log.Warnf("Step version constraint is latest or version locked, but failed to update StepLib, err: %s", err)
-		} else {
-			didUpdate = true
-		}
-	}
-
-	stepInfo, err = cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
-	if err != nil {
-		return stepInfo, didUpdate, err
-	}
-
-	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
-		stepInfo.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-	}
-	stepInfo.OriginalVersion = id.Version
-
-	return stepInfo, didUpdate, nil
 }
 
 func shouldUpdateStepLibForStep(constraint models.VersionConstraint, isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool {
