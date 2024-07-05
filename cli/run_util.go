@@ -310,7 +310,7 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	activator := newStepActivator()
-	stepYMLPth, origStepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	stepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
 	if didStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
@@ -324,13 +324,7 @@ func (r WorkflowRunner) activateStep(
 		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
 		log.Debugf("Spec read from YML: %#v", specStep)
 		if err != nil {
-			ymlPth := stepYMLPth
-			if origStepYMLPth != "" {
-				// in case of local step (path:./) we use the original step definition path,
-				// instead of the activated step's one.
-				ymlPth = origStepYMLPth
-			}
-			err = fmt.Errorf("failed to parse step definition (%s): %s", ymlPth, err)
+			err = fmt.Errorf("parse step.yml of '%s': %s", stepIDData.IDorURI, err)
 			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
 		}
 
