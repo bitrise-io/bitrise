@@ -153,28 +153,29 @@ func openRemoteConfigModule(reference configReference) (io.Reader, error) {
 
 	repo, cloneErr := git.Clone(memory.NewStorage(), memfs.New(), &opts)
 	if cloneErr != nil {
+		if !isHttpFormatRepoURL(reference.Repository) {
+			return nil, cloneErr
+		}
+
 		// Try repo url with ssh syntax
-		if isHttpFormatRepoURL(reference.Repository) {
-			repoURL, err := parseGitRepoURL(reference.Repository)
-			if err != nil {
-				return nil, err
-			}
-			if repoURL.User == "" {
-				repoURL.User = "git"
-			}
+		repoURL, err := parseGitRepoURL(reference.Repository)
+		if err != nil {
+			return nil, err
+		}
+		if repoURL.User == "" {
+			repoURL.User = "git"
+		}
 
-			opts := git.CloneOptions{
-				URL: generateSCPStyleSSHFormatRepoURL(repoURL),
-			}
-			if reference.Branch != "" {
-				opts.ReferenceName = plumbing.NewBranchReferenceName(reference.Branch)
-			}
+		opts := git.CloneOptions{
+			URL: generateSCPStyleSSHFormatRepoURL(repoURL),
+		}
+		if reference.Branch != "" {
+			opts.ReferenceName = plumbing.NewBranchReferenceName(reference.Branch)
+		}
 
-			repo, err = git.Clone(memory.NewStorage(), memfs.New(), &opts)
-			if err != nil {
-				return nil, cloneErr
-			}
-		} else {
+		repo, err = git.Clone(memory.NewStorage(), memfs.New(), &opts)
+		if err != nil {
+			// Return the original error
 			return nil, cloneErr
 		}
 	}
