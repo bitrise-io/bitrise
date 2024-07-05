@@ -23,8 +23,6 @@ func ActivateSteplibRefStep(
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	activationResult := ActivatedStep{
 		StepYMLPath:      stepYMLPath,
-		OrigStepYMLPath:  "", // TODO: temporary during refactors, see definition
-		WorkDir: activatedStepDir,
 		DidStepLibUpdate: false,
 	}
 
