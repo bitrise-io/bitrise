@@ -23,7 +23,7 @@ func (a stepActivator) activateStep(
 	workDir string, // $TMPDIR/bitrise
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
-) (stepYMLPth string, didStepLibUpdate bool, err error) {
+) (stepYMLPath string, didStepLibUpdate bool, err error) {
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
@@ -39,7 +39,7 @@ func (a stepActivator) activateStep(
 			return "", false, fmt.Errorf("activate local step: %w", err)
 		}
 
-		stepYMLPth = activatedStep.StepYMLPath
+		stepYMLPath = activatedStep.StepYMLPath
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -53,7 +53,7 @@ func (a stepActivator) activateStep(
 			return "", false, fmt.Errorf("activate git step reference: %w", err)
 		}
 
-		stepYMLPth = activatedStep.StepYMLPath
+		stepYMLPath = activatedStep.StepYMLPath
 	} else if stepIDData.SteplibSource != "" {
 		activatedStep, err := activator.ActivateSteplibRefStep(
 			stepmanLogger,
@@ -69,10 +69,10 @@ func (a stepActivator) activateStep(
 			return "", didStepLibUpdate, fmt.Errorf("activate steplib step: %w", err)
 		}
 
-		stepYMLPth = activatedStep.StepYMLPath
+		stepYMLPath = activatedStep.StepYMLPath
 	} else {
 		return "", didStepLibUpdate, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 
-	return stepYMLPth, didStepLibUpdate, nil
+	return stepYMLPath, didStepLibUpdate, nil
 }
