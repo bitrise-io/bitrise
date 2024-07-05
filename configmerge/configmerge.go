@@ -158,8 +158,13 @@ func openRemoteConfigModule(reference configReference) (io.Reader, error) {
 	}
 
 	if reference.Commit != "" {
+		h, err := repo.ResolveRevision(plumbing.Revision(reference.Commit))
+		if err != nil {
+			return nil, err
+		}
+
 		if err := tree.Checkout(&git.CheckoutOptions{
-			Hash: plumbing.NewHash(reference.Commit),
+			Hash: *h,
 		}); err != nil {
 			return nil, err
 		}
