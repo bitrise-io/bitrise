@@ -11,6 +11,7 @@ func TestMerger_MergeConfig(t *testing.T) {
 		name             string
 		repoInfoProvider RepoInfoProvider
 		fileReader       FileReader
+		fileCache        FileCache
 		mainConfigPth    string
 		wantConfig       string
 		wantErr          string
@@ -45,12 +46,91 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 format_version: "15"
 `,
 		},
+		{
+			name: "Merges remote config module",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(`
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: containers.yml
+  repository: https://github.com/bitrise-io/examples-yamls.git
+  branch: dev`),
+				},
+				repoFilesOnBranch: map[string]map[string]map[string][]byte{
+					"https://github.com/bitrise-io/examples-yamls.git": {
+						"dev": {
+							"containers.yml": []byte(`
+containers:
+  golang:
+    image: golang:1.22`),
+						},
+					},
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantConfig: `containers:
+  golang:
+    image: golang:1.22
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+format_version: "15"
+`,
+		},
+		{
+			name: "Uses remote config module from cache",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(`
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: containers.yml
+  repository: https://github.com/bitrise-io/examples-yamls.git
+  branch: dev`),
+				},
+			},
+			fileCache: mockFileCache{
+				fileContent: map[string][]byte{
+					"https___github.com_bitrise-io_examples-yamls.git_containers.yml@dev": []byte(`
+containers:
+  golang:
+    image: golang:1.22`),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantConfig: `containers:
+  golang:
+    image: golang:1.22
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+format_version: "15"
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				repoInfoProvider: tt.repoInfoProvider,
 				fileReader:       tt.fileReader,
+				fileCache:        tt.fileCache,
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -117,4 +197,16 @@ func (m mockFileReader) ReadFileFromGitRepository(repository string, branch stri
 		return nil, m.repoErr
 	}
 	return filesOnBranch[path], m.repoErr
+}
+
+type mockFileCache struct {
+	fileContent map[string][]byte
+}
+
+func (m mockFileCache) GetFileContent(key string) ([]byte, error) {
+	return m.fileContent[key], nil
+}
+
+func (m mockFileCache) SetFileContent(key string, content []byte) error {
+	return nil
 }
