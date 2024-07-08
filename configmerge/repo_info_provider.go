@@ -8,14 +8,26 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-type repoInfo struct {
-	defaultRemoteURL string
-	branch           string
-	commit           string
-	tag              string
+type RepoInfo struct {
+	DefaultRemoteURL string
+	Branch           string
+	Commit           string
+	Tag              string
 }
 
-func readRepoInfo(repo *git.Repository) (*repoInfo, error) {
+type repoInfoProvider struct {
+}
+
+func NewRepoInfoProvider() RepoInfoProvider {
+	return repoInfoProvider{}
+}
+
+func (p repoInfoProvider) GetRepoInfo(repoPth string) (*RepoInfo, error) {
+	repo, err := git.PlainOpen(repoPth)
+	if err != nil {
+		return nil, err
+	}
+
 	head, err := repo.Head()
 	if err != nil {
 		return nil, err
@@ -72,10 +84,10 @@ func readRepoInfo(repo *git.Repository) (*repoInfo, error) {
 
 	remoteURL := remote.URLs[0]
 
-	return &repoInfo{
-		defaultRemoteURL: remoteURL,
-		branch:           branch,
-		commit:           commit,
-		tag:              tag,
+	return &RepoInfo{
+		DefaultRemoteURL: remoteURL,
+		Branch:           branch,
+		Commit:           commit,
+		Tag:              tag,
 	}, nil
 }

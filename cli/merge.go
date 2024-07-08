@@ -6,6 +6,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/configmerge"
 	"github.com/bitrise-io/bitrise/models"
+	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/urfave/cli"
 )
 
@@ -25,11 +26,9 @@ func mergeConfig(c *cli.Context) error {
 		configPth = "bitrise.yml"
 	}
 
-	merger, err := configmerge.NewMerger("./")
-	if err != nil {
-		return fmt.Errorf("failed to create config merger: %s", err)
-	}
-
+	repoInfoProvider := configmerge.NewRepoInfoProvider()
+	fileReader := configmerge.NewFileReader(logV2.NewLogger())
+	merger := configmerge.NewMerger(repoInfoProvider, fileReader)
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {
 		return fmt.Errorf("failed to merge config: %s", err)
