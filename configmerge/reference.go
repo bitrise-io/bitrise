@@ -1,8 +1,13 @@
 package configmerge
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
-type configReference struct {
+type ConfigReference struct {
 	Repository string `yaml:"repository" json:"repository"`
 	Branch     string `yaml:"branch" json:"branch"`
 	Commit     string `yaml:"commit" json:"commit"`
@@ -10,10 +15,10 @@ type configReference struct {
 	Path       string `yaml:"path" json:"path"`
 }
 
-func (r configReference) Key() string {
+func (r ConfigReference) Key() string {
 	var key string
 	if r.Repository != "" {
-		key = fmt.Sprintf("repo:%s,%s", r.Repository, r.Path)
+		key = fmt.Sprintf("%s/%s", r.Repository, r.Path)
 	} else {
 		key = r.Path
 	}
@@ -25,6 +30,10 @@ func (r configReference) Key() string {
 	} else if r.Branch != "" {
 		key += fmt.Sprintf("@%s", r.Branch)
 	}
+
+	key = filepath.FromSlash(key)
+	key = strings.ReplaceAll(key, string(os.PathSeparator), "_")
+	key = strings.ReplaceAll(key, ":", "_")
 
 	return key
 }

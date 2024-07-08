@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/models"
+	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -16,17 +17,26 @@ type FileReader interface {
 	ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error)
 }
 
+type FileCache interface {
+	GetFileContent(key string) ([]byte, error)
+	SetFileContent(key string, content []byte) error
+}
+
 type Merger struct {
 	repoInfoProvider RepoInfoProvider
 	fileReader       FileReader
+	fileCache        FileCache
+	logger           logV2.Logger
 
 	repoInfo RepoInfo
 }
 
-func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader) Merger {
+func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, fileCache FileCache, logger logV2.Logger) Merger {
 	return Merger{
 		repoInfoProvider: repoInfoProvider,
 		fileReader:       fileReader,
+		fileCache:        fileCache,
+		logger:           logger,
 	}
 }
 
@@ -38,7 +48,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	}
 	m.repoInfo = *info
 
-	ref := configReference{
+	ref := ConfigReference{
 		Repository: info.DefaultRemoteURL,
 		Commit:     info.Commit,
 		Tag:        info.Tag,
@@ -64,9 +74,9 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	return mergedConfigContent, configTree, nil
 }
 
-func (m *Merger) buildConfigTree(configContent []byte, reference configReference) (*models.ConfigFileTreeModel, error) {
+func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference) (*models.ConfigFileTreeModel, error) {
 	var config struct {
-		Include []configReference `yaml:"include" json:"include"`
+		Include []ConfigReference `yaml:"include" json:"include"`
 	}
 	if err := yaml.Unmarshal(configContent, &config); err != nil {
 		return nil, err
@@ -94,7 +104,7 @@ func (m *Merger) buildConfigTree(configContent []byte, reference configReference
 	}, nil
 }
 
-func (m *Merger) readConfigModule(reference configReference, info RepoInfo) ([]byte, error) {
+func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]byte, error) {
 	localReference, err := isLocalReference(reference, info)
 	if err != nil {
 		return nil, err
@@ -103,11 +113,31 @@ func (m *Merger) readConfigModule(reference configReference, info RepoInfo) ([]b
 	if localReference {
 		return m.readLocalConfigModule(reference)
 	} else {
-		return m.readRemoteConfigModule(reference)
+		if m.fileCache != nil {
+			b, err := m.fileCache.GetFileContent(reference.Key())
+			if err != nil {
+				m.logger.Warnf("Failed to read file (%s) from cache: %s", err)
+			} else if len(b) > 0 {
+				return b, nil
+			}
+		}
+
+		b, err := m.readRemoteConfigModule(reference)
+		if err != nil {
+			return nil, err
+		}
+
+		if m.fileCache != nil {
+			if err := m.fileCache.SetFileContent(reference.Key(), b); err != nil {
+				m.logger.Warnf("Failed to cache file (%s): %s", err)
+			}
+		}
+
+		return b, nil
 	}
 }
 
-func isLocalReference(reference configReference, info RepoInfo) (bool, error) {
+func isLocalReference(reference ConfigReference, info RepoInfo) (bool, error) {
 	if reference.Repository == "" {
 		return true, nil
 	}
@@ -139,11 +169,11 @@ func isLocalReference(reference configReference, info RepoInfo) (bool, error) {
 	return true, nil
 }
 
-func (m *Merger) readLocalConfigModule(reference configReference) ([]byte, error) {
+func (m *Merger) readLocalConfigModule(reference ConfigReference) ([]byte, error) {
 	return m.fileReader.ReadFileFromFileSystem(reference.Path)
 }
 
-func (m *Merger) readRemoteConfigModule(reference configReference) ([]byte, error) {
+func (m *Merger) readRemoteConfigModule(reference ConfigReference) ([]byte, error) {
 	return m.fileReader.ReadFileFromGitRepository(reference.Repository, reference.Branch, reference.Commit, reference.Tag, reference.Path)
 
 }

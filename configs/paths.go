@@ -44,6 +44,10 @@ func GetBitriseToolsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "tools")
 }
 
+func GetBitriseConfigCacheDirPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), "config-cache")
+}
+
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {
@@ -112,6 +116,11 @@ func InitPaths() error {
 			if err := os.Setenv("PATH", pthWithBitriseTools); err != nil {
 				return fmt.Errorf("Failed to set PATH to include BITRISE_HOME/tools! Error: %s", err)
 			}
+		}
+
+		configCacheDir := GetBitriseConfigCacheDirPath()
+		if err := pathutil.EnsureDirExist(configCacheDir); err != nil {
+			return err
 		}
 	}
 

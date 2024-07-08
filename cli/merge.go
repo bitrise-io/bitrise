@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/configmerge"
+	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/urfave/cli"
@@ -28,7 +29,8 @@ func mergeConfig(c *cli.Context) error {
 
 	repoInfoProvider := configmerge.NewRepoInfoProvider()
 	fileReader := configmerge.NewFileReader(logV2.NewLogger())
-	merger := configmerge.NewMerger(repoInfoProvider, fileReader)
+	fileCache := configmerge.NewFileCache(configs.GetBitriseConfigCacheDirPath(), logV2.NewLogger())
+	merger := configmerge.NewMerger(repoInfoProvider, fileReader, fileCache, logV2.NewLogger())
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {
 		return fmt.Errorf("failed to merge config: %s", err)
