@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/djherbis/times"
 )
 
 // ConfigModel ...
@@ -16,6 +18,7 @@ type ConfigModel struct {
 	SetupVersion           string               `json:"setup_version"`
 	LastCLIUpdateCheck     time.Time            `json:"last_cli_update_check"`
 	LastPluginUpdateChecks map[string]time.Time `json:"last_plugin_update_checks"`
+	LastConfigCacheCleanup time.Time            `json:"last_config_cache_cleanup"`
 }
 
 // ---------------------------
@@ -71,6 +74,13 @@ const (
 
 const (
 	bitriseConfigFileName = "config.json"
+)
+
+const (
+	configCacheCleanupCheckInterval   = 24 * 7 * time.Hour  // 7 days
+	configCacheItemExpirationInterval = 24 * 30 * time.Hour // 30 days
+	selfUpdateInterval                = 24 * time.Hour
+	PluginUpdateInterval              = 24 * time.Hour
 )
 
 // IsDebugUseSystemTools ...
@@ -134,11 +144,64 @@ func CheckIsCLIUpdateCheckRequired() bool {
 	}
 
 	duration := time.Now().Sub(config.LastCLIUpdateCheck)
-	if duration.Hours() >= 24 {
+	if duration >= selfUpdateInterval {
 		return true
 	}
 
 	return false
+}
+
+func IsConfigCacheCleanupRequired() bool {
+	config, err := loadBitriseConfig()
+	if err != nil {
+		return false
+	}
+
+	duration := time.Now().Sub(config.LastConfigCacheCleanup)
+	if duration >= configCacheCleanupCheckInterval {
+		return true
+	}
+
+	return false
+}
+
+func SaveConfigCacheCleanup() error {
+	config, err := loadBitriseConfig()
+	if err != nil {
+		return err
+	}
+
+	config.LastConfigCacheCleanup = time.Now()
+
+	return saveBitriseConfig(config)
+}
+
+func CleanupConfigCache() error {
+	configCacheDir := GetBitriseConfigCacheDirPath()
+	entries, err := os.ReadDir(configCacheDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		pth := filepath.Join(configCacheDir, entry.Name())
+		t, err := times.Stat(pth)
+		if err != nil {
+			return err
+		}
+
+		if time.Now().After(t.AccessTime().Add(configCacheItemExpirationInterval)) {
+			if err := os.Remove(pth); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func SaveCLIUpdateCheck() error {
@@ -159,7 +222,7 @@ func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 	}
 
 	duration := time.Now().Sub(config.LastPluginUpdateChecks[plugin])
-	if duration.Hours() >= 24 {
+	if duration >= PluginUpdateInterval {
 		return true
 	}
 

@@ -54,7 +54,3 @@ func (c fileCache) SetFileContent(key string, content []byte) error {
 	}
 	return nil
 }
-
-func cachePathFromReference(reference ConfigReference) string {
-	return filepath.Join(reference.Repository, reference.Commit, reference.Tag, reference.Branch, reference.Path)
-}
