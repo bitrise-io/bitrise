@@ -80,17 +80,6 @@ func Run() {
 	app.Email = ""
 
 	app.Before = before
-	app.After = func(c *cli.Context) error {
-		if !configs.IsCIMode && configs.IsConfigCacheCleanupRequired() {
-			if err := configs.CleanupConfigCache(); err != nil {
-				log.Warnf("Failed to cleanup config cache: %s", err)
-			}
-			if err := configs.SaveConfigCacheCleanup(); err != nil {
-				log.Warnf("Failed to save config cache cleanup time: %s", err)
-			}
-		}
-		return nil
-	}
 
 	app.Flags = flags
 	app.Commands = commands

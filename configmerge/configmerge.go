@@ -8,6 +8,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func IsModularConfig(configContent []byte) (bool, error) {
+	var config struct {
+		Include []ConfigReference `yaml:"include" json:"include"`
+	}
+	if err := yaml.Unmarshal(configContent, &config); err != nil {
+		return false, err
+	}
+	return len(config.Include) > 0, nil
+}
+
 type RepoInfoProvider interface {
 	GetRepoInfo(repoPth string) (*RepoInfo, error)
 }
@@ -17,25 +27,18 @@ type FileReader interface {
 	ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error)
 }
 
-type FileCache interface {
-	GetFileContent(key string) ([]byte, error)
-	SetFileContent(key string, content []byte) error
-}
-
 type Merger struct {
 	repoInfoProvider RepoInfoProvider
 	fileReader       FileReader
-	fileCache        FileCache
 	logger           logV2.Logger
 
 	repoInfo RepoInfo
 }
 
-func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, fileCache FileCache, logger logV2.Logger) Merger {
+func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger logV2.Logger) Merger {
 	return Merger{
 		repoInfoProvider: repoInfoProvider,
 		fileReader:       fileReader,
-		fileCache:        fileCache,
 		logger:           logger,
 	}
 }
@@ -113,27 +116,7 @@ func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]b
 	if localReference {
 		return m.readLocalConfigModule(reference)
 	} else {
-		if m.fileCache != nil {
-			b, err := m.fileCache.GetFileContent(reference.Key())
-			if err != nil {
-				m.logger.Warnf("Failed to read file (%s) from cache: %s", reference.Key(), err)
-			} else if len(b) > 0 {
-				return b, nil
-			}
-		}
-
-		b, err := m.readRemoteConfigModule(reference)
-		if err != nil {
-			return nil, err
-		}
-
-		if m.fileCache != nil {
-			if err := m.fileCache.SetFileContent(reference.Key(), b); err != nil {
-				m.logger.Warnf("Failed to cache file (%s): %s", reference.Key(), err)
-			}
-		}
-
-		return b, nil
+		return m.readRemoteConfigModule(reference)
 	}
 }
 
