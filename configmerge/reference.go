@@ -2,9 +2,7 @@ package configmerge
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 )
 
 type ConfigReference struct {
@@ -15,25 +13,70 @@ type ConfigReference struct {
 	Path       string `yaml:"path" json:"path"`
 }
 
+func NewConfigReference(repository, branch, commit, tag, path string) ConfigReference {
+	return ConfigReference{
+		Repository: repository,
+		Branch:     branch,
+		Commit:     commit,
+		Tag:        tag,
+	}
+}
+
 func (r ConfigReference) Key() string {
-	var key string
+	if r.Branch == "" && r.Tag == "" && r.Commit == "" {
+		return ""
+	}
+
+	key := r.Path
 	if r.Repository != "" {
-		key = fmt.Sprintf("%s/%s", r.Repository, r.Path)
-	} else {
-		key = r.Path
+		key = "repo:" + r.Repository + "," + r.Path
 	}
 
 	if r.Commit != "" {
-		key += fmt.Sprintf("@%s", r.Commit)
+		key += "@commit:" + r.Commit
 	} else if r.Tag != "" {
-		key += fmt.Sprintf("@%s", r.Tag)
+		key += "@tag:" + r.Tag
 	} else if r.Branch != "" {
-		key += fmt.Sprintf("@%s", r.Branch)
+		key += "@branch:" + r.Branch
 	}
 
-	key = filepath.FromSlash(key)
-	key = strings.ReplaceAll(key, string(os.PathSeparator), "_")
-	key = strings.ReplaceAll(key, ":", "_")
-
 	return key
+}
+
+func (r ConfigReference) Validate() error {
+	key := r.Key()
+
+	includePath := r.Path
+	if includePath == "" {
+		return fmt.Errorf("missing YML path in reference: %s", key)
+	}
+
+	if filepath.Ext(includePath) != ".yml" && filepath.Ext(includePath) != ".yaml" {
+		return fmt.Errorf("invalid YML path in reference (%s): %s is not a yaml file", key, includePath)
+	}
+
+	includeCommit := r.Commit
+	isCommitValid := true
+	if includeCommit != "" {
+		isCommitValid = false
+
+		if len(includeCommit) > 5 && len(includeCommit) < 9 {
+			isCommitValid = true
+		} else if len(includeCommit) == 40 {
+			isCommitValid = true
+		}
+	}
+	if !isCommitValid {
+		return fmt.Errorf("invalid commit hash in reference (%s): %s", key, includeCommit)
+	}
+
+	includeRepo := r.Repository
+	includeBranch := r.Branch
+	includeTag := r.Tag
+	if includeRepo != "" && includeBranch == "" && includeTag == "" && includeCommit == "" {
+		return fmt.Errorf("incomplete reference (%s): repository specified without branch, tag or commit", key)
+
+	}
+
+	return nil
 }

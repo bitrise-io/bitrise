@@ -70,12 +70,12 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		Path:       mainConfigPth,
 	}
 
-	b, err := m.fileReader.ReadFileFromFileSystem(mainConfigPth)
+	mainConfigBytes, err := m.fileReader.ReadFileFromFileSystem(mainConfigPth)
 	if err != nil {
 		return "", nil, err
 	}
 
-	configTree, err := m.buildConfigTree(b, mainConfigRef)
+	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef)
 	if err != nil {
 		return "", nil, err
 	}
@@ -95,26 +95,31 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 	if err := yaml.Unmarshal(configContent, &config); err != nil {
 		return nil, err
 	}
-
-	var includedConfigs []models.ConfigFileTreeModel
 	for _, include := range config.Include {
-		b, err := m.readConfigModule(include, m.repoInfo)
+		if err := include.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	var includedConfigTrees []models.ConfigFileTreeModel
+	for _, include := range config.Include {
+		moduleBytes, err := m.readConfigModule(include, m.repoInfo)
 		if err != nil {
 			return nil, err
 		}
 
-		tree, err := m.buildConfigTree(b, include)
+		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include)
 		if err != nil {
 			return nil, err
 		}
 
-		includedConfigs = append(includedConfigs, *tree)
+		includedConfigTrees = append(includedConfigTrees, *moduleConfigTree)
 	}
 
 	return &models.ConfigFileTreeModel{
 		Path:     reference.Key(),
 		Contents: string(configContent),
-		Includes: includedConfigs,
+		Includes: includedConfigTrees,
 	}, nil
 }
 
