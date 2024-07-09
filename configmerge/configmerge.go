@@ -119,23 +119,20 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 }
 
 func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]byte, error) {
-	localReference, err := isLocalReference(reference, info)
-	if err != nil {
-		return nil, err
+	if isLocalReference(reference) {
+		return m.readLocalConfigModule(reference)
 	}
 
-	if localReference {
+	if sameRepo, err := isSameRepoReference(reference, info); err != nil {
+		m.logger.Warnf("Failed to check if the reference is from the same repository: %s", err)
+	} else if sameRepo {
 		return m.readLocalConfigModule(reference)
-	} else {
-		return m.readRemoteConfigModule(reference)
 	}
+
+	return m.readRemoteConfigModule(reference)
 }
 
-func isLocalReference(reference ConfigReference, info RepoInfo) (bool, error) {
-	if reference.Repository == "" {
-		return true, nil
-	}
-
+func isSameRepoReference(reference ConfigReference, info RepoInfo) (bool, error) {
 	refGitUrl, err := parseGitRepoURL(reference.Repository)
 	if err != nil {
 		return false, err
@@ -161,6 +158,10 @@ func isLocalReference(reference ConfigReference, info RepoInfo) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func isLocalReference(reference ConfigReference) bool {
+	return reference.Repository == ""
 }
 
 func (m *Merger) readLocalConfigModule(reference ConfigReference) ([]byte, error) {
