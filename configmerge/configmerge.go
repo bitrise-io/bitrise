@@ -42,17 +42,17 @@ func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, fileCac
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	repoDir := filepath.Dir(mainConfigPth)
-	info, err := m.repoInfoProvider.GetRepoInfo(repoDir)
+	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
 		return "", nil, err
 	}
-	m.repoInfo = *info
+	m.repoInfo = *repoInfo
 
-	ref := ConfigReference{
-		Repository: info.DefaultRemoteURL,
-		Commit:     info.Commit,
-		Tag:        info.Tag,
-		Branch:     info.Branch,
+	mainConfigRef := ConfigReference{
+		Repository: repoInfo.DefaultRemoteURL,
+		Commit:     repoInfo.Commit,
+		Tag:        repoInfo.Tag,
+		Branch:     repoInfo.Branch,
 		Path:       mainConfigPth,
 	}
 
@@ -61,7 +61,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		return "", nil, err
 	}
 
-	configTree, err := m.buildConfigTree(b, ref)
+	configTree, err := m.buildConfigTree(b, mainConfigRef)
 	if err != nil {
 		return "", nil, err
 	}
@@ -116,7 +116,7 @@ func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]b
 		if m.fileCache != nil {
 			b, err := m.fileCache.GetFileContent(reference.Key())
 			if err != nil {
-				m.logger.Warnf("Failed to read file (%s) from cache: %s", err)
+				m.logger.Warnf("Failed to read file (%s) from cache: %s", reference.Key(), err)
 			} else if len(b) > 0 {
 				return b, nil
 			}
@@ -129,7 +129,7 @@ func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]b
 
 		if m.fileCache != nil {
 			if err := m.fileCache.SetFileContent(reference.Key(), b); err != nil {
-				m.logger.Warnf("Failed to cache file (%s): %s", err)
+				m.logger.Warnf("Failed to cache file (%s): %s", reference.Key(), err)
 			}
 		}
 
