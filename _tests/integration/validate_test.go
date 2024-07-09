@@ -201,7 +201,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		}, runtimeLimit)
 		require.Error(t, err, out)
-		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (%s) is not valid: missing format_version\"}}}", configPth)
+		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"config (%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
