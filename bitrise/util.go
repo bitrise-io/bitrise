@@ -233,6 +233,13 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 	return
 }
 
+func ConfigModelFromFileContent(configBytes []byte, isJSON bool) (models.BitriseDataModel, []string, error) {
+	if isJSON {
+		return ConfigModelFromJSONBytes(configBytes)
+	}
+	return ConfigModelFromYAMLBytes(configBytes)
+}
+
 // ConfigModelFromJSONBytes ...
 func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {

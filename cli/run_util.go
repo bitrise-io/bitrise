@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/analytics"
 	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/cli/docker"
+	"github.com/bitrise-io/bitrise/configmerge"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/log/logwriter"
@@ -883,42 +884,71 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 }
 
 func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
-	bitriseConfig := models.BitriseDataModel{}
+	var bitriseConfig *models.BitriseDataModel
 	warnings := []string{}
 
 	if bitriseConfigBase64Data != "" {
 		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
 		warnings = warns
 		if err != nil {
-			return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to get config (bitrise.yml) from base 64 data, err: %s", err)
+			return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to get Bitrise config (bitrise.yml) from base 64 data: %w", err)
 		}
-		bitriseConfig = config
+		bitriseConfig = &config
 	} else {
 		bitriseConfigPath, err := GetBitriseConfigFilePath(bitriseConfigPath)
 		if err != nil {
-			return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to get config (bitrise.yml) path: %s", err)
+			return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to get Bitrise config (bitrise.yml) path: %w", err)
 		}
 		if bitriseConfigPath == "" {
-			return models.BitriseDataModel{}, []string{}, errors.New("Failed to get config (bitrise.yml) path: empty bitriseConfigPath")
+			return models.BitriseDataModel{}, []string{}, errors.New("empty Bitrise config (bitrise.yml) path")
 		}
 
-		config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
-		warnings = warns
-		if err != nil {
-			return models.BitriseDataModel{}, warnings, fmt.Errorf("Config (path:%s) is not valid: %s", bitriseConfigPath, err)
+		if !configs.IsCIMode {
+			isModularConfig, err := configmerge.IsModularConfig(bitriseConfigPath)
+			if err != nil {
+				log.Warnf("Failed to check if the config is modular: %s", err)
+			} else if isModularConfig {
+				logger := logV2.NewLogger()
+				repoInfoProvider := configmerge.NewRepoInfoProvider()
+				fileReader := configmerge.NewFileReader(logger)
+				merger := configmerge.NewMerger(repoInfoProvider, fileReader, logger)
+				mergedConfigContent, _, err := merger.MergeConfig(bitriseConfigPath)
+				if err != nil {
+					return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
+				}
+
+				config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), filepath.Ext(bitriseConfigPath) == "json")
+				warnings = warns
+				if err != nil {
+					return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
+				}
+				bitriseConfig = &config
+			}
 		}
-		bitriseConfig = config
+
+		if bitriseConfig == nil {
+			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+			warnings = warns
+			if err != nil {
+				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
+			}
+			bitriseConfig = &config
+		}
+	}
+
+	if bitriseConfig == nil {
+		return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to create Bitrise config model")
 	}
 
 	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
 	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
 	}
 	if !isConfigVersionOK {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("The bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("the bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
 	}
 
-	return bitriseConfig, warnings, nil
+	return *bitriseConfig, warnings, nil
 }
 
 func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {

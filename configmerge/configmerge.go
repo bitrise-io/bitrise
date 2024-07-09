@@ -1,6 +1,8 @@
 package configmerge
 
 import (
+	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/models"
@@ -8,11 +10,20 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func IsModularConfig(configContent []byte) (bool, error) {
+func IsModularConfig(mainConfigPth string) (bool, error) {
+	mainConfigFile, err := os.Open(mainConfigPth)
+	if err != nil {
+		return false, err
+	}
+	mainConfigContent, err := io.ReadAll(mainConfigFile)
+	if err != nil {
+		return false, err
+	}
+
 	var config struct {
 		Include []ConfigReference `yaml:"include" json:"include"`
 	}
-	if err := yaml.Unmarshal(configContent, &config); err != nil {
+	if err := yaml.Unmarshal(mainConfigContent, &config); err != nil {
 		return false, err
 	}
 	return len(config.Include) > 0, nil
