@@ -16,7 +16,8 @@ import (
 const (
 	MaxIncludeCountPerFile = 10
 	MaxFilesCountTotal     = 20
-	MaxIncludeDepth        = 5 // root + 4 includes
+	MaxIncludeDepth        = 5           // root + 4 includes
+	MaxFileSizeBytes       = 1024 * 1024 // 1MB
 )
 
 func IsModularConfig(mainConfigPth string) (bool, error) {
@@ -100,7 +101,12 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 }
 
 func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
-	keys = append(keys, reference.Key())
+	key := reference.Key()
+	keys = append(keys, key)
+
+	if len(configContent) > MaxFileSizeBytes {
+		return nil, fmt.Errorf("max file size (%d bytes) exceeded in file %s", MaxFileSizeBytes, key)
+	}
 
 	if depth > MaxIncludeDepth {
 		return nil, fmt.Errorf("max include depth (%d) exceeded", MaxIncludeDepth)
@@ -159,7 +165,7 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 	}
 
 	return &models.ConfigFileTreeModel{
-		Path:     reference.Key(),
+		Path:     key,
 		Contents: string(configContent),
 		Includes: includedConfigTrees,
 		Depth:    depth,

@@ -19,6 +19,23 @@ func TestMerger_MergeConfig_Validation(t *testing.T) {
 		wantErr          string
 	}{
 		{
+			name: "Max file size is 1MB",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(strings.Repeat(" ", MaxFileSizeBytes+1)),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantErr:       "max file size (1048576 bytes) exceeded in file repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
+		},
+		{
 			name: "Circular dependency is not allowed",
 			repoInfoProvider: mockRepoInfoProvider{
 				repoInfo: &RepoInfo{
@@ -41,7 +58,7 @@ include:
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "circular includes detected: repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_2.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
+			wantErr:       "circular reference detected: repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_2.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
 		},
 		{
 			name: "Max 10 include items are allowed",
