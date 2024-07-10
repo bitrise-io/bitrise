@@ -12,19 +12,19 @@ trigger_map:
 pipelines:
   ci:
     stages:
-    - run_tests: {}
+    - run_tests: { }
 
 stages:
   run_tests:
     workflows:
-    - lint: {}
-    - unit_test: {}
-    - integration_test: {}
-    - test_binary_build: {}
+    - lint: { }
+    - unit_test: { }
+    - integration_test: { }
+    - test_binary_build: { }
 
 app:
   envs:
-  - SRC_DIR_IN_GOPATH: "$GOPATH/src/github.com/bitrise-io/bitrise"
+  - SRC_DIR_IN_GOPATH:  $GOPATH/src/github.com/bitrise-io/bitrise
 
 workflows:
   lint:
@@ -41,40 +41,40 @@ workflows:
             apt-get --assume-yes install python3.8-venv
     - change-workdir:
         inputs:
-        - path: "${SRC_DIR_IN_GOPATH}"
+        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
-        - fetch_tags: 'yes'
+        - fetch_tags: "yes"
     - git::https://github.com/bitrise-steplib/steps-check.git:
         inputs:
         - workflow: lint
         - skip_step_yml_validation: "yes"
-    - deploy-to-bitrise-io: {}
+    - deploy-to-bitrise-io: { }
 
   unit_test:
     steps:
     - change-workdir:
         inputs:
-        - path: "${SRC_DIR_IN_GOPATH}"
+        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
-        - fetch_tags: 'yes'
+        - fetch_tags: "yes"
     - go-list: { }
     - script:
         title: Go test
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
-    - deploy-to-bitrise-io: {}
+    - deploy-to-bitrise-io: { }
 
   integration_test:
     title: Runs integration tests
     steps:
     - change-workdir:
         inputs:
-        - path: "${SRC_DIR_IN_GOPATH}"
+        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
-        - fetch_tags: 'yes'
+        - fetch_tags: "yes"
     - script:
         title: Run integration tests
         inputs:
@@ -96,7 +96,7 @@ workflows:
             if [ "$(uname)" == "Linux" ]; then
                 go test -v ./_tests/integration/ --tags linux_only
             fi
-    - deploy-to-bitrise-io: {}
+    - deploy-to-bitrise-io: { }
 
   test_binary_build:
     description: Tests the release build process by creating a snapshot release (without publishing)
@@ -117,10 +117,10 @@ workflows:
             sudo dpkg -i /tmp/goreleaser.deb
     - change-workdir:
         inputs:
-        - path: "${SRC_DIR_IN_GOPATH}"
+        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
-        - fetch_tags: 'yes'
+        - fetch_tags: "yes"
     - script:
         title: Goreleaser (create snapshot binaries)
         deps:
@@ -132,7 +132,7 @@ workflows:
             set -ex
 
             goreleaser release --snapshot --rm-dist
-    - deploy-to-bitrise-io: {}
+    - deploy-to-bitrise-io: { }
 
 meta:
   bitrise.io:
