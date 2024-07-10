@@ -13,20 +13,7 @@ type ConfigReference struct {
 	Path       string `yaml:"path" json:"path"`
 }
 
-func NewConfigReference(repository, branch, commit, tag, path string) ConfigReference {
-	return ConfigReference{
-		Repository: repository,
-		Branch:     branch,
-		Commit:     commit,
-		Tag:        tag,
-	}
-}
-
 func (r ConfigReference) Key() string {
-	if r.Branch == "" && r.Tag == "" && r.Commit == "" {
-		return ""
-	}
-
 	key := r.Path
 	if r.Repository != "" {
 		key = "repo:" + r.Repository + "," + r.Path

@@ -1,11 +1,137 @@
 package configmerge
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMerger_MergeConfig_Validation(t *testing.T) {
+	tests := []struct {
+		name             string
+		repoInfoProvider RepoInfoProvider
+		fileReader       FileReader
+		mainConfigPth    string
+		wantConfig       string
+		wantErr          string
+	}{
+		{
+			name: "Circular dependency is not allowed",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(`format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: module_1.yml`),
+					"module_1.yml": []byte(`include:
+- path: module_2.yml`),
+					"module_2.yml": []byte(`include:
+- path: module_1.yml`),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantErr:       "circular includes detected: repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_2.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
+		},
+		{
+			name: "Max 20 config files are allowed",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+%s`, strings.Repeat("- path: path_1.yml\n", MaxFilesCountTotal))),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantErr:       "max include count (20) exceeded",
+		},
+		{
+			name: "Max include depth is 5",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(`format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: module_1.yml
+  repository: http://github.com/bitrise-io/bitrise-yamls.git
+  branch: main`),
+				},
+				repoFilesOnBranch: map[string]map[string]map[string][]byte{
+					"http://github.com/bitrise-io/bitrise-yamls.git": {
+						"main": {
+							"module_1.yml": []byte(`include:
+- path: module_2.yml
+  repository: http://github.com/bitrise-io/bitrise-yamls.git
+  branch: main`),
+							"module_2.yml": []byte(`include:
+- path: module_3.yml
+  repository: http://github.com/bitrise-io/bitrise-yamls.git
+  branch: main`),
+							"module_3.yml": []byte(`include:
+- path: module_4.yml
+  repository: http://github.com/bitrise-io/bitrise-yamls.git
+  branch: main`),
+							"module_4.yml": []byte(`include:
+- path: module_5.yml
+  repository: http://github.com/bitrise-io/bitrise-yamls.git
+  branch: main`),
+							"module_5.yml": []byte(``),
+						},
+					},
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantErr:       "max include depth (5) exceeded",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Merger{
+				repoInfoProvider: tt.repoInfoProvider,
+				fileReader:       tt.fileReader,
+				logger:           logV2.NewLogger(),
+			}
+			got, _, err := m.MergeConfig(tt.mainConfigPth)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, tt.wantConfig, got, got)
+		})
+	}
+
+}
 
 func TestMerger_MergeConfig(t *testing.T) {
 	tests := []struct {
