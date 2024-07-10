@@ -24,7 +24,7 @@ stages:
 
 app:
   envs:
-  - SRC_DIR_IN_GOPATH:  $GOPATH/src/github.com/bitrise-io/bitrise
+  - SRC_DIR_IN_GOPATH: $GOPATH/src/github.com/bitrise-io/bitrise
 
 workflows:
   lint:
