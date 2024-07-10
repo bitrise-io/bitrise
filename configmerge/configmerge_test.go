@@ -44,6 +44,28 @@ include:
 			wantErr:       "circular includes detected: repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_2.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
 		},
 		{
+			name: "Max 10 include items are allowed",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+%s`, strings.Repeat("- path: path_1.yml\n", MaxIncludeCountPerFile+1))),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantErr:       "max include count (10) exceeded",
+		},
+		{
 			name: "Max 20 config files are allowed",
 			repoInfoProvider: mockRepoInfoProvider{
 				repoInfo: &RepoInfo{
@@ -59,11 +81,13 @@ include:
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 include:
-%s`, strings.Repeat("- path: path_1.yml\n", MaxFilesCountTotal))),
+%s`, strings.Repeat("- path: path_1.yml\n", 10))),
+					"path_1.yml": []byte(`include:
+- path: path_2.yml`),
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "max include count (20) exceeded",
+			wantErr:       "max file count (20) exceeded",
 		},
 		{
 			name: "Max include depth is 5",

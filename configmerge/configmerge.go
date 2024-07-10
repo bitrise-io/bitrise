@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	MaxFilesCountTotal = 20
-	MaxIncludeDepth    = 5 // root + 4 includes
+	MaxIncludeCountPerFile = 10
+	MaxFilesCountTotal     = 20
+	MaxIncludeDepth        = 5 // root + 4 includes
 )
 
 func IsModularConfig(mainConfigPth string) (bool, error) {
@@ -54,7 +55,6 @@ type Merger struct {
 	repoInfo RepoInfo
 
 	filesCount int
-	keys       []string
 }
 
 func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger logV2.Logger) Merger {
@@ -86,7 +86,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		return "", nil, err
 	}
 
-	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, 1)
+	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, 1, nil)
 	if err != nil {
 		return "", nil, err
 	}
@@ -99,15 +99,12 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	return mergedConfigContent, configTree, nil
 }
 
-func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int) (*models.ConfigFileTreeModel, error) {
+func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
+	keys = append(keys, reference.Key())
+
 	if depth > MaxIncludeDepth {
 		return nil, fmt.Errorf("max include depth (%d) exceeded", MaxIncludeDepth)
 	}
-
-	if sliceutil.IsStringInSlice(reference.Key(), m.keys) {
-		return nil, fmt.Errorf("circular includes detected: %s -> %s", strings.Join(m.keys, " -> "), reference.Key())
-	}
-	m.keys = append(m.keys, reference.Key())
 
 	m.filesCount++
 	if m.filesCount > MaxFilesCountTotal {
@@ -131,10 +128,19 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 			include.Tag = reference.Tag
 		}
 		config.Include[idx] = include
+
+		if sliceutil.IsStringInSlice(include.Key(), keys) {
+			return nil, fmt.Errorf("circular reference detected: %s -> %s", strings.Join(keys, " -> "), include.Key())
+		}
+	}
+
+	if len(config.Include) > MaxIncludeCountPerFile {
+		return nil, fmt.Errorf("max include count (%d) exceeded", MaxIncludeCountPerFile)
+
 	}
 
 	if m.filesCount+len(config.Include) > MaxFilesCountTotal {
-		return nil, fmt.Errorf("max include count (%d) exceeded", MaxFilesCountTotal)
+		return nil, fmt.Errorf("max file count (%d) exceeded", MaxFilesCountTotal)
 	}
 
 	var includedConfigTrees []models.ConfigFileTreeModel
@@ -144,7 +150,7 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 			return nil, err
 		}
 
-		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, depth+1)
+		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, depth+1, keys)
 		if err != nil {
 			return nil, err
 		}
