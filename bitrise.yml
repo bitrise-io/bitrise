@@ -37,7 +37,7 @@ workflows:
             #!/usr/bin/env bash
             # fail if any commands fails
             set -ex
-            
+            apt-get update
             apt-get --assume-yes install python3.8-venv
     - change-workdir:
         inputs:
