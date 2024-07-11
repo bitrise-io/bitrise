@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/log"
+
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
@@ -53,7 +55,7 @@ type Merger struct {
 	fileReader       FileReader
 	logger           logV2.Logger
 
-	repoInfo RepoInfo
+	repoInfo *RepoInfo
 
 	filesCount int
 }
@@ -70,16 +72,20 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	repoDir := filepath.Dir(mainConfigPth)
 	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
-		return "", nil, err
+		log.Debug("Failed to get repository info: %s", err)
+	} else {
+		m.repoInfo = repoInfo
 	}
-	m.repoInfo = *repoInfo
 
 	mainConfigRef := ConfigReference{
-		Repository: repoInfo.DefaultRemoteURL,
-		Commit:     repoInfo.Commit,
-		Tag:        repoInfo.Tag,
-		Branch:     repoInfo.Branch,
-		Path:       mainConfigPth,
+		Path: mainConfigPth,
+	}
+
+	if repoInfo != nil {
+		mainConfigRef.Repository = repoInfo.DefaultRemoteURL
+		mainConfigRef.Commit = repoInfo.Commit
+		mainConfigRef.Tag = repoInfo.Tag
+		mainConfigRef.Branch = repoInfo.Branch
 	}
 
 	mainConfigBytes, err := m.fileReader.ReadFileFromFileSystem(mainConfigPth)
@@ -171,27 +177,33 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 	}, nil
 }
 
-func (m *Merger) readConfigModule(reference ConfigReference, info RepoInfo) ([]byte, error) {
+func (m *Merger) readConfigModule(reference ConfigReference, repoInfo *RepoInfo) ([]byte, error) {
 	if isLocalReference(reference) {
 		return m.readLocalConfigModule(reference)
 	}
 
-	if sameRepo, err := isSameRepoReference(reference, info); err != nil {
-		m.logger.Warnf("Failed to check if the reference is from the same repository: %s", err)
-	} else if sameRepo {
+	sameRepo := false
+	if repoInfo != nil {
+		var err error
+		if sameRepo, err = isSameRepoReference(reference, *repoInfo); err != nil {
+			m.logger.Warnf("Failed to check if the reference is from the same repository: %s", err)
+		}
+	}
+
+	if sameRepo {
 		return m.readLocalConfigModule(reference)
 	}
 
 	return m.readRemoteConfigModule(reference)
 }
 
-func isSameRepoReference(reference ConfigReference, info RepoInfo) (bool, error) {
+func isSameRepoReference(reference ConfigReference, repoInfo RepoInfo) (bool, error) {
 	refGitUrl, err := parseGitRepoURL(reference.Repository)
 	if err != nil {
 		return false, err
 	}
 
-	repoGitURL, err := parseGitRepoURL(info.DefaultRemoteURL)
+	repoGitURL, err := parseGitRepoURL(repoInfo.DefaultRemoteURL)
 	if err != nil {
 		return false, err
 	}
@@ -202,12 +214,12 @@ func isSameRepoReference(reference ConfigReference, info RepoInfo) (bool, error)
 
 	switch {
 	case reference.Commit != "":
-		return reference.Commit == info.Commit ||
-			reference.Commit == info.Commit[:7], nil
+		return reference.Commit == repoInfo.Commit ||
+			reference.Commit == repoInfo.Commit[:7], nil
 	case reference.Tag != "":
-		return reference.Tag == info.Tag, nil
+		return reference.Tag == repoInfo.Tag, nil
 	case reference.Branch != "":
-		return reference.Branch == info.Branch, nil
+		return reference.Branch == repoInfo.Branch, nil
 	}
 
 	return true, nil

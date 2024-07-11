@@ -1,0 +1,8 @@
+workflows:
+  print_hello_world:
+    envs:
+    - NAME: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello $NAME!"

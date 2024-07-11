@@ -75,7 +75,7 @@ const (
 
 const (
 	selfUpdateInterval   = 24 * time.Hour
-	pluginUpdateInterval = 24 * time.Hour
+	PluginUpdateInterval = 24 * time.Hour
 )
 
 // IsDebugUseSystemTools ...
@@ -164,7 +164,7 @@ func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 	}
 
 	duration := time.Now().Sub(config.LastPluginUpdateChecks[plugin])
-	if duration >= pluginUpdateInterval {
+	if duration >= PluginUpdateInterval {
 		return true
 	}
 
