@@ -101,6 +101,7 @@ include:
 %s`, strings.Repeat("- path: path_1.yml\n", 10))),
 					"path_1.yml": []byte(`include:
 - path: path_2.yml`),
+					"path_2.yml": []byte(``),
 				},
 			},
 			mainConfigPth: "bitrise.yml",
@@ -214,6 +215,44 @@ format_version: "15"
 `,
 		},
 		{
+			name: "Follows references' relative paths",
+			repoInfoProvider: mockRepoInfoProvider{
+				repoInfo: &RepoInfo{
+					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
+					Branch:           "main",
+					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
+				},
+				err: nil,
+			},
+			fileReader: mockFileReader{
+				fileSystemFiles: map[string][]byte{
+					"bitrise.yml": []byte(`format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: configs/ci/module_1.yml`),
+					"configs/ci/module_1.yml": []byte(`include:
+- path: module_2.yml`),
+					"configs/ci/module_2.yml": []byte(`workflows:
+  print_hello:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello World!"`),
+				},
+			},
+			mainConfigPth: "bitrise.yml",
+			wantConfig: `default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+format_version: "15"
+workflows:
+  print_hello:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello World!"
+`,
+		},
+		{
 			name: "Merges remote config module",
 			repoInfoProvider: mockRepoInfoProvider{
 				repoInfo: &RepoInfo{
@@ -284,46 +323,44 @@ func (m mockRepoInfoProvider) GetRepoInfo(repoPth string) (*RepoInfo, error) {
 
 type mockFileReader struct {
 	fileSystemFiles   map[string][]byte
-	fileSystemErr     error
 	repoFilesOnCommit map[string]map[string]map[string][]byte
 	repoFilesOnTag    map[string]map[string]map[string][]byte
 	repoFilesOnBranch map[string]map[string]map[string][]byte
-	repoErr           error
 }
 
 func (m mockFileReader) ReadFileFromFileSystem(name string) ([]byte, error) {
-	return m.fileSystemFiles[name], m.fileSystemErr
+	c, ok := m.fileSystemFiles[name]
+	if !ok {
+		return nil, fmt.Errorf("file not found: %s", name)
+	}
+	return c, nil
 }
 
 func (m mockFileReader) ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
+	var repoFiles map[string]map[string]map[string][]byte
+	var checkout string
 	if commit != "" {
-		filesInRepo, ok := m.repoFilesOnCommit[repository]
-		if !ok {
-			return nil, m.repoErr
-		}
-		filesOnCommit, ok := filesInRepo[commit]
-		if !ok {
-			return nil, m.repoErr
-		}
-		return filesOnCommit[path], m.repoErr
+		repoFiles = m.repoFilesOnCommit
+		checkout = commit
 	} else if tag != "" {
-		filesInRepo, ok := m.repoFilesOnTag[repository]
-		if !ok {
-			return nil, m.repoErr
-		}
-		filesOnTag, ok := filesInRepo[tag]
-		if !ok {
-			return nil, m.repoErr
-		}
-		return filesOnTag[path], m.repoErr
+		repoFiles = m.repoFilesOnTag
+		checkout = tag
+	} else {
+		repoFiles = m.repoFilesOnBranch
+		checkout = branch
 	}
-	filesInRepo, ok := m.repoFilesOnBranch[repository]
+
+	filesInRepo, ok := repoFiles[repository]
 	if !ok {
-		return nil, m.repoErr
+		return nil, fmt.Errorf("repo not found: %s", repository)
 	}
-	filesOnBranch, ok := filesInRepo[branch]
+	filesOnCommit, ok := filesInRepo[checkout]
 	if !ok {
-		return nil, m.repoErr
+		return nil, fmt.Errorf("checkout param not found: %s", checkout)
 	}
-	return filesOnBranch[path], m.repoErr
+	c, ok := filesOnCommit[path]
+	if !ok {
+		return nil, fmt.Errorf("file not found: %s", path)
+	}
+	return c, nil
 }

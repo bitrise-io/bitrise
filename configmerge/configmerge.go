@@ -53,8 +53,7 @@ type Merger struct {
 	fileReader       FileReader
 	logger           logV2.Logger
 
-	repoInfo      *RepoInfo
-	mainConfigDir string
+	repoInfo *RepoInfo
 
 	filesCount int
 }
@@ -69,7 +68,6 @@ func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger 
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	repoDir := filepath.Dir(mainConfigPth)
-	m.mainConfigDir = repoDir
 
 	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
@@ -94,7 +92,8 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		return "", nil, err
 	}
 
-	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, 1, nil)
+	mainConfigDir := filepath.Dir(mainConfigPth)
+	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, mainConfigDir, 1, nil)
 	if err != nil {
 		return "", nil, err
 	}
@@ -107,7 +106,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	return mergedConfigContent, configTree, nil
 }
 
-func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
+func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, dir string, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
 	key := reference.Key()
 	keys = append(keys, key)
 
@@ -157,12 +156,13 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 
 	var includedConfigTrees []models.ConfigFileTreeModel
 	for _, include := range config.Include {
-		moduleBytes, err := m.readConfigModule(include, m.repoInfo)
+		moduleBytes, err := m.readConfigModule(include, dir, m.repoInfo)
 		if err != nil {
 			return nil, err
 		}
 
-		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, depth+1, keys)
+		moduleDir := filepath.Dir(include.Path)
+		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, moduleDir, depth+1, keys)
 		if err != nil {
 			return nil, err
 		}
@@ -178,9 +178,9 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 	}, nil
 }
 
-func (m *Merger) readConfigModule(reference ConfigReference, repoInfo *RepoInfo) ([]byte, error) {
+func (m *Merger) readConfigModule(reference ConfigReference, dir string, repoInfo *RepoInfo) ([]byte, error) {
 	if isLocalReference(reference) {
-		return m.readLocalConfigModule(reference)
+		return m.readLocalConfigModule(reference, dir)
 	}
 
 	sameRepo := false
@@ -192,7 +192,7 @@ func (m *Merger) readConfigModule(reference ConfigReference, repoInfo *RepoInfo)
 	}
 
 	if sameRepo {
-		return m.readLocalConfigModule(reference)
+		return m.readLocalConfigModule(reference, dir)
 	}
 
 	return m.readRemoteConfigModule(reference)
@@ -230,10 +230,10 @@ func isLocalReference(reference ConfigReference) bool {
 	return reference.Repository == ""
 }
 
-func (m *Merger) readLocalConfigModule(reference ConfigReference) ([]byte, error) {
+func (m *Merger) readLocalConfigModule(reference ConfigReference, dir string) ([]byte, error) {
 	pth := reference.Path
 	if !filepath.IsAbs(pth) {
-		pth = filepath.Join(m.mainConfigDir, pth)
+		pth = filepath.Join(dir, pth)
 	}
 	return m.fileReader.ReadFileFromFileSystem(pth)
 }
