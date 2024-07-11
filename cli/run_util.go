@@ -903,27 +903,25 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 			return models.BitriseDataModel{}, []string{}, errors.New("empty Bitrise config (bitrise.yml) path")
 		}
 
-		if !configs.IsCIMode {
-			isModularConfig, err := configmerge.IsModularConfig(bitriseConfigPath)
+		isModularConfig, err := configmerge.IsModularConfig(bitriseConfigPath)
+		if err != nil {
+			log.Warnf("Failed to check if the config is modular: %s", err)
+		} else if isModularConfig {
+			logger := logV2.NewLogger()
+			repoInfoProvider := configmerge.NewRepoInfoProvider()
+			fileReader := configmerge.NewFileReader(logger)
+			merger := configmerge.NewMerger(repoInfoProvider, fileReader, logger)
+			mergedConfigContent, _, err := merger.MergeConfig(bitriseConfigPath)
 			if err != nil {
-				log.Warnf("Failed to check if the config is modular: %s", err)
-			} else if isModularConfig {
-				logger := logV2.NewLogger()
-				repoInfoProvider := configmerge.NewRepoInfoProvider()
-				fileReader := configmerge.NewFileReader(logger)
-				merger := configmerge.NewMerger(repoInfoProvider, fileReader, logger)
-				mergedConfigContent, _, err := merger.MergeConfig(bitriseConfigPath)
-				if err != nil {
-					return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
-				}
-
-				config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), filepath.Ext(bitriseConfigPath) == "json")
-				warnings = warns
-				if err != nil {
-					return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
-				}
-				bitriseConfig = &config
+				return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
 			}
+
+			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), filepath.Ext(bitriseConfigPath) == "json")
+			warnings = warns
+			if err != nil {
+				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
+			}
+			bitriseConfig = &config
 		}
 
 		if bitriseConfig == nil {
