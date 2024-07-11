@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
@@ -19,6 +20,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// InventoryModelFromYAMLBytes ...
 func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
 	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
 		return
@@ -53,6 +55,7 @@ func searchEnvInSlice(searchForEnvKey string, searchIn []envmanModels.Environmen
 	return envmanModels.EnvironmentItemModel{}, -1, nil
 }
 
+// ApplyOutputAliases ...
 func ApplyOutputAliases(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
 	for _, basedOnEnv := range basedOnEnvs {
 		envKey, envKeyAlias, err := basedOnEnv.GetKeyValuePair()
@@ -85,6 +88,7 @@ func ApplyOutputAliases(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel)
 	return onEnvs, nil
 }
 
+// ApplySensitiveOutputs ...
 func ApplySensitiveOutputs(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemModel) ([]envmanModels.EnvironmentItemModel, error) {
 	for _, basedOnEnv := range basedOnEnvs {
 		envKey, _, err := basedOnEnv.GetKeyValuePair()
@@ -130,6 +134,7 @@ func ApplySensitiveOutputs(onEnvs, basedOnEnvs []envmanModels.EnvironmentItemMod
 	return onEnvs, nil
 }
 
+// CollectEnvironmentsFromFile ...
 func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemModel, error) {
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
@@ -139,6 +144,7 @@ func CollectEnvironmentsFromFile(pth string) ([]envmanModels.EnvironmentItemMode
 	return CollectEnvironmentsFromFileContent(bytes)
 }
 
+// CollectEnvironmentsFromFileContent ...
 func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.EnvironmentItemModel, error) {
 	var envstore envmanModels.EnvsSerializeModel
 	if err := yaml.Unmarshal(bytes, &envstore); err != nil {
@@ -160,6 +166,7 @@ func CollectEnvironmentsFromFileContent(bytes []byte) ([]envmanModels.Environmen
 	return envstore.Envs, nil
 }
 
+// CleanupStepWorkDir ...
 func CleanupStepWorkDir() error {
 	stepYMLPth := filepath.Join(configs.BitriseWorkDirPath, "current_step.yml")
 	if err := command.RemoveFile(stepYMLPth); err != nil {
@@ -212,13 +219,7 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) 
 	return warnings, nil
 }
 
-func ConfigModelFromFileContent(configBytes []byte, isJSON bool) (models.BitriseDataModel, []string, error) {
-	if isJSON {
-		return ConfigModelFromJSONBytes(configBytes)
-	}
-	return ConfigModelFromYAMLBytes(configBytes)
-}
-
+// ConfigModelFromYAMLBytes ...
 func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
@@ -232,6 +233,14 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 	return
 }
 
+func ConfigModelFromFileContent(configBytes []byte, isJSON bool) (models.BitriseDataModel, []string, error) {
+	if isJSON {
+		return ConfigModelFromJSONBytes(configBytes)
+	}
+	return ConfigModelFromYAMLBytes(configBytes)
+}
+
+// ConfigModelFromJSONBytes ...
 func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
 		return
@@ -244,6 +253,7 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 	return
 }
 
+// ReadBitriseConfig ...
 func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
@@ -260,9 +270,16 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 		return models.BitriseDataModel{}, []string{}, errors.New("empty config")
 	}
 
-	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"))
+	if strings.HasSuffix(pth, ".json") {
+		log.Debug("=> Using JSON parser for: ", pth)
+		return ConfigModelFromJSONBytes(bytes)
+	}
+
+	log.Debug("=> Using YAML parser for: ", pth)
+	return ConfigModelFromYAMLBytes(bytes)
 }
 
+// ReadSpecStep ...
 func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return stepmanModels.StepModel{}, err
