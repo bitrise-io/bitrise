@@ -12,8 +12,8 @@ import (
 
 var mergeConfigCommand = cli.Command{
 	Name:      "merge",
-	Usage:     "Resolves includes in a modular bitrise.yml and merge included config modules into a single bitrise.yml file.",
-	ArgsUsage: "args[0]: By default the command looks for a bitrise.yml in the current directory, custom path can be specified as an argument.",
+	Usage:     "Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.",
+	ArgsUsage: "args[0]: By default, the command looks for a bitrise.yml in the current directory, custom path can be specified as an argument.",
 	Action:    mergeConfig,
 	Flags:     []cli.Flag{},
 }
@@ -47,7 +47,9 @@ func mergeConfig(c *cli.Context) error {
 
 func printConfigFileTree(configFileTree models.ConfigFileTreeModel, logger logV2.Logger) {
 	b, err := json.MarshalIndent(configFileTree, "", "\t")
-	if err == nil {
+	if err != nil {
+		logger.Warnf("Failed to parse config tree: %s", err)
+	} else {
 		logger.Printf(string(b))
 	}
 }
