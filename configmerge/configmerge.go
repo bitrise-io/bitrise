@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/log"
-
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
@@ -72,7 +70,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	repoDir := filepath.Dir(mainConfigPth)
 	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
-		log.Debug("Failed to get repository info: %s", err)
+		m.logger.Debugf("Failed to get repository info: %s", err)
 	} else {
 		m.repoInfo = repoInfo
 	}
