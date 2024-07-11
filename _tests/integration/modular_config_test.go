@@ -1,6 +1,8 @@
 package integration
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -9,9 +11,15 @@ import (
 
 func Test_ModularConfig_Run(t *testing.T) {
 	configPth := "modular_config_main.yml"
+	deployDir := os.Getenv("BITRISE_DEPLOY_DIR")
+	resultDir := filepath.Join(deployDir, "merged")
 
-	cmd := command.New(binPath(), "validate", "--config", configPth)
+	cmd := command.New(binPath(), "merge", configPth, "-o", resultDir)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, out)
+
+	cmd = command.New(binPath(), "validate", "--config", configPth)
+	out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 	require.Equal(t, "Config is valid: \u001B[32;1mtrue\u001B[0m", out)
 

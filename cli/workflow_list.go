@@ -209,7 +209,7 @@ func workflowList(c *cli.Context) error {
 	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
 	warnings = append(warnings, warns...)
 	if err != nil {
-		logger.Print(NewErrorOutput("Either define --minimal or --id-only", warnings...))
+		logger.Print(NewErrorOutput(fmt.Sprintf("Failed to create bitrise config: %s", err)))
 		os.Exit(1)
 	}
 
