@@ -53,7 +53,8 @@ type Merger struct {
 	fileReader       FileReader
 	logger           logV2.Logger
 
-	repoInfo *RepoInfo
+	repoInfo      *RepoInfo
+	mainConfigDir string
 
 	filesCount int
 }
@@ -68,6 +69,8 @@ func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger 
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	repoDir := filepath.Dir(mainConfigPth)
+	m.mainConfigDir = repoDir
+
 	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
 		m.logger.Debugf("Failed to get repository info: %s", err)
@@ -228,7 +231,11 @@ func isLocalReference(reference ConfigReference) bool {
 }
 
 func (m *Merger) readLocalConfigModule(reference ConfigReference) ([]byte, error) {
-	return m.fileReader.ReadFileFromFileSystem(reference.Path)
+	pth := reference.Path
+	if !filepath.IsAbs(pth) {
+		pth = filepath.Join(m.mainConfigDir, pth)
+	}
+	return m.fileReader.ReadFileFromFileSystem(pth)
 }
 
 func (m *Merger) readRemoteConfigModule(reference ConfigReference) ([]byte, error) {
