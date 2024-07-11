@@ -58,7 +58,7 @@ func (p repoInfoProvider) GetRepoInfo(repoPth string) (*RepoInfo, error) {
 			return err
 		}
 
-		if obj.Target == head.Hash() {
+		if obj != nil && obj.Target == head.Hash() {
 			tag = ref.Name().Short()
 		}
 
