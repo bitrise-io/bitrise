@@ -123,6 +123,14 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 	if err := yaml.Unmarshal(configContent, &config); err != nil {
 		return nil, err
 	}
+
+	if len(config.Include) > MaxIncludeCountPerFile {
+		return nil, fmt.Errorf("max include count (%d) exceeded", MaxIncludeCountPerFile)
+	}
+	if m.filesCount+len(config.Include) > MaxFilesCountTotal {
+		return nil, fmt.Errorf("max file count (%d) exceeded", MaxFilesCountTotal)
+	}
+
 	for idx, include := range config.Include {
 		if err := include.Validate(); err != nil {
 			return nil, err
@@ -138,15 +146,6 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 		if sliceutil.IsStringInSlice(include.Key(), keys) {
 			return nil, fmt.Errorf("circular reference detected: %s -> %s", strings.Join(keys, " -> "), include.Key())
 		}
-	}
-
-	if len(config.Include) > MaxIncludeCountPerFile {
-		return nil, fmt.Errorf("max include count (%d) exceeded", MaxIncludeCountPerFile)
-
-	}
-
-	if m.filesCount+len(config.Include) > MaxFilesCountTotal {
-		return nil, fmt.Errorf("max file count (%d) exceeded", MaxFilesCountTotal)
 	}
 
 	var includedConfigTrees []models.ConfigFileTreeModel
