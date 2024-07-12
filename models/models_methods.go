@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -105,6 +106,33 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
+func (bundle *StepBundleListItemModel) Normalize() error {
+	for _, env := range bundle.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (bundle *StepBundleModel) Normalize() error {
+	for _, env := range bundle.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (container *Container) Normalize() error {
+	for _, env := range container.Envs {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (workflow *WorkflowModel) Normalize() error {
 	for _, env := range workflow.Environments {
 		if err := env.Normalize(); err != nil {
@@ -113,15 +141,28 @@ func (workflow *WorkflowModel) Normalize() error {
 	}
 
 	for _, stepListItem := range workflow.Steps {
-		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+		_, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
-		if key != StepListItemWithKey {
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return err
+			}
+
 			if err := step.Normalize(); err != nil {
 				return err
 			}
-			stepListItem[key] = step
+		} else if t == StepListItemTypeBundle {
+			bundle, err := stepListItem.GetBundle()
+			if err != nil {
+				return err
+			}
+
+			if err := bundle.Normalize(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -139,23 +180,42 @@ func (app *AppModel) Normalize() error {
 
 func (config *BitriseDataModel) Normalize() error {
 	if err := config.App.Normalize(); err != nil {
-		return err
+		return fmt.Errorf("failed to normalize app: %w", err)
 	}
 
 	normalizedTriggerMap, err := config.TriggerMap.Normalized()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to normalize trigger_map: %w", err)
 	}
 	config.TriggerMap = normalizedTriggerMap
 
-	for _, workflow := range config.Workflows {
-		if err := workflow.Normalize(); err != nil {
-			return err
+	for _, container := range config.Containers {
+		if err := container.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize container: %w", err)
 		}
 	}
+
+	for _, container := range config.Services {
+		if err := container.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize service: %w", err)
+		}
+	}
+
+	for _, stepBundle := range config.StepBundles {
+		if err := stepBundle.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize step_bundle: %w", err)
+		}
+	}
+
+	for _, workflow := range config.Workflows {
+		if err := workflow.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize workflow: %w", err)
+		}
+	}
+
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to normalize meta: %w", err)
 	}
 	config.Meta = normalizedMeta
 
@@ -164,6 +224,47 @@ func (config *BitriseDataModel) Normalize() error {
 
 // ----------------------------
 // --- Validate
+
+func (bundle *StepBundleListItemModel) Validate() error {
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (bundle *StepBundleModel) Validate() ([]string, error) {
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	var warnings []string
+	for _, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return warnings, err
+		}
+
+		warns, err := validateStep(stepID, step)
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, err
+		}
+	}
+	return warnings, nil
+}
+
+func (container *Container) Validate() error {
+	for _, env := range container.Envs {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
 	var warnings []string
@@ -203,31 +304,128 @@ func (with WithModel) Validate(workflowID string, containers, services map[strin
 
 }
 
-func (workflow *WorkflowModel) Validate() ([]string, error) {
-	var warnings []string
-
+func (workflow *WorkflowModel) Validate() error {
 	for _, env := range workflow.Environments {
 		if err := env.Validate(); err != nil {
-			return warnings, err
+			return err
+		}
+	}
+	return nil
+}
+
+func (app *AppModel) Validate() error {
+	for _, env := range app.Environments {
+		if err := env.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (config *BitriseDataModel) Validate() ([]string, error) {
+	var warnings []string
+
+	if config.FormatVersion == "" {
+		return warnings, fmt.Errorf("missing format_version")
+	}
+
+	// trigger map
+	workflows := config.getWorkflowIDs()
+	pipelines := config.getPipelineIDs()
+	triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
+	warnings = append(warnings, triggerMapWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// app
+	if err := config.App.Validate(); err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// containers
+	if err := validateContainers(*config); err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// step_bundles
+	stepBundleWarnings, err := validateStepBundles(*config)
+	warnings = append(warnings, stepBundleWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// pipelines
+	pipelineWarnings, err := validatePipelines(config)
+	warnings = append(warnings, pipelineWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// stages
+	stageWarnings, err := validateStages(config)
+	warnings = append(warnings, stageWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	// workflows
+	workflowWarnings, err := validateWorkflows(config)
+	warnings = append(warnings, workflowWarnings...)
+	if err != nil {
+		return warnings, err
+	}
+	// ---
+
+	return warnings, nil
+}
+
+func validateContainers(config BitriseDataModel) error {
+	for containerID, containerDef := range config.Containers {
+		if containerID == "" {
+			return fmt.Errorf("container (image: %s) has empty ID defined", containerDef.Image)
+		}
+		if strings.TrimSpace(containerDef.Image) == "" {
+			return fmt.Errorf("container (%s) has no image defined", containerID)
+		}
+		if err := containerDef.Validate(); err != nil {
+			return fmt.Errorf("container (%s) has config issue: %w", containerID, err)
 		}
 	}
 
-	for _, stepListItem := range workflow.Steps {
-		key, step, _, err := stepListItem.GetStepListItemKeyAndValue()
-		if err != nil {
-			return warnings, err
+	for serviceID, serviceDef := range config.Services {
+		if serviceID == "" {
+			return fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
+		}
+		if strings.TrimSpace(serviceDef.Image) == "" {
+			return fmt.Errorf("service (%s) has no image defined", serviceID)
+		}
+		if err := serviceDef.Validate(); err != nil {
+			return fmt.Errorf("container (%s) has config issue: %w", serviceID, err)
+		}
+	}
+
+	return nil
+}
+
+func validateStepBundles(config BitriseDataModel) ([]string, error) {
+	var warnings []string
+
+	for bundleID, bundle := range config.StepBundles {
+		if bundleID == "" {
+			return warnings, fmt.Errorf("step bundle has empty ID defined")
 		}
 
-		if key != StepListItemWithKey {
-			stepID := key
-			warns, err := validateStep(stepID, step)
-			warnings = append(warnings, warns...)
-			if err != nil {
-				return warnings, err
-			}
-
-			// TODO: Why is this assignment needed?
-			stepListItem[stepID] = step
+		warns, err := bundle.Validate()
+		warnings = append(warnings, warns...)
+		if err != nil {
+			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)
 		}
 	}
 
@@ -258,101 +456,6 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 		}
 		stepInputMap[key] = true
 	}
-
-	return warnings, nil
-}
-
-func (app *AppModel) Validate() error {
-	for _, env := range app.Environments {
-		if err := env.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (config *BitriseDataModel) Validate() ([]string, error) {
-	var warnings []string
-
-	if config.FormatVersion == "" {
-		return warnings, fmt.Errorf("missing format_version")
-	}
-
-	// trigger map
-	workflows := config.getWorkflowIDs()
-	pipelines := config.getPipelineIDs()
-	warns, err := config.TriggerMap.Validate(workflows, pipelines)
-	warnings = append(warnings, warns...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// app
-	if err := config.App.Validate(); err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// containers
-	for containerID, containerDef := range config.Containers {
-		if containerID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", containerDef.Image)
-		}
-		if strings.TrimSpace(containerDef.Image) == "" {
-			return warnings, fmt.Errorf("service (%s) has no image defined", containerID)
-		}
-	}
-
-	for serviceID, serviceDef := range config.Services {
-		if serviceID == "" {
-			return nil, fmt.Errorf("service (image: %s) has empty ID defined", serviceDef.Image)
-		}
-		if strings.TrimSpace(serviceDef.Image) == "" {
-			return warnings, fmt.Errorf("service (%s) has no image defined", serviceID)
-		}
-	}
-	// ---
-
-	// pipelines
-	pipelineWarnings, err := validatePipelines(config)
-	warnings = append(warnings, pipelineWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// stages
-	stageWarnings, err := validateStages(config)
-	warnings = append(warnings, stageWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-	// ---
-
-	// workflows
-	workflowWarnings, err := validateWorkflows(config)
-	warnings = append(warnings, workflowWarnings...)
-	if err != nil {
-		return warnings, err
-	}
-
-	for workflowID, workflow := range config.Workflows {
-		for _, stepListItem := range workflow.Steps {
-			key, _, with, err := stepListItem.GetStepListItemKeyAndValue()
-			if err != nil {
-				return warnings, err
-			}
-			if key == StepListItemWithKey {
-				warns, err := with.Validate(workflowID, config.Containers, config.Services)
-				warnings = append(warnings, warns...)
-				if err != nil {
-					return warnings, err
-				}
-			}
-		}
-	}
-	// ---
 
 	return warnings, nil
 }
@@ -439,28 +542,75 @@ func isUtilityWorkflow(workflowID string) bool {
 }
 
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {
-	workflowWarnings := make([]string, 0)
-	for ID, workflow := range config.Workflows {
-		idWarning, err := validateID(ID, "workflow")
+	var warnings []string
+
+	for workflowID, workflow := range config.Workflows {
+		idWarning, err := validateID(workflowID, "workflow")
 		if idWarning != "" {
-			workflowWarnings = append(workflowWarnings, idWarning)
+			warnings = append(warnings, idWarning)
 		}
 		if err != nil {
-			return workflowWarnings, err
+			return warnings, err
 		}
 
-		warns, err := workflow.Validate()
-		workflowWarnings = append(workflowWarnings, warns...)
-		if err != nil {
-			return workflowWarnings, fmt.Errorf("validation error in workflow: %s: %s", ID, err)
+		if err := checkWorkflowReferenceCycle(workflowID, workflow, *config, []string{}); err != nil {
+			return warnings, err
 		}
 
-		if err := checkWorkflowReferenceCycle(ID, workflow, *config, []string{}); err != nil {
-			return workflowWarnings, err
+		if err := workflow.Validate(); err != nil {
+			return warnings, fmt.Errorf("validation error in workflow: %s: %s", workflowID, err)
+		}
+
+		for _, stepListItem := range workflow.Steps {
+			key, t, err := stepListItem.GetKeyAndType()
+			if err != nil {
+				return warnings, err
+			}
+
+			if t == StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err != nil {
+					return warnings, err
+				}
+				stepID := key
+				warns, err := validateStep(stepID, *step)
+				warnings = append(warnings, warns...)
+				if err != nil {
+					return warnings, err
+				}
+
+				// TODO: Why is this assignment needed?
+				stepListItem[stepID] = step
+			} else if t == StepListItemTypeWith {
+				with, err := stepListItem.GetWith()
+				if err != nil {
+					return warnings, err
+				}
+
+				warns, err := with.Validate(workflowID, config.Containers, config.Services)
+				warnings = append(warnings, warns...)
+				if err != nil {
+					return warnings, err
+				}
+			} else if t == StepListItemTypeBundle {
+				bundleID := strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix)
+				if _, ok := config.StepBundles[bundleID]; !ok {
+					return warnings, fmt.Errorf("step-bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
+				}
+
+				bundle, err := stepListItem.GetBundle()
+				if err != nil {
+					return warnings, err
+				}
+
+				if err := bundle.Validate(); err != nil {
+					return warnings, err
+				}
+			}
 		}
 	}
 
-	return workflowWarnings, nil
+	return warnings, nil
 }
 
 func validateID(id, modelType string) (string, error) {
@@ -890,6 +1040,53 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 // ----------------------------
 // --- StepIDData
 
+func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if key == StepListItemWithKey {
+		var withItem StepListWithItemModel
+		if err := json.Unmarshal(b, &withItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := json.Unmarshal(b, &stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
 func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw map[string]interface{}
 	if err := unmarshal(&raw); err != nil {
@@ -910,6 +1107,16 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 
 		*stepListItem = map[string]interface{}{}
 		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := unmarshal(&stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
 			(*stepListItem)[k] = v
 		}
 	} else {
@@ -951,42 +1158,103 @@ func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepm
 	return stepID, step, nil
 }
 
-// GetStepListItemKeyAndValue returns the Step List Item key and value. The key is either a Step ID or 'with'.
-// If the key is 'with' the returned WithModel is relevant otherwise the StepModel.
-func (stepListItem *StepListItemModel) GetStepListItemKeyAndValue() (string, stepmanModels.StepModel, WithModel, error) {
+type StepListItemType int
+
+const (
+	StepListItemTypeUnknown StepListItemType = iota
+	StepListItemTypeStep
+	StepListItemTypeWith
+	StepListItemTypeBundle
+)
+
+func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType, error) {
 	if stepListItem == nil {
-		return "", stepmanModels.StepModel{}, WithModel{}, nil
+		return "", StepListItemTypeUnknown, nil
 	}
 
 	if len(*stepListItem) == 0 {
-		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem does not contain a key-value pair")
+		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", stepmanModels.StepModel{}, WithModel{}, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", StepListItemTypeUnknown, errors.New("StepListItem contains more than 1 key-value pair")
 	}
 
-	for key, value := range *stepListItem {
-		if key == StepListItemWithKey {
-			with := value.(WithModel)
-			return key, stepmanModels.StepModel{}, with, nil
-		} else {
-			step, ok := value.(stepmanModels.StepModel)
-			if ok {
-				return key, step, WithModel{}, nil
-			}
-
-			// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
-			// the StepModel has a pointer type.
-			stepPtr, ok := value.(*stepmanModels.StepModel)
-			if ok {
-				return key, *stepPtr, WithModel{}, nil
-			}
-
-			return key, stepmanModels.StepModel{}, WithModel{}, nil
+	for key := range *stepListItem {
+		switch {
+		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
+		case key == StepListItemWithKey:
+			return key, StepListItemTypeWith, nil
+		default:
+			return key, StepListItemTypeStep, nil
 		}
 	}
-	return "", stepmanModels.StepModel{}, WithModel{}, nil
+
+	return "", StepListItemTypeUnknown, nil
+}
+
+func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		bundle, ok := value.(StepBundleListItemModel)
+		if ok {
+			return &bundle, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a StepBundle")
+}
+
+func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		with, ok := value.(WithModel)
+		if ok {
+			return &with, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a With")
+}
+
+func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	var stepPtr *stepmanModels.StepModel
+	for _, value := range *stepListItem {
+		s, ok := value.(stepmanModels.StepModel)
+		if ok {
+			stepPtr = &s
+			break
+		}
+
+		// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
+		// the StepModel has a pointer type.
+		sPtr, ok := value.(*stepmanModels.StepModel)
+		if ok {
+			stepPtr = sPtr
+			break
+		}
+
+		break
+	}
+
+	if stepPtr == nil {
+		return nil, fmt.Errorf("stepListItem is not a Step")
+	}
+
+	return stepPtr, nil
 }
 
 // ----------------------------

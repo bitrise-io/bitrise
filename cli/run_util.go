@@ -82,16 +82,39 @@ func (r WorkflowRunner) activateAndRunSteps(
 	runResultCollector := newBuildRunResultCollector(r.logger, tracker)
 	currentStepGroupID := ""
 
+	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
+	currentStepBundleUUID := ""
+	// TODO: add the last step bundle's envs to environments
+	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
+
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		if stepPlan.GroupID != currentStepGroupID {
-			if stepPlan.GroupID != "" {
+		if stepPlan.WithGroupUUID != currentStepGroupID {
+			if stepPlan.WithGroupUUID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.GroupID, plan.WorkflowTitle)
+					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
 				}
 			}
-			currentStepGroupID = stepPlan.GroupID
+
+			currentStepGroupID = stepPlan.WithGroupUUID
+		}
+
+		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
+
+		if stepPlan.StepBundleUUID != currentStepBundleUUID {
+			if stepPlan.StepBundleUUID != "" {
+				currentStepBundleEnvVars = append(workflowEnvironments, stepPlan.StepBundleEnvs...)
+			}
+
+			currentStepBundleUUID = stepPlan.StepBundleUUID
+		}
+
+		var envsForStepRun []envmanModels.EnvironmentItemModel
+		if currentStepBundleUUID != "" {
+			envsForStepRun = currentStepBundleEnvVars
+		} else {
+			envsForStepRun = workflowEnvironments
 		}
 
 		stepStartTime := time.Now()
@@ -105,23 +128,26 @@ func (r WorkflowRunner) activateAndRunSteps(
 			defaultStepLibSource,
 			stepPlan.UUID,
 			tracker,
-			*environments,
+			envsForStepRun,
 			secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
 			stepPlan.ContainerID,
-			stepPlan.GroupID,
+			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
+		if currentStepBundleUUID != "" {
+			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
+		}
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 
 		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
 		if currentStepGroupID != "" {
-			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].GroupID
+			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
 			if isLastStepInWorkflow || doesStepGroupChange {
 				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
 			}

@@ -86,6 +86,8 @@ services:
     image: postgres:13
     envs:
     - POSTGRES_PASSWORD: password
+      opts:
+        is_expand: false
     ports:
     - 5435:5432
     options: >-
@@ -127,6 +129,40 @@ workflows:
             title: Run tests
             inputs:
             - content: bundle exec rspec spec/features/`,
+		},
+		{
+			name: "Step Bundles are normalized",
+			config: `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    envs:
+    - NAME: World
+      opts:
+        is_expand: false
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    envs:
+    - NAME: Bitrise
+    steps:
+    - bundle::print-hello: {}
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+    - bundle::print-hello:
+        envs:
+        - NAME: Universe
+          opts:
+            is_expand: false
+`,
 		},
 	}
 	for _, tt := range tests {
@@ -539,7 +575,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   "":
     image: ruby:3.2`),
-			wantErr: "service (image: ruby:3.2) has empty ID defined",
+			wantErr: "container (image: ruby:3.2) has empty ID defined",
 		},
 		{
 			name: "Invalid bitrise.yml: missing container image",
@@ -549,7 +585,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   "ruby":
     image: ""`),
-			wantErr: "service (ruby) has no image defined",
+			wantErr: "container (ruby) has no image defined",
 		},
 		{
 			name: "Invalid bitrise.yml: missing container image (whitespace)",
@@ -559,7 +595,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   "ruby":
     image: " "`),
-			wantErr: "service (ruby) has no image defined",
+			wantErr: "container (ruby) has no image defined",
 		},
 		{
 			name: "Invalid bitrise.yml: non-existing container referenced",
@@ -624,6 +660,105 @@ workflows:
 	}
 }
 
+func TestValidateConfig_StepBundles(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  BitriseDataModel
+		wantErr string
+	}{
+		{
+			name: "Valid bitrise.yml with a step bundle",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    envs:
+    - NAME: World
+      opts:
+        is_expand: false
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    envs:
+    - NAME: Bitrise
+    steps:
+    - bundle::print-hello: {}
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+    - bundle::print-hello:
+        envs:
+        - NAME: Universe
+`),
+		},
+		{
+			name: "Invalid bitrise.yml: empty step bundle ID",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  "":
+    envs:
+    - NAME: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    steps:
+    - bundle::print-hello: {}
+`),
+			wantErr: "step bundle has empty ID defined",
+		},
+		{
+			name: "Invalid bitrise.yml: non-existing container referenced",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    envs:
+    - NAME: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    steps:
+    - bundle::non-existing-bundle: {}
+`),
+			wantErr: "step-bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warns, err := tt.config.Validate()
+			require.Empty(t, warns)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
 	t.Log("before-after test")
@@ -633,9 +768,7 @@ func TestValidateWorkflow(t *testing.T) {
 			AfterRun:  []string{"after1", "after2", "after3"},
 		}
 
-		warnings, err := workflow.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 0, len(warnings))
+		require.NoError(t, workflow.Validate())
 	}
 
 	t.Log("invalid workflow - Invalid env: more than 2 fields")
@@ -1133,9 +1266,15 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step1": stepData,
 		}
 
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.NoError(t, err)
-		require.Equal(t, "step1", id)
+		require.Equal(t, StepListItemTypeStep, itemType)
+
+		_, err = stepListItem.GetStep()
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+		require.Equal(t, "step1", key)
 	}
 
 	t.Log("invalid steplist item - more than 1 step")
@@ -1145,18 +1284,19 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 			"step2": stepData,
 		}
 
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.Error(t, err)
-		require.Equal(t, "", id)
+		require.Equal(t, "", key)
+		require.Equal(t, StepListItemTypeUnknown, itemType)
 	}
 
 	t.Log("invalid steplist item - no step")
 	{
 		stepListItem := StepListItemModel{}
-
-		id, _, _, err := stepListItem.GetStepListItemKeyAndValue()
+		key, itemType, err := stepListItem.GetKeyAndType()
 		require.Error(t, err)
-		require.Equal(t, "", id)
+		require.Equal(t, "", key)
+		require.Equal(t, StepListItemTypeUnknown, itemType)
 	}
 }
 
@@ -1343,7 +1483,11 @@ workflows:
 		}
 
 		for _, stepListItem := range workflow.Steps {
-			_, step, _, err := stepListItem.GetStepListItemKeyAndValue()
+			_, itemType, err := stepListItem.GetKeyAndType()
+			require.NoError(t, err)
+			require.Equal(t, StepListItemTypeStep, itemType)
+
+			step, err := stepListItem.GetStep()
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)
