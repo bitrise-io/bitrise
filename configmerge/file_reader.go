@@ -3,6 +3,7 @@ package configmerge
 import (
 	"io"
 	"os"
+	"path/filepath"
 
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/go-git/go-billy/v5/memfs"
@@ -15,13 +16,28 @@ type fileReader struct {
 	logger logV2.Logger
 }
 
-func NewFileReader(logger logV2.Logger) FileReader {
+func NewFileReader(logger logV2.Logger) ConfigReader {
 	return fileReader{
 		logger: logger,
 	}
 }
 
-func (f fileReader) ReadFileFromFileSystem(name string) ([]byte, error) {
+func (f fileReader) Read(ref ConfigReference, dir string) ([]byte, error) {
+	if isLocalReference(ref) {
+		pth := ref.Path
+		if !filepath.IsAbs(pth) {
+			pth = filepath.Join(dir, pth)
+		}
+		return f.readFileFromFileSystem(pth)
+	}
+	return f.readFileFromGitRepository(ref.Repository, ref.Branch, ref.Commit, ref.Tag, ref.Path)
+}
+
+func isLocalReference(reference ConfigReference) bool {
+	return reference.Repository == ""
+}
+
+func (f fileReader) readFileFromFileSystem(name string) ([]byte, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -35,7 +51,7 @@ func (f fileReader) ReadFileFromFileSystem(name string) ([]byte, error) {
 
 }
 
-func (f fileReader) ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
+func (f fileReader) readFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
 	opts := git.CloneOptions{
 		URL: repository,
 	}

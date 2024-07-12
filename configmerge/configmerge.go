@@ -43,14 +43,13 @@ type RepoInfoProvider interface {
 	GetRepoInfo(repoPth string) (*RepoInfo, error)
 }
 
-type FileReader interface {
-	ReadFileFromFileSystem(name string) ([]byte, error)
-	ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error)
+type ConfigReader interface {
+	Read(ref ConfigReference, dir string) ([]byte, error)
 }
 
 type Merger struct {
 	repoInfoProvider RepoInfoProvider
-	fileReader       FileReader
+	configReader     ConfigReader
 	logger           logV2.Logger
 
 	repoInfo *RepoInfo
@@ -58,10 +57,10 @@ type Merger struct {
 	filesCount int
 }
 
-func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger logV2.Logger) Merger {
+func NewMerger(repoInfoProvider RepoInfoProvider, configReader ConfigReader, logger logV2.Logger) Merger {
 	return Merger{
 		repoInfoProvider: repoInfoProvider,
-		fileReader:       fileReader,
+		configReader:     configReader,
 		logger:           logger,
 	}
 }
@@ -69,6 +68,7 @@ func NewMerger(repoInfoProvider RepoInfoProvider, fileReader FileReader, logger 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	repoDir := filepath.Dir(mainConfigPth)
 
+	// TODO: we shouldn't care about the repo info
 	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
 	if err != nil {
 		m.logger.Debugf("Failed to get repository info: %s", err)
@@ -80,14 +80,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		Path: mainConfigPth,
 	}
 
-	if repoInfo != nil {
-		mainConfigRef.Repository = repoInfo.DefaultRemoteURL
-		mainConfigRef.Commit = repoInfo.Commit
-		mainConfigRef.Tag = repoInfo.Tag
-		mainConfigRef.Branch = repoInfo.Branch
-	}
-
-	mainConfigBytes, err := m.fileReader.ReadFileFromFileSystem(mainConfigPth)
+	mainConfigBytes, err := m.configReader.Read(mainConfigRef, repoDir)
 	if err != nil {
 		return "", nil, err
 	}
@@ -156,7 +149,7 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 
 	var includedConfigTrees []models.ConfigFileTreeModel
 	for _, include := range config.Include {
-		moduleBytes, err := m.readConfigModule(include, dir, m.repoInfo)
+		moduleBytes, err := m.configReader.Read(include, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -176,69 +169,4 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 		Includes: includedConfigTrees,
 		Depth:    depth,
 	}, nil
-}
-
-func (m *Merger) readConfigModule(reference ConfigReference, dir string, repoInfo *RepoInfo) ([]byte, error) {
-	if isLocalReference(reference) {
-		return m.readLocalConfigModule(reference, dir)
-	}
-
-	sameRepo := false
-	if repoInfo != nil {
-		var err error
-		if sameRepo, err = isSameRepoReference(reference, *repoInfo); err != nil {
-			m.logger.Warnf("Failed to check if the reference is from the same repository: %s", err)
-		}
-	}
-
-	if sameRepo {
-		return m.readLocalConfigModule(reference, dir)
-	}
-
-	return m.readRemoteConfigModule(reference)
-}
-
-func isSameRepoReference(reference ConfigReference, repoInfo RepoInfo) (bool, error) {
-	refGitUrl, err := parseGitRepoURL(reference.Repository)
-	if err != nil {
-		return false, err
-	}
-
-	repoGitURL, err := parseGitRepoURL(repoInfo.DefaultRemoteURL)
-	if err != nil {
-		return false, err
-	}
-
-	if !equalGitRepoURLs(refGitUrl, repoGitURL) {
-		return false, nil
-	}
-
-	switch {
-	case reference.Commit != "":
-		return reference.Commit == repoInfo.Commit ||
-			reference.Commit == repoInfo.Commit[:7], nil
-	case reference.Tag != "":
-		return reference.Tag == repoInfo.Tag, nil
-	case reference.Branch != "":
-		return reference.Branch == repoInfo.Branch, nil
-	}
-
-	return true, nil
-}
-
-func isLocalReference(reference ConfigReference) bool {
-	return reference.Repository == ""
-}
-
-func (m *Merger) readLocalConfigModule(reference ConfigReference, dir string) ([]byte, error) {
-	pth := reference.Path
-	if !filepath.IsAbs(pth) {
-		pth = filepath.Join(dir, pth)
-	}
-	return m.fileReader.ReadFileFromFileSystem(pth)
-}
-
-func (m *Merger) readRemoteConfigModule(reference ConfigReference) ([]byte, error) {
-	return m.fileReader.ReadFileFromGitRepository(reference.Repository, reference.Branch, reference.Commit, reference.Tag, reference.Path)
-
 }

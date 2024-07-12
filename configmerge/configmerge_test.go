@@ -2,6 +2,7 @@ package configmerge
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,7 +14,7 @@ func TestMerger_MergeConfig_Validation(t *testing.T) {
 	tests := []struct {
 		name             string
 		repoInfoProvider RepoInfoProvider
-		fileReader       FileReader
+		configReader     ConfigReader
 		mainConfigPth    string
 		wantConfig       string
 		wantErr          string
@@ -27,13 +28,13 @@ func TestMerger_MergeConfig_Validation(t *testing.T) {
 					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
 				},
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(strings.Repeat(" ", MaxFileSizeBytes+1)),
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "max file size (1048576 bytes) exceeded in file repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
+			wantErr:       "max file size (1048576 bytes) exceeded in file bitrise.yml",
 		},
 		{
 			name: "Circular dependency is not allowed",
@@ -44,7 +45,7 @@ func TestMerger_MergeConfig_Validation(t *testing.T) {
 					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
 				},
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -58,7 +59,7 @@ include:
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "circular reference detected: repo:https://github.com/bitrise-io/example.git,bitrise.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_2.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf -> repo:https://github.com/bitrise-io/example.git,module_1.yml@commit:016883ca9498f75d03cd45c0fa400ad9f8141edf",
+			wantErr:       "circular reference detected: bitrise.yml -> module_1.yml -> module_2.yml -> module_1.yml",
 		},
 		{
 			name: "Max 10 include items are allowed",
@@ -70,7 +71,7 @@ include:
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -92,7 +93,7 @@ include:
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -117,7 +118,7 @@ include:
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -159,7 +160,7 @@ include:
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				repoInfoProvider: tt.repoInfoProvider,
-				fileReader:       tt.fileReader,
+				configReader:     tt.configReader,
 				logger:           logV2.NewLogger(),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
@@ -179,7 +180,7 @@ func TestMerger_MergeConfig(t *testing.T) {
 	tests := []struct {
 		name             string
 		repoInfoProvider RepoInfoProvider
-		fileReader       FileReader
+		configReader     ConfigReader
 		mainConfigPth    string
 		wantConfig       string
 		wantErr          string
@@ -194,7 +195,7 @@ func TestMerger_MergeConfig(t *testing.T) {
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -224,7 +225,7 @@ format_version: "15"
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -262,7 +263,7 @@ workflows:
 				},
 				err: nil,
 			},
-			fileReader: mockFileReader{
+			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`
 format_version: "15"
@@ -297,7 +298,7 @@ format_version: "15"
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				repoInfoProvider: tt.repoInfoProvider,
-				fileReader:       tt.fileReader,
+				configReader:     tt.configReader,
 				logger:           logV2.NewLogger(),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
@@ -321,14 +322,26 @@ func (m mockRepoInfoProvider) GetRepoInfo(repoPth string) (*RepoInfo, error) {
 	return m.repoInfo, m.err
 }
 
-type mockFileReader struct {
+type mockConfigReader struct {
 	fileSystemFiles   map[string][]byte
 	repoFilesOnCommit map[string]map[string]map[string][]byte
 	repoFilesOnTag    map[string]map[string]map[string][]byte
 	repoFilesOnBranch map[string]map[string]map[string][]byte
 }
 
-func (m mockFileReader) ReadFileFromFileSystem(name string) ([]byte, error) {
+func (m mockConfigReader) Read(ref ConfigReference, dir string) ([]byte, error) {
+	if isLocalReference(ref) {
+		pth := ref.Path
+		if !filepath.IsAbs(pth) {
+			pth = filepath.Join(dir, pth)
+		}
+		return m.readFileFromFileSystem(pth)
+	}
+	return m.readFileFromGitRepository(ref.Repository, ref.Branch, ref.Commit, ref.Tag, ref.Path)
+
+}
+
+func (m mockConfigReader) readFileFromFileSystem(name string) ([]byte, error) {
 	c, ok := m.fileSystemFiles[name]
 	if !ok {
 		return nil, fmt.Errorf("file not found: %s", name)
@@ -336,7 +349,7 @@ func (m mockFileReader) ReadFileFromFileSystem(name string) ([]byte, error) {
 	return c, nil
 }
 
-func (m mockFileReader) ReadFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
+func (m mockConfigReader) readFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
 	var repoFiles map[string]map[string]map[string][]byte
 	var checkout string
 	if commit != "" {
