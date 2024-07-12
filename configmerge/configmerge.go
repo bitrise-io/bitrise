@@ -39,43 +39,26 @@ func IsModularConfig(mainConfigPth string) (bool, error) {
 	return len(config.Include) > 0, nil
 }
 
-type RepoInfoProvider interface {
-	GetRepoInfo(repoPth string) (*RepoInfo, error)
-}
-
 type ConfigReader interface {
 	Read(ref ConfigReference, dir string) ([]byte, error)
 }
 
 type Merger struct {
-	repoInfoProvider RepoInfoProvider
-	configReader     ConfigReader
-	logger           logV2.Logger
-
-	repoInfo *RepoInfo
+	configReader ConfigReader
+	logger       logV2.Logger
 
 	filesCount int
 }
 
-func NewMerger(repoInfoProvider RepoInfoProvider, configReader ConfigReader, logger logV2.Logger) Merger {
+func NewMerger(configReader ConfigReader, logger logV2.Logger) Merger {
 	return Merger{
-		repoInfoProvider: repoInfoProvider,
-		configReader:     configReader,
-		logger:           logger,
+		configReader: configReader,
+		logger:       logger,
 	}
 }
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	repoDir := filepath.Dir(mainConfigPth)
-
-	// TODO: we shouldn't care about the repo info
-	repoInfo, err := m.repoInfoProvider.GetRepoInfo(repoDir)
-	if err != nil {
-		m.logger.Debugf("Failed to get repository info: %s", err)
-	} else {
-		m.repoInfo = repoInfo
-	}
-
 	mainConfigRef := ConfigReference{
 		Path: mainConfigPth,
 	}

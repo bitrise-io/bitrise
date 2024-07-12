@@ -12,22 +12,14 @@ import (
 
 func TestMerger_MergeConfig_Validation(t *testing.T) {
 	tests := []struct {
-		name             string
-		repoInfoProvider RepoInfoProvider
-		configReader     ConfigReader
-		mainConfigPth    string
-		wantConfig       string
-		wantErr          string
+		name          string
+		configReader  ConfigReader
+		mainConfigPth string
+		wantConfig    string
+		wantErr       string
 	}{
 		{
 			name: "Max file size is 1MB",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(strings.Repeat(" ", MaxFileSizeBytes+1)),
@@ -38,13 +30,6 @@ func TestMerger_MergeConfig_Validation(t *testing.T) {
 		},
 		{
 			name: "Circular dependency is not allowed",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
@@ -63,14 +48,6 @@ include:
 		},
 		{
 			name: "Max 10 include items are allowed",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
@@ -85,14 +62,6 @@ include:
 		},
 		{
 			name: "Max 20 config files are allowed",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
@@ -110,14 +79,6 @@ include:
 		},
 		{
 			name: "Max include depth is 5",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
@@ -159,9 +120,8 @@ include:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
-				repoInfoProvider: tt.repoInfoProvider,
-				configReader:     tt.configReader,
-				logger:           logV2.NewLogger(),
+				configReader: tt.configReader,
+				logger:       logV2.NewLogger(),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -178,23 +138,14 @@ include:
 
 func TestMerger_MergeConfig(t *testing.T) {
 	tests := []struct {
-		name             string
-		repoInfoProvider RepoInfoProvider
-		configReader     ConfigReader
-		mainConfigPth    string
-		wantConfig       string
-		wantErr          string
+		name          string
+		configReader  ConfigReader
+		mainConfigPth string
+		wantConfig    string
+		wantErr       string
 	}{
 		{
 			name: "Merges local config module",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
@@ -217,14 +168,6 @@ format_version: "15"
 		},
 		{
 			name: "Follows references' relative paths",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
@@ -255,14 +198,6 @@ workflows:
 		},
 		{
 			name: "Merges remote config module",
-			repoInfoProvider: mockRepoInfoProvider{
-				repoInfo: &RepoInfo{
-					DefaultRemoteURL: "https://github.com/bitrise-io/example.git",
-					Branch:           "main",
-					Commit:           "016883ca9498f75d03cd45c0fa400ad9f8141edf",
-				},
-				err: nil,
-			},
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`
@@ -297,9 +232,8 @@ format_version: "15"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
-				repoInfoProvider: tt.repoInfoProvider,
-				configReader:     tt.configReader,
-				logger:           logV2.NewLogger(),
+				configReader: tt.configReader,
+				logger:       logV2.NewLogger(),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -311,15 +245,6 @@ format_version: "15"
 			require.Equal(t, tt.wantConfig, got, got)
 		})
 	}
-}
-
-type mockRepoInfoProvider struct {
-	repoInfo *RepoInfo
-	err      error
-}
-
-func (m mockRepoInfoProvider) GetRepoInfo(repoPth string) (*RepoInfo, error) {
-	return m.repoInfo, m.err
 }
 
 type mockConfigReader struct {

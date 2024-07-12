@@ -16,7 +16,7 @@ type fileReader struct {
 	logger logV2.Logger
 }
 
-func NewFileReader(logger logV2.Logger) ConfigReader {
+func NewConfigReader(logger logV2.Logger) ConfigReader {
 	return fileReader{
 		logger: logger,
 	}
