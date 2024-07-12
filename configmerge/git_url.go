@@ -87,7 +87,3 @@ func generateSCPStyleSSHFormatRepoURL(details *GitRepoURL) string {
 
 	return urlBuilder.String()
 }
-
-func equalGitRepoURLs(a, b *GitRepoURL) bool {
-	return a.Host == b.Host && a.Path == b.Path
-}
