@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	FormatVersion                   = "15"
+	FormatVersion                   = "16"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
