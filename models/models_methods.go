@@ -559,7 +559,7 @@ func validateGraph(pipeline *PipelineModel) error {
 					// The workflows are in a map object, and the order of these two in the error message was non-deterministic.
 					// We need to sort them, so they appear always in the same order.
 					items := []string{identifier, dependency}
-					sort.Sort(sort.StringSlice(items))
+					sort.Strings(items)
 
 					return fmt.Errorf("the dependency between workflow '%s' and workflow '%s' creates a cycle in the graph", items[0], items[1])
 				}
