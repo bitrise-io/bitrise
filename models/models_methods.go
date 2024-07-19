@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/heimdalr/dag"
@@ -504,7 +505,7 @@ func validateStagedPipeline(pipelineID string, pipeline *PipelineModel, config *
 		}
 
 		if _, ok := config.Stages[pipelineStageID]; !ok {
-			return fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, pipelineID)
+			return fmt.Errorf("stage (%s) defined in pipeline (%s) does not exist", pipelineStageID, pipelineID)
 		}
 	}
 
@@ -514,24 +515,24 @@ func validateStagedPipeline(pipelineID string, pipeline *PipelineModel, config *
 func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *BitriseDataModel) error {
 	for pipelineWorkflowID, pipelineWorkflow := range pipeline.Workflows {
 		if isUtilityWorkflow(pipelineWorkflowID) {
-			return fmt.Errorf("workflow (%s) defined in pipeline (%s), is a utility workflow", pipelineWorkflowID, pipelineID)
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
 		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
-			return fmt.Errorf("workflow (%s) defined in pipeline (%s), but does not exist", pipelineWorkflowID, pipelineID)
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
 		}
 
-		uniqueItems := make(map[string]struct{})
+		uniqueItems := make(map[string]bool)
 
 		for _, identifier := range pipelineWorkflow.DependsOn {
-			if _, ok := uniqueItems[identifier]; ok {
+			if uniqueItems[identifier] {
 				return fmt.Errorf("workflow (%s) is duplicated in the dependency list (%s)", identifier, pipelineWorkflowID)
 			}
 
-			uniqueItems[identifier] = struct{}{}
+			uniqueItems[identifier] = true
 
 			if _, ok := pipeline.Workflows[identifier]; !ok {
-				return fmt.Errorf("workflow (%s) defined in dependencies (%s), but does not exist in the pipeline (%s)", identifier, pipelineWorkflowID, pipelineID)
+				return fmt.Errorf("workflow (%s) defined in dependencies (%s) is not part of pipeline (%s)", identifier, pipelineWorkflowID, pipelineID)
 			}
 		}
 	}
@@ -555,7 +556,12 @@ func validateGraph(pipeline *PipelineModel) error {
 			err := d.AddEdge(dependency, identifier)
 			if err != nil {
 				if errors.As(err, &dag.EdgeLoopError{}) {
-					return fmt.Errorf("the dependency between workflow '%s' and workflow '%s' creates a cycle in the graph", identifier, dependency)
+					// The workflows are in a map object, and the order of these two in the error message was non-deterministic.
+					// We need to sort them, so they appear always in the same order.
+					items := []string{identifier, dependency}
+					sort.Sort(sort.StringSlice(items))
+
+					return fmt.Errorf("the dependency between workflow '%s' and workflow '%s' creates a cycle in the graph", items[0], items[1])
 				}
 				return err
 			}
