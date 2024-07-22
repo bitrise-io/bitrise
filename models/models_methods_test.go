@@ -299,7 +299,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 
 		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage")
+		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
 		require.Equal(t, 0, len(warnings))
 	}
 
@@ -313,7 +313,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 
 		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage")
+		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
 		require.Equal(t, 0, len(warnings))
 	}
 
@@ -341,7 +341,7 @@ func TestValidateConfig(t *testing.T) {
 		}
 
 		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1), but does not exist")
+		require.EqualError(t, err, "stage (stage2) defined in pipeline (pipeline1) does not exist")
 		require.Equal(t, 0, len(warnings))
 	}
 

@@ -12,6 +12,7 @@ require (
 	github.com/bitrise-io/stepman v0.0.0-20240628161214-6bfe26aacd00
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-version v1.4.0
+	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.15
@@ -24,6 +25,8 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

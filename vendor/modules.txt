@@ -95,12 +95,25 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.4.0
 ## explicit
 github.com/docker/go-units
+# github.com/emirpasic/gods v1.18.1
+## explicit; go 1.2
+github.com/emirpasic/gods/containers
+github.com/emirpasic/gods/lists
+github.com/emirpasic/gods/lists/singlylinkedlist
+github.com/emirpasic/gods/queues
+github.com/emirpasic/gods/queues/linkedlistqueue
+github.com/emirpasic/gods/stacks
+github.com/emirpasic/gods/stacks/linkedliststack
+github.com/emirpasic/gods/utils
 # github.com/gofrs/uuid v4.3.1+incompatible
 ## explicit
 github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/proto
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
@@ -110,6 +123,9 @@ github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.4.0
 ## explicit
 github.com/hashicorp/go-version
+# github.com/heimdalr/dag v1.4.0
+## explicit; go 1.12
+github.com/heimdalr/dag
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
