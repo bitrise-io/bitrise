@@ -43,11 +43,6 @@ func mergeConfig(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create config module reader: %w", err)
 	}
-	defer func() {
-		if err := configReader.CleanupRepoDirs(); err != nil {
-			log.Warnf("Failed to clean up config module repositories dir: %s", err)
-		}
-	}()
 	merger := configmerge.NewMerger(configReader, logger)
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {

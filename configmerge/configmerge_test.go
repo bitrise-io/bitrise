@@ -2,7 +2,6 @@ package configmerge
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -167,7 +166,7 @@ format_version: "15"
 `,
 		},
 		{
-			name: "Follows references' relative paths",
+			name: "Include path is relative to the main config file dir (repo root)",
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(`format_version: "15"
@@ -176,7 +175,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 include:
 - path: configs/ci/module_1.yml`),
 					"configs/ci/module_1.yml": []byte(`include:
-- path: module_2.yml`),
+- path: configs/ci/module_2.yml`),
 					"configs/ci/module_2.yml": []byte(`workflows:
   print_hello:
     steps:
@@ -254,16 +253,16 @@ type mockConfigReader struct {
 	repoFilesOnBranch map[string]map[string]map[string][]byte
 }
 
-func (m mockConfigReader) Read(ref ConfigReference, dir string) ([]byte, error) {
+func (m mockConfigReader) Read(ref ConfigReference) ([]byte, error) {
 	if isLocalReference(ref) {
-		pth := ref.Path
-		if !filepath.IsAbs(pth) {
-			pth = filepath.Join(dir, pth)
-		}
-		return m.readFileFromFileSystem(pth)
+		return m.readFileFromFileSystem(ref.Path)
 	}
 	return m.readFileFromGitRepository(ref.Repository, ref.Branch, ref.Commit, ref.Tag, ref.Path)
 
+}
+
+func (m mockConfigReader) CleanupRepoDirs() error {
+	return nil
 }
 
 func (m mockConfigReader) readFileFromFileSystem(name string) ([]byte, error) {

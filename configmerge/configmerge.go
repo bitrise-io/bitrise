@@ -28,9 +28,7 @@ func IsModularConfig(mainConfigPth string) (bool, error) {
 		return false, err
 	}
 
-	var config struct {
-		Include []ConfigReference `yaml:"include" json:"include"`
-	}
+	var config ConfigModule
 	if err := yaml.Unmarshal(mainConfigContent, &config); err != nil {
 		return false, err
 	}
@@ -61,6 +59,12 @@ func NewMerger(configReader ConfigReader, logger Logger) Merger {
 }
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
+	defer func() {
+		if err := m.configReader.CleanupRepoDirs(); err != nil {
+			m.logger.Warnf("Failed to cleanup repo dirs: %s", err)
+		}
+	}()
+
 	mainConfigRef := ConfigReference{
 		Path: mainConfigPth,
 	}
