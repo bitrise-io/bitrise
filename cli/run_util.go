@@ -934,7 +934,8 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 			log.Warnf("Failed to check if the config is modular: %s", err)
 		} else if isModularConfig {
 			logger := logV2.NewLogger()
-			configReader := configmerge.NewConfigReader(logger)
+			repoCache := configmerge.NewRepoCache()
+			configReader := configmerge.NewConfigReader(repoCache, logger)
 			merger := configmerge.NewMerger(configReader, logger)
 			mergedConfigContent, _, err := merger.MergeConfig(bitriseConfigPath)
 			if err != nil {

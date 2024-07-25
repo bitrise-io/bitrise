@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/models"
@@ -40,7 +39,7 @@ func IsModularConfig(mainConfigPth string) (bool, error) {
 }
 
 type ConfigReader interface {
-	Read(ref ConfigReference, dir string) ([]byte, error)
+	Read(ref ConfigReference) ([]byte, error)
 }
 
 type Merger struct {
@@ -58,18 +57,16 @@ func NewMerger(configReader ConfigReader, logger logV2.Logger) Merger {
 }
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
-	repoDir := filepath.Dir(mainConfigPth)
 	mainConfigRef := ConfigReference{
 		Path: mainConfigPth,
 	}
 
-	mainConfigBytes, err := m.configReader.Read(mainConfigRef, repoDir)
+	mainConfigBytes, err := m.configReader.Read(mainConfigRef)
 	if err != nil {
 		return "", nil, err
 	}
 
-	mainConfigDir := filepath.Dir(mainConfigPth)
-	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, mainConfigDir, 1, nil)
+	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, 1, nil)
 	if err != nil {
 		return "", nil, err
 	}
@@ -86,7 +83,7 @@ type ConfigModule struct {
 	Include []ConfigReference `yaml:"include" json:"include"`
 }
 
-func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, dir string, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
+func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
 	key := reference.Key()
 	keys = append(keys, key)
 
@@ -114,13 +111,12 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 
 	var includedConfigTrees []models.ConfigFileTreeModel
 	for _, include := range config.Include {
-		moduleBytes, err := m.configReader.Read(include, dir)
+		moduleBytes, err := m.configReader.Read(include)
 		if err != nil {
 			return nil, err
 		}
 
-		moduleDir := filepath.Dir(include.Path)
-		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, moduleDir, depth+1, keys)
+		moduleConfigTree, err := m.buildConfigTree(moduleBytes, include, depth+1, keys)
 		if err != nil {
 			return nil, err
 		}

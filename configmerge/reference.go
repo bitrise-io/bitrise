@@ -30,6 +30,24 @@ func (r ConfigReference) Key() string {
 	return key
 }
 
+// TODO: merge or reuse this function in Key() func
+func (r ConfigReference) RepoKey() string {
+	if r.Repository == "" {
+		return ""
+	}
+
+	key := "repo:" + r.Repository
+	if r.Commit != "" {
+		key += "@commit:" + r.Commit
+	} else if r.Tag != "" {
+		key += "@tag:" + r.Tag
+	} else if r.Branch != "" {
+		key += "@branch:" + r.Branch
+	}
+
+	return key
+}
+
 func (r ConfigReference) Validate() error {
 	key := r.Key()
 

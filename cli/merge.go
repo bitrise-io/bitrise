@@ -36,7 +36,8 @@ func mergeConfig(c *cli.Context) error {
 	outputDir := c.String("output")
 
 	logger := logV2.NewLogger()
-	configReader := configmerge.NewConfigReader(logger)
+	repoCache := configmerge.NewRepoCache()
+	configReader := configmerge.NewConfigReader(repoCache, logger)
 	merger := configmerge.NewMerger(configReader, logger)
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {
