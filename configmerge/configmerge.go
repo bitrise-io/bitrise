@@ -82,52 +82,34 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	return mergedConfigContent, configTree, nil
 }
 
+type ConfigModule struct {
+	Include []ConfigReference `yaml:"include" json:"include"`
+}
+
 func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, dir string, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
 	key := reference.Key()
 	keys = append(keys, key)
 
-	if len(configContent) > MaxFileSizeBytes {
-		return nil, fmt.Errorf("max file size (%d bytes) exceeded in file %s", MaxFileSizeBytes, key)
-	}
-
-	if depth > MaxIncludeDepth {
-		return nil, fmt.Errorf("max include depth (%d) exceeded", MaxIncludeDepth)
-	}
-
 	m.filesCount++
-	if m.filesCount > MaxFilesCountTotal {
-		return nil, fmt.Errorf("max include count (%d) exceeded", MaxFilesCountTotal)
-	}
 
-	var config struct {
-		Include []ConfigReference `yaml:"include" json:"include"`
-	}
+	var config ConfigModule
 	if err := yaml.Unmarshal(configContent, &config); err != nil {
 		return nil, err
 	}
 
-	if len(config.Include) > MaxIncludeCountPerFile {
-		return nil, fmt.Errorf("max include count (%d) exceeded", MaxIncludeCountPerFile)
-	}
-	if m.filesCount+len(config.Include) > MaxFilesCountTotal {
-		return nil, fmt.Errorf("max file count (%d) exceeded", MaxFilesCountTotal)
-	}
-
 	for idx, include := range config.Include {
-		if err := include.Validate(); err != nil {
-			return nil, err
-		}
 		if include.Repository == "" {
 			include.Repository = reference.Repository
 			include.Branch = reference.Branch
 			include.Commit = reference.Commit
 			include.Tag = reference.Tag
 		}
-		config.Include[idx] = include
 
-		if sliceutil.IsStringInSlice(include.Key(), keys) {
-			return nil, fmt.Errorf("circular reference detected: %s -> %s", strings.Join(keys, " -> "), include.Key())
-		}
+		config.Include[idx] = include
+	}
+
+	if err := validateReference(reference, configContent, config, m.filesCount, depth, keys); err != nil {
+		return nil, err
 	}
 
 	var includedConfigTrees []models.ConfigFileTreeModel
@@ -152,4 +134,39 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 		Includes: includedConfigTrees,
 		Depth:    depth,
 	}, nil
+}
+
+func validateReference(reference ConfigReference, configContent []byte, config ConfigModule, filesCount int, depth int, keys []string) error {
+	key := reference.Key()
+
+	if len(configContent) > MaxFileSizeBytes {
+		return fmt.Errorf("max file size (%d bytes) exceeded in file %s", MaxFileSizeBytes, key)
+	}
+
+	if depth > MaxIncludeDepth {
+		return fmt.Errorf("max include depth (%d) exceeded", MaxIncludeDepth)
+	}
+
+	if filesCount > MaxFilesCountTotal {
+		return fmt.Errorf("max include count (%d) exceeded", MaxFilesCountTotal)
+	}
+
+	if len(config.Include) > MaxIncludeCountPerFile {
+		return fmt.Errorf("max include count (%d) exceeded", MaxIncludeCountPerFile)
+	}
+	if filesCount+len(config.Include) > MaxFilesCountTotal {
+		return fmt.Errorf("max file count (%d) exceeded", MaxFilesCountTotal)
+	}
+
+	for _, include := range config.Include {
+		if err := include.Validate(); err != nil {
+			return err
+		}
+
+		if sliceutil.IsStringInSlice(include.Key(), keys) {
+			return fmt.Errorf("circular reference detected: %s -> %s", strings.Join(keys, " -> "), include.Key())
+		}
+	}
+
+	return nil
 }
