@@ -935,7 +935,15 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 		} else if isModularConfig {
 			logger := logV2.NewLogger()
 			repoCache := configmerge.NewRepoCache()
-			configReader := configmerge.NewConfigReader(repoCache, logger)
+			configReader, err := configmerge.NewConfigReader(repoCache, logger)
+			if err != nil {
+				return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to create config module reader: %w", err)
+			}
+			defer func() {
+				if err := configReader.CleanupRepoDirs(); err != nil {
+					log.Warnf("Failed to clean up config module repositories dir: %s", err)
+				}
+			}()
 			merger := configmerge.NewMerger(configReader, logger)
 			mergedConfigContent, _, err := merger.MergeConfig(bitriseConfigPath)
 			if err != nil {

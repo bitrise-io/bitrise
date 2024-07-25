@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/configmerge"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/urfave/cli"
 )
 
@@ -35,29 +35,39 @@ func mergeConfig(c *cli.Context) error {
 	}
 	outputDir := c.String("output")
 
-	logger := logV2.NewLogger()
+	opts := log.GetGlobalLoggerOpts()
+	logger := log.NewLogger(opts)
+
 	repoCache := configmerge.NewRepoCache()
-	configReader := configmerge.NewConfigReader(repoCache, logger)
+	configReader, err := configmerge.NewConfigReader(repoCache, logger)
+	if err != nil {
+		return fmt.Errorf("failed to create config module reader: %w", err)
+	}
+	defer func() {
+		if err := configReader.CleanupRepoDirs(); err != nil {
+			log.Warnf("Failed to clean up config module repositories dir: %s", err)
+		}
+	}()
 	merger := configmerge.NewMerger(configReader, logger)
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {
-		return fmt.Errorf("failed to merge config: %s", err)
+		return fmt.Errorf("failed to merge config: %w", err)
 	}
 
 	if outputDir == "" {
 		if err := printOutputFiles(mergedConfigContent, *configFileTree, logger); err != nil {
-			return fmt.Errorf("failed to print output files: %s", err)
+			return fmt.Errorf("failed to print output files: %w", err)
 		}
 	} else {
 		if err := writeOutputFiles(mergedConfigContent, *configFileTree, outputDir); err != nil {
-			return fmt.Errorf("failed to write output files: %s", err)
+			return fmt.Errorf("failed to write output files: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFileTreeModel, logger logV2.Logger) error {
+func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFileTreeModel, logger log.Logger) error {
 	logger.Printf("config tree:")
 	configTreeBytes, err := json.MarshalIndent(configFileTree, "", "\t")
 	if err != nil {
@@ -65,7 +75,7 @@ func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFi
 	}
 	logger.Printf(string(configTreeBytes))
 
-	logger.Println()
+	logger.Print()
 	logger.Printf("merged config:")
 	logger.Printf(mergedConfigContent)
 

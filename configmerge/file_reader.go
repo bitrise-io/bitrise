@@ -5,47 +5,33 @@ import (
 	"os"
 	"path/filepath"
 
-	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	pathutilV2 "github.com/bitrise-io/go-utils/v2/pathutil"
-	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/storage/memory"
 )
-
-type repoCache struct {
-	cache map[string]string
-}
 
 type RepoCache interface {
 	GetRepo(ref ConfigReference) string
 	SetRepo(dir string, ref ConfigReference)
 }
 
-func NewRepoCache() RepoCache {
-	return repoCache{
-		cache: map[string]string{},
-	}
-}
-
-func (c repoCache) GetRepo(ref ConfigReference) string {
-	return c.cache[ref.RepoKey()]
-}
-
-func (c repoCache) SetRepo(dir string, ref ConfigReference) {
-	c.cache[ref.RepoKey()] = dir
-}
-
 type fileReader struct {
 	repoCache RepoCache
-	logger    logV2.Logger
+	tmpDir    string
+	logger    Logger
 }
 
-func NewConfigReader(repoCache RepoCache, logger logV2.Logger) ConfigReader {
+func NewConfigReader(repoCache RepoCache, logger Logger) (ConfigReader, error) {
+	tmpDir, err := pathutilV2.NewPathProvider().CreateTempDir("config-merge")
+	if err != nil {
+		return nil, err
+	}
+
 	return fileReader{
 		repoCache: repoCache,
+		tmpDir:    tmpDir,
 		logger:    logger,
-	}
+	}, nil
 }
 
 func (f fileReader) Read(ref ConfigReference) ([]byte, error) {
@@ -59,7 +45,7 @@ func (f fileReader) Read(ref ConfigReference) ([]byte, error) {
 		return f.readFileFromFileSystem(pth)
 	}
 
-	repoDir, err := f.cloneGitRepository(ref.Repository, ref.Branch, ref.Commit, ref.Tag)
+	repoDir, err := f.cloneGitRepository(ref)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +53,10 @@ func (f fileReader) Read(ref ConfigReference) ([]byte, error) {
 	f.repoCache.SetRepo(repoDir, ref)
 	pth := filepath.Join(repoDir, ref.Path)
 	return f.readFileFromFileSystem(pth)
+}
+
+func (f fileReader) CleanupRepoDirs() error {
+	return os.RemoveAll(f.tmpDir)
 }
 
 func isLocalReference(reference ConfigReference) bool {
@@ -86,27 +76,24 @@ func (f fileReader) readFileFromFileSystem(name string) ([]byte, error) {
 	return io.ReadAll(file)
 }
 
-func (f fileReader) cloneGitRepository(repository string, branch string, commit string, tag string) (string, error) {
+func (f fileReader) cloneGitRepository(ref ConfigReference) (string, error) {
 	opts := git.CloneOptions{
-		URL: repository,
+		URL: ref.Repository,
 	}
-	if branch != "" {
-		opts.ReferenceName = plumbing.NewBranchReferenceName(branch)
-	}
-
-	tmpDir, err := pathutilV2.NewPathProvider().CreateTempDir("config-merge")
-	if err != nil {
-		return "", err
+	if ref.Branch != "" {
+		opts.ReferenceName = plumbing.NewBranchReferenceName(ref.Branch)
 	}
 
-	repo, cloneErr := git.PlainClone(tmpDir, false, &opts)
+	repoDir := filepath.Join(f.tmpDir, ref.RepoKey())
+
+	repo, cloneErr := git.PlainClone(repoDir, false, &opts)
 	if cloneErr != nil {
-		if !isHttpFormatRepoURL(repository) {
+		if !isHttpFormatRepoURL(ref.Repository) {
 			return "", cloneErr
 		}
 
 		// Try repo url with ssh syntax
-		repoURL, err := parseGitRepoURL(repository)
+		repoURL, err := parseGitRepoURL(ref.Repository)
 		if err != nil {
 			return "", err
 		}
@@ -115,7 +102,7 @@ func (f fileReader) cloneGitRepository(repository string, branch string, commit 
 		}
 
 		opts.URL = generateSCPStyleSSHFormatRepoURL(repoURL)
-		repo, err = git.PlainClone(tmpDir, false, &opts)
+		repo, err = git.PlainClone(repoDir, false, &opts)
 		if err != nil {
 			// Return the original error
 			return "", cloneErr
@@ -127,8 +114,8 @@ func (f fileReader) cloneGitRepository(repository string, branch string, commit 
 		return "", err
 	}
 
-	if commit != "" {
-		h, err := repo.ResolveRevision(plumbing.Revision(commit))
+	if ref.Commit != "" {
+		h, err := repo.ResolveRevision(plumbing.Revision(ref.Commit))
 		if err != nil {
 			return "", err
 		}
@@ -138,86 +125,13 @@ func (f fileReader) cloneGitRepository(repository string, branch string, commit 
 		}); err != nil {
 			return "", err
 		}
-	} else if tag != "" {
+	} else if ref.Tag != "" {
 		if err := tree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewTagReferenceName(tag),
+			Branch: plumbing.NewTagReferenceName(ref.Tag),
 		}); err != nil {
 			return "", err
 		}
 	}
 
-	return tmpDir, nil
-}
-
-func (f fileReader) readFileFromGitRepository(repository string, branch string, commit string, tag string, path string) ([]byte, error) {
-	opts := git.CloneOptions{
-		URL: repository,
-	}
-	if branch != "" {
-		opts.ReferenceName = plumbing.NewBranchReferenceName(branch)
-	}
-
-	repo, cloneErr := git.Clone(memory.NewStorage(), memfs.New(), &opts)
-	if cloneErr != nil {
-		if !isHttpFormatRepoURL(repository) {
-			return nil, cloneErr
-		}
-
-		// Try repo url with ssh syntax
-		repoURL, err := parseGitRepoURL(repository)
-		if err != nil {
-			return nil, err
-		}
-		if repoURL.User == "" {
-			repoURL.User = "git"
-		}
-
-		opts := git.CloneOptions{
-			URL: generateSCPStyleSSHFormatRepoURL(repoURL),
-		}
-		if branch != "" {
-			opts.ReferenceName = plumbing.NewBranchReferenceName(branch)
-		}
-
-		repo, err = git.Clone(memory.NewStorage(), memfs.New(), &opts)
-		if err != nil {
-			// Return the original error
-			return nil, cloneErr
-		}
-	}
-
-	tree, err := repo.Worktree()
-	if err != nil {
-		return nil, err
-	}
-
-	if commit != "" {
-		h, err := repo.ResolveRevision(plumbing.Revision(commit))
-		if err != nil {
-			return nil, err
-		}
-
-		if err := tree.Checkout(&git.CheckoutOptions{
-			Hash: *h,
-		}); err != nil {
-			return nil, err
-		}
-	} else if tag != "" {
-		if err := tree.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.NewTagReferenceName(tag),
-		}); err != nil {
-			return nil, err
-		}
-	}
-
-	file, err := tree.Filesystem.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			f.logger.Warnf("Failed to close file: %s", err)
-		}
-	}()
-	return io.ReadAll(file)
+	return repoDir, nil
 }

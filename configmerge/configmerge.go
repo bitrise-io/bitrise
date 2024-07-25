@@ -8,7 +8,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/sliceutil"
-	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,16 +39,21 @@ func IsModularConfig(mainConfigPth string) (bool, error) {
 
 type ConfigReader interface {
 	Read(ref ConfigReference) ([]byte, error)
+	CleanupRepoDirs() error
+}
+
+type Logger interface {
+	Warnf(format string, args ...interface{})
 }
 
 type Merger struct {
 	configReader ConfigReader
-	logger       logV2.Logger
+	logger       Logger
 
 	filesCount int
 }
 
-func NewMerger(configReader ConfigReader, logger logV2.Logger) Merger {
+func NewMerger(configReader ConfigReader, logger Logger) Merger {
 	return Merger{
 		configReader: configReader,
 		logger:       logger,
