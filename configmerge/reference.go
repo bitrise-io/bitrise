@@ -30,7 +30,6 @@ func (r ConfigReference) Key() string {
 	return key
 }
 
-// TODO: merge or reuse this function in Key() func
 func (r ConfigReference) RepoKey() string {
 	if r.Repository == "" {
 		return ""

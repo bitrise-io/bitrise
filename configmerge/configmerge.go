@@ -18,6 +18,10 @@ const (
 	MaxFileSizeBytes       = 1024 * 1024 // 1MB
 )
 
+type ConfigModule struct {
+	Include []ConfigReference `yaml:"include" json:"include"`
+}
+
 func IsModularConfig(mainConfigPth string) (bool, error) {
 	mainConfigFile, err := os.Open(mainConfigPth)
 	if err != nil {
@@ -85,10 +89,6 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	}
 
 	return mergedConfigContent, configTree, nil
-}
-
-type ConfigModule struct {
-	Include []ConfigReference `yaml:"include" json:"include"`
 }
 
 func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference, depth int, keys []string) (*models.ConfigFileTreeModel, error) {
