@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+
+	"github.com/heimdalr/dag"
 
 	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -462,8 +465,8 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 
 func validatePipelines(config *BitriseDataModel) ([]string, error) {
 	pipelineWarnings := make([]string, 0)
-	for ID, pipeline := range config.Pipelines {
-		idWarning, err := validateID(ID, "pipeline")
+	for pipelineID, pipeline := range config.Pipelines {
+		idWarning, err := validateID(pipelineID, "pipeline")
 		if idWarning != "" {
 			pipelineWarnings = append(pipelineWarnings, idWarning)
 		}
@@ -471,29 +474,101 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 			return pipelineWarnings, err
 		}
 
-		if len(pipeline.Stages) == 0 {
-			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+		hasStages := len(pipeline.Stages) > 0
+		hasWorkflows := len(pipeline.Workflows) > 0
+
+		if hasStages && hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has both stages and workflows", pipelineID)
+		} else if !hasStages && !hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage or workflow", pipelineID)
 		}
 
-		for _, pipelineStage := range pipeline.Stages {
-			pipelineStageID, err := getStageID(pipelineStage)
-			if err != nil {
-				return pipelineWarnings, err
+		if hasStages {
+			return pipelineWarnings, validateStagedPipeline(pipelineID, &pipeline, config)
+		}
+
+		//TODO: Why is this always true?
+		if hasWorkflows {
+			return pipelineWarnings, validateDAGPipeline(pipelineID, &pipeline, config)
+		}
+
+	}
+
+	return pipelineWarnings, nil
+}
+
+func validateStagedPipeline(pipelineID string, pipeline *PipelineModel, config *BitriseDataModel) error {
+	for _, pipelineStage := range pipeline.Stages {
+		pipelineStageID, err := getStageID(pipelineStage)
+		if err != nil {
+			return err
+		}
+
+		if _, ok := config.Stages[pipelineStageID]; !ok {
+			return fmt.Errorf("stage (%s) defined in pipeline (%s) does not exist", pipelineStageID, pipelineID)
+		}
+	}
+
+	return nil
+}
+
+func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *BitriseDataModel) error {
+	for pipelineWorkflowID, pipelineWorkflow := range pipeline.Workflows {
+		if isUtilityWorkflow(pipelineWorkflowID) {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
+		}
+
+		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+		}
+
+		uniqueItems := make(map[string]bool)
+
+		for _, identifier := range pipelineWorkflow.DependsOn {
+			if uniqueItems[identifier] {
+				return fmt.Errorf("workflow (%s) is duplicated in the dependency list (%s)", identifier, pipelineWorkflowID)
 			}
-			found := false
-			for stageID := range config.Stages {
-				if stageID == pipelineStageID {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+
+			uniqueItems[identifier] = true
+
+			if _, ok := pipeline.Workflows[identifier]; !ok {
+				return fmt.Errorf("workflow (%s) defined in dependencies (%s) is not part of pipeline (%s)", identifier, pipelineWorkflowID, pipelineID)
 			}
 		}
 	}
 
-	return pipelineWarnings, nil
+	return validateGraph(pipeline)
+}
+
+func validateGraph(pipeline *PipelineModel) error {
+	d := dag.NewDAG()
+	for identifier := range pipeline.Workflows {
+		// The second argument in AddVertexByID is the "value" which cannot be empty,
+		// but we will rely on the first argument (ID) only
+		err := d.AddVertexByID(identifier, identifier)
+		if err != nil {
+			return err
+		}
+	}
+
+	for identifier, workflow := range pipeline.Workflows {
+		for _, dependency := range workflow.DependsOn {
+			err := d.AddEdge(dependency, identifier)
+			if err != nil {
+				if errors.As(err, &dag.EdgeLoopError{}) {
+					// The workflows are in a map object, and the order of these two in the error message was non-deterministic.
+					// We need to sort them, so they appear always in the same order.
+					items := []string{identifier, dependency}
+					sort.Strings(items)
+
+					return fmt.Errorf("the dependency between workflow '%s' and workflow '%s' creates a cycle in the graph", items[0], items[1])
+				}
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func validateStages(config *BitriseDataModel) ([]string, error) {

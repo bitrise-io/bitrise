@@ -14,6 +14,7 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-version v1.4.0
+	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.15
@@ -33,6 +34,7 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
