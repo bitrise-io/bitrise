@@ -149,32 +149,32 @@ func TestValidation(t *testing.T) {
 		{
 			name:    "Mixing stages and workflows in the same pipeline",
 			config:  mixedStagedAndDAGPipeline,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: pipeline (dag) has both stages and workflows",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: pipeline (dag) has both stages and workflows",
 		},
 		{
 			name:    "Workflow is missing from the DAG pipeline definition",
 			config:  missingWorkflowInDAGPipelineDefinition,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: workflow (c) defined in dependencies (b) is not part of pipeline (dag)",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in dependencies (b) is not part of pipeline (dag)",
 		},
 		{
 			name:    "Workflow is missing from the Workflow definition",
 			config:  missingWorkflowInWorkflowDefinitionForDAGPipeline,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
 		},
 		{
 			name:    "Utility workflow is referenced in the DAG pipeline",
 			config:  utilityWorkflowDAGPipeline,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: workflow (_a) defined in pipeline (dag) is a utility workflow",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (_a) defined in pipeline (dag) is a utility workflow",
 		},
 		{
 			name:    "Duplicated dependency in the DAG pipeline",
 			config:  duplicatedDependencyDAGPipeline,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: workflow (a) is duplicated in the dependency list (b)",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (a) is duplicated in the dependency list (b)",
 		},
 		{
 			name:    "Cycle in the DAG pipeline",
 			config:  cycleInDAGPipeline,
-			wantErr: "Failed to get config (bitrise.yml) from base 64 data, err: Failed to parse bitrise config, error: the dependency between workflow 'b' and workflow 'c' creates a cycle in the graph",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: the dependency between workflow 'b' and workflow 'c' creates a cycle in the graph",
 		},
 		{
 			name:    "Valid DAG pipeline",
