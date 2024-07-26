@@ -136,7 +136,6 @@ func (m *Merger) buildConfigTree(configContent []byte, reference ConfigReference
 		Path:     key,
 		Contents: string(configContent),
 		Includes: includedConfigTrees,
-		Depth:    depth,
 	}, nil
 }
 

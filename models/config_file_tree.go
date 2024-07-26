@@ -10,8 +10,6 @@ type ConfigFileTreeModel struct {
 	Path     string                `json:"path" yaml:"path"`
 	Contents string                `json:"contents,omitempty" yaml:"contents,omitempty"`
 	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
-
-	Depth int `json:"-" yaml:"-"`
 }
 
 func (configTree *ConfigFileTreeModel) Merge() (string, error) {
