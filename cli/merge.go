@@ -35,22 +35,17 @@ func mergeConfig(c *cli.Context) error {
 	}
 	outputDir := c.String("output")
 
-	opts := log.GetGlobalLoggerOpts()
-	logger := log.NewLogger(opts)
-
-	repoCache := configmerge.NewRepoCache()
-	configReader, err := configmerge.NewConfigReader(repoCache, logger)
+	merger, err := createDefaultMerger()
 	if err != nil {
-		return fmt.Errorf("failed to create config module reader: %w", err)
+		return err
 	}
-	merger := configmerge.NewMerger(configReader, logger)
 	mergedConfigContent, configFileTree, err := merger.MergeConfig(configPth)
 	if err != nil {
 		return fmt.Errorf("failed to merge config: %w", err)
 	}
 
 	if outputDir == "" {
-		if err := printOutputFiles(mergedConfigContent, *configFileTree, logger); err != nil {
+		if err := printOutputFiles(mergedConfigContent, *configFileTree); err != nil {
 			return fmt.Errorf("failed to print output files: %w", err)
 		}
 	} else {
@@ -62,17 +57,30 @@ func mergeConfig(c *cli.Context) error {
 	return nil
 }
 
-func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFileTreeModel, logger log.Logger) error {
-	logger.Printf("config tree:")
+func createDefaultMerger() (*configmerge.Merger, error) {
+	opts := log.GetGlobalLoggerOpts()
+	logger := log.NewLogger(opts)
+
+	repoCache := configmerge.NewRepoCache()
+	configReader, err := configmerge.NewConfigReader(repoCache, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create config module reader: %w", err)
+	}
+	merger := configmerge.NewMerger(configReader, logger)
+	return &merger, nil
+}
+
+func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFileTreeModel) error {
+	log.Printf("config tree:")
 	configTreeBytes, err := json.MarshalIndent(configFileTree, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to parse config tree: %s", err)
 	}
-	logger.Printf(string(configTreeBytes))
+	log.Printf(string(configTreeBytes))
 
-	logger.Print()
-	logger.Printf("merged config:")
-	logger.Printf(mergedConfigContent)
+	log.Print()
+	log.Printf("merged config:")
+	log.Printf(mergedConfigContent)
 
 	return nil
 }
