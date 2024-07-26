@@ -931,8 +931,10 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 
 		isModularConfig, err := configmerge.IsModularConfig(bitriseConfigPath)
 		if err != nil {
-			log.Warnf("Failed to check if the config is modular: %s", err)
-		} else if isModularConfig {
+			return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to check if the config is modular: %s", err)
+		}
+
+		if isModularConfig {
 			merger, err := createDefaultMerger()
 			if err != nil {
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to create config module merger: %w", err)
@@ -948,9 +950,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
 			}
 			bitriseConfig = &config
-		}
-
-		if bitriseConfig == nil {
+		} else {
 			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
 			warnings = warns
 			if err != nil {
@@ -958,10 +958,6 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 			}
 			bitriseConfig = &config
 		}
-	}
-
-	if bitriseConfig == nil {
-		return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to create Bitrise config model")
 	}
 
 	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
