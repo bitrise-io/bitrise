@@ -10,26 +10,21 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-type RepoCache interface {
-	GetRepo(ref ConfigReference) string
-	SetRepo(dir string, ref ConfigReference)
-}
-
 type fileReader struct {
-	repoCache RepoCache
 	tmpDir    string
+	repoCache map[string]string
 	logger    Logger
 }
 
-func NewConfigReader(repoCache RepoCache, logger Logger) (ConfigReader, error) {
+func NewConfigReader(logger Logger) (ConfigReader, error) {
 	tmpDir, err := pathutilV2.NewPathProvider().CreateTempDir("config-merge")
 	if err != nil {
 		return nil, err
 	}
 
 	return fileReader{
-		repoCache: repoCache,
 		tmpDir:    tmpDir,
+		repoCache: map[string]string{},
 		logger:    logger,
 	}, nil
 }
@@ -39,7 +34,7 @@ func (f fileReader) Read(ref ConfigReference) ([]byte, error) {
 		return f.readFileFromFileSystem(ref.Path)
 	}
 
-	cachedRepoDir := f.repoCache.GetRepo(ref)
+	cachedRepoDir := f.getRepo(ref)
 	if cachedRepoDir != "" {
 		pth := filepath.Join(cachedRepoDir, ref.Path)
 		return f.readFileFromFileSystem(pth)
@@ -50,7 +45,7 @@ func (f fileReader) Read(ref ConfigReference) ([]byte, error) {
 		return nil, err
 	}
 
-	f.repoCache.SetRepo(repoDir, ref)
+	f.setRepo(repoDir, ref)
 	pth := filepath.Join(repoDir, ref.Path)
 	return f.readFileFromFileSystem(pth)
 }
@@ -134,4 +129,12 @@ func (f fileReader) cloneGitRepository(ref ConfigReference) (string, error) {
 	}
 
 	return repoDir, nil
+}
+
+func (f fileReader) getRepo(ref ConfigReference) string {
+	return f.repoCache[ref.RepoKey()]
+}
+
+func (f fileReader) setRepo(dir string, ref ConfigReference) {
+	f.repoCache[ref.RepoKey()] = dir
 }

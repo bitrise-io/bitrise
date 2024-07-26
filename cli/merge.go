@@ -60,9 +60,7 @@ func mergeConfig(c *cli.Context) error {
 func createDefaultMerger() (*configmerge.Merger, error) {
 	opts := log.GetGlobalLoggerOpts()
 	logger := log.NewLogger(opts)
-
-	repoCache := configmerge.NewRepoCache()
-	configReader, err := configmerge.NewConfigReader(repoCache, logger)
+	configReader, err := configmerge.NewConfigReader(logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config module reader: %w", err)
 	}
