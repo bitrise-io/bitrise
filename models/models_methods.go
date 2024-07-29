@@ -118,7 +118,36 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 	return nil
 }
 
+func (with *WithModel) Normalize() error {
+	for idx, stepListItem := range with.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		with.Steps[idx] = stepListItem
+	}
+	return nil
+}
+
 func (bundle *StepBundleModel) Normalize() error {
+	for idx, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		bundle.Steps[idx] = stepListItem
+	}
+
 	for _, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
@@ -166,17 +195,34 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := bundle.Normalize(); err != nil {
 				return err
 			}
+		} else if t == StepListItemTypeWith {
+			with, err := stepListItem.GetWith()
+			if err != nil {
+				return err
+			}
+
+			if err := with.Normalize(); err != nil {
+				return err
+			}
+
 		}
 	}
+
+	normalizedMeta, err := stepmanModels.JSONMarshallable(workflow.Meta)
+	if err != nil {
+		return fmt.Errorf("failed to normalize meta: %w", err)
+	}
+	workflow.Meta = normalizedMeta
 
 	return nil
 }
 
 func (app *AppModel) Normalize() error {
-	for _, env := range app.Environments {
+	for idx, env := range app.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		app.Environments[idx] = env
 	}
 	return nil
 }
@@ -210,10 +256,11 @@ func (config *BitriseDataModel) Normalize() error {
 		}
 	}
 
-	for _, workflow := range config.Workflows {
+	for id, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize workflow: %w", err)
 		}
+		config.Workflows[id] = workflow
 	}
 
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
@@ -269,7 +316,7 @@ func (container *Container) Validate() error {
 	return nil
 }
 
-func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
+func (with *WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
 	var warnings []string
 
 	if with.ContainerID != "" {

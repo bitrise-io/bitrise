@@ -25,18 +25,57 @@ func TestJSONMarshal(t *testing.T) {
 		wantErr   string
 	}{
 		{
-			name: "Step inputs are normalized",
-			config: `format_version: "13"
+			name: "Meta fields are normalized",
+			config: `format_version: "17"
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - NAME: Bitrise
+    opts:
+      meta:
+        bitrise.io:
+          stack: osx-xcode-16.0.x-edge
+          machine_type_id: g2-m1-max.10core
 
 workflows:
   test:
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x-edge
+        machine_type_id: g2-m1-max.10core
+    envs:
+    - NAME: Universe
+      opts:
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
     steps:
     - script:
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
         inputs:
-        - content: 'echo "Hello $NAME!"'
+        - content: echo "Hello, $NAME!"
           opts:
-            is_expand: false`,
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
+        outputs:
+        - RESULT:
+          opts:
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
+
+meta:
+  bitrise.io:
+    stack: osx-xcode-16.0.x-edge
+    machine_type_id: g2-m1-max.10core`,
 		},
 		{
 			name: "Trigger map items are normalized",
@@ -78,8 +117,7 @@ workflows:
 		},
 		{
 			name: "Containers are normalized",
-			config: `
-format_version: '11'
+			config: `format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 services:
   postgres:
@@ -107,33 +145,33 @@ workflows:
         - postgres
         steps:
         - script:
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
             title: Setup DB
             inputs:
             - content: bundle exec rails db:setup
+              opts:
+                meta:
+                  bitrise.io:
+                    stack: osx-xcode-16.0.x-edge
+                    machine_type_id: g2-m1-max.10core
         - script:
             title: Run tests
             inputs:
             - content: bundle exec rspec
-  test_features:
-    steps:
-    - with:
-        container: ruby
-        services:
-        - postgres
-        steps:
-        - script:
-            title: Setup DB
-            inputs:
-            - content: bundle exec rails db:setup
-        - script:
-            title: Run tests
-            inputs:
-            - content: bundle exec rspec spec/features/`,
+            outputs:
+            - RESULT:
+              opts:
+                meta:
+                  bitrise.io:
+                    stack: osx-xcode-16.0.x-edge
+                    machine_type_id: g2-m1-max.10core`,
 		},
 		{
 			name: "Step Bundles are normalized",
-			config: `
-format_version: "15"
+			config: `format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
@@ -143,10 +181,30 @@ step_bundles:
     - NAME: World
       opts:
         is_expand: false
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
     steps:
     - script:
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
         inputs:
         - content: echo "Hello, $NAME!"
+          opts:
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
+        outputs:
+        - RESULT:
+          opts:
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
 
 workflows:
   print-hellos:
@@ -162,7 +220,10 @@ workflows:
         - NAME: Universe
           opts:
             is_expand: false
-`,
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core`,
 		},
 	}
 	for _, tt := range tests {
