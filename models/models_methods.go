@@ -172,8 +172,8 @@ func (workflow *WorkflowModel) Normalize() error {
 		}
 	}
 
-	for _, stepListItem := range workflow.Steps {
-		_, t, err := stepListItem.GetKeyAndType()
+	for idx, stepListItem := range workflow.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
@@ -186,6 +186,9 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[key] = step
+			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeBundle {
 			bundle, err := stepListItem.GetBundle()
 			if err != nil {
@@ -195,6 +198,9 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := bundle.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[key] = bundle
+			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeWith {
 			with, err := stepListItem.GetWith()
 			if err != nil {
@@ -205,6 +211,8 @@ func (workflow *WorkflowModel) Normalize() error {
 				return err
 			}
 
+			stepListItem[key] = with
+			workflow.Steps[idx] = stepListItem
 		}
 	}
 
