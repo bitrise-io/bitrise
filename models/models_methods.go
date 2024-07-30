@@ -109,29 +109,61 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
-func (bundle *StepBundleListItemModel) Normalize() error {
-	for _, env := range bundle.Environments {
+func (bundle *StepBundleModel) Normalize() error {
+	for idx, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		bundle.Steps[idx] = stepListItem
+	}
+
+	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		bundle.Environments[i] = env
 	}
 	return nil
 }
 
-func (bundle *StepBundleModel) Normalize() error {
-	for _, env := range bundle.Environments {
+func (bundle *StepBundleListItemModel) Normalize() error {
+	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		bundle.Environments[i] = env
+	}
+	return nil
+}
+
+func (with *WithModel) Normalize() error {
+	for idx, stepListItem := range with.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		with.Steps[idx] = stepListItem
 	}
 	return nil
 }
 
 func (container *Container) Normalize() error {
-	for _, env := range container.Envs {
+	for i, env := range container.Envs {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		container.Envs[i] = env
 	}
 	return nil
 }
@@ -143,8 +175,8 @@ func (workflow *WorkflowModel) Normalize() error {
 		}
 	}
 
-	for _, stepListItem := range workflow.Steps {
-		_, t, err := stepListItem.GetKeyAndType()
+	for idx, stepListItem := range workflow.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
@@ -157,6 +189,9 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[key] = *step
+			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeBundle {
 			bundle, err := stepListItem.GetBundle()
 			if err != nil {
@@ -166,17 +201,39 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := bundle.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = *bundle
+			workflow.Steps[idx] = stepListItem
+		} else if t == StepListItemTypeWith {
+			with, err := stepListItem.GetWith()
+			if err != nil {
+				return err
+			}
+
+			if err := with.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[key] = *with
+			workflow.Steps[idx] = stepListItem
 		}
 	}
+
+	normalizedMeta, err := stepmanModels.JSONMarshallable(workflow.Meta)
+	if err != nil {
+		return fmt.Errorf("failed to normalize meta: %w", err)
+	}
+	workflow.Meta = normalizedMeta
 
 	return nil
 }
 
 func (app *AppModel) Normalize() error {
-	for _, env := range app.Environments {
+	for idx, env := range app.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		app.Environments[idx] = env
 	}
 	return nil
 }
@@ -192,28 +249,32 @@ func (config *BitriseDataModel) Normalize() error {
 	}
 	config.TriggerMap = normalizedTriggerMap
 
-	for _, container := range config.Containers {
+	for containerID, container := range config.Containers {
 		if err := container.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize container: %w", err)
 		}
+		config.Containers[containerID] = container
 	}
 
-	for _, container := range config.Services {
-		if err := container.Normalize(); err != nil {
+	for serviceID, service := range config.Services {
+		if err := service.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize service: %w", err)
 		}
+		config.Services[serviceID] = service
 	}
 
-	for _, stepBundle := range config.StepBundles {
+	for stepBundleID, stepBundle := range config.StepBundles {
 		if err := stepBundle.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize step_bundle: %w", err)
 		}
+		config.StepBundles[stepBundleID] = stepBundle
 	}
 
-	for _, workflow := range config.Workflows {
+	for workflowID, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize workflow: %w", err)
 		}
+		config.Workflows[workflowID] = workflow
 	}
 
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
@@ -269,7 +330,7 @@ func (container *Container) Validate() error {
 	return nil
 }
 
-func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
+func (with *WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
 	var warnings []string
 
 	if with.ContainerID != "" {
@@ -655,7 +716,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 
 				// TODO: Why is this assignment needed?
-				stepListItem[stepID] = step
+				stepListItem[stepID] = *step
 			} else if t == StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
 				if err != nil {
@@ -1252,7 +1313,7 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
 	}
 
 	for key := range *stepListItem {
@@ -1311,14 +1372,6 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
 			stepPtr = &s
-			break
-		}
-
-		// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
-		// the StepModel has a pointer type.
-		sPtr, ok := value.(*stepmanModels.StepModel)
-		if ok {
-			stepPtr = sPtr
 			break
 		}
 

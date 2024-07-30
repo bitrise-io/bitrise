@@ -31,7 +31,7 @@ github.com/ProtonMail/go-crypto/openpgp/s2k
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20240624065735-ca81d0a80500
+# github.com/bitrise-io/envman v0.0.0-20240730123632-8066eeb61599
 ## explicit; go 1.21
 github.com/bitrise-io/envman/cli
 github.com/bitrise-io/envman/env
