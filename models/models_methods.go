@@ -1313,7 +1313,7 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
 	}
 
 	for key := range *stepListItem {
