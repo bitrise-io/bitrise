@@ -262,6 +262,34 @@ func TestGetOptions(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestNormalize_JSONMarshal(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+	}{
+		{
+			name: "Meta field is normalised",
+			env: `NAME: Bitrise
+opts:
+  meta:
+    bitrise.io:
+      stack: osx-xcode-16.0.x-edge
+      machine_type_id: g2-m1-max.10core`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var env EnvironmentItemModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.env), &env))
+
+			require.NoError(t, env.Normalize())
+
+			_, err := json.Marshal(env)
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestNormalize(t *testing.T) {
 	// Filled with map[string]interface{} options
 	env := EnvironmentItemModel{
