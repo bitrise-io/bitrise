@@ -109,11 +109,35 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
-func (bundle *StepBundleListItemModel) Normalize() error {
-	for _, env := range bundle.Environments {
+func (bundle *StepBundleModel) Normalize() error {
+	for idx, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		bundle.Steps[idx] = stepListItem
+	}
+
+	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		bundle.Environments[i] = env
+	}
+	return nil
+}
+
+func (bundle *StepBundleListItemModel) Normalize() error {
+	for i, env := range bundle.Environments {
+		if err := env.Normalize(); err != nil {
+			return err
+		}
+		bundle.Environments[i] = env
 	}
 	return nil
 }
@@ -134,33 +158,12 @@ func (with *WithModel) Normalize() error {
 	return nil
 }
 
-func (bundle *StepBundleModel) Normalize() error {
-	for idx, stepListItem := range bundle.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
-		if err != nil {
-			return err
-		}
-
-		if err := step.Normalize(); err != nil {
-			return err
-		}
-		stepListItem[stepID] = step
-		bundle.Steps[idx] = stepListItem
-	}
-
-	for _, env := range bundle.Environments {
-		if err := env.Normalize(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (container *Container) Normalize() error {
-	for _, env := range container.Envs {
+	for i, env := range container.Envs {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		container.Envs[i] = env
 	}
 	return nil
 }
@@ -246,29 +249,32 @@ func (config *BitriseDataModel) Normalize() error {
 	}
 	config.TriggerMap = normalizedTriggerMap
 
-	for _, container := range config.Containers {
+	for containerID, container := range config.Containers {
 		if err := container.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize container: %w", err)
 		}
+		config.Containers[containerID] = container
 	}
 
-	for _, container := range config.Services {
-		if err := container.Normalize(); err != nil {
+	for serviceID, service := range config.Services {
+		if err := service.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize service: %w", err)
 		}
+		config.Services[serviceID] = service
 	}
 
-	for _, stepBundle := range config.StepBundles {
+	for stepBundleID, stepBundle := range config.StepBundles {
 		if err := stepBundle.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize step_bundle: %w", err)
 		}
+		config.StepBundles[stepBundleID] = stepBundle
 	}
 
-	for id, workflow := range config.Workflows {
+	for workflowID, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize workflow: %w", err)
 		}
-		config.Workflows[id] = workflow
+		config.Workflows[workflowID] = workflow
 	}
 
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
