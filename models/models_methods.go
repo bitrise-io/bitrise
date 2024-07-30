@@ -190,7 +190,7 @@ func (workflow *WorkflowModel) Normalize() error {
 				return err
 			}
 
-			stepListItem[key] = step
+			stepListItem[key] = *step
 			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeBundle {
 			bundle, err := stepListItem.GetBundle()
@@ -202,7 +202,7 @@ func (workflow *WorkflowModel) Normalize() error {
 				return err
 			}
 
-			stepListItem[key] = bundle
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = *bundle
 			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeWith {
 			with, err := stepListItem.GetWith()
@@ -214,7 +214,7 @@ func (workflow *WorkflowModel) Normalize() error {
 				return err
 			}
 
-			stepListItem[key] = with
+			stepListItem[key] = *with
 			workflow.Steps[idx] = stepListItem
 		}
 	}
@@ -716,7 +716,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 
 				// TODO: Why is this assignment needed?
-				stepListItem[stepID] = step
+				stepListItem[stepID] = *step
 			} else if t == StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
 				if err != nil {
@@ -1372,14 +1372,6 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
 			stepPtr = &s
-			break
-		}
-
-		// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
-		// the StepModel has a pointer type.
-		sPtr, ok := value.(*stepmanModels.StepModel)
-		if ok {
-			stepPtr = sPtr
 			break
 		}
 
