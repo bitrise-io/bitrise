@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/stepman/cli"
+	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/require"
 )
@@ -219,7 +219,7 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	err = cli.Activate("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", true, logger, false)
+	err = steplib.ActivateStep("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", logger, false)
 	require.NoError(b, err)
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"

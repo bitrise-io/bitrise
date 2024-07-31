@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/cli"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
@@ -32,7 +33,7 @@ func ActivateSteplibRefStep(
 		return activationResult, err
 	}
 
-	err = cli.Activate(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, false, log, isOfflineMode)
+	err = steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
 	if err != nil {
 		return activationResult, err
 	}

@@ -1,4 +1,4 @@
-package cli
+package steplib
 
 import (
 	"fmt"
@@ -7,92 +7,28 @@ import (
 	"slices"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/urfave/cli"
 )
 
-var activateCommand = cli.Command{
-	Name:  "activate",
-	Usage: "Copy the step with specified --id, and --version, into provided path. If --version flag is not set, the latest version of the step will be used. If --copyyml flag is set, step.yml will be copied to the given path.",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:   CollectionKey + ", " + collectionKeyShort,
-			Usage:  "Collection of step.",
-			EnvVar: CollectionPathEnvKey,
-		},
-		cli.StringFlag{
-			Name:  IDKey + ", " + idKeyShort,
-			Usage: "Step id.",
-		},
-		cli.StringFlag{
-			Name:  VersionKey + ", " + versionKeyShort,
-			Usage: "Step version.",
-		},
-		cli.StringFlag{
-			Name:  PathKey + ", " + pathKeyShort,
-			Usage: "Path where the step will copied.",
-		},
-		cli.StringFlag{
-			Name:  CopyYMLKey + ", " + copyYMLKeyShort,
-			Usage: "Path where the activated step's step.yml will be copied.",
-		},
-		cli.BoolFlag{
-			Name:  UpdateKey + ", " + updateKeyShort,
-			Usage: "If flag is set, and collection doesn't contains the specified step, the collection will updated.",
-		},
-	},
-	Action: func(c *cli.Context) error {
-		if err := activate(c); err != nil {
-			failf("Command failed: %s", err)
-		}
-		return nil
-	},
-}
+var errStepNotAvailableOfflineMode error = fmt.Errorf("step not available in offline mode")
 
-func activate(c *cli.Context) error {
-	stepLibURI := c.String(CollectionKey)
-	if stepLibURI == "" {
-		return fmt.Errorf("no steplib specified")
-	}
-
-	id := c.String(IDKey)
-	if id == "" {
-		return fmt.Errorf("no step ID specified")
-	}
-
-	path := c.String(PathKey)
-	if path == "" {
-		return fmt.Errorf("no destination path specified")
-	}
-
-	version := c.String(VersionKey)
-	copyYML := c.String(CopyYMLKey)
-	update := c.Bool(UpdateKey)
-	logger := log.NewDefaultLogger(false)
-	isOfflineMode := false
-
-	return Activate(stepLibURI, id, version, path, copyYML, update, logger, isOfflineMode)
-}
-
-// Activate ...
-func Activate(stepLibURI, id, version, destination, destinationStepYML string, updateLibrary bool, log stepman.Logger, isOfflineMode bool) error {
-	stepLib, err := stepman.ReadStepSpec(stepLibURI)
+func ActivateStep(stepLibURI, id, version, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool) error {
+	stepCollection, err := stepman.ReadStepSpec(stepLibURI)
 	if err != nil {
 		return fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
 	}
 
-	step, version, err := queryStep(stepLib, stepLibURI, id, version, updateLibrary, log)
+	step, version, err := queryStep(stepCollection, stepLibURI, id, version)
 	if err != nil {
 		return fmt.Errorf("failed to find step: %s", err)
 	}
 
-	srcFolder, err := activateStep(stepLib, stepLibURI, id, version, step, log, isOfflineMode)
+	srcFolder, err := activateStep(stepCollection, stepLibURI, id, version, step, log, isOfflineMode)
 	if err != nil {
 		if err == errStepNotAvailableOfflineMode {
-			availableVersions := listCachedStepVersion(log, stepLib, stepLibURI, id)
+			availableVersions := ListCachedStepVersions(log, stepCollection, stepLibURI, id)
 			versionList := "Other versions available in the local cache:"
 			for _, version := range availableVersions {
 				versionList = versionList + fmt.Sprintf("\n- %s", version)
@@ -118,17 +54,9 @@ func Activate(stepLibURI, id, version, destination, destinationStepYML string, u
 	return nil
 }
 
-func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string, updateLibrary bool, log stepman.Logger) (models.StepModel, string, error) {
+func queryStep(stepLib models.StepCollectionModel, stepLibURI string, id, version string) (models.StepModel, string, error) {
 	step, stepFound, versionFound := stepLib.GetStep(id, version)
-	if (!stepFound || !versionFound) && updateLibrary {
-		var err error
-		stepLib, err = stepman.UpdateLibrary(stepLibURI, log)
-		if err != nil {
-			return models.StepModel{}, "", fmt.Errorf("failed to update %s steplib: %s", stepLibURI, err)
-		}
 
-		step, stepFound, versionFound = stepLib.GetStep(id, version)
-	}
 	if !stepFound {
 		return models.StepModel{}, "", fmt.Errorf("%s steplib does not contain %s step", stepLibURI, id)
 	}
@@ -172,33 +100,6 @@ func activateStep(stepLib models.StepCollectionModel, stepLibURI, id, version st
 	return stepCacheDir, nil
 }
 
-func listCachedStepVersion(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
-	versions := []models.Semver{}
-
-	for version, step := range stepLib.Steps[stepID].Versions {
-		_, err := activateStep(stepLib, stepLibURI, stepID, version, step, log, true)
-		if err != nil {
-			continue
-		}
-
-		v, err := models.ParseSemver(version)
-		if err != nil {
-			log.Warnf("failed to parse version (%s): %s", version, err)
-		}
-
-		versions = append(versions, v)
-	}
-
-	slices.SortFunc(versions, models.CmpSemver)
-
-	versionsStr := make([]string, len(versions))
-	for i, v := range versions {
-		versionsStr[i] = v.String()
-	}
-
-	return versionsStr
-}
-
 func copyStep(src, dst string) error {
 	if exist, err := pathutil.IsPathExists(dst); err != nil {
 		return fmt.Errorf("failed to check if %s path exist: %s", dst, err)
@@ -232,4 +133,31 @@ func copyStepYML(libraryURL, id, version, dest string) error {
 		return fmt.Errorf("copy command failed: %s", err)
 	}
 	return nil
+}
+
+func ListCachedStepVersions(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
+	versions := []models.Semver{}
+
+	for version, step := range stepLib.Steps[stepID].Versions {
+		_, err := activateStep(stepLib, stepLibURI, stepID, version, step, log, true)
+		if err != nil {
+			continue
+		}
+
+		v, err := models.ParseSemver(version)
+		if err != nil {
+			log.Warnf("failed to parse version (%s): %s", version, err)
+		}
+
+		versions = append(versions, v)
+	}
+
+	slices.SortFunc(versions, models.CmpSemver)
+
+	versionsStr := make([]string, len(versions))
+	for i, v := range versions {
+		versionsStr[i] = v.String()
+	}
+
+	return versionsStr
 }

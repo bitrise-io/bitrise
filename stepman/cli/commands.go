@@ -66,7 +66,6 @@ var (
 				flUpdate,
 			},
 		},
-		activateCommand,
 		{
 			Name:   "audit",
 			Usage:  "Validates Step or Step Collection.",
