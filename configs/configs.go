@@ -73,6 +73,11 @@ const (
 	bitriseConfigFileName = "config.json"
 )
 
+const (
+	selfUpdateInterval   = 24 * time.Hour
+	PluginUpdateInterval = 24 * time.Hour
+)
+
 // IsDebugUseSystemTools ...
 func IsDebugUseSystemTools() bool {
 	return os.Getenv(DebugUseSystemTools) == "true"
@@ -134,7 +139,7 @@ func CheckIsCLIUpdateCheckRequired() bool {
 	}
 
 	duration := time.Now().Sub(config.LastCLIUpdateCheck)
-	if duration.Hours() >= 24 {
+	if duration >= selfUpdateInterval {
 		return true
 	}
 
@@ -159,7 +164,7 @@ func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 	}
 
 	duration := time.Now().Sub(config.LastPluginUpdateChecks[plugin])
-	if duration.Hours() >= 24 {
+	if duration >= PluginUpdateInterval {
 		return true
 	}
 

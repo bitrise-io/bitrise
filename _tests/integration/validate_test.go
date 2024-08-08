@@ -112,7 +112,7 @@ func Test_ValidateTest(t *testing.T) {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		}, runtimeLimit)
 		require.Error(t, err, out)
-		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mConfig (path:%s) is not valid: empty config\x1b[0m", configPth)
+		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mconfig (%s) is not valid: empty config\x1b[0m", configPth)
 		require.Equal(t, expected, out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
@@ -184,7 +184,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		}, runtimeLimit)
 		require.Error(t, err, out)
-		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: empty config\"}}}", configPth)
+		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"config (%s) is not valid: empty config\"}}}", configPth)
 		require.Equal(t, expected, out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
@@ -201,7 +201,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		}, runtimeLimit)
 		require.Error(t, err, out)
-		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"Config (path:%s) is not valid: missing format_version\"}}}", configPth)
+		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"config (%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}

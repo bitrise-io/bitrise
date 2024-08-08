@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+
+	"github.com/heimdalr/dag"
 
 	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -106,29 +109,61 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // ----------------------------
 // --- Normalize
 
-func (bundle *StepBundleListItemModel) Normalize() error {
-	for _, env := range bundle.Environments {
+func (bundle *StepBundleModel) Normalize() error {
+	for idx, stepListItem := range bundle.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		bundle.Steps[idx] = stepListItem
+	}
+
+	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		bundle.Environments[i] = env
 	}
 	return nil
 }
 
-func (bundle *StepBundleModel) Normalize() error {
-	for _, env := range bundle.Environments {
+func (bundle *StepBundleListItemModel) Normalize() error {
+	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		bundle.Environments[i] = env
+	}
+	return nil
+}
+
+func (with *WithModel) Normalize() error {
+	for idx, stepListItem := range with.Steps {
+		stepID, step, err := stepListItem.GetStepIDAndStep()
+		if err != nil {
+			return err
+		}
+
+		if err := step.Normalize(); err != nil {
+			return err
+		}
+		stepListItem[stepID] = step
+		with.Steps[idx] = stepListItem
 	}
 	return nil
 }
 
 func (container *Container) Normalize() error {
-	for _, env := range container.Envs {
+	for i, env := range container.Envs {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		container.Envs[i] = env
 	}
 	return nil
 }
@@ -140,8 +175,8 @@ func (workflow *WorkflowModel) Normalize() error {
 		}
 	}
 
-	for _, stepListItem := range workflow.Steps {
-		_, t, err := stepListItem.GetKeyAndType()
+	for idx, stepListItem := range workflow.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
@@ -154,6 +189,9 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[key] = *step
+			workflow.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeBundle {
 			bundle, err := stepListItem.GetBundle()
 			if err != nil {
@@ -163,17 +201,39 @@ func (workflow *WorkflowModel) Normalize() error {
 			if err := bundle.Normalize(); err != nil {
 				return err
 			}
+
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = *bundle
+			workflow.Steps[idx] = stepListItem
+		} else if t == StepListItemTypeWith {
+			with, err := stepListItem.GetWith()
+			if err != nil {
+				return err
+			}
+
+			if err := with.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[key] = *with
+			workflow.Steps[idx] = stepListItem
 		}
 	}
+
+	normalizedMeta, err := stepmanModels.JSONMarshallable(workflow.Meta)
+	if err != nil {
+		return fmt.Errorf("failed to normalize meta: %w", err)
+	}
+	workflow.Meta = normalizedMeta
 
 	return nil
 }
 
 func (app *AppModel) Normalize() error {
-	for _, env := range app.Environments {
+	for idx, env := range app.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
+		app.Environments[idx] = env
 	}
 	return nil
 }
@@ -189,28 +249,32 @@ func (config *BitriseDataModel) Normalize() error {
 	}
 	config.TriggerMap = normalizedTriggerMap
 
-	for _, container := range config.Containers {
+	for containerID, container := range config.Containers {
 		if err := container.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize container: %w", err)
 		}
+		config.Containers[containerID] = container
 	}
 
-	for _, container := range config.Services {
-		if err := container.Normalize(); err != nil {
+	for serviceID, service := range config.Services {
+		if err := service.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize service: %w", err)
 		}
+		config.Services[serviceID] = service
 	}
 
-	for _, stepBundle := range config.StepBundles {
+	for stepBundleID, stepBundle := range config.StepBundles {
 		if err := stepBundle.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize step_bundle: %w", err)
 		}
+		config.StepBundles[stepBundleID] = stepBundle
 	}
 
-	for _, workflow := range config.Workflows {
+	for workflowID, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize workflow: %w", err)
 		}
+		config.Workflows[workflowID] = workflow
 	}
 
 	normalizedMeta, err := stepmanModels.JSONMarshallable(config.Meta)
@@ -266,7 +330,7 @@ func (container *Container) Validate() error {
 	return nil
 }
 
-func (with WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
+func (with *WithModel) Validate(workflowID string, containers, services map[string]Container) ([]string, error) {
 	var warnings []string
 
 	if with.ContainerID != "" {
@@ -462,8 +526,8 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 
 func validatePipelines(config *BitriseDataModel) ([]string, error) {
 	pipelineWarnings := make([]string, 0)
-	for ID, pipeline := range config.Pipelines {
-		idWarning, err := validateID(ID, "pipeline")
+	for pipelineID, pipeline := range config.Pipelines {
+		idWarning, err := validateID(pipelineID, "pipeline")
 		if idWarning != "" {
 			pipelineWarnings = append(pipelineWarnings, idWarning)
 		}
@@ -471,29 +535,101 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 			return pipelineWarnings, err
 		}
 
-		if len(pipeline.Stages) == 0 {
-			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage", ID)
+		hasStages := len(pipeline.Stages) > 0
+		hasWorkflows := len(pipeline.Workflows) > 0
+
+		if hasStages && hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has both stages and workflows", pipelineID)
+		} else if !hasStages && !hasWorkflows {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage or workflow", pipelineID)
 		}
 
-		for _, pipelineStage := range pipeline.Stages {
-			pipelineStageID, err := getStageID(pipelineStage)
-			if err != nil {
-				return pipelineWarnings, err
+		if hasStages {
+			return pipelineWarnings, validateStagedPipeline(pipelineID, &pipeline, config)
+		}
+
+		//TODO: Why is this always true?
+		if hasWorkflows {
+			return pipelineWarnings, validateDAGPipeline(pipelineID, &pipeline, config)
+		}
+
+	}
+
+	return pipelineWarnings, nil
+}
+
+func validateStagedPipeline(pipelineID string, pipeline *PipelineModel, config *BitriseDataModel) error {
+	for _, pipelineStage := range pipeline.Stages {
+		pipelineStageID, err := getStageID(pipelineStage)
+		if err != nil {
+			return err
+		}
+
+		if _, ok := config.Stages[pipelineStageID]; !ok {
+			return fmt.Errorf("stage (%s) defined in pipeline (%s) does not exist", pipelineStageID, pipelineID)
+		}
+	}
+
+	return nil
+}
+
+func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *BitriseDataModel) error {
+	for pipelineWorkflowID, pipelineWorkflow := range pipeline.Workflows {
+		if isUtilityWorkflow(pipelineWorkflowID) {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
+		}
+
+		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+		}
+
+		uniqueItems := make(map[string]bool)
+
+		for _, identifier := range pipelineWorkflow.DependsOn {
+			if uniqueItems[identifier] {
+				return fmt.Errorf("workflow (%s) is duplicated in the dependency list (%s)", identifier, pipelineWorkflowID)
 			}
-			found := false
-			for stageID := range config.Stages {
-				if stageID == pipelineStageID {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return pipelineWarnings, fmt.Errorf("stage (%s) defined in pipeline (%s), but does not exist", pipelineStageID, ID)
+
+			uniqueItems[identifier] = true
+
+			if _, ok := pipeline.Workflows[identifier]; !ok {
+				return fmt.Errorf("workflow (%s) defined in dependencies (%s) is not part of pipeline (%s)", identifier, pipelineWorkflowID, pipelineID)
 			}
 		}
 	}
 
-	return pipelineWarnings, nil
+	return validateGraph(pipeline)
+}
+
+func validateGraph(pipeline *PipelineModel) error {
+	d := dag.NewDAG()
+	for identifier := range pipeline.Workflows {
+		// The second argument in AddVertexByID is the "value" which cannot be empty,
+		// but we will rely on the first argument (ID) only
+		err := d.AddVertexByID(identifier, identifier)
+		if err != nil {
+			return err
+		}
+	}
+
+	for identifier, workflow := range pipeline.Workflows {
+		for _, dependency := range workflow.DependsOn {
+			err := d.AddEdge(dependency, identifier)
+			if err != nil {
+				if errors.As(err, &dag.EdgeLoopError{}) {
+					// The workflows are in a map object, and the order of these two in the error message was non-deterministic.
+					// We need to sort them, so they appear always in the same order.
+					items := []string{identifier, dependency}
+					sort.Strings(items)
+
+					return fmt.Errorf("the dependency between workflow '%s' and workflow '%s' creates a cycle in the graph", items[0], items[1])
+				}
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func validateStages(config *BitriseDataModel) ([]string, error) {
@@ -580,7 +716,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 
 				// TODO: Why is this assignment needed?
-				stepListItem[stepID] = step
+				stepListItem[stepID] = *step
 			} else if t == StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
 				if err != nil {
@@ -1177,7 +1313,7 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 	}
 
 	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, errors.New("StepListItem contains more than 1 key-value pair")
+		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
 	}
 
 	for key := range *stepListItem {
@@ -1236,14 +1372,6 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
 			stepPtr = &s
-			break
-		}
-
-		// StepListItemModel is a map[string]interface{}, when it comes from a JSON/YAML unmarshal
-		// the StepModel has a pointer type.
-		sPtr, ok := value.(*stepmanModels.StepModel)
-		if ok {
-			stepPtr = sPtr
 			break
 		}
 

@@ -1,0 +1,22 @@
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+include:
+- path: modular_config_module.yml
+- path: print-hello.yml
+  repository: https://github.com/bitrise-io/test-bitrise-config-modules.git
+  branch: main
+
+workflows:
+  print_hello_bitrise:
+    envs:
+    - NAME: Bitrise
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello $NAME!"
+
+  # This overwrites the NAME env from the included print-hello.yml
+  print_hello:
+    envs:
+    - NAME: John Doe

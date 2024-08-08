@@ -2,11 +2,18 @@ package models
 
 import (
 	"fmt"
+
 	"gopkg.in/yaml.v2"
 )
 
-func (ymlTree *ConfigFileTreeModel) Merge() (string, error) {
-	result, err := merge(ymlTree)
+type ConfigFileTreeModel struct {
+	Path     string                `json:"path" yaml:"path"`
+	Contents string                `json:"contents,omitempty" yaml:"contents,omitempty"`
+	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
+}
+
+func (configTree *ConfigFileTreeModel) Merge() (string, error) {
+	result, err := merge(configTree)
 	if err != nil {
 		return "", err
 	}

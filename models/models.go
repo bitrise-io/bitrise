@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	FormatVersion                   = "16"
+	FormatVersion                   = "17"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
@@ -39,10 +39,11 @@ type StepListStepItemModel map[string]stepmanModels.StepModel
 type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
-	Title       string               `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string               `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
-	Stages      []StageListItemModel `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Title       string                   `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Stages      []StageListItemModel     `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Workflows   DagWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 type StageListItemModel map[string]StageModel
@@ -61,6 +62,12 @@ type StageWorkflowListItemModel map[string]StageWorkflowModel
 
 type StageWorkflowModel struct {
 	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+}
+
+type DagWorkflowListItemModel map[string]DagWorkflowModel
+
+type DagWorkflowModel struct {
+	DependsOn []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 }
 
 type WorkflowListItemModel map[string]WorkflowModel
@@ -252,10 +259,4 @@ type TestResultStepInfo struct {
 	Version string `json:"version" yaml:"version"`
 	Title   string `json:"title" yaml:"title"`
 	Number  int    `json:"number" yaml:"number"`
-}
-
-type ConfigFileTreeModel struct {
-	Path     string                `json:"path" yaml:"path"`
-	Contents string                `json:"contents,omitempty" yaml:"contents,omitempty"`
-	Includes []ConfigFileTreeModel `json:"includes,omitempty" yaml:"includes,omitempty"`
 }
