@@ -307,7 +307,11 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		ProjectType:    r.config.Config.ProjectType,
 	}
 
-	plan, err := createWorkflowRunPlan(r.config.Modes, r.config.Workflow, r.config.Config.Workflows, r.config.Config.StepBundles, func() string { return uuid.Must(uuid.NewV4()).String() })
+	plan, err := createWorkflowRunPlan(
+		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
+		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,
+		func() string { return uuid.Must(uuid.NewV4()).String() },
+	)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to create workflow execution plan: %w", err)
 	}
@@ -495,8 +499,14 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 	return nil
 }
 
-func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel, stepBundles map[string]models.StepBundleModel, uuidProvider func() string) (models.WorkflowRunPlan, error) {
+func createWorkflowRunPlan(
+	modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel,
+	stepBundles map[string]models.StepBundleModel, containers map[string]models.Container, services map[string]models.Container,
+	uuidProvider func() string,
+) (models.WorkflowRunPlan, error) {
 	var executionPlan []models.WorkflowExecutionPlan
+	withGroupPlans := map[string]models.WithGroupPlan{}
+	stepBundlePlans := map[string]models.StepBundlePlan{}
 
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
@@ -530,6 +540,21 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 
 				groupID := uuidProvider()
 
+				var containerPlan models.ContainerPlan
+				if with.ContainerID != "" {
+					containerPlan.Image = containers[with.ContainerID].Image
+				}
+
+				var servicePlans []models.ContainerPlan
+				for _, serviceID := range with.ServiceIDs {
+					servicePlans = append(servicePlans, models.ContainerPlan{Image: services[serviceID].Image})
+				}
+
+				withGroupPlans[groupID] = models.WithGroupPlan{
+					Services:  servicePlans,
+					Container: containerPlan,
+				}
+
 				for _, stepListStepItem := range with.Steps {
 					stepID, step, err := stepListStepItem.GetStepIDAndStep()
 					if err != nil {
@@ -559,6 +584,10 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 
 				bundleEnvs := append(bundleDefinition.Environments, bundleOverride.Environments...)
 				bundleUUID := uuidProvider()
+
+				stepBundlePlans[bundleUUID] = models.StepBundlePlan{
+					ID: bundleID,
+				}
 
 				for idx, stepListStepItem := range bundleDefinition.Steps {
 					stepID, step, err := stepListStepItem.GetStepIDAndStep()
@@ -611,6 +640,8 @@ func createWorkflowRunPlan(modes models.WorkflowRunModes, targetWorkflow string,
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
+		WithGroupPlans:          withGroupPlans,
+		StepBundlePlans:         stepBundlePlans,
 		ExecutionPlan:           executionPlan,
 	}, nil
 }
