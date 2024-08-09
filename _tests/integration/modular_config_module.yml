@@ -10,4 +10,4 @@ workflows:
     envs:
     - NAME: World
     steps:
-    - bundle::print: {}
+    - bundle::print: { }
