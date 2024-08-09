@@ -4,12 +4,76 @@
 package integration
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
 )
+
+func Test_Docker_JSON_Logs(t *testing.T) {
+	testCases := map[string]struct {
+		workflowName           string
+		configPath             string
+		inventoryPath          string
+		requiredContainerImage string
+		requiredServiceImages  []string
+	}{
+		"With group with step execution and service containers": {
+			workflowName:           "docker-login-multiple-containers",
+			configPath:             "docker_multiple_containers_bitrise.yml",
+			inventoryPath:          "docker_multiple_containers_secrets.yml",
+			requiredContainerImage: "localhost:5001/healthy-image",
+			requiredServiceImages: []string{
+				"localhost:5002/healthy-image",
+				"localhost:5003/healthy-image",
+			},
+		},
+	}
+	for testName, testCase := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			cmd := command.New(binPath(), "run", testCase.workflowName, "--config", testCase.configPath, "--inventory", testCase.inventoryPath, "--output-format", "json")
+			out, _ := cmd.RunAndReturnTrimmedCombinedOutput()
+			//require.NoError(t, err, out)
+			checkRequiredContainers(t, out, testCase.requiredContainerImage, testCase.requiredServiceImages)
+		})
+	}
+}
+
+func checkRequiredContainers(t *testing.T, log string, requiredContainerImage string, requiredServiceImages []string) {
+	lines := strings.Split(log, "\n")
+	require.True(t, len(lines) > 0)
+
+	var bitriseStartedEventLog struct {
+		BitriseStartedEvent models.WorkflowRunPlan `json:"content"`
+	}
+	bitriseStartedLog := lines[0]
+	require.NoError(t, json.Unmarshal([]byte(bitriseStartedLog), &bitriseStartedEventLog))
+	bitriseStartedEvent := bitriseStartedEventLog.BitriseStartedEvent
+
+	var usedContainerImages []string
+	var usedServiceImages []string
+
+	for _, workflowPlans := range bitriseStartedEvent.ExecutionPlan {
+		for _, stepPlans := range workflowPlans.Steps {
+			if stepPlans.WithGroupUUID != "" {
+				withGroupPlan := bitriseStartedEvent.WithGroupPlans[stepPlans.WithGroupUUID]
+
+				usedContainerImages = append(usedContainerImages, withGroupPlan.Container.Image)
+				for _, servicePlan := range withGroupPlan.Services {
+					usedServiceImages = append(usedServiceImages, servicePlan.Image)
+				}
+			}
+		}
+	}
+
+	require.Equal(t, 1, len(usedContainerImages))
+	require.EqualValues(t, requiredContainerImage, usedContainerImages[0])
+	require.EqualValues(t, requiredServiceImages, usedServiceImages)
+}
 
 func Test_Docker(t *testing.T) {
 	testCases := map[string]struct {
