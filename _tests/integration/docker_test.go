@@ -224,7 +224,7 @@ func checkRequiredContainers(t *testing.T, log string, requiredContainerImage st
 		}
 	}
 
-	require.Equal(t, 1, len(usedContainerImages), bitriseStartedLog)
-	require.EqualValues(t, requiredContainerImage, usedContainerImages[0], bitriseStartedLog)
-	require.EqualValues(t, requiredServiceImages, usedServiceImages, bitriseStartedLog)
+	require.Equal(t, 1, len(usedContainerImages), log)
+	require.EqualValues(t, requiredContainerImage, usedContainerImages[0], log)
+	require.EqualValues(t, requiredServiceImages, usedServiceImages, log)
 }
