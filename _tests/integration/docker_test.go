@@ -195,12 +195,18 @@ func checkRequiredContainers(t *testing.T, log string, requiredContainerImage st
 	lines := strings.Split(log, "\n")
 	require.True(t, len(lines) > 0)
 
-	var bitriseStartedEventLog struct {
-		BitriseStartedEvent models.WorkflowRunPlan `json:"content"`
+	var bitriseStartedEvent models.WorkflowRunPlan
+	for _, line := range lines {
+		var eventLogStruct struct {
+			EventType string                 `json:"event_type"`
+			Content   models.WorkflowRunPlan `json:"content"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(line), &eventLogStruct))
+		if eventLogStruct.EventType == "bitrise_started" {
+			bitriseStartedEvent = eventLogStruct.Content
+			break
+		}
 	}
-	bitriseStartedLog := lines[0]
-	require.NoError(t, json.Unmarshal([]byte(bitriseStartedLog), &bitriseStartedEventLog))
-	bitriseStartedEvent := bitriseStartedEventLog.BitriseStartedEvent
 
 	var usedContainerImages []string
 	var usedServiceImages []string
