@@ -70,9 +70,9 @@ func checkRequiredContainers(t *testing.T, log string, requiredContainerImage st
 		}
 	}
 
-	require.Equal(t, 1, len(usedContainerImages))
-	require.EqualValues(t, requiredContainerImage, usedContainerImages[0])
-	require.EqualValues(t, requiredServiceImages, usedServiceImages)
+	require.Equal(t, 1, len(usedContainerImages), bitriseStartedLog)
+	require.EqualValues(t, requiredContainerImage, usedContainerImages[0], bitriseStartedLog)
+	require.EqualValues(t, requiredServiceImages, usedServiceImages, bitriseStartedLog)
 }
 
 func Test_Docker(t *testing.T) {
