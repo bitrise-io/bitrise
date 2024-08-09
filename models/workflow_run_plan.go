@@ -25,11 +25,11 @@ type StepExecutionPlan struct {
 
 	Step stepmanModels.StepModel `json:"-"`
 	// With (container) group
-	WithGroupUUID string   `json:"with_group_uuid"`
+	WithGroupUUID string   `json:"with_group_uuid,omitempty"`
 	ContainerID   string   `json:"-"`
 	ServiceIDs    []string `json:"-"`
 	// Step Bundle group
-	StepBundleUUID string                              `json:"step_bundle_uuid"`
+	StepBundleUUID string                              `json:"step_bundle_uuid,omitempty"`
 	StepBundleEnvs []envmanModels.EnvironmentItemModel `json:"-"`
 }
 
@@ -46,8 +46,8 @@ type ContainerPlan struct {
 }
 
 type WithGroupPlan struct {
-	Services  []ContainerPlan `json:"services"`
-	Container ContainerPlan   `json:"container"`
+	Services  []ContainerPlan `json:"services,omitempty"`
+	Container ContainerPlan   `json:"container,omitempty"`
 }
 
 type StepBundlePlan struct {
@@ -66,7 +66,7 @@ type WorkflowRunPlan struct {
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
 
-	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups"`
-	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles"`
+	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
+	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
 	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
 }
