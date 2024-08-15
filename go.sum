@@ -24,8 +24,8 @@ github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22 h1:/SD9xE4LlX/Ju9YZ+n/yW/uDs7h
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22/go.mod h1:Laih4ji980SQkRgdnMCH0g4u2GZI/5nnbqmYT9UfKFQ=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN9g1FQ8W7nXxQAG7iwq1Cw+mUk5S9A=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef/go.mod h1:27ldH2bkCdYN5CEJ6x92EK+gkd5EcDBkA7dMrSKQFYU=
-github.com/bitrise-io/stepman v0.0.0-20240628140527-5e941cdb67a1 h1:/hVIftPENx0k6JuXDgPbpWXCx1Lm4GbvsUVfgr6618A=
-github.com/bitrise-io/stepman v0.0.0-20240628140527-5e941cdb67a1/go.mod h1:netRLDQD95IzWZbzmn7CBolzNqH1tErRKS31BrZKt9s=
+github.com/bitrise-io/stepman v0.0.0-20240731124408-5b7e38abd0bf h1:Sw+nLHrAqcPE7jbsIgFMvaRsvQOZAA95xFCPUSb0ZKE=
+github.com/bitrise-io/stepman v0.0.0-20240731124408-5b7e38abd0bf/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/cloudflare/circl v1.3.3/go.mod h1:5XYMA4rFBvNIrhs50XuiBJ15vF2pZn4nnUKZrLbUZFA=
 github.com/cloudflare/circl v1.3.7 h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=

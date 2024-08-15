@@ -17,7 +17,7 @@ func ActivatePathRefStep(
 	workDir string,
 ) (ActivatedStep, error) {
 	log.Debugf("Local step found: (path:%s)", id.IDorURI)
-	// TODO: id.IDorURI is a path to the step dir in this case
+	// id.IDorURI is a path to the step dir in this case
 	stepAbsLocalPth, err := pathutil.AbsPath(id.IDorURI)
 	if err != nil {
 		return ActivatedStep{}, err
@@ -40,8 +40,8 @@ func ActivatePathRefStep(
 		return ActivatedStep{}, fmt.Errorf("step.yml doesn't exist at %s", origStepYMLPth)
 	}
 
-	stepYMLPath := filepath.Join(workDir, "current_step.yml")
-	if err := command.CopyFile(origStepYMLPth, stepYMLPath); err != nil {
+	activatedStepYMLPath := filepath.Join(workDir, "current_step.yml")
+	if err := command.CopyFile(origStepYMLPth, activatedStepYMLPath); err != nil {
 		return ActivatedStep{}, err
 	}
 
@@ -50,8 +50,7 @@ func ActivatePathRefStep(
 	}
 
 	return ActivatedStep{
-		StepYMLPath:     stepYMLPath,
-		OrigStepYMLPath: origStepYMLPth,
-		WorkDir:         activatedStepDir,
+		StepYMLPath:     activatedStepYMLPath,
+		DidStepLibUpdate: false,
 	}, nil
 }

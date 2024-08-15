@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/stringutil"
+	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
@@ -62,7 +63,7 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 		}
 
 		if isShort { // print only step IDs and cached versions
-			cachedVersions := listCachedStepVersion(log, stepLib, stepLibURI, stepID)
+			cachedVersions := steplib.ListCachedStepVersions(log, stepLib, stepLibURI, stepID)
 			id := fmt.Sprintf("%s (%s)", stepID, stepGroupInfo.Info.Maintainer)
 			fmt.Printf("%s cached versions:  %s\n", printInMaxNChars(id, 55), strings.Join(cachedVersions, ", "))
 
