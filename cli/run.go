@@ -632,7 +632,7 @@ func createWorkflowRunPlan(
 
 	return models.WorkflowRunPlan{
 		Version:                 cliVersion,
-		LogFormatVersion:        "1",
+		LogFormatVersion:        models.LogFormatVersion,
 		CIMode:                  modes.CIMode,
 		PRMode:                  modes.PRMode,
 		DebugMode:               modes.DebugMode,
