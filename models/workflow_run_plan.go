@@ -7,6 +7,8 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+const LogFormatVersion = "2"
+
 type WorkflowRunModes struct {
 	CIMode                  bool
 	PRMode                  bool
