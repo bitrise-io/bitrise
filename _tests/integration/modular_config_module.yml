@@ -1,8 +1,13 @@
+step_bundles:
+  print:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello $NAME!"
+
 workflows:
   print_hello_world:
     envs:
     - NAME: World
     steps:
-    - script:
-        inputs:
-        - content: echo "Hello $NAME!"
+    - bundle::print: { }

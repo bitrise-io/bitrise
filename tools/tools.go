@@ -134,18 +134,6 @@ func StepmanSetup(collection string) error {
 	return stepman.Setup(collection, "", log)
 }
 
-// StepmanUpdate ...
-func StepmanUpdate(collection string) error {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.UpdateLibrary(collection, log)
-}
-
-// StepmanActivate ...
-func StepmanActivate(collection, stepID, stepVersion, dir, ymlPth string, isOfflineMode bool) error {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Activate(collection, stepID, stepVersion, dir, ymlPth, false, log, isOfflineMode)
-}
-
 // StepmanStepInfo ...
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())

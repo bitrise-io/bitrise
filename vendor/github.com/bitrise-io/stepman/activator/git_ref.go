@@ -51,7 +51,6 @@ even if the repository is open source!`)
 
 	return ActivatedStep{
 		StepYMLPath:     stepYMLPath,
-		OrigStepYMLPath: "", // TODO: temporary during refactors, see definition
-		WorkDir:         activatedStepDir,
+		DidStepLibUpdate: false,
 	}, nil
 }
