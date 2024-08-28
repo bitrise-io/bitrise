@@ -86,7 +86,7 @@ func prepareStepLibForActivation(
 			return stepInfo, didUpdate, err
 		}
 
-		log.Infof("Failed to query step info from library, trying to update StepLib...")
+		log.Infof("Step not found in local StepLib cache, trying to update StepLib...")
 		_, err = stepman.UpdateLibrary(id.SteplibSource, log)
 		if err != nil {
 			return stepInfo, didUpdate, err
