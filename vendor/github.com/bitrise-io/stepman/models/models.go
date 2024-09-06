@@ -56,12 +56,11 @@ type SwiftStepToolkitModel struct {
 }
 
 type StepToolkitModel struct {
-	Bash   *BashStepToolkitModel   `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go     *GoStepToolkitModel     `json:"go,omitempty" yaml:"go,omitempty"`
-	Swift  *SwiftStepToolkitModel  `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
-// StepModel ...
 type StepModel struct {
 	Title       *string `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     *string `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -70,10 +69,13 @@ type StepModel struct {
 	Website       *string `json:"website,omitempty" yaml:"website,omitempty"`
 	SourceCodeURL *string `json:"source_code_url,omitempty" yaml:"source_code_url,omitempty"`
 	SupportURL    *string `json:"support_url,omitempty" yaml:"support_url,omitempty"`
+
 	// auto-generated at share
 	PublishedAt *time.Time        `json:"published_at,omitempty" yaml:"published_at,omitempty"`
 	Source      *StepSourceModel  `json:"source,omitempty" yaml:"source,omitempty"`
+	Executables Executables       `json:"executables,omitempty" yaml:"executables,omitempty"`
 	AssetURLs   map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
+
 	//
 	HostOsTags          []string          `json:"host_os_tags,omitempty" yaml:"host_os_tags,omitempty"`
 	ProjectTypeTags     []string          `json:"project_type_tags,omitempty" yaml:"project_type_tags,omitempty"`
@@ -118,6 +120,15 @@ type StepGroupModel struct {
 	Info                StepGroupInfoModel   `json:"info,omitempty" yaml:"info,omitempty"`
 	LatestVersionNumber string               `json:"latest_version_number,omitempty" yaml:"latest_version_number,omitempty"`
 	Versions            map[string]StepModel `json:"versions,omitempty" yaml:"versions,omitempty"`
+}
+
+// Key: platform, as in runtime.GOOS + runtime.GOARCH
+// Examples: darwin-arm64, linux-amd64
+type Executables map[string]Executable
+
+type Executable struct {
+	Url string `json:"url,omitempty" yaml:"url,omitempty"`
+	Hash string `json:"hash,omitempty" yaml:"hash,omitempty"`
 }
 
 func (stepGroup StepGroupModel) LatestVersion() (StepModel, bool) {
@@ -174,4 +185,3 @@ type SteplibInfoModel struct {
 	URI      string `json:"uri,omitempty" yaml:"uri,omitempty"`
 	SpecPath string `json:"spec_path,omitempty" yaml:"spec_path,omitempty"`
 }
-
