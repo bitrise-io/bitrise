@@ -90,6 +90,8 @@ func Run() {
 	app.Action = func(c *cli.Context) error {
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
+			logPluginCommandParameters(pluginName, pluginArgs)
+
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
 				return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)

@@ -5,7 +5,9 @@ import (
 	"github.com/urfave/cli"
 )
 
-func shareAudit(_ *cli.Context) error {
+func shareAudit(c *cli.Context) error {
+	logSubcommandParameters(c)
+
 	if err := tools.StepmanShareAudit(); err != nil {
 		failf("Bitrise share audit failed, error: %s", err)
 	}

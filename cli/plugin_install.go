@@ -13,6 +13,8 @@ var pluginInstallCommand = cli.Command{
 	Name:  "install",
 	Usage: "Install bitrise plugin.",
 	Action: func(c *cli.Context) error {
+		logSubcommandParameters(c)
+
 		if err := pluginInstall(c); err != nil {
 			log.Errorf("Plugin install failed, error: %s", err)
 			os.Exit(1)
