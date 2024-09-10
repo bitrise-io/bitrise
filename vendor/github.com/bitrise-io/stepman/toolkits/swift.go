@@ -37,7 +37,7 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	return len(binPath) > 0
 }
 
-func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.CanonicalID, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.CanonicalID, stepAbsDirPath, _ string) error {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return nil
@@ -58,7 +58,7 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.Ca
 	return nil
 }
 
-func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
+func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath, _ string) ([]string, error) {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
 		return []string{"swift", "run", "--package-path", stepAbsDirPath, "-c", "release"}, nil

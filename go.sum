@@ -28,6 +28,12 @@ github.com/bitrise-io/stepman v0.0.0-20240827070535-210db1eae58e h1:bTy1G+zKuDZO
 github.com/bitrise-io/stepman v0.0.0-20240827070535-210db1eae58e/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
 github.com/bitrise-io/stepman v0.0.0-20240827073840-3b3418afd742 h1:n9T1IXoYrv53dgA6ok55qpATMOHO1GO1a1XEzFgdJ+E=
 github.com/bitrise-io/stepman v0.0.0-20240827073840-3b3418afd742/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
+github.com/bitrise-io/stepman v0.0.0-20240910090525-81ea523fde4d h1:wYYhOou+MRhXFb6c4TTSMAHZtyHK3p6dYvw12n5PBMM=
+github.com/bitrise-io/stepman v0.0.0-20240910090525-81ea523fde4d/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
+github.com/bitrise-io/stepman v0.0.0-20240910132802-bdedd1d6ee3a h1:DFhzNz6cb/rTu8GJKyJ1/wFKl6+8x6CCk67zZHiRBys=
+github.com/bitrise-io/stepman v0.0.0-20240910132802-bdedd1d6ee3a/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
+github.com/bitrise-io/stepman v0.0.0-20240910143949-9b1ab78ab2a1 h1:+juFsCpL7PgNqp9Vt7nY5FxGEDAsnLmGTksvZms3+k4=
+github.com/bitrise-io/stepman v0.0.0-20240910143949-9b1ab78ab2a1/go.mod h1:Lq9nEqKerBD35w3eSU8lf83F7uZPkXfmRSZEUDJN40w=
 github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
 github.com/cloudflare/circl v1.3.3/go.mod h1:5XYMA4rFBvNIrhs50XuiBJ15vF2pZn4nnUKZrLbUZFA=
 github.com/cloudflare/circl v1.3.7 h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=

@@ -16,15 +16,15 @@ import (
 
 const precompiledStepsEnv = "BITRISE_EXPERIMENT_PRECOMPILED_STEPS"
 
-func ActivateStep(stepLibURI, id, version, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool) error {
+func ActivateStep(stepLibURI, id, version, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool) (string, error) {
 	stepCollection, err := stepman.ReadStepSpec(stepLibURI)
 	if err != nil {
-		return fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
+		return "", fmt.Errorf("failed to read %s steplib: %s", stepLibURI, err)
 	}
 
 	step, version, err := queryStepMetadata(stepCollection, stepLibURI, id, version)
 	if err != nil {
-		return fmt.Errorf("failed to find step: %s", err)
+		return "", fmt.Errorf("failed to find step: %s", err)
 	}
 
 	if os.Getenv(precompiledStepsEnv) == "true" {
@@ -33,19 +33,22 @@ func ActivateStep(stepLibURI, id, version, destination, destinationStepYML strin
 		if ok {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
-			err = activateStepExecutable(stepLibURI, id, version, executableForPlatform, destination, destinationStepYML)
+			execPath, err := activateStepExecutable(stepLibURI, id, version, executableForPlatform, destination, destinationStepYML)
 			if err != nil {
 				log.Warnf("Failed to download step executable, falling back to source build: %s", err)
-				return activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+				err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+				return "", err
 			}
 			log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
-			return nil
+			return execPath, nil
 		} else {
 			log.Infof("No prebuilt executable found for %s, falling back to source build", platform)
-			return activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+			err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+			return "", err
 		}
 	} else {
-		return activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+		err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+		return "", err
 	}
 }
 

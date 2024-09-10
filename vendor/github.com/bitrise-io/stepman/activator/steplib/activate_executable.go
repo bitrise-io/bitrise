@@ -20,39 +20,44 @@ func activateStepExecutable(
 	executable models.Executable,
 	destination string,
 	destinationStepYML string,
-) error {
+) (string, error) {
 	resp, err := retryablehttp.Get(executable.Url)
 	if err != nil {
-		return fmt.Errorf("fetch from %s: %w", executable.Url, err)
+		return "", fmt.Errorf("fetch from %s: %w", executable.Url, err)
 	}
 	defer resp.Body.Close()
+
+	err = os.MkdirAll(destination, 0755)
+	if err != nil {
+		return "", fmt.Errorf("create directory %s: %w", destination, err)
+	}
 
 	path := filepath.Join(destination, stepID)
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("create file %s: %w", path, err)
+		return "", fmt.Errorf("create file %s: %w", path, err)
 	}
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return fmt.Errorf("download %s to %s: %w", executable.Url, path, err)
+		return "", fmt.Errorf("download %s to %s: %w", executable.Url, path, err)
 	}
 
 	err = validateHash(path, executable.Hash)
 	if err != nil {
-		return fmt.Errorf("validate hash: %s", err)
+		return "", fmt.Errorf("validate hash: %s", err)
 	}
 
 	err = os.Chmod(path, 0755)
 	if err != nil {
-		return fmt.Errorf("set executable permission on file: %s", err)
+		return "", fmt.Errorf("set executable permission on file: %s", err)
 	}
 
 	if err := copyStepYML(stepLibURI, stepID, version, destinationStepYML); err != nil {
-		return fmt.Errorf("copy step.yml: %s", err)
+		return "", fmt.Errorf("copy step.yml: %s", err)
 	}
 
-	return nil
+	return path, nil
 }
 
 func validateHash(filePath string, expectedHash string) error {
