@@ -64,7 +64,5 @@ func collectFlags(c *cli.Context) []string {
 }
 
 func sendCommandInfo(command, subcommand string, flags []string) {
-	//fmt.Printf("Command name: %s, subcommand: %s, flags: %s\n", command, subcommand, flags)
-
 	globalTracker.SendCommandInfo(command, subcommand, flags)
 }
