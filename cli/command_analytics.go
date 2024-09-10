@@ -48,14 +48,14 @@ func logCommandParameters(c *cli.Context) {
 func collectFlags(c *cli.Context) []string {
 	var flags []string
 
-	for _, flag := range c.FlagNames() {
-		if isSet := c.IsSet(flag); isSet {
+	for _, flag := range c.GlobalFlagNames() {
+		if isSet := c.GlobalIsSet(flag); isSet {
 			flags = append(flags, flag)
 		}
 	}
 
-	for _, flag := range c.GlobalFlagNames() {
-		if isSet := c.GlobalIsSet(flag); isSet {
+	for _, flag := range c.FlagNames() {
+		if isSet := c.IsSet(flag); isSet {
 			flags = append(flags, flag)
 		}
 	}
