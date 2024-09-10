@@ -610,19 +610,25 @@ func (r WorkflowRunner) executeStep(
 	containerID string,
 	groupID string,
 ) (int, error) {
+	var cmdArgs []string
 
-	toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
-	toolkitName := toolkitForStep.ToolkitName()
-
-	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath, stepExecutablePath); err != nil {
-		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
-			toolkitName, err)
-	}
-
-	cmdArgs, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath, stepExecutablePath)
-	if err != nil {
-		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
-			toolkitName, err)
+	if stepExecutablePath != "" {
+		cmdArgs = []string{stepExecutablePath}
+	} else {
+		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
+		toolkitName := toolkitForStep.ToolkitName()
+	
+		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
+				toolkitName, err)
+		}
+	
+		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
+		if err != nil {
+			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
+				toolkitName, err)
+		}
+		cmdArgs = cmdFromToolkit
 	}
 
 	timeout := time.Duration(-1)
@@ -654,7 +660,7 @@ func (r WorkflowRunner) executeStep(
 
 	containerDef := r.ContainerDefinition(containerID)
 	if containerDef != nil {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
+		envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
 		if err != nil {
@@ -676,7 +682,7 @@ func (r WorkflowRunner) executeStep(
 		return cmd.Run()
 	}
 
-	envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}

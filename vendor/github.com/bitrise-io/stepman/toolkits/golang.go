@@ -279,7 +279,7 @@ func stepBinaryCacheFullPath(sIDData stepid.CanonicalID) string {
 }
 
 // PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath, stepExecutablePath string) error {
+func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 
 	// try to use cached binary, if possible
@@ -289,11 +289,6 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 		} else if exists {
 			return nil
 		}
-	}
-
-	if stepExecutablePath != "" {
-		// It's a steplib ref step activated as a precompiled binary, there is nothing to prepare
-		return nil
 	}
 
 	// it's not cached, so compile it
@@ -319,12 +314,7 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 // === Toolkit: Step Run ===
 
 // StepRunCommandArguments ...
-func (toolkit GoToolkit) StepRunCommandArguments(_ models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath, stepExecutablePath string) ([]string, error) {
-	if stepExecutablePath != "" {
-		// It's a steplib ref step activated as a precompiled binary, just run it
-		return []string{stepExecutablePath}, nil
-	}
-
+func (toolkit GoToolkit) StepRunCommandArguments(_ models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 	return []string{fullStepBinPath}, nil
 }

@@ -57,10 +57,10 @@ type Toolkit interface {
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath, stepExecutablePath string) error
+	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error
 
 	// StepRunCommandArguments ...
-	StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath, stepExecutablePath string) ([]string, error)
+	StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error)
 }
 
 //
