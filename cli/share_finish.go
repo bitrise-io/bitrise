@@ -6,7 +6,7 @@ import (
 )
 
 func finish(c *cli.Context) error {
-	logSubcommandParameters(c)
+	logCommandParameters(c)
 
 	if err := tools.StepmanShareFinish(); err != nil {
 		failf("Bitrise share finish failed, error: %s", err)

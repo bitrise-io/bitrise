@@ -12,7 +12,7 @@ var setupCommand = cli.Command{
 	Name:  "setup",
 	Usage: "Setup the current host. Install every required tool to run Workflows.",
 	Action: func(c *cli.Context) error {
-		logSubcommandParameters(c)
+		logCommandParameters(c)
 
 		if err := setup(c); err != nil {
 			log.Errorf("Setup failed, error: %s", err)

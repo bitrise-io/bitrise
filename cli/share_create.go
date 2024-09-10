@@ -6,7 +6,7 @@ import (
 )
 
 func create(c *cli.Context) error {
-	logSubcommandParameters(c)
+	logCommandParameters(c)
 
 	// Input validation
 	tag := c.String(TagKey)

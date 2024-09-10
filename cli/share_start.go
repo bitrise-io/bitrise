@@ -6,7 +6,7 @@ import (
 )
 
 func start(c *cli.Context) error {
-	logSubcommandParameters(c)
+	logCommandParameters(c)
 
 	// Input validation
 	collectionURI := c.String(CollectionKey)

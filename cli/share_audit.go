@@ -6,7 +6,7 @@ import (
 )
 
 func shareAudit(c *cli.Context) error {
-	logSubcommandParameters(c)
+	logCommandParameters(c)
 
 	if err := tools.StepmanShareAudit(); err != nil {
 		failf("Bitrise share audit failed, error: %s", err)

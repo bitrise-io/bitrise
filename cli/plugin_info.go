@@ -15,7 +15,7 @@ var pluginInfoCommand = cli.Command{
 	Name:  "info",
 	Usage: "Installed bitrise plugin's info",
 	Action: func(c *cli.Context) error {
-		logSubcommandParameters(c)
+		logCommandParameters(c)
 
 		if err := pluginInfo(c); err != nil {
 			log.Errorf("Plugin info failed, error: %s", err)

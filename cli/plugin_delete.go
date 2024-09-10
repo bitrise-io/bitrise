@@ -14,7 +14,7 @@ var pluginDeleteCommand = cli.Command{
 	Name:  "delete",
 	Usage: "Delete bitrise plugin.",
 	Action: func(c *cli.Context) error {
-		logSubcommandParameters(c)
+		logCommandParameters(c)
 
 		if err := pluginDelete(c); err != nil {
 			log.Errorf("Plugin delete failed, error: %s", err)

@@ -17,32 +17,26 @@ func logPluginCommandParameters(name string, _ []string) {
 	sendCommandInfo(fmt.Sprintf(":%s", name), "", []string{})
 }
 
-func logSubcommandParameters(c *cli.Context) {
-	if c == nil {
-		return
-	}
-
-	commandName := "unknown"
-	subcommandName := "unknown"
-
-	if names := strings.Split(c.Command.FullName(), " "); len(names) == 2 {
-		commandName = names[0]
-		subcommandName = names[1]
-	}
-
-	flags := collectFlags(c)
-
-	sendCommandInfo(commandName, subcommandName, flags)
-}
-
 func logCommandParameters(c *cli.Context) {
 	if c == nil {
 		return
 	}
 
+	commandName := "unknown"
+	subcommandName := ""
+
+	fmt.Println(c.Command.FullName())
+
+	if names := strings.Split(c.Command.FullName(), " "); 0 < len(names) {
+		commandName = names[0]
+		if 1 < len(names) {
+			subcommandName = names[1]
+		}
+	}
+
 	flags := collectFlags(c)
 
-	sendCommandInfo(c.Command.Name, "", flags)
+	sendCommandInfo(commandName, subcommandName, flags)
 }
 
 func collectFlags(c *cli.Context) []string {

@@ -14,7 +14,7 @@ var pluginListCommand = cli.Command{
 	Name:  "list",
 	Usage: "List installed bitrise plugins.",
 	Action: func(c *cli.Context) error {
-		logSubcommandParameters(c)
+		logCommandParameters(c)
 
 		if err := pluginList(c); err != nil {
 			log.Errorf("Plugin list failed, error: %s", err)
