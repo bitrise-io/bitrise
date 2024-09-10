@@ -24,9 +24,7 @@ func logCommandParameters(c *cli.Context) {
 
 	commandName := "unknown"
 	subcommandName := ""
-
-	fmt.Println(c.Command.FullName())
-
+	
 	if names := strings.Split(c.Command.FullName(), " "); 0 < len(names) {
 		commandName = names[0]
 		if 1 < len(names) {
