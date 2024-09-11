@@ -22,6 +22,8 @@ type VersionOutputModel struct {
 }
 
 func printVersionCmd(c *cli.Context) error {
+	logCommandParameters(c)
+
 	fullVersion := c.Bool("full")
 
 	if err := output.ConfigureOutputFormat(c); err != nil {

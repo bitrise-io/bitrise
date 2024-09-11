@@ -17,6 +17,8 @@ var workflowListCommand = cli.Command{
 	Name:  "workflows",
 	Usage: "List of available workflows in config.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := workflowList(c); err != nil {
 			log.Errorf("List of available workflows in config failed, error: %s", err)
 			os.Exit(1)

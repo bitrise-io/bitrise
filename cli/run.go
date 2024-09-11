@@ -73,6 +73,8 @@ var runCommand = cli.Command{
 }
 
 func run(c *cli.Context) error {
+	logCommandParameters(c)
+
 	signalInterruptChan := make(chan os.Signal, 1)
 	signal.Notify(signalInterruptChan, syscall.SIGINT, syscall.SIGTERM)
 

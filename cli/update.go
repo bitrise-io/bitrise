@@ -31,6 +31,8 @@ var updateCommand = cli.Command{
 	Name:  "update",
 	Usage: "Updates the Bitrise CLI.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := update(c); err != nil {
 			log.Errorf("Update Bitrise CLI failed, error: %s", err)
 			os.Exit(1)
