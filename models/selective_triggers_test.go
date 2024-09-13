@@ -26,9 +26,9 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithPushGitEventTriggerItems(
 				PushGitEventTriggerItem{
-					PushBranch:    GlobOrRegexFilterValue{Glob: "branch"},
-					CommitMessage: GlobOrRegexFilterValue{Glob: "message"},
-					ChangedFiles:  GlobOrRegexFilterValue{Glob: "file"},
+					PushBranch:    "branch",
+					CommitMessage: "message",
+					ChangedFiles:  "file",
 					Enabled:       pointers.NewBoolPtr(false),
 				}),
 		},
@@ -46,9 +46,9 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithPushGitEventTriggerItems(
 				PushGitEventTriggerItem{
-					PushBranch:    GlobOrRegexFilterValue{Regex: "branch"},
-					CommitMessage: GlobOrRegexFilterValue{Regex: "message"},
-					ChangedFiles:  GlobOrRegexFilterValue{Regex: "file"},
+					PushBranch:    map[string]string{"regex": "branch"},
+					CommitMessage: map[string]string{"regex": "message"},
+					ChangedFiles:  map[string]string{"regex": "file"},
 					Enabled:       pointers.NewBoolPtr(false),
 				}),
 		},
@@ -67,13 +67,13 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithPullRequestEventTriggerItems(
 				PullRequestGitEventTriggerItem{
-					PullRequestSourceBranch: GlobOrRegexFilterValue{Glob: "source_branch"},
-					PullRequestTargetBranch: GlobOrRegexFilterValue{Glob: "target_branch"},
+					PullRequestSourceBranch: "source_branch",
+					PullRequestTargetBranch: "target_branch",
 					DraftPullRequestEnabled: pointers.NewBoolPtr(false),
-					PullRequestLabel:        GlobOrRegexFilterValue{Glob: "label"},
-					PullRequestComment:      GlobOrRegexFilterValue{Glob: "comment"},
-					CommitMessage:           GlobOrRegexFilterValue{Glob: "message"},
-					ChangedFiles:            GlobOrRegexFilterValue{Glob: "file"},
+					PullRequestLabel:        "label",
+					PullRequestComment:      "comment",
+					CommitMessage:           "message",
+					ChangedFiles:            "file",
 					Enabled:                 pointers.NewBoolPtr(false),
 				}),
 		},
@@ -98,13 +98,13 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithPullRequestEventTriggerItems(
 				PullRequestGitEventTriggerItem{
-					PullRequestSourceBranch: GlobOrRegexFilterValue{Regex: "source_branch"},
-					PullRequestTargetBranch: GlobOrRegexFilterValue{Regex: "target_branch"},
+					PullRequestSourceBranch: map[string]string{"regex": "source_branch"},
+					PullRequestTargetBranch: map[string]string{"regex": "target_branch"},
 					DraftPullRequestEnabled: pointers.NewBoolPtr(false),
-					PullRequestLabel:        GlobOrRegexFilterValue{Regex: "label"},
-					PullRequestComment:      GlobOrRegexFilterValue{Regex: "comment"},
-					CommitMessage:           GlobOrRegexFilterValue{Regex: "message"},
-					ChangedFiles:            GlobOrRegexFilterValue{Regex: "file"},
+					PullRequestLabel:        map[string]string{"regex": "label"},
+					PullRequestComment:      map[string]string{"regex": "comment"},
+					CommitMessage:           map[string]string{"regex": "message"},
+					ChangedFiles:            map[string]string{"regex": "file"},
 					Enabled:                 pointers.NewBoolPtr(false),
 				}),
 		},
@@ -117,7 +117,7 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithTagEventTriggerItems(
 				TagGitEventTriggerItem{
-					Tag:     GlobOrRegexFilterValue{Glob: "tag"},
+					Tag:     "tag",
 					Enabled: pointers.NewBoolPtr(false),
 				}),
 		},
@@ -131,7 +131,7 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithTagEventTriggerItems(
 				TagGitEventTriggerItem{
-					Tag:     GlobOrRegexFilterValue{Regex: "tag"},
+					Tag:     map[string]string{"regex": "tag"},
 					Enabled: pointers.NewBoolPtr(false),
 				}),
 		},
@@ -145,7 +145,7 @@ git_events:
     enabled: false`,
 			wantTriggers: triggersWithTagEventTriggerItems(
 				TagGitEventTriggerItem{
-					Tag:     GlobOrRegexFilterValue{Regex: "tag"},
+					Tag:     map[string]string{"regex": "tag"},
 					Enabled: pointers.NewBoolPtr(false),
 				}),
 		},
@@ -153,7 +153,7 @@ git_events:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var triggers Triggers
-			err := yaml.UnmarshalStrict([]byte(tt.yamlContent), &triggers)
+			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
 			require.NoError(t, err)
 			require.EqualValues(t, tt.wantTriggers, triggers)
 		})
@@ -169,7 +169,7 @@ git_events:
 	err := yaml.Unmarshal([]byte(yamlContent), &triggers)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(triggers.GitEventTriggers.PushTriggers))
-	require.Equal(t, "main", triggers.GitEventTriggers.PushTriggers[0].PushBranch.Glob)
+	require.Equal(t, "main", triggers.GitEventTriggers.PushTriggers[0].PushBranch)
 }
 
 func triggersWithPushGitEventTriggerItems(items ...PushGitEventTriggerItem) Triggers {
