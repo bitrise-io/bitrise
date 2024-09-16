@@ -12,25 +12,25 @@ type Triggers struct {
 
 type PushGitEventTriggerItem struct {
 	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	PushBranch    any   `json:"push_branch,omitempty" yaml:"push_branch,omitempty"`
+	Branch        any   `json:"branch,omitempty" yaml:"branch,omitempty"`
 	CommitMessage any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
 	ChangedFiles  any   `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
 }
 
 type PullRequestGitEventTriggerItem struct {
-	Enabled                 *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	DraftPullRequestEnabled *bool `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
-	PullRequestSourceBranch any   `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
-	PullRequestTargetBranch any   `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	PullRequestLabel        any   `json:"pull_request_label,omitempty" yaml:"pull_request_label,omitempty"`
-	PullRequestComment      any   `json:"pull_request_comment,omitempty" yaml:"pull_request_comment,omitempty"`
-	CommitMessage           any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
-	ChangedFiles            any   `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
+	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	DraftEnabled  *bool `json:"draft_enabled,omitempty" yaml:"draft_enabled,omitempty"`
+	SourceBranch  any   `json:"source_branch,omitempty" yaml:"source_branch,omitempty"`
+	TargetBranch  any   `json:"target_branch,omitempty" yaml:"target_branch,omitempty"`
+	Label         any   `json:"label,omitempty" yaml:"label,omitempty"`
+	Comment       any   `json:"comment,omitempty" yaml:"comment,omitempty"`
+	CommitMessage any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
+	ChangedFiles  any   `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
 }
 
 type TagGitEventTriggerItem struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Tag     any   `json:"tag,omitempty" yaml:"tag,omitempty"`
+	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 // TODO: check error messages
@@ -130,7 +130,7 @@ func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
 func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem, error) {
 	pushTrigger, ok := pushTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.push[%d]' should be an object with 'enabled', 'push_branch', 'commit_message' and 'changed_files' keys", idx)
+		return nil, fmt.Errorf("'triggers.push[%d]' should be an object with 'enabled', 'branch', 'commit_message' and 'changed_files' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(pushTrigger, "enabled")
@@ -138,7 +138,7 @@ func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem
 		return nil, err
 	}
 
-	pushBranch, err := globOrRegexValue(pushTrigger, "push_branch")
+	branch, err := globOrRegexValue(pushTrigger, "branch")
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem
 
 	return &PushGitEventTriggerItem{
 		Enabled:       enabled,
-		PushBranch:    pushBranch,
+		Branch:        branch,
 		CommitMessage: commitMessage,
 		ChangedFiles:  changedFiles,
 	}, nil
@@ -164,7 +164,7 @@ func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem
 func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullRequestGitEventTriggerItem, error) {
 	pullRequestTrigger, ok := pullRequestTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.pull_request[%d]' should be an object with 'enabled', 'draft_pull_request_enabled', 'pull_request_source_branch', 'pull_request_target_branch', 'pull_request_label', 'pull_request_comment', 'commit_message' and 'changed_files' keys", idx)
+		return nil, fmt.Errorf("'triggers.pull_request[%d]' should be an object with 'enabled', 'source_branch', 'target_branch', 'draft_enabled', 'label', 'comment', 'commit_message' and 'changed_files' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(pullRequestTrigger, "enabled")
@@ -172,27 +172,27 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullReque
 		return nil, err
 	}
 
-	draftPullRequestEnabled, err := boolPtrValue(pullRequestTrigger, "draft_pull_request_enabled")
+	draftEnabled, err := boolPtrValue(pullRequestTrigger, "draft_enabled")
 	if err != nil {
 		return nil, err
 	}
 
-	pullRequestSourceBranch, err := globOrRegexValue(pullRequestTrigger, "pull_request_source_branch")
+	sourceBranch, err := globOrRegexValue(pullRequestTrigger, "source_branch")
 	if err != nil {
 		return nil, err
 	}
 
-	pullRequestTargetBranch, err := globOrRegexValue(pullRequestTrigger, "pull_request_target_branch")
+	targetBranch, err := globOrRegexValue(pullRequestTrigger, "target_branch")
 	if err != nil {
 		return nil, err
 	}
 
-	pullRequestLabel, err := globOrRegexValue(pullRequestTrigger, "pull_request_label")
+	label, err := globOrRegexValue(pullRequestTrigger, "label")
 	if err != nil {
 		return nil, err
 	}
 
-	pullRequestComment, err := globOrRegexValue(pullRequestTrigger, "pull_request_comment")
+	comment, err := globOrRegexValue(pullRequestTrigger, "comment")
 	if err != nil {
 		return nil, err
 	}
@@ -208,21 +208,21 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullReque
 	}
 
 	return &PullRequestGitEventTriggerItem{
-		Enabled:                 enabled,
-		PullRequestSourceBranch: pullRequestSourceBranch,
-		PullRequestTargetBranch: pullRequestTargetBranch,
-		DraftPullRequestEnabled: draftPullRequestEnabled,
-		PullRequestLabel:        pullRequestLabel,
-		PullRequestComment:      pullRequestComment,
-		CommitMessage:           commitMessage,
-		ChangedFiles:            changedFiles,
+		Enabled:       enabled,
+		SourceBranch:  sourceBranch,
+		TargetBranch:  targetBranch,
+		DraftEnabled:  draftEnabled,
+		Label:         label,
+		Comment:       comment,
+		CommitMessage: commitMessage,
+		ChangedFiles:  changedFiles,
 	}, nil
 }
 
 func parseTagTriggerItem(tagTriggerRaw any, idx int) (*TagGitEventTriggerItem, error) {
 	tagTrigger, ok := tagTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.tag[%d]' should be an object with 'enabled' and 'tag' keys", idx)
+		return nil, fmt.Errorf("'triggers.tag[%d]' should be an object with 'enabled' and 'name' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(tagTrigger, "enabled")
@@ -230,14 +230,14 @@ func parseTagTriggerItem(tagTriggerRaw any, idx int) (*TagGitEventTriggerItem, e
 		return nil, err
 	}
 
-	tag, err := globOrRegexValue(tagTrigger, "tag")
+	name, err := globOrRegexValue(tagTrigger, "name")
 	if err != nil {
 		return nil, err
 	}
 
 	return &TagGitEventTriggerItem{
 		Enabled: enabled,
-		Tag:     tag,
+		Name:    name,
 	}, nil
 }
 
