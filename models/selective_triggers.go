@@ -5,10 +5,6 @@ import (
 )
 
 type Triggers struct {
-	GitEventTriggers GitEventTriggers `json:"git_events,omitempty" yaml:"git_events,omitempty"`
-}
-
-type GitEventTriggers struct {
 	PushTriggers        []PushGitEventTriggerItem        `json:"push,omitempty" yaml:"push,omitempty"`
 	PullRequestTriggers []PullRequestGitEventTriggerItem `json:"pull_request,omitempty" yaml:"pull_request,omitempty"`
 	TagTriggers         []TagGitEventTriggerItem         `json:"tag,omitempty" yaml:"tag,omitempty"`
@@ -23,9 +19,9 @@ type PushGitEventTriggerItem struct {
 
 type PullRequestGitEventTriggerItem struct {
 	Enabled                 *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	DraftPullRequestEnabled *bool `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
 	PullRequestSourceBranch any   `json:"pull_request_source_branch,omitempty" yaml:"pull_request_source_branch,omitempty"`
 	PullRequestTargetBranch any   `json:"pull_request_target_branch,omitempty" yaml:"pull_request_target_branch,omitempty"`
-	DraftPullRequestEnabled *bool `json:"draft_pull_request_enabled,omitempty" yaml:"draft_pull_request_enabled,omitempty"`
 	PullRequestLabel        any   `json:"pull_request_label,omitempty" yaml:"pull_request_label,omitempty"`
 	PullRequestComment      any   `json:"pull_request_comment,omitempty" yaml:"pull_request_comment,omitempty"`
 	CommitMessage           any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
@@ -41,85 +37,100 @@ type TagGitEventTriggerItem struct {
 func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var triggersConfig map[string]any
 	if err := unmarshal(&triggersConfig); err != nil {
-		return fmt.Errorf("triggers should be an object with git_events key")
+		return fmt.Errorf("'triggers' should be an object with 'push', 'pull_request' and 'tag' keys")
 	}
 
-	gitEventTriggersRaw, ok := triggersConfig["git_events"]
-	if ok {
-		gitEventTriggers, err := parseGitEventTriggers(gitEventTriggersRaw)
+	if pushTriggersRaw, ok := triggersConfig["push"]; ok {
+		pushTriggers, err := parsePushTriggers(pushTriggersRaw)
 		if err != nil {
 			return err
 		}
 
-		triggers.GitEventTriggers = *gitEventTriggers
+		triggers.PushTriggers = pushTriggers
+	}
+
+	if pullRequestTriggersRaw, ok := triggersConfig["pull_request"]; ok {
+		pullRequestTriggers, err := parsePullRequestTriggers(pullRequestTriggersRaw)
+		if err != nil {
+			return err
+		}
+
+		triggers.PullRequestTriggers = pullRequestTriggers
+	}
+
+	if tagTriggersRaw, ok := triggersConfig["tag"]; ok {
+		tagTriggers, err := parseTagTriggers(tagTriggersRaw)
+		if err != nil {
+			return err
+		}
+
+		triggers.TagTriggers = tagTriggers
 	}
 
 	return nil
 }
 
-func parseGitEventTriggers(gitEventTriggersRaw any) (*GitEventTriggers, error) {
-	gitEventTriggersConfig, ok := gitEventTriggersRaw.(map[any]any)
+func parsePushTriggers(pushTriggersRaw any) ([]PushGitEventTriggerItem, error) {
+	pushTriggersList, ok := pushTriggersRaw.([]any)
 	if !ok {
-		return nil, fmt.Errorf("git_events should be an object with push, pull_request and tag keys")
+		return nil, fmt.Errorf("'triggers.push' should be a list of push trigger items")
 	}
 
 	var pushTriggers []PushGitEventTriggerItem
-	pushTriggersRaw := gitEventTriggersConfig["push"]
-	if pushTriggersRaw != nil {
-		pushTriggersList, ok := pushTriggersRaw.([]any)
-		if !ok {
-			return nil, fmt.Errorf("push trigger should be a list of objects")
+	for idx, pushTriggerRaw := range pushTriggersList {
+		pushTriggerItem, err := parsePushTriggerItem(pushTriggerRaw, idx)
+		if err != nil {
+			return nil, err
 		}
 
-		for _, pushTriggerRaw := range pushTriggersList {
-			pushTriggerItem, err := parsePushTriggerItem(pushTriggerRaw)
-			if err != nil {
-				return nil, err
-			}
+		pushTriggers = append(pushTriggers, *pushTriggerItem)
+	}
 
-			pushTriggers = append(pushTriggers, *pushTriggerItem)
-		}
+	return pushTriggers, nil
+}
+
+func parsePullRequestTriggers(pullRequestTriggersRaw any) ([]PullRequestGitEventTriggerItem, error) {
+	pullRequestTriggersList, ok := pullRequestTriggersRaw.([]any)
+	if !ok {
+		return nil, fmt.Errorf("'triggers.pull_request' should be a list of pull request trigger items")
 	}
 
 	var pullRequestTriggers []PullRequestGitEventTriggerItem
-	pullRequestTriggersRaw := gitEventTriggersConfig["pull_request"]
-	if pullRequestTriggersRaw != nil {
-		pullRequestTriggersList := pullRequestTriggersRaw.([]any)
-		for _, pullRequestTriggerRaw := range pullRequestTriggersList {
-			pullRequestTriggerItem, err := parsePullRequestTriggerItem(pullRequestTriggerRaw)
-			if err != nil {
-				return nil, err
-			}
-
-			pullRequestTriggers = append(pullRequestTriggers, *pullRequestTriggerItem)
+	for idx, pullRequestTriggerRaw := range pullRequestTriggersList {
+		pullRequestTriggerItem, err := parsePullRequestTriggerItem(pullRequestTriggerRaw, idx)
+		if err != nil {
+			return nil, err
 		}
+
+		pullRequestTriggers = append(pullRequestTriggers, *pullRequestTriggerItem)
+	}
+
+	return pullRequestTriggers, nil
+}
+
+func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
+	tagTriggersList, ok := tagTriggersRaw.([]any)
+	if !ok {
+		return nil, fmt.Errorf("'triggers.tag' should be a list of tag trigger items")
 	}
 
 	var tagTriggers []TagGitEventTriggerItem
-	tagTriggersRaw := gitEventTriggersConfig["tag"]
-	if tagTriggersRaw != nil {
-		tagTriggersList := tagTriggersRaw.([]any)
-		for _, tagTriggerRaw := range tagTriggersList {
-			tagTriggerItem, err := parseTagTriggerItem(tagTriggerRaw)
-			if err != nil {
-				return nil, err
-			}
-
-			tagTriggers = append(tagTriggers, *tagTriggerItem)
+	for idx, tagTriggerRaw := range tagTriggersList {
+		tagTriggerItem, err := parseTagTriggerItem(tagTriggerRaw, idx)
+		if err != nil {
+			return nil, err
 		}
+
+		tagTriggers = append(tagTriggers, *tagTriggerItem)
 	}
 
-	return &GitEventTriggers{
-		PushTriggers:        pushTriggers,
-		PullRequestTriggers: pullRequestTriggers,
-		TagTriggers:         tagTriggers,
-	}, nil
+	return tagTriggers, nil
 }
 
-func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) {
+func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem, error) {
 	pushTrigger, ok := pushTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("push trigger should be an object with enabled, push_branch, commit_message and changed_files keys")
+		return nil, fmt.Errorf("'triggers.push[%d]' should be an object with 'enabled', 'push_branch', 'commit_message' and 'changed_files' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(pushTrigger, "enabled")
@@ -150,10 +161,10 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 	}, nil
 }
 
-func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEventTriggerItem, error) {
+func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullRequestGitEventTriggerItem, error) {
 	pullRequestTrigger, ok := pullRequestTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("pull request trigger should be an object with enabled, pull_request_source_branch, pull_request_target_branch, draft_pull_request_enabled, pull_request_label, pull_request_comment, commit_message and changed_files keys")
+		return nil, fmt.Errorf("'triggers.pull_request[%d]' should be an object with 'enabled', 'draft_pull_request_enabled', 'pull_request_source_branch', 'pull_request_target_branch', 'pull_request_label', 'pull_request_comment', 'commit_message' and 'changed_files' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(pullRequestTrigger, "enabled")
@@ -208,10 +219,10 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 	}, nil
 }
 
-func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
+func parseTagTriggerItem(tagTriggerRaw any, idx int) (*TagGitEventTriggerItem, error) {
 	tagTrigger, ok := tagTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("tag trigger should be an object with enabled and tag keys")
+		return nil, fmt.Errorf("'triggers.tag[%d]' should be an object with 'enabled' and 'tag' keys", idx)
 	}
 
 	enabled, err := boolPtrValue(tagTrigger, "enabled")
