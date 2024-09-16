@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"golang.org/x/exp/maps"
 )
@@ -37,7 +38,6 @@ type TagGitEventTriggerItem struct {
 	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
-// TODO: check error messages
 func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var triggersConfig map[string]any
 	if err := unmarshal(&triggersConfig); err != nil {
@@ -320,7 +320,7 @@ func ensureKeys(item map[string]any, allowedKeys ...string) error {
 		}
 	}
 	if len(keys) > 0 {
-		return fmt.Errorf("unknown keys: %v", keys)
+		return fmt.Errorf("unknown key(s): %s", strings.Join(keys, ", "))
 	}
 
 	return nil

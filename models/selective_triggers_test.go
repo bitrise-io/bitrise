@@ -146,3 +146,125 @@ tag:
 		})
 	}
 }
+
+func TestUnmarshalTriggersYAMLValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		yamlContent string
+		wantErr     string
+	}{
+		{
+			name: "Throws error when 'triggers' is not a map",
+			yamlContent: `
+- push_branch: "*"
+  workflow: primary
+- pull_request_source_branch: "*"
+  workflow: primary
+- tag: "*.*.*"`,
+			wantErr: "'triggers': should be a map with 'push', 'pull_request' and 'tag' keys",
+		},
+		{
+			name: "Throws error when 'triggers' has unknown keys",
+			yamlContent: `
+chron: 
+- "0 0 * * *"`,
+			wantErr: "'triggers': unknown key(s): chron",
+		},
+		{
+			name: "Push should be a list of push trigger items",
+			yamlContent: `
+push: 
+  branch: main`,
+			wantErr: "'triggers.push': should be a list of push trigger items",
+		},
+		{
+			name: "Push item should be a map",
+			yamlContent: `
+push: 
+- main`,
+			wantErr: "'triggers.push[0]': should be a map with 'enabled', 'branch', 'commit_message' and 'changed_files' keys",
+		},
+		{
+			name: "Push item with unknown key",
+			yamlContent: `
+push: 
+- push_branch: main`,
+			wantErr: "'triggers.push[0]': unknown key(s): push_branch",
+		},
+		{
+			name: "Push filter should be a string or a map with a 'regex' key and string value",
+			yamlContent: `
+push: 
+- branch:
+    include: main`,
+			wantErr: "'triggers.push[0]': 'branch' value should be a string or a map with a 'regex' key and string value",
+		},
+
+		{
+			name: "Pull request should be a list of push trigger items",
+			yamlContent: `
+pull_request: 
+  target_branch: main`,
+			wantErr: "'triggers.pull_request': should be a list of pull request trigger items",
+		},
+		{
+			name: "Pull request item should be a map",
+			yamlContent: `
+pull_request: 
+- main`,
+			wantErr: "'triggers.pull_request[0]': should be a map with 'enabled', 'source_branch', 'target_branch', 'draft_enabled', 'label', 'comment', 'commit_message' and 'changed_files' keys",
+		},
+		{
+			name: "Pull request item with unknown key",
+			yamlContent: `
+pull_request: 
+- pull_request_target_branch: main`,
+			wantErr: "'triggers.pull_request[0]': unknown key(s): pull_request_target_branch",
+		},
+		{
+			name: "Pull request filter should be a string or a map with a 'regex' key and string value",
+			yamlContent: `
+pull_request: 
+- target_branch:
+    include: main`,
+			wantErr: "'triggers.pull_request[0]': 'target_branch' value should be a string or a map with a 'regex' key and string value",
+		},
+
+		{
+			name: "Tag should be a list of push trigger items",
+			yamlContent: `
+tag: 
+  name: main`,
+			wantErr: "'triggers.tag': should be a list of tag trigger items",
+		},
+		{
+			name: "Tag item should be a map",
+			yamlContent: `
+tag: 
+- 1.0.0`,
+			wantErr: "'triggers.tag[0]': should be a map with 'enabled' and 'name' keys",
+		},
+		{
+			name: "Tag item with unknown key",
+			yamlContent: `
+tag: 
+- tag: main`,
+			wantErr: "'triggers.tag[0]': unknown key(s): tag",
+		},
+		{
+			name: "Tag filter should be a string or a map with a 'regex' key and string value",
+			yamlContent: `
+tag: 
+- name:
+    include: main`,
+			wantErr: "'triggers.tag[0]': 'name' value should be a string or a map with a 'regex' key and string value",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var triggers Triggers
+			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
+			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
