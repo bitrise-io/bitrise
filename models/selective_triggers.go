@@ -38,6 +38,8 @@ type TagGitEventTriggerItem struct {
 	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
+// UnmarshalYAML implements the yaml.Unmarshaler interface for Triggers, allowing
+// additional validation of the triggers YAML configuration.
 func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var triggersConfig map[string]any
 	if err := unmarshal(&triggersConfig); err != nil {
