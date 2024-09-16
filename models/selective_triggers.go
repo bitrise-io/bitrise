@@ -1,7 +1,11 @@
 package models
 
 import (
+	"errors"
 	"fmt"
+	"slices"
+
+	"golang.org/x/exp/maps"
 )
 
 type Triggers struct {
@@ -37,7 +41,11 @@ type TagGitEventTriggerItem struct {
 func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var triggersConfig map[string]any
 	if err := unmarshal(&triggersConfig); err != nil {
-		return fmt.Errorf("'triggers' should be an object with 'push', 'pull_request' and 'tag' keys")
+		return fmt.Errorf("'triggers': should be a map with 'push', 'pull_request' and 'tag' keys")
+	}
+
+	if err := ensureKeys(triggersConfig, "push", "pull_request", "tag"); err != nil {
+		return fmt.Errorf("'triggers': %w", err)
 	}
 
 	if pushTriggersRaw, ok := triggersConfig["push"]; ok {
@@ -73,14 +81,14 @@ func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error
 func parsePushTriggers(pushTriggersRaw any) ([]PushGitEventTriggerItem, error) {
 	pushTriggersList, ok := pushTriggersRaw.([]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.push' should be a list of push trigger items")
+		return nil, fmt.Errorf("'triggers.push': should be a list of push trigger items")
 	}
 
 	var pushTriggers []PushGitEventTriggerItem
 	for idx, pushTriggerRaw := range pushTriggersList {
-		pushTriggerItem, err := parsePushTriggerItem(pushTriggerRaw, idx)
+		pushTriggerItem, err := parsePushTriggerItem(pushTriggerRaw)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("'triggers.push[%d]': %w", idx, err)
 		}
 
 		pushTriggers = append(pushTriggers, *pushTriggerItem)
@@ -92,14 +100,14 @@ func parsePushTriggers(pushTriggersRaw any) ([]PushGitEventTriggerItem, error) {
 func parsePullRequestTriggers(pullRequestTriggersRaw any) ([]PullRequestGitEventTriggerItem, error) {
 	pullRequestTriggersList, ok := pullRequestTriggersRaw.([]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.pull_request' should be a list of pull request trigger items")
+		return nil, fmt.Errorf("'triggers.pull_request': should be a list of pull request trigger items")
 	}
 
 	var pullRequestTriggers []PullRequestGitEventTriggerItem
 	for idx, pullRequestTriggerRaw := range pullRequestTriggersList {
-		pullRequestTriggerItem, err := parsePullRequestTriggerItem(pullRequestTriggerRaw, idx)
+		pullRequestTriggerItem, err := parsePullRequestTriggerItem(pullRequestTriggerRaw)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("'triggers.pull_request[%d]': %w", idx, err)
 		}
 
 		pullRequestTriggers = append(pullRequestTriggers, *pullRequestTriggerItem)
@@ -111,14 +119,14 @@ func parsePullRequestTriggers(pullRequestTriggersRaw any) ([]PullRequestGitEvent
 func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
 	tagTriggersList, ok := tagTriggersRaw.([]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.tag' should be a list of tag trigger items")
+		return nil, fmt.Errorf("'triggers.tag': should be a list of tag trigger items")
 	}
 
 	var tagTriggers []TagGitEventTriggerItem
 	for idx, tagTriggerRaw := range tagTriggersList {
-		tagTriggerItem, err := parseTagTriggerItem(tagTriggerRaw, idx)
+		tagTriggerItem, err := parseTagTriggerItem(tagTriggerRaw)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("'triggers.tag[%d]': %w", idx, err)
 		}
 
 		tagTriggers = append(tagTriggers, *tagTriggerItem)
@@ -127,28 +135,37 @@ func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
 	return tagTriggers, nil
 }
 
-func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem, error) {
+func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) {
 	pushTrigger, ok := pushTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.push[%d]' should be an object with 'enabled', 'branch', 'commit_message' and 'changed_files' keys", idx)
+		return nil, errors.New("should be a map with 'enabled', 'branch', 'commit_message' and 'changed_files' keys")
 	}
 
-	enabled, err := boolPtrValue(pushTrigger, "enabled")
+	stringKeyedPushTrigger, err := stringKeyedMap(pushTrigger)
 	if err != nil {
 		return nil, err
 	}
 
-	branch, err := globOrRegexValue(pushTrigger, "branch")
+	if err := ensureKeys(stringKeyedPushTrigger, "enabled", "branch", "commit_message", "changed_files"); err != nil {
+		return nil, err
+	}
+
+	enabled, err := boolPtrValue(stringKeyedPushTrigger, "enabled")
 	if err != nil {
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(pushTrigger, "commit_message")
+	branch, err := globOrRegexValue(stringKeyedPushTrigger, "branch")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(pushTrigger, "changed_files")
+	commitMessage, err := globOrRegexValue(stringKeyedPushTrigger, "commit_message")
+	if err != nil {
+		return nil, err
+	}
+
+	changedFiles, err := globOrRegexValue(stringKeyedPushTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
@@ -161,48 +178,57 @@ func parsePushTriggerItem(pushTriggerRaw any, idx int) (*PushGitEventTriggerItem
 	}, nil
 }
 
-func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullRequestGitEventTriggerItem, error) {
+func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEventTriggerItem, error) {
 	pullRequestTrigger, ok := pullRequestTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.pull_request[%d]' should be an object with 'enabled', 'source_branch', 'target_branch', 'draft_enabled', 'label', 'comment', 'commit_message' and 'changed_files' keys", idx)
+		return nil, errors.New("should be a map with 'enabled', 'source_branch', 'target_branch', 'draft_enabled', 'label', 'comment', 'commit_message' and 'changed_files' keys")
 	}
 
-	enabled, err := boolPtrValue(pullRequestTrigger, "enabled")
+	stringKeyedPullRequestTrigger, err := stringKeyedMap(pullRequestTrigger)
 	if err != nil {
 		return nil, err
 	}
 
-	draftEnabled, err := boolPtrValue(pullRequestTrigger, "draft_enabled")
+	if err := ensureKeys(stringKeyedPullRequestTrigger, "enabled", "source_branch", "target_branch", "draft_enabled", "label", "comment", "commit_message", "changed_files"); err != nil {
+		return nil, err
+	}
+
+	enabled, err := boolPtrValue(stringKeyedPullRequestTrigger, "enabled")
 	if err != nil {
 		return nil, err
 	}
 
-	sourceBranch, err := globOrRegexValue(pullRequestTrigger, "source_branch")
+	draftEnabled, err := boolPtrValue(stringKeyedPullRequestTrigger, "draft_enabled")
 	if err != nil {
 		return nil, err
 	}
 
-	targetBranch, err := globOrRegexValue(pullRequestTrigger, "target_branch")
+	sourceBranch, err := globOrRegexValue(stringKeyedPullRequestTrigger, "source_branch")
 	if err != nil {
 		return nil, err
 	}
 
-	label, err := globOrRegexValue(pullRequestTrigger, "label")
+	targetBranch, err := globOrRegexValue(stringKeyedPullRequestTrigger, "target_branch")
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := globOrRegexValue(pullRequestTrigger, "comment")
+	label, err := globOrRegexValue(stringKeyedPullRequestTrigger, "label")
 	if err != nil {
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(pullRequestTrigger, "commit_message")
+	comment, err := globOrRegexValue(stringKeyedPullRequestTrigger, "comment")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(pullRequestTrigger, "changed_files")
+	commitMessage, err := globOrRegexValue(stringKeyedPullRequestTrigger, "commit_message")
+	if err != nil {
+		return nil, err
+	}
+
+	changedFiles, err := globOrRegexValue(stringKeyedPullRequestTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
@@ -219,18 +245,27 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any, idx int) (*PullReque
 	}, nil
 }
 
-func parseTagTriggerItem(tagTriggerRaw any, idx int) (*TagGitEventTriggerItem, error) {
+func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 	tagTrigger, ok := tagTriggerRaw.(map[any]any)
 	if !ok {
-		return nil, fmt.Errorf("'triggers.tag[%d]' should be an object with 'enabled' and 'name' keys", idx)
+		return nil, errors.New("should be a map with 'enabled' and 'name' keys")
 	}
 
-	enabled, err := boolPtrValue(tagTrigger, "enabled")
+	stringKeyedTagTrigger, err := stringKeyedMap(tagTrigger)
 	if err != nil {
 		return nil, err
 	}
 
-	name, err := globOrRegexValue(tagTrigger, "name")
+	if err := ensureKeys(stringKeyedTagTrigger, "enabled", "name"); err != nil {
+		return nil, err
+	}
+
+	enabled, err := boolPtrValue(stringKeyedTagTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := globOrRegexValue(stringKeyedTagTrigger, "name")
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +276,7 @@ func parseTagTriggerItem(tagTriggerRaw any, idx int) (*TagGitEventTriggerItem, e
 	}, nil
 }
 
-func globOrRegexValue(item map[any]any, key string) (any, error) {
+func globOrRegexValue(item map[string]any, key string) (any, error) {
 	value, ok := item[key]
 	if !ok {
 		return nil, nil
@@ -254,15 +289,15 @@ func globOrRegexValue(item map[any]any, key string) (any, error) {
 		regexRaw := value["regex"]
 		regex, ok := regexRaw.(string)
 		if !ok {
-			return nil, fmt.Errorf("'%s' value should be a string or an object with a 'regex' key and string value", key)
+			return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' key and string value", key)
 		}
 		return map[string]string{"regex": regex}, nil
 	default:
-		return nil, fmt.Errorf("'%s' value should be a string or an object with a 'regex' key and string value", key)
+		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' key and string value", key)
 	}
 }
 
-func boolPtrValue(item map[any]any, key string) (*bool, error) {
+func boolPtrValue(item map[string]any, key string) (*bool, error) {
 	value, ok := item[key]
 	if !ok {
 		return nil, nil
@@ -274,4 +309,31 @@ func boolPtrValue(item map[any]any, key string) (*bool, error) {
 	}
 
 	return &boolValue, nil
+}
+
+func ensureKeys(item map[string]any, allowedKeys ...string) error {
+	keys := maps.Keys(item)
+	for _, allowedKey := range allowedKeys {
+		idx := slices.Index(keys, allowedKey)
+		if idx >= 0 {
+			keys = slices.Delete(keys, idx, idx+1)
+		}
+	}
+	if len(keys) > 0 {
+		return fmt.Errorf("unknown keys: %v", keys)
+	}
+
+	return nil
+}
+
+func stringKeyedMap(item map[any]any) (map[string]any, error) {
+	stringKeyedItem := make(map[string]any, len(item))
+	for key, value := range item {
+		keyStr, ok := key.(string)
+		if !ok {
+			return nil, fmt.Errorf("should be a string keyed map")
+		}
+		stringKeyedItem[keyStr] = value
+	}
+	return stringKeyedItem, nil
 }

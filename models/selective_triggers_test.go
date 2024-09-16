@@ -130,7 +130,7 @@ tag:
 - name: 
     glob: tag
   enabled: false`,
-			wantErr: "'name' value should be a string or an object with a 'regex' key and string value",
+			wantErr: "'triggers.tag[0]': 'name' value should be a string or a map with a 'regex' key and string value",
 		},
 	}
 	for _, tt := range tests {
@@ -138,7 +138,7 @@ tag:
 			var triggers Triggers
 			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
 			if tt.wantErr != "" {
-				require.Errorf(t, err, tt.wantErr)
+				require.EqualError(t, err, tt.wantErr)
 			} else {
 				require.NoError(t, err)
 				require.EqualValues(t, tt.wantTriggers, triggers)
