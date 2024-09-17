@@ -119,16 +119,6 @@ workflows:
 step_bundles:
   run_lint:
     steps:
-    - script@1:
-        title: Setup YAML lint
-        inputs:
-        - script_file_path:
-        - content: |-
-            #!/usr/bin/env bash
-            # fail if any commands fails
-            set -ex
-            apt-get update
-            apt-get --assume-yes install python3.8-venv
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
