@@ -146,6 +146,13 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
+        title: Setup JUnit XML converter
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            go install github.com/jstemmer/go-junit-report/v2@latest
+    - script@1:
         title: Run integration tests
         inputs:
         - content: |-
@@ -161,10 +168,20 @@ step_bundles:
 
             $current_bitrise setup
 
-            go test -v ./_tests/integration/ --tags linux_and_mac
+            integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/integration_test_results"
+            mkdir "$integration_test_results_dir"
+  
+            go test -v ./_tests/integration/ --tags linux_and_mac 2>&1 ./... | go-junit-report -set-exit-code > "$integration_test_results_dir/integration_tests.xml"
+            
+            echo '{"test-name":"Integration tests"}' >> "$integration_test_results_dir/test-info.json"
 
             if [ "$(uname)" == "Linux" ]; then
-                go test -v ./_tests/integration/ --tags linux_only
+                linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
+                mkdir "linux_only_integration_test_results_dir"
+            
+                go test -v ./_tests/integration/ --tags linux_only | go-junit-report -set-exit-code > report.xml "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
+            
+                echo '{"test-name":"Linux only integration tests"}' >> "$linux_only_integration_test_results_dir/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
 
