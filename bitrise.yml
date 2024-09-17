@@ -83,7 +83,7 @@ workflows:
 
   release:
     steps:
-    - trigger-bitrise-workflow@0.0.8:
+    - trigger-bitrise-workflow@0:
         inputs:
         - api_token: "$CONTROL_CENTER_TRIGGER_KEY"
         - workflow_id: binary-tool-release
@@ -93,7 +93,6 @@ workflows:
       bitrise.io:
         machine_type_id: elite-xl
         stack: linux-docker-android-22.04
-
 
 step_bundles:
   run_lint:
@@ -108,33 +107,33 @@ step_bundles:
             set -ex
             apt-get update
             apt-get --assume-yes install python3.8-venv
-    - git-clone:
+    - git-clone@8:
         inputs:
         - fetch_tags: "yes"
     - git::https://github.com/bitrise-steplib/steps-check.git:
         inputs:
         - workflow: lint
         - skip_step_yml_validation: "yes"
-    - deploy-to-bitrise-io: { }
+    - deploy-to-bitrise-io@2: { }
 
   run_unit_tests:
     steps:
-    - git-clone:
+    - git-clone@8:
         inputs:
         - fetch_tags: "yes"
-    - go-list: { }
-    - script:
+    - go-list@1: { }
+    - script@1:
         title: Go test
         inputs:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
-    - deploy-to-bitrise-io: { }
+    - deploy-to-bitrise-io@2: { }
 
   run_integration_tests:
     steps:
-    - git-clone:
+    - git-clone@8:
         inputs:
         - fetch_tags: "yes"
-    - script:
+    - script@1:
         title: Run integration tests
         inputs:
         - content: |-
@@ -155,7 +154,7 @@ step_bundles:
             if [ "$(uname)" == "Linux" ]; then
                 go test -v ./_tests/integration/ --tags linux_only
             fi
-    - deploy-to-bitrise-io: { }
+    - deploy-to-bitrise-io@2: { }
 
   test_binary_build:
     steps:
@@ -173,10 +172,10 @@ step_bundles:
 
             wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
             sudo dpkg -i /tmp/goreleaser.deb
-    - git-clone:
+    - git-clone@8:
         inputs:
         - fetch_tags: "yes"
-    - script:
+    - script@1:
         title: Goreleaser (create snapshot binaries)
         deps:
           brew:
@@ -187,7 +186,7 @@ step_bundles:
             set -ex
 
             goreleaser release --snapshot --rm-dist
-    - deploy-to-bitrise-io: { }
+    - deploy-to-bitrise-io@2: { }
 
 meta:
   bitrise.io:
