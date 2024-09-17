@@ -159,19 +159,13 @@ step_bundles:
   test_binary_build:
     steps:
     - script@1:
-        title: Set up Goreleaser
         inputs:
         - content: |-
             #!/usr/bin/env bash
             # fail if any commands fails
-            set -e
-            # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-            set -o pipefail
-            # debug log
-            set -x
+            set -ex
 
-            wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
-            sudo dpkg -i /tmp/goreleaser.deb
+            go install github.com/goreleaser/goreleaser@latest
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
