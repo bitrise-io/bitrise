@@ -9,6 +9,11 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const (
+	defaultTriggerItemEnabled      = true
+	defaultPullRequestDraftEnabled = true
+)
+
 type Triggers struct {
 	PushTriggers        []PushGitEventTriggerItem        `json:"push,omitempty" yaml:"push,omitempty"`
 	PullRequestTriggers []PullRequestGitEventTriggerItem `json:"pull_request,omitempty" yaml:"pull_request,omitempty"`
@@ -36,6 +41,34 @@ type PullRequestGitEventTriggerItem struct {
 type TagGitEventTriggerItem struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+func (pushItem PushGitEventTriggerItem) toString() string {
+	enabled := defaultTriggerItemEnabled
+	if pushItem.Enabled != nil {
+		enabled = *pushItem.Enabled
+	}
+	return fmt.Sprintf("PushGitEventTriggerItem{Enabled: %v, Branch: %v, CommitMessage: %v, ChangedFiles: %v}", enabled, pushItem.Branch, pushItem.CommitMessage, pushItem.ChangedFiles)
+}
+
+func (pullRequestItem PullRequestGitEventTriggerItem) toString() string {
+	enabled := defaultTriggerItemEnabled
+	if pullRequestItem.Enabled != nil {
+		enabled = *pullRequestItem.Enabled
+	}
+	draftEnabled := defaultDraftPullRequestEnabled
+	if pullRequestItem.DraftEnabled != nil {
+		draftEnabled = *pullRequestItem.DraftEnabled
+	}
+	return fmt.Sprintf("PullRequestGitEventTriggerItem{Enabled: %v, DraftEnabled: %v, SourceBranch: %v, TargetBranch: %v, Label: %v, Comment: %v, CommitMessage: %v, ChangedFiles: %v}", enabled, draftEnabled, pullRequestItem.SourceBranch, pullRequestItem.TargetBranch, pullRequestItem.Label, pullRequestItem.Comment, pullRequestItem.CommitMessage, pullRequestItem.ChangedFiles)
+}
+
+func (tagItem TagGitEventTriggerItem) toString() string {
+	enabled := defaultTriggerItemEnabled
+	if tagItem.Enabled != nil {
+		enabled = *tagItem.Enabled
+	}
+	return fmt.Sprintf("TagGitEventTriggerItem{Enabled: %v, Name: %v}", enabled, tagItem.Name)
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface for Triggers, allowing
@@ -86,12 +119,20 @@ func parsePushTriggers(pushTriggersRaw any) ([]PushGitEventTriggerItem, error) {
 		return nil, fmt.Errorf("'triggers.push': should be a list of push trigger items")
 	}
 
+	seenPushItems := map[string]int{}
 	var pushTriggers []PushGitEventTriggerItem
 	for idx, pushTriggerRaw := range pushTriggersList {
 		pushTriggerItem, err := parsePushTriggerItem(pushTriggerRaw)
 		if err != nil {
 			return nil, fmt.Errorf("'triggers.push[%d]': %w", idx, err)
 		}
+
+		pushTriggerItemStr := pushTriggerItem.toString()
+		seenIdx, ok := seenPushItems[pushTriggerItemStr]
+		if ok {
+			return nil, fmt.Errorf("'triggers.push[%d]': duplicates the %d. push trigger item", idx, seenIdx)
+		}
+		seenPushItems[pushTriggerItemStr] = idx
 
 		pushTriggers = append(pushTriggers, *pushTriggerItem)
 	}
@@ -105,12 +146,20 @@ func parsePullRequestTriggers(pullRequestTriggersRaw any) ([]PullRequestGitEvent
 		return nil, fmt.Errorf("'triggers.pull_request': should be a list of pull request trigger items")
 	}
 
+	seenPullRequestItems := map[string]int{}
 	var pullRequestTriggers []PullRequestGitEventTriggerItem
 	for idx, pullRequestTriggerRaw := range pullRequestTriggersList {
 		pullRequestTriggerItem, err := parsePullRequestTriggerItem(pullRequestTriggerRaw)
 		if err != nil {
 			return nil, fmt.Errorf("'triggers.pull_request[%d]': %w", idx, err)
 		}
+
+		pullRequestTriggerItemStr := pullRequestTriggerItem.toString()
+		seenIdx, ok := seenPullRequestItems[pullRequestTriggerItemStr]
+		if ok {
+			return nil, fmt.Errorf("'triggers.pull_request[%d]': duplicates the %d. pull request trigger item", idx, seenIdx)
+		}
+		seenPullRequestItems[pullRequestTriggerItemStr] = idx
 
 		pullRequestTriggers = append(pullRequestTriggers, *pullRequestTriggerItem)
 	}
@@ -124,12 +173,20 @@ func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
 		return nil, fmt.Errorf("'triggers.tag': should be a list of tag trigger items")
 	}
 
+	seenTagItems := map[string]int{}
 	var tagTriggers []TagGitEventTriggerItem
 	for idx, tagTriggerRaw := range tagTriggersList {
 		tagTriggerItem, err := parseTagTriggerItem(tagTriggerRaw)
 		if err != nil {
 			return nil, fmt.Errorf("'triggers.tag[%d]': %w", idx, err)
 		}
+
+		tagTriggerItemStr := tagTriggerItem.toString()
+		seenIdx, ok := seenTagItems[tagTriggerItemStr]
+		if ok {
+			return nil, fmt.Errorf("'triggers.tag[%d]': duplicates the %d. tag trigger item", idx, seenIdx)
+		}
+		seenTagItems[tagTriggerItemStr] = idx
 
 		tagTriggers = append(tagTriggers, *tagTriggerItem)
 	}

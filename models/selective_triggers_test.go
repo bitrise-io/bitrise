@@ -148,7 +148,7 @@ tag:
 	}
 }
 
-func TestYAMLUnmarshalTriggers_Validation(t *testing.T) {
+func TestYAMLUnmarshalTriggers_Validation_Push(t *testing.T) {
 	tests := []struct {
 		name        string
 		yamlContent string
@@ -200,7 +200,49 @@ push:
     include: main`,
 			wantErr: "'triggers.push[0]': 'branch' value should be a string or a map with a 'regex' key and string value",
 		},
+		{
+			name: "Duplicated push trigger items - string filters",
+			yamlContent: `
+push: 
+- branch: main
+- branch: main`,
+			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+		},
+		{
+			name: "Duplicated push trigger items - regex filters",
+			yamlContent: `
+push: 
+- branch:
+    regex: branch
+- branch:
+    regex: branch`,
+			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+		},
+		{
+			name: "Duplicated push trigger items - enabled",
+			yamlContent: `
+push: 
+- branch: main
+- branch: main
+  enabled: true`,
+			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var triggers Triggers
+			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
+			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
 
+func TestYAMLUnmarshalTriggers_Validation_PullRequest(t *testing.T) {
+	tests := []struct {
+		name        string
+		yamlContent string
+		wantErr     string
+	}{
 		{
 			name: "Pull request should be a list of push trigger items",
 			yamlContent: `
@@ -230,7 +272,58 @@ pull_request:
     include: main`,
 			wantErr: "'triggers.pull_request[0]': 'target_branch' value should be a string or a map with a 'regex' key and string value",
 		},
+		{
+			name: "Duplicated pull request trigger items - string filters",
+			yamlContent: `
+pull_request:
+- source_branch: source_branch
+- source_branch: source_branch`,
+			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+		},
+		{
+			name: "Duplicated pull request trigger items - regex filters",
+			yamlContent: `
+pull_request:
+- source_branch:
+    regex: source_branch
+- source_branch:
+    regex: source_branch`,
+			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+		},
+		{
+			name: "Duplicated pull request trigger items - enabled",
+			yamlContent: `
+pull_request: 
+- source_branch: source_branch
+- source_branch: source_branch
+  enabled: true`,
+			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+		},
+		{
+			name: "Duplicated pull request trigger items - draft enabled",
+			yamlContent: `
+pull_request: 
+- source_branch: source_branch
+- source_branch: source_branch
+  draft_enabled: true`,
+			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var triggers Triggers
+			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
+			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
 
+func TestYAMLUnmarshalTriggers_Validation_Tag(t *testing.T) {
+	tests := []struct {
+		name        string
+		yamlContent string
+		wantErr     string
+	}{
 		{
 			name: "Tag should be a list of push trigger items",
 			yamlContent: `
@@ -259,6 +352,33 @@ tag:
 - name:
     include: main`,
 			wantErr: "'triggers.tag[0]': 'name' value should be a string or a map with a 'regex' key and string value",
+		},
+		{
+			name: "Duplicated tag trigger items - string filters",
+			yamlContent: `
+tag:
+- name: tag
+- name: tag`,
+			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
+		},
+		{
+			name: "Duplicated tag trigger items - regex filters",
+			yamlContent: `
+tag:
+- name: 
+    regex: tag
+- name: 
+    regex: tag`,
+			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
+		},
+		{
+			name: "Duplicated tag trigger items - enabled",
+			yamlContent: `
+tag:
+- name: tag
+- name: tag
+  enabled: true`,
+			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
 		},
 	}
 	for _, tt := range tests {
