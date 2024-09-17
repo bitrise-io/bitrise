@@ -130,21 +130,6 @@ step_bundles:
 
   run_unit_tests:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
-    - go-list@1: { }
-    - script@1:
-        title: Go test
-        inputs:
-        - content: go test -p 1 $BITRISE_GO_PACKAGES
-    - deploy-to-bitrise-io@2: { }
-
-  run_integration_tests:
-    steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - script@1:
         title: Setup JUnit XML converter
         inputs:
@@ -152,6 +137,38 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - go-list@1: { }
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            
+            unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
+            mkdir "$unit_test_results_dir"
+            
+            code_coverage_report_pth="$BITRISE_DEPLOY_DIR/coverage.txt"
+            
+            go test -v -race -coverprofile=$code_coverage_report_pth -covermode=atomic $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
+            
+            echo '{"test-name":"Unit tests"}' >> "$unit_test_results_dir/test-info.json"
+    - deploy-to-bitrise-io@2: { }
+
+  run_integration_tests:
+    steps:
+    - script@1:
+        title: Setup JUnit XML converter
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            go install github.com/jstemmer/go-junit-report/v2@latest
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
     - script@1:
         title: Run integration tests
         inputs:
