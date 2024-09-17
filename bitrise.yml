@@ -107,10 +107,10 @@ workflows:
     steps:
     - trigger-bitrise-workflow@0:
         inputs:
-        - api_token: "$CONTROL_CENTER_TRIGGER_KEY"
+        - api_token: $CONTROL_CENTER_TRIGGER_KEY
         - workflow_id: binary-tool-release
         - exported_environment_variable_names: GIT_REPOSITORY_URL
-        - app_slug: "$CONTROL_CENTER_APP_SLUG"
+        - app_slug: $CONTROL_CENTER_APP_SLUG
     meta:
       bitrise.io:
         machine_type_id: elite-xl
@@ -151,18 +151,18 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            
+
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
             go build -o "$current_bitrise"
-            
+
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            
+
             $current_bitrise setup
-            
+
             go test -v ./_tests/integration/ --tags linux_and_mac
-            
+
             if [ "$(uname)" == "Linux" ]; then
                 go test -v ./_tests/integration/ --tags linux_only
             fi
