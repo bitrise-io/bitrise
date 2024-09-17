@@ -63,7 +63,7 @@ workflows:
     meta:
       bitrise.io:
         machine_type_id: elite-xl
-        stack: linux-docker-android-20.04 # TODO: Docker tests are failing on Ubuntu 22.04
+        stack: linux-docker-android-20.04  # TODO: Docker tests are failing on Ubuntu 22.04
 
   test_binary_build_macos:
     steps:
@@ -83,7 +83,7 @@ workflows:
 
   test_binary_build_linux:
     steps:
-    - script@1: # TODO: Unify with goreleaser setup with macOS
+    - script@1:  # TODO: Unify with goreleaser setup with macOS
         title: Set up Goreleaser
         inputs:
         - content: |-
@@ -146,15 +146,19 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            
+
             unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
             mkdir "$unit_test_results_dir"
-            
+
             code_coverage_report_pth="$BITRISE_DEPLOY_DIR/coverage.txt"
-            
+
             go test -v -race -coverprofile=$code_coverage_report_pth -covermode=atomic $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
-            
-            echo '{"test-name":"Unit tests"}' >> "$unit_test_results_dir/test-info.json"
+
+            if [ "$(uname)" == "Linux" ]; then
+              echo '{"test-name":"Unit tests (Linux)"}' >> "$unit_test_results_dir/test-info.json"
+            else
+              echo '{"test-name":"Unit tests (macOS)"}' >> "$unit_test_results_dir/test-info.json"
+            fi
     - deploy-to-bitrise-io@2: { }
 
   run_integration_tests:
@@ -187,17 +191,21 @@ step_bundles:
 
             integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/integration_test_results"
             mkdir "$integration_test_results_dir"
-  
+
             go test -v ./_tests/integration/ --tags linux_and_mac 2>&1 ./... | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
-            
-            echo '{"test-name":"Integration tests"}' >> "$integration_test_results_dir/test-info.json"
+
+            if [ "$(uname)" == "Linux" ]; then
+              echo '{"test-name":"Integration tests (Linux)"}' >> "$integration_test_results_dir/test-info.json"
+            else
+              echo '{"test-name":"Integration tests (macOS)"}' >> "$integration_test_results_dir/test-info.json"
+            fi
 
             if [ "$(uname)" == "Linux" ]; then
                 linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
                 mkdir "linux_only_integration_test_results_dir"
             
-                go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out report.xml "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
-            
+                go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
+
                 echo '{"test-name":"Linux only integration tests"}' >> "$linux_only_integration_test_results_dir/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
