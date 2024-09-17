@@ -8,6 +8,9 @@ trigger_map:
   pipeline: ci
 - pull_request_source_branch: "*"
   pipeline: ci
+- tag: "*.*.*"
+  workflow: release
+  enabled: false
 
 pipelines:
   ci:
@@ -17,17 +20,83 @@ pipelines:
 stages:
   run_tests:
     workflows:
-    - lint: { }
-    - unit_test: { }
-    - integration_test: { }
-    - test_binary_build: { }
-
-app:
-  envs:
-  - SRC_DIR_IN_GOPATH: $GOPATH/src/github.com/bitrise-io/bitrise
+    - run_lint: { }
+    - run_unit_tests_macos: { }
+    - run_unit_tests_linux: { }
+    - run_integration_tests_macos: { }
+    - run_integration_tests_linux: { }
+    - test_binary_build_macos: { }
+    - test_binary_build_linux: { }
 
 workflows:
-  lint:
+  run_lint:
+    steps:
+    - bundle::run_lint: { }
+
+  run_unit_tests_macos:
+    steps:
+    - bundle::run_unit_tests: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x
+        machine_type_id: g2.mac.large
+
+  run_unit_tests_linux:
+    steps:
+    - bundle::run_unit_tests: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  run_integration_tests_macos:
+    steps:
+    - bundle::run_integration_tests: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x
+        machine_type_id: g2.mac.large
+
+  run_integration_tests_linux:
+    steps:
+    - bundle::run_integration_tests: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  test_binary_build_macos:
+    steps:
+    - bundle::test_binary_build: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x
+        machine_type_id: g2.mac.large
+
+  test_binary_build_linux:
+    steps:
+    - bundle::test_binary_build: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  release:
+    steps:
+    - trigger-bitrise-workflow@0.0.8:
+        inputs:
+        - api_token: "$CONTROL_CENTER_TRIGGER_KEY"
+        - workflow_id: binary-tool-release
+        - exported_environment_variable_names: GIT_REPOSITORY_URL
+        - app_slug: "$CONTROL_CENTER_APP_SLUG"
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+
+step_bundles:
+  run_lint:
     steps:
     - script@1:
         title: Setup YAML lint
@@ -39,9 +108,6 @@ workflows:
             set -ex
             apt-get update
             apt-get --assume-yes install python3.8-venv
-    - change-workdir:
-        inputs:
-        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
         - fetch_tags: "yes"
@@ -51,11 +117,8 @@ workflows:
         - skip_step_yml_validation: "yes"
     - deploy-to-bitrise-io: { }
 
-  unit_test:
+  run_unit_tests:
     steps:
-    - change-workdir:
-        inputs:
-        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
         - fetch_tags: "yes"
@@ -66,12 +129,8 @@ workflows:
         - content: go test -p 1 $BITRISE_GO_PACKAGES
     - deploy-to-bitrise-io: { }
 
-  integration_test:
-    title: Runs integration tests
+  run_integration_tests:
     steps:
-    - change-workdir:
-        inputs:
-        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
         - fetch_tags: "yes"
@@ -81,25 +140,24 @@ workflows:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-
+            
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
             go build -o "$current_bitrise"
-
+            
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-
+            
             $current_bitrise setup
-
+            
             go test -v ./_tests/integration/ --tags linux_and_mac
-
+            
             if [ "$(uname)" == "Linux" ]; then
                 go test -v ./_tests/integration/ --tags linux_only
             fi
     - deploy-to-bitrise-io: { }
 
   test_binary_build:
-    description: Tests the release build process by creating a snapshot release (without publishing)
     steps:
     - script@1:
         title: Set up Goreleaser
@@ -115,9 +173,6 @@ workflows:
 
             wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
             sudo dpkg -i /tmp/goreleaser.deb
-    - change-workdir:
-        inputs:
-        - path: ${SRC_DIR_IN_GOPATH}
     - git-clone:
         inputs:
         - fetch_tags: "yes"
@@ -137,4 +192,4 @@ workflows:
 meta:
   bitrise.io:
     machine_type_id: elite-xl
-    stack: linux-docker-android-20.04
+    stack: linux-docker-android-22.04
