@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pointers"
@@ -8,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestUnmarshalTriggersYAML(t *testing.T) {
+func TestYAMLUnmarshalTriggers(t *testing.T) {
 	tests := []struct {
 		name         string
 		yamlContent  string
@@ -147,7 +148,7 @@ tag:
 	}
 }
 
-func TestUnmarshalTriggersYAMLValidation(t *testing.T) {
+func TestYAMLUnmarshalTriggers_Validation(t *testing.T) {
 	tests := []struct {
 		name        string
 		yamlContent string
@@ -265,6 +266,42 @@ tag:
 			var triggers Triggers
 			err := yaml.Unmarshal([]byte(tt.yamlContent), &triggers)
 			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
+
+func TestJSONMarshalTriggers_FromYAML(t *testing.T) {
+	tests := []struct {
+		name   string
+		config string
+	}{
+		{
+			name: "Selective triggers are JSON marshallable",
+			config: `
+format_version: "17"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    triggers:
+      push:
+      - branch:
+          regex: branch
+      pull_request:
+      - source_branch: source_branch`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			require.Empty(t, warns)
+			require.NoError(t, err)
+
+			_, err = json.Marshal(config)
+			require.NoError(t, err)
 		})
 	}
 }
