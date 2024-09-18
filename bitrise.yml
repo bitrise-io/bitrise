@@ -150,9 +150,7 @@ step_bundles:
             unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
             mkdir "$unit_test_results_dir"
 
-            code_coverage_report_pth="$BITRISE_DEPLOY_DIR/coverage.txt"
-
-            go test -v -race -coverprofile=$code_coverage_report_pth -covermode=atomic $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
+            go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
 
             if [ "$(uname)" == "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' >> "$unit_test_results_dir/test-info.json"
