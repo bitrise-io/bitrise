@@ -203,7 +203,7 @@ step_bundles:
             if [ "$(uname)" == "Linux" ]; then
                 linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
                 mkdir "linux_only_integration_test_results_dir"
-            
+
                 go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
 
                 echo '{"test-name":"Linux only integration tests"}' >> "$linux_only_integration_test_results_dir/test-info.json"
