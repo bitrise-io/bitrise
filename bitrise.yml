@@ -137,6 +137,10 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
+            
+            if [ "$(uname)" == "Linux" ]; then
+              export PATH="$HOME/go/bin:$PATH"
+            fi
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
@@ -148,7 +152,7 @@ step_bundles:
             set -ex
 
             unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
-            mkdir "$unit_test_results_dir"
+            mkdir -p "$unit_test_results_dir"
 
             go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
 
@@ -188,7 +192,7 @@ step_bundles:
             $current_bitrise setup
 
             integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/integration_test_results"
-            mkdir "$integration_test_results_dir"
+            mkdir -p "$integration_test_results_dir"
 
             go test -v ./_tests/integration/ --tags linux_and_mac 2>&1 ./... | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
 
@@ -200,7 +204,7 @@ step_bundles:
 
             if [ "$(uname)" == "Linux" ]; then
                 linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
-                mkdir "$linux_only_integration_test_results_dir"
+                mkdir -p "$linux_only_integration_test_results_dir"
 
                 go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
 
