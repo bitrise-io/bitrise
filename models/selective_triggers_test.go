@@ -224,7 +224,7 @@ push:
 push: 
 - branch: main
 - branch: main
-  enabled: true`,
+  enabled: false`,
 			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
 		},
 	}
@@ -296,7 +296,7 @@ pull_request:
 pull_request: 
 - source_branch: source_branch
 - source_branch: source_branch
-  enabled: true`,
+  enabled: false`,
 			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
 		},
 		{
@@ -377,7 +377,7 @@ tag:
 tag:
 - name: tag
 - name: tag
-  enabled: true`,
+  enabled: false`,
 			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
 		},
 	}

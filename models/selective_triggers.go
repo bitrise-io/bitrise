@@ -44,31 +44,19 @@ type TagGitEventTriggerItem struct {
 }
 
 func (pushItem PushGitEventTriggerItem) toString() string {
-	enabled := defaultTriggerItemEnabled
-	if pushItem.Enabled != nil {
-		enabled = *pushItem.Enabled
-	}
-	return fmt.Sprintf("PushGitEventTriggerItem{Enabled: %v, Branch: %v, CommitMessage: %v, ChangedFiles: %v}", enabled, pushItem.Branch, pushItem.CommitMessage, pushItem.ChangedFiles)
+	return fmt.Sprintf("PushGitEventTriggerItem{Branch: %v, CommitMessage: %v, ChangedFiles: %v}", pushItem.Branch, pushItem.CommitMessage, pushItem.ChangedFiles)
 }
 
 func (pullRequestItem PullRequestGitEventTriggerItem) toString() string {
-	enabled := defaultTriggerItemEnabled
-	if pullRequestItem.Enabled != nil {
-		enabled = *pullRequestItem.Enabled
-	}
 	draftEnabled := defaultDraftPullRequestEnabled
 	if pullRequestItem.DraftEnabled != nil {
 		draftEnabled = *pullRequestItem.DraftEnabled
 	}
-	return fmt.Sprintf("PullRequestGitEventTriggerItem{Enabled: %v, DraftEnabled: %v, SourceBranch: %v, TargetBranch: %v, Label: %v, Comment: %v, CommitMessage: %v, ChangedFiles: %v}", enabled, draftEnabled, pullRequestItem.SourceBranch, pullRequestItem.TargetBranch, pullRequestItem.Label, pullRequestItem.Comment, pullRequestItem.CommitMessage, pullRequestItem.ChangedFiles)
+	return fmt.Sprintf("PullRequestGitEventTriggerItem{DraftEnabled: %v, SourceBranch: %v, TargetBranch: %v, Label: %v, Comment: %v, CommitMessage: %v, ChangedFiles: %v}", draftEnabled, pullRequestItem.SourceBranch, pullRequestItem.TargetBranch, pullRequestItem.Label, pullRequestItem.Comment, pullRequestItem.CommitMessage, pullRequestItem.ChangedFiles)
 }
 
 func (tagItem TagGitEventTriggerItem) toString() string {
-	enabled := defaultTriggerItemEnabled
-	if tagItem.Enabled != nil {
-		enabled = *tagItem.Enabled
-	}
-	return fmt.Sprintf("TagGitEventTriggerItem{Enabled: %v, Name: %v}", enabled, tagItem.Name)
+	return fmt.Sprintf("TagGitEventTriggerItem{Name: %v}", tagItem.Name)
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface for Triggers, allowing
