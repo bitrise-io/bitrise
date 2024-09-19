@@ -137,9 +137,9 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
-            
+
             if [ "$(uname)" == "Linux" ]; then
-              export PATH="$HOME/go/bin:$PATH"
+              asdf reshim golang
             fi
     - git-clone@8:
         inputs:
