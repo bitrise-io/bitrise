@@ -157,9 +157,9 @@ step_bundles:
             go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
 
             if [ "$(uname)" == "Linux" ]; then
-              echo '{"test-name":"Unit tests (Linux)"}' >> "$unit_test_results_dir/test-info.json"
+              echo '{"test-name":"Unit tests (Linux)"}' > "$unit_test_results_dir/test-info.json"
             else
-              echo '{"test-name":"Unit tests (macOS)"}' >> "$unit_test_results_dir/test-info.json"
+              echo '{"test-name":"Unit tests (macOS)"}' > "$unit_test_results_dir/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
 
@@ -197,9 +197,9 @@ step_bundles:
             go test -v ./_tests/integration/ --tags linux_and_mac 2>&1 ./... | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
 
             if [ "$(uname)" == "Linux" ]; then
-              echo '{"test-name":"Integration tests (Linux)"}' >> "$integration_test_results_dir/test-info.json"
+              echo '{"test-name":"Integration tests (Linux)"}' > "$integration_test_results_dir/test-info.json"
             else
-              echo '{"test-name":"Integration tests (macOS)"}' >> "$integration_test_results_dir/test-info.json"
+              echo '{"test-name":"Integration tests (macOS)"}' > "$integration_test_results_dir/test-info.json"
             fi
 
             if [ "$(uname)" == "Linux" ]; then
@@ -208,7 +208,7 @@ step_bundles:
 
                 go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
 
-                echo '{"test-name":"Linux only integration tests"}' >> "$linux_only_integration_test_results_dir/test-info.json"
+                echo '{"test-name":"Linux only integration tests"}' > "$linux_only_integration_test_results_dir/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
 
