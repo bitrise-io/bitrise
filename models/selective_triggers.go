@@ -9,11 +9,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-const (
-	defaultTriggerItemEnabled      = true
-	defaultPullRequestDraftEnabled = true
-)
-
 type Triggers struct {
 	PushTriggers        []PushGitEventTriggerItem        `json:"push,omitempty" yaml:"push,omitempty"`
 	PullRequestTriggers []PullRequestGitEventTriggerItem `json:"pull_request,omitempty" yaml:"pull_request,omitempty"`
