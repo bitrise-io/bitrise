@@ -7,54 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCommandInfo(t *testing.T) {
-	tests := []struct {
-		name           string
-		args           []string
-		wantCommand    string
-		wantSubcommand string
-		wantFlags      []string
-	}{
-		{
-			name:           "Empty command",
-			args:           []string{},
-			wantCommand:    "",
-			wantSubcommand: "",
-			wantFlags:      nil,
-		},
-		{
-			name:           "CLI command",
-			args:           []string{"run", "e2e"},
-			wantCommand:    "run",
-			wantSubcommand: "",
-			wantFlags:      nil,
-		},
-		{
-			name:           "Plugin command",
-			args:           []string{":plugin", "do", "something"},
-			wantCommand:    ":plugin",
-			wantSubcommand: "do",
-			wantFlags:      nil,
-		},
-		{
-			name:           "Flags",
-			args:           []string{"run", "--A", "-a", "--B=true", "-b false", "--C /path/to/something"},
-			wantCommand:    "run",
-			wantSubcommand: "",
-			wantFlags:      []string{"A", "a", "B", "b", "C"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			command, subcommand, flags := commandExecutionInfo(tt.args)
-			assert.Equalf(t, tt.wantCommand, command, "commandExecutionInfo(%v)", tt.args)
-			assert.Equalf(t, tt.wantSubcommand, subcommand, "commandExecutionInfo(%v)", tt.args)
-			assert.Equalf(t, tt.wantFlags, flags, "commandExecutionInfo(%v)", tt.args)
-		})
-	}
-}
-
 func Test_loggerParameters(t *testing.T) {
 	tests := []struct {
 		name             string

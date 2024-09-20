@@ -73,6 +73,8 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 // --------------------
 
 func triggerCheck(c *cli.Context) error {
+	logCommandParameters(c)
+
 	warnings := []string{}
 
 	//
