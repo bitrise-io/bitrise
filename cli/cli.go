@@ -18,8 +18,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-var globalTracker analytics.Tracker
-
 // Run ...
 func Run() {
 	// In the case of `--output-format=json` flag is set for the run command, all the logs are expected in JSON format.
@@ -89,12 +87,11 @@ func Run() {
 		globalTracker.Wait()
 	}()
 
-	command, subcommand, flags := commandExecutionInfo(os.Args[1:])
-	globalTracker.SendCommandInfo(command, subcommand, flags)
-
 	app.Action = func(c *cli.Context) error {
 		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
 		if isPlugin {
+			logPluginCommandParameters(pluginName, pluginArgs)
+
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
 				return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)
@@ -123,46 +120,6 @@ func Run() {
 	if err := app.Run(os.Args); err != nil {
 		failf(err.Error())
 	}
-}
-
-func commandExecutionInfo(args []string) (string, string, []string) {
-	if len(args) == 0 {
-		return "", "", nil
-	}
-
-	command := args[0]
-	commandFlags := collectFlags(args)
-	isPluginCommand := strings.HasPrefix(command, ":")
-
-	if isPluginCommand && len(args) > 1 {
-		return command, args[1], commandFlags
-	}
-
-	return command, "", commandFlags
-}
-
-func collectFlags(args []string) []string {
-	var commandFlags []string
-	for _, arg := range args {
-		if !strings.HasPrefix(arg, "-") && !strings.HasPrefix(arg, "--") {
-			continue
-		}
-
-		components := strings.Split(arg, "=")
-		if len(components) < 1 {
-			continue
-		}
-
-		components = strings.Split(components[0], " ")
-		if len(components) < 1 {
-			continue
-		}
-
-		trimmedFlag := strings.TrimPrefix(strings.TrimPrefix(components[0], "--"), "-")
-		commandFlags = append(commandFlags, trimmedFlag)
-	}
-
-	return commandFlags
 }
 
 func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType, isDebug bool) {

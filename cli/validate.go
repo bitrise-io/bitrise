@@ -218,6 +218,8 @@ func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inven
 }
 
 func validate(c *cli.Context) error {
+	logCommandParameters(c)
+
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
