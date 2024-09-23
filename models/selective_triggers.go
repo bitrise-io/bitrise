@@ -113,7 +113,7 @@ func parsePushTriggers(pushTriggersRaw any) ([]PushGitEventTriggerItem, error) {
 		pushTriggerItemStr := pushTriggerItem.toString()
 		seenIdx, ok := seenPushItems[pushTriggerItemStr]
 		if ok {
-			return nil, fmt.Errorf("'triggers.push[%d]': duplicates the %d. push trigger item", idx, seenIdx)
+			return nil, fmt.Errorf("'triggers.push[%d]': duplicates push trigger item #%d", idx, seenIdx)
 		}
 		seenPushItems[pushTriggerItemStr] = idx
 
