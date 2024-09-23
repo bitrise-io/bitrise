@@ -140,7 +140,7 @@ func parsePullRequestTriggers(pullRequestTriggersRaw any) ([]PullRequestGitEvent
 		pullRequestTriggerItemStr := pullRequestTriggerItem.toString()
 		seenIdx, ok := seenPullRequestItems[pullRequestTriggerItemStr]
 		if ok {
-			return nil, fmt.Errorf("'triggers.pull_request[%d]': duplicates the %d. pull request trigger item", idx, seenIdx)
+			return nil, fmt.Errorf("'triggers.pull_request[%d]': duplicates pull request trigger item #%d", idx, seenIdx)
 		}
 		seenPullRequestItems[pullRequestTriggerItemStr] = idx
 
@@ -167,7 +167,7 @@ func parseTagTriggers(tagTriggersRaw any) ([]TagGitEventTriggerItem, error) {
 		tagTriggerItemStr := tagTriggerItem.toString()
 		seenIdx, ok := seenTagItems[tagTriggerItemStr]
 		if ok {
-			return nil, fmt.Errorf("'triggers.tag[%d]': duplicates the %d. tag trigger item", idx, seenIdx)
+			return nil, fmt.Errorf("'triggers.tag[%d]': duplicates tag trigger item #%d", idx, seenIdx)
 		}
 		seenTagItems[tagTriggerItemStr] = idx
 

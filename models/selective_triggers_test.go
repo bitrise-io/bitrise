@@ -206,7 +206,7 @@ push:
 push: 
 - branch: main
 - branch: main`,
-			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+			wantErr: "'triggers.push[1]': duplicates push trigger item #0",
 		},
 		{
 			name: "Duplicated push trigger items - regex filters",
@@ -216,7 +216,7 @@ push:
     regex: branch
 - branch:
     regex: branch`,
-			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+			wantErr: "'triggers.push[1]': duplicates push trigger item #0",
 		},
 		{
 			name: "Duplicated push trigger items - enabled",
@@ -225,7 +225,7 @@ push:
 - branch: main
 - branch: main
   enabled: false`,
-			wantErr: "'triggers.push[1]': duplicates the 0. push trigger item",
+			wantErr: "'triggers.push[1]': duplicates push trigger item #0",
 		},
 	}
 	for _, tt := range tests {
@@ -278,7 +278,7 @@ pull_request:
 pull_request:
 - source_branch: source_branch
 - source_branch: source_branch`,
-			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+			wantErr: "'triggers.pull_request[1]': duplicates pull request trigger item #0",
 		},
 		{
 			name: "Duplicated pull request trigger items - regex filters",
@@ -288,7 +288,7 @@ pull_request:
     regex: source_branch
 - source_branch:
     regex: source_branch`,
-			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+			wantErr: "'triggers.pull_request[1]': duplicates pull request trigger item #0",
 		},
 		{
 			name: "Duplicated pull request trigger items - enabled",
@@ -297,7 +297,7 @@ pull_request:
 - source_branch: source_branch
 - source_branch: source_branch
   enabled: false`,
-			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+			wantErr: "'triggers.pull_request[1]': duplicates pull request trigger item #0",
 		},
 		{
 			name: "Duplicated pull request trigger items - draft enabled",
@@ -306,7 +306,7 @@ pull_request:
 - source_branch: source_branch
 - source_branch: source_branch
   draft_enabled: true`,
-			wantErr: "'triggers.pull_request[1]': duplicates the 0. pull request trigger item",
+			wantErr: "'triggers.pull_request[1]': duplicates pull request trigger item #0",
 		},
 	}
 	for _, tt := range tests {
@@ -359,7 +359,7 @@ tag:
 tag:
 - name: tag
 - name: tag`,
-			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
+			wantErr: "'triggers.tag[1]': duplicates tag trigger item #0",
 		},
 		{
 			name: "Duplicated tag trigger items - regex filters",
@@ -369,7 +369,7 @@ tag:
     regex: tag
 - name: 
     regex: tag`,
-			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
+			wantErr: "'triggers.tag[1]': duplicates tag trigger item #0",
 		},
 		{
 			name: "Duplicated tag trigger items - enabled",
@@ -378,7 +378,7 @@ tag:
 - name: tag
 - name: tag
   enabled: false`,
-			wantErr: "'triggers.tag[1]': duplicates the 0. tag trigger item",
+			wantErr: "'triggers.tag[1]': duplicates tag trigger item #0",
 		},
 	}
 	for _, tt := range tests {
