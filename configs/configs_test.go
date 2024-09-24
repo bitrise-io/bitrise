@@ -18,11 +18,14 @@ func TestSetupForVersionChecks(t *testing.T) {
 
 	t.Setenv("HOME", fakeHomePth)
 
-	require.Equal(t, false, CheckIsSetupWasDoneForVersion("0.9.7"))
+	versionMatch, _ := CheckIsSetupWasDoneForVersion("0.9.7")
+	require.Equal(t, false, versionMatch)
 
 	require.Equal(t, nil, SaveSetupSuccessForVersion("0.9.7"))
 
-	require.Equal(t, true, CheckIsSetupWasDoneForVersion("0.9.7"))
+	versionMatch, _ = CheckIsSetupWasDoneForVersion("0.9.7")
+	require.Equal(t, true, versionMatch)
 
-	require.Equal(t, false, CheckIsSetupWasDoneForVersion("0.9.8"))
+	versionMatch, _ = CheckIsSetupWasDoneForVersion("0.9.8")
+	require.Equal(t, false, versionMatch)
 }
