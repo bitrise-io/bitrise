@@ -42,6 +42,7 @@ type PipelineModel struct {
 	Title       string                   `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary     string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers    Triggers                 `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 	Stages      []StageListItemModel     `json:"stages,omitempty" yaml:"stages,omitempty"`
 	Workflows   DagWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
@@ -76,6 +77,7 @@ type WorkflowModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers     Triggers                            `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 	BeforeRun    []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
 	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
