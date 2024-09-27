@@ -152,14 +152,15 @@ step_bundles:
             set -ex
 
             unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
-            mkdir -p "$unit_test_results_dir"
+            mkdir -p "${unit_test_results_dir}"
 
-            go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "$unit_test_results_dir/unit_tests.xml"
+            go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
 
-            if [ "$(uname)" == "Linux" ]; then
-              echo '{"test-name":"Unit tests (Linux)"}' > "$unit_test_results_dir/test-info.json"
+            touch "${unit_test_results_dir}/test-info.json"
+            if [ "$(uname)" == "Linux" ]; then 
+              echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
-              echo '{"test-name":"Unit tests (macOS)"}' > "$unit_test_results_dir/test-info.json"
+              echo '{"test-name":"Unit tests (macOS)"}' > "${unit_test_results_dir}/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
 
