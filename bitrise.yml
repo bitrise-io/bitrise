@@ -157,6 +157,7 @@ step_bundles:
             mkdir -p "${unit_test_results_dir}"
 
             go test -v -p 1 $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
+            tree -L 3 "${unit_test_results_dir}"
 
             if [ "$(uname)" == "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
