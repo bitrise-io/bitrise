@@ -162,7 +162,7 @@ func TestYAMLUnmarshalTriggers_Validation_Push(t *testing.T) {
 - pull_request_source_branch: "*"
   workflow: primary
 - tag: "*.*.*"`,
-			wantErr: "'triggers': should be a map with 'push', 'pull_request' and 'tag' keys",
+			wantErr: "'triggers': should be a map with 'enabled', 'push', 'pull_request' and 'tag' keys",
 		},
 		{
 			name: "Throws error when 'triggers' has unknown keys",
@@ -404,11 +404,13 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 workflows:
   test:
     triggers:
+      enabled: false
       push:
       - branch:
           regex: branch
       pull_request:
-      - source_branch: source_branch`,
+      - source_branch: source_branch
+        enabled: false`,
 		},
 	}
 	for _, tt := range tests {

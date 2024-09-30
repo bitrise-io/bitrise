@@ -10,6 +10,7 @@ import (
 )
 
 type Triggers struct {
+	Enabled             *bool                            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	PushTriggers        []PushGitEventTriggerItem        `json:"push,omitempty" yaml:"push,omitempty"`
 	PullRequestTriggers []PullRequestGitEventTriggerItem `json:"pull_request,omitempty" yaml:"pull_request,omitempty"`
 	TagTriggers         []TagGitEventTriggerItem         `json:"tag,omitempty" yaml:"tag,omitempty"`
@@ -59,12 +60,18 @@ func (tagItem TagGitEventTriggerItem) toString() string {
 func (triggers *Triggers) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var triggersConfig map[string]any
 	if err := unmarshal(&triggersConfig); err != nil {
-		return fmt.Errorf("'triggers': should be a map with 'push', 'pull_request' and 'tag' keys")
+		return fmt.Errorf("'triggers': should be a map with 'enabled', 'push', 'pull_request' and 'tag' keys")
 	}
 
-	if err := ensureKeys(triggersConfig, "push", "pull_request", "tag"); err != nil {
+	if err := ensureKeys(triggersConfig, "enabled", "push", "pull_request", "tag"); err != nil {
 		return fmt.Errorf("'triggers': %w", err)
 	}
+
+	enabled, err := boolPtrValue(triggersConfig, "enabled")
+	if err != nil {
+		return fmt.Errorf("'triggers': %w", err)
+	}
+	triggers.Enabled = enabled
 
 	if pushTriggersRaw, ok := triggersConfig["push"]; ok {
 		pushTriggers, err := parsePushTriggers(pushTriggersRaw)
