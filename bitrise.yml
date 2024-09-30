@@ -158,7 +158,7 @@ step_bundles:
 
             go test -v -p 1 $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
 
-            if [ "$(uname)" == "Linux" ]; then 
+            if [ "$(uname)" == "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
               echo '{"test-name":"Unit tests (macOS)"}' > "${unit_test_results_dir}/test-info.json"
