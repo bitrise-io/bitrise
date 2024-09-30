@@ -156,9 +156,8 @@ step_bundles:
             unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
             mkdir -p "${unit_test_results_dir}"
 
-            go test -v -p 1 $BITRISE_GO_PACKAGES | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
+            go test -v -p 1 $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
 
-            touch "${unit_test_results_dir}/test-info.json"
             if [ "$(uname)" == "Linux" ]; then 
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
@@ -209,7 +208,7 @@ step_bundles:
                 linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
                 mkdir -p "$linux_only_integration_test_results_dir"
 
-                go test -v ./_tests/integration/ --tags linux_only | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
+                go test -v ./_tests/integration/ --tags linux_only 2>&1 | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
 
                 echo '{"test-name":"Linux only integration tests"}' > "$linux_only_integration_test_results_dir/test-info.json"
             fi
