@@ -162,6 +162,8 @@ step_bundles:
               exit 1
             fi
             
+            cat "${unit_test_results_dir}/unit_tests.xml"
+            
             if [ "$(uname)" = "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
