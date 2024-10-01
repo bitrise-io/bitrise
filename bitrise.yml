@@ -152,14 +152,27 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-
-            unit_test_results_dir="$BITRISE_TEST_RESULT_DIR/unit_test_results"
+            
+            # Ensure required environment variables are set
+            if [ -z "${BITRISE_TEST_RESULT_DIR}" ] || [ -z "${BITRISE_GO_PACKAGES}" ]; then
+              echo "Required environment variables BITRISE_TEST_RESULT_DIR or BITRISE_GO_PACKAGES are not set."
+              exit 1
+            fi
+            
+            # Create the results directory
+            unit_test_results_dir="${BITRISE_TEST_RESULT_DIR}/unit_test_results"
             mkdir -p "${unit_test_results_dir}"
-
-            go test -v -p 1 $BITRISE_GO_PACKAGES 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"
-            tree -L 3 "${unit_test_results_dir}"
-
-            if [ "$(uname)" == "Linux" ]; then
+            
+            # Run tests and generate report
+            if ! go test -v -p 1 "${BITRISE_GO_PACKAGES}" 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"; then
+              echo "go test or go-junit-report failed."
+              exit 1
+            fi
+            
+            cat "${unit_test_results_dir}/unit_tests.xml"
+            
+            # Create JSON file based on OS
+            if [ "$(uname)" = "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
               echo '{"test-name":"Unit tests (macOS)"}' > "${unit_test_results_dir}/test-info.json"
