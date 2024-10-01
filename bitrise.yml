@@ -146,32 +146,22 @@ step_bundles:
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
-    - go-list@1: { }
     - script@1:
         inputs:
         - content: |-
             #!/usr/bin/env bash
-            set -ex
-            
-            # Ensure required environment variables are set
-            if [ -z "${BITRISE_TEST_RESULT_DIR}" ] || [ -z "${BITRISE_GO_PACKAGES}" ]; then
-              echo "Required environment variables BITRISE_TEST_RESULT_DIR or BITRISE_GO_PACKAGES are not set."
-              exit 1
-            fi
+            set -exo pipefail
             
             # Create the results directory
             unit_test_results_dir="${BITRISE_TEST_RESULT_DIR}/unit_test_results"
             mkdir -p "${unit_test_results_dir}"
             
             # Run tests and generate report
-            if ! go test -v -p 1 "${BITRISE_GO_PACKAGES}" 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"; then
+            if ! go test -v -p 1 ./... 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"; then
               echo "go test or go-junit-report failed."
               exit 1
             fi
             
-            cat "${unit_test_results_dir}/unit_tests.xml"
-            
-            # Create JSON file based on OS
             if [ "$(uname)" = "Linux" ]; then
               echo '{"test-name":"Unit tests (Linux)"}' > "${unit_test_results_dir}/test-info.json"
             else
@@ -196,8 +186,9 @@ step_bundles:
         inputs:
         - content: |-
             #!/usr/bin/env bash
-            set -ex
+            set -exo pipefail
 
+            # Setup current binary
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
             go build -o "$current_bitrise"
@@ -206,11 +197,13 @@ step_bundles:
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
 
             $current_bitrise setup
-
+          
+            # Create the results directory
             integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/integration_test_results"
             mkdir -p "$integration_test_results_dir"
 
-            go test -v ./_tests/integration/ --tags linux_and_mac 2>&1 ./... | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
+            # Run tests and generate report
+            go test -v --tags linux_and_mac ./_tests/integration/... 2>&1 | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
 
             if [ "$(uname)" == "Linux" ]; then
               echo '{"test-name":"Integration tests (Linux)"}' > "$integration_test_results_dir/test-info.json"
@@ -218,11 +211,12 @@ step_bundles:
               echo '{"test-name":"Integration tests (macOS)"}' > "$integration_test_results_dir/test-info.json"
             fi
 
+            # Run linux only tests and generate report
             if [ "$(uname)" == "Linux" ]; then
                 linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
                 mkdir -p "$linux_only_integration_test_results_dir"
 
-                go test -v ./_tests/integration/ --tags linux_only 2>&1 | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
+                go test -v --tags linux_only ./_tests/integration/... 2>&1 | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
 
                 echo '{"test-name":"Linux only integration tests"}' > "$linux_only_integration_test_results_dir/test-info.json"
             fi
