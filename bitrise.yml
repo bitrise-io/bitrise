@@ -152,13 +152,13 @@ step_bundles:
             #!/usr/bin/env bash
             set -exo pipefail
             
-            # Create the results directory
-            unit_test_results_dir="${BITRISE_TEST_RESULT_DIR}/unit_test_results"
-            mkdir -p "${unit_test_results_dir}"
+            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
             
-            # Run tests and generate report
-            go test -v -p 1 ./... 2>&1 | tee "${unit_test_results_dir}/unit_tests.log"
-            go-junit-report -in "${unit_test_results_dir}/unit_tests.log" -out "${unit_test_results_dir}/unit_tests.xml"
+            go test -v -p 1 ./... 2>&1 | tee "./unit_tests.log"
+            
+            unit_test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
+            mkdir -p "${unit_test_results_dir}"
+            go-junit-report -in "./unit_tests.log" -out "${unit_test_results_dir}/unit_tests.xml"
             
             cat "${unit_test_results_dir}/unit_tests.xml"
             
