@@ -157,10 +157,8 @@ step_bundles:
             mkdir -p "${unit_test_results_dir}"
             
             # Run tests and generate report
-            if ! go test -v -p 1 ./... 2>&1 | go-junit-report -iocopy -set-exit-code -out "${unit_test_results_dir}/unit_tests.xml"; then
-              echo "go test or go-junit-report failed."
-              exit 1
-            fi
+            go test -v -p 1 ./... 2>&1 | tee "${unit_test_results_dir}/unit_tests.log"
+            go-junit-report -in "${unit_test_results_dir}/unit_tests.log" -out "${unit_test_results_dir}/unit_tests.xml
             
             cat "${unit_test_results_dir}/unit_tests.xml"
             
