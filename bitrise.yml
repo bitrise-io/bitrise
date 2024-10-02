@@ -197,7 +197,7 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -exo pipefail
-            
+
             # Here we save the original test results and deploy directories and later on we recreate them,
             #  because during the tests these directories are removed.
             ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
@@ -228,13 +228,13 @@ step_bundles:
             if [ "$(uname)" = "Linux" ]; then
               go test -v --tags linux_only ./_tests/integration/... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
             fi
-            
+
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
             cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
             if [ "$(uname)" = "Linux" ]; then
               cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
             fi
-            
+
             go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
             if [ "$(uname)" = "Linux" ]; then
                 go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
