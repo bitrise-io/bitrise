@@ -155,6 +155,7 @@ step_bundles:
             # Here we save the original test result directory and later on we recreate it, 
             #  because during the tests the test result directory gets removed.
             ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
             
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
@@ -166,13 +167,15 @@ step_bundles:
             fi
             
             # Run tests and generate report
-            go test -v -p 1 ./... 2>&1 | tee "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
-            go-junit-report -in "${BITRISE_DEPLOY_DIR}/${test_log_file_name}" -out "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+            go test -v -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+            cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
             
-            # Copy the junit test results to the test result directory
+            # Export the junit test results
             test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
             mkdir -p "${test_results_dir}"
-            cp "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+            cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
     - deploy-to-bitrise-io@2: { }
 
@@ -195,7 +198,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -exo pipefail
 
-            # Setup current binary
+            # Build and setup the current binary
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
             go build -o "$current_bitrise"
@@ -208,24 +211,38 @@ step_bundles:
             # Create the results directory
             integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/integration_test_results"
             mkdir -p "$integration_test_results_dir"
-
-            # Run tests and generate report
-            go test -v --tags linux_and_mac ./_tests/integration/... 2>&1 | go-junit-report -iocopy -set-exit-code -out "$integration_test_results_dir/integration_tests.xml"
-
-            if [ "$(uname)" == "Linux" ]; then
-              echo '{"test-name":"Integration tests (Linux)"}' > "$integration_test_results_dir/test-info.json"
+            
+            # Setup per OS test name and log file name
+            if [ "$(uname)" = "Linux" ]; then
+              test_name_json='{"test-name":"Integration tests (Linux)"}'
+              test_log_file_name="integration_tests_linux"
             else
-              echo '{"test-name":"Integration tests (macOS)"}' > "$integration_test_results_dir/test-info.json"
+              test_name_json='{"test-name":"Integration tests (macOS)"}'
+              test_log_file_name="integration_tests_macos"
             fi
 
-            # Run linux only tests and generate report
+            # Run tests and generate report
+            go test -v --tags linux_and_mac ./_tests/integration/... 2>&1 | tee "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+            go-junit-report -in "${BITRISE_DEPLOY_DIR}/${test_log_file_name}" -out "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+            
+            # Export the junit test results
+            test_results_dir="${BITRISE_TEST_RESULT_DIR}/integration_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+
+            # Run linux only tests and generate and export report
             if [ "$(uname)" == "Linux" ]; then
-                linux_only_integration_test_results_dir="$BITRISE_TEST_RESULT_DIR/linux_only_integration_test_results"
-                mkdir -p "$linux_only_integration_test_results_dir"
-
-                go test -v --tags linux_only ./_tests/integration/... 2>&1 | go-junit-report -iocopy -set-exit-code -out "$linux_only_integration_test_results_dir/linux_only_integration_tests.xml"
-
-                echo '{"test-name":"Linux only integration tests"}' > "$linux_only_integration_test_results_dir/test-info.json"
+              test_name_json='{"test-name":"Linux only integration tests"}'
+              test_log_file_name="linux_only_integration_tests"
+            
+              go test -v --tags linux_only ./_tests/integration/... 2>&1 | tee "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+              go-junit-report -in "${BITRISE_DEPLOY_DIR}/${test_log_file_name}" -out "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+            
+              test_results_dir="${BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
+              mkdir -p "${test_results_dir}"
+              cp "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+              echo "${test_name_json}" > "${test_results_dir}/test-info.json"
             fi
     - deploy-to-bitrise-io@2: { }
 
