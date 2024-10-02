@@ -235,9 +235,9 @@ step_bundles:
               cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
             fi
             
-            go-junit-report -in "./${test_log_file_name}" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
             if [ "$(uname)" = "Linux" ]; then
-                go-junit-report -in "./${linux_only_test_log_file_name}" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
+                go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
             fi
 
             # Export the junit test results
@@ -246,7 +246,6 @@ step_bundles:
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
 
-            # Run linux only tests and generate and export report
             if [ "$(uname)" == "Linux" ]; then
               test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
               mkdir -p "${test_results_dir}"
