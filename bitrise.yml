@@ -150,23 +150,30 @@ step_bundles:
         inputs:
         - content: |-
             #!/usr/bin/env bash
-            set -exo pipefail
+            set -ex
             
+            # Here we save the original test result directory and later on we recreate it, 
+            #  because during the tests the test result directory gets removed.
             ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
             
-            go test -v -p 1 ./... 2>&1 | tee "./unit_tests.log"
-            
-            unit_test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
-            mkdir -p "${unit_test_results_dir}"
-            go-junit-report -in "./unit_tests.log" -out "${unit_test_results_dir}/unit_tests.xml"
-            
-            cat "${unit_test_results_dir}/unit_tests.xml"
-            
+            # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
-              echo '{"test-name":"Unit tests (Linux)"}' > "{$unit_test_results_dir}/test-info.json"
+              test_name_json='{"test-name":"Unit tests (Linux)"}'
+              test_log_file_name="unit_tests_linux"
             else
-              echo '{"test-name":"Unit tests (macOS)"}' > "${unit_test_results_dir}/test-info.json"
+              test_name_json='{"test-name":"Unit tests (macOS)"}'
+              test_log_file_name="unit_tests_macos"
             fi
+            
+            # Run tests and generate report
+            go test -v -p 1 ./... 2>&1 | tee "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+            go-junit-report -in "${BITRISE_DEPLOY_DIR}/${test_log_file_name}" -out "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+            
+            # Copy the junit test results to the test result directory
+            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
     - deploy-to-bitrise-io@2: { }
 
   run_integration_tests:
