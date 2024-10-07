@@ -199,7 +199,9 @@ func (r WorkflowRunner) activateAndRunStep(
 ) activateAndRunStepResult {
 	//
 	// Activate step
+	activateStartTime := time.Now()
 	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
 	}
@@ -257,7 +259,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	redactedStepInputs := prepareEnvsResult.RedactedStepInputs
 
 	// Run the step
-	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
+	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
 	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
 
