@@ -33,10 +33,11 @@ func ActivateSteplibRefStep(
 		return activationResult, err
 	}
 
-	err = steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
+	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
 	if err != nil {
 		return activationResult, err
 	}
+	activationResult.ExecutablePath = execPath
 
 	// TODO: this is sketchy, we should clean this up, but this pointer originates in the CLI codebase
 	stepInfoPtr.ID = stepInfo.ID
@@ -82,22 +83,7 @@ func prepareStepLibForActivation(
 
 	stepInfo, err = cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
 	if err != nil {
-		if !canUpdateStepLib(isOfflineMode, didStepLibUpdateInWorkflow) {
-			return stepInfo, didUpdate, err
-		}
-
-		log.Infof("Step not found in local StepLib cache, trying to update StepLib...")
-		_, err = stepman.UpdateLibrary(id.SteplibSource, log)
-		if err != nil {
-			return stepInfo, didUpdate, err
-		} else {
-			didUpdate = true
-		}
-
-		stepInfo, err = cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
-		if err != nil {
-			return stepInfo, didUpdate, err
-		}
+		return stepInfo, didUpdate, err
 	}
 
 	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
@@ -109,16 +95,6 @@ func prepareStepLibForActivation(
 }
 
 func shouldUpdateStepLibForStep(constraint models.VersionConstraint, isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool {
-	if !canUpdateStepLib(isOfflineMode, didStepLibUpdateInWorkflow) {
-		return false
-	}
-
-	return (constraint.VersionLockType == models.Latest) ||
-		(constraint.VersionLockType == models.MinorLocked) ||
-		(constraint.VersionLockType == models.MajorLocked)
-}
-
-func canUpdateStepLib(isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool {
 	if isOfflineMode {
 		return false
 	}
@@ -127,5 +103,7 @@ func canUpdateStepLib(isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool 
 		return false
 	}
 
-	return true
+	return (constraint.VersionLockType == models.Latest) ||
+		(constraint.VersionLockType == models.MinorLocked) ||
+		(constraint.VersionLockType == models.MajorLocked)
 }
