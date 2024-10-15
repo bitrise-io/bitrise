@@ -4,4 +4,4 @@ default_step_lib_source: https://github.com/ofalvai/bitrise-steplib-playground.g
 workflows:
   step-executable-test:
     steps:
-    - dummy@1.0.0: {}
+    - dummy@1.0.0: { }
