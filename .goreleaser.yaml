@@ -40,19 +40,19 @@ blobs:
   bucket: bitrise-cli-releases-prod
   folder: /{{ .Tag }}
   ids:
-    - default
+  - default
 - provider: s3
   bucket: bitrise-cli-releases-prod
   folder: /
   ids:
-    - s3
+  - s3
 
 release:
   github:
     owner: bitrise-io
     name: bitrise
   ids:
-    - default
+  - default
   draft: true
   mode: replace
   footer: |
