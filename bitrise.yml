@@ -54,6 +54,9 @@ workflows:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:
     - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
+    - AWS_ENDPOINT_URL: $AWS_ENDPOINT_PROD
+    - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
+    - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
     steps:
     - script:
         title: Fetch GCS bucket credentials
