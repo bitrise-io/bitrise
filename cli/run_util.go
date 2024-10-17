@@ -261,7 +261,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	// Run the step
 	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
-	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
+	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
 
 	if stepTestDir != "" {
 		if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: stepIDx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -289,11 +289,12 @@ type activateStepResult struct {
 	StepInfoPtr stepmanModels.StepInfoModel
 	StepIDData  stepid.CanonicalID
 	StepDir     string
+	ExecutablePath string
 	Err         error
 }
 
-func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepIDData stepid.CanonicalID, stepDir string, err error) activateStepResult {
-	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepIDData: stepIDData, StepDir: stepDir, Err: err}
+func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepIDData stepid.CanonicalID, stepDir, executablePath string, err error) activateStepResult {
+	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepIDData: stepIDData, StepDir: stepDir, ExecutablePath: executablePath, Err: err}
 }
 
 func (r WorkflowRunner) activateStep(
@@ -316,7 +317,7 @@ func (r WorkflowRunner) activateStep(
 
 	stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 	if err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepid.CanonicalID{}, "", err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepid.CanonicalID{}, "", "", err)
 	}
 	stepInfoPtr.ID = stepIDData.IDorURI
 	if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
@@ -328,7 +329,7 @@ func (r WorkflowRunner) activateStep(
 	//
 	// Activating the step
 	if err := bitrise.CleanupStepWorkDir(); err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, "", err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, "", "", err)
 	}
 
 	stepDir := configs.BitriseWorkStepsDirPath
@@ -339,27 +340,27 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	activator := newStepActivator()
-	stepYMLPth, didStepLibUpdate, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
-	if didStepLibUpdate {
+	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	if activatedStep.DidStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
 	if err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, "", err)
 	}
 
 	// Fill step info with default step info, if exist
 	mergedStep := step
-	if stepYMLPth != "" {
-		specStep, err := bitrise.ReadSpecStep(stepYMLPth)
+	if activatedStep.StepYMLPath != "" {
+		specStep, err := bitrise.ReadSpecStep(activatedStep.StepYMLPath)
 		log.Debugf("Spec read from YML: %#v", specStep)
 		if err != nil {
 			err = fmt.Errorf("parse step.yml of '%s': %s", stepIDData.IDorURI, err)
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
 		}
 
 		mergedStep, err = models.MergeStepWith(specStep, step)
 		if err != nil {
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, err)
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
 		}
 	}
 
@@ -395,7 +396,7 @@ func (r WorkflowRunner) activateStep(
 		}
 	}
 
-	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, nil)
+	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, nil)
 }
 
 type prepareEnvsForStepRunResult struct {
@@ -514,6 +515,7 @@ func (r WorkflowRunner) runStep(
 	step stepmanModels.StepModel,
 	stepIDData stepid.CanonicalID,
 	stepDir string,
+	stepExecutablePath string,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
 	containerID string,
@@ -555,7 +557,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, bitriseSourceDir, secrets, containerID, groupID); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, stepExecutablePath, bitriseSourceDir, secrets, containerID, groupID); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -605,24 +607,30 @@ func (r WorkflowRunner) runStep(
 func (r WorkflowRunner) executeStep(
 	stepUUID string,
 	step stepmanModels.StepModel, sIDData stepid.CanonicalID,
-	stepAbsDirPath, bitriseSourceDir string,
+	stepAbsDirPath, stepExecutablePath, bitriseSourceDir string,
 	secrets []string,
 	containerID string,
 	groupID string,
 ) (int, error) {
+	var cmdArgs []string
 
-	toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
-	toolkitName := toolkitForStep.ToolkitName()
-
-	if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
-		return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
-			toolkitName, err)
-	}
-
-	cmdArgs, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
-	if err != nil {
-		return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
-			toolkitName, err)
+	if stepExecutablePath != "" {
+		cmdArgs = []string{stepExecutablePath}
+	} else {
+		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
+		toolkitName := toolkitForStep.ToolkitName()
+	
+		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
+				toolkitName, err)
+		}
+	
+		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
+		if err != nil {
+			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
+				toolkitName, err)
+		}
+		cmdArgs = cmdFromToolkit
 	}
 
 	timeout := time.Duration(-1)
@@ -654,7 +662,7 @@ func (r WorkflowRunner) executeStep(
 
 	containerDef := r.ContainerDefinition(containerID)
 	if containerDef != nil {
-		envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
+		envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
 		if err != nil {
@@ -676,7 +684,7 @@ func (r WorkflowRunner) executeStep(
 		return cmd.Run()
 	}
 
-	envs, err = envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
+	envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &envmanEnv.DefaultEnvironmentSource{})
 	if err != nil {
 		return 1, fmt.Errorf("failed to read command environment: %w", err)
 	}
