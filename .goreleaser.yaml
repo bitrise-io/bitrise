@@ -43,6 +43,7 @@ blobs:
   - default
 - provider: s3
   bucket: bitrise-cli-releases-prod
+  region: us-east-1
   folder: /
   ids:
   - s3
