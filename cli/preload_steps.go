@@ -24,6 +24,8 @@ var stepsCommand = cli.Command{
 			Name:  "list-cached",
 			Usage: "List all the cached steps",
 			Action: func(c *cli.Context) error {
+				logCommandParameters(c)
+
 				return listCachedSteps(c)
 			},
 			Flags: []cli.Flag{
@@ -44,6 +46,8 @@ var stepsCommand = cli.Command{
 			Usage:     "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
 			UsageText: fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineModeEnvKey),
 			Action: func(c *cli.Context) error {
+				logCommandParameters(c)
+
 				if err := preloadSteps(c); err != nil {
 					log.Errorf("Preload failed: %s", err)
 					os.Exit(1)

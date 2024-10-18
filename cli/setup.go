@@ -12,6 +12,8 @@ var setupCommand = cli.Command{
 	Name:  "setup",
 	Usage: "Setup the current host. Install every required tool to run Workflows.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := setup(c); err != nil {
 			log.Errorf("Setup failed, error: %s", err)
 			os.Exit(1)

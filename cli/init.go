@@ -15,6 +15,8 @@ var initCmd = cli.Command{
 	Aliases: []string{"i"},
 	Usage:   "Init bitrise config.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		logger := log.NewLogger(log.GetGlobalLoggerOpts())
 		if err := initConfig(c); err != nil {
 

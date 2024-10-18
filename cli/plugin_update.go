@@ -14,6 +14,8 @@ var pluginUpdateCommand = cli.Command{
 	Name:  "update",
 	Usage: "Update bitrise plugin. If <plugin_name> not specified, every plugin will be updated.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := pluginUpdate(c); err != nil {
 			log.Errorf("Plugin update failed, error: %s", err)
 			os.Exit(1)

@@ -65,6 +65,8 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
+	logCommandParameters(c)
+
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
 	if c.GlobalIsSet(PRKey) {

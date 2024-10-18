@@ -1901,7 +1901,7 @@ func write(t *testing.T, content, toPth string) {
 
 type noOpTracker struct{}
 
-func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, map[string]interface{}, map[string]string) {
+func (n noOpTracker) SendStepStartedEvent(analytics.Properties, cliAnalytics.StepInfo, time.Duration, map[string]interface{}, map[string]string) {
 }
 func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.StepResult) {}
 func (n noOpTracker) SendCLIWarning(string)                                               {}

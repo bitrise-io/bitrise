@@ -6,6 +6,8 @@ import (
 )
 
 func start(c *cli.Context) error {
+	logCommandParameters(c)
+
 	// Input validation
 	collectionURI := c.String(CollectionKey)
 	if collectionURI == "" {

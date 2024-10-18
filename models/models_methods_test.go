@@ -19,10 +19,8 @@ import (
 
 func TestJSONMarshal(t *testing.T) {
 	tests := []struct {
-		name      string
-		config    string
-		wantWarns []string
-		wantErr   string
+		name   string
+		config string
 	}{
 		{
 			name: "Meta fields are normalized",
