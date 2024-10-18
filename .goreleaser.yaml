@@ -44,6 +44,7 @@ blobs:
 - provider: s3
   bucket: bitrise-cli-releases-prod
   region: us-east-1
+  endpoint: "{{ .Env.AWS_ENDPOINT_URL }}"
   folder: /
   ids:
   - s3
