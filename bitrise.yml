@@ -279,7 +279,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
-            if [ "$(uname)" == "Linux" ] && [asdf plugin list | grep -q 'golang']; then
+            if [ "$(uname)" == "Linux" ] && command -v asdf >/dev/null && asdf plugin list | grep -q 'golang'; then
               asdf reshim golang
             fi
 
