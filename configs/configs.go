@@ -186,12 +186,12 @@ func SavePluginUpdateCheck(plugin string) error {
 	return saveBitriseConfig(config)
 }
 
-func CheckIsSetupWasDoneForVersion(ver string) bool {
+func CheckIsSetupWasDoneForVersion(ver string) (bool, string) {
 	config, err := loadBitriseConfig()
 	if err != nil {
-		return false
+		return false, ""
 	}
-	return (config.SetupVersion == ver)
+	return config.SetupVersion == ver, config.SetupVersion
 }
 
 func SaveSetupSuccessForVersion(ver string) error {

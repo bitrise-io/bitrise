@@ -54,6 +54,7 @@ const (
 	stepTitleProperty             = "step_title"
 	stepVersionProperty           = "step_version"
 	stepSourceProperty            = "step_source"
+	stepActivateDurationProperty  = "step_activate_duration_ms"
 	skippableProperty             = "skippable"
 	timeoutProperty               = "timeout"
 	runTimeProperty               = "runtime"
@@ -108,7 +109,7 @@ type StepResult struct {
 type Tracker interface {
 	SendWorkflowStarted(properties analytics.Properties, name string, title string)
 	SendWorkflowFinished(properties analytics.Properties, failed bool)
-	SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string)
+	SendStepStartedEvent(properties analytics.Properties, info StepInfo, activateDuration time.Duration, expandedInputs map[string]interface{}, originalInputs map[string]string)
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
 	SendCLIWarning(message string)
 	SendToolVersionSnapshot(toolVersions, snapshotType string)
@@ -249,12 +250,13 @@ func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
 	t.tracker.Enqueue(toolVersionSnapshotEventName, properties)
 }
 
-func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, expandedInputs map[string]interface{}, originalInputs map[string]string) {
+func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, activateDuration time.Duration, expandedInputs map[string]interface{}, originalInputs map[string]string) {
 	if !t.stateChecker.Enabled() {
 		return
 	}
 
 	extraProperties := []analytics.Properties{properties, prepareStartProperties(info)}
+	extraProperties = append(extraProperties, analytics.Properties{stepActivateDurationProperty: activateDuration.Milliseconds()})
 	if len(expandedInputs) > 0 {
 		inputMap := map[string]Input{}
 		for k, v := range expandedInputs {
