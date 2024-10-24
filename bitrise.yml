@@ -35,6 +35,7 @@ workflows:
 
   run_unit_tests_macos:
     steps:
+    - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
     meta:
       bitrise.io:
@@ -43,6 +44,7 @@ workflows:
 
   run_unit_tests_linux:
     steps:
+    - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
     meta:
       bitrise.io:
@@ -51,6 +53,7 @@ workflows:
 
   run_integration_tests_macos:
     steps:
+    - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
     meta:
       bitrise.io:
@@ -59,6 +62,7 @@ workflows:
 
   run_integration_tests_linux:
     steps:
+    - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
@@ -69,14 +73,7 @@ workflows:
 
   test_binary_build_macos:
     steps:
-    - script@1:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            # fail if any commands fails
-            set -ex
-
-            go install github.com/goreleaser/goreleaser@latest
+    - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
     meta:
       bitrise.io:
@@ -85,20 +82,7 @@ workflows:
 
   test_binary_build_linux:
     steps:
-    - script@1:  # TODO: Unify with goreleaser setup with macOS
-        title: Set up Goreleaser
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            # fail if any commands fails
-            set -e
-            # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-            set -o pipefail
-            # debug log
-            set -x
-
-            wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
-            sudo dpkg -i /tmp/goreleaser.deb
+    - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
     meta:
       bitrise.io:
@@ -118,6 +102,38 @@ workflows:
         machine_type_id: elite-xl
         stack: linux-docker-android-22.04
 
+  create-release:
+    description: Creates Linux and Darwin binaries, then publishes a GitHub release
+    envs:
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
+    # R2 bucket connection params
+    - AWS_ENDPOINT_URL: $AWS_ENDPOINT_PROD
+    - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
+    - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
+    steps:
+    - script@1:
+        title: Fetch GCS bucket credentials
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
+            # Goreleaser expects this env var:
+            envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
+    - script@1:
+        title: Goreleaser (create binaries + publish to GH)
+        deps:
+          brew:
+          - name: goreleaser
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+
+            goreleaser release
+
+
 step_bundles:
   run_lint:
     steps:
@@ -132,21 +148,11 @@ step_bundles:
 
   run_unit_tests:
     steps:
-    - script@1:
-        title: Setup JUnit XML converter
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            go install github.com/jstemmer/go-junit-report/v2@latest
-
-            if [ "$(uname)" == "Linux" ]; then
-              asdf reshim golang
-            fi
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
     - script@1:
+        title: Run unit tests and export results
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -181,18 +187,11 @@ step_bundles:
 
   run_integration_tests:
     steps:
-    - script@1:
-        title: Setup JUnit XML converter
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            go install github.com/jstemmer/go-junit-report/v2@latest
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run integration tests
+        title: Run integration tests and export results
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -260,7 +259,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Goreleaser (create snapshot binaries)
+        title: Create snapshot binaries
         deps:
           brew:
           - name: goreleaser
@@ -271,6 +270,31 @@ step_bundles:
 
             goreleaser release --snapshot --rm-dist
     - deploy-to-bitrise-io@2: { }
+
+  setup_go_junit_report:
+    steps:
+    - script@1:
+        title: Setup JUnit XML converter
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            go install github.com/jstemmer/go-junit-report/v2@latest
+
+  setup_goreleaser:
+    steps:
+    - script@1:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            if [ "$(uname)" = "Linux" ]; then
+              wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
+              sudo dpkg -i /tmp/goreleaser.deb
+            else
+              go install github.com/goreleaser/goreleaser@latest
+            fi
 
 meta:
   bitrise.io:
