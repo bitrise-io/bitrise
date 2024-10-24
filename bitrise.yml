@@ -133,7 +133,6 @@ workflows:
 
             goreleaser release
 
-
 step_bundles:
   run_lint:
     steps:
@@ -280,6 +279,9 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
+            if [ "$(uname)" == "Linux" ]; then
+              asdf reshim golang
+            fi
 
   setup_goreleaser:
     steps:
