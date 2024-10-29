@@ -6,6 +6,8 @@ import (
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestStatusReasonSuccess(t *testing.T) {
@@ -190,4 +192,60 @@ func TestShortReason(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, actual)
+}
+
+func TestDagWorkflow(t *testing.T) {
+	testCases := []struct {
+		rawYML        string
+		errorExpected bool
+	}{
+		{
+			rawYML: `
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1:
+        abort_on_fail: true
+        should_always_run: off
+        run_if:
+          expression: "custom-expression"
+workflows:
+  workflow1: {}
+`,
+		},
+		{
+			rawYML: `
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1:
+        abort_on_fail: false
+        should_always_run: workflow
+workflows:
+  workflow1: {}
+`,
+		},
+		{
+			rawYML: `
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1:
+        should_always_run: none
+workflows:
+  workflow1: {}
+`,
+			errorExpected: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		config := BitriseDataModel{}
+		err := yaml.Unmarshal([]byte(testCase.rawYML), &config)
+		if testCase.errorExpected {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
 }

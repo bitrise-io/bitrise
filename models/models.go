@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -9,8 +10,15 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+type DagAlwaysRunMode string
+
 const (
-	FormatVersion                   = "17"
+	DagAlwaysRunModeOff      DagAlwaysRunMode = "off"
+	DagAlwaysRunModeWorkflow DagAlwaysRunMode = "workflow"
+)
+
+const (
+	FormatVersion                   = "18"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
@@ -68,7 +76,30 @@ type StageWorkflowModel struct {
 type DagWorkflowListItemModel map[string]DagWorkflowModel
 
 type DagWorkflowModel struct {
-	DependsOn []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	DependsOn       []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	AbortOnFail     bool             `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           DagRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	ShouldAlwaysRun DagAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+}
+
+type DagRunIfModel struct {
+	Expression string `json:"expression,omitempty" yaml:"expression,omitempty"`
+}
+
+func (d *DagAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+
+	allowedValues := []string{string(DagAlwaysRunModeOff), string(DagAlwaysRunModeWorkflow)}
+	if !slices.Contains(allowedValues, value) {
+		return fmt.Errorf("%s is not a valid should always run value", value)
+	}
+
+	*d = DagAlwaysRunMode(value)
+
+	return nil
 }
 
 type WorkflowListItemModel map[string]WorkflowModel
