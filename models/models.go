@@ -94,7 +94,7 @@ func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) e
 
 	allowedValues := []string{string(GraphPipelineAlwaysRunModeOff), string(GraphPipelineAlwaysRunModeWorkflow)}
 	if !slices.Contains(allowedValues, value) {
-		return fmt.Errorf("%s is not a valid should always run value", value)
+		return fmt.Errorf("%s is not a valid should_always_run value (%s)", value, allowedValues)
 	}
 
 	*d = GraphPipelineAlwaysRunMode(value)
