@@ -10,11 +10,11 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-type DagAlwaysRunMode string
+type GraphPipelineAlwaysRunMode string
 
 const (
-	DagAlwaysRunModeOff      DagAlwaysRunMode = "off"
-	DagAlwaysRunModeWorkflow DagAlwaysRunMode = "workflow"
+	GraphPipelineAlwaysRunModeOff      GraphPipelineAlwaysRunMode = "off"
+	GraphPipelineAlwaysRunModeWorkflow GraphPipelineAlwaysRunMode = "workflow"
 )
 
 const (
@@ -47,12 +47,12 @@ type StepListStepItemModel map[string]stepmanModels.StepModel
 type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
-	Title       string                   `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Triggers    Triggers                 `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-	Stages      []StageListItemModel     `json:"stages,omitempty" yaml:"stages,omitempty"`
-	Workflows   DagWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	Title       string                             `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary     string                             `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string                             `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers    Triggers                           `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+	Stages      []StageListItemModel               `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Workflows   GraphPipelineWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 type StageListItemModel map[string]StageModel
@@ -73,31 +73,31 @@ type StageWorkflowModel struct {
 	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 }
 
-type DagWorkflowListItemModel map[string]DagWorkflowModel
+type GraphPipelineWorkflowListItemModel map[string]GraphPipelineWorkflowModel
 
-type DagWorkflowModel struct {
-	DependsOn       []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
-	AbortOnFail     bool             `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
-	RunIf           DagRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	ShouldAlwaysRun DagAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+type GraphPipelineWorkflowModel struct {
+	DependsOn       []string                   `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	AbortOnFail     bool                       `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	ShouldAlwaysRun GraphPipelineAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
 }
 
-type DagRunIfModel struct {
+type GraphPipelineRunIfModel struct {
 	Expression string `json:"expression,omitempty" yaml:"expression,omitempty"`
 }
 
-func (d *DagAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 	if err := unmarshal(&value); err != nil {
 		return err
 	}
 
-	allowedValues := []string{string(DagAlwaysRunModeOff), string(DagAlwaysRunModeWorkflow)}
+	allowedValues := []string{string(GraphPipelineAlwaysRunModeOff), string(GraphPipelineAlwaysRunModeWorkflow)}
 	if !slices.Contains(allowedValues, value) {
 		return fmt.Errorf("%s is not a valid should always run value", value)
 	}
 
-	*d = DagAlwaysRunMode(value)
+	*d = GraphPipelineAlwaysRunMode(value)
 
 	return nil
 }

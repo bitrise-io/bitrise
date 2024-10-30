@@ -194,7 +194,7 @@ func TestShortReason(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestDagWorkflow(t *testing.T) {
+func TestGraphPipelineWorkflow(t *testing.T) {
 	testCases := []struct {
 		rawYML        string
 		errorExpected bool
