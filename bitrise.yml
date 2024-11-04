@@ -58,7 +58,7 @@ workflows:
     - bundle::run_integration_tests: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-16.0.x
+        stack: osx-xcode-latest
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
@@ -315,9 +315,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
-            if [ "$(uname)" == "Linux" ] && command -v asdf >/dev/null && asdf plugin list | grep -q 'golang'; then
-              asdf reshim golang
-            fi
+            asdf reshim golang || true
 
   setup_goreleaser:
     steps:
