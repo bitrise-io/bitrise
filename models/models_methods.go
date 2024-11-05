@@ -374,6 +374,20 @@ func (workflow *WorkflowModel) Validate() error {
 			return err
 		}
 	}
+
+	return validateStatusReportName(workflow.StatusReportName)
+}
+
+func validateStatusReportName(statusReportName string) error {
+	if len(statusReportName) > 100 {
+		return fmt.Errorf("status_report_name (%s) is too long, max length is 100 characters", statusReportName)
+	}
+
+	pattern := `^[a-zA-Z0-9,./():\-_ <>[\]|]*$`
+	re := regexp.MustCompile(pattern)
+	if !re.MatchString(statusReportName) {
+		return fmt.Errorf("status_report_name (%s) contains invalid characters", statusReportName)
+	}
 	return nil
 }
 
@@ -535,6 +549,10 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 			return pipelineWarnings, err
 		}
 
+		if err := validateStatusReportName(pipeline.StatusReportName); err != nil {
+			return pipelineWarnings, err
+		}
+
 		hasStages := len(pipeline.Stages) > 0
 		hasWorkflows := len(pipeline.Workflows) > 0
 
@@ -552,7 +570,6 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		if hasWorkflows {
 			return pipelineWarnings, validateDAGPipeline(pipelineID, &pipeline, config)
 		}
-
 	}
 
 	return pipelineWarnings, nil
