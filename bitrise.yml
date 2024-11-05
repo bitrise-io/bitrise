@@ -143,6 +143,42 @@ workflows:
 
             goreleaser release
 
+  noop:
+    title: Noop
+    description: Empty workflow for quick testing
+
+  fail-test:
+    title: Fails
+    description: Workflow will fail
+    steps:
+    - script:
+        title: Success
+        inputs:
+        - content: |-
+            set -ex
+            exit 0
+    - script:
+        title: Fail wit exit code 2
+        inputs:
+        - content: |-
+            set -ex
+            exit 2
+    - script:
+        title: Skippable fail with exit code 2
+        is_always_run: true
+        is_skippable: true
+        inputs:
+        - content: |-
+            set -ex
+            exit 2
+    - script:
+        title: Skipping success
+        is_always_run: false
+        inputs:
+        - content: |-
+            set -ex
+            exit 0
+
 step_bundles:
   run_lint:
     steps:
