@@ -378,15 +378,16 @@ func (workflow *WorkflowModel) Validate() error {
 	return validateStatusReportName(workflow.StatusReportName)
 }
 
+const statusReportNameRegex = `^[a-zA-Z0-9,./():\-_ <>[\]|]*$`
+
 func validateStatusReportName(statusReportName string) error {
 	if len(statusReportName) > 100 {
 		return fmt.Errorf("status_report_name (%s) is too long, max length is 100 characters", statusReportName)
 	}
 
-	pattern := `^[a-zA-Z0-9,./():\-_ <>[\]|]*$`
-	re := regexp.MustCompile(pattern)
+	re := regexp.MustCompile(statusReportNameRegex)
 	if !re.MatchString(statusReportName) {
-		return fmt.Errorf("status_report_name (%s) contains invalid characters", statusReportName)
+		return fmt.Errorf("status_report_name (%s) contains invalid characters, should match the '%s' regex", statusReportName, statusReportNameRegex)
 	}
 	return nil
 }

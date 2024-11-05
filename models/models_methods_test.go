@@ -332,7 +332,7 @@ func TestValidateConfig(t *testing.T) {
 
 		bitriseData.App.StatusReportName += "*"
 		_, err = bitriseData.Validate()
-		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") contains invalid characters")
+		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
 	}
 
 	t.Log("Invalid bitriseData - pipeline ID empty")
@@ -634,7 +634,7 @@ func TestValidateConfig(t *testing.T) {
 		pipeline.StatusReportName += "*"
 		bitriseData.Pipelines["pipeline1"] = pipeline
 		_, err = bitriseData.Validate()
-		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters")
+		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
 	}
 }
 
@@ -1006,7 +1006,7 @@ workflows:
 		require.NoError(t, workflow.Validate())
 
 		workflow.StatusReportName += "*"
-		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") contains invalid characters")
+		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
 	}
 }
 
