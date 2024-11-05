@@ -133,10 +133,11 @@ type Container struct {
 }
 
 type AppModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	StatusReportName string                              `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
 type BitriseDataModel struct {

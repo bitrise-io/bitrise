@@ -305,6 +305,36 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
+	t.Log("validate app status report name - max length")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+		}
+
+		bitriseData.App.StatusReportName = strings.Repeat("a", 100)
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		bitriseData.App.StatusReportName += "a"
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate app status report name - allowed characters")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+		}
+
+		bitriseData.App.StatusReportName = "aA0,./():-_< >[]|"
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		bitriseData.App.StatusReportName += "*"
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") contains invalid characters")
+	}
+
 	t.Log("Invalid bitriseData - pipeline ID empty")
 	{
 		bitriseData := BitriseDataModel{

@@ -397,7 +397,7 @@ func (app *AppModel) Validate() error {
 			return err
 		}
 	}
-	return nil
+	return validateStatusReportName(app.StatusReportName)
 }
 
 func (config *BitriseDataModel) Validate() ([]string, error) {
