@@ -536,6 +536,76 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 1, len(warnings))
 		require.Equal(t, "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
+
+	t.Log("validate pipeline status report name - max length")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		pipeline := bitriseData.Pipelines["pipeline1"]
+
+		pipeline.StatusReportName = strings.Repeat("a", 100)
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		pipeline.StatusReportName += "a"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate pipeline status report name - allowed characters")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		pipeline := bitriseData.Pipelines["pipeline1"]
+
+		pipeline.StatusReportName = "aA0,./():-_< >[]|"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		pipeline.StatusReportName += "*"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters")
+	}
 }
 
 func TestValidateConfig_Containers(t *testing.T) {
@@ -885,6 +955,28 @@ workflows:
 		warnings, err := config.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
+	}
+
+	t.Log("validate workflow status report name - max length")
+	{
+		workflow := WorkflowModel{}
+
+		workflow.StatusReportName = strings.Repeat("a", 100)
+		require.NoError(t, workflow.Validate())
+
+		workflow.StatusReportName += "a"
+		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate workflow status report name - allowed characters")
+	{
+		workflow := WorkflowModel{}
+
+		workflow.StatusReportName = "aA0,./():-_< >[]|"
+		require.NoError(t, workflow.Validate())
+
+		workflow.StatusReportName += "*"
+		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") contains invalid characters")
 	}
 }
 
