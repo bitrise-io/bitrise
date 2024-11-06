@@ -47,12 +47,13 @@ type StepListStepItemModel map[string]stepmanModels.StepModel
 type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
-	Title       string                             `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string                             `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string                             `json:"description,omitempty" yaml:"description,omitempty"`
-	Triggers    Triggers                           `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-	Stages      []StageListItemModel               `json:"stages,omitempty" yaml:"stages,omitempty"`
-	Workflows   GraphPipelineWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                             `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                             `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers         Triggers                           `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+	StatusReportName string                             `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	Stages           []StageListItemModel               `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Workflows        GraphPipelineWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 type StageListItemModel map[string]StageModel
@@ -105,15 +106,16 @@ func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) e
 type WorkflowListItemModel map[string]WorkflowModel
 
 type WorkflowModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Triggers     Triggers                            `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-	BeforeRun    []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
-	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
-	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
+	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers         Triggers                            `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+	StatusReportName string                              `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	BeforeRun        []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
+	AfterRun         []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
+	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Steps            []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
 type DockerCredentials struct {
@@ -131,10 +133,11 @@ type Container struct {
 }
 
 type AppModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	StatusReportName string                              `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
 type BitriseDataModel struct {
