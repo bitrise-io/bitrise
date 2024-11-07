@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -93,12 +94,35 @@ func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) e
 		return err
 	}
 
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func (d *GraphPipelineAlwaysRunMode) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func validateGraphPipelineAlwaysRunMode(value string) error {
 	allowedValues := []string{string(GraphPipelineAlwaysRunModeOff), string(GraphPipelineAlwaysRunModeWorkflow)}
 	if !slices.Contains(allowedValues, value) {
 		return fmt.Errorf("%s is not a valid should_always_run value (%s)", value, allowedValues)
 	}
-
-	*d = GraphPipelineAlwaysRunMode(value)
 
 	return nil
 }
