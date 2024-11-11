@@ -140,6 +140,15 @@ workflows:
   c: {}
 `
 
+const emptyPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows: {}
+workflows:
+  a: {}
+`
+
 func TestValidation(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -185,19 +194,8 @@ func TestValidation(t *testing.T) {
 			config: validStagedPipeline,
 		},
 		{
-			name: "The last pipeline is invalid",
-			config: `
-format_version: '13'
-pipelines:
-  pipeline1:
-    workflows:
-      a: {}
-  pipeline2:
-    workflows: {}
-workflows:
-  a: {}
-`,
-			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: pipeline (pipeline2) should have at least 1 stage or workflow",
+			name:   "Empty pipeline",
+			config: emptyPipeline,
 		},
 	}
 	for _, tt := range tests {

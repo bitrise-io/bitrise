@@ -376,36 +376,6 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
 
-	t.Log("Invalid bitriseData - pipeline does not have any stages")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
-					Stages: []StageListItemModel{},
-				},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
-	}
-
-	t.Log("Invalid bitriseData - pipeline does not have stages key defined")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
-	}
-
 	t.Log("Invalid bitriseData - pipeline stage does not exist")
 	{
 		bitriseData := BitriseDataModel{
