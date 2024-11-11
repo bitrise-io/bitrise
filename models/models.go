@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -77,9 +78,9 @@ type StageWorkflowModel struct {
 type GraphPipelineWorkflowListItemModel map[string]GraphPipelineWorkflowModel
 
 type GraphPipelineWorkflowModel struct {
-	DependsOn   []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
-	AbortOnFail bool     `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
-	//RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	DependsOn       []string                   `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	AbortOnFail     bool                       `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 	ShouldAlwaysRun GraphPipelineAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
 }
 
@@ -93,12 +94,35 @@ func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) e
 		return err
 	}
 
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func (d *GraphPipelineAlwaysRunMode) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func validateGraphPipelineAlwaysRunMode(value string) error {
 	allowedValues := []string{string(GraphPipelineAlwaysRunModeOff), string(GraphPipelineAlwaysRunModeWorkflow)}
 	if !slices.Contains(allowedValues, value) {
 		return fmt.Errorf("%s is not a valid should_always_run value (%s)", value, allowedValues)
 	}
-
-	*d = GraphPipelineAlwaysRunMode(value)
 
 	return nil
 }
