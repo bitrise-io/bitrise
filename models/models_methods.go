@@ -564,12 +564,13 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		}
 
 		if hasStages {
-			return pipelineWarnings, validateStagedPipeline(pipelineID, &pipeline, config)
-		}
-
-		//TODO: Why is this always true?
-		if hasWorkflows {
-			return pipelineWarnings, validateDAGPipeline(pipelineID, &pipeline, config)
+			if err := validateStagedPipeline(pipelineID, &pipeline, config); err != nil {
+				return pipelineWarnings, err
+			}
+		} else {
+			if err := validateDAGPipeline(pipelineID, &pipeline, config); err != nil {
+				return pipelineWarnings, err
+			}
 		}
 	}
 
