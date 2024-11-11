@@ -177,14 +177,27 @@ func TestValidation(t *testing.T) {
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: the dependency between workflow 'b' and workflow 'c' creates a cycle in the graph",
 		},
 		{
-			name:    "Valid DAG pipeline",
-			config:  validDAGPipeline,
-			wantErr: "",
+			name:   "Valid DAG pipeline",
+			config: validDAGPipeline,
 		},
 		{
-			name:    "Valid staged pipeline",
-			config:  validStagedPipeline,
-			wantErr: "",
+			name:   "Valid staged pipeline",
+			config: validStagedPipeline,
+		},
+		{
+			name: "The last pipeline is invalid",
+			config: `
+format_version: '13'
+pipelines:
+  pipeline1:
+    workflows:
+      a: {}
+  pipeline2:
+    workflows: {}
+workflows:
+  a: {}
+`,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: pipeline (pipeline2) should have at least 1 stage or workflow",
 		},
 	}
 	for _, tt := range tests {
