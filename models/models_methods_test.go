@@ -376,36 +376,6 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
 
-	t.Log("Invalid bitriseData - pipeline does not have any stages")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
-					Stages: []StageListItemModel{},
-				},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
-	}
-
-	t.Log("Invalid bitriseData - pipeline does not have stages key defined")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
-	}
-
 	t.Log("Invalid bitriseData - pipeline stage does not exist")
 	{
 		bitriseData := BitriseDataModel{
@@ -635,6 +605,72 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData.Pipelines["pipeline1"] = pipeline
 		_, err = bitriseData.Validate()
 		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
+	}
+}
+
+func TestValidatePipelines(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "empty pipelines",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows: {}
+  pipeline2:
+    stages: []
+`,
+			wantWarns: []string{
+				"pipeline (pipeline1) should have at least 1 stage or workflow",
+				"pipeline (pipeline2) should have at least 1 stage or workflow",
+			},
+		},
+		{
+			name: "mixed pipeline",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1: {}
+    stages:
+    - stage1: {}
+stages:
+  stage1:
+    workflow1: {}
+workflows:
+  workflow1: {}
+`,
+			wantErr: "pipeline (pipeline1) has both stages and workflows",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			if len(tt.wantWarns) > 0 {
+				require.Equal(t, tt.wantWarns, warns)
+			} else {
+				require.Empty(t, warns)
+			}
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
 }
 
