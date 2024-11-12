@@ -660,7 +660,7 @@ workflows:
 
 			warns, err := config.Validate()
 			if len(tt.wantWarns) > 0 {
-				require.Equal(t, tt.wantWarns, warns)
+				require.ElementsMatch(t, tt.wantWarns, warns)
 			} else {
 				require.Empty(t, warns)
 			}
