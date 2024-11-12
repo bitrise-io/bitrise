@@ -608,6 +608,72 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
+func TestValidatePipelines(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "empty pipelines",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows: {}
+  pipeline2:
+    stages: []
+`,
+			wantWarns: []string{
+				"pipeline (pipeline1) should have at least 1 stage or workflow",
+				"pipeline (pipeline2) should have at least 1 stage or workflow",
+			},
+		},
+		{
+			name: "mixed pipeline",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1: {}
+    stages:
+    - stage1: {}
+stages:
+  stage1:
+    workflow1: {}
+workflows:
+  workflow1: {}
+`,
+			wantErr: "pipeline (pipeline1) has both stages and workflows",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			if len(tt.wantWarns) > 0 {
+				require.Equal(t, tt.wantWarns, warns)
+			} else {
+				require.Empty(t, warns)
+			}
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidateConfig_Containers(t *testing.T) {
 	tests := []struct {
 		name    string

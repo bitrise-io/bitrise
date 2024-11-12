@@ -564,6 +564,9 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		// A pipeline is considered valid if it has neither stages nor workflows.
 		// This is useful for the WFE to be able to save a pipeline that is not yet fully defined.
 		if !hasStages && !hasWorkflows {
+			warning := fmt.Sprintf("pipeline (%s) should have at least 1 stage or workflow", pipelineID)
+			pipelineWarnings = append(pipelineWarnings, warning)
+
 			continue
 		}
 
