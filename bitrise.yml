@@ -58,7 +58,7 @@ workflows:
     - bundle::run_integration_tests: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-latest
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
