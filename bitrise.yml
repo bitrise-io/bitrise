@@ -323,6 +323,7 @@ step_bundles:
             mkdir -p "${test_results_dir}"
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
             echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+    - deploy-to-bitrise-io@2: { }
 
   test_binary_build:
     steps:
