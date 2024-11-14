@@ -3,6 +3,9 @@ format_version: "17"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
+app:
+  status_report_name: Run <target_id> pipeline
+
 trigger_map:
 - push_branch: master
   pipeline: ci
@@ -180,7 +183,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run unit tests and export results
+        title: Run unit tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -193,10 +196,10 @@ step_bundles:
 
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Unit tests (Linux)"}'
+              test_name_json='{"test-name":"Unit tests on Linux"}'
               test_log_file_name="unit_tests_linux"
             else
-              test_name_json='{"test-name":"Unit tests (macOS)"}'
+              test_name_json='{"test-name":"Unit tests on macOS"}'
               test_log_file_name="unit_tests_macos"
             fi
 
@@ -219,7 +222,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run integration tests and export results
+        title: Run integration tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -241,10 +244,10 @@ step_bundles:
 
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Integration tests (Linux)"}'
+              test_name_json='{"test-name":"Integration tests on Linux"}'
               test_log_file_name="integration_tests_linux"
             else
-              test_name_json='{"test-name":"Integration tests (macOS)"}'
+              test_name_json='{"test-name":"Integration tests on macOS"}'
               test_log_file_name="integration_tests_macos"
             fi
 
@@ -269,7 +272,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run integration tests and export results
+        title: Run integration tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
