@@ -3,6 +3,9 @@ format_version: "17"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
+app:
+  status_report_name: Run <target_id> pipeline
+
 trigger_map:
 - push_branch: master
   pipeline: ci
@@ -10,7 +13,6 @@ trigger_map:
   pipeline: ci
 - tag: "*.*.*"
   workflow: release
-  enabled: false
 
 pipelines:
   ci:
@@ -40,17 +42,13 @@ workflows:
     - bundle::run_unit_tests: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-16.0.x
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
     steps:
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   run_integration_tests_macos:
     steps:
@@ -65,10 +63,6 @@ workflows:
     steps:
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   run_docker_integration_tests_linux:
     steps:
@@ -87,17 +81,13 @@ workflows:
     - bundle::test_binary_build: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-16.0.x
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   test_binary_build_linux:
     steps:
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   release:
     steps:
@@ -107,10 +97,6 @@ workflows:
         - workflow_id: binary-tool-release
         - exported_environment_variable_names: GIT_REPOSITORY_URL
         - app_slug: $CONTROL_CENTER_APP_SLUG
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
@@ -197,7 +183,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run unit tests and export results
+        title: Run unit tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -210,10 +196,10 @@ step_bundles:
 
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Unit tests (Linux)"}'
+              test_name_json='{"test-name":"Unit tests on Linux"}'
               test_log_file_name="unit_tests_linux"
             else
-              test_name_json='{"test-name":"Unit tests (macOS)"}'
+              test_name_json='{"test-name":"Unit tests on macOS"}'
               test_log_file_name="unit_tests_macos"
             fi
 
@@ -236,7 +222,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run integration tests and export results
+        title: Run integration tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
@@ -258,10 +244,10 @@ step_bundles:
 
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Integration tests (Linux)"}'
+              test_name_json='{"test-name":"Integration tests on Linux"}'
               test_log_file_name="integration_tests_linux"
             else
-              test_name_json='{"test-name":"Integration tests (macOS)"}'
+              test_name_json='{"test-name":"Integration tests on macOS"}'
               test_log_file_name="integration_tests_macos"
             fi
 
@@ -286,7 +272,7 @@ step_bundles:
         inputs:
         - fetch_tags: "yes"
     - script@1:
-        title: Run integration tests and export results
+        title: Run integration tests
         inputs:
         - content: |-
             #!/usr/bin/env bash
