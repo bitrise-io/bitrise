@@ -10,7 +10,6 @@ trigger_map:
   pipeline: ci
 - tag: "*.*.*"
   workflow: release
-  enabled: false
 
 pipelines:
   ci:
@@ -40,17 +39,13 @@ workflows:
     - bundle::run_unit_tests: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-16.0.x
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
     steps:
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   run_integration_tests_macos:
     steps:
@@ -65,10 +60,6 @@ workflows:
     steps:
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   run_docker_integration_tests_linux:
     steps:
@@ -87,17 +78,13 @@ workflows:
     - bundle::test_binary_build: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-16.0.x
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   test_binary_build_linux:
     steps:
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   release:
     steps:
@@ -107,10 +94,6 @@ workflows:
         - workflow_id: binary-tool-release
         - exported_environment_variable_names: GIT_REPOSITORY_URL
         - app_slug: $CONTROL_CENTER_APP_SLUG
-    meta:
-      bitrise.io:
-        machine_type_id: elite-xl
-        stack: linux-docker-android-22.04
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
