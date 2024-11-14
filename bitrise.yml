@@ -1,54 +1,116 @@
-format_version: "11"
+---
+format_version: "17"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
-app:
-  envs:
-  - BIN_NAME: bitrise
+trigger_map:
+- push_branch: master
+  pipeline: ci
+- pull_request_source_branch: "*"
+  pipeline: ci
+- tag: "*.*.*"
+  workflow: release
+  enabled: false
+
+pipelines:
+  ci:
+    stages:
+    - run_tests: { }
+
+stages:
+  run_tests:
+    workflows:
+    - run_lint: { }
+    - run_unit_tests_macos: { }
+    - run_unit_tests_linux: { }
+    - run_integration_tests_macos: { }
+    - run_integration_tests_linux: { }
+    - run_docker_integration_tests_linux: { }
+    - test_binary_build_macos: { }
+    - test_binary_build_linux: { }
 
 workflows:
-  check:
+  run_lint:
     steps:
-    - git::https://github.com/bitrise-steplib/steps-check.git:
-        inputs:
-        - workflow: lint
-        - skip_step_yml_validation: "yes"
-    - go-list: { }
-    - script:
-        title: Go test
-        inputs:
-        - content: go test -p 1 $BITRISE_GO_PACKAGES
+    - bundle::run_lint: { }
 
-  test:
-    title: Runs tests
-    after_run:
-    - check
-    - integration-test
-
-  integration-test:
-    title: Runs integration tests
+  run_unit_tests_macos:
     steps:
-    - script:
-        title: Run integration tests
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_unit_tests: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x
+        machine_type_id: g2.mac.large
+
+  run_unit_tests_linux:
+    steps:
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_unit_tests: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  run_integration_tests_macos:
+    steps:
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_integration_tests: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-edge
+        machine_type_id: g2.mac.large
+
+  run_integration_tests_linux:
+    steps:
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_integration_tests: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  run_docker_integration_tests_linux:
+    steps:
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_docker_integration_tests:
+        envs:
+        - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-20.04  # TODO: Docker tests are failing on Ubuntu 22.04
+
+  test_binary_build_macos:
+    steps:
+    - bundle::setup_goreleaser: { }
+    - bundle::test_binary_build: { }
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.0.x
+        machine_type_id: g2.mac.large
+
+  test_binary_build_linux:
+    steps:
+    - bundle::setup_goreleaser: { }
+    - bundle::test_binary_build: { }
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
+
+  release:
+    steps:
+    - trigger-bitrise-workflow@0:
         inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            current_bitrise="$(pwd)/_tmp/test_bitrise"
-            export CGO_ENABLED=0
-            go build -o "$current_bitrise"
-
-            export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-
-            $current_bitrise setup
-
-            go test -v ./_tests/integration/ --tags linux_and_mac
-
-            if [ "$(uname)" == "Linux" ]; then
-                go test -v ./_tests/integration/ --tags linux_only
-            fi
+        - api_token: $CONTROL_CENTER_TRIGGER_KEY
+        - workflow_id: binary-tool-release
+        - exported_environment_variable_names: GIT_REPOSITORY_URL
+        - app_slug: $CONTROL_CENTER_APP_SLUG
+    meta:
+      bitrise.io:
+        machine_type_id: elite-xl
+        stack: linux-docker-android-22.04
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
@@ -59,7 +121,7 @@ workflows:
     - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
     - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
     steps:
-    - script:
+    - script@1:
         title: Fetch GCS bucket credentials
         inputs:
         - content: |-
@@ -69,7 +131,7 @@ workflows:
             echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
             # Goreleaser expects this env var:
             envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
-    - script:
+    - script@1:
         title: Goreleaser (create binaries + publish to GH)
         deps:
           brew:
@@ -80,21 +142,6 @@ workflows:
             set -ex
 
             goreleaser release
-
-  test-binary-build:
-    description: Tests the release build process by creating a snapshot release (without publishing)
-    steps:
-    - script:
-        title: Goreleaser (create snapshot binaries)
-        deps:
-          brew:
-          - name: goreleaser
-        inputs:
-        - content: |
-            #!/usr/bin/env bash
-            set -ex
-
-            goreleaser release --snapshot --rm-dist
 
   noop:
     title: Noop
@@ -131,3 +178,197 @@ workflows:
         - content: |-
             set -ex
             exit 0
+
+step_bundles:
+  run_lint:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - git::https://github.com/bitrise-steplib/steps-check.git:
+        inputs:
+        - workflow: lint
+        - skip_step_yml_validation: "yes"
+    - deploy-to-bitrise-io@2: { }
+
+  run_unit_tests:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - script@1:
+        title: Run unit tests and export results
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            # Here we save the original test results and deploy directories and later on we recreate them,
+            #  because during the tests these directories are removed.
+            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+
+            # Setup per OS test name and log file name
+            if [ "$(uname)" = "Linux" ]; then
+              test_name_json='{"test-name":"Unit tests (Linux)"}'
+              test_log_file_name="unit_tests_linux"
+            else
+              test_name_json='{"test-name":"Unit tests (macOS)"}'
+              test_log_file_name="unit_tests_macos"
+            fi
+
+            # Run tests and generate report
+            go test -v -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+            cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+
+            # Export the junit test results
+            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+    - deploy-to-bitrise-io@2: { }
+
+  run_integration_tests:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - script@1:
+        title: Run integration tests and export results
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -exo pipefail
+
+            # Here we save the original test results and deploy directories and later on we recreate them,
+            #  because during the tests these directories are removed.
+            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+
+            # Build and setup the current binary
+            current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
+            go build -o "$current_bitrise"
+
+            export PR="" PULL_REQUEST_ID=""
+            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+            $current_bitrise setup
+
+            # Setup per OS test name and log file name
+            if [ "$(uname)" = "Linux" ]; then
+              test_name_json='{"test-name":"Integration tests (Linux)"}'
+              test_log_file_name="integration_tests_linux"
+            else
+              test_name_json='{"test-name":"Integration tests (macOS)"}'
+              test_log_file_name="integration_tests_macos"
+            fi
+
+            # Run tests and generate report
+            go test -v --tags linux_and_mac ./_tests/integration/... 2>&1 | tee "./${test_log_file_name}.log"
+
+            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+            cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+
+            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+
+            # Export the junit test results
+            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/integration_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+    - deploy-to-bitrise-io@2: { }
+
+  run_docker_integration_tests:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - script@1:
+        title: Run integration tests and export results
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -exo pipefail
+
+            # Here we save the original test results and deploy directories and later on we recreate them,
+            #  because during the tests these directories are removed.
+            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+
+            # Build and setup the current binary
+            current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
+            go build -o "$current_bitrise"
+
+            export PR="" PULL_REQUEST_ID=""
+            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+            $current_bitrise setup
+
+            # Setup per OS test name and log file name
+            linux_only_test_name_json='{"test-name":"Linux only integration tests"}'
+            linux_only_test_log_file_name="linux_only_integration_tests"
+
+            # Run tests and generate report
+            go test -v --tags linux_only ./_tests/integration/... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+
+            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+            cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
+
+            go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
+
+            # Export the junit test results
+            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
+            echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+
+  test_binary_build:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - script@1:
+        title: Create snapshot binaries
+        deps:
+          brew:
+          - name: goreleaser
+        inputs:
+        - content: |
+            #!/usr/bin/env bash
+            set -ex
+
+            goreleaser release --snapshot --rm-dist
+    - deploy-to-bitrise-io@2: { }
+
+  setup_go_junit_report:
+    steps:
+    - script@1:
+        title: Setup JUnit XML converter
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            go install github.com/jstemmer/go-junit-report/v2@latest
+            asdf reshim golang || true
+
+  setup_goreleaser:
+    steps:
+    - script@1:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            if [ "$(uname)" = "Linux" ]; then
+              wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
+              sudo dpkg -i /tmp/goreleaser.deb
+            else
+              go install github.com/goreleaser/goreleaser@latest
+            fi
+
+meta:
+  bitrise.io:
+    machine_type_id: elite-xl
+    stack: linux-docker-android-22.04
