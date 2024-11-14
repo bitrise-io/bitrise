@@ -1,4 +1,4 @@
-# Bitrise (offline) CLI
+# Bitrise CLI
 
 _Discussion forum: [https://discuss.bitrise.io/](https://discuss.bitrise.io/)_
 
