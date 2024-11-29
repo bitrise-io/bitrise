@@ -1,7 +1,7 @@
 package version
 
 // VERSION is the main CLI version number. It's defined at build time using -ldflags
-var VERSION = "2.24.3"
+var VERSION = "2.24.4"
 
 // BuildNumber is the CI build number that creates the release. It's defined at build time using -ldflags
 var BuildNumber = ""
