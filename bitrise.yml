@@ -34,10 +34,12 @@ stages:
 workflows:
   run_lint:
     steps:
+    - bundle::setup_repo: { }
     - bundle::run_lint: { }
 
   run_unit_tests_macos:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
     meta:
@@ -47,11 +49,13 @@ workflows:
 
   run_unit_tests_linux:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
 
   run_integration_tests_macos:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
     meta:
@@ -61,22 +65,25 @@ workflows:
 
   run_integration_tests_linux:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
 
   run_docker_integration_tests_linux:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
     meta:
       bitrise.io:
-        machine_type_id: elite-xl
+        machine_type_id: g2.linux.x-large
         stack: linux-docker-android-20.04  # TODO: Docker tests are failing on Ubuntu 22.04
 
   test_binary_build_macos:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
     meta:
@@ -86,6 +93,7 @@ workflows:
 
   test_binary_build_linux:
     steps:
+    - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
 
@@ -168,9 +176,6 @@ workflows:
 step_bundles:
   run_lint:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - git::https://github.com/bitrise-steplib/steps-check.git:
         inputs:
         - workflow: lint
@@ -179,9 +184,6 @@ step_bundles:
 
   run_unit_tests:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - script@1:
         title: Run unit tests
         inputs:
@@ -218,9 +220,6 @@ step_bundles:
 
   run_integration_tests:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - script@1:
         title: Run integration tests
         inputs:
@@ -268,9 +267,6 @@ step_bundles:
 
   run_docker_integration_tests:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - script@1:
         title: Run integration tests
         inputs:
@@ -313,9 +309,6 @@ step_bundles:
 
   test_binary_build:
     steps:
-    - git-clone@8:
-        inputs:
-        - fetch_tags: "yes"
     - script@1:
         title: Create snapshot binaries
         deps:
@@ -329,6 +322,21 @@ step_bundles:
             goreleaser release --snapshot --rm-dist
     - deploy-to-bitrise-io@2: { }
 
+  setup_repo:
+    steps:
+    - git-clone@8:
+        inputs:
+        - fetch_tags: "yes"
+    - script:
+        title: Setup Go version
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            asdf plugin add golang || true # TODO: can be removed once all workflows are migrated to Ubuntu 22
+            asdf install golang
+
   setup_go_junit_report:
     steps:
     - script@1:
@@ -338,7 +346,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
-            asdf reshim golang || true
+            asdf reshim golang
 
   setup_goreleaser:
     steps:
@@ -353,9 +361,10 @@ step_bundles:
               sudo dpkg -i /tmp/goreleaser.deb
             else
               go install github.com/goreleaser/goreleaser@latest
+              asdf reshim golang
             fi
 
 meta:
   bitrise.io:
-    machine_type_id: elite-xl
+    machine_type_id: g2.linux.x-large
     stack: linux-docker-android-22.04
