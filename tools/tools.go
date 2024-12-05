@@ -3,7 +3,6 @@ package tools
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,10 +16,10 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepman "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/sys/unix"
 )
 
-// UnameGOOS ...
 func UnameGOOS() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
@@ -31,7 +30,6 @@ func UnameGOOS() (string, error) {
 	return "", fmt.Errorf("Unsupported platform (%s)", runtime.GOOS)
 }
 
-// UnameGOARCH ...
 func UnameGOARCH() (string, error) {
 	switch runtime.GOARCH {
 	case "amd64":
@@ -42,7 +40,6 @@ func UnameGOARCH() (string, error) {
 	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
 }
 
-// InstallToolFromGitHub ...
 func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
 	unameGOOS, err := UnameGOOS()
 	if err != nil {
@@ -57,7 +54,6 @@ func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
 	return InstallFromURL(toolname, downloadURL)
 }
 
-// DownloadFile ...
 func DownloadFile(downloadURL, targetDirPath string) error {
 	outFile, err := os.Create(targetDirPath)
 	defer func() {
@@ -66,19 +62,22 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 		}
 	}()
 	if err != nil {
-		return fmt.Errorf("failed to create (%s), error: %s", targetDirPath, err)
+		return fmt.Errorf("create %s: %s", targetDirPath, err)
 	}
 
-	resp, err := http.Get(downloadURL)
+	resp, err := retryablehttp.Get(downloadURL)
 	if err != nil {
-		return fmt.Errorf("failed to download from (%s), error: %s", downloadURL, err)
+		return fmt.Errorf("download %s: %s", downloadURL, err)
 	}
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("download %s: %s", downloadURL, resp.Status)
+	}
+
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Warnf("failed to close (%s) body", downloadURL)
 		}
 	}()
-
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to download from (%s), error: %s", downloadURL, err)
@@ -87,7 +86,6 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 	return nil
 }
 
-// InstallFromURL ...
 func InstallFromURL(toolBinName, downloadURL string) error {
 	if len(toolBinName) < 1 {
 		return fmt.Errorf("no Tool (bin) Name provided! URL was: %s", downloadURL)
@@ -128,13 +126,11 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 // ------------------
 // --- Stepman
 
-// StepmanSetup ...
 func StepmanSetup(collection string) error {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.Setup(collection, "", log)
 }
 
-// StepmanStepInfo ...
 func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
 	log := log.NewLogger(log.GetGlobalLoggerOpts())
 	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
@@ -143,31 +139,26 @@ func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.Step
 //
 // Share
 
-// StepmanShare ...
 func StepmanShare() error {
 	args := []string{"share", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
-// StepmanShareAudit ...
 func StepmanShareAudit() error {
 	args := []string{"share", "audit", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
-// StepmanShareCreate ...
 func StepmanShareCreate(tag, git, stepID string) error {
 	args := []string{"share", "create", "--tag", tag, "--git", git, "--stepid", stepID, "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
-// StepmanShareFinish ...
 func StepmanShareFinish() error {
 	args := []string{"share", "finish", "--toolmode"}
 	return command.RunCommand("stepman", args...)
 }
 
-// StepmanShareStart ...
 func StepmanShareStart(collection string) error {
 	args := []string{"share", "start", "--collection", collection, "--toolmode"}
 	return command.RunCommand("stepman", args...)
@@ -176,17 +167,14 @@ func StepmanShareStart(collection string) error {
 // ------------------
 // --- Envman
 
-// EnvmanInit ...
 func EnvmanInit(envStorePth string, clear bool) error {
 	return envman.InitEnvStore(envStorePth, clear)
 }
 
-// EnvmanAdd ...
 func EnvmanAdd(envStorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
 	return envman.AddEnv(envStorePth, key, value, expand, false, skipIfEmpty, sensitive)
 }
 
-// EnvmanAddEnvs ...
 func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
 	for _, env := range envsList {
 		key, value, err := env.GetKeyValuePair()
@@ -221,12 +209,10 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 	return nil
 }
 
-// EnvmanReadEnvList ...
 func EnvmanReadEnvList(envStorePth string) (envmanModels.EnvsJSONListModel, error) {
 	return envman.ReadEnvsJSONList(envStorePth, true, false, &envmanEnv.DefaultEnvironmentSource{})
 }
 
-// EnvmanClear ...
 func EnvmanClear(envStorePth string) error {
 	return envman.ClearEnvs(envStorePth)
 }
@@ -253,7 +239,6 @@ func GetSecretKeysAndValues(secrets []envmanModels.EnvironmentItemModel) ([]stri
 	return secretKeys, secretValues
 }
 
-// MoveFile ...
 func MoveFile(oldpath, newpath string) error {
 	err := os.Rename(oldpath, newpath)
 	if err == nil {
