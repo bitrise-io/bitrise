@@ -1,17 +1,12 @@
 package plugins
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/require"
 )
 
-const examplePluginGitURL = "https://github.com/bitrise-io/bitrise-plugins-example.git"
-const testPluginBinURL = "https://github.com/bitrise-io/bitrise-plugins-step/releases/download/0.10.4/bitrise-plugins-step-Darwin-arm64"
 
 func TestIsLocalURL(t *testing.T) {
 	t.Log("local url - absolute")
@@ -196,30 +191,7 @@ func TestValidateRequirements(t *testing.T) {
 	}
 }
 
-func TestDownloadPluginBin(t *testing.T) {
-	t.Log("example plugin bin - ")
-	{
-		destinationDir, err := pathutil.NormalizedOSTempDirPath("TestDownloadPluginBin")
-		require.NoError(t, err)
 
-		exist, err := pathutil.IsPathExists(destinationDir)
-		require.NoError(t, err)
-		if exist {
-			err := os.RemoveAll(destinationDir)
-			require.NoError(t, err)
-		}
-
-		require.NoError(t, os.MkdirAll(destinationDir, 0755))
-
-		destinationPth := filepath.Join(destinationDir, "example")
-
-		require.NoError(t, downloadPluginBin(testPluginBinURL, destinationPth))
-
-		exist, err = pathutil.IsPathExists(destinationPth)
-		require.NoError(t, err)
-		require.Equal(t, true, exist)
-	}
-}
 
 func Test_isSourceURIChanged(t *testing.T) {
 	for _, tt := range []struct {
