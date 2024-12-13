@@ -112,7 +112,19 @@ pipelines:
       b: { source: c }
 workflows:
   a: {}
+`
+
+const workflowVariantHasTheSameNameAsAnExistingWorkflowForDAGPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a: {}
+      b: { source: c }
+workflows:
+  a: {}
   b: {}
+  c: {}
 `
 
 const duplicatedDependencyDAGPipeline = `
@@ -186,7 +198,12 @@ func TestValidation(t *testing.T) {
 		{
 			name:    "Workflow is missing from the Workflow Variant definition",
 			config:  missingWorkflowInWorkflowVariantDefinitionForDAGPipeline,
-			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) referenced in pipeline (dag) in workflow variant (b) is not found in the workflow definitions",
+		},
+		{
+			name:    "Workflow variant has the same name as an existing workflow",
+			config:  workflowVariantHasTheSameNameAsAnExistingWorkflowForDAGPipeline,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (b) defined in pipeline (dag) is a variant of another workflow, but it is also defined as a workflow",
 		},
 		{
 			name:    "Utility workflow is referenced in the DAG pipeline",
