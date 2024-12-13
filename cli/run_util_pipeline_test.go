@@ -41,6 +41,7 @@ pipelines:
   dag:
     workflows:
       a: {}
+      a1: { source: a, inputs: [key: value] }
       b: { depends_on: [a] }
       c: { depends_on: [a] }
       d: { depends_on: [a] }
@@ -97,6 +98,18 @@ pipelines:
       a: {}
       b: { depends_on: [c] }
       c: {}
+workflows:
+  a: {}
+  b: {}
+`
+
+const missingWorkflowInWorkflowVariantDefinitionForDAGPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a: {}
+      b: { source: c }
 workflows:
   a: {}
   b: {}
@@ -168,6 +181,11 @@ func TestValidation(t *testing.T) {
 		{
 			name:    "Workflow is missing from the Workflow definition",
 			config:  missingWorkflowInWorkflowDefinitionForDAGPipeline,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
+		},
+		{
+			name:    "Workflow is missing from the Workflow Variant definition",
+			config:  missingWorkflowInWorkflowVariantDefinitionForDAGPipeline,
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
 		},
 		{

@@ -365,7 +365,6 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 	}
 
 	return warnings, nil
-
 }
 
 func (workflow *WorkflowModel) Validate() error {
@@ -605,8 +604,14 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
-		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
-			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+		isWorkflowVariant := pipelineWorkflow.Source != ""
+		workflowDefinitionToCheck := pipelineWorkflowID
+		if isWorkflowVariant {
+			workflowDefinitionToCheck = pipelineWorkflow.Source
+		}
+
+		if _, ok := config.Workflows[workflowDefinitionToCheck]; !ok {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", workflowDefinitionToCheck, pipelineID)
 		}
 
 		uniqueItems := make(map[string]bool)
@@ -988,7 +993,7 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 
 	(*env)[key] = otherValue
 
-	//merge options
+	// merge options
 	options, err := env.GetOptions()
 	if err != nil {
 		return err
