@@ -82,8 +82,7 @@ type GraphPipelineWorkflowModel struct {
 	AbortOnFail     bool                       `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
 	RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 	ShouldAlwaysRun GraphPipelineAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
-	// TODO: the name is not final
-	Source string `json:"source,omitempty" yaml:"source,omitempty"`
+	Uses            string                     `json:"uses,omitempty" yaml:"uses,omitempty"`
 }
 
 type GraphPipelineRunIfModel struct {

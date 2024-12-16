@@ -604,10 +604,10 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
-		isWorkflowVariant := pipelineWorkflow.Source != ""
+		isWorkflowVariant := pipelineWorkflow.Uses != ""
 		if isWorkflowVariant {
-			if _, ok := config.Workflows[pipelineWorkflow.Source]; !ok {
-				return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", pipelineWorkflow.Source, pipelineID, pipelineWorkflowID)
+			if _, ok := config.Workflows[pipelineWorkflow.Uses]; !ok {
+				return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", pipelineWorkflow.Uses, pipelineID, pipelineWorkflowID)
 			}
 
 			if _, ok := config.Workflows[pipelineWorkflowID]; ok {

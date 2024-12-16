@@ -41,7 +41,7 @@ pipelines:
   dag:
     workflows:
       a: {}
-      a1: { source: a, inputs: [key: value] }
+      a1: { uses: a, inputs: [key: value] }
       b: { depends_on: [a] }
       c: { depends_on: [a] }
       d: { depends_on: [a] }
@@ -109,7 +109,7 @@ pipelines:
   dag:
     workflows:
       a: {}
-      b: { source: c }
+      b: { uses: c }
 workflows:
   a: {}
 `
@@ -120,7 +120,7 @@ pipelines:
   dag:
     workflows:
       a: {}
-      b: { source: c }
+      b: { uses: c }
 workflows:
   a: {}
   b: {}
