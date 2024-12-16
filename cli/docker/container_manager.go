@@ -11,13 +11,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
+
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/v2/redactwriter"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
 )
 
 type RunningContainer struct {
@@ -267,7 +268,7 @@ func (cm *ContainerManager) login(container models.Container, envs map[string]st
 
 		out, err := command.New("docker", args...).RunAndReturnTrimmedCombinedOutput()
 		if err != nil {
-			cm.logger.Errorf(out)
+			cm.logger.Errorf("%s", out)
 			return fmt.Errorf("run docker login: %w", err)
 		}
 	}
@@ -328,7 +329,7 @@ func (cm *ContainerManager) startContainer(options containerCreateOptions) (*Run
 	cm.logger.Infof("ℹ️ Running command: docker start %s", options.name)
 	out, err := command.New("docker", "start", options.name).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		cm.logger.Errorf(out)
+		cm.logger.Errorf("%s", out)
 		return runningContainer, fmt.Errorf("start docker container (%s): %w", options.name, err)
 	}
 
@@ -349,7 +350,8 @@ func (cm *ContainerManager) createContainer(
 	options containerCreateOptions,
 	envs map[string]string,
 ) error {
-	dockerRunArgs := []string{"create",
+	dockerRunArgs := []string{
+		"create",
 		"--platform", "linux/amd64",
 		fmt.Sprintf("--network=%s", bitriseNetwork),
 	}
@@ -406,7 +408,7 @@ func (cm *ContainerManager) createContainer(
 
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		cm.logger.Errorf(out)
+		cm.logger.Errorf("%s", out)
 		return fmt.Errorf("create container (%s): %w", options.name, err)
 	}
 
@@ -460,7 +462,7 @@ func (cm *ContainerManager) pullImage(container models.Container) error {
 	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
 	out, err := command.New("docker", dockerRunArgs...).RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		cm.logger.Errorf(out)
+		cm.logger.Errorf("%s", out)
 		return fmt.Errorf("pull container (%s): %w", container.Image, err)
 	}
 	return nil
@@ -495,7 +497,6 @@ func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string
 		return &containers[0], fmt.Errorf("container (%s) is not running", name)
 	}
 	return &containers[0], nil
-
 }
 
 func (cm *ContainerManager) healthCheckContainer(ctx context.Context, container *RunningContainer) error {

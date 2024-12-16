@@ -905,7 +905,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.ValueOptions != nil && len(options.ValueOptions) > 0 {
+	if len(options.ValueOptions) > 0 {
 		hasOptions = true
 	}
 	if options.IsRequired != nil {
@@ -929,7 +929,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.Meta != nil && len(options.Meta) > 0 {
+	if len(options.Meta) > 0 {
 		hasOptions = true
 	}
 

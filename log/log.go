@@ -145,8 +145,8 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 		})
 	} else {
 		m.Print()
-		m.Printf("Invocation started at %s", colorstring.Cyan(m.opts.TimeProvider().Format(consoleTimeLayout)))
-		m.Printf("Bitrise CLI version: %s", colorstring.Cyan(plan.Version))
+		m.Printf("Invocation started at %s", colorstring.Cyan("%s", m.opts.TimeProvider().Format(consoleTimeLayout)))
+		m.Printf("Bitrise CLI version: %s", colorstring.Cyan("%s", plan.Version))
 		m.Print()
 		m.Infof("Run modes:")
 		m.Printf("CI mode: %v", colorstring.Cyan("%v", plan.CIMode))
@@ -169,7 +169,7 @@ func (m *defaultLogger) PrintBitriseStartedEvent(plan models.WorkflowRunPlan) {
 			prefix = "Running workflows"
 		}
 
-		m.Printf("%s: %s", prefix, colorstring.Cyan(strings.Join(workflowIDs, " → ")))
+		m.Printf("%s: %s", prefix, colorstring.Cyan("%s", strings.Join(workflowIDs, " → ")))
 	}
 }
 
