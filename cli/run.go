@@ -224,7 +224,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 		}()
 	}
 
-	if buildRunResults, err := r.runWorkflows(globalTracker); err != nil {
+	if buildRunResults, err := r.RunWorkflows(globalTracker); err != nil {
 		return 1, fmt.Errorf("failed to run workflow: %s", err)
 	} else if buildRunResults.IsBuildFailed() {
 		return buildRunResults.ExitCode(), errWorkflowRunFailed
@@ -237,7 +237,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	return 0, nil
 }
 
-func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
+func (r WorkflowRunner) RunWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
 
 	// Register run modes
