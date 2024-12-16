@@ -114,7 +114,7 @@ func cleanupDirs(dirs []string) error {
 		if err := os.RemoveAll(absPath); err != nil {
 			return fmt.Errorf("cleaning up %s: %w", dir, err)
 		}
-		log.Donef("- Cleaned %s", colorstring.Cyan(expandedPath))
+		log.Donef("- Cleaned %s", colorstring.Cyan("%s", expandedPath))
 	}
 
 	return nil

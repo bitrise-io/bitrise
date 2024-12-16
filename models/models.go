@@ -82,6 +82,7 @@ type GraphPipelineWorkflowModel struct {
 	AbortOnFail     bool                       `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
 	RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 	ShouldAlwaysRun GraphPipelineAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+	Uses            string                     `json:"uses,omitempty" yaml:"uses,omitempty"`
 }
 
 type GraphPipelineRunIfModel struct {
@@ -289,14 +290,14 @@ func (s StepRunResultsModel) error() []StepError {
 }
 
 func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
-	var remaining = int(timeInterval / time.Second)
+	remaining := int(timeInterval / time.Second)
 	h := int(remaining / 3600)
 	remaining = remaining - h*3600
 	m := int(remaining / 60)
 	remaining = remaining - m*60
 	s := remaining
 
-	var formattedTimeInterval = ""
+	formattedTimeInterval := ""
 	if h > 0 {
 		formattedTimeInterval += fmt.Sprintf("%dh ", h)
 	}

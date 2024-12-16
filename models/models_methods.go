@@ -365,7 +365,6 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 	}
 
 	return warnings, nil
-
 }
 
 func (workflow *WorkflowModel) Validate() error {
@@ -605,8 +604,19 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
-		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
-			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+		isWorkflowVariant := pipelineWorkflow.Uses != ""
+		if isWorkflowVariant {
+			if _, ok := config.Workflows[pipelineWorkflow.Uses]; !ok {
+				return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", pipelineWorkflow.Uses, pipelineID, pipelineWorkflowID)
+			}
+
+			if _, ok := config.Workflows[pipelineWorkflowID]; ok {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a variant of another workflow, but it is also defined as a workflow", pipelineWorkflowID, pipelineID)
+			}
+		} else {
+			if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+			}
 		}
 
 		uniqueItems := make(map[string]bool)
@@ -895,7 +905,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.ValueOptions != nil && len(options.ValueOptions) > 0 {
+	if len(options.ValueOptions) > 0 {
 		hasOptions = true
 	}
 	if options.IsRequired != nil {
@@ -919,7 +929,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.Meta != nil && len(options.Meta) > 0 {
+	if len(options.Meta) > 0 {
 		hasOptions = true
 	}
 
@@ -988,7 +998,7 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 
 	(*env)[key] = otherValue
 
-	//merge options
+	// merge options
 	options, err := env.GetOptions()
 	if err != nil {
 		return err
