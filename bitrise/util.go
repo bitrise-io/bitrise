@@ -198,53 +198,94 @@ func SetBuildFailedEnv(failed bool) error {
 	return nil
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel) ([]string, error) {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, fullValidation bool) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
-	warnings, err := bitriseData.Validate()
+
+	var validationFunc func() ([]string, error)
+	if fullValidation {
+		validationFunc = bitriseData.Validate
+	} else {
+		validationFunc = bitriseData.MinimalValidation
+	}
+
+	warnings, err := validationFunc()
 	if err != nil {
 		return warnings, err
 	}
+
 	if err := bitriseData.FillMissingDefaults(); err != nil {
 		return warnings, err
 	}
+
 	return warnings, nil
 }
 
-func ConfigModelFromFileContent(configBytes []byte, isJSON bool) (models.BitriseDataModel, []string, error) {
+func ConfigModelFromFileContent(configBytes []byte, isJSON bool, fullValidation bool) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if isJSON {
-		return ConfigModelFromJSONBytes(configBytes)
-	}
-	return ConfigModelFromYAMLBytes(configBytes)
-}
-
-func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
-	if err = yaml.Unmarshal(configBytes, &bitriseData); err != nil {
-		return
+		bitriseData, err = jsonBytesToConfig(configBytes)
+	} else {
+		bitriseData, err = yamlBytesToConfig(configBytes)
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
 	if err != nil {
 		return
 	}
 
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
+	return
+}
+
+func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+	bitriseData, err = yamlBytesToConfig(configBytes)
+	if err != nil {
+		return
+	}
+
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
+	return
+}
+
+func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, fullValidation bool) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+	bitriseData, err = yamlBytesToConfig(configBytes)
+	if err != nil {
+		return
+	}
+
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, fullValidation)
 	return
 }
 
 func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
-	if err = json.Unmarshal(configBytes, &bitriseData); err != nil {
-		return
-	}
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData)
+	bitriseData, err = jsonBytesToConfig(configBytes)
 	if err != nil {
 		return
 	}
 
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
 	return
 }
 
-func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
+func jsonBytesToConfig(bytes []byte) (models.BitriseDataModel, error) {
+	var config models.BitriseDataModel
+	if err := json.Unmarshal(bytes, &config); err != nil {
+		return models.BitriseDataModel{}, err
+	}
+
+	return config, nil
+}
+
+func yamlBytesToConfig(bytes []byte) (models.BitriseDataModel, error) {
+	var config models.BitriseDataModel
+	if err := yaml.Unmarshal(bytes, &config); err != nil {
+		return models.BitriseDataModel{}, err
+	}
+
+	return config, nil
+}
+
+func ReadBitriseConfig(pth string, fullValidation bool) (models.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
@@ -260,7 +301,7 @@ func ReadBitriseConfig(pth string) (models.BitriseDataModel, []string, error) {
 		return models.BitriseDataModel{}, []string{}, errors.New("empty config")
 	}
 
-	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"))
+	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"), fullValidation)
 }
 
 func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {

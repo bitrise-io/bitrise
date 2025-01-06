@@ -883,13 +883,13 @@ func isDirEmpty(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
+func GetBitriseConfigFromBase64Data(configBase64Str string, fullValidation bool) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
 	if err != nil {
 		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
 	}
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytesWithValidation(configBase64Bytes, fullValidation)
 	if err != nil {
 		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
 	}
@@ -911,12 +911,12 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	return bitriseConfigPath, nil
 }
 
-func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string, fullValidation bool) (models.BitriseDataModel, []string, error) {
 	var bitriseConfig *models.BitriseDataModel
 	warnings := []string{}
 
 	if bitriseConfigBase64Data != "" {
-		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data, fullValidation)
 		warnings = warns
 		if err != nil {
 			return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to get Bitrise config (bitrise.yml) from base 64 data: %w", err)
@@ -946,14 +946,15 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 				return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
 			}
 
-			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), filepath.Ext(bitriseConfigPath) == "json")
+			isJSON := filepath.Ext(bitriseConfigPath) == "json"
+			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), isJSON, fullValidation)
 			warnings = warns
 			if err != nil {
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
 			}
 			bitriseConfig = &config
 		} else {
-			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath, fullValidation)
 			warnings = warns
 			if err != nil {
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
