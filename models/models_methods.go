@@ -392,15 +392,36 @@ func validateStatusReportName(statusReportName string) error {
 }
 
 func (app *AppModel) Validate() error {
+	return app.internalValidation(true)
+}
+
+func (app *AppModel) MinimalValidation() error {
+	return app.internalValidation(false)
+}
+
+func (app *AppModel) internalValidation(full bool) error {
 	for _, env := range app.Environments {
 		if err := env.Validate(); err != nil {
 			return err
 		}
 	}
+
+	if !full {
+		return nil
+	}
+
 	return validateStatusReportName(app.StatusReportName)
 }
 
 func (config *BitriseDataModel) Validate() ([]string, error) {
+	return config.internalValidation(true)
+}
+
+func (config *BitriseDataModel) MinimalValidation() ([]string, error) {
+	return config.internalValidation(false)
+}
+
+func (config *BitriseDataModel) internalValidation(full bool) ([]string, error) {
 	var warnings []string
 
 	if config.FormatVersion == "" {
@@ -408,17 +429,25 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	// trigger map
-	workflows := config.getWorkflowIDs()
-	pipelines := config.getPipelineIDs()
-	triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
-	warnings = append(warnings, triggerMapWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		workflows := config.getWorkflowIDs()
+		pipelines := config.getPipelineIDs()
+		triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
+		warnings = append(warnings, triggerMapWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
 	// app
-	if err := config.App.Validate(); err != nil {
+	var appValidationFunc func() error
+	if full {
+		appValidationFunc = config.App.Validate
+	} else {
+		appValidationFunc = config.App.MinimalValidation
+	}
+	if err := appValidationFunc(); err != nil {
 		return warnings, err
 	}
 	// ---
@@ -438,18 +467,22 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// ---
 
 	// pipelines
-	pipelineWarnings, err := validatePipelines(config)
-	warnings = append(warnings, pipelineWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		pipelineWarnings, err := validatePipelines(config)
+		warnings = append(warnings, pipelineWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
 	// stages
-	stageWarnings, err := validateStages(config)
-	warnings = append(warnings, stageWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		stageWarnings, err := validateStages(config)
+		warnings = append(warnings, stageWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
