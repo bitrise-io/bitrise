@@ -208,7 +208,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, true)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		logger.Print(NewErrorOutput(fmt.Sprintf("Failed to create bitrise config: %s", err)))

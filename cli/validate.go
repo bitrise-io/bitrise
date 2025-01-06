@@ -154,7 +154,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, true)
 		configValidation := ValidationItemModel{
 			IsValid:  true,
 			Warnings: warns,

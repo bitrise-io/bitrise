@@ -332,7 +332,7 @@ workflows:
 	configBytes := []byte(configStr)
 	configBase64Str := base64.StdEncoding.EncodeToString(configBytes)
 
-	config, warnings, err := GetBitriseConfigFromBase64Data(configBase64Str)
+	config, warnings, err := GetBitriseConfigFromBase64Data(configBase64Str, true)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 

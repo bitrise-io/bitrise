@@ -236,7 +236,7 @@ func TestValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b64Data := base64.StdEncoding.EncodeToString([]byte(tt.config))
-			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "")
+			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "", true)
 
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
