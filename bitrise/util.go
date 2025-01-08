@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/models"
 	envmanModels "github.com/bitrise-io/envman/models"
@@ -16,7 +18,13 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
-	"gopkg.in/yaml.v2"
+)
+
+type ValidationType int
+
+const (
+	ValidationTypeFull ValidationType = iota
+	ValidationTypeMinimal
 )
 
 func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
@@ -198,13 +206,13 @@ func SetBuildFailedEnv(failed bool) error {
 	return nil
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, fullValidation bool) ([]string, error) {
+func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
 
 	var validationFunc func() ([]string, error)
-	if fullValidation {
+	if validation == ValidationTypeFull {
 		validationFunc = bitriseData.Validate
 	} else {
 		validationFunc = bitriseData.MinimalValidation
@@ -222,7 +230,7 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, 
 	return warnings, nil
 }
 
-func ConfigModelFromFileContent(configBytes []byte, isJSON bool, fullValidation bool) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromFileContent(configBytes []byte, isJSON bool, validation ValidationType) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	if isJSON {
 		bitriseData, err = jsonBytesToConfig(configBytes)
 	} else {
@@ -233,7 +241,7 @@ func ConfigModelFromFileContent(configBytes []byte, isJSON bool, fullValidation 
 		return
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, validation)
 	return
 }
 
@@ -243,17 +251,17 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 		return
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, ValidationTypeFull)
 	return
 }
 
-func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, fullValidation bool) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, validation ValidationType) (bitriseData models.BitriseDataModel, warnings []string, err error) {
 	bitriseData, err = yamlBytesToConfig(configBytes)
 	if err != nil {
 		return
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, fullValidation)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, validation)
 	return
 }
 
@@ -263,7 +271,7 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 		return
 	}
 
-	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, true)
+	warnings, err = normalizeValidateFillMissingDefaults(&bitriseData, ValidationTypeFull)
 	return
 }
 
@@ -285,7 +293,7 @@ func yamlBytesToConfig(bytes []byte) (models.BitriseDataModel, error) {
 	return config, nil
 }
 
-func ReadBitriseConfig(pth string, fullValidation bool) (models.BitriseDataModel, []string, error) {
+func ReadBitriseConfig(pth string, validation ValidationType) (models.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
@@ -301,7 +309,7 @@ func ReadBitriseConfig(pth string, fullValidation bool) (models.BitriseDataModel
 		return models.BitriseDataModel{}, []string{}, errors.New("empty config")
 	}
 
-	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"), fullValidation)
+	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"), validation)
 }
 
 func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {

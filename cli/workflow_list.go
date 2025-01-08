@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -208,7 +209,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, true)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		logger.Print(NewErrorOutput(fmt.Sprintf("Failed to create bitrise config: %s", err)))
