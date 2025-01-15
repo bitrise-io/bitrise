@@ -17,6 +17,86 @@ import (
 // ----------------------------
 // --- Validate
 
+func TestYAMLUnmarshal(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  string
+		wantErr string
+	}{
+		{
+			name: "Invalid bitrise.yml: step bundle in a step bundle's steps list",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+step_bundles:
+  build: {}
+  test:
+    steps:
+    - bundle::build: {}`,
+			wantErr: "step bundle is not allowed in a step list",
+		},
+		{
+			name: "Invalid bitrise.yml: with group in a step bundle's steps list",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+step_bundles:
+  test:
+    steps:
+    - with: {}`,
+			wantErr: "'with' group is not allowed in a step list",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle in a 'with' group's steps list",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+workflows:
+  primary:
+    steps:
+    - with:
+        services:
+        - postgres
+        steps:
+        - bundle::test: {}`,
+			wantErr: "step bundle is not allowed in a step list",
+		},
+		{
+			name: "Invalid bitrise.yml: with group in a 'with' group's steps list",
+			config: `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+services:
+  postgres:
+    image: postgres:13
+workflows:
+  primary:
+    steps:
+    - with:
+        services:
+        - postgres
+        steps:
+        - with: {}`,
+			wantErr: "'with' group is not allowed in a step list",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			err := yaml.Unmarshal([]byte(tt.config), &config)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestJSONMarshal(t *testing.T) {
 	tests := []struct {
 		name   string
