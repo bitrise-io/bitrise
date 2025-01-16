@@ -1306,6 +1306,47 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 	return nil
 }
 
+func (stepListStepItem *StepListStepItemModel) UnmarshalJSON(b []byte) error {
+	var raw map[string]stepmanModels.StepModel
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	return stepListStepItem.fromRawStepListStepItem(raw)
+}
+
+func (stepListStepItem *StepListStepItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var raw map[string]stepmanModels.StepModel
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	return stepListStepItem.fromRawStepListStepItem(raw)
+}
+
+func (stepListStepItem *StepListStepItemModel) fromRawStepListStepItem(raw map[string]stepmanModels.StepModel) error {
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	// Only Steps are allowed
+	if key == StepListItemWithKey {
+		return errors.New("'with' group is not allowed in a step list")
+	}
+	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		return errors.New("step bundle is not allowed in a step list")
+	}
+
+	*stepListStepItem = map[string]stepmanModels.StepModel{}
+	for k, v := range raw {
+		(*stepListStepItem)[k] = v
+	}
+
+	return nil
+}
+
 func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepmanModels.StepModel, error) {
 	if stepListStepItem == nil {
 		return "", stepmanModels.StepModel{}, nil
