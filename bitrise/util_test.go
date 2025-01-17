@@ -351,7 +351,7 @@ workflows:
         - postgres
         steps:
         - bundle::test: {}`,
-			wantErr: "step bundle is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with' group in workflow (primary): step bundle is not allowed in a 'with' group's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with' group's steps list",
@@ -369,7 +369,7 @@ workflows:
         - postgres
         steps:
         - with: {}`,
-			wantErr: "'with' group is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with' group in workflow (primary): 'with' group is not allowed in a 'with' group's step list",
 		},
 	}
 	for _, tt := range tests {
@@ -455,7 +455,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "step bundle is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with' group in workflow (primary): step bundle is not allowed in a 'with' group's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with' group's steps list",
@@ -486,7 +486,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "'with' group is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with' group in workflow (primary): 'with' group is not allowed in a 'with' group's step list",
 		},
 	}
 	for _, tt := range tests {
