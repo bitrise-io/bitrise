@@ -6,6 +6,14 @@ app:
   envs:
   - BIN_NAME: stepman
 
+step_bundles:
+  setup-go:
+    steps:
+    - script:
+        title: Setup pinned Go version
+        inputs:
+        - content: asdf install
+
 workflows:
   test:
     title: Runs tests
@@ -14,6 +22,7 @@ workflows:
         inputs:
         - workflow: lint
         - skip_step_yml_validation: "yes"
+    - bundle::setup-go: { }
     - go-list: { }
     - go-test: { }
     - script:
@@ -37,6 +46,7 @@ workflows:
     # Goreleaser expects this env var
     - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN
     steps:
+    - bundle::setup-go: { }
     - script:
         title: Goreleaser (create binaries + publish to GH)
         deps:
@@ -51,6 +61,7 @@ workflows:
   test-binary-build:
     description: Tests the release build process by creating a snapshot release (without publishing)
     steps:
+    - bundle::setup-go: { }
     - script:
         title: Goreleaser (create snapshot binaries)
         deps:
