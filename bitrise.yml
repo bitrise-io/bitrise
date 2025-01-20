@@ -326,7 +326,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
 
-            goreleaser release --snapshot --rm-dist
+            goreleaser release --snapshot --clean
     - deploy-to-bitrise-io@2: { }
 
   setup_repo:
@@ -362,14 +362,8 @@ step_bundles:
         - content: |-
             #!/bin/bash
             set -ex
-
-            if [ "$(uname)" = "Linux" ]; then
-              wget -O /tmp/goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v1.19.2/goreleaser_1.19.2_amd64.deb
-              sudo dpkg -i /tmp/goreleaser.deb
-            else
-              go install github.com/goreleaser/goreleaser@latest
-              asdf reshim golang
-            fi
+            go install github.com/goreleaser/goreleaser/v2@latest
+            asdf reshim golang
 
 meta:
   bitrise.io:
