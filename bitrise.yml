@@ -326,7 +326,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
 
-            goreleaser release --snapshot --rm-dist
+            goreleaser release --snapshot --clean
     - deploy-to-bitrise-io@2: { }
 
   setup_repo:
