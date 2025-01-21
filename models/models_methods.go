@@ -629,6 +629,10 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
 				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
 			}
+
+			if 0 < len(pipelineWorkflow.Inputs) {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) has inputs but it is not a workflow variant", pipelineWorkflowID, pipelineID)
+			}
 		}
 
 		uniqueItems := make(map[string]bool)

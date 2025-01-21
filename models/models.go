@@ -78,12 +78,15 @@ type StageWorkflowModel struct {
 type GraphPipelineWorkflowListItemModel map[string]GraphPipelineWorkflowModel
 
 type GraphPipelineWorkflowModel struct {
-	DependsOn       []string                   `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
-	AbortOnFail     bool                       `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
-	RunIf           GraphPipelineRunIfModel    `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	ShouldAlwaysRun GraphPipelineAlwaysRunMode `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
-	Uses            string                     `json:"uses,omitempty" yaml:"uses,omitempty"`
+	DependsOn       []string                          `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	AbortOnFail     bool                              `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           GraphPipelineRunIfModel           `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	ShouldAlwaysRun GraphPipelineAlwaysRunMode        `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+	Uses            string                            `json:"uses,omitempty" yaml:"uses,omitempty"`
+	Inputs          []GraphPipelineWorkflowModelInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
+
+type GraphPipelineWorkflowModelInput map[string]interface{}
 
 type GraphPipelineRunIfModel struct {
 	Expression string `json:"expression,omitempty" yaml:"expression,omitempty"`
