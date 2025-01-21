@@ -312,6 +312,12 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 
+		if stepID == StepListItemWithKey {
+			return warnings, errors.New("'with' group is not allowed in a step bundle's step list")
+		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
+			return warnings, errors.New("step bundle is not allowed in a step bundle's step list")
+		}
+
 		warns, err := validateStep(stepID, step)
 		warnings = append(warnings, warns...)
 		if err != nil {
@@ -355,6 +361,12 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 		stepID, step, err := stepListItem.GetStepIDAndStep()
 		if err != nil {
 			return warnings, err
+		}
+
+		if stepID == StepListItemWithKey {
+			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): 'with' group is not allowed in a 'with' group's step list", workflowID)
+		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
+			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): step bundle is not allowed in a 'with' group's step list", workflowID)
 		}
 
 		warns, err := validateStep(stepID, step)

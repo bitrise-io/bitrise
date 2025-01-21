@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
   - go mod tidy
@@ -38,14 +40,14 @@ archives:
 blobs:
 - provider: gs
   bucket: bitrise-cli-releases-prod
-  folder: /{{ .Tag }}
+  directory: /{{ .Tag }}
   ids:
   - default
 - provider: s3
   bucket: bitrise-cli-releases-prod
   region: us-east-1
   endpoint: "{{ .Env.AWS_ENDPOINT_URL }}"
-  folder: /
+  directory: /
   ids:
   - s3
 
