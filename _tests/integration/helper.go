@@ -7,11 +7,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/stretchr/testify/require"
 )
 
+var binPathStr string
+
 func binPath() string {
-	return os.Getenv("INTEGRATION_TEST_BINARY_PATH")
+	if binPathStr != "" {
+		return binPathStr
+	}
+
+	pth := os.Getenv("INTEGRATION_TEST_BINARY_PATH")
+	if pth == "" {
+		if os.Getenv("CI") == "true" {
+			panic("INTEGRATION_TEST_BINARY_PATH env is required in CI")
+		} else {
+			log.Warn("INTEGRATION_TEST_BINARY_PATH is not set, make sure 'bitrise' binary in your PATH is up-to-date")
+			pth = "bitrise"
+		}
+	}
+	binPathStr = pth
+	return pth
 }
 
 func toBase64(str string) string {
