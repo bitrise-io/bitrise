@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 // ----------------------------
@@ -672,6 +673,97 @@ workflows:
 			}
 		})
 	}
+}
+
+func TestValidatePipelineWorkflowVariant(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "valid variant",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+      wf2: {}
+workflows:
+  script: {}
+  wf2: {}
+`,
+		},
+		{
+			name: "missing variant base workflow",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+`,
+			wantErr: "workflow (script) referenced in pipeline (pipeline) in workflow variant (wf1) is not found in the workflow definitions",
+		},
+		{
+			name: "variant identifier is an existing workflow identifier",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+workflows:
+  script: {}
+  wf1: {}
+`,
+			wantErr: "workflow (wf1) defined in pipeline (pipeline) is a variant of another workflow, but it is also defined as a workflow",
+		},
+		{
+			name: "non variant has an input field",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        inputs:
+        - A: test1
+workflows:
+  wf1: {}
+`,
+			wantErr: "workflow (wf1) defined in pipeline (pipeline) has inputs but it is not a workflow variant",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			err := yaml.Unmarshal([]byte(tt.config), &config)
+			require.NoError(t, err)
+
+			warns, err := config.Validate()
+			require.Empty(t, warns)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+
 }
 
 func TestValidateConfig_Containers(t *testing.T) {
