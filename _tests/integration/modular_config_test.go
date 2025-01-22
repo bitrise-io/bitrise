@@ -54,8 +54,10 @@ func Test_ModularConfig(t *testing.T) {
 
 func Test_ModularConfig_Run_JSON_Logs(t *testing.T) {
 	configPth := "modular_config_main.yml"
+	currentRepositoryURLEnv := "BITRISE_CURRENT_REPOSITORY_URL=https://github.com/bitrise-io/bitrise.git"
 
 	cmd := command.New(binPath(), "run", "print_hello_world", "--config", configPth, "--output-format", "json")
+	cmd.AppendEnvs(currentRepositoryURLEnv)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 	require.Contains(t, out, "Hello World!")
