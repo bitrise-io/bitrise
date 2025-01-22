@@ -7,22 +7,24 @@ import (
 	"strings"
 )
 
-type GitRepoURL struct {
-	User string
-	Host string
-	Port string
-	Path string
-}
+type GitRepoURLSyntax string
 
-func isHttpFormatRepoURL(gitURL string) bool {
-	return strings.HasPrefix(gitURL, "http://") || strings.HasPrefix(gitURL, "https://")
+const (
+	SSHGitRepoURLSyntax GitRepoURLSyntax = "ssh"
+	HTTPSRepoURLSyntax  GitRepoURLSyntax = "https"
+)
+
+type GitRepoURL struct {
+	User           string
+	Host           string
+	Port           string
+	Path           string
+	OriginalSyntax GitRepoURLSyntax
 }
 
 func parseGitRepoURL(gitURL string) (*GitRepoURL, error) {
-	if strings.HasPrefix(gitURL, "ssh://") || // ssh syntax: ssh://[<user>@]<host>[:<port>]/<path-to-git-repo>
-		strings.HasPrefix(gitURL, "git://") || // git syntax: git://<host>[:<port>]/<path-to-git-repo>
-		strings.HasPrefix(gitURL, "http://") || strings.HasPrefix(gitURL, "https://") || // http[s] syntax: http[s]://<host>[:<port>]/<path-to-git-repo>
-		strings.HasPrefix(gitURL, "ftp://") || strings.HasPrefix(gitURL, "ftps://") { // ftp[s] syntax: ftp[s]://<host>[:<port>]/<path-to-git-repo>
+	// https syntax: http[s]://<host>[:<port>]/<path-to-git-repo>
+	if strings.HasPrefix(gitURL, "https://") {
 		u, err := url.Parse(gitURL)
 		if err != nil {
 			return nil, err
@@ -38,52 +40,66 @@ func parseGitRepoURL(gitURL string) (*GitRepoURL, error) {
 		path := strings.TrimPrefix(u.Path, "/")
 
 		return &GitRepoURL{
-			User: user,
-			Host: host,
-			Port: port,
-			Path: path,
+			User:           user,
+			Host:           host,
+			Port:           port,
+			Path:           path,
+			OriginalSyntax: HTTPSRepoURLSyntax,
 		}, nil
-	} else { // SCP-like syntax: [<user>@]<host>:/<path-to-git-repo>
-		re := regexp.MustCompile(`^(?:(?P<user>[^@]+)@)?(?P<host>[^:]+):(?P<path>.+)$`)
-		matches := re.FindStringSubmatch(gitURL)
-		if matches != nil {
-			user := ""
-			host := ""
-			path := ""
+	}
 
-			for i, name := range re.SubexpNames() {
-				switch name {
-				case "user":
-					user = matches[i]
-				case "host":
-					host = matches[i]
-				case "path":
-					path = matches[i]
-				}
-			}
+	// scp-like syntax: [<user>@]<host>:<path-to-git-repo>
+	re := regexp.MustCompile(`^(?:(?P<user>[^@]+)@)?(?P<host>[^:]+):(?P<path>.+)$`)
+	matches := re.FindStringSubmatch(gitURL)
+	if matches == nil {
+		return nil, fmt.Errorf("unsupported git URL format: %s", gitURL)
+	}
+	user := ""
+	host := ""
+	path := ""
 
-			return &GitRepoURL{
-				User: user,
-				Host: host,
-				Path: path,
-			}, nil
+	for i, name := range re.SubexpNames() {
+		switch name {
+		case "user":
+			user = matches[i]
+		case "host":
+			host = matches[i]
+		case "path":
+			path = matches[i]
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported git URL format")
+	return &GitRepoURL{
+		User:           user,
+		Host:           host,
+		Path:           path,
+		OriginalSyntax: SSHGitRepoURLSyntax,
+	}, nil
 }
 
-func generateSCPStyleSSHFormatRepoURL(details *GitRepoURL) string {
+func (u GitRepoURL) URLString(syntax GitRepoURLSyntax) string {
 	var urlBuilder strings.Builder
 
-	// SSH format: [<user>@]<host>:/<path-to-git-repo>
-	if details.User != "" {
-		urlBuilder.WriteString(details.User)
-		urlBuilder.WriteString("@")
+	if syntax == HTTPSRepoURLSyntax {
+		// https syntax: http[s]://<host>[:<port>]/<path-to-git-repo>
+		urlBuilder.WriteString("https://")
+		urlBuilder.WriteString(u.Host)
+		if u.Port != "" {
+			urlBuilder.WriteString(":")
+			urlBuilder.WriteString(u.Port)
+		}
+		urlBuilder.WriteString("/")
+		urlBuilder.WriteString(u.Path)
+	} else {
+		// scp-like syntax: [<user>@]<host>:<path-to-git-repo>
+		if u.User != "" {
+			urlBuilder.WriteString(u.User)
+			urlBuilder.WriteString("@")
+		}
+		urlBuilder.WriteString(u.Host)
+		urlBuilder.WriteString(":")
+		urlBuilder.WriteString(u.Path)
 	}
-	urlBuilder.WriteString(details.Host)
-	urlBuilder.WriteString(":/")
-	urlBuilder.WriteString(details.Path)
 
 	return urlBuilder.String()
 }

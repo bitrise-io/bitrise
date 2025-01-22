@@ -14,118 +14,49 @@ func Test_parseGitURL(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name:   "SSH with user and port",
-			gitURL: "ssh://bitrise-bot@github:22/bitrise-io/bitrise.git",
+			name:   "SCP-like SSH syntax",
+			gitURL: "git@github.com:bitrise-io/bitrise.git",
 			want: &GitRepoURL{
-				User: "bitrise-bot",
-				Host: "github",
-				Port: "22",
-				Path: "bitrise-io/bitrise.git",
+				User:           "git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
 			},
 		},
 		{
-			name:   "SSH without user but with port",
-			gitURL: "ssh://github:22/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "22",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "SSH without port",
-			gitURL: "ssh://github/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "SCP-like syntax with user",
-			gitURL: "bitrise-bot@github.com:bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "bitrise-bot",
-				Host: "github.com",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "SCP-like syntax without user",
+			name:   "SCP-like SSH syntax without user",
 			gitURL: "github.com:bitrise-io/bitrise.git",
 			want: &GitRepoURL{
-				User: "",
-				Host: "github.com",
-				Path: "bitrise-io/bitrise.git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
 			},
 		},
 		{
-			name:   "Git protocol with port",
-			gitURL: "git://github:22/bitrise-io/bitrise.git",
+			name:   "HTTPS syntax",
+			gitURL: "https://github.com/bitrise-io/bitrise.git",
 			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "22",
-				Path: "bitrise-io/bitrise.git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: HTTPSRepoURLSyntax,
 			},
 		},
 		{
-			name:   "Git protocol without port",
-			gitURL: "git://github/bitrise-io/bitrise.git",
+			name:   "HTTPS syntax with port",
+			gitURL: "https://github.com:22/bitrise-io/bitrise.git",
 			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "HTTPS with port",
-			gitURL: "https://github:22/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "22",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "HTTPS without port",
-			gitURL: "https://github/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "HTTP with port",
-			gitURL: "http://github:22/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "22",
-				Path: "bitrise-io/bitrise.git",
-			},
-		},
-		{
-			name:   "HTTP without port",
-			gitURL: "http://github/bitrise-io/bitrise.git",
-			want: &GitRepoURL{
-				User: "",
-				Host: "github",
-				Port: "",
-				Path: "bitrise-io/bitrise.git",
+				User:           "",
+				Host:           "github.com",
+				Port:           "22",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: HTTPSRepoURLSyntax,
 			},
 		},
 		{
 			name:    "Invalid URL",
 			gitURL:  "justastring",
 			want:    nil,
-			wantErr: "unsupported git URL format",
+			wantErr: "unsupported git URL format: justastring",
 		},
 	}
 	for _, tt := range tests {
@@ -136,6 +67,82 @@ func Test_parseGitURL(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGitRepoURL_URLString(t *testing.T) {
+	tests := []struct {
+		name       string
+		gitRepoURL GitRepoURL
+		syntax     GitRepoURLSyntax
+		want       string
+	}{
+		{
+			name: "git repo url to SSH syntax",
+			gitRepoURL: GitRepoURL{
+				Host: "github.com",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: SSHGitRepoURLSyntax,
+			want:   "github.com:bitrise-io/bitrise.git",
+		},
+		{
+			name: "git repo url (with user) to SSH syntax",
+			gitRepoURL: GitRepoURL{
+				User: "git",
+				Host: "github.com",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: SSHGitRepoURLSyntax,
+			want:   "git@github.com:bitrise-io/bitrise.git",
+		},
+		{
+			name: "git repo url (with user and port) to SSH syntax",
+			gitRepoURL: GitRepoURL{
+				User: "git",
+				Host: "github.com",
+				Port: "22",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: SSHGitRepoURLSyntax,
+			want:   "git@github.com:bitrise-io/bitrise.git",
+		},
+		{
+			name: "git repo url to HTTPS syntax",
+			gitRepoURL: GitRepoURL{
+				Host: "github.com",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: HTTPSRepoURLSyntax,
+			want:   "https://github.com/bitrise-io/bitrise.git",
+		},
+		{
+			name: "git repo url (with user) to HTTPS syntax",
+			gitRepoURL: GitRepoURL{
+				User: "git",
+				Host: "github.com",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: HTTPSRepoURLSyntax,
+			want:   "https://github.com/bitrise-io/bitrise.git",
+		},
+		{
+			name: "git repo url (with user and port) to HTTPS syntax",
+			gitRepoURL: GitRepoURL{
+				User: "git",
+				Host: "github.com",
+				Port: "22",
+				Path: "bitrise-io/bitrise.git",
+			},
+			syntax: HTTPSRepoURLSyntax,
+			want:   "https://github.com:22/bitrise-io/bitrise.git",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.gitRepoURL.URLString(tt.syntax)
 			require.Equal(t, tt.want, got)
 		})
 	}

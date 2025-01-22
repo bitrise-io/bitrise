@@ -205,11 +205,11 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 include:
 - path: containers.yml
-  repository: https://github.com/bitrise-io/examples-yamls.git
+  repository: examples-yamls
   branch: dev`),
 				},
 				repoFilesOnBranch: map[string]map[string]map[string][]byte{
-					"https://github.com/bitrise-io/examples-yamls.git": {
+					"examples-yamls": {
 						"dev": {
 							"containers.yml": []byte(`
 containers:
