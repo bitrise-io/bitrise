@@ -23,7 +23,7 @@ type GitRepoURL struct {
 }
 
 func parseGitRepoURL(gitURL string) (*GitRepoURL, error) {
-	// https syntax: http[s]://<host>[:<port>]/<path-to-git-repo>
+	// https syntax: https://<host>[:<port>]/<path-to-git-repo>
 	if strings.HasPrefix(gitURL, "https://") {
 		u, err := url.Parse(gitURL)
 		if err != nil {
