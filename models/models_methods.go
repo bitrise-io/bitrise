@@ -123,22 +123,40 @@ func (bundle *StepBundleModel) Normalize() error {
 		bundle.Steps[idx] = stepListItem
 	}
 
+	for i, input := range bundle.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+		bundle.Inputs[i] = input
+	}
+
+	// TODO: deprecate
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
 		bundle.Environments[i] = env
 	}
+
 	return nil
 }
 
 func (bundle *StepBundleListItemModel) Normalize() error {
+	for i, input := range bundle.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+		bundle.Inputs[i] = input
+	}
+
+	// TODO: deprecate
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
 		bundle.Environments[i] = env
 	}
+
 	return nil
 }
 
@@ -290,6 +308,13 @@ func (config *BitriseDataModel) Normalize() error {
 // --- Validate
 
 func (bundle *StepBundleListItemModel) Validate() error {
+	for _, input := range bundle.Inputs {
+		if err := input.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// TODO: deprecate
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return err
@@ -300,12 +325,8 @@ func (bundle *StepBundleListItemModel) Validate() error {
 }
 
 func (bundle *StepBundleModel) Validate() ([]string, error) {
-	for _, env := range bundle.Environments {
-		if err := env.Validate(); err != nil {
-			return nil, err
-		}
-	}
 	var warnings []string
+
 	for _, stepListItem := range bundle.Steps {
 		stepID, step, err := stepListItem.GetStepIDAndStep()
 		if err != nil {
@@ -324,6 +345,20 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 	}
+
+	for _, input := range bundle.Inputs {
+		if err := input.Validate(); err != nil {
+			return warnings, err
+		}
+	}
+
+	// TODO: deprecate
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return warnings, err
+		}
+	}
+
 	return warnings, nil
 }
 

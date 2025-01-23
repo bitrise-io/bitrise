@@ -25,11 +25,15 @@ const (
 )
 
 type StepBundleModel struct {
+	Inputs []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Steps  []StepListStepItemModel             `json:"steps,omitempty" yaml:"steps,omitempty"`
+	// TODO: deprecate
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListStepItemModel             `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 type StepBundleListItemModel struct {
+	Inputs []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	// TODO: deprecate
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
