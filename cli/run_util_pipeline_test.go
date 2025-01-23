@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/stretchr/testify/require"
 )
 
@@ -236,7 +237,7 @@ func TestValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b64Data := base64.StdEncoding.EncodeToString([]byte(tt.config))
-			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "")
+			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "", bitrise.ValidationTypeFull)
 
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)

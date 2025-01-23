@@ -434,7 +434,7 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		return nil, fmt.Errorf("failed to create inventory: %s", err)
 	}
 
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(runParams.BitriseConfigBase64Data, runParams.BitriseConfigPath, bitrise.ValidationTypeMinimal)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}

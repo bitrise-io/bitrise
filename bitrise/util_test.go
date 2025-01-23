@@ -374,7 +374,7 @@ workflows:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), false)
+			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), false, ValidationTypeFull)
 			require.Equal(t, []string(nil), warns)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
@@ -491,7 +491,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), true)
+			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), true, ValidationTypeFull)
 			require.Equal(t, []string(nil), warns)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
