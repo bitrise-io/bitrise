@@ -477,6 +477,7 @@ workflows:
 	}
 }
 
+// TODO: test step bundle inputs
 func TestEnvOrders(t *testing.T) {
 	tests := []struct {
 		name    string

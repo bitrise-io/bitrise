@@ -307,10 +307,26 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
-func (bundle *StepBundleListItemModel) Validate() error {
+func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel) error {
+	stepBundleDefinitionInputKeys := map[string]bool{}
+	for _, input := range stepBundleDefinition.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+		stepBundleDefinitionInputKeys[key] = true
+	}
+
 	for _, input := range bundle.Inputs {
 		if err := input.Validate(); err != nil {
 			return err
+		}
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+		if _, ok := stepBundleDefinitionInputKeys[key]; !ok {
+			return fmt.Errorf("input (%s) is not defined in the step bundle definition", key)
 		}
 	}
 
@@ -850,8 +866,9 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 			} else if t == StepListItemTypeBundle {
 				bundleID := strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix)
-				if _, ok := config.StepBundles[bundleID]; !ok {
-					return warnings, fmt.Errorf("step-bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
+				bundleDefinition, ok := config.StepBundles[bundleID]
+				if !ok {
+					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
 				}
 
 				bundle, err := stepListItem.GetBundle()
@@ -859,8 +876,8 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 
-				if err := bundle.Validate(); err != nil {
-					return warnings, err
+				if err := bundle.Validate(bundleDefinition); err != nil {
+					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s) has config issue: %w", bundleID, workflowID, err)
 				}
 			}
 		}

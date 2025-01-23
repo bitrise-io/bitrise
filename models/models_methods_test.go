@@ -18,6 +18,7 @@ import (
 // ----------------------------
 // --- Validate
 
+// TODO: test step bundle inputs
 func TestJSONMarshal(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -947,6 +948,7 @@ workflows:
 	}
 }
 
+// TODO: test step bundle inputs
 func TestValidateConfig_StepBundles(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -1029,7 +1031,7 @@ workflows:
     steps:
     - bundle::non-existing-bundle: {}
 `),
-			wantErr: "step-bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+			wantErr: "step bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
 		},
 	}
 	for _, tt := range tests {
