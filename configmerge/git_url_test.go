@@ -61,7 +61,7 @@ func Test_parseGitURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseGitRepoURL(tt.gitURL)
+			got, err := NewGitRepoURL(tt.gitURL)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {
@@ -143,6 +143,66 @@ func TestGitRepoURL_URLString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.gitRepoURL.URLString(tt.syntax)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGitRepoURL_RepoURLForRepo(t *testing.T) {
+	tests := []struct {
+		name       string
+		gitRepoURL GitRepoURL
+		repoName   string
+		want       GitRepoURL
+	}{
+		{
+			name: "returns the original git repo url for empty repo name",
+			gitRepoURL: GitRepoURL{
+				User:           "git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
+			},
+			repoName: "",
+			want: GitRepoURL{
+				User:           "git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
+			},
+		},
+		{
+			name: "updates repo name for an scp like git repo url",
+			gitRepoURL: GitRepoURL{
+				User:           "git",
+				Host:           "github.com",
+				Path:           "bitrise-io/bitrise.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
+			},
+			repoName: "envman",
+			want: GitRepoURL{
+				User:           "git",
+				Host:           "github.com",
+				Path:           "bitrise-io/envman.git",
+				OriginalSyntax: SSHGitRepoURLSyntax,
+			},
+		},
+		{
+			name: "updates repo name for a https git repo url",
+			gitRepoURL: GitRepoURL{
+				Host: "github.com",
+				Path: "bitrise-io/bitrise.git",
+			},
+			repoName: "envman",
+			want: GitRepoURL{
+				Host: "github.com",
+				Path: "bitrise-io/envman.git",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.gitRepoURL.RepoURLForRepo(tt.repoName)
 			require.Equal(t, tt.want, got)
 		})
 	}

@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	pathutilV2 "github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/go-git/go-git/v5"
@@ -38,7 +37,7 @@ func NewConfigReader(logger Logger) (ConfigReader, error) {
 }
 
 func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
-	if isLocalReference(ref) {
+	if ref.IsLocalReference() {
 		return f.readFileFromFileSystem(ref.Path)
 	}
 
@@ -54,13 +53,10 @@ func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 		}
 	}
 
-	repoURL, err := createModuleRepoURL(*f.repoURL, ref.Repository)
-	if err != nil {
-		return nil, err
-	}
-
+	moduleGitRepoURL := f.repoURL.RepoURLForRepo(ref.Repository)
+	moduleRepoURL := moduleGitRepoURL.URLString(moduleGitRepoURL.OriginalSyntax)
 	repoDir := filepath.Join(f.tmpDir, ref.RepoKey())
-	if err := f.cloneGitRepository(repoDir, repoURL, ref.Branch, ref.Tag, ref.Commit); err != nil {
+	if err := f.cloneGitRepository(repoDir, moduleRepoURL, ref.Branch, ref.Tag, ref.Commit); err != nil {
 		return nil, err
 	}
 
@@ -87,18 +83,6 @@ func (f *fileReader) readFileFromFileSystem(name string) ([]byte, error) {
 	return io.ReadAll(file)
 }
 
-func createModuleRepoURL(currentRepoURL GitRepoURL, moduleRepoName string) (string, error) {
-	pathComponents := strings.Split(currentRepoURL.Path, "/")
-	if len(pathComponents) < 2 {
-		return "", fmt.Errorf("repository path (%s) is expected in a 'user/repo_name' format", currentRepoURL.Path)
-	}
-
-	moduleRepoURL := currentRepoURL
-	moduleRepoURL.Path = strings.Join(pathComponents[:len(pathComponents)-1], "/") + "/" + moduleRepoName + ".git"
-
-	return moduleRepoURL.URLString(currentRepoURL.OriginalSyntax), nil
-}
-
 func (f *fileReader) cloneGitRepository(repoDir, repoURL, branch, tag, commit string) error {
 	opts := git.CloneOptions{
 		URL: repoURL,
@@ -112,7 +96,7 @@ func (f *fileReader) cloneGitRepository(repoDir, repoURL, branch, tag, commit st
 		f.logger.Warnf("Failed to clone repository (%s): %s, trying with a different repository URL syntax...", repoURL, cloneErr)
 
 		// Try repo url with a different syntax
-		gitRepoURL, err := parseGitRepoURL(repoURL)
+		gitRepoURL, err := NewGitRepoURL(repoURL)
 		if err != nil {
 			return fmt.Errorf("failed to parse repository URL (%s):  %w", repoURL, err)
 		}
@@ -162,17 +146,9 @@ func (f *fileReader) cloneGitRepository(repoDir, repoURL, branch, tag, commit st
 	return nil
 }
 
-func (f *fileReader) getRepo(ref ConfigReference) string {
-	return f.repoCache[ref.RepoKey()]
-}
-
-func (f *fileReader) setRepo(dir string, ref ConfigReference) {
-	f.repoCache[ref.RepoKey()] = dir
-}
-
 func (f *fileReader) getCurrentRepositoryURL() error {
 	if repoURL := os.Getenv(currentRepositoryURLEnvKey); repoURL != "" {
-		gitRepoURL, err := parseGitRepoURL(repoURL)
+		gitRepoURL, err := NewGitRepoURL(repoURL)
 		if err != nil {
 			return fmt.Errorf("failed to parse repository URL: %w, the URL is expected in a HTTPS (https://<host>[:<port>]/<path-to-git-repo>) or SSH ([<user>@]<host>:<path-to-git-repo>) syntax ", err)
 		}
@@ -225,7 +201,7 @@ func (f *fileReader) getCurrentRepositoryURL() error {
 		return fmt.Errorf("multiple remote URLs found for the repository in the working directory")
 	}
 
-	gitRepoURL, err := parseGitRepoURL(remoteConfig.URLs[0])
+	gitRepoURL, err := NewGitRepoURL(remoteConfig.URLs[0])
 	if err != nil {
 		return fmt.Errorf("failed to parse repository URL: %w, the URL is expected in a HTTPS (https://<host>[:<port>]/<path-to-git-repo>) or SSH ([<user>@]<host>:<path-to-git-repo>) syntax ", err)
 	}
@@ -234,6 +210,10 @@ func (f *fileReader) getCurrentRepositoryURL() error {
 	return nil
 }
 
-func isLocalReference(reference ConfigReference) bool {
-	return reference.Repository == ""
+func (f *fileReader) getRepo(ref ConfigReference) string {
+	return f.repoCache[ref.RepoKey()]
+}
+
+func (f *fileReader) setRepo(dir string, ref ConfigReference) {
+	f.repoCache[ref.RepoKey()] = dir
 }
