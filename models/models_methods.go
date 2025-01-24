@@ -130,7 +130,6 @@ func (bundle *StepBundleModel) Normalize() error {
 		bundle.Inputs[i] = input
 	}
 
-	// TODO: deprecate
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
@@ -149,7 +148,6 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 		bundle.Inputs[i] = input
 	}
 
-	// TODO: deprecate
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
@@ -330,7 +328,6 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 		}
 	}
 
-	// TODO: deprecate
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return err
@@ -368,7 +365,6 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 		}
 	}
 
-	// TODO: deprecate
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return warnings, err

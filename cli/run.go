@@ -584,7 +584,12 @@ func createWorkflowRunPlan(
 					return models.WorkflowRunPlan{}, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
 				}
 
-				bundleEnvs := append([]envmanModels.EnvironmentItemModel{}, bundleDefinition.Inputs...)
+				var bundleEnvs []envmanModels.EnvironmentItemModel
+
+				bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)
+				bundleEnvs = append(bundleEnvs, bundleOverride.Environments...)
+
+				bundleEnvs = append(bundleEnvs, bundleDefinition.Inputs...)
 
 				// Filter undefined bundleOverride inputs
 				bundleDefinitionInputKeys := map[string]bool{}
@@ -606,11 +611,6 @@ func createWorkflowRunPlan(
 						bundleEnvs = append(bundleEnvs, input)
 					}
 				}
-				// ---
-
-				// TODO: deprecate
-				bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)
-				bundleEnvs = append(bundleEnvs, bundleOverride.Environments...)
 
 				bundleUUID := uuidProvider()
 
