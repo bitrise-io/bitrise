@@ -84,3 +84,7 @@ func (r ConfigReference) Validate() error {
 
 	return nil
 }
+
+func (r ConfigReference) IsLocalReference() bool {
+	return r.Repository == ""
+}

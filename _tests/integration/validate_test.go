@@ -60,7 +60,7 @@ func Test_ValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
@@ -76,7 +76,7 @@ func Test_ValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth)
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid pipeline ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
 		require.Equal(t, expected, out)
@@ -93,7 +93,7 @@ func Test_ValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth)
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		expected := "Config is valid: \x1b[32;1mtrue\x1b[0m\nWarning(s):\n- invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]"
 		require.Equal(t, expected, out)
@@ -110,7 +110,7 @@ func Test_ValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth)
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("Config is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mconfig (%s) is not valid: empty config\x1b[0m", configPth)
 		require.Equal(t, expected, out)
@@ -132,7 +132,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml", "--format", "json")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"config\":{\"is_valid\":true}}}", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
@@ -148,7 +148,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		expected := "{\"data\":{\"config\":{\"is_valid\":true,\"warnings\":[\"invalid pipeline ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]\"]}}}"
 		require.Equal(t, expected, out)
@@ -165,7 +165,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		expected := "{\"data\":{\"config\":{\"is_valid\":true,\"warnings\":[\"invalid workflow ID (invalid:id): doesn't conform to: [A-Za-z0-9-_.]\"]}}}"
 		require.Equal(t, expected, out)
@@ -182,7 +182,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"config (%s) is not valid: empty config\"}}}", configPth)
 		require.Equal(t, expected, out)
@@ -199,7 +199,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-c", configPth, "--format", "json")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := fmt.Sprintf("{\"data\":{\"config\":{\"is_valid\":false,\"error\":\"config (%s) is not valid: missing format_version\"}}}", configPth)
 		require.Equal(t, expected, out)
@@ -221,7 +221,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-i", "global_flag_test_secrets.yml")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		require.Equal(t, "Secret is valid: \x1b[32;1mtrue\x1b[0m", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
@@ -237,7 +237,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-i", secretsPth)
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mempty config\x1b[0m"
 		require.Equal(t, expected, out)
@@ -254,7 +254,7 @@ func Test_SecretValidateTest(t *testing.T) {
 		elapsed := withRunningTimeCheck(func() {
 			cmd := command.New(binPath(), "validate", "-i", secretsPth)
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := "Secret is valid: \x1b[31;1mfalse\x1b[0m\nError: \x1b[31;1mInvalid inventory format: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\x1b[0m"
 		require.Equal(t, expected, out)
@@ -277,7 +277,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.NoError(t, err)
 		require.Equal(t, "{\"data\":{\"secrets\":{\"is_valid\":true}}}", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
@@ -294,7 +294,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"empty config\"}}}"
 		require.Equal(t, expected, out)
@@ -311,7 +311,7 @@ func Test_SecretValidateTestJSON(t *testing.T) {
 		cmd := command.New(binPath(), "validate", "-i", secretsPth, "--format", "json")
 		elapsed := withRunningTimeCheck(func() {
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-		}, runtimeLimit)
+		})
 		require.Error(t, err, out)
 		expected := "{\"data\":{\"secrets\":{\"is_valid\":false,\"error\":\"Invalid inventory format: yaml: unmarshal errors:\\n  line 1: cannot unmarshal !!seq into models.EnvsSerializeModel\"}}}"
 		require.Equal(t, expected, out)
