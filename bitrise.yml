@@ -116,6 +116,20 @@ workflows:
     - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
     steps:
     - script@1:
+        title: Validate if Bitrise CLI version matches the git tag
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            go build -o ./current_bitrise
+            version=$(./current_bitrise --version)
+            if [[ "$version" != "$BITRISE_GIT_TAG" ]]; then
+              echo "Bitrise CLI version ($version) does not match the git tag ($BITRISE_GIT_TAG)"
+              echo "Please update the Bitrise CLI version to match the git tag"
+              exit 1
+            fi
+    - script@1:
         title: Fetch GCS bucket credentials
         inputs:
         - content: |-
