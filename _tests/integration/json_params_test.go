@@ -68,7 +68,7 @@ func Test_JsonParams(t *testing.T) {
 			"workflow": "json_params_test_target",
 		}
 
-		cmd := command.New(binPath(), "run", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "run", "--json-params-base64", toBase64(toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
@@ -80,7 +80,7 @@ func Test_JsonParams(t *testing.T) {
 			"pattern": "json_params_test_target",
 		}
 
-		cmd := command.New(binPath(), "trigger", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "trigger", "--json-params-base64", toBase64(toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}

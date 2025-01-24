@@ -120,7 +120,7 @@ func Test_NewTrigger(t *testing.T) {
 			"format":           "json",
 		}
 
-		cmd := command.New(binPath(), "trigger-check", "--json-params-base64", toBase64(t, toJSON(t, config)))
+		cmd := command.New(binPath(), "trigger-check", "--json-params-base64", toBase64(toJSON(t, config)))
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 		require.Equal(t, `{"pr-source-branch":"pr_source","pr-target-branch":"pr_target","workflow":"pr_source_and_target"}`, out)
