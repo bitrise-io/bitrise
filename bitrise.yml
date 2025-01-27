@@ -76,10 +76,6 @@ workflows:
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
-    # meta:
-    #   bitrise.io:
-    #     machine_type_id: g2.linux.x-large
-    #     stack: linux-docker-android-20.04  # TODO: Docker tests are failing on Ubuntu 22.04
 
   test_binary_build_macos:
     steps:
