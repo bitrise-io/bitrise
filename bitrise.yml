@@ -318,13 +318,6 @@ step_bundles:
             mkdir -p "${test_results_dir}"
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
             echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
-    - script:
-        # The Go + ASDF situation is messed up on the Ubuntu 20 stack. Even though this workflow starts by installing
-        # the correct Go version with ASDF, the first non-Bash-toolkit step (deploy-to-bitrise-io) will fail,
-        # probably because the CLI process (which runs the steps) is already running by the time the Go version is set.
-        title: Ubuntu 20 Go hackery  # TODO: remove this once the workflow is migrated to the Ubuntu 22 stack
-        inputs:
-        - content: rm ~/.asdf/shims/go
     - deploy-to-bitrise-io@2: { }
 
   test_binary_build:
