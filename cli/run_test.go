@@ -591,7 +591,45 @@ workflows:
             fi`,
 		},
 		{
-			name: "Step Bundle definition's env var overrides secrets, app, workflow and step output env vars with the same env key",
+			name: "Step Bundle definition's inputs overrides secrets, app, workflow and step output env vars with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+step_bundles:
+  test-bundle:
+    inputs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 5." ]] ; then
+              exit 1
+            fi
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle: {}`,
+		},
+		{
+			name: "Step Bundle definition's envs overrides secrets, app, workflow and step output env vars with the same env key",
 			secrets: `
 envs:
 - ENV_ORDER_TEST: "should be the 1."`,
@@ -629,7 +667,87 @@ workflows:
     - bundle::test-bundle: {}`,
 		},
 		{
-			name: "Step Bundle list item's env var overrides secrets, app, workflow, step output and step bundle definition env vars with the same env key",
+			name: "Step Bundle definition's inputs override Step Bundle definition envs with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+step_bundles:
+  test-bundle:
+    inputs:
+    - ENV_ORDER_TEST: "should be the 6."
+    envs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 6." ]] ; then
+              exit 1
+            fi
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle: {}`,
+		},
+		{
+			name: "Step Bundle list item's inputs overrides secrets, app, workflow, step output and step bundle definition env vars with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+step_bundles:
+  test-bundle:
+    inputs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 6." ]] ; then
+              exit 1
+            fi
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle:
+        inputs:
+        - ENV_ORDER_TEST: "should be the 6."`,
+		},
+		{
+			name: "Step Bundle list item's envs overrides secrets, app, workflow, step output and step bundle definition env vars with the same env key",
 			secrets: `
 envs:
 - ENV_ORDER_TEST: "should be the 1."`,
@@ -669,7 +787,87 @@ workflows:
         - ENV_ORDER_TEST: "should be the 6."`,
 		},
 		{
-			name: "Step Bundle input envs are not shared with the workflow",
+			name: "Step Bundle list item's inputs overrides Step Bundle list item's envs with the same env key",
+			secrets: `
+envs:
+- ENV_ORDER_TEST: "should be the 1."`,
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+app:
+  envs:
+  - ENV_ORDER_TEST: "should be the 2."
+
+step_bundles:
+  test-bundle:
+    inputs:
+    - ENV_ORDER_TEST: "should be the 6."
+    envs:
+    - ENV_ORDER_TEST: "should be the 5."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 8." ]] ; then
+              exit 1
+            fi
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 3."
+    steps:
+    - script:
+        inputs:
+        - content: envman add --key ENV_ORDER_TEST --value "should be the 4."
+    - bundle::test-bundle:
+        inputs:
+        - ENV_ORDER_TEST: "should be the 8."
+        envs:
+        - ENV_ORDER_TEST: "should be the 7."`,
+		},
+		{
+			name: "Step Bundle inputs are not shared with the workflow",
+			config: `
+format_version: "15"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+step_bundles:
+  test-bundle:
+    inputs:
+    - ENV_ORDER_TEST: "should be the 2."
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+
+workflows:
+  test:
+    envs:
+    - ENV_ORDER_TEST: "should be the 1."
+    steps:
+    - bundle::test-bundle:
+        inputs:
+        - ENV_ORDER_TEST: "should be the 3."
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -v
+            echo "ENV_ORDER_TEST: $ENV_ORDER_TEST"
+            if [[ "$ENV_ORDER_TEST" != "should be the 1." ]] ; then
+              exit 1
+            fi`,
+		},
+		{
+			name: "Step Bundle envs are not shared with the workflow",
 			config: `
 format_version: "15"
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -705,7 +903,7 @@ workflows:
             fi`,
 		},
 		{
-			name: "Step Bundle output envs are shared with the workflow",
+			name: "Step Bundle outputs are shared with the workflow",
 			config: `
 format_version: "15"
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"

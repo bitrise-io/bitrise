@@ -176,6 +176,14 @@ project_type: other
 
 step_bundles:
   print-hello:
+    inputs:
+    - NAME: World
+      opts:
+        is_expand: false
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
     envs:
     - NAME: World
       opts:
@@ -215,6 +223,14 @@ workflows:
         inputs:
         - content: echo "Hello, $NAME!"
     - bundle::print-hello:
+        inputs:
+        - NAME: Universe
+          opts:
+            is_expand: false
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
         envs:
         - NAME: Universe
           opts:
@@ -962,6 +978,10 @@ project_type: other
 
 step_bundles:
   print-hello:
+    inputs:
+    - NAME: World
+      opts:
+        is_expand: false
     envs:
     - NAME: World
       opts:
@@ -981,6 +1001,8 @@ workflows:
         inputs:
         - content: echo "Hello, $NAME!"
     - bundle::print-hello:
+        inputs:
+        - NAME: Universe
         envs:
         - NAME: Universe
 `),
@@ -1009,7 +1031,7 @@ workflows:
 			wantErr: "step bundle has empty ID defined",
 		},
 		{
-			name: "Invalid bitrise.yml: non-existing container referenced",
+			name: "Invalid bitrise.yml: non-existing step bundle referenced",
 			config: createConfig(t, `
 format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -1029,7 +1051,32 @@ workflows:
     steps:
     - bundle::non-existing-bundle: {}
 `),
-			wantErr: "step-bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+			wantErr: "step bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+		},
+		{
+			name: "Invalid bitrise.yml: non-existing step bundle input set",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    inputs:
+    - NAME: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    steps:
+    - bundle::print-hello:
+        inputs:
+        - FIRST_NAME: Universe
+`),
+			wantErr: "step bundle (print-hello) referenced in workflow (print-hellos) has config issue: input (FIRST_NAME) is not defined in the step bundle definition",
 		},
 	}
 	for _, tt := range tests {

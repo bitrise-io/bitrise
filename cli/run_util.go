@@ -85,7 +85,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
 	currentStepBundleUUID := ""
-	// TODO: add the last step bundle's envs to environments
 	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
 
 	// ------------------------------------------
