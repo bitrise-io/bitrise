@@ -85,6 +85,7 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 	}
 
 	m.logger.Debugf("Merging config tree")
+
 	mergedConfigContent, err := configTree.Merge()
 	if err != nil {
 		return "", nil, err

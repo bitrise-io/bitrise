@@ -89,6 +89,7 @@ func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 }
 
 func (f *fileReader) CleanupRepoDirs() error {
+	f.logger.Debugf("Cleaning up modular config local cache dir: %s", f.tmpDir)
 	return os.RemoveAll(f.tmpDir)
 }
 
