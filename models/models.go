@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	FormatVersion                   = "18"
+	FormatVersion                   = "19"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
