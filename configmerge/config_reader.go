@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/log"
-	pathutilV2 "github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -25,7 +25,7 @@ type fileReader struct {
 }
 
 func NewConfigReader(logger log.Logger) (ConfigReader, error) {
-	tmpDir, err := pathutilV2.NewPathProvider().CreateTempDir("config-merge")
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("config-merge")
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +75,8 @@ func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 
 	moduleGitRepoURL := f.repoURL.RepoURLForRepo(ref.Repository)
 	moduleRepoURL := moduleGitRepoURL.URLString(moduleGitRepoURL.OriginalSyntax)
-	f.logger.Debugf("cloning repository '%s' %s", moduleRepoURL, cloneRepoStateText)
 	repoDir := filepath.Join(f.tmpDir, ref.RepoKey())
+	f.logger.Debugf("cloning repository '%s' %s into %s", moduleRepoURL, cloneRepoStateText, repoDir)
 	if err := f.cloneGitRepository(repoDir, moduleRepoURL, ref.Branch, ref.Tag, ref.Commit); err != nil {
 		return nil, err
 	}

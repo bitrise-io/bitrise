@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	logV2 "github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,7 +120,7 @@ include:
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				configReader: tt.configReader,
-				logger:       logV2.NewLogger(),
+				logger:       log.NewLogger(log.GetGlobalLoggerOpts()),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -232,7 +232,7 @@ format_version: "15"
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				configReader: tt.configReader,
-				logger:       logV2.NewLogger(),
+				logger:       log.NewLogger(log.GetGlobalLoggerOpts()),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
