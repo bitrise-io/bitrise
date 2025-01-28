@@ -84,7 +84,7 @@ func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 	f.setRepo(repoDir, ref)
 
 	pth := filepath.Join(repoDir, ref.Path)
-	f.logger.Debugf("reading config module (%s) from a cloned repository: %s", ref.Path, pth)
+	f.logger.Debugf("reading config module '%s' from a cloned repository: %s", ref.Path, pth)
 	return f.readFileFromFileSystem(pth)
 }
 
