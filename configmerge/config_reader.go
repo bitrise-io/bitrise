@@ -18,7 +18,7 @@ const (
 )
 
 type fileReader struct {
-	logger    log.Logger
+	logger    Logger
 	tmpDir    string
 	repoCache map[string]string
 	repoURL   *GitRepoURL
@@ -31,7 +31,7 @@ func NewConfigReader(logger log.Logger) (ConfigReader, error) {
 	}
 
 	return &fileReader{
-		logger:    logger,
+		logger:    newDebugLogger(logger),
 		tmpDir:    tmpDir,
 		repoCache: map[string]string{},
 	}, nil

@@ -47,7 +47,7 @@ type ConfigReader interface {
 
 type Merger struct {
 	configReader ConfigReader
-	logger       log.Logger
+	logger       Logger
 
 	filesCount int
 }
@@ -55,7 +55,7 @@ type Merger struct {
 func NewMerger(configReader ConfigReader, logger log.Logger) Merger {
 	return Merger{
 		configReader: configReader,
-		logger:       logger,
+		logger:       newDebugLogger(logger),
 	}
 }
 
