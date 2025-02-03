@@ -6,7 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	pathutilV2 "github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -23,14 +24,14 @@ type fileReader struct {
 	repoURL   *GitRepoURL
 }
 
-func NewConfigReader(logger Logger) (ConfigReader, error) {
-	tmpDir, err := pathutilV2.NewPathProvider().CreateTempDir("config-merge")
+func NewConfigReader(logger log.Logger) (ConfigReader, error) {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("config-merge")
 	if err != nil {
 		return nil, err
 	}
 
 	return &fileReader{
-		logger:    logger,
+		logger:    newDebugLogger(logger),
 		tmpDir:    tmpDir,
 		repoCache: map[string]string{},
 	}, nil
@@ -38,24 +39,44 @@ func NewConfigReader(logger Logger) (ConfigReader, error) {
 
 func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 	if ref.IsLocalReference() {
+		f.logger.Debugf("reading local config module at: %s", ref.Path)
 		return f.readFileFromFileSystem(ref.Path)
 	}
+
+	repoStateText := fmt.Sprintf("on branch '%s'", ref.Branch)
+	if ref.Tag != "" {
+		repoStateText = fmt.Sprintf("on tag '%s'", ref.Tag)
+	} else if ref.Commit != "" {
+		repoStateText = fmt.Sprintf("on commit '%s'", ref.Commit)
+	}
+	f.logger.Debugf("reading remote config module '%s' from repo '%s' %s", ref.Path, ref.Repository, repoStateText)
 
 	cachedRepoDir := f.getRepo(ref)
 	if cachedRepoDir != "" {
 		pth := filepath.Join(cachedRepoDir, ref.Path)
+		f.logger.Debugf("reading config module (%s) from a cached repository: %s", ref.Path, pth)
 		return f.readFileFromFileSystem(pth)
 	}
 
 	if f.repoURL == nil {
+		f.logger.Debugf("getting current repository url")
 		if err := f.getCurrentRepositoryURL(); err != nil {
 			return nil, fmt.Errorf("failed to get current repository URL: %w, the repository URL can be set manually using the 'BITRISE_CURRENT_REPOSITORY_URL' environment variable", err)
 		}
+		f.logger.Debugf("current repository url: %s", f.repoURL.URLString(f.repoURL.OriginalSyntax))
+	}
+
+	cloneRepoStateText := fmt.Sprintf("with branch '%s'", ref.Branch)
+	if ref.Tag != "" {
+		cloneRepoStateText = fmt.Sprintf("with tag '%s'", ref.Tag)
+	} else if ref.Commit != "" {
+		cloneRepoStateText = fmt.Sprintf("with commit '%s'", ref.Commit)
 	}
 
 	moduleGitRepoURL := f.repoURL.RepoURLForRepo(ref.Repository)
 	moduleRepoURL := moduleGitRepoURL.URLString(moduleGitRepoURL.OriginalSyntax)
 	repoDir := filepath.Join(f.tmpDir, ref.RepoKey())
+	f.logger.Debugf("cloning repository '%s' %s into %s", moduleRepoURL, cloneRepoStateText, repoDir)
 	if err := f.cloneGitRepository(repoDir, moduleRepoURL, ref.Branch, ref.Tag, ref.Commit); err != nil {
 		return nil, err
 	}
@@ -63,10 +84,12 @@ func (f *fileReader) Read(ref ConfigReference) ([]byte, error) {
 	f.setRepo(repoDir, ref)
 
 	pth := filepath.Join(repoDir, ref.Path)
+	f.logger.Debugf("reading config module '%s' from a cloned repository: %s", ref.Path, pth)
 	return f.readFileFromFileSystem(pth)
 }
 
 func (f *fileReader) CleanupRepoDirs() error {
+	f.logger.Debugf("Cleaning up modular config local cache dir: %s", f.tmpDir)
 	return os.RemoveAll(f.tmpDir)
 }
 
@@ -93,7 +116,7 @@ func (f *fileReader) cloneGitRepository(repoDir, repoURL, branch, tag, commit st
 
 	repo, cloneErr := git.PlainClone(repoDir, false, &opts)
 	if cloneErr != nil {
-		f.logger.Warnf("Failed to clone repository (%s): %s, trying with a different repository URL syntax...", repoURL, cloneErr)
+		f.logger.Warnf("Failed to clone config module repository (%s): %s, trying with a different repository URL syntax...", repoURL, cloneErr)
 
 		// Try repo url with a different syntax
 		gitRepoURL, err := NewGitRepoURL(repoURL)
