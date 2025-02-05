@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 // ----------------------------
@@ -175,6 +176,14 @@ project_type: other
 
 step_bundles:
   print-hello:
+    inputs:
+    - NAME: World
+      opts:
+        is_expand: false
+        meta:
+          bitrise.io:
+            stack: osx-xcode-16.0.x-edge
+            machine_type_id: g2-m1-max.10core
     envs:
     - NAME: World
       opts:
@@ -214,6 +223,14 @@ workflows:
         inputs:
         - content: echo "Hello, $NAME!"
     - bundle::print-hello:
+        inputs:
+        - NAME: Universe
+          opts:
+            is_expand: false
+            meta:
+              bitrise.io:
+                stack: osx-xcode-16.0.x-edge
+                machine_type_id: g2-m1-max.10core
         envs:
         - NAME: Universe
           opts:
@@ -305,6 +322,36 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 0, len(warnings))
 	}
 
+	t.Log("validate app status report name - max length")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+		}
+
+		bitriseData.App.StatusReportName = strings.Repeat("a", 100)
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		bitriseData.App.StatusReportName += "a"
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate app status report name - allowed characters")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+		}
+
+		bitriseData.App.StatusReportName = "aA0,./():-_< >[]|"
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		bitriseData.App.StatusReportName += "*"
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+bitriseData.App.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
+	}
+
 	t.Log("Invalid bitriseData - pipeline ID empty")
 	{
 		bitriseData := BitriseDataModel{
@@ -344,36 +391,6 @@ func TestValidateConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
 		require.Equal(t, "invalid pipeline ID (pi/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
-	}
-
-	t.Log("Invalid bitriseData - pipeline does not have any stages")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
-					Stages: []StageListItemModel{},
-				},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
-	}
-
-	t.Log("Invalid bitriseData - pipeline does not have stages key defined")
-	{
-		bitriseData := BitriseDataModel{
-			FormatVersion: "1.4.0",
-			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{},
-			},
-		}
-
-		warnings, err := bitriseData.Validate()
-		require.EqualError(t, err, "pipeline (pipeline1) should have at least 1 stage or workflow")
-		require.Equal(t, 0, len(warnings))
 	}
 
 	t.Log("Invalid bitriseData - pipeline stage does not exist")
@@ -536,6 +553,233 @@ func TestValidateConfig(t *testing.T) {
 		require.Equal(t, 1, len(warnings))
 		require.Equal(t, "invalid workflow ID (wf/id): doesn't conform to: [A-Za-z0-9-_.]", warnings[0])
 	}
+
+	t.Log("validate pipeline status report name - max length")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		pipeline := bitriseData.Pipelines["pipeline1"]
+
+		pipeline.StatusReportName = strings.Repeat("a", 100)
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		pipeline.StatusReportName += "a"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate pipeline status report name - allowed characters")
+	{
+		bitriseData := BitriseDataModel{
+			FormatVersion: "1.4.0",
+			Pipelines: map[string]PipelineModel{
+				"pipeline1": PipelineModel{
+					Stages: []StageListItemModel{
+						StageListItemModel{"stage1": StageModel{}},
+					},
+				},
+			},
+			Stages: map[string]StageModel{
+				"stage1": StageModel{
+					Workflows: []StageWorkflowListItemModel{
+						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+					},
+				},
+			},
+			Workflows: map[string]WorkflowModel{
+				"workflow1": WorkflowModel{},
+			},
+		}
+		pipeline := bitriseData.Pipelines["pipeline1"]
+
+		pipeline.StatusReportName = "aA0,./():-_< >[]|"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err := bitriseData.Validate()
+		require.NoError(t, err)
+
+		pipeline.StatusReportName += "*"
+		bitriseData.Pipelines["pipeline1"] = pipeline
+		_, err = bitriseData.Validate()
+		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
+	}
+}
+
+func TestValidatePipelines(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "empty pipelines",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows: {}
+  pipeline2:
+    stages: []
+`,
+			wantWarns: []string{
+				"pipeline (pipeline1) should have at least 1 stage or workflow",
+				"pipeline (pipeline2) should have at least 1 stage or workflow",
+			},
+		},
+		{
+			name: "mixed pipeline",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    workflows:
+      workflow1: {}
+    stages:
+    - stage1: {}
+stages:
+  stage1:
+    workflow1: {}
+workflows:
+  workflow1: {}
+`,
+			wantErr: "pipeline (pipeline1) has both stages and workflows",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
+
+			warns, err := config.Validate()
+			if len(tt.wantWarns) > 0 {
+				require.ElementsMatch(t, tt.wantWarns, warns)
+			} else {
+				require.Empty(t, warns)
+			}
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidatePipelineWorkflowVariant(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "valid variant",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+      wf2: {}
+workflows:
+  script: {}
+  wf2: {}
+`,
+		},
+		{
+			name: "missing variant base workflow",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+`,
+			wantErr: "workflow (script) referenced in pipeline (pipeline) in workflow variant (wf1) is not found in the workflow definitions",
+		},
+		{
+			name: "variant identifier is an existing workflow identifier",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        uses: script
+        inputs:
+        - A: test1
+workflows:
+  script: {}
+  wf1: {}
+`,
+			wantErr: "workflow (wf1) defined in pipeline (pipeline) is a variant of another workflow, but it is also defined as a workflow",
+		},
+		{
+			name: "non variant has an input field",
+			config: `
+format_version: 13
+pipelines:
+  pipeline:
+    workflows:
+      wf1:
+        inputs:
+        - A: test1
+workflows:
+  wf1: {}
+`,
+			wantErr: "workflow (wf1) defined in pipeline (pipeline) has inputs but it is not a workflow variant",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			err := yaml.Unmarshal([]byte(tt.config), &config)
+			require.NoError(t, err)
+
+			warns, err := config.Validate()
+			require.Empty(t, warns)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+
 }
 
 func TestValidateConfig_Containers(t *testing.T) {
@@ -734,6 +978,10 @@ project_type: other
 
 step_bundles:
   print-hello:
+    inputs:
+    - NAME: World
+      opts:
+        is_expand: false
     envs:
     - NAME: World
       opts:
@@ -753,6 +1001,8 @@ workflows:
         inputs:
         - content: echo "Hello, $NAME!"
     - bundle::print-hello:
+        inputs:
+        - NAME: Universe
         envs:
         - NAME: Universe
 `),
@@ -781,7 +1031,7 @@ workflows:
 			wantErr: "step bundle has empty ID defined",
 		},
 		{
-			name: "Invalid bitrise.yml: non-existing container referenced",
+			name: "Invalid bitrise.yml: non-existing step bundle referenced",
 			config: createConfig(t, `
 format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -801,7 +1051,32 @@ workflows:
     steps:
     - bundle::non-existing-bundle: {}
 `),
-			wantErr: "step-bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+			wantErr: "step bundle (non-existing-bundle) referenced in workflow (print-hellos), but this step-bundle is not defined",
+		},
+		{
+			name: "Invalid bitrise.yml: non-existing step bundle input set",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  print-hello:
+    inputs:
+    - NAME: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello, $NAME!"
+
+workflows:
+  print-hellos:
+    steps:
+    - bundle::print-hello:
+        inputs:
+        - FIRST_NAME: Universe
+`),
+			wantErr: "step bundle (print-hello) referenced in workflow (print-hellos) has config issue: input (FIRST_NAME) is not defined in the step bundle definition",
 		},
 	}
 	for _, tt := range tests {
@@ -885,6 +1160,28 @@ workflows:
 		warnings, err := config.Validate()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(warnings))
+	}
+
+	t.Log("validate workflow status report name - max length")
+	{
+		workflow := WorkflowModel{}
+
+		workflow.StatusReportName = strings.Repeat("a", 100)
+		require.NoError(t, workflow.Validate())
+
+		workflow.StatusReportName += "a"
+		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") is too long, max length is 100 characters")
+	}
+
+	t.Log("validate workflow status report name - allowed characters")
+	{
+		workflow := WorkflowModel{}
+
+		workflow.StatusReportName = "aA0,./():-_< >[]|"
+		require.NoError(t, workflow.Validate())
+
+		workflow.StatusReportName += "*"
+		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
 	}
 }
 

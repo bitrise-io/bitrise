@@ -4,7 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 include:
 - path: modular_config_module.yml
 - path: print-hello.yml
-  repository: https://github.com/bitrise-io/test-bitrise-config-modules.git
+  repository: test-bitrise-config-modules
   branch: main
 
 workflows:

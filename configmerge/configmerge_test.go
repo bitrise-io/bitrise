@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	logV2 "github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,7 +120,7 @@ include:
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				configReader: tt.configReader,
-				logger:       logV2.NewLogger(),
+				logger:       log.NewLogger(log.GetGlobalLoggerOpts()),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -205,11 +205,11 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 include:
 - path: containers.yml
-  repository: https://github.com/bitrise-io/examples-yamls.git
+  repository: examples-yamls
   branch: dev`),
 				},
 				repoFilesOnBranch: map[string]map[string]map[string][]byte{
-					"https://github.com/bitrise-io/examples-yamls.git": {
+					"examples-yamls": {
 						"dev": {
 							"containers.yml": []byte(`
 containers:
@@ -232,7 +232,7 @@ format_version: "15"
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Merger{
 				configReader: tt.configReader,
-				logger:       logV2.NewLogger(),
+				logger:       log.NewLogger(log.GetGlobalLoggerOpts()),
 			}
 			got, _, err := m.MergeConfig(tt.mainConfigPth)
 			if tt.wantErr != "" {
@@ -254,7 +254,7 @@ type mockConfigReader struct {
 }
 
 func (m mockConfigReader) Read(ref ConfigReference) ([]byte, error) {
-	if isLocalReference(ref) {
+	if ref.IsLocalReference() {
 		return m.readFileFromFileSystem(ref.Path)
 	}
 	return m.readFileFromGitRepository(ref.Repository, ref.Branch, ref.Commit, ref.Tag, ref.Path)

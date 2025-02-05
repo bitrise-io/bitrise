@@ -1,0 +1,18 @@
+format_version: "18"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+step_bundles:
+  print_hello:
+    inputs:
+    - name: World
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello $name!"
+
+workflows:
+  test_step_bundle_inputs:
+    steps:
+    - bundle::print_hello:
+        inputs:
+        - name: Bitrise

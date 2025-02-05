@@ -1,7 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -9,18 +11,27 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+type GraphPipelineAlwaysRunMode string
+
 const (
-	FormatVersion                   = "17"
+	GraphPipelineAlwaysRunModeOff      GraphPipelineAlwaysRunMode = "off"
+	GraphPipelineAlwaysRunModeWorkflow GraphPipelineAlwaysRunMode = "workflow"
+)
+
+const (
+	FormatVersion                   = "19"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
 
 type StepBundleModel struct {
+	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListStepItemModel             `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 type StepBundleListItemModel struct {
+	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
@@ -39,12 +50,13 @@ type StepListStepItemModel map[string]stepmanModels.StepModel
 type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
-	Title       string                   `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Triggers    Triggers                 `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-	Stages      []StageListItemModel     `json:"stages,omitempty" yaml:"stages,omitempty"`
-	Workflows   DagWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
+	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                             `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                             `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers         Triggers                           `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+	StatusReportName string                             `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	Stages           []StageListItemModel               `json:"stages,omitempty" yaml:"stages,omitempty"`
+	Workflows        GraphPipelineWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
 }
 
 type StageListItemModel map[string]StageModel
@@ -65,24 +77,75 @@ type StageWorkflowModel struct {
 	RunIf string `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 }
 
-type DagWorkflowListItemModel map[string]DagWorkflowModel
+type GraphPipelineWorkflowListItemModel map[string]GraphPipelineWorkflowModel
 
-type DagWorkflowModel struct {
-	DependsOn []string `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+type GraphPipelineWorkflowModel struct {
+	DependsOn       []string                          `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	AbortOnFail     bool                              `json:"abort_on_fail,omitempty" yaml:"abort_on_fail,omitempty"`
+	RunIf           GraphPipelineRunIfModel           `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	ShouldAlwaysRun GraphPipelineAlwaysRunMode        `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
+	Uses            string                            `json:"uses,omitempty" yaml:"uses,omitempty"`
+	Inputs          []GraphPipelineWorkflowModelInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+}
+
+type GraphPipelineWorkflowModelInput map[string]interface{}
+
+type GraphPipelineRunIfModel struct {
+	Expression string `json:"expression,omitempty" yaml:"expression,omitempty"`
+}
+
+func (d *GraphPipelineAlwaysRunMode) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var value string
+	if err := unmarshal(&value); err != nil {
+		return err
+	}
+
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func (d *GraphPipelineAlwaysRunMode) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	if err := validateGraphPipelineAlwaysRunMode(value); err != nil {
+		return err
+	}
+
+	*d = GraphPipelineAlwaysRunMode(value)
+
+	return nil
+}
+
+func validateGraphPipelineAlwaysRunMode(value string) error {
+	allowedValues := []string{string(GraphPipelineAlwaysRunModeOff), string(GraphPipelineAlwaysRunModeWorkflow)}
+	if !slices.Contains(allowedValues, value) {
+		return fmt.Errorf("%s is not a valid should_always_run value (%s)", value, allowedValues)
+	}
+
+	return nil
 }
 
 type WorkflowListItemModel map[string]WorkflowModel
 
 type WorkflowModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Triggers     Triggers                            `json:"triggers,omitempty" yaml:"triggers,omitempty"`
-	BeforeRun    []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
-	AfterRun     []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
-	Meta         map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
+	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	Triggers         Triggers                            `json:"triggers,omitempty" yaml:"triggers,omitempty"`
+	StatusReportName string                              `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	BeforeRun        []string                            `json:"before_run,omitempty" yaml:"before_run,omitempty"`
+	AfterRun         []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
+	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Steps            []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
 type DockerCredentials struct {
@@ -100,10 +163,11 @@ type Container struct {
 }
 
 type AppModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description      string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	StatusReportName string                              `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
+	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
 type BitriseDataModel struct {
@@ -231,14 +295,14 @@ func (s StepRunResultsModel) error() []StepError {
 }
 
 func formatStatusReasonTimeInterval(timeInterval time.Duration) string {
-	var remaining = int(timeInterval / time.Second)
+	remaining := int(timeInterval / time.Second)
 	h := int(remaining / 3600)
 	remaining = remaining - h*3600
 	m := int(remaining / 60)
 	remaining = remaining - m*60
 	s := remaining
 
-	var formattedTimeInterval = ""
+	formattedTimeInterval := ""
 	if h > 0 {
 		formattedTimeInterval += fmt.Sprintf("%dh ", h)
 	}
