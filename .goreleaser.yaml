@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
   - go mod tidy
@@ -23,6 +25,7 @@ builds:
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
 - format: binary
+  id: default
   # Name format should match the curl install script
   name_template: >-
     {{ .ProjectName }}-
@@ -30,15 +33,30 @@ archives:
     {{- if eq .Arch "amd64" }}x86_64
     {{- else }}{{ .Arch }}{{ end }}
 
+- format: binary
+  id: s3
+  name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Tag }}"
+
 blobs:
 - provider: gs
   bucket: bitrise-cli-releases-prod
-  folder: /{{ .Tag }}
+  directory: /{{ .Tag }}
+  ids:
+  - default
+- provider: s3
+  bucket: bitrise-cli-releases-prod
+  region: us-east-1
+  endpoint: "{{ .Env.AWS_ENDPOINT_URL }}"
+  directory: /
+  ids:
+  - s3
 
 release:
   github:
     owner: bitrise-io
     name: bitrise
+  ids:
+  - default
   draft: true
   mode: replace
   footer: |

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"gopkg.in/yaml.v2"
@@ -44,10 +45,6 @@ type ConfigReader interface {
 	CleanupRepoDirs() error
 }
 
-type Logger interface {
-	Warnf(format string, args ...interface{})
-}
-
 type Merger struct {
 	configReader ConfigReader
 	logger       Logger
@@ -55,19 +52,21 @@ type Merger struct {
 	filesCount int
 }
 
-func NewMerger(configReader ConfigReader, logger Logger) Merger {
+func NewMerger(configReader ConfigReader, logger log.Logger) Merger {
 	return Merger{
 		configReader: configReader,
-		logger:       logger,
+		logger:       newDebugLogger(logger),
 	}
 }
 
 func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTreeModel, error) {
 	defer func() {
 		if err := m.configReader.CleanupRepoDirs(); err != nil {
-			m.logger.Warnf("Failed to cleanup repo dirs: %s", err)
+			m.logger.Warnf("Failed to cleanup modular config local cache dir: %s", err)
 		}
 	}()
+
+	m.logger.Debugf("Merge config modules included in %s", mainConfigPth)
 
 	mainConfigRef := ConfigReference{
 		Path: mainConfigPth,
@@ -78,10 +77,14 @@ func (m *Merger) MergeConfig(mainConfigPth string) (string, *models.ConfigFileTr
 		return "", nil, err
 	}
 
+	m.logger.Debugf("Building config tree")
+
 	configTree, err := m.buildConfigTree(mainConfigBytes, mainConfigRef, 1, nil)
 	if err != nil {
 		return "", nil, err
 	}
+
+	m.logger.Debugf("Merging config tree")
 
 	mergedConfigContent, err := configTree.Merge()
 	if err != nil {

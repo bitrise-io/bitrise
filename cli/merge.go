@@ -27,6 +27,8 @@ var mergeConfigCommand = cli.Command{
 }
 
 func mergeConfig(c *cli.Context) error {
+	logCommandParameters(c)
+
 	var configPth string
 	if c.Args().Present() {
 		configPth = c.Args().First()

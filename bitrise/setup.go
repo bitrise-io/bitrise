@@ -46,9 +46,14 @@ var PluginDependencyMap = map[string]PluginDependency{
 }
 
 func RunSetupIfNeeded(logger log.Logger) error {
-	if !configs.CheckIsSetupWasDoneForVersion(version.VERSION) {
-		log.Warnf("Setup was not performed for this version of bitrise, doing it now...")
-		return RunSetup(logger, version.VERSION, SetupModeDefault, false)
+	versionMatch, setupVersion := configs.CheckIsSetupWasDoneForVersion(version.VERSION)
+	if setupVersion == "" {
+		log.Infof("No setup was done yet, running setup now...")
+		return RunSetup(logger, version.VERSION, SetupModeMinimal, false)
+	}
+	if !versionMatch {
+		log.Infof("Setup was last performed for version %s, current version is %s. Re-running setup now...", setupVersion, version.VERSION)
+		return RunSetup(logger, version.VERSION, SetupModeMinimal, false)
 	}
 	return nil
 }

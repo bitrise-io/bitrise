@@ -85,7 +85,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
 	currentStepBundleUUID := ""
-	// TODO: add the last step bundle's envs to environments
 	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
 
 	// ------------------------------------------
@@ -199,7 +198,9 @@ func (r WorkflowRunner) activateAndRunStep(
 ) activateAndRunStepResult {
 	//
 	// Activate step
+	activateStartTime := time.Now()
 	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
 	}
@@ -257,7 +258,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	redactedStepInputs := prepareEnvsResult.RedactedStepInputs
 
 	// Run the step
-	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), redactedInputsWithType, redactedOriginalInputs)
+	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
 	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
 
@@ -889,13 +890,13 @@ func isDirEmpty(path string) (bool, error) {
 	return len(entries) == 0, nil
 }
 
-func GetBitriseConfigFromBase64Data(configBase64Str string) (models.BitriseDataModel, []string, error) {
+func GetBitriseConfigFromBase64Data(configBase64Str string, validation bitrise.ValidationType) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
 	if err != nil {
 		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
 	}
 
-	config, warnings, err := bitrise.ConfigModelFromYAMLBytes(configBase64Bytes)
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytesWithValidation(configBase64Bytes, validation)
 	if err != nil {
 		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
 	}
@@ -917,12 +918,12 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	return bitriseConfigPath, nil
 }
 
-func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string) (models.BitriseDataModel, []string, error) {
+func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath string, validation bitrise.ValidationType) (models.BitriseDataModel, []string, error) {
 	var bitriseConfig *models.BitriseDataModel
 	warnings := []string{}
 
 	if bitriseConfigBase64Data != "" {
-		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data)
+		config, warns, err := GetBitriseConfigFromBase64Data(bitriseConfigBase64Data, validation)
 		warnings = warns
 		if err != nil {
 			return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to get Bitrise config (bitrise.yml) from base 64 data: %w", err)
@@ -952,14 +953,15 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 				return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
 			}
 
-			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), filepath.Ext(bitriseConfigPath) == "json")
+			isJSON := filepath.Ext(bitriseConfigPath) == "json"
+			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), isJSON, validation)
 			warnings = warns
 			if err != nil {
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)
 			}
 			bitriseConfig = &config
 		} else {
-			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath)
+			config, warns, err := bitrise.ReadBitriseConfig(bitriseConfigPath, validation)
 			warnings = warns
 			if err != nil {
 				return models.BitriseDataModel{}, warnings, fmt.Errorf("config (%s) is not valid: %w", bitriseConfigPath, err)

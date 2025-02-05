@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/output"
@@ -73,6 +74,8 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 // --------------------
 
 func triggerCheck(c *cli.Context) error {
+	logCommandParameters(c)
+
 	warnings := []string{}
 
 	//
@@ -123,7 +126,7 @@ func triggerCheck(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath, bitrise.ValidationTypeFull)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		registerFatal(fmt.Sprintf("Failed to create config, err: %s", err), warnings, triggerParams.Format)

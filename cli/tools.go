@@ -12,6 +12,8 @@ var envmanCommand = cli.Command{
 	Usage:           "Runs an envman command.",
 	SkipFlagParsing: true,
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := runCommandWith("envman", c); err != nil {
 			failf("Command failed, error: %s", err)
 		}

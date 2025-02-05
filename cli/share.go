@@ -6,6 +6,8 @@ import (
 )
 
 func share(c *cli.Context) error {
+	logCommandParameters(c)
+
 	if err := tools.StepmanShare(); err != nil {
 		failf("Bitrise share failed, error: %s", err)
 	}

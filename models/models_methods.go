@@ -123,22 +123,38 @@ func (bundle *StepBundleModel) Normalize() error {
 		bundle.Steps[idx] = stepListItem
 	}
 
+	for i, input := range bundle.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+		bundle.Inputs[i] = input
+	}
+
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
 		bundle.Environments[i] = env
 	}
+
 	return nil
 }
 
 func (bundle *StepBundleListItemModel) Normalize() error {
+	for i, input := range bundle.Inputs {
+		if err := input.Normalize(); err != nil {
+			return err
+		}
+		bundle.Inputs[i] = input
+	}
+
 	for i, env := range bundle.Environments {
 		if err := env.Normalize(); err != nil {
 			return err
 		}
 		bundle.Environments[i] = env
 	}
+
 	return nil
 }
 
@@ -289,7 +305,29 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
-func (bundle *StepBundleListItemModel) Validate() error {
+func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel) error {
+	stepBundleDefinitionInputKeys := map[string]bool{}
+	for _, input := range stepBundleDefinition.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+		stepBundleDefinitionInputKeys[key] = true
+	}
+
+	for _, input := range bundle.Inputs {
+		if err := input.Validate(); err != nil {
+			return err
+		}
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return err
+		}
+		if _, ok := stepBundleDefinitionInputKeys[key]; !ok {
+			return fmt.Errorf("input (%s) is not defined in the step bundle definition", key)
+		}
+	}
+
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return err
@@ -300,16 +338,18 @@ func (bundle *StepBundleListItemModel) Validate() error {
 }
 
 func (bundle *StepBundleModel) Validate() ([]string, error) {
-	for _, env := range bundle.Environments {
-		if err := env.Validate(); err != nil {
-			return nil, err
-		}
-	}
 	var warnings []string
+
 	for _, stepListItem := range bundle.Steps {
 		stepID, step, err := stepListItem.GetStepIDAndStep()
 		if err != nil {
 			return warnings, err
+		}
+
+		if stepID == StepListItemWithKey {
+			return warnings, errors.New("'with' group is not allowed in a step bundle's step list")
+		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
+			return warnings, errors.New("step bundle is not allowed in a step bundle's step list")
 		}
 
 		warns, err := validateStep(stepID, step)
@@ -318,6 +358,19 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 			return warnings, err
 		}
 	}
+
+	for _, input := range bundle.Inputs {
+		if err := input.Validate(); err != nil {
+			return warnings, err
+		}
+	}
+
+	for _, env := range bundle.Environments {
+		if err := env.Validate(); err != nil {
+			return warnings, err
+		}
+	}
+
 	return warnings, nil
 }
 
@@ -357,6 +410,12 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 			return warnings, err
 		}
 
+		if stepID == StepListItemWithKey {
+			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): 'with' group is not allowed in a 'with' group's step list", workflowID)
+		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
+			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): step bundle is not allowed in a 'with' group's step list", workflowID)
+		}
+
 		warns, err := validateStep(stepID, step)
 		warnings = append(warnings, warns...)
 		if err != nil {
@@ -365,7 +424,6 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 	}
 
 	return warnings, nil
-
 }
 
 func (workflow *WorkflowModel) Validate() error {
@@ -374,19 +432,55 @@ func (workflow *WorkflowModel) Validate() error {
 			return err
 		}
 	}
+
+	return validateStatusReportName(workflow.StatusReportName)
+}
+
+const statusReportNameRegex = `^[a-zA-Z0-9,./():\-_ <>[\]|]*$`
+
+func validateStatusReportName(statusReportName string) error {
+	if len(statusReportName) > 100 {
+		return fmt.Errorf("status_report_name (%s) is too long, max length is 100 characters", statusReportName)
+	}
+
+	re := regexp.MustCompile(statusReportNameRegex)
+	if !re.MatchString(statusReportName) {
+		return fmt.Errorf("status_report_name (%s) contains invalid characters, should match the '%s' regex", statusReportName, statusReportNameRegex)
+	}
 	return nil
 }
 
 func (app *AppModel) Validate() error {
+	return app.internalValidation(true)
+}
+
+func (app *AppModel) MinimalValidation() error {
+	return app.internalValidation(false)
+}
+
+func (app *AppModel) internalValidation(full bool) error {
 	for _, env := range app.Environments {
 		if err := env.Validate(); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	if !full {
+		return nil
+	}
+
+	return validateStatusReportName(app.StatusReportName)
 }
 
 func (config *BitriseDataModel) Validate() ([]string, error) {
+	return config.internalValidation(true)
+}
+
+func (config *BitriseDataModel) MinimalValidation() ([]string, error) {
+	return config.internalValidation(false)
+}
+
+func (config *BitriseDataModel) internalValidation(full bool) ([]string, error) {
 	var warnings []string
 
 	if config.FormatVersion == "" {
@@ -394,17 +488,25 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	}
 
 	// trigger map
-	workflows := config.getWorkflowIDs()
-	pipelines := config.getPipelineIDs()
-	triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
-	warnings = append(warnings, triggerMapWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		workflows := config.getWorkflowIDs()
+		pipelines := config.getPipelineIDs()
+		triggerMapWarnings, err := config.TriggerMap.Validate(workflows, pipelines)
+		warnings = append(warnings, triggerMapWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
 	// app
-	if err := config.App.Validate(); err != nil {
+	var appValidationFunc func() error
+	if full {
+		appValidationFunc = config.App.Validate
+	} else {
+		appValidationFunc = config.App.MinimalValidation
+	}
+	if err := appValidationFunc(); err != nil {
 		return warnings, err
 	}
 	// ---
@@ -424,18 +526,22 @@ func (config *BitriseDataModel) Validate() ([]string, error) {
 	// ---
 
 	// pipelines
-	pipelineWarnings, err := validatePipelines(config)
-	warnings = append(warnings, pipelineWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		pipelineWarnings, err := validatePipelines(config)
+		warnings = append(warnings, pipelineWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
 	// stages
-	stageWarnings, err := validateStages(config)
-	warnings = append(warnings, stageWarnings...)
-	if err != nil {
-		return warnings, err
+	if full {
+		stageWarnings, err := validateStages(config)
+		warnings = append(warnings, stageWarnings...)
+		if err != nil {
+			return warnings, err
+		}
 	}
 	// ---
 
@@ -535,24 +641,35 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 			return pipelineWarnings, err
 		}
 
+		if err := validateStatusReportName(pipeline.StatusReportName); err != nil {
+			return pipelineWarnings, err
+		}
+
 		hasStages := len(pipeline.Stages) > 0
 		hasWorkflows := len(pipeline.Workflows) > 0
 
 		if hasStages && hasWorkflows {
 			return pipelineWarnings, fmt.Errorf("pipeline (%s) has both stages and workflows", pipelineID)
-		} else if !hasStages && !hasWorkflows {
-			return pipelineWarnings, fmt.Errorf("pipeline (%s) should have at least 1 stage or workflow", pipelineID)
+		}
+
+		// A pipeline is considered valid if it has neither stages nor workflows.
+		// This is useful for the WFE to be able to save a pipeline that is not yet fully defined.
+		if !hasStages && !hasWorkflows {
+			warning := fmt.Sprintf("pipeline (%s) should have at least 1 stage or workflow", pipelineID)
+			pipelineWarnings = append(pipelineWarnings, warning)
+
+			continue
 		}
 
 		if hasStages {
-			return pipelineWarnings, validateStagedPipeline(pipelineID, &pipeline, config)
+			if err := validateStagedPipeline(pipelineID, &pipeline, config); err != nil {
+				return pipelineWarnings, err
+			}
+		} else {
+			if err := validateDAGPipeline(pipelineID, &pipeline, config); err != nil {
+				return pipelineWarnings, err
+			}
 		}
-
-		//TODO: Why is this always true?
-		if hasWorkflows {
-			return pipelineWarnings, validateDAGPipeline(pipelineID, &pipeline, config)
-		}
-
 	}
 
 	return pipelineWarnings, nil
@@ -579,8 +696,23 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
-		if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
-			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+		isWorkflowVariant := pipelineWorkflow.Uses != ""
+		if isWorkflowVariant {
+			if _, ok := config.Workflows[pipelineWorkflow.Uses]; !ok {
+				return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", pipelineWorkflow.Uses, pipelineID, pipelineWorkflowID)
+			}
+
+			if _, ok := config.Workflows[pipelineWorkflowID]; ok {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a variant of another workflow, but it is also defined as a workflow", pipelineWorkflowID, pipelineID)
+			}
+		} else {
+			if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is not found in the workflow definitions", pipelineWorkflowID, pipelineID)
+			}
+
+			if 0 < len(pipelineWorkflow.Inputs) {
+				return fmt.Errorf("workflow (%s) defined in pipeline (%s) has inputs but it is not a workflow variant", pipelineWorkflowID, pipelineID)
+			}
 		}
 
 		uniqueItems := make(map[string]bool)
@@ -730,8 +862,9 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 			} else if t == StepListItemTypeBundle {
 				bundleID := strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix)
-				if _, ok := config.StepBundles[bundleID]; !ok {
-					return warnings, fmt.Errorf("step-bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
+				bundleDefinition, ok := config.StepBundles[bundleID]
+				if !ok {
+					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s), but this step-bundle is not defined", bundleID, workflowID)
 				}
 
 				bundle, err := stepListItem.GetBundle()
@@ -739,8 +872,8 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 
-				if err := bundle.Validate(); err != nil {
-					return warnings, err
+				if err := bundle.Validate(bundleDefinition); err != nil {
+					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s) has config issue: %w", bundleID, workflowID, err)
 				}
 			}
 		}
@@ -869,7 +1002,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.ValueOptions != nil && len(options.ValueOptions) > 0 {
+	if len(options.ValueOptions) > 0 {
 		hasOptions = true
 	}
 	if options.IsRequired != nil {
@@ -893,7 +1026,7 @@ func removeEnvironmentRedundantFields(env *envmanModels.EnvironmentItemModel) er
 			hasOptions = true
 		}
 	}
-	if options.Meta != nil && len(options.Meta) > 0 {
+	if len(options.Meta) > 0 {
 		hasOptions = true
 	}
 
@@ -962,7 +1095,7 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 
 	(*env)[key] = otherValue
 
-	//merge options
+	// merge options
 	options, err := env.GetOptions()
 	if err != nil {
 		return err

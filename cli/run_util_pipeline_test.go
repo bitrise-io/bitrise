@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,6 +42,7 @@ pipelines:
   dag:
     workflows:
       a: {}
+      a1: { uses: a, inputs: [key: value] }
       b: { depends_on: [a] }
       c: { depends_on: [a] }
       d: { depends_on: [a] }
@@ -102,6 +104,30 @@ workflows:
   b: {}
 `
 
+const missingWorkflowInWorkflowVariantDefinitionForDAGPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a: {}
+      b: { uses: c }
+workflows:
+  a: {}
+`
+
+const workflowVariantHasTheSameNameAsAnExistingWorkflowForDAGPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a: {}
+      b: { uses: c }
+workflows:
+  a: {}
+  b: {}
+  c: {}
+`
+
 const duplicatedDependencyDAGPipeline = `
 format_version: '13'
 pipelines:
@@ -140,6 +166,15 @@ workflows:
   c: {}
 `
 
+const emptyPipeline = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows: {}
+workflows:
+  a: {}
+`
+
 func TestValidation(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -162,6 +197,16 @@ func TestValidation(t *testing.T) {
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) defined in pipeline (dag) is not found in the workflow definitions",
 		},
 		{
+			name:    "Workflow is missing from the Workflow Variant definition",
+			config:  missingWorkflowInWorkflowVariantDefinitionForDAGPipeline,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (c) referenced in pipeline (dag) in workflow variant (b) is not found in the workflow definitions",
+		},
+		{
+			name:    "Workflow variant has the same name as an existing workflow",
+			config:  workflowVariantHasTheSameNameAsAnExistingWorkflowForDAGPipeline,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (b) defined in pipeline (dag) is a variant of another workflow, but it is also defined as a workflow",
+		},
+		{
 			name:    "Utility workflow is referenced in the DAG pipeline",
 			config:  utilityWorkflowDAGPipeline,
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (_a) defined in pipeline (dag) is a utility workflow",
@@ -177,20 +222,22 @@ func TestValidation(t *testing.T) {
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: the dependency between workflow 'b' and workflow 'c' creates a cycle in the graph",
 		},
 		{
-			name:    "Valid DAG pipeline",
-			config:  validDAGPipeline,
-			wantErr: "",
+			name:   "Valid DAG pipeline",
+			config: validDAGPipeline,
 		},
 		{
-			name:    "Valid staged pipeline",
-			config:  validStagedPipeline,
-			wantErr: "",
+			name:   "Valid staged pipeline",
+			config: validStagedPipeline,
+		},
+		{
+			name:   "Empty pipeline",
+			config: emptyPipeline,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b64Data := base64.StdEncoding.EncodeToString([]byte(tt.config))
-			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "")
+			_, _, err := CreateBitriseConfigFromCLIParams(b64Data, "", bitrise.ValidationTypeFull)
 
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)

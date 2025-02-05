@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/configs"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/models"
@@ -65,6 +66,8 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 }
 
 func trigger(c *cli.Context) error {
+	logCommandParameters(c)
+
 	// Expand cli.Context
 	var prGlobalFlagPtr *bool
 	if c.GlobalIsSet(PRKey) {
@@ -129,7 +132,7 @@ func trigger(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath)
+	bitriseConfig, warnings, err := CreateBitriseConfigFromCLIParams(triggerParams.BitriseConfigBase64Data, triggerParams.BitriseConfigPath, bitrise.ValidationTypeMinimal)
 	for _, warning := range warnings {
 		log.Warnf("warning: %s", warning)
 	}

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/log"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -17,6 +18,8 @@ var workflowListCommand = cli.Command{
 	Name:  "workflows",
 	Usage: "List of available workflows in config.",
 	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+
 		if err := workflowList(c); err != nil {
 			log.Errorf("List of available workflows in config failed, error: %s", err)
 			os.Exit(1)
@@ -206,7 +209,7 @@ func workflowList(c *cli.Context) error {
 	}
 
 	// Config validation
-	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
 	warnings = append(warnings, warns...)
 	if err != nil {
 		logger.Print(NewErrorOutput(fmt.Sprintf("Failed to create bitrise config: %s", err)))

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/bitrise"
 	"github.com/bitrise-io/bitrise/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/urfave/cli"
@@ -154,7 +155,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
 		// Config validation
-		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath)
+		_, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
 		configValidation := ValidationItemModel{
 			IsValid:  true,
 			Warnings: warns,
@@ -218,6 +219,8 @@ func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inven
 }
 
 func validate(c *cli.Context) error {
+	logCommandParameters(c)
+
 	// Expand cli.Context
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)
 	bitriseConfigPath := c.String(ConfigKey)
