@@ -27,8 +27,10 @@ const (
 type StepBundleModel struct {
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListStepItemModel             `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
+
+type StepListItemStepOrBundleModel map[string]any
 
 type StepBundleListItemModel struct {
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`

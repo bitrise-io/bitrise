@@ -111,16 +111,36 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 
 func (bundle *StepBundleModel) Normalize() error {
 	for idx, stepListItem := range bundle.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
 
-		if err := step.Normalize(); err != nil {
-			return err
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return err
+			}
+
+			if err := step.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[key] = step
+			bundle.Steps[idx] = stepListItem
+		} else if t == StepListItemTypeBundle {
+			b, err := stepListItem.GetBundle()
+			if err != nil {
+				return err
+			}
+
+			if err := b.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = b
+			bundle.Steps[idx] = stepListItem
 		}
-		stepListItem[stepID] = step
-		bundle.Steps[idx] = stepListItem
 	}
 
 	for i, input := range bundle.Inputs {
@@ -341,21 +361,38 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return warnings, err
 		}
 
-		if stepID == StepListItemWithKey {
-			return warnings, errors.New("'with' group is not allowed in a step bundle's step list")
-		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
-			return warnings, errors.New("step bundle is not allowed in a step bundle's step list")
+		if t == StepListItemTypeWith {
+			return warnings, errors.New("'with group' is not allowed in a step bundle")
 		}
 
-		warns, err := validateStep(stepID, step)
-		warnings = append(warnings, warns...)
-		if err != nil {
-			return warnings, err
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return warnings, err
+			}
+
+			warns, err := validateStep(key, *step)
+			warnings = append(warnings, warns...)
+			if err != nil {
+				return warnings, err
+			}
+		} else if t == StepListItemTypeBundle {
+			b, err := stepListItem.GetBundle()
+			if err != nil {
+				return warnings, err
+			}
+
+			// TODO: validateStep checks the step ID to
+			warns, err := b.Validate()
+			warnings = append(warnings, warns...)
+			if err != nil {
+				return warnings, err
+			}
 		}
 	}
 
@@ -1308,6 +1345,146 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 
 // ----------------------------
 // --- StepIDData
+
+func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := json.Unmarshal(b, &stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var raw map[string]interface{}
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := unmarshal(&stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := unmarshal(&stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
+	if stepListItem == nil {
+		return "", StepListItemTypeUnknown, nil
+	}
+
+	if len(*stepListItem) == 0 {
+		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
+	}
+
+	if len(*stepListItem) > 1 {
+		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+	}
+
+	for key := range *stepListItem {
+		switch {
+		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
+		case key == StepListItemWithKey:
+			return key, StepListItemTypeWith, fmt.Errorf("'with group' is not allowed in a step bundle's step list")
+		default:
+			return key, StepListItemTypeStep, nil
+		}
+	}
+
+	return "", StepListItemTypeUnknown, nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		bundle, ok := value.(StepBundleListItemModel)
+		if ok {
+			return &bundle, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a StepBundle")
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetStep() (*stepmanModels.StepModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	var stepPtr *stepmanModels.StepModel
+	for _, value := range *stepListItem {
+		s, ok := value.(stepmanModels.StepModel)
+		if ok {
+			stepPtr = &s
+			break
+		}
+
+		break
+	}
+
+	if stepPtr == nil {
+		return nil, fmt.Errorf("stepListItem is not a Step")
+	}
+
+	return stepPtr, nil
+}
 
 func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}

@@ -19,7 +19,6 @@ import (
 	"github.com/bitrise-io/bitrise/models"
 	"github.com/bitrise-io/bitrise/plugins"
 	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/bitrise/version"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -309,7 +308,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		ProjectType:    r.config.Config.ProjectType,
 	}
 
-	plan, err := createWorkflowRunPlan(
+	plan, err := models.NewWorkflowRunPlan(
 		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
 		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,
 		func() string { return uuid.Must(uuid.NewV4()).String() },
@@ -499,195 +498,6 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 	}
 
 	return nil
-}
-
-func createWorkflowRunPlan(
-	modes models.WorkflowRunModes, targetWorkflow string, workflows map[string]models.WorkflowModel,
-	stepBundles map[string]models.StepBundleModel, containers map[string]models.Container, services map[string]models.Container,
-	uuidProvider func() string,
-) (models.WorkflowRunPlan, error) {
-	var executionPlan []models.WorkflowExecutionPlan
-	withGroupPlans := map[string]models.WithGroupPlan{}
-	stepBundlePlans := map[string]models.StepBundlePlan{}
-
-	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
-	for _, workflowID := range workflowList {
-		workflow := workflows[workflowID]
-
-		var stepPlans []models.StepExecutionPlan
-
-		for _, stepListItem := range workflow.Steps {
-			key, t, err := stepListItem.GetKeyAndType()
-			if err != nil {
-				return models.WorkflowRunPlan{}, err
-			}
-
-			if t == models.StepListItemTypeStep {
-				step, err := stepListItem.GetStep()
-				if err != nil {
-					return models.WorkflowRunPlan{}, err
-				}
-
-				stepID := key
-				stepPlans = append(stepPlans, models.StepExecutionPlan{
-					UUID:   uuidProvider(),
-					StepID: stepID,
-					Step:   *step,
-				})
-			} else if t == models.StepListItemTypeWith {
-				with, err := stepListItem.GetWith()
-				if err != nil {
-					return models.WorkflowRunPlan{}, err
-				}
-
-				groupID := uuidProvider()
-
-				var containerPlan models.ContainerPlan
-				if with.ContainerID != "" {
-					containerPlan.Image = containers[with.ContainerID].Image
-				}
-
-				var servicePlans []models.ContainerPlan
-				for _, serviceID := range with.ServiceIDs {
-					servicePlans = append(servicePlans, models.ContainerPlan{Image: services[serviceID].Image})
-				}
-
-				withGroupPlans[groupID] = models.WithGroupPlan{
-					Services:  servicePlans,
-					Container: containerPlan,
-				}
-
-				for _, stepListStepItem := range with.Steps {
-					stepID, step, err := stepListStepItem.GetStepIDAndStep()
-					if err != nil {
-						return models.WorkflowRunPlan{}, err
-					}
-
-					stepPlans = append(stepPlans, models.StepExecutionPlan{
-						UUID:          uuidProvider(),
-						StepID:        stepID,
-						Step:          step,
-						WithGroupUUID: groupID,
-						ContainerID:   with.ContainerID,
-						ServiceIDs:    with.ServiceIDs,
-					})
-				}
-			} else if t == models.StepListItemTypeBundle {
-				bundleID := key
-				bundleOverride, err := stepListItem.GetBundle()
-				if err != nil {
-					return models.WorkflowRunPlan{}, err
-				}
-
-				bundleDefinition, ok := stepBundles[bundleID]
-				if !ok {
-					return models.WorkflowRunPlan{}, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
-				}
-
-				var bundleEnvs []envmanModels.EnvironmentItemModel
-
-				bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)
-				bundleEnvs = append(bundleEnvs, bundleOverride.Environments...)
-
-				bundleEnvs = append(bundleEnvs, bundleDefinition.Inputs...)
-
-				// Filter undefined bundleOverride inputs
-				bundleDefinitionInputKeys := map[string]bool{}
-				for _, input := range bundleDefinition.Inputs {
-					key, _, err := input.GetKeyValuePair()
-					if err != nil {
-						return models.WorkflowRunPlan{}, err
-					}
-
-					bundleDefinitionInputKeys[key] = true
-				}
-				for _, input := range bundleOverride.Inputs {
-					key, _, err := input.GetKeyValuePair()
-					if err != nil {
-						return models.WorkflowRunPlan{}, err
-					}
-
-					if _, ok := bundleDefinitionInputKeys[key]; ok {
-						bundleEnvs = append(bundleEnvs, input)
-					}
-				}
-
-				bundleUUID := uuidProvider()
-
-				stepBundlePlans[bundleUUID] = models.StepBundlePlan{
-					ID: bundleID,
-				}
-
-				for idx, stepListStepItem := range bundleDefinition.Steps {
-					stepID, step, err := stepListStepItem.GetStepIDAndStep()
-					if err != nil {
-						return models.WorkflowRunPlan{}, err
-					}
-
-					stepPlan := models.StepExecutionPlan{
-						UUID:           uuidProvider(),
-						StepID:         stepID,
-						Step:           step,
-						StepBundleUUID: bundleUUID,
-					}
-
-					if idx == 0 {
-						stepPlan.StepBundleEnvs = bundleEnvs
-					}
-
-					stepPlans = append(stepPlans, stepPlan)
-				}
-			}
-		}
-
-		workflowTitle := workflow.Title
-		if workflowTitle == "" {
-			workflowTitle = workflowID
-		}
-
-		executionPlan = append(executionPlan, models.WorkflowExecutionPlan{
-			UUID:                 uuidProvider(),
-			WorkflowID:           workflowID,
-			Steps:                stepPlans,
-			WorkflowTitle:        workflowTitle,
-			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
-		})
-	}
-
-	cliVersion := version.VERSION
-	if version.IsAlternativeInstallation {
-		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
-	}
-
-	return models.WorkflowRunPlan{
-		Version:                 cliVersion,
-		LogFormatVersion:        models.LogFormatVersion,
-		CIMode:                  modes.CIMode,
-		PRMode:                  modes.PRMode,
-		DebugMode:               modes.DebugMode,
-		IsSteplibOfflineMode:    modes.IsSteplibOfflineMode,
-		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
-		SecretFilteringMode:     modes.SecretFilteringMode,
-		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
-		WithGroupPlans:          withGroupPlans,
-		StepBundlePlans:         stepBundlePlans,
-		ExecutionPlan:           executionPlan,
-	}, nil
-}
-
-func walkWorkflows(workflowID string, workflows map[string]models.WorkflowModel, workflowStack []string) []string {
-	workflow := workflows[workflowID]
-	for _, before := range workflow.BeforeRun {
-		workflowStack = walkWorkflows(before, workflows, workflowStack)
-	}
-
-	workflowStack = append(workflowStack, workflowID)
-
-	for _, after := range workflow.AfterRun {
-		workflowStack = walkWorkflows(after, workflows, workflowStack)
-	}
-
-	return workflowStack
 }
 
 func printAvailableWorkflows(config models.BitriseDataModel) {
