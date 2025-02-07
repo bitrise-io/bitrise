@@ -216,13 +216,15 @@ func NewWorkflowRunPlan(
 
 func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, stepBundles map[string]StepBundleModel, stepBundlePlans map[string]StepBundlePlan, uuidProvider func() string) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
-	for idx, stepListStepOrBundleItem := range bundleDefinition.Steps {
+	stepIDX := -1
+	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
 		key, t, err := stepListStepOrBundleItem.GetKeyAndType()
 		if err != nil {
 			return nil, err
 		}
 
 		if t == StepListItemTypeStep {
+			stepIDX++
 			step, err := stepListStepOrBundleItem.GetStep()
 			if err != nil {
 				return nil, err
@@ -236,7 +238,7 @@ func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bund
 				StepBundleUUID: bundleUUID,
 			}
 
-			if idx == 0 {
+			if stepIDX == 0 {
 				stepPlan.StepBundleEnvs = bundleEnvs
 			}
 
@@ -257,6 +259,7 @@ func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bund
 			if err != nil {
 				return nil, err
 			}
+			envs = append(bundleEnvs, envs...)
 
 			uuid := uuidProvider()
 
@@ -306,10 +309,6 @@ func gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition S
 	}
 
 	return bundleEnvs, nil
-}
-
-func createExecutionPlanForBundle() {
-
 }
 
 func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {

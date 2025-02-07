@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/version"
+	envmanModels "github.com/bitrise-io/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,6 +118,67 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 						{UUID: "uuid_7", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
 						{UUID: "uuid_8", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
 						{UUID: "uuid_9", StepID: "bundle3-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested step bundle inputs",
+			modes:          WorkflowRunModes{},
+			uuidProvider:   (&MockUUIDProvider{}).UUID,
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input1": "value1"},
+						{"input2": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input1": "value3"},
+						{"input3": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input2": "value2"},
+							},
+						}},
+						{"bundle2-step1": stepmanModels.StepModel{}},
+						{"bundle2-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle2": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input3": "value3"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          version.VERSION,
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle2"},
+					"uuid_2": {ID: "bundle1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{{"input1": "value3"}, {"input3": ""}, {"input3": "value3"}, {"input1": "value1"}, {"input2": ""}, {"input2": "value2"}}},
+						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2"},
+						{UUID: "uuid_5", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{{"input1": "value3"}, {"input3": ""}, {"input3": "value3"}}},
+						{UUID: "uuid_6", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
 					}},
 				},
 			},
