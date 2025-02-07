@@ -357,7 +357,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	return nil
 }
 
-func (bundle *StepBundleModel) Validate() ([]string, error) {
+func (bundle *StepBundleModel) Validate(stepBundles map[string]StepBundleModel) ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
@@ -382,15 +382,18 @@ func (bundle *StepBundleModel) Validate() ([]string, error) {
 				return warnings, err
 			}
 		} else if t == StepListItemTypeBundle {
-			b, err := stepListItem.GetBundle()
+			override, err := stepListItem.GetBundle()
 			if err != nil {
 				return warnings, err
 			}
 
+			definition, ok := stepBundles[key]
+			if !ok {
+				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
+			}
+
 			// TODO: validateStep checks the step ID to
-			warns, err := b.Validate()
-			warnings = append(warnings, warns...)
-			if err != nil {
+			if err := override.Validate(definition); err != nil {
 				return warnings, err
 			}
 		}
@@ -629,7 +632,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("step bundle has empty ID defined")
 		}
 
-		warns, err := bundle.Validate()
+		warns, err := bundle.Validate(config.StepBundles)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)

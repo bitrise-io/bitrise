@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/version"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewWorkflowRunPlan(t *testing.T) {
-	type args struct {
+	tests := []struct {
+		name           string
 		modes          WorkflowRunModes
 		targetWorkflow string
 		workflows      map[string]WorkflowModel
@@ -16,22 +20,122 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 		containers     map[string]Container
 		services       map[string]Container
 		uuidProvider   func() string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    WorkflowRunPlan
-		wantErr assert.ErrorAssertionFunc
+		want           WorkflowRunPlan
+		wantErr        assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name:           "step bundle used multiple times",
+			modes:          WorkflowRunModes{},
+			uuidProvider:   (&MockUUIDProvider{}).UUID,
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step1": stepmanModels.StepModel{}},
+						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"step2": stepmanModels.StepModel{}},
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          version.VERSION,
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_2": {ID: "bundle1"},
+					"uuid_6": {ID: "bundle1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_9", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{}},
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2"},
+						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2"},
+						{UUID: "uuid_5", StepID: "step2", Step: stepmanModels.StepModel{}},
+						{UUID: "uuid_7", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_6"},
+						{UUID: "uuid_8", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_6"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested step bundles",
+			modes:          WorkflowRunModes{},
+			uuidProvider:   (&MockUUIDProvider{}).UUID,
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle2": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"bundle2-step1": stepmanModels.StepModel{}},
+						{"bundle2-step2": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle3": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle3-step1": stepmanModels.StepModel{}},
+						{"bundle::bundle2": StepBundleListItemModel{}},
+						{"bundle3-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle3": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          version.VERSION,
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle3"},
+					"uuid_3": {ID: "bundle2"},
+					"uuid_4": {ID: "bundle1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_10", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle3-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+						{UUID: "uuid_5", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_4"},
+						{UUID: "uuid_6", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_4"},
+						{UUID: "uuid_7", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
+						{UUID: "uuid_8", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
+						{UUID: "uuid_9", StepID: "bundle3-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+					}},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewWorkflowRunPlan(tt.args.modes, tt.args.targetWorkflow, tt.args.workflows, tt.args.stepBundles, tt.args.containers, tt.args.services, tt.args.uuidProvider)
-			if !tt.wantErr(t, err, fmt.Sprintf("NewWorkflowRunPlan(%v, %v, %v, %v, %v, %v, %v)", tt.args.modes, tt.args.targetWorkflow, tt.args.workflows, tt.args.stepBundles, tt.args.containers, tt.args.services, tt.args.uuidProvider)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "NewWorkflowRunPlan(%v, %v, %v, %v, %v, %v, %v)", tt.args.modes, tt.args.targetWorkflow, tt.args.workflows, tt.args.stepBundles, tt.args.containers, tt.args.services, tt.args.uuidProvider)
+			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, tt.uuidProvider)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+type MockUUIDProvider struct {
+	i int
+}
+
+func (m *MockUUIDProvider) UUID() string {
+	m.i++
+	return fmt.Sprintf("uuid_%d", m.i)
 }
