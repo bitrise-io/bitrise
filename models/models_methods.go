@@ -1345,9 +1345,6 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 	return "", errors.New("StageListItemModel does not contain a key-value pair")
 }
 
-// ----------------------------
-// --- StepIDData
-
 func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
@@ -1574,6 +1571,9 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 
 	return nil
 }
+
+// ----------------------------
+// --- StepIDData
 
 func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepmanModels.StepModel, error) {
 	if stepListStepItem == nil {
