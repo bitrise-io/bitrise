@@ -392,7 +392,6 @@ func (bundle *StepBundleModel) Validate(stepBundles map[string]StepBundleModel) 
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
 
-			// TODO: validateStep checks the step ID to
 			if err := override.Validate(definition); err != nil {
 				return warnings, err
 			}
