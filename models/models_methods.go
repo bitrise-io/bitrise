@@ -126,7 +126,7 @@ func (bundle *StepBundleModel) Normalize() error {
 				return err
 			}
 
-			stepListItem[key] = step
+			stepListItem[key] = *step
 			bundle.Steps[idx] = stepListItem
 		} else if t == StepListItemTypeBundle {
 			b, err := stepListItem.GetBundle()
@@ -138,7 +138,7 @@ func (bundle *StepBundleModel) Normalize() error {
 				return err
 			}
 
-			stepListItem[StepListItemStepBundleKeyPrefix+key] = b
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = *b
 			bundle.Steps[idx] = stepListItem
 		}
 	}
@@ -1471,22 +1471,15 @@ func (stepListItem *StepListItemStepOrBundleModel) GetStep() (*stepmanModels.Ste
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	var stepPtr *stepmanModels.StepModel
 	for _, value := range *stepListItem {
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
-			stepPtr = &s
-			break
+			return &s, nil
 		}
-
 		break
 	}
 
-	if stepPtr == nil {
-		return nil, fmt.Errorf("stepListItem is not a Step")
-	}
-
-	return stepPtr, nil
+	return nil, fmt.Errorf("stepListItem is not a Step")
 }
 
 func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
@@ -1680,22 +1673,15 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	var stepPtr *stepmanModels.StepModel
 	for _, value := range *stepListItem {
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
-			stepPtr = &s
-			break
+			return &s, nil
 		}
-
 		break
 	}
 
-	if stepPtr == nil {
-		return nil, fmt.Errorf("stepListItem is not a Step")
-	}
-
-	return stepPtr, nil
+	return nil, fmt.Errorf("stepListItem is not a Step")
 }
 
 // ----------------------------
