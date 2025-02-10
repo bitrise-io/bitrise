@@ -25,7 +25,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 		wantErr        assert.ErrorAssertionFunc
 	}{
 		{
-			name:           "step bundle used multiple times",
+			name:           "order of steps - step bundle used multiple times",
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
@@ -68,7 +68,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			},
 		},
 		{
-			name:           "nested step bundles",
+			name:           "order of steps -  nested step bundles",
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
@@ -175,9 +175,21 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
-						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{{"input1": "value3"}, {"input3": ""}, {"input3": "value3"}, {"input1": "value1"}, {"input2": ""}, {"input2": "value2"}}},
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"},
+							// bundle1 definition inputs
+							{"input1": "value1"}, {"input2": ""},
+							// bundle1 override inputs
+							{"input2": "value2"}}},
 						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2"},
-						{UUID: "uuid_5", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{{"input1": "value3"}, {"input3": ""}, {"input3": "value3"}}},
+						{UUID: "uuid_5", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"}}},
 						{UUID: "uuid_6", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
 					}},
 				},

@@ -214,6 +214,21 @@ func NewWorkflowRunPlan(
 	}, nil
 }
 
+func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
+	workflow := workflows[workflowID]
+	for _, before := range workflow.BeforeRun {
+		workflowStack = walkWorkflows(before, workflows, workflowStack)
+	}
+
+	workflowStack = append(workflowStack, workflowID)
+
+	for _, after := range workflow.AfterRun {
+		workflowStack = walkWorkflows(after, workflows, workflowStack)
+	}
+
+	return workflowStack
+}
+
 func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, stepBundles map[string]StepBundleModel, stepBundlePlans map[string]StepBundlePlan, uuidProvider func() string) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	stepIDX := -1
@@ -309,19 +324,4 @@ func gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition S
 	}
 
 	return bundleEnvs, nil
-}
-
-func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
-	workflow := workflows[workflowID]
-	for _, before := range workflow.BeforeRun {
-		workflowStack = walkWorkflows(before, workflows, workflowStack)
-	}
-
-	workflowStack = append(workflowStack, workflowID)
-
-	for _, after := range workflow.AfterRun {
-		workflowStack = walkWorkflows(after, workflows, workflowStack)
-	}
-
-	return workflowStack
 }
