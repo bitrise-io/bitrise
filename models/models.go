@@ -19,12 +19,15 @@ const (
 )
 
 const (
-	FormatVersion                   = "19"
+	FormatVersion                   = "20"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
 
 type StepBundleModel struct {
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
@@ -33,6 +36,9 @@ type StepBundleModel struct {
 type StepListItemStepOrBundleModel map[string]any
 
 type StepBundleListItemModel struct {
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
