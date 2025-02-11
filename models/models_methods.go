@@ -664,6 +664,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 
 		bundleIDs = append(bundleIDs, bundleID)
 	}
+	sort.Strings(bundleIDs)
 
 	for _, bundleID := range bundleIDs {
 		bundle := config.StepBundles[bundleID]
