@@ -8,15 +8,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/heimdalr/dag"
-
 	"github.com/bitrise-io/bitrise/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/heimdalr/dag"
 )
 
+// TODO: can we replace these with slices package functions?
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
 		if t == title {
@@ -34,6 +35,35 @@ func removeWorkflowName(title string, workflowStack []string) []string {
 		}
 	}
 	return newStack
+}
+
+func checkStepBundleReferenceCycle(stepBundleID string, stepBundle StepBundleModel, bitriseConfig BitriseDataModel, stepBundleStack []string) error {
+	if sliceutil.IsStringInSlice(stepBundleID, stepBundleStack) {
+		stackStr := ""
+		for _, aStepBundleID := range stepBundleStack {
+			stackStr += aStepBundleID + " -> "
+		}
+		stackStr += stepBundleID
+		return fmt.Errorf("step bundle reference cycle found: %s", stackStr)
+	}
+	stepBundleStack = append(stepBundleStack, stepBundleID)
+
+	for _, stepListItem := range stepBundle.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			return err
+		}
+		if t == StepListItemTypeBundle {
+			definition := bitriseConfig.StepBundles[key]
+
+			err := checkStepBundleReferenceCycle(key, definition, bitriseConfig, stepBundleStack)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitriseConfig BitriseDataModel, workflowStack []string) error {
@@ -357,7 +387,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	return nil
 }
 
-func (bundle *StepBundleModel) Validate(stepBundles map[string]StepBundleModel) ([]string, error) {
+func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel) ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
@@ -387,7 +417,7 @@ func (bundle *StepBundleModel) Validate(stepBundles map[string]StepBundleModel) 
 				return warnings, err
 			}
 
-			definition, ok := stepBundles[key]
+			definition, ok := stepBundleDefinitions[key]
 			if !ok {
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
@@ -626,9 +656,20 @@ func validateContainers(config BitriseDataModel) error {
 func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	var warnings []string
 
-	for bundleID, bundle := range config.StepBundles {
+	bundleIDs := make([]string, len(config.StepBundles))
+	for bundleID := range config.StepBundles {
 		if bundleID == "" {
 			return warnings, fmt.Errorf("step bundle has empty ID defined")
+		}
+
+		bundleIDs = append(bundleIDs, bundleID)
+	}
+
+	for _, bundleID := range bundleIDs {
+		bundle := config.StepBundles[bundleID]
+
+		if err := checkStepBundleReferenceCycle(bundleID, bundle, config, []string{}); err != nil {
+			return warnings, err
 		}
 
 		warns, err := bundle.Validate(config.StepBundles)
