@@ -1,7 +1,22 @@
 format_version: "13"
-default_step_lib_source: https://github.com/ofalvai/bitrise-steplib-playground.git
+
+# Note the unusual steplib source here :)
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib-playground.git
 
 workflows:
   step-executable-test:
     steps:
-    - dummy@1.0.0: { }
+
+    - script:
+        title: Bash toolkit step
+        inputs:
+        - content: echo 'Hello World!'
+
+    - dummy@1.0.0:
+        title: Go toolkit step with prebuilt binary
+    
+    - share-pipeline-variable@1.0.0:
+        title: Go toolkit step without prebuilt binary
+        inputs:
+        - variables: HELLO=WORLD
+    
