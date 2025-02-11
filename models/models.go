@@ -92,6 +92,7 @@ type GraphPipelineWorkflowModel struct {
 	ShouldAlwaysRun GraphPipelineAlwaysRunMode        `json:"should_always_run,omitempty" yaml:"should_always_run,omitempty"`
 	Uses            string                            `json:"uses,omitempty" yaml:"uses,omitempty"`
 	Inputs          []GraphPipelineWorkflowModelInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Parallel        *int                              `json:"parallel,omitempty" yaml:"parallel,omitempty"`
 }
 
 type GraphPipelineWorkflowModelInput map[string]interface{}
