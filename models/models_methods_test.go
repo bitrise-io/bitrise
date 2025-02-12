@@ -1078,6 +1078,52 @@ workflows:
 `),
 			wantErr: "step bundle (print-hello) referenced in workflow (print-hellos) has config issue: input (FIRST_NAME) is not defined in the step bundle definition",
 		},
+		{
+			name: "Invalid bitrise.yml: step bundle circular reference",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  bundle_1:
+    steps:
+    - bundle::bundle_3: { }
+
+  bundle_2:
+    steps:
+    - bundle::bundle_1: { }
+
+  bundle_3:
+    steps:
+    - bundle::bundle_2: { }
+
+workflows:
+  workflow_1:
+    steps:
+    - bundle::bundle_3: { }
+`),
+			wantErr: "step bundle reference cycle found: bundle_1 -> bundle_3 -> bundle_2 -> bundle_1",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle self reference",
+			config: createConfig(t, `
+format_version: "15"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+step_bundles:
+  bundle_1:
+    steps:
+    - bundle::bundle_1: { }
+
+workflows:
+  workflow_1:
+    steps:
+    - bundle::bundle_1: { }
+`),
+			wantErr: "step bundle reference cycle found: bundle_1 -> bundle_1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
