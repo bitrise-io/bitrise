@@ -31,6 +31,7 @@ func TestReadAgentConfig(t *testing.T) {
 					SourceDir:          "/opt/bitrise/workspace/ef7a9665e8b6408b",
 					DeployDir:          "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/artifacts",
 					TestDeployDir:      "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/test_results",
+					HTMLReportDir:      "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/html_reports",
 				},
 				AgentHooks{
 					CleanupOnBuildStart: []string{"$BITRISE_DEPLOY_DIR"},
@@ -50,6 +51,7 @@ func TestReadAgentConfig(t *testing.T) {
 					SourceDir:          "/opt/bitrise/workspace",
 					DeployDir:          "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/artifacts",
 					TestDeployDir:      "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/test_results",
+					HTMLReportDir:      "/opt/bitrise/ef7a9665e8b6408b/80b66786-d011-430f-9c68-00e9416a7325/html_reports",
 				},
 				AgentHooks{},
 			},
