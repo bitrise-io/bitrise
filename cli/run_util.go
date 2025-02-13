@@ -145,7 +145,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 
-		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
+		// Shut down containers if the step is in a 'With group', and it's the last step in the group
 		if currentStepGroupID != "" {
 			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
 			if isLastStepInWorkflow || doesStepGroupChange {

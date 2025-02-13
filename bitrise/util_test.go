@@ -313,18 +313,6 @@ func TestConfigModelFromYAMLFileContent_StepListValidation(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "Invalid bitrise.yml: step bundle in a step bundle's steps list",
-			config: `
-format_version: '11'
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-step_bundles:
-  build: {}
-  test:
-    steps:
-    - bundle::build: {}`,
-			wantErr: "step bundle (test) has config issue: step bundle is not allowed in a step bundle's step list",
-		},
-		{
 			name: "Invalid bitrise.yml: with group in a step bundle's steps list",
 			config: `
 format_version: '11'
@@ -333,10 +321,10 @@ step_bundles:
   test:
     steps:
     - with: {}`,
-			wantErr: "step bundle (test) has config issue: 'with' group is not allowed in a step bundle's step list",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
-			name: "Invalid bitrise.yml: step bundle in a 'with' group's steps list",
+			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
 			config: `
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -351,10 +339,10 @@ workflows:
         - postgres
         steps:
         - bundle::test: {}`,
-			wantErr: "invalid 'with' group in workflow (primary): step bundle is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
-			name: "Invalid bitrise.yml: with group in a 'with' group's steps list",
+			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
 			config: `
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
@@ -369,13 +357,12 @@ workflows:
         - postgres
         steps:
         - with: {}`,
-			wantErr: "invalid 'with' group in workflow (primary): 'with' group is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), false, ValidationTypeFull)
-			require.Equal(t, []string(nil), warns)
+			_, _, err := ConfigModelFromFileContent([]byte(tt.config), false, ValidationTypeFull)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {
@@ -392,24 +379,6 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "Invalid bitrise.yml: step bundle in a step bundle's steps list",
-			config: `{
-  "format_version": "11",
-  "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
-  "step_bundles": {
-    "build": {},
-    "test": {
-      "steps": [
-        {
-          "bundle::build": {}
-        }
-      ]
-    }
-  }
-}`,
-			wantErr: "step bundle (test) has config issue: step bundle is not allowed in a step bundle's step list",
-		},
-		{
 			name: "Invalid bitrise.yml: with group in a step bundle's steps list",
 			config: `{
   "format_version": "11",
@@ -424,10 +393,10 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "step bundle (test) has config issue: 'with' group is not allowed in a step bundle's step list",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
-			name: "Invalid bitrise.yml: step bundle in a 'with' group's steps list",
+			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
 			config: `{
   "format_version": "11",
   "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
@@ -455,10 +424,10 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "invalid 'with' group in workflow (primary): step bundle is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
-			name: "Invalid bitrise.yml: with group in a 'with' group's steps list",
+			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
 			config: `{
   "format_version": "11",
   "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
@@ -486,13 +455,12 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "invalid 'with' group in workflow (primary): 'with' group is not allowed in a 'with' group's step list",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, warns, err := ConfigModelFromFileContent([]byte(tt.config), true, ValidationTypeFull)
-			require.Equal(t, []string(nil), warns)
+			_, _, err := ConfigModelFromFileContent([]byte(tt.config), true, ValidationTypeFull)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			} else {

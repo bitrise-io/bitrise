@@ -10,9 +10,45 @@ step_bundles:
         inputs:
         - content: echo "Hello $name!"
 
+  bundle1:
+    inputs:
+    - bundle1_input1: bundle1_input1
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            echo "bundle1"
+            echo "bundle1_input1: $bundle1_input1"
+            echo "bundle2_input1: $bundle2_input1"
+
+  bundle2:
+    inputs:
+    - bundle2_input1: bundle2_input1
+    steps:
+    - bundle::bundle1: { }
+    - bundle::bundle1:
+        inputs:
+        - bundle1_input1: bundle1_input1_override
+    - script:
+        inputs:
+        - content: |-
+            echo "bundle2"
+            echo "bundle1_input1: $bundle1_input1"
+            echo "bundle2_input1: $bundle2_input1"
+
 workflows:
   test_step_bundle_inputs:
     steps:
     - bundle::print_hello:
         inputs:
         - name: Bitrise
+
+  test_nested_step_bundle:
+    steps:
+    - bundle::bundle2: { }
+    - script:
+        inputs:
+        - content: |-
+            echo "workflow step"
+            echo "bundle1_input1: $bundle1_input1"
+            echo "bundle2_input1: $bundle2_input1"
