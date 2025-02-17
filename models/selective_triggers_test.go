@@ -239,7 +239,7 @@ push:
 push:
 - branch: main
   priority: -101`,
-			wantErr: "'triggers.push[1]': priority (-101) should be between -100 and 100",
+			wantErr: "'triggers.push[0]': priority (-101) should be between -100 and 100",
 		},
 	}
 	for _, tt := range tests {

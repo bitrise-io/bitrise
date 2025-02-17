@@ -519,9 +519,13 @@ func validateStatusReportName(statusReportName string) error {
 	return nil
 }
 
-func validatePriority(priority int) error {
-	if priority > 100 || priority < -100 {
-		return fmt.Errorf("priority (%d) should be between -100 and 100", priority)
+func validatePriority(priority *int) error {
+	if priority == nil {
+		return nil
+	}
+
+	if *priority > 100 || *priority < -100 {
+		return fmt.Errorf("priority (%d) should be between -100 and 100", *priority)
 	}
 	return nil
 }

@@ -65,7 +65,7 @@ type PipelineModel struct {
 	StatusReportName string                             `json:"status_report_name,omitempty" yaml:"status_report_name,omitempty"`
 	Stages           []StageListItemModel               `json:"stages,omitempty" yaml:"stages,omitempty"`
 	Workflows        GraphPipelineWorkflowListItemModel `json:"workflows,omitempty" yaml:"workflows,omitempty"`
-	Priority         int                                `json:"priority,omitempty" yaml:"priority,omitempty"`
+	Priority         *int                               `json:"priority,omitempty" yaml:"priority,omitempty"`
 }
 
 type StageListItemModel map[string]StageModel
@@ -155,7 +155,7 @@ type WorkflowModel struct {
 	AfterRun         []string                            `json:"after_run,omitempty" yaml:"after_run,omitempty"`
 	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps            []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
-	Priority         int                                 `json:"priority,omitempty" yaml:"priority,omitempty"`
+	Priority         *int                                `json:"priority,omitempty" yaml:"priority,omitempty"`
 	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
