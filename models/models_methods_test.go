@@ -586,7 +586,7 @@ func TestValidateConfig(t *testing.T) {
 		pipeline.StatusReportName += "a"
 		bitriseData.Pipelines["pipeline1"] = pipeline
 		_, err = bitriseData.Validate()
-		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") is too long, max length is 100 characters")
+		require.EqualError(t, err, "pipeline (pipeline1) has invalid status_report_name: status_report_name ("+pipeline.StatusReportName+") is too long, max length is 100 characters")
 	}
 
 	t.Log("validate pipeline status report name - allowed characters")
@@ -621,7 +621,7 @@ func TestValidateConfig(t *testing.T) {
 		pipeline.StatusReportName += "*"
 		bitriseData.Pipelines["pipeline1"] = pipeline
 		_, err = bitriseData.Validate()
-		require.EqualError(t, err, "status_report_name ("+pipeline.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
+		require.EqualError(t, err, "pipeline (pipeline1) has invalid status_report_name: status_report_name ("+pipeline.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
 	}
 }
 

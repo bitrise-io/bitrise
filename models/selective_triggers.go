@@ -18,6 +18,7 @@ type Triggers struct {
 
 type PushGitEventTriggerItem struct {
 	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority      *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
 	Branch        any   `json:"branch,omitempty" yaml:"branch,omitempty"`
 	CommitMessage any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
 	ChangedFiles  any   `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
@@ -25,6 +26,7 @@ type PushGitEventTriggerItem struct {
 
 type PullRequestGitEventTriggerItem struct {
 	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority      *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
 	DraftEnabled  *bool `json:"draft_enabled,omitempty" yaml:"draft_enabled,omitempty"`
 	SourceBranch  any   `json:"source_branch,omitempty" yaml:"source_branch,omitempty"`
 	TargetBranch  any   `json:"target_branch,omitempty" yaml:"target_branch,omitempty"`
@@ -35,8 +37,9 @@ type PullRequestGitEventTriggerItem struct {
 }
 
 type TagGitEventTriggerItem struct {
-	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
+	Enabled  *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
+	Name     any   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 func (pushItem PushGitEventTriggerItem) toString() string {
@@ -195,11 +198,16 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedPushTrigger, "enabled", "branch", "commit_message", "changed_files"); err != nil {
+	if err := ensureKeys(stringKeyedPushTrigger, "enabled", "priority", "branch", "commit_message", "changed_files"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedPushTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedPushTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -221,6 +229,7 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 
 	return &PushGitEventTriggerItem{
 		Enabled:       enabled,
+		Priority:      priority,
 		Branch:        branch,
 		CommitMessage: commitMessage,
 		ChangedFiles:  changedFiles,
@@ -238,11 +247,16 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedPullRequestTrigger, "enabled", "source_branch", "target_branch", "draft_enabled", "label", "comment", "commit_message", "changed_files"); err != nil {
+	if err := ensureKeys(stringKeyedPullRequestTrigger, "enabled", "priority", "source_branch", "target_branch", "draft_enabled", "label", "comment", "commit_message", "changed_files"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedPullRequestTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedPullRequestTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -284,6 +298,7 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 
 	return &PullRequestGitEventTriggerItem{
 		Enabled:       enabled,
+		Priority:      priority,
 		SourceBranch:  sourceBranch,
 		TargetBranch:  targetBranch,
 		DraftEnabled:  draftEnabled,
@@ -305,11 +320,16 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedTagTrigger, "enabled", "name"); err != nil {
+	if err := ensureKeys(stringKeyedTagTrigger, "enabled", "priority", "name"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedTagTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedTagTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -320,8 +340,9 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 	}
 
 	return &TagGitEventTriggerItem{
-		Enabled: enabled,
-		Name:    name,
+		Enabled:  enabled,
+		Priority: priority,
+		Name:     name,
 	}, nil
 }
 
@@ -358,6 +379,35 @@ func boolPtrValue(item map[string]any, key string) (*bool, error) {
 	}
 
 	return &boolValue, nil
+}
+func priorityValue(item map[string]any) (*int, error) {
+	valuePtr, err := intPtrValue(item, "priority")
+	if err != nil {
+		return nil, err
+	}
+	if valuePtr == nil {
+		return nil, nil
+	}
+
+	if *valuePtr > 100 || *valuePtr < -100 {
+		// "priority (%d) should be between -100 and 100", priority
+		return nil, fmt.Errorf("priority (%d) should be between -100 and 100", *valuePtr)
+	}
+	return valuePtr, nil
+}
+
+func intPtrValue(item map[string]any, key string) (*int, error) {
+	value, ok := item[key]
+	if !ok {
+		return nil, nil
+	}
+
+	intValue, ok := value.(int)
+	if !ok {
+		return nil, fmt.Errorf("'%s' value should be an integer", key)
+	}
+
+	return &intValue, nil
 }
 
 func ensureKeys(item map[string]any, allowedKeys ...string) error {
