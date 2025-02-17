@@ -669,6 +669,25 @@ workflows:
 `,
 			wantErr: "pipeline (pipeline1) has both stages and workflows",
 		},
+		{
+			name: "invalid priority",
+			config: `
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+pipelines:
+  pipeline1:
+    priority: -101
+    stages:
+    - stage1: {}
+stages:
+  stage1:
+    workflow1: {}
+workflows:
+  workflow1: {}
+`,
+			wantErr: "pipeline (pipeline1) has invalid priority: priority (-101) should be between -100 and 100",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1141,19 +1160,38 @@ workflows:
 
 // Workflow
 func TestValidateWorkflow(t *testing.T) {
-	t.Log("before-after test")
-	{
-		workflow := WorkflowModel{
-			BeforeRun: []string{"befor1", "befor2", "befor3"},
-			AfterRun:  []string{"after1", "after2", "after3"},
-		}
+	tests := []struct {
+		name      string
+		config    string
+		wantWarns []string
+		wantErr   string
+	}{
+		{
+			name: "before-after test",
+			config: `
+format_version: 13
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-		require.NoError(t, workflow.Validate())
-	}
-
-	t.Log("invalid workflow - Invalid env: more than 2 fields")
-	{
-		configStr := `
+workflows:
+  workflow_1:
+    before_run:
+    - before1
+    - before2
+    - before3
+    after_run:
+    - after1
+    - after2
+    - after3
+  before1:
+  before2:
+  before3:
+  after1:
+  after2:
+  after3:`,
+		},
+		{
+			name: "invalid workflow - Invalid env: more than 2 fields",
+			config: `
 format_version: 1.4.0
 
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -1170,22 +1208,13 @@ workflows:
         title: Should fail
         inputs:
         - content: echo "Hello"
-          BAD_KEY: value
-`
-
-		config := BitriseDataModel{}
-		require.NoError(t, yaml.Unmarshal([]byte(configStr), &config))
-		require.NoError(t, config.Normalize())
-
-		warnings, err := config.Validate()
-		require.Error(t, err)
-		require.Equal(t, true, strings.Contains(err.Error(), "more than 2 keys specified: [BAD_KEY content opts]"))
-		require.Equal(t, 0, len(warnings))
-	}
-
-	t.Log("valid workflow - Warning: duplicated inputs")
-	{
-		configStr := `format_version: 1.4.0
+          BAD_KEY: value`,
+			wantErr: "Invalid environment (map[BAD_KEY:value content:echo \"Hello\"]), err: more than 1 environment key specified: [BAD_KEY content]",
+		},
+		{
+			name: "valid workflow - Warning: duplicated inputs",
+			config: `
+format_version: 1.4.0
 
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
@@ -1196,38 +1225,86 @@ workflows:
         title: Should fail
         inputs:
         - content: echo "Hello"
-        - content: echo "Hello"
-`
+        - content: echo "Hello"`,
+			wantWarns: []string{"invalid step: duplicated input found: (content)"},
+		},
+		{
+			name: "validate workflow status report name - max length",
+			config: `
+format_version: 1.4.0
 
-		config := BitriseDataModel{}
-		require.NoError(t, yaml.Unmarshal([]byte(configStr), &config))
-		require.NoError(t, config.Normalize())
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
-		warnings, err := config.Validate()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(warnings))
+workflows:
+  target:
+    status_report_name: ` + strings.Repeat("a", 100),
+		},
+		{
+			name: "validate workflow status report name - max length exceeded",
+			config: `
+format_version: 1.4.0
+
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    status_report_name: ` + strings.Repeat("a", 101),
+			wantErr: "workflow (target) has config issue: status_report_name (" + strings.Repeat("a", 101) + ") is too long, max length is 100 characters",
+		},
+		{
+			name: "validate workflow status report name - allowed characters",
+			config: `
+format_version: 1.4.0
+
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    status_report_name: aA0,./():-_< >[]|`,
+		},
+		{
+			name: "validate workflow status report name - restricted characters",
+			config: `
+format_version: 1.4.0
+
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    status_report_name: "*"`,
+			wantErr: "workflow (target) has config issue: status_report_name (*) contains invalid characters, should match the '^[a-zA-Z0-9,./():\\-_ <>[\\]|]*$' regex",
+		},
+		{
+			name: "validate workflow status report name - restricted characters",
+			config: `
+format_version: 1.4.0
+
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  target:
+    priority: 101`,
+			wantErr: "workflow (target) has invalid priority: priority (101) should be between -100 and 100",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config BitriseDataModel
+			require.NoError(t, yaml.Unmarshal([]byte(tt.config), &config))
 
-	t.Log("validate workflow status report name - max length")
-	{
-		workflow := WorkflowModel{}
+			warns, err := config.Validate()
+			if len(tt.wantWarns) > 0 {
+				require.ElementsMatch(t, tt.wantWarns, warns)
+			} else {
+				require.Empty(t, warns)
+			}
 
-		workflow.StatusReportName = strings.Repeat("a", 100)
-		require.NoError(t, workflow.Validate())
-
-		workflow.StatusReportName += "a"
-		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") is too long, max length is 100 characters")
-	}
-
-	t.Log("validate workflow status report name - allowed characters")
-	{
-		workflow := WorkflowModel{}
-
-		workflow.StatusReportName = "aA0,./():-_< >[]|"
-		require.NoError(t, workflow.Validate())
-
-		workflow.StatusReportName += "*"
-		require.EqualError(t, workflow.Validate(), "status_report_name ("+workflow.StatusReportName+") contains invalid characters, should match the '"+statusReportNameRegex+"' regex")
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
 	}
 }
 
