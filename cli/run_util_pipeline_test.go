@@ -45,7 +45,7 @@ pipelines:
       a: {}
       a1: { uses: a, inputs: [key: value] }
       b: { depends_on: [a], parallel: 3 }
-      c: { depends_on: [a] }
+      c: { depends_on: [a], parallel: $PARALLEL_COUNT }
       d: { depends_on: [a] }
       e: { depends_on: [b, d] }
       f: { depends_on: [e] }
@@ -249,9 +249,9 @@ func TestValidation(t *testing.T) {
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (a) defined in pipeline (dag) has invalid parallel value (0), should be at least 1",
 		},
 		{
-			name:    "Parallel value is non-integer",
+			name:    "Parallel value is non-integer, not a reference to an environment variable",
 			config:  parallelValueIsNonInteger,
-			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: yaml: unmarshal errors:\n  line 6: cannot unmarshal !!bool `true` into int",
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (a) defined in pipeline (dag) has invalid parallel value (true), should be an integer or a reference to an environment variable",
 		},
 		{
 			name:    "Utility workflow is referenced in the DAG pipeline",
