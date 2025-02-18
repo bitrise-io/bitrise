@@ -1275,7 +1275,7 @@ workflows:
 			wantErr: "workflow (target) has config issue: status_report_name (*) contains invalid characters, should match the '^[a-zA-Z0-9,./():\\-_ <>[\\]|]*$' regex",
 		},
 		{
-			name: "validate workflow status report name - restricted characters",
+			name: "validate workflow priority - priority range exceeded",
 			config: `
 format_version: 1.4.0
 
