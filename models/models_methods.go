@@ -823,11 +823,11 @@ func validateParallelizedWorkflow(pipelineID, workflowID string, workflow GraphP
 	isDynamic := false
 	parallel, err := strconv.Atoi(workflow.Parallel)
 	if err != nil {
-		isDynamic := strings.HasPrefix(workflow.Parallel, "$")
+		isDynamic = strings.HasPrefix(workflow.Parallel, "$")
+
+		if !isDynamic {
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) has invalid parallel value (%s), should be an integer or a reference to an environment variable", workflowID, pipelineID, workflow.Parallel)
 		}
-
-		isDynamic = true
 	}
 
 	if isDynamic {
