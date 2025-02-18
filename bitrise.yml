@@ -6,16 +6,13 @@ project_type: other
 app:
   status_report_name: Run <target_id> pipeline
 
-trigger_map:
-- push_branch: master
-  pipeline: ci
-- pull_request_source_branch: "*"
-  pipeline: ci
-- tag: "*.*.*"
-  workflow: release
-
 pipelines:
   ci:
+    triggers:
+      push:
+      - branch: master
+      pull_request:
+      - source_branch: "*"
     stages:
     - run_tests: { }
 
@@ -32,6 +29,18 @@ stages:
     - test_binary_build_linux: { }
 
 workflows:
+  release:
+    triggers:
+      tag:
+      - name: "*.*.*"
+    steps:
+    - trigger-bitrise-workflow@0:
+        inputs:
+        - api_token: $CONTROL_CENTER_TRIGGER_KEY
+        - workflow_id: binary-tool-release
+        - exported_environment_variable_names: GIT_REPOSITORY_URL
+        - app_slug: $CONTROL_CENTER_APP_SLUG
+
   run_lint:
     steps:
     - bundle::setup_repo: { }
@@ -92,15 +101,6 @@ workflows:
     - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
-
-  release:
-    steps:
-    - trigger-bitrise-workflow@0:
-        inputs:
-        - api_token: $CONTROL_CENTER_TRIGGER_KEY
-        - workflow_id: binary-tool-release
-        - exported_environment_variable_names: GIT_REPOSITORY_URL
-        - app_slug: $CONTROL_CENTER_APP_SLUG
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
