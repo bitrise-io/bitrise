@@ -390,7 +390,6 @@ func priorityValue(item map[string]any) (*int, error) {
 	}
 
 	if *valuePtr > 100 || *valuePtr < -100 {
-		// "priority (%d) should be between -100 and 100", priority
 		return nil, fmt.Errorf("priority (%d) should be between -100 and 100", *valuePtr)
 	}
 	return valuePtr, nil
