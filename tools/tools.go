@@ -14,8 +14,6 @@ import (
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	stepman "github.com/bitrise-io/stepman/cli"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/sys/unix"
 )
@@ -121,19 +119,6 @@ func InstallFromURL(toolBinName, downloadURL string) error {
 	}
 
 	return nil
-}
-
-// ------------------
-// --- Stepman
-
-func StepmanSetup(collection string) error {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.Setup(collection, "", log)
-}
-
-func StepmanStepInfo(collection, stepID, stepVersion string) (stepmanModels.StepInfoModel, error) {
-	log := log.NewLogger(log.GetGlobalLoggerOpts())
-	return stepman.QueryStepInfo(collection, stepID, stepVersion, log)
 }
 
 //
