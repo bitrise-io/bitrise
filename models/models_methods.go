@@ -521,6 +521,17 @@ func validateStatusReportName(statusReportName string) error {
 	return nil
 }
 
+func validatePriority(priority *int) error {
+	if priority == nil {
+		return nil
+	}
+
+	if *priority > 100 || *priority < -100 {
+		return fmt.Errorf("priority (%d) should be between -100 and 100", *priority)
+	}
+	return nil
+}
+
 func (app *AppModel) Validate() error {
 	return app.internalValidation(true)
 }
@@ -725,7 +736,11 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		}
 
 		if err := validateStatusReportName(pipeline.StatusReportName); err != nil {
-			return pipelineWarnings, err
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has invalid status_report_name: %w", pipelineID, err)
+		}
+
+		if err := validatePriority(pipeline.Priority); err != nil {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has invalid priority: %w", pipelineID, err)
 		}
 
 		hasStages := len(pipeline.Stages) > 0
@@ -953,7 +968,11 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 		}
 
 		if err := workflow.Validate(); err != nil {
-			return warnings, fmt.Errorf("validation error in workflow: %s: %s", workflowID, err)
+			return warnings, fmt.Errorf("workflow (%s) has config issue: %w", workflowID, err)
+		}
+
+		if err := validatePriority(workflow.Priority); err != nil {
+			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
 		for _, stepListItem := range workflow.Steps {
