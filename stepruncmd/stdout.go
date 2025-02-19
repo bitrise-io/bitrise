@@ -3,7 +3,7 @@ package stepruncmd
 import (
 	"io"
 
-	"github.com/bitrise-io/bitrise/stepruncmd/errorfinder"
+	"github.com/bitrise-io/bitrise/v2/stepruncmd/errorfinder"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/redactwriter"
 )

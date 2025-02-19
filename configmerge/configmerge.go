@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	"gopkg.in/yaml.v2"
 )

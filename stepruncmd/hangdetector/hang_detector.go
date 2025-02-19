@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 // HangDetector ...

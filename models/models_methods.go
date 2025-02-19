@@ -11,7 +11,7 @@ import (
 
 	"github.com/heimdalr/dag"
 
-	"github.com/bitrise-io/bitrise/exitcode"
+	"github.com/bitrise-io/bitrise/v2/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/sliceutil"

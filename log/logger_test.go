@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 func referenceTime() time.Time {

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/log/logwriter"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/log/logwriter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

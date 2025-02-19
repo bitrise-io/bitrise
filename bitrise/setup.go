@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/toolkits"
 )

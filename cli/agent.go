@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/log/logwriter"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/log/logwriter"
 	"github.com/bitrise-io/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
 )

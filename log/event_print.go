@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log/corelog"
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/utils"
+	"github.com/bitrise-io/bitrise/v2/log/corelog"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
 )

@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/cli"
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/bitrise/v2/cli"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )

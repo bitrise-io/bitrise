@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/bitrise"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/stretchr/testify/require"
 )
 

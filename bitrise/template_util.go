@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/models"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/goinp/goinp"
 )

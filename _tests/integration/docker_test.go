@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"

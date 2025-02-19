@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/output"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/urfave/cli"
 )

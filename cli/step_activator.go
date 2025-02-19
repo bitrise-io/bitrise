@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/stepman/activator"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"

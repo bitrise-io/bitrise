@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 // implementing env.EnvironmentSource

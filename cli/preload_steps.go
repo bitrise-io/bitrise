@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
 	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/bitrise-io/stepman/preload"
 	"github.com/urfave/cli"

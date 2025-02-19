@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
 	envmanModels "github.com/bitrise-io/envman/models"
 )
 
