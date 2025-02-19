@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/assert"

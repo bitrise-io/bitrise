@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/stretchr/testify/assert"
 )
 

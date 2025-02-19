@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/output"
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/urfave/cli"
 )
 
