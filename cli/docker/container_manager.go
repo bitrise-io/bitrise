@@ -11,8 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 
 	"github.com/bitrise-io/bitrise/log"
@@ -448,7 +450,7 @@ func (cm *ContainerManager) pullImageWithRetry(container models.Container) error
 }
 
 func (cm *ContainerManager) pullImage(container models.Container) error {
-	images, err := cm.client.ImageList(context.Background(), types.ImageListOptions{
+	images, err := cm.client.ImageList(context.Background(), image.ListOptions{
 		Filters: filters.NewArgs(filters.Arg("reference", container.Image)),
 	})
 	if err != nil {
@@ -468,8 +470,8 @@ func (cm *ContainerManager) pullImage(container models.Container) error {
 	return nil
 }
 
-func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string) (*types.Container, error) {
-	containers, err := cm.client.ContainerList(ctx, types.ContainerListOptions{
+func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string) (*container.Summary, error) {
+	containers, err := cm.client.ContainerList(ctx, container.ListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", name)),
 	})
 	if err != nil {
@@ -481,7 +483,7 @@ func (cm *ContainerManager) getRunningContainer(ctx context.Context, name string
 	}
 
 	if containers[0].State != "running" {
-		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, types.ContainerLogsOptions{
+		logs, err := cm.client.ContainerLogs(ctx, containers[0].ID, container.LogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
 		})
@@ -537,7 +539,7 @@ func (cm *ContainerManager) healthCheckContainer(ctx context.Context, container 
 }
 
 func (cm *ContainerManager) ensureNetwork() error {
-	networks, err := cm.client.NetworkList(context.Background(), types.NetworkListOptions{
+	networks, err := cm.client.NetworkList(context.Background(), network.ListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", bitriseNetwork)),
 	})
 	if err != nil {
@@ -548,7 +550,7 @@ func (cm *ContainerManager) ensureNetwork() error {
 		return nil
 	}
 
-	if _, err := cm.client.NetworkCreate(context.Background(), bitriseNetwork, types.NetworkCreate{}); err != nil {
+	if _, err := cm.client.NetworkCreate(context.Background(), bitriseNetwork, network.CreateOptions{}); err != nil {
 		return fmt.Errorf("create network: %w", err)
 	}
 
