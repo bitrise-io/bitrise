@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/analytics"
+	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/urfave/cli"
 )
 

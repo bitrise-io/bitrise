@@ -6,7 +6,7 @@ package integration
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/configs"
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
