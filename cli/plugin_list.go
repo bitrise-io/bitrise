@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/output"
-	"github.com/bitrise-io/bitrise/plugins"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/urfave/cli"
 )
 
