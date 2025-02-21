@@ -23,11 +23,13 @@ push:
 - branch: branch
   commit_message: message
   changed_files: file
+  priority: 100
   enabled: false`,
 			wantTriggers: Triggers{PushTriggers: []PushGitEventTriggerItem{{
 				Branch:        "branch",
 				CommitMessage: "message",
 				ChangedFiles:  "file",
+				Priority:      pointers.NewIntPtr(100),
 				Enabled:       pointers.NewBoolPtr(false)},
 			}},
 		},
@@ -60,6 +62,7 @@ pull_request:
   comment: comment
   commit_message: message
   changed_files: file
+  priority: 100
   enabled: false`,
 			wantTriggers: Triggers{PullRequestTriggers: []PullRequestGitEventTriggerItem{{
 				SourceBranch:  "source_branch",
@@ -69,6 +72,7 @@ pull_request:
 				Comment:       "comment",
 				CommitMessage: "message",
 				ChangedFiles:  "file",
+				Priority:      pointers.NewIntPtr(100),
 				Enabled:       pointers.NewBoolPtr(false)},
 			}},
 		},
@@ -106,10 +110,12 @@ pull_request:
 			yamlContent: `
 tag:
 - name: tag
+  priority: 100
   enabled: false`,
 			wantTriggers: Triggers{TagTriggers: []TagGitEventTriggerItem{{
-				Name:    "tag",
-				Enabled: pointers.NewBoolPtr(false)},
+				Name:     "tag",
+				Priority: pointers.NewIntPtr(100),
+				Enabled:  pointers.NewBoolPtr(false)},
 			}},
 		},
 		{
@@ -227,6 +233,14 @@ push:
   enabled: false`,
 			wantErr: "'triggers.push[1]': duplicates push trigger item #0",
 		},
+		{
+			name: "Invalid priority",
+			yamlContent: `
+push:
+- branch: main
+  priority: -101`,
+			wantErr: "'triggers.push[0]': priority (-101) should be between -100 and 100",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -308,6 +322,14 @@ pull_request:
   draft_enabled: true`,
 			wantErr: "'triggers.pull_request[1]': duplicates pull request trigger item #0",
 		},
+		{
+			name: "Invalid priority",
+			yamlContent: `
+pull_request:
+- source_branch: main
+  priority: 101`,
+			wantErr: "'triggers.pull_request[0]': priority (101) should be between -100 and 100",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -379,6 +401,14 @@ tag:
 - name: tag
   enabled: false`,
 			wantErr: "'triggers.tag[1]': duplicates tag trigger item #0",
+		},
+		{
+			name: "Invalid priority",
+			yamlContent: `
+tag:
+- name: main
+  priority: -101`,
+			wantErr: "'triggers.tag[0]': priority (-101) should be between -100 and 100",
 		},
 	}
 	for _, tt := range tests {
