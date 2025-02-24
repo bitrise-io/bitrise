@@ -301,13 +301,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	// Prepare workflow run parameters
-	buildRunResults := models.BuildRunResultsModel{
-		WorkflowID:     r.config.Workflow,
-		StartTime:      startTime,
-		StepmanUpdates: map[string]int{},
-		ProjectType:    r.config.Config.ProjectType,
-	}
-
+	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 	plan, err := models.NewWorkflowRunPlan(
 		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
 		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,

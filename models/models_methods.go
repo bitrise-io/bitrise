@@ -9,14 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/heimdalr/dag"
-
-	"github.com/bitrise-io/bitrise/v2/exitcode"
 	envmanModels "github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/heimdalr/dag"
 )
 
 // TODO: can we replace these with slices package functions?
@@ -1788,75 +1786,4 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a Step")
-}
-
-// ----------------------------
-// --- BuildRunResults
-
-func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
-	return (buildRes.StepmanUpdates[stepLib] > 0)
-}
-
-func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
-	return len(buildRes.FailedSteps) > 0
-}
-
-func (buildRes BuildRunResultsModel) ExitCode() int {
-	if !buildRes.IsBuildFailed() {
-		return 0
-	}
-
-	if buildRes.isBuildAbortedWithNoOutputTimeout() {
-		return exitcode.CLIAbortedWithNoOutputTimeout
-	}
-
-	if buildRes.isBuildAbortedWithTimeout() {
-		return exitcode.CLIAbortedWithCustomTimeout
-	}
-
-	return exitcode.CLIFailed
-}
-
-func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
-	return len(buildRes.FailedSkippableSteps) > 0
-}
-
-func (buildRes BuildRunResultsModel) ResultsCount() int {
-	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
-}
-
-func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
-	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedWithCustomTimeout {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (buildRes BuildRunResultsModel) isBuildAbortedWithNoOutputTimeout() bool {
-	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedWithNoOutputTimeout {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
-	results := append([]StepRunResultsModel{}, buildRes.SuccessSteps...)
-	results = append(results, buildRes.FailedSteps...)
-	results = append(results, buildRes.FailedSkippableSteps...)
-	return append(results, buildRes.SkippedSteps...)
-}
-
-func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
-	results := make([]StepRunResultsModel, buildRes.ResultsCount())
-	unorderedResults := buildRes.unorderedResults()
-	for _, result := range unorderedResults {
-		results[result.Idx] = result
-	}
-	return results
 }
