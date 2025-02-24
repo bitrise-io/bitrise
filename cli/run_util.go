@@ -158,9 +158,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
-		if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
-			log.Error("Failed to set Build Status envs")
-		}
+		buildRunResultEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
+		*environments = append(*environments, buildRunResultEnvs...)
 	}
 
 	return buildRunResults
@@ -216,9 +215,8 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	// Evaluate run conditions
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-		buildFailedEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
-		runIfEnvs := append(environments, buildFailedEnvs...)
-		runIfEnvList, err := envman.ConvertToEnvsJSONModel(runIfEnvs, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		// TODO: test build failed envs
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {
 			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
 			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -191,19 +190,6 @@ func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 		{"STEPLIB_BUILD_STATUS": statusStr},
 		{"BITRISE_BUILD_STATUS": statusStr},
 	}
-}
-
-func SetBuildFailedEnv(failed bool) error {
-	envs := BuildFailedEnvs(failed)
-	for _, env := range envs {
-		key, value, err := env.GetKeyValuePair()
-		if err == nil {
-			if err := os.Setenv(key, value); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {

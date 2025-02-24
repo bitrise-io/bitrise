@@ -271,11 +271,11 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
 	}
-	if err := bitrise.SetBuildFailedEnv(false); err != nil {
-		log.Error("Failed to set Build Status envs")
-	}
 
 	environments = append(environments, targetWorkflow.Environments...)
+
+	buildRunResultEnvs := bitrise.BuildFailedEnvs(false)
+	environments = append(environments, buildRunResultEnvs...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
