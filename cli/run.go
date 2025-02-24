@@ -238,6 +238,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
+	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 
 	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {
@@ -274,7 +275,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	environments = append(environments, targetWorkflow.Environments...)
 
-	buildRunResultEnvs := bitrise.BuildFailedEnvs(false)
+	buildRunResultEnvs := bitrise.BuildRunResultEnvs(buildRunResults, nil)
 	environments = append(environments, buildRunResultEnvs...)
 
 	// Bootstrap Toolkits
@@ -301,7 +302,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	// Prepare workflow run parameters
-	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 	plan, err := models.NewWorkflowRunPlan(
 		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
 		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,
