@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/bitrise-io/bitrise/stepruncmd/timeoutcmd"
+	"github.com/bitrise-io/bitrise/v2/stepruncmd/timeoutcmd"
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 

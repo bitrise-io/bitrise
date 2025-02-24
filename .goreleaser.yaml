@@ -35,12 +35,12 @@ archives:
 
 - format: binary
   id: s3
-  name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Tag }}"
+  name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Version }}"
 
 blobs:
 - provider: gs
   bucket: bitrise-cli-releases-prod
-  directory: /{{ .Tag }}
+  directory: /{{ .Version }}
   ids:
   - default
 - provider: s3
@@ -59,13 +59,14 @@ release:
   - default
   draft: true
   mode: replace
+  name_template: "{{ .Version }}"
   footer: |
     ### Install or upgrade
 
     To install this version, run the following command (in a bash shell):
 
       ```bash
-      curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
+      curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Version }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
       ```
     ℹ️ Apple Silicon: Please note by default `/usr/local/bin` does not exist and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
 

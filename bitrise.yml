@@ -119,7 +119,7 @@ workflows:
             set -ex
 
             version=$(go run main.go --version)
-            if [[ "$version" != "$BITRISE_GIT_TAG" ]]; then
+            if [[ "v$version" != "$BITRISE_GIT_TAG" ]]; then
               echo "Bitrise CLI version ($version) does not match the git tag ($BITRISE_GIT_TAG)"
               echo "Please update the Bitrise CLI version to match the git tag"
               exit 1

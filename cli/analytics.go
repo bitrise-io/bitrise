@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bitrise-io/bitrise/log"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/envman/models"
 	"github.com/bitrise-io/go-utils/v2/redactwriter"
 )

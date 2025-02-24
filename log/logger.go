@@ -1,8 +1,8 @@
 package log
 
 import (
-	"github.com/bitrise-io/bitrise/log/corelog"
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/log/corelog"
+	"github.com/bitrise-io/bitrise/v2/models"
 )
 
 type MessageFields corelog.MessageLogFields
