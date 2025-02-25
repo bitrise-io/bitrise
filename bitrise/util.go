@@ -180,34 +180,26 @@ func CleanupStepWorkDir() error {
 	return nil
 }
 
-func BuildRunResultEnvs(currentBuildRunResult models.BuildRunResultsModel, previousBuildRunResult *models.BuildRunResultsModel) []envmanModels.EnvironmentItemModel {
-	isBuildFailed := currentBuildRunResult.IsBuildFailed()
+func BuildStatusEnvs(isBuildFailed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
 	if isBuildFailed {
 		statusStr = "1"
 	}
 
-	buildRunResultEnvs := []envmanModels.EnvironmentItemModel{
+	return []envmanModels.EnvironmentItemModel{
 		{"STEPLIB_BUILD_STATUS": statusStr},
 		{"BITRISE_BUILD_STATUS": statusStr},
 	}
+}
 
-	if previousBuildRunResult == nil {
-		return buildRunResultEnvs
+func FailingStepEnvs(failingStepRunResult models.StepRunResultsModel) []envmanModels.EnvironmentItemModel {
+	failingStep := failingStepRunResult.StepInfo.Step.Title
+	failureReason := failingStepRunResult.ErrorStr
+
+	return []envmanModels.EnvironmentItemModel{
+		{"BITRISE_FAILED_STEP_NAME": failingStep},
+		{"BITRISE_FAILED_STEP_FAILURE_REASON": failureReason},
 	}
-
-	if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
-		failingStepRunResult := currentBuildRunResult.FailedSteps[0]
-		failingStep := *failingStepRunResult.StepInfo.Step.Title
-		failureReason := failingStepRunResult.ErrorStr
-
-		buildRunResultEnvs = append(buildRunResultEnvs,
-			envmanModels.EnvironmentItemModel{"BITRISE_FAILED_STEP_NAME": failingStep},
-			envmanModels.EnvironmentItemModel{"BITRISE_FAILED_STEP_FAILURE_REASON": failureReason},
-		)
-	}
-
-	return buildRunResultEnvs
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {

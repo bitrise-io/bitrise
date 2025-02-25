@@ -238,7 +238,6 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
-	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 
 	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {
@@ -272,11 +271,10 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
 	}
+	buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
+	environments = append(environments, buildRunResultEnvs...)
 
 	environments = append(environments, targetWorkflow.Environments...)
-
-	buildRunResultEnvs := bitrise.BuildRunResultEnvs(buildRunResults, nil)
-	environments = append(environments, buildRunResultEnvs...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
@@ -302,6 +300,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	// Prepare workflow run parameters
+	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 	plan, err := models.NewWorkflowRunPlan(
 		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
 		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,

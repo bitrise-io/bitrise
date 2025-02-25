@@ -161,9 +161,17 @@ func (r WorkflowRunner) activateAndRunSteps(
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
 		currentBuildRunResult := buildRunResults
+		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
+			if len(currentBuildRunResult.FailedSteps) == 1 {
+				failedStepRunResult := currentBuildRunResult.FailedSteps[0]
+				failingStepEnvs := bitrise.FailingStepEnvs(failedStepRunResult)
+				*environments = append(*environments, failingStepEnvs...)
+			}
 
-		buildRunResultEnvs := bitrise.BuildRunResultEnvs(currentBuildRunResult, &previousBuildRunResult)
-		*environments = append(*environments, buildRunResultEnvs...)
+			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
+			*environments = append(*environments, buildStatusEnvs...)
+		}
+
 	}
 
 	return buildRunResults
