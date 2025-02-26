@@ -147,7 +147,7 @@ workflows:
     steps:
     - script:
         title: Run if BITRISE_BUILD_STATUS is 0
-        run_if: '{{enveq "BITRISE_BUILD_STATUS" "0"}}'
+        run_if: "{{enveq \"BITRISE_BUILD_STATUS\" \"0\"}}"
         inputs:
         - content: |-
             #!/bin/bash
@@ -155,7 +155,7 @@ workflows:
             echo "Run if BITRISE_BUILD_STATUS is 0"
     - script:
         title: Run if not .IsBuildFailed
-        run_if: '{{not .IsBuildFailed}}'
+        run_if: "{{not .IsBuildFailed}}"
         inputs:
         - content: |-
             #!/bin/bash
@@ -164,7 +164,7 @@ workflows:
             exit 1
     - script:
         title: Run if BITRISE_BUILD_STATUS is 1
-        run_if: '{{enveq "BITRISE_BUILD_STATUS" "1"}}'
+        run_if: "{{enveq \"BITRISE_BUILD_STATUS\" \"1\"}}"
         is_always_run: true
         inputs:
         - content: |-
@@ -173,7 +173,7 @@ workflows:
             echo "Run if BITRISE_BUILD_STATUS is 1"
     - script:
         title: Run if .IsBuildFailed
-        run_if: '{{.IsBuildFailed}}'
+        run_if: "{{.IsBuildFailed}}"
         is_always_run: true
         inputs:
         - content: |-
