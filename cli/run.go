@@ -174,8 +174,10 @@ type DockerManager interface {
 }
 
 type WorkflowRunner struct {
-	logger log.Logger
-	config RunConfig
+	logger        log.Logger
+	config        RunConfig
+	envVars       []envmanModels.EnvironmentItemModel
+	secretEnvVars []envmanModels.EnvironmentItemModel
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig   *configs.AgentConfig
@@ -193,7 +195,7 @@ func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) Workf
 	}
 }
 
-func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
+func (r *WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	if r.config.Workflow == "" {
 		return 1, errWorkflowNotSpecified
 	}
@@ -236,7 +238,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	return 0, nil
 }
 
-func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
+func (r *WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
 
 	// Register run modes
@@ -263,7 +265,10 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	// App level environment
-	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
+	r.secretEnvVars = append(r.secretEnvVars, r.config.Secrets...)
+
+	r.envVars = append(r.envVars, r.config.Secrets...)
+	r.envVars = append(r.envVars, r.config.Config.App.Environments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
@@ -271,10 +276,11 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
 	}
-	buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
-	environments = append(environments, buildRunResultEnvs...)
 
-	environments = append(environments, targetWorkflow.Environments...)
+	buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
+	r.envVars = append(r.envVars, buildRunResultEnvs...)
+
+	r.envVars = append(r.envVars, targetWorkflow.Environments...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
@@ -329,8 +335,8 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
 		workflowToRun := r.config.Config.Workflows[workflowRunPlan.WorkflowID]
-		environments = append(environments, workflowToRun.Environments...)
-		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
+		r.envVars = append(r.envVars, workflowToRun.Environments...)
+		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, isLastWorkflow, tracker, buildIDProperties)
 	}
 
 	// Build finished
@@ -345,7 +351,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	return buildRunResults, nil
 }
 
-func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
+func (r *WorkflowRunner) ContainerDefinition(id string) *models.Container {
 	container, ok := r.config.Config.Containers[id]
 	if ok {
 		return &container
@@ -353,7 +359,7 @@ func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
 	return nil
 }
 
-func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
+func (r *WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
 	services := map[string]models.Container{}
 	for _, id := range ids {
 		service, ok := r.config.Config.Services[id]
