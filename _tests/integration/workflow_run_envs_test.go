@@ -40,7 +40,7 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			},
 		},
 		{
-			name:           "Build status test in run_if conditions",
+			name:           "Build status envs test in run_if conditions",
 			workflow:       "build_status_run_if_test",
 			expectedToFail: true,
 			expectedStepOutputs: []string{
@@ -48,6 +48,15 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 				"Run if not .IsBuildFailed\n",
 				"Run if BITRISE_BUILD_STATUS is 1\n",
 				"Run if .IsBuildFailed\n",
+			},
+		},
+		{
+			name:           "Failing step and failure reason envs test",
+			workflow:       "failed_step_and_reason_envs_test",
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Step failure reason\n",
+				"BITRISE_FAILED_STEP_TITLE: Failing step\nBITRISE_FAILED_STEP_FAILURE_REASON: Step failure reason\n",
 			},
 		},
 	} {

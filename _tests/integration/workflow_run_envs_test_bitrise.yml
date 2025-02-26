@@ -180,3 +180,25 @@ workflows:
             #!/bin/bash
             set -e
             echo "Run if .IsBuildFailed"
+
+  failed_step_and_reason_envs_test:
+    steps:
+    - script:
+        title: Failing step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            RED_COLOUR='\x1b[31;1m'
+            NO_COLOUR='\x1b[0m'
+            echo -e "${RED_COLOUR}Step failure reason${NO_COLOUR}"
+            exit 2
+    - script:
+        title: Failing step
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
+            echo "BITRISE_FAILED_STEP_FAILURE_REASON: $BITRISE_FAILED_STEP_FAILURE_REASON"
