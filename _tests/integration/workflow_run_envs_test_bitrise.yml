@@ -1,0 +1,182 @@
+---
+format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  workflow_run_envs_test:
+    steps:
+    - script:
+        title: BITRISE_BUILD_STATUS initially set to '0'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "BITRISE_BUILD_STATUS initially set to '0'"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+    - script:
+        title: Failing skippable step
+        is_skippable: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Failing skippable step"
+            exit 1
+    - script:
+        title: Failing skippable step isn't not modifying BITRISE_BUILD_STATUS
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Failing skippable step isn't not modifying BITRISE_BUILD_STATUS"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+    - script:
+        title: Failing step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo  "Failing step"
+            exit 2
+    - script:
+        title: BITRISE_BUILD_STATUS set to '1' on failure
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "BITRISE_BUILD_STATUS set to '1' on failure"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+    - script:
+        title: Skipped step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Skipped step"
+
+  before_after_workflow_run_envs_test:
+    before_run:
+    - _before1
+    - _before2
+    after_run:
+    - _after1
+    - _after2
+    steps:
+    - script:
+        title: Failing step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo  "Failing step"
+            exit 2
+
+  _before1:
+    steps:
+    - script:
+        title: _before1 success step 1
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "_before1 success step 1"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+    - script:
+        title: _before1 failing skippable step
+        is_skippable: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "_before1 failing skippable step"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+            exit 1
+    - script:
+        title: _before1 uccess step 2
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "_before1 uccess step 2"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+
+  _before2:
+    steps:
+    - script:
+        title: _before2 success step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "_before2 success step"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+
+  _after1:
+    steps:
+    - script:
+        title: _after1 failing step
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo  "_after1 failing step"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "STEPLIB_BUILD_STATUS: $STEPLIB_BUILD_STATUS"
+            exit 2
+
+  _after2:
+    steps:
+    - script:
+        title: _after2 skipped step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "_after2 skipped step"
+
+  build_status_run_if_test:
+    steps:
+    - script:
+        title: Run if BITRISE_BUILD_STATUS is 0
+        run_if: '{{enveq "BITRISE_BUILD_STATUS" "0"}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if BITRISE_BUILD_STATUS is 0"
+    - script:
+        title: Run if not .IsBuildFailed
+        run_if: '{{not .IsBuildFailed}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if not .IsBuildFailed"
+            exit 1
+    - script:
+        title: Run if BITRISE_BUILD_STATUS is 1
+        run_if: '{{enveq "BITRISE_BUILD_STATUS" "1"}}'
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if BITRISE_BUILD_STATUS is 1"
+    - script:
+        title: Run if .IsBuildFailed
+        run_if: '{{.IsBuildFailed}}'
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if .IsBuildFailed"

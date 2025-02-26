@@ -168,6 +168,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 				*environments = append(*environments, failingStepEnvs...)
 			}
 
+			// TODO: now we set failed build envs once, instead of setting them after each step
 			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
 			*environments = append(*environments, buildStatusEnvs...)
 		}
