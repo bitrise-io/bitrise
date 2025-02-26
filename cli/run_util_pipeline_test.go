@@ -160,6 +160,31 @@ workflows:
   a: {}
 `
 
+const dynamicParallelWorkflowCollisionWithVariant = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a_1: { uses: b }
+      a: { parallel: $PARALLEL_COUNT }
+workflows:
+  a: {}
+  b: {}
+`
+
+const dynamicParallelWorkflowCollisionWithMainWorkflow = `
+format_version: '13'
+pipelines:
+  dag:
+    workflows:
+      a: {}
+      b: { parallel: $PARALLEL_COUNT, depends_on: [a] }
+workflows:
+  a: {}
+  b: {}
+  b_99: {}
+`
+
 const duplicatedDependencyDAGPipeline = `
 format_version: '13'
 pipelines:
@@ -205,6 +230,22 @@ pipelines:
     workflows: {}
 workflows:
   a: {}
+`
+
+const validParallelWorkflows = `
+format_version: '13'
+pipelines:
+  dag:
+    a: {}
+    b: { parallel: $B_COUNT, depends_on: [a] }
+    c: { parallel: 2, depends_on: [a] }
+    d: { uses: e, depends_on: [b, c] }
+workflows:
+  a: {}
+  b: {}
+  b_22_33: {}
+  c: {}
+  e: {}
 `
 
 func TestValidation(t *testing.T) {
@@ -254,6 +295,16 @@ func TestValidation(t *testing.T) {
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (a) defined in pipeline (dag) has invalid parallel value (true), should be an integer or a reference to an environment variable",
 		},
 		{
+			name:    "Dynamic parallel workflow name collision with pipeline workflow variant",
+			config:  dynamicParallelWorkflowCollisionWithVariant,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: dynamic parallel workflow (a) could collide with pipeline workflow (a_1) during runtime",
+		},
+		{
+			name:    "Dynamic parallel workflow name collision with workflow",
+			config:  dynamicParallelWorkflowCollisionWithMainWorkflow,
+			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: dynamic parallel workflow (b) could collide with workflow (b_99) during runtime",
+		},
+		{
 			name:    "Utility workflow is referenced in the DAG pipeline",
 			config:  utilityWorkflowDAGPipeline,
 			wantErr: "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: workflow (_a) defined in pipeline (dag) is a utility workflow",
@@ -279,6 +330,10 @@ func TestValidation(t *testing.T) {
 		{
 			name:   "Empty pipeline",
 			config: emptyPipeline,
+		},
+		{
+			name:   "Valid parallel workflow pipeline",
+			config: validParallelWorkflows,
 		},
 	}
 	for _, tt := range tests {
