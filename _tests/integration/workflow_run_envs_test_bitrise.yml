@@ -194,7 +194,7 @@ workflows:
             echo -e "${RED_COLOUR}Step failure reason${NO_COLOUR}"
             exit 2
     - script:
-        title: Failing step
+        title: Print failing step and failure reason envs
         is_always_run: true
         inputs:
         - content: |-
@@ -202,3 +202,21 @@ workflows:
             set -e
             echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
             echo "BITRISE_FAILED_STEP_FAILURE_REASON: $BITRISE_FAILED_STEP_FAILURE_REASON"
+    - script:
+        title: Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_TITLE\" \"Failing step\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'"
+    - script:
+        title: Run if BITRISE_FAILED_STEP_FAILURE_REASON is 'Step failure reason'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_FAILURE_REASON\" \"Step failure reason\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Run if BITRISE_FAILED_STEP_FAILURE_REASON is 'Step failure reason'"
