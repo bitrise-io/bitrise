@@ -28,7 +28,7 @@ func NewBuildRunResultsModel(workflowID string, start time.Time, projectType str
 }
 
 func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
-	return (buildRes.StepmanUpdates[stepLib] > 0)
+	return buildRes.StepmanUpdates[stepLib] > 0
 }
 
 func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
@@ -37,7 +37,7 @@ func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
 
 func (buildRes BuildRunResultsModel) ExitCode() int {
 	if !buildRes.IsBuildFailed() {
-		return 0
+		return exitcode.CLISuccess
 	}
 
 	if buildRes.isBuildAbortedWithNoOutputTimeout() {
