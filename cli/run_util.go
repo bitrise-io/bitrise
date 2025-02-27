@@ -168,7 +168,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 				*environments = append(*environments, failingStepEnvs...)
 			}
 
-			// TODO: now we set failed build envs once, instead of setting them after each step
 			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
 			*environments = append(*environments, buildStatusEnvs...)
 		}
@@ -228,7 +227,6 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	// Evaluate run conditions
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-		// TODO: test build failed envs
 		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {
 			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
