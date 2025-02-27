@@ -1,5 +1,11 @@
 package models
 
+import (
+	"time"
+
+	stepmanModels "github.com/bitrise-io/stepman/models"
+)
+
 // StepRunStatus ...
 type StepRunStatus int
 
@@ -13,6 +19,20 @@ const (
 	StepRunStatusAbortedWithCustomTimeout   StepRunStatus = 7 // step times out due to a custom timeout
 	StepRunStatusAbortedWithNoOutputTimeout StepRunStatus = 8 // step times out due to no output received (hang)
 )
+
+type StepRunResultsModel struct {
+	StepInfo   stepmanModels.StepInfoModel `json:"step_info" yaml:"step_info"`
+	StepInputs map[string]string           `json:"step_inputs" yaml:"step_inputs"`
+	Status     StepRunStatus               `json:"status" yaml:"status"`
+	Idx        int                         `json:"idx" yaml:"idx"`
+	RunTime    time.Duration               `json:"run_time" yaml:"run_time"`
+	StartTime  time.Time                   `json:"start_time" yaml:"start_time"`
+	ErrorStr   string                      `json:"error_str" yaml:"error_str"`
+	ExitCode   int                         `json:"exit_code" yaml:"exit_code"`
+
+	Timeout         time.Duration `json:"-"`
+	NoOutputTimeout time.Duration `json:"-"`
+}
 
 func NewStepRunStatus(status string) StepRunStatus {
 	switch status {

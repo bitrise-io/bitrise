@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -47,4 +48,43 @@ func withRunningTimeCheck(f func()) time.Duration {
 	end := time.Now()
 
 	return end.Sub(start)
+}
+
+func collectStepOutputs(workflowRunOut string, t *testing.T) []string {
+	type messageLine struct {
+		Producer   string `json:"producer"`
+		ProducerID string `json:"producer_id"`
+		Message    string `json:"message"`
+	}
+
+	idxToStep := map[string]int{}
+	messageToStep := map[string]string{}
+	stepIDx := 0
+
+	for _, line := range strings.Split(workflowRunOut, "\n") {
+		var message messageLine
+		err := json.Unmarshal([]byte(line), &message)
+		require.NoError(t, err)
+
+		if message.Producer != "step" {
+			continue
+		}
+
+		stepMessage := messageToStep[message.ProducerID]
+		stepMessage += message.Message
+		messageToStep[message.ProducerID] = stepMessage
+
+		_, ok := idxToStep[message.ProducerID]
+		if !ok {
+			idxToStep[message.ProducerID] = stepIDx
+			stepIDx++
+		}
+	}
+
+	stepMessages := make([]string, len(idxToStep))
+	for step, idx := range idxToStep {
+		stepMessages[idx] = messageToStep[step]
+	}
+
+	return stepMessages
 }
