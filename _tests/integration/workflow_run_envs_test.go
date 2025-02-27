@@ -14,6 +14,7 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 	for _, tt := range []struct {
 		name                string
 		workflow            string
+		usesSecrets         bool
 		expectedToFail      bool
 		expectedStepOutputs []string
 	}{
@@ -64,9 +65,24 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 				"Run if BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
 			},
 		},
+		{
+			name:           "Failing step and failure reason envs secret filtering test",
+			workflow:       "failed_step_and_reason_envs_test",
+			usesSecrets:    true,
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Step [REDACTED]\n",
+				"BITRISE_FAILED_STEP_TITLE: Failing step\nBITRISE_FAILED_STEP_ERROR_MESSAGE: Step [REDACTED]\n",
+				"Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+			},
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := command.New(binPath(), "run", "--output-format", "json", tt.workflow, "--config", "workflow_run_envs_test_bitrise.yml")
+			args := []string{"run", "--output-format", "json", tt.workflow, "--config", "workflow_run_envs_test_bitrise.yml"}
+			if tt.usesSecrets {
+				args = append(args, "--inventory", "workflow_run_envs_test_secrets.yml")
+			}
+			cmd := command.New(binPath(), args...)
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 			stepOutputs := collectStepOutputs(out, t)
 
