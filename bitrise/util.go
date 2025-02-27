@@ -192,13 +192,13 @@ func BuildStatusEnvs(isBuildFailed bool) []envmanModels.EnvironmentItemModel {
 	}
 }
 
-func FailingStepEnvs(failingStepRunResult models.StepRunResultsModel) []envmanModels.EnvironmentItemModel {
-	failedStepTitle := failingStepRunResult.StepInfo.ID
-	if failingStepRunResult.StepInfo.Step.Title != nil && len(*failingStepRunResult.StepInfo.Step.Title) > 0 {
-		failedStepTitle = *failingStepRunResult.StepInfo.Step.Title
+func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanModels.EnvironmentItemModel {
+	failedStepTitle := failedStepRunResult.StepInfo.ID
+	if failedStepRunResult.StepInfo.Step.Title != nil && len(*failedStepRunResult.StepInfo.Step.Title) > 0 {
+		failedStepTitle = *failedStepRunResult.StepInfo.Step.Title
 	}
 
-	errorMessage := failingStepRunResult.ErrorStr
+	errorMessage := failedStepRunResult.ErrorStr
 
 	return []envmanModels.EnvironmentItemModel{
 		{"BITRISE_FAILED_STEP_TITLE": failedStepTitle},
