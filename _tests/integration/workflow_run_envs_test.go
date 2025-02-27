@@ -59,9 +59,9 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			expectedToFail: true,
 			expectedStepOutputs: []string{
 				"Step failure reason\n",
-				"BITRISE_FAILED_STEP_TITLE: Failing step\nBITRISE_FAILED_STEP_FAILURE_REASON: Step failure reason\n",
+				"BITRISE_FAILED_STEP_TITLE: Failing step\nBITRISE_FAILED_STEP_ERROR_MESSAGE: Step failure reason\n",
 				"Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
-				"Run if BITRISE_FAILED_STEP_FAILURE_REASON is 'Step failure reason'\n",
+				"Run if BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
 			},
 		},
 	} {

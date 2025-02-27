@@ -202,7 +202,7 @@ func FailingStepEnvs(failingStepRunResult models.StepRunResultsModel) []envmanMo
 
 	return []envmanModels.EnvironmentItemModel{
 		{"BITRISE_FAILED_STEP_TITLE": failingStep},
-		{"BITRISE_FAILED_STEP_FAILURE_REASON": failureReason},
+		{"BITRISE_FAILED_STEP_ERROR_MESSAGE": failureReason},
 	}
 }
 
