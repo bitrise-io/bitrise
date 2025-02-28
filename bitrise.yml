@@ -199,14 +199,11 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            if [ "$(uname)" = "Linux" ]; then
-              envman add --key UNAME --value "Linux"
-            else
-              envman add --key UNAME --value "macOS"
-            fi
+            envman add --key UNAME --value "$(uname)"
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
         - package: ./...
+        - covermode: set
         - test_options: -p 1
         - test_report_name: Unit tests on $UNAME
     - deploy-to-bitrise-io@2: { }
@@ -219,11 +216,7 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            if [ "$(uname)" = "Linux" ]; then
-              envman add --key UNAME --value "Linux"
-            else
-              envman add --key UNAME --value "macOS"
-            fi
+            envman add --key UNAME --value "$(uname)"
 
             # Build and setup the current binary
             current_bitrise="$(pwd)/_tmp/test_bitrise"
