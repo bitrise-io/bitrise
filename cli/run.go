@@ -271,9 +271,8 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
 	}
-	if err := bitrise.SetBuildFailedEnv(false); err != nil {
-		log.Error("Failed to set Build Status envs")
-	}
+	buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
+	environments = append(environments, buildRunResultEnvs...)
 
 	environments = append(environments, targetWorkflow.Environments...)
 
@@ -301,13 +300,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	}
 
 	// Prepare workflow run parameters
-	buildRunResults := models.BuildRunResultsModel{
-		WorkflowID:     r.config.Workflow,
-		StartTime:      startTime,
-		StepmanUpdates: map[string]int{},
-		ProjectType:    r.config.Config.ProjectType,
-	}
-
+	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
 	plan, err := models.NewWorkflowRunPlan(
 		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
 		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,
