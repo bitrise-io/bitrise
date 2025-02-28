@@ -224,6 +224,20 @@ step_bundles:
             else
               envman add --key UNAME --value "macOS"
             fi
+            
+            # Build and setup the current binary
+            current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
+            envman add --key CGO_ENABLED --value "0"
+            go build -o "$current_bitrise"
+
+            export PR="" PULL_REQUEST_ID=""
+            envman add --key PR --value ""
+            envman add --key PULL_REQUEST_ID --value ""
+            
+            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+            envman add --key INTEGRATION_TEST_BINARY_PATH --value "$INTEGRATION_TEST_BINARY_PATH"
+            $current_bitrise setup
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
         - package: ./_tests/integration/...
@@ -233,6 +247,26 @@ step_bundles:
 
   run_docker_integration_tests:
     steps:
+    - script@1:
+        title: Setup test envs
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            
+            # Build and setup the current binary
+            current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
+            envman add --key CGO_ENABLED --value "0"
+            go build -o "$current_bitrise"
+
+            export PR="" PULL_REQUEST_ID=""
+            envman add --key PR --value ""
+            envman add --key PULL_REQUEST_ID --value ""
+            
+            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+            envman add --key INTEGRATION_TEST_BINARY_PATH --value "$INTEGRATION_TEST_BINARY_PATH"
+            $current_bitrise setup
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
         - package: ./_tests/integration/...
