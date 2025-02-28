@@ -206,7 +206,7 @@ step_bundles:
             fi
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
-        - packages: ./...
+        - package: ./...
         - test_options: -p 1
         - test_report_name: Unit tests on $UNAME
     - deploy-to-bitrise-io@2: { }
@@ -226,7 +226,7 @@ step_bundles:
             fi
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
-        - packages: ./_tests/integration/...
+        - package: ./_tests/integration/...
         - test_options: --tags linux_and_mac
         - test_report_name: Integration tests on $UNAME
     - deploy-to-bitrise-io@2: { }
@@ -235,7 +235,7 @@ step_bundles:
     steps:
     - git::https://github.com/bitrise-steplib/steps-go-test.git@test-reporting:
         inputs:
-        - packages: ./_tests/integration/...
+        - package: ./_tests/integration/...
         - test_options: --tags linux_only
         - test_report_name: Linux only integration tests
     - deploy-to-bitrise-io@2: { }
