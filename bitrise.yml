@@ -224,7 +224,7 @@ step_bundles:
             else
               envman add --key UNAME --value "macOS"
             fi
-            
+
             # Build and setup the current binary
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
@@ -234,7 +234,7 @@ step_bundles:
             export PR="" PULL_REQUEST_ID=""
             envman add --key PR --value ""
             envman add --key PULL_REQUEST_ID --value ""
-            
+
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
             envman add --key INTEGRATION_TEST_BINARY_PATH --value "$INTEGRATION_TEST_BINARY_PATH"
             $current_bitrise setup
@@ -253,7 +253,7 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            
+
             # Build and setup the current binary
             current_bitrise="$(pwd)/_tmp/test_bitrise"
             export CGO_ENABLED=0
@@ -263,7 +263,7 @@ step_bundles:
             export PR="" PULL_REQUEST_ID=""
             envman add --key PR --value ""
             envman add --key PULL_REQUEST_ID --value ""
-            
+
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
             envman add --key INTEGRATION_TEST_BINARY_PATH --value "$INTEGRATION_TEST_BINARY_PATH"
             $current_bitrise setup
