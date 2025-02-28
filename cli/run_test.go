@@ -982,9 +982,6 @@ workflows:
 func Test0Steps1Workflows(t *testing.T) {
 	workflow := models.WorkflowModel{}
 
-	t.Setenv("BITRISE_BUILD_STATUS", "0")
-	t.Setenv("STEPLIB_BUILD_STATUS", "0")
-
 	config := models.BitriseDataModel{
 		FormatVersion:        "1.0.0",
 		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
@@ -1011,16 +1008,10 @@ func Test0Steps1Workflows(t *testing.T) {
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
-	t.Setenv("BITRISE_BUILD_STATUS", "0")
-	t.Setenv("STEPLIB_BUILD_STATUS", "0")
-
 	beforeWorkflow := models.WorkflowModel{}
 	afterWorkflow := models.WorkflowModel{}
 
@@ -1058,9 +1049,6 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Trivial test with 1 workflow
@@ -1117,9 +1105,6 @@ workflows:
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Trivial test with before, after workflows
@@ -1199,9 +1184,6 @@ workflows:
 	require.Equal(t, 2, len(buildRunResults.FailedSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Checks if BuildStatusEnv is set correctly
@@ -1307,9 +1289,6 @@ workflows:
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Trivial fail test
@@ -1364,9 +1343,6 @@ workflows:
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 1, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Trivial success test
@@ -1399,9 +1375,6 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Checks if BuildStatusEnv is set correctly
@@ -1457,9 +1430,6 @@ workflows:
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 2, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Checks if BuildStatusEnv is set correctly for Step Bundles
@@ -1513,9 +1483,6 @@ workflows:
 	require.Equal(t, 1, buildRunResults.SkippedSteps[0].Idx)
 	require.Equal(t, 2, buildRunResults.FailedSteps[0].Idx)
 	require.Equal(t, 3, buildRunResults.SkippedSteps[1].Idx)
-
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Trivial test for workflow environment handling, before workflows env should be visible in target and after workflow
@@ -1574,9 +1541,6 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Test for same env in before and target workflow, actual workflow should overwrite environemnt and use own value
@@ -1635,9 +1599,6 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Target workflows env should be visible in before and after workflow
@@ -1684,9 +1645,6 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Step input should visible only for actual step and invisible for other steps
@@ -1741,9 +1699,6 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
-
-	require.Equal(t, "0", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "0", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 // Outputs exported with `envman add` should be accessible for subsequent Steps.
@@ -1805,10 +1760,6 @@ workflows:
 	// the exported output envs should NOT be exposed here, should NOT be available!
 	require.Equal(t, "", os.Getenv("MY_TEST_1"))
 	require.Equal(t, "", os.Getenv("MY_TEST_2"))
-
-	// standard, Build Status ENV test
-	require.Equal(t, "1", os.Getenv("BITRISE_BUILD_STATUS"))
-	require.Equal(t, "1", os.Getenv("STEPLIB_BUILD_STATUS"))
 }
 
 func TestExpandEnvs(t *testing.T) {

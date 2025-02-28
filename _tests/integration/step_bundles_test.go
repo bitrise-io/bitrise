@@ -1,8 +1,9 @@
+//go:build linux_and_mac
+// +build linux_and_mac
+
 package integration
 
 import (
-	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -43,43 +44,4 @@ bundle1_input1:
 bundle2_input1: 
 `,
 	})
-}
-
-func collectStepOutputs(workflowRunOut string, t *testing.T) []string {
-	type messageLine struct {
-		Producer   string `json:"producer"`
-		ProducerID string `json:"producer_id"`
-		Message    string `json:"message"`
-	}
-
-	idxToStep := map[string]int{}
-	messageToStep := map[string]string{}
-	stepIDx := 0
-
-	for _, line := range strings.Split(workflowRunOut, "\n") {
-		var message messageLine
-		err := json.Unmarshal([]byte(line), &message)
-		require.NoError(t, err)
-
-		if message.Producer != "step" {
-			continue
-		}
-
-		stepMessage := messageToStep[message.ProducerID]
-		stepMessage += message.Message
-		messageToStep[message.ProducerID] = stepMessage
-
-		_, ok := idxToStep[message.ProducerID]
-		if !ok {
-			idxToStep[message.ProducerID] = stepIDx
-			stepIDx++
-		}
-	}
-
-	stepMessages := make([]string, len(idxToStep))
-	for step, idx := range idxToStep {
-		stepMessages[idx] = messageToStep[step]
-	}
-
-	return stepMessages
 }

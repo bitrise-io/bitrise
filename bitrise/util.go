@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -181,9 +180,9 @@ func CleanupStepWorkDir() error {
 	return nil
 }
 
-func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
+func BuildStatusEnvs(isBuildFailed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
-	if failed {
+	if isBuildFailed {
 		statusStr = "1"
 	}
 
@@ -193,17 +192,18 @@ func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	}
 }
 
-func SetBuildFailedEnv(failed bool) error {
-	envs := BuildFailedEnvs(failed)
-	for _, env := range envs {
-		key, value, err := env.GetKeyValuePair()
-		if err == nil {
-			if err := os.Setenv(key, value); err != nil {
-				return err
-			}
-		}
+func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanModels.EnvironmentItemModel {
+	failedStepTitle := failedStepRunResult.StepInfo.ID
+	if failedStepRunResult.StepInfo.Step.Title != nil && len(*failedStepRunResult.StepInfo.Step.Title) > 0 {
+		failedStepTitle = *failedStepRunResult.StepInfo.Step.Title
 	}
-	return nil
+
+	errorMessage := failedStepRunResult.ErrorStr
+
+	return []envmanModels.EnvironmentItemModel{
+		{"BITRISE_FAILED_STEP_TITLE": failedStepTitle},
+		{"BITRISE_FAILED_STEP_ERROR_MESSAGE": errorMessage},
+	}
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {
