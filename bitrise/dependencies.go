@@ -134,10 +134,6 @@ func CheckIsHomebrewInstalled() error {
 
 func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
 	doInstall := func() error {
-		officialGithub := "https://github.com/bitrise-io/" + toolname
-		log.Warnf("No supported %s version found", toolname)
-		log.Printf("You can find more information about %s on its official GitHub page: %s", toolname, officialGithub)
-
 		// Install
 		var err error
 		progress.ShowIndicator("Installing", func() {
@@ -158,30 +154,39 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	// check whether installed
-	progInstallPth, err := utils.CheckProgramInstalledPath(toolname)
+	progInstallPth, err := exec.LookPath(toolname)
 	if err != nil {
 		if !isInstall {
 			return err
 		}
+
+		officialGithub := "https://github.com/bitrise-io/" + toolname
+		log.Warnf("%s isn't installed", toolname)
+		log.Printf("You can find more information about %s on its official GitHub page: %s", toolname, officialGithub)
 		return doInstall()
 	}
 	versionOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr(toolname, "-version")
 	if err != nil {
-		log.Print(versionOutput)
-		return fmt.Errorf("run %s -version", toolname)
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return fmt.Errorf("run '%s -version' failed: %s", toolname, versionOutput)
+		}
+		return fmt.Errorf("run '%s -version' failed: %s", toolname, err)
 	}
 
 	// version check
 	isVersionOk, err := versions.IsVersionGreaterOrEqual(versionOutput, minVersion)
 	if err != nil {
-		log.Errorf("Failed to validate installed version")
-		return err
+		return fmt.Errorf("failed to check %s version: %w", toolname, err)
 	}
 	if !isVersionOk {
 		if !isInstall {
-			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, versionOutput)
-			return errors.New("Failed to install required version")
+			return fmt.Errorf("incompatible %s version (%s), should be >= %s", toolname, versionOutput, minVersion)
 		}
+
+		officialGithub := "https://github.com/bitrise-io/" + toolname
+		log.Warnf("Incompatible %s version (%s), minimum version: %s", toolname, versionOutput, minVersion)
+		log.Printf("You can find more information about %s on its official GitHub page: %s", toolname, officialGithub)
 		return doInstall()
 	}
 
