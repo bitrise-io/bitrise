@@ -53,7 +53,7 @@ var (
 			Name:    "clear",
 			Aliases: []string{"c"},
 			Usage:   "Clear the envstore.",
-			Action:  clear,
+			Action:  clearEnvstore,
 		},
 		{
 			Name:    "print",

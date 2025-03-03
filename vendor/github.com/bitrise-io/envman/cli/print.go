@@ -15,7 +15,7 @@ func printCmd(c *cli.Context) error {
 	format := c.String(FormatKey)
 	if format == "" {
 		format = OutputFormatRaw
-	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
+	} else if !(format == OutputFormatRaw || format == OutputFormatJSON || format == OutputFormatEnvList) {
 		log.Fatalf("Invalid format: %s", format)
 	}
 
@@ -32,6 +32,8 @@ func printCmd(c *cli.Context) error {
 	switch format {
 	case OutputFormatRaw:
 		printRawEnvs(envSet)
+	case OutputFormatEnvList:
+		printEnvsList(envSet)
 	case OutputFormatJSON:
 		if err := printJSONEnvs(envSet); err != nil {
 			log.Fatalf("Failed to print env list, err: %s", err)
@@ -113,6 +115,14 @@ func printRawEnvs(envList models.EnvsJSONListModel) {
 	fmt.Println()
 	for key, value := range envList {
 		fmt.Printf("%s: %s\n", key, value)
+	}
+	fmt.Println()
+}
+
+func printEnvsList(envList models.EnvsJSONListModel) {
+	fmt.Println()
+	for key, value := range envList {
+		fmt.Printf("export %s=%q\n", key, value)
 	}
 	fmt.Println()
 }
