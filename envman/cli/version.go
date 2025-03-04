@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bitrise-io/envman/output"
-	"github.com/bitrise-io/envman/version"
+	"github.com/bitrise-io/envman/v2/output"
+	"github.com/bitrise-io/envman/v2/version"
 	"github.com/urfave/cli"
 )
 

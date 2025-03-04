@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
 )

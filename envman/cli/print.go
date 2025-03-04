@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/bitrise-io/envman/env"
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/env"
+	"github.com/bitrise-io/envman/v2/models"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )

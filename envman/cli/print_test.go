@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bitrise-io/envman/env"
+	"github.com/bitrise-io/envman/v2/env"
 	"github.com/stretchr/testify/require"
 )
 
