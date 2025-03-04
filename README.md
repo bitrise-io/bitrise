@@ -7,7 +7,7 @@ It's also useful as a standalone dev tool in your local environment. You can:
 - quickly validate your `bitrise.yml` changes before pushing a commit (`bitrise validate`)
 - run CI workflows locally (`bitrise run workflow_name`)
 - run the workflow editor in `localhost` and edit your configs and pipelines visually (`bitrise :workflow-editor`)
-- 
+- perform various other tasks (for a full list run `bitrise help`)
 
 ## Install
 
