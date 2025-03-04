@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/envman/envman"
 	"github.com/bitrise-io/envman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -29,45 +29,51 @@ func TestEnvListSizeInBytes(t *testing.T) {
 }
 
 func TestValidateEnv(t *testing.T) {
-	// Valid - max allowed
-	str64KBytes := strings.Repeat("a", (64 * 1024))
-	env1 := models.EnvironmentItemModel{
-		"key": str64KBytes,
-	}
-	envs := []models.EnvironmentItemModel{env1}
-
-	valValue, err := validateEnv("key", str64KBytes, envs)
+	defaultConfig, err := envman.GetConfigs()
 	require.NoError(t, err)
-	require.Equal(t, str64KBytes, valValue)
 
-	// List oversize
-	//  first create a large, but valid env set
-	for i := 0; i < 2; i++ {
-		envs = append(envs, env1)
+	tests := []struct {
+		name    string
+		key     string
+		value   string
+		envList []models.EnvironmentItemModel
+		wantErr error
+	}{
+		{
+			name:  "Max allowed env var value",
+			key:   "key",
+			value: strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024),
+		},
+		{
+			name:    "Max allowed env var list",
+			key:     "key",
+			value:   strings.Repeat("a", defaultConfig.EnvListBytesLimitInKB/2*1024),
+			envList: []models.EnvironmentItemModel{{"key": strings.Repeat("a", defaultConfig.EnvListBytesLimitInKB/2*1024)}},
+		},
+		{
+			name:    "Too big env var value",
+			key:     "key",
+			value:   strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024+1),
+			wantErr: NewEnvVarValueTooLargeError("key", float64(defaultConfig.EnvBytesLimitInKB)+(1.0/1024.0), float64(defaultConfig.EnvBytesLimitInKB)),
+		},
+		{
+			name:    "Too big env var list",
+			key:     "key",
+			value:   "a",
+			envList: []models.EnvironmentItemModel{{"key": strings.Repeat("a", defaultConfig.EnvListBytesLimitInKB*1024)}},
+			wantErr: NewEnvVarListTooLargeError(((float64)(defaultConfig.EnvListBytesLimitInKB))+(float64)(len("a"))/1024.0, float64(defaultConfig.EnvListBytesLimitInKB)),
+		},
 	}
-
-	valValue, err = validateEnv("key", str64KBytes, envs)
-	require.NoError(t, err)
-	require.Equal(t, str64KBytes, valValue)
-
-	// append one more -> too large
-	envs = append(envs, env1)
-	_, err = validateEnv("key", str64KBytes, envs)
-	require.Equal(t, errors.New("environment list is too large (320 KB), max allowed size: 256 KB"), err)
-
-	// List oversize + too big value
-	str10Kbytes := strings.Repeat("a", (10 * 1024))
-	envs = []models.EnvironmentItemModel{}
-	for i := 0; i < 8; i++ {
-		env := models.EnvironmentItemModel{
-			"key": str10Kbytes,
-		}
-		envs = append(envs, env)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validValue, err := validateEnv(tt.key, tt.value, tt.envList)
+			if tt.wantErr != nil {
+				require.Equal(t, tt.wantErr, err)
+				require.Equal(t, "", validValue)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.value, validValue)
+			}
+		})
 	}
-
-	str257Kbytes := strings.Repeat("a", (257 * 1024))
-
-	valValue, err = validateEnv("key", str257Kbytes, envs)
-	require.NoError(t, err)
-	require.Equal(t, "environment var (key) value is too large (257 KB), max allowed size: 256 KB", valValue)
 }
