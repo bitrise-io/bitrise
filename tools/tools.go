@@ -214,7 +214,7 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 				}
 			}
 			if isEnvVarLimitErr {
-				return fmt.Errorf("%w.\nTo increase env var list size limit please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
+				return fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
 			}
 
 			return err
