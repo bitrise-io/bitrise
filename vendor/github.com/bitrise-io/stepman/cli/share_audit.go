@@ -13,7 +13,7 @@ func printFinishAudit(share ShareModel, toolMode bool) {
 	b := colorstring.NewBuilder()
 	b.Green("your step (%s@%s) is valid", share.StepID, share.StepTag).NewLine()
 	b.NewLine()
-	b.Plain(GuideTextForShareFinish(toolMode))
+	b.Plain(GuideTextForShareFinish(toolMode)) //nolint:govet
 	fmt.Println(b.String())
 }
 

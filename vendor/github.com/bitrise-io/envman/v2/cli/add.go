@@ -2,12 +2,11 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 
-	"github.com/bitrise-io/envman/envman"
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/envman"
+	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -162,8 +161,8 @@ func validateEnv(key, value string, envList []models.EnvironmentItemModel) (stri
 	valueSizeInBytes := len([]byte(value))
 	if configs.EnvBytesLimitInKB > 0 {
 		if valueSizeInBytes > configs.EnvBytesLimitInKB*1024 {
-			valueSizeInKB := ((float64)(valueSizeInBytes)) / 1024.0
-			return fmt.Sprintf("environment var (%s) value is too large (%#v KB), max allowed size: %#v KB", key, valueSizeInKB, (float64)(configs.EnvBytesLimitInKB)), nil
+			valueSizeInKB := (float64)(valueSizeInBytes) / 1024.0
+			return "", NewEnvVarValueTooLargeError(key, valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
 		}
 	}
 
@@ -174,7 +173,7 @@ func validateEnv(key, value string, envList []models.EnvironmentItemModel) (stri
 		}
 		if envListSizeInBytes+valueSizeInBytes > configs.EnvListBytesLimitInKB*1024 {
 			listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(valueSizeInBytes)/1024
-			return "", fmt.Errorf("environment list is too large (%#v KB), max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
+			return "", NewEnvVarListTooLargeError(listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
 		}
 	}
 	return value, nil
