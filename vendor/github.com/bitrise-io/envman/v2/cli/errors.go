@@ -33,5 +33,5 @@ func NewEnvVarListTooLargeError(envListSizeInKB, maxSizeInKB float64) EnvVarList
 }
 
 func (e EnvVarListTooLargeError) Error() string {
-	return fmt.Sprintf("environment list is too large (%#v KB), max allowed size: %#v KB", e.EnvListSizeInKB, e.MaxSizeInKB)
+	return fmt.Sprintf("env var list is too large (%#v KB), max allowed size: %#v KB", e.EnvListSizeInKB, e.MaxSizeInKB)
 }

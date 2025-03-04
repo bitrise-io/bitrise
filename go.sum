@@ -14,8 +14,10 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 h1:vSHYT6kCL/iOT9BVuUPm0tVcbW57r5zldLWg0aB7qbQ=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192/go.mod h1:CIHVcxZUvsG99XUJV6JlR7okNsMMGY81jMvPC20W+O0=
-github.com/bitrise-io/envman v0.0.0-20250303085455-29a640660057 h1:u1z67dGLVYl+s6kNajzaWUbtl+SrLS3xpsfDoUAfFzg=
-github.com/bitrise-io/envman v0.0.0-20250303085455-29a640660057/go.mod h1:NJIMhSVdPJzHKxxzN+ZXzXJ4ai2K7M+YqABZW+wyZDk=
+github.com/bitrise-io/envman v0.0.0-20230721122944-6b164ed0c2f8 h1:tBhRcS1lxkFrPpnYHbeeQE3DzEVEbs8CMs2y2ppVPB0=
+github.com/bitrise-io/envman v0.0.0-20230721122944-6b164ed0c2f8/go.mod h1:eZDEXpkF4BguvTERmhij3Vwf7Y2qvnJBBW/61hQRip4=
+github.com/bitrise-io/envman/v2 v2.5.2 h1:NRB5oq4MiYCTIE/73ui+Jnb9xM0A0aIRISIxAasdxMk=
+github.com/bitrise-io/envman/v2 v2.5.2/go.mod h1:N+HmJ9EVvGgCyw2bZ1O+YLltSHHhWemKOcQTssSj7UY=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19 h1:zP9oZRZA9JGPELjBcWSzo/nd8g7apc7EBd7KZHHFdvs=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19/go.mod h1:/ueNOKnsjcUrlt8Ck75WRNspL7E6nAAylvl9oGJtYio=
 github.com/bitrise-io/go-utils v1.0.13 h1:1QENhTS/JlKH9F7+/nB+TtbTcor6jGrE6cQ4CJWfp5U=

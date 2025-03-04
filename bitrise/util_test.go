@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	envmanModels "github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/stretchr/testify/require"
 )
 

@@ -35,14 +35,17 @@ github.com/ProtonMail/go-crypto/openpgp/x448
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman v0.0.0-20250303085455-29a640660057
-## explicit; go 1.23
-github.com/bitrise-io/envman/cli
-github.com/bitrise-io/envman/env
-github.com/bitrise-io/envman/envman
+# github.com/bitrise-io/envman v0.0.0-20230721122944-6b164ed0c2f8
+## explicit; go 1.18
 github.com/bitrise-io/envman/models
-github.com/bitrise-io/envman/output
-github.com/bitrise-io/envman/version
+# github.com/bitrise-io/envman/v2 v2.5.2
+## explicit; go 1.22
+github.com/bitrise-io/envman/v2/cli
+github.com/bitrise-io/envman/v2/env
+github.com/bitrise-io/envman/v2/envman
+github.com/bitrise-io/envman/v2/models
+github.com/bitrise-io/envman/v2/output
+github.com/bitrise-io/envman/v2/version
 # github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/secretkeys

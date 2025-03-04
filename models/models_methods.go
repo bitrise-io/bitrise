@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	envmanModels "github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
