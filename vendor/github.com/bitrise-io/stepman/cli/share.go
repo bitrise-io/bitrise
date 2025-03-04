@@ -166,19 +166,20 @@ func share(c *cli.Context) {
 	b.NewLine()
 	b.Plain("Just follow these steps:").NewLine()
 	b.NewLine()
-	b.Plain("0. ").Plain(GuideTextForStepAudit(toolMode)).NewLine()
+
+	b.Plain("0. ").Plain(GuideTextForStepAudit(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("1. ").Plain(GuideTextForStart()).NewLine()
+	b.Plain("1. ").Plain(GuideTextForStart()).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("2. ").Plain(GuideTextForShareStart(toolMode)).NewLine()
+	b.Plain("2. ").Plain(GuideTextForShareStart(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("3. ").Plain(GuideTextForShareCreate(toolMode)).NewLine()
+	b.Plain("3. ").Plain(GuideTextForShareCreate(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("4. ").Plain(GuideTextForAudit(toolMode)).NewLine()
+	b.Plain("4. ").Plain(GuideTextForAudit(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("5. ").Plain(GuideTextForShareFinish(toolMode)).NewLine()
+	b.Plain("5. ").Plain(GuideTextForShareFinish(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("6. ").Plain(GuideTextForFinish()).NewLine()
+	b.Plain("6. ").Plain(GuideTextForFinish()).NewLine() //nolint:govet
 	b.NewLine()
 	fmt.Print(b.String())
 }

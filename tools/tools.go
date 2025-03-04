@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,9 +10,9 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	envman "github.com/bitrise-io/envman/cli"
-	envmanEnv "github.com/bitrise-io/envman/env"
-	envmanModels "github.com/bitrise-io/envman/models"
+	envman "github.com/bitrise-io/envman/v2/cli"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepman "github.com/bitrise-io/stepman/cli"
@@ -19,6 +20,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/sys/unix"
 )
+
+const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error"
 
 func UnameGOOS() (string, error) {
 	switch runtime.GOOS {
@@ -171,10 +174,6 @@ func EnvmanInit(envStorePth string, clear bool) error {
 	return envman.InitEnvStore(envStorePth, clear)
 }
 
-func EnvmanAdd(envStorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
-	return envman.AddEnv(envStorePth, key, value, expand, false, skipIfEmpty, sensitive)
-}
-
 func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
 	for _, env := range envsList {
 		key, value, err := env.GetKeyValuePair()
@@ -202,7 +201,22 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 			sensitive = *opts.IsSensitive
 		}
 
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty, sensitive); err != nil {
+		if err := envman.AddEnv(envstorePth, key, value, isExpand, false, skipIfEmpty, sensitive); err != nil {
+			isEnvVarLimitErr := false
+			var envVarTooBigErr *envman.EnvVarValueTooLargeError
+			if errors.As(err, &envVarTooBigErr) {
+				isEnvVarLimitErr = true
+			}
+			if !isEnvVarLimitErr {
+				var envVarListTooLargeErr *envman.EnvVarListTooLargeError
+				if errors.As(err, &envVarListTooLargeErr) {
+					isEnvVarLimitErr = true
+				}
+			}
+			if isEnvVarLimitErr {
+				return fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
+			}
+
 			return err
 		}
 	}
