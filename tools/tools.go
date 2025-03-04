@@ -9,9 +9,9 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	envman "github.com/bitrise-io/envman/cli"
-	envmanEnv "github.com/bitrise-io/envman/env"
-	envmanModels "github.com/bitrise-io/envman/models"
+	envman "github.com/bitrise-io/envman/v2/cli"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	stepman "github.com/bitrise-io/stepman/cli"

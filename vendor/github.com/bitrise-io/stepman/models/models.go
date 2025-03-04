@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	envmanModels "github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
 type StepSourceModel struct {
@@ -56,9 +56,9 @@ type SwiftStepToolkitModel struct {
 }
 
 type StepToolkitModel struct {
-	Bash   *BashStepToolkitModel   `json:"bash,omitempty" yaml:"bash,omitempty"`
-	Go     *GoStepToolkitModel     `json:"go,omitempty" yaml:"go,omitempty"`
-	Swift  *SwiftStepToolkitModel  `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Bash  *BashStepToolkitModel  `json:"bash,omitempty" yaml:"bash,omitempty"`
+	Go    *GoStepToolkitModel    `json:"go,omitempty" yaml:"go,omitempty"`
+	Swift *SwiftStepToolkitModel `json:"swift,omitempty" yaml:"swift,omitempty"`
 }
 
 // StepModel ...
@@ -174,4 +174,3 @@ type SteplibInfoModel struct {
 	URI      string `json:"uri,omitempty" yaml:"uri,omitempty"`
 	SpecPath string `json:"spec_path,omitempty" yaml:"spec_path,omitempty"`
 }
-

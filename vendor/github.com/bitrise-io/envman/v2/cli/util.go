@@ -3,8 +3,8 @@ package cli
 import (
 	"errors"
 
-	"github.com/bitrise-io/envman/env"
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/env"
+	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/goinp/goinp"
