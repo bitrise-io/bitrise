@@ -34,6 +34,7 @@ release:
     name: stepman
   draft: true
   mode: replace
+  name_template: "{{ .Version }}"
   footer: |
     ### Install or upgrade
 

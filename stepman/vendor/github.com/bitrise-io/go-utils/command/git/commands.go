@@ -47,7 +47,7 @@ func (g *Git) Fetch(opts ...string) *command.Model {
 	return g.command(args...)
 }
 
-// Checkout switchs branches or restore working tree files.
+// Checkout switches branches or restore working tree files.
 // Arg can be a commit hash, a branch or a tag.
 func (g *Git) Checkout(arg string) *command.Model {
 	return g.command("checkout", arg)
@@ -170,6 +170,14 @@ func (g *Git) SparseCheckoutInit(cone bool) *command.Model {
 // SparseCheckoutSet writes the provided patterns to the sparse-checkout config file.
 func (g *Git) SparseCheckoutSet(opts ...string) *command.Model {
 	args := []string{"sparse-checkout", "set"}
+	args = append(args, opts...)
+	return g.command(args...)
+}
+
+// UpdateRef updates the object name stored in a ref safely.
+// With -d flag, it deletes the named <ref>.
+func (g *Git) UpdateRef(opts ...string) *command.Model {
+	args := []string{"update-ref"}
 	args = append(args, opts...)
 	return g.command(args...)
 }

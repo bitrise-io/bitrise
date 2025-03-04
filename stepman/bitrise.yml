@@ -47,6 +47,18 @@ workflows:
     - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN
     steps:
     - bundle::setup-go: { }
+    - script@1:
+        title: Validate if Stepman version matches the git tag
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            version=$(go run main.go --version)
+            if [[ "v$version" != "$BITRISE_GIT_TAG" ]]; then
+              echo "Stepman version ($version) does not match the git tag ($BITRISE_GIT_TAG)"
+              echo "Please update the Stepman version to match the git tag"
+              exit 1
+            fi
     - script:
         title: Goreleaser (create binaries + publish to GH)
         deps:

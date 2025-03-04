@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/stepman/version"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +15,7 @@ func Test_VersionOutput(t *testing.T) {
 	{
 		out, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err, out)
-		require.Equal(t, "0.0.0-development", out)
+		require.Equal(t, version.Version, out)
 	}
 
 	t.Log("Version --full")
@@ -23,11 +24,11 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err, out)
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
-		expectedVersionOut := fmt.Sprintf(`version: 0.0.0-development
+		expectedVersionOut := fmt.Sprintf(`version: %s
 os: %s
 go: %s
 build_number: 
-commit:`, expectedOSVersion, runtime.Version())
+commit:`, version.Version, expectedOSVersion, runtime.Version())
 
 		require.Equal(t, expectedVersionOut, out)
 	}

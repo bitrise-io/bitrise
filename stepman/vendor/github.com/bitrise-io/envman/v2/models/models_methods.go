@@ -33,7 +33,6 @@ const (
 	DefaultUnset = false
 )
 
-// NewEnvJSONList ...
 func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
 	list := EnvsJSONListModel{}
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
@@ -42,9 +41,7 @@ func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
 	return list, nil
 }
 
-// GetKeyValuePairWithType ...
 func (env EnvironmentItemModel) GetKeyValuePairWithType() (string, interface{}, error) {
-	// Collect keys and values
 	var keys []string
 	var values []interface{}
 
@@ -87,7 +84,6 @@ func (env EnvironmentItemModel) GetKeyValuePairWithType() (string, interface{}, 
 	return key, value, nil
 }
 
-// GetKeyValuePair ...
 func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	key, value, err := env.GetKeyValuePairWithType()
 	if err != nil {
@@ -110,10 +106,126 @@ func (env EnvironmentItemModel) GetKeyValuePair() (string, string, error) {
 	return key, valueStr, nil
 }
 
-// ParseFromInterfaceMap ...
+func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error) {
+	value, found := env[OptionsKey]
+	if !found {
+		return EnvironmentItemOptionsModel{}, nil
+	}
+
+	if opts, ok := value.(EnvironmentItemOptionsModel); ok {
+		return opts, nil
+	}
+
+	// if it's read from a file (YAML/JSON) then it's most likely not the proper type
+	//  so cast it from the generic interface-interface map
+	optsMap := make(map[string]interface{})
+	if m, ok := value.(map[string]interface{}); ok {
+		optsMap = m
+	} else if m, ok := value.(map[interface{}]interface{}); ok {
+		for k, v := range m {
+			kStr, ok := k.(string)
+			if !ok {
+				return EnvironmentItemOptionsModel{}, fmt.Errorf("failed to cast option key (%#v) to string", k)
+			}
+			optsMap[kStr] = v
+		}
+	} else {
+		return EnvironmentItemOptionsModel{}, errors.New("opts is not a map")
+	}
+
+	options := EnvironmentItemOptionsModel{}
+	if err := options.ParseFromInterfaceMap(optsMap); err != nil {
+		return EnvironmentItemOptionsModel{}, err
+	}
+
+	return options, nil
+
+}
+
+func (env EnvironmentItemModel) NormalizeValidateFillDefaults() error {
+	if err := env.Normalize(); err != nil {
+		return err
+	}
+
+	if err := env.Validate(); err != nil {
+		return err
+	}
+
+	return env.FillMissingDefaults()
+}
+
+func (env EnvironmentItemModel) Normalize() error {
+	opts, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+	env[OptionsKey] = opts
+	return nil
+}
+
+func (env EnvironmentItemModel) Validate() error {
+	_, _, err := env.GetKeyValuePair()
+	if err != nil {
+		return err
+	}
+	_, err = env.GetOptions()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (env EnvironmentItemModel) FillMissingDefaults() error {
+	options, err := env.GetOptions()
+	if err != nil {
+		return err
+	}
+	if options.Title == nil {
+		options.Title = pointers.NewStringPtr("")
+	}
+	if options.Description == nil {
+		options.Description = pointers.NewStringPtr("")
+	}
+	if options.Summary == nil {
+		options.Summary = pointers.NewStringPtr("")
+	}
+	if options.Category == nil {
+		options.Category = pointers.NewStringPtr("")
+	}
+	if options.ValueOptions == nil {
+		options.ValueOptions = []string{}
+	}
+	if options.IsRequired == nil {
+		options.IsRequired = pointers.NewBoolPtr(DefaultIsRequired)
+	}
+	if options.IsExpand == nil {
+		options.IsExpand = pointers.NewBoolPtr(DefaultIsExpand)
+	}
+	if options.IsSensitive == nil {
+		options.IsSensitive = pointers.NewBoolPtr(DefaultIsSensitive)
+	}
+	if options.IsDontChangeValue == nil {
+		options.IsDontChangeValue = pointers.NewBoolPtr(DefaultIsDontChangeValue)
+	}
+	if options.IsTemplate == nil {
+		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplate)
+	}
+	if options.SkipIfEmpty == nil {
+		options.SkipIfEmpty = pointers.NewBoolPtr(DefaultSkipIfEmpty)
+	}
+	if options.Meta == nil {
+		options.Meta = map[string]interface{}{}
+	}
+	if options.Unset == nil {
+		options.Unset = pointers.NewBoolPtr(DefaultUnset)
+	}
+
+	env[OptionsKey] = options
+	return nil
+}
+
 func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[string]interface{}) error {
 	for keyStr, value := range input {
-
 		switch keyStr {
 		case "title":
 			envSerModel.Title = parseutil.CastToStringPtr(value)
@@ -188,11 +300,11 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 			}
 			envSerModel.Unset = castedBoolPtr
 		case "meta":
-			castedMapStringInterface, ok := parseutil.CastToMapStringInterface(value)
-			if !ok {
-				return fmt.Errorf("failed to parse map[string]interface{} value (%#v) for key (%s)", value, keyStr)
+			metaValue, err := convertMetaValue(value)
+			if err != nil {
+				return fmt.Errorf("failed to parse meta: %s", err)
 			}
-			envSerModel.Meta = castedMapStringInterface
+			envSerModel.Meta = metaValue
 		default:
 			// intentional no-op case -- we just ignore unrecognized fields
 		}
@@ -200,65 +312,9 @@ func (envSerModel *EnvironmentItemOptionsModel) ParseFromInterfaceMap(input map[
 	return nil
 }
 
-// GetOptions ...
-func (env EnvironmentItemModel) GetOptions() (EnvironmentItemOptionsModel, error) {
-	value, found := env[OptionsKey]
-	if !found {
-		return EnvironmentItemOptionsModel{}, nil
-	}
-
-	envItmCasted, ok := value.(EnvironmentItemOptionsModel)
-	if ok {
-		return envItmCasted, nil
-	}
-
-	// if it's read from a file (YAML/JSON) then it's most likely not the proper type
-	//  so cast it from the generic interface-interface map
-	normalizedOptsInterfaceMap := make(map[string]interface{})
-	isNormalizeOK := false
-	if optionsInterfaceMap, ok := value.(map[interface{}]interface{}); ok {
-		// Try to normalize every key to String
-		for key, value := range optionsInterfaceMap {
-			keyStr, ok := key.(string)
-			if !ok {
-				return EnvironmentItemOptionsModel{}, fmt.Errorf("failed to cask options key (%#v) to string", key)
-			}
-			normalizedOptsInterfaceMap[keyStr] = value
-		}
-		isNormalizeOK = true
-	} else {
-		if castedTmp, ok := value.(map[string]interface{}); ok {
-			normalizedOptsInterfaceMap = castedTmp
-			isNormalizeOK = true
-		}
-	}
-
-	if isNormalizeOK {
-		options := EnvironmentItemOptionsModel{}
-		err := options.ParseFromInterfaceMap(normalizedOptsInterfaceMap)
-		if err != nil {
-			return EnvironmentItemOptionsModel{}, err
-		}
-
-		return options, nil
-	}
-
-	return EnvironmentItemOptionsModel{}, fmt.Errorf("failed to cast options value: (%#v)", value)
-}
-
-// Normalize ...
-func (env *EnvironmentItemModel) Normalize() error {
-	opts, err := env.GetOptions()
-	if err != nil {
-		return err
-	}
-	(*env)[OptionsKey] = opts
-	return nil
-}
-
 // Normalize - if successful this makes the model JSON serializable.
 // Without this, if the object was created with e.g. a YAML parser,
-// the type of `opts` might be map[interface]interface, which is not JSON serializable.
+// the type of `opts` might be a map[interface]interface, which is not JSON serializable.
 // After this call it's ensured that the type of objects is map[string]interface,
 // which is JSON serializable.
 func (envsSerializeObj *EnvsSerializeModel) Normalize() error {
@@ -270,78 +326,59 @@ func (envsSerializeObj *EnvsSerializeModel) Normalize() error {
 	return nil
 }
 
-// FillMissingDefaults ...
-func (env *EnvironmentItemModel) FillMissingDefaults() error {
-	options, err := env.GetOptions()
+func convertMetaValue(metaValue any) (map[string]any, error) {
+	converted, err := recursiveConvertToStringKeyedMap(metaValue)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if options.Title == nil {
-		options.Title = pointers.NewStringPtr("")
+	convertedMetaValue, ok := converted.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("meta value is not a map")
 	}
-	if options.Description == nil {
-		options.Description = pointers.NewStringPtr("")
-	}
-	if options.Summary == nil {
-		options.Summary = pointers.NewStringPtr("")
-	}
-	if options.Category == nil {
-		options.Category = pointers.NewStringPtr("")
-	}
-	if options.ValueOptions == nil {
-		options.ValueOptions = []string{}
-	}
-	if options.IsRequired == nil {
-		options.IsRequired = pointers.NewBoolPtr(DefaultIsRequired)
-	}
-	if options.IsExpand == nil {
-		options.IsExpand = pointers.NewBoolPtr(DefaultIsExpand)
-	}
-	if options.IsSensitive == nil {
-		options.IsSensitive = pointers.NewBoolPtr(DefaultIsSensitive)
-	}
-	if options.IsDontChangeValue == nil {
-		options.IsDontChangeValue = pointers.NewBoolPtr(DefaultIsDontChangeValue)
-	}
-	if options.IsTemplate == nil {
-		options.IsTemplate = pointers.NewBoolPtr(DefaultIsTemplate)
-	}
-	if options.SkipIfEmpty == nil {
-		options.SkipIfEmpty = pointers.NewBoolPtr(DefaultSkipIfEmpty)
-	}
-	if options.Meta == nil {
-		options.Meta = map[string]interface{}{}
-	}
-	if options.Unset == nil {
-		options.Unset = pointers.NewBoolPtr(DefaultUnset)
-	}
-
-	(*env)[OptionsKey] = options
-	return nil
+	return convertedMetaValue, nil
 }
 
-// Validate ...
-func (env EnvironmentItemModel) Validate() error {
-	_, _, err := env.GetKeyValuePair()
-	if err != nil {
-		return err
-	}
-	_, err = env.GetOptions()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// NormalizeValidateFillDefaults ...
-func (env EnvironmentItemModel) NormalizeValidateFillDefaults() error {
-	if err := env.Normalize(); err != nil {
-		return err
+func recursiveConvertToStringKeyedMap(source interface{}) (interface{}, error) {
+	if array, ok := source.([]interface{}); ok {
+		var convertedArray []interface{}
+		for _, element := range array {
+			convertedValue, err := recursiveConvertToStringKeyedMap(element)
+			if err != nil {
+				return nil, err
+			}
+			convertedArray = append(convertedArray, convertedValue)
+		}
+		return convertedArray, nil
 	}
 
-	if err := env.Validate(); err != nil {
-		return err
+	if interfaceToInterfaceMap, ok := source.(map[interface{}]interface{}); ok {
+		target := map[string]interface{}{}
+		for key, value := range interfaceToInterfaceMap {
+			strKey, ok := key.(string)
+			if !ok {
+				return nil, fmt.Errorf("failed to convert map key from type interface{} to string")
+			}
+
+			convertedValue, err := recursiveConvertToStringKeyedMap(value)
+			if err != nil {
+				return nil, err
+			}
+			target[strKey] = convertedValue
+		}
+		return target, nil
 	}
 
-	return env.FillMissingDefaults()
+	if stringToInterfaceMap, ok := source.(map[string]interface{}); ok {
+		target := map[string]interface{}{}
+		for key, value := range stringToInterfaceMap {
+			convertedValue, err := recursiveConvertToStringKeyedMap(value)
+			if err != nil {
+				return nil, err
+			}
+			target[key] = convertedValue
+		}
+		return target, nil
+	}
+
+	return source, nil
 }

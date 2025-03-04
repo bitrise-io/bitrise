@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	envmanModels "github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"

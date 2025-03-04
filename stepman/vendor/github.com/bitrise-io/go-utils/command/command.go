@@ -2,10 +2,10 @@ package command
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -125,7 +125,7 @@ func (m Model) PrintableCommandArgs() string {
 func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	cmdArgsDecorated := []string{}
 	for idx, anArg := range fullCommandArgs {
-		quotedArg := strconv.Quote(anArg)
+		quotedArg := fmt.Sprintf("\"%s\"", anArg)
 		if idx == 0 && !isQuoteFirst {
 			quotedArg = anArg
 		}
