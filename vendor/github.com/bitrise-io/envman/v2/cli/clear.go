@@ -3,13 +3,13 @@ package cli
 import (
 	"errors"
 
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pathutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
-func clear(_ *cli.Context) error {
+func clearEnvstore(_ *cli.Context) error {
 	log.Debugln("[ENVMAN] - Work path:", CurrentEnvStoreFilePath)
 
 	if err := ClearEnvs(CurrentEnvStoreFilePath); err != nil {

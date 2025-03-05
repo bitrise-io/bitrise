@@ -1,6 +1,10 @@
 package cli
 
-import "github.com/urfave/cli"
+import (
+	"fmt"
+
+	"github.com/urfave/cli"
+)
 
 const (
 	// PathEnvKey ...
@@ -69,6 +73,8 @@ const (
 	OutputFormatRaw = "raw"
 	// OutputFormatJSON ...
 	OutputFormatJSON = "json"
+	// OutputFormatExport
+	OutputFormatEnvList = "envlist"
 )
 
 var (
@@ -123,7 +129,7 @@ var (
 	}
 	flFormat = cli.StringFlag{
 		Name:  FormatKey,
-		Usage: "Output format (options: raw, json).",
+		Usage: fmt.Sprintf("Output format (options: %s, %s, %s).", OutputFormatRaw, OutputFormatJSON, OutputFormatEnvList),
 	}
 	flExpand = cli.BoolFlag{
 		Name:  ExpandKey,
