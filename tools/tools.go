@@ -202,9 +202,9 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 		}
 
 		if err := envman.AddEnv(envstorePth, key, value, isExpand, false, skipIfEmpty, sensitive); err != nil {
-			var envVarTooBigErr envman.EnvVarValueTooLargeError
+			var envVarValueTooLargeErr envman.EnvVarValueTooLargeError
 			var envVarListTooLargeErr envman.EnvVarListTooLargeError
-			if errors.As(err, &envVarTooBigErr) || errors.As(err, &envVarListTooLargeErr) {
+			if errors.As(err, &envVarValueTooLargeErr) || errors.As(err, &envVarListTooLargeErr) {
 				return fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
 			}
 			return err
