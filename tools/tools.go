@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +20,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/sys/unix"
 )
+
+const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large"
 
 func UnameGOOS() (string, error) {
 	switch runtime.GOOS {
@@ -171,10 +174,6 @@ func EnvmanInit(envStorePth string, clear bool) error {
 	return envman.InitEnvStore(envStorePth, clear)
 }
 
-func EnvmanAdd(envStorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
-	return envman.AddEnv(envStorePth, key, value, expand, false, skipIfEmpty, sensitive)
-}
-
 func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
 	for _, env := range envsList {
 		key, value, err := env.GetKeyValuePair()
@@ -202,7 +201,12 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 			sensitive = *opts.IsSensitive
 		}
 
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty, sensitive); err != nil {
+		if err := envman.AddEnv(envstorePth, key, value, isExpand, false, skipIfEmpty, sensitive); err != nil {
+			var envVarValueTooLargeErr envman.EnvVarValueTooLargeError
+			var envVarListTooLargeErr envman.EnvVarListTooLargeError
+			if errors.As(err, &envVarValueTooLargeErr) || errors.As(err, &envVarListTooLargeErr) {
+				return fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
+			}
 			return err
 		}
 	}
