@@ -125,9 +125,15 @@ func TestEnvmanAddEnvs(t *testing.T) {
 		wantErr     string
 	}{
 		{
-			name:        "add envs",
+			name:        "add valid envs",
 			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
 			envsList:    []models.EnvironmentItemModel{{"key_1": "value_1"}, {"key_2": "value_2"}},
+		},
+		{
+			name:        "add invalid envs",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key_1": "value_1", "key_2": "value_2"}},
+			wantErr:     "more than 1 environment key specified: [key_1 key_2]",
 		},
 		{
 			name:        "add too large env",
