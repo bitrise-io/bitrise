@@ -5,9 +5,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
+	envmanCLI "github.com/bitrise-io/envman/v2/cli"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	"github.com/bitrise-io/envman/v2/envman"
 	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -108,4 +112,56 @@ func TestEnvmanJSONPrint(t *testing.T) {
 	out, err = EnvmanReadEnvList(envstorePth)
 	require.NotEqual(t, nil, err)
 	require.Nil(t, out)
+}
+
+func TestEnvmanAddEnvs(t *testing.T) {
+	defaultConfig, err := envman.GetConfigs()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		envstorePth string
+		envsList    []models.EnvironmentItemModel
+		wantErr     string
+	}{
+		{
+			name:        "add envs",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key": "value"}},
+		},
+		{
+			name:        "add too large env",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024+1)}},
+			wantErr: `env var (key) value is too large (256.0009765625 KB), max allowed size: 256 KB.
+To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
+		},
+		{
+			name:        "add env to a too large env list",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key_1": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024)}, {"key_2": "a"}},
+			wantErr: `env var list is too large (256.0009765625 KB), max allowed size: 256 KB.
+To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := EnvmanInit(tt.envstorePth, true)
+			require.NoError(t, err)
+
+			err = EnvmanAddEnvs(tt.envstorePth, tt.envsList)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+
+				gotEnvs, err := EnvmanReadEnvList(tt.envstorePth)
+				require.NoError(t, err)
+
+				wantEnvs, err := envmanCLI.ConvertToEnvsJSONModel(tt.envsList, true, false, &envmanEnv.DefaultEnvironmentSource{})
+				require.Equal(t, wantEnvs, gotEnvs)
+			}
+
+		})
+	}
 }

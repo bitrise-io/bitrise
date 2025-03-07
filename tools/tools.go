@@ -21,7 +21,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error"
+const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large"
 
 func UnameGOOS() (string, error) {
 	switch runtime.GOOS {
@@ -203,12 +203,12 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 
 		if err := envman.AddEnv(envstorePth, key, value, isExpand, false, skipIfEmpty, sensitive); err != nil {
 			isEnvVarLimitErr := false
-			var envVarTooBigErr *envman.EnvVarValueTooLargeError
+			var envVarTooBigErr envman.EnvVarValueTooLargeError
 			if errors.As(err, &envVarTooBigErr) {
 				isEnvVarLimitErr = true
 			}
 			if !isEnvVarLimitErr {
-				var envVarListTooLargeErr *envman.EnvVarListTooLargeError
+				var envVarListTooLargeErr envman.EnvVarListTooLargeError
 				if errors.As(err, &envVarListTooLargeErr) {
 					isEnvVarLimitErr = true
 				}
