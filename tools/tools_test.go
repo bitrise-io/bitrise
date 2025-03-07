@@ -127,7 +127,7 @@ func TestEnvmanAddEnvs(t *testing.T) {
 		{
 			name:        "add envs",
 			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
-			envsList:    []models.EnvironmentItemModel{{"key": "value"}},
+			envsList:    []models.EnvironmentItemModel{{"key_1": "value_1"}, {"key_2": "value_2"}},
 		},
 		{
 			name:        "add too large env",

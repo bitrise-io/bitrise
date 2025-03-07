@@ -2,7 +2,7 @@ module github.com/bitrise-io/bitrise/v2
 
 go 1.22.0
 
-toolchain go1.23.6
+toolchain go1.22.7
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
