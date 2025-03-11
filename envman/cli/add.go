@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -11,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
+
+const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large"
 
 func add(c *cli.Context) error {
 	log.Debugln("[ENVMAN] Work path:", CurrentEnvStoreFilePath)
@@ -33,7 +36,7 @@ func add(c *cli.Context) error {
 	if value == "" && c.String(ValueFileKey) != "" {
 		var err error
 		if value, err = loadValueFromFile(c.String(ValueFileKey)); err != nil {
-			log.Fatal("[ENVMAN] Failed to read file value: ", err)
+			log.Fatalf("[ENVMAN] Failed to read env var value from file: %s", err)
 		}
 		log.Debugf("adding file flag value: (%s)", value)
 	}
@@ -42,59 +45,33 @@ func add(c *cli.Context) error {
 	if value == "" {
 		info, err := os.Stdin.Stat()
 		if err != nil {
-			log.Fatalf("[ENVMAN] Failed to get standard input FileInfo: %s", err)
+			log.Fatalf("[ENVMAN] Failed to get file info for standard input: %s", err)
 		}
 		if info.Mode()&os.ModeNamedPipe == os.ModeNamedPipe {
 			log.Debugf("adding from piped stdin")
-
-			configs, err := envman.GetConfigs()
-			if err != nil {
-				log.Fatalf("[ENVMAN] Failed to load envman config: %s", err)
-			}
-
 			data, err := io.ReadAll(os.Stdin)
 			if err != nil {
-				log.Fatalf("[ENVMAN] Failed to read standard input: %s", err)
-			}
-
-			if configs.EnvBytesLimitInKB > 0 && len(data) > configs.EnvBytesLimitInKB*1024 {
-				valueSizeInKB := ((float64)(len(data))) / 1024.0
-				log.Warnf("environment value too large")
-				log.Warnf("environment value size (%#v KB) - max allowed size: %#v KB", valueSizeInKB, (float64)(configs.EnvBytesLimitInKB))
-				log.Fatalf("[ENVMAN] environment value too large - rejected")
-			}
-
-			if configs.EnvListBytesLimitInKB > 0 {
-				envList, err := ReadEnvsOrCreateEmptyList(CurrentEnvStoreFilePath)
-				if err != nil {
-					log.Fatalf("[ENVMAN] failed to get env list, error: %s", err)
-				}
-				envListSizeInBytes, err := envListSizeInBytes(envList)
-				if err != nil {
-					log.Fatalf("[ENVMAN] failed to get env list size, error: %s", err)
-				}
-				if envListSizeInBytes+len(data) > configs.EnvListBytesLimitInKB*1024 {
-					listSizeInKB := (float64)(envListSizeInBytes)/1024 + (float64)(len(data))/1024
-					log.Warn("environment list too large")
-					log.Warnf("environment list size (%#v KB) - max allowed size: %#v KB", listSizeInKB, (float64)(configs.EnvListBytesLimitInKB))
-					log.Fatalf("[ENVMAN] environment list too large")
-				}
+				log.Fatalf("[ENVMAN] Failed to read env var value from standard input: %s", err)
 			}
 
 			value = string(data)
-
 			log.Debugf("stdin value: (%s)", value)
 		}
 	}
 
 	if err := AddEnv(CurrentEnvStoreFilePath, key, value, expand, replace, skipIfEmpty, sensitive); err != nil {
-		log.Fatal("[ENVMAN] Failed to add env:", err)
+		var envVarValueTooLargeErr EnvVarValueTooLargeError
+		var envVarListTooLargeErr EnvVarListTooLargeError
+		if errors.As(err, &envVarValueTooLargeErr) || errors.As(err, &envVarListTooLargeErr) {
+			err = fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
+		}
+		log.Fatalf("[ENVMAN] Failed to add env var: %s", err)
 	}
 
 	log.Debugln("[ENVMAN] Env added")
 
 	if err := logEnvs(CurrentEnvStoreFilePath); err != nil {
-		log.Fatal("[ENVMAN] Failed to print:", err)
+		log.Fatalf("[ENVMAN] Failed to print env var list: %s", err)
 	}
 
 	return nil

@@ -129,7 +129,8 @@ func TestAdd(t *testing.T) {
 
 		out, err := addPipeCommand("KEY", strings.NewReader(strings.Repeat("0", 2*1024)), envstore).RunAndReturnTrimmedCombinedOutput()
 		require.Error(t, err)
-		require.True(t, strings.Contains(out, "environment value size (2 KB) - max allowed size: 1 KB"))
+		require.True(t, strings.Contains(out, `[ENVMAN] Failed to add env var: env var (KEY) value is too large (2 KB), max allowed size: 1 KB.
+To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`), out)
 
 		if exists {
 			require.NoError(t, fileutil.WriteBytesToFile(configPath, origData))
