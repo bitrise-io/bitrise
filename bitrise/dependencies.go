@@ -191,16 +191,14 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 // CheckIsEnvmanInstalled ...
 func CheckIsEnvmanInstalled(minEnvmanVersion string) error {
-	toolname := "envman"
 	minVersion := minEnvmanVersion
-	return checkIsBitriseToolInstalled(toolname, minVersion, true)
+	return checkIsBitriseToolInstalled(tools.EnvmanToolName, minVersion, true)
 }
 
 // CheckIsStepmanInstalled ...
 func CheckIsStepmanInstalled(minStepmanVersion string) error {
-	toolname := "stepman"
 	minVersion := minStepmanVersion
-	return checkIsBitriseToolInstalled(toolname, minVersion, true)
+	return checkIsBitriseToolInstalled(tools.StepmanToolName, minVersion, true)
 }
 
 func checkIfBrewPackageInstalled(packageName string) bool {
