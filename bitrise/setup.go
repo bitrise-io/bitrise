@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	minEnvmanVersion  = "2.4.3"
+	minEnvmanVersion  = "2.5.3"
 	minStepmanVersion = "0.16.3"
 )
 
