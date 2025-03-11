@@ -171,3 +171,59 @@ To increase env var limits please visit: https://support.bitrise.io/en/articles/
 		})
 	}
 }
+
+func Test_createGitHubBinDownloadURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		githubUser  string
+		toolName    string
+		toolVersion string
+		unameGOOS   string
+		unameGOARCH string
+		want        string
+	}{
+		{
+			name:        "envman pre 2.5.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "envman",
+			toolVersion: "2.5.1",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/envman/releases/download/2.5.1/envman-Darwin-arm64",
+		},
+		{
+			name:        "envman post 2.5.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "envman",
+			toolVersion: "2.5.2",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/envman/releases/download/v2.5.2/envman-Darwin-arm64",
+		},
+		{
+			name:        "stepman pre 0.17.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "stepman",
+			toolVersion: "0.17.1",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/stepman/releases/download/0.17.1/stepman-Darwin-arm64",
+		},
+		{
+			name:        "stepman post 0.17.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "stepman",
+			toolVersion: "0.17.2",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/stepman/releases/download/v0.17.2/stepman-Darwin-arm64",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := createGitHubBinDownloadURL(tt.githubUser, tt.toolName, tt.toolVersion, tt.unameGOOS, tt.unameGOARCH); got != tt.want {
+				t.Errorf("createGitHubBinDownloadURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

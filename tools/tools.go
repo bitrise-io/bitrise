@@ -3,7 +3,6 @@ package tools
 import (
 	"errors"
 	"fmt"
-	"go/version"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,6 +18,7 @@ import (
 	stepman "github.com/bitrise-io/stepman/cli"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/hashicorp/go-retryablehttp"
+	"golang.org/x/mod/semver"
 	"golang.org/x/sys/unix"
 )
 
@@ -36,7 +36,7 @@ func UnameGOOS() (string, error) {
 	case "linux":
 		return "Linux", nil
 	}
-	return "", fmt.Errorf("Unsupported platform (%s)", runtime.GOOS)
+	return "", fmt.Errorf("unsupported platform (%s)", runtime.GOOS)
 }
 
 func UnameGOARCH() (string, error) {
@@ -46,24 +46,10 @@ func UnameGOARCH() (string, error) {
 	case "arm64":
 		return "arm64", nil
 	}
-	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
+	return "", fmt.Errorf("unsupported architecture (%s)", runtime.GOARCH)
 }
 
-func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
-	shouldAddVPrefix := false
-	if toolname == EnvmanToolName {
-		if version.Compare(toolVersion, "2.5.2") >= 0 {
-			shouldAddVPrefix = true
-		}
-	} else if toolname == StepmanToolName {
-		if version.Compare(toolVersion, "0.17.2") >= 0 {
-			shouldAddVPrefix = true
-		}
-	}
-	if shouldAddVPrefix {
-		toolVersion = "v" + toolVersion
-	}
-
+func InstallToolFromGitHub(toolName, githubUser, toolVersion string) error {
 	unameGOOS, err := UnameGOOS()
 	if err != nil {
 		return fmt.Errorf("failed to determine OS: %w", err)
@@ -73,9 +59,26 @@ func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
 		return fmt.Errorf("failed to determine ARCH: %w", err)
 	}
 
-	downloadURL := "https://github.com/" + githubUser + "/" + toolname + "/releases/download/" + toolVersion + "/" + toolname + "-" + unameGOOS + "-" + unameGOARCH
+	downloadURL := createGitHubBinDownloadURL(githubUser, toolName, toolVersion, unameGOOS, unameGOARCH)
+	return InstallFromURL(toolName, downloadURL)
+}
 
-	return InstallFromURL(toolname, downloadURL)
+func createGitHubBinDownloadURL(githubUser, toolName, toolVersion, unameGOOS, unameGOARCH string) string {
+	shouldAddVPrefix := false
+	if toolName == EnvmanToolName {
+		if semver.Compare("v"+toolVersion, "v2.5.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	} else if toolName == StepmanToolName {
+		if semver.Compare("v"+toolVersion, "v0.17.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	}
+	if shouldAddVPrefix {
+		toolVersion = "v" + toolVersion
+	}
+
+	return "https://github.com/" + githubUser + "/" + toolName + "/releases/download/" + toolVersion + "/" + toolName + "-" + unameGOOS + "-" + unameGOARCH
 }
 
 func DownloadFile(downloadURL, targetDirPath string) error {
@@ -89,7 +92,11 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 		return fmt.Errorf("create %s: %s", targetDirPath, err)
 	}
 
-	resp, err := retryablehttp.Get(downloadURL)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	client := retryablehttp.NewClient()
+	client.Logger = &httpLogAdaptor{logger: logger}
+	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
+	resp, err := client.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("download %s: %s", downloadURL, err)
 	}
@@ -307,4 +314,14 @@ func IsBuiltInFlagTypeKey(env string) bool {
 	default:
 		return false
 	}
+}
+
+// httpLogAdaptor adapts the retryablehttp.Logger interface to the log.Logger.
+type httpLogAdaptor struct {
+	logger log.Logger
+}
+
+// Printf implements the retryablehttp.Logger interface
+func (a *httpLogAdaptor) Printf(fmtStr string, vars ...interface{}) {
+	a.logger.Debugf(fmtStr, vars...)
 }
