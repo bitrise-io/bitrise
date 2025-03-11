@@ -164,11 +164,11 @@ func doSetupBitriseCoreTools() error {
 	log.Infof("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return fmt.Errorf("Envman failed to install: %s", err)
+		return fmt.Errorf("failed to install envman: %s", err)
 	}
 
 	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return fmt.Errorf("Stepman failed to install: %s", err)
+		return fmt.Errorf("failed to install stepman: %s", err)
 	}
 
 	return nil

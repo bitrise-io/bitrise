@@ -3,6 +3,7 @@ package tools
 import (
 	"errors"
 	"fmt"
+	"go/version"
 	"io"
 	"os"
 	"path/filepath"
@@ -22,6 +23,11 @@ import (
 )
 
 const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large"
+
+const (
+	EnvmanToolName  = "envman"
+	StepmanToolName = "stepman"
+)
 
 func UnameGOOS() (string, error) {
 	switch runtime.GOOS {
@@ -44,14 +50,29 @@ func UnameGOARCH() (string, error) {
 }
 
 func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
+	shouldAddVPrefix := false
+	if toolname == EnvmanToolName {
+		if version.Compare(toolVersion, "2.5.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	} else if toolname == StepmanToolName {
+		if version.Compare(toolVersion, "0.17.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	}
+	if shouldAddVPrefix {
+		toolVersion = "v" + toolVersion
+	}
+
 	unameGOOS, err := UnameGOOS()
 	if err != nil {
-		return fmt.Errorf("Failed to determine OS: %s", err)
+		return fmt.Errorf("failed to determine OS: %w", err)
 	}
 	unameGOARCH, err := UnameGOARCH()
 	if err != nil {
-		return fmt.Errorf("Failed to determine ARCH: %s", err)
+		return fmt.Errorf("failed to determine ARCH: %w", err)
 	}
+
 	downloadURL := "https://github.com/" + githubUser + "/" + toolname + "/releases/download/" + toolVersion + "/" + toolname + "-" + unameGOOS + "-" + unameGOARCH
 
 	return InstallFromURL(toolname, downloadURL)
