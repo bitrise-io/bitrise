@@ -248,7 +248,7 @@ step_bundles:
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            $current_bitrise setup --clean
+            $current_bitrise setup
 
             # Setup per OS test name and log file name
             if [ "$(uname)" = "Linux" ]; then
@@ -295,7 +295,7 @@ step_bundles:
 
             export PR="" PULL_REQUEST_ID=""
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            $current_bitrise setup --clean
+            $current_bitrise setup
 
             # Setup per OS test name and log file name
             linux_only_test_name_json='{"test-name":"Linux only integration tests"}'
