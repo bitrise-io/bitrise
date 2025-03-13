@@ -204,7 +204,7 @@ func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanMode
 	errorMessage := failedStepRunResult.ErrorStr
 	errorMessage, limited := tools.LimitEnvVarValue(errorMessage, FailedStepErrorMessageEnvVarSizeLimitInBytes)
 	if limited {
-		log.Warnf("Truncating error message to %dKB", FailedStepErrorMessageEnvVarSizeLimitInBytes)
+		log.Warnf("Truncating BITRISE_FAILED_STEP_ERROR_MESSAGE value to %dKB", FailedStepErrorMessageEnvVarSizeLimitInBytes/1024)
 	}
 
 	return []envmanModels.EnvironmentItemModel{
