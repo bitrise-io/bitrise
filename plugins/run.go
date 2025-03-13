@@ -7,7 +7,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/log/logwriter"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
@@ -139,17 +138,10 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 	// $ENV_1 will be printed (and not value).
 	cmd.AppendEnvs(envs...)
 
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	logWriter := logwriter.NewLogWriter(logger)
-
-	cmd.SetStdout(logWriter)
-	cmd.SetStderr(logWriter)
+	cmd.SetStdout(os.Stdout)
+	cmd.SetStderr(os.Stderr)
 
 	cmdErr := cmd.Run()
-
-	if err := logWriter.Close(); err != nil {
-		log.Warnf("Failed to close command output writer: %s", err)
-	}
 
 	return cmdErr
 }
