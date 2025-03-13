@@ -7,16 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/envman/v2/envman"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"gopkg.in/yaml.v2"
 )
 
 type ValidationType int
@@ -25,6 +26,8 @@ const (
 	ValidationTypeFull ValidationType = iota
 	ValidationTypeMinimal
 )
+
+const FallbackEnvVarSizeLimitInKB = 256
 
 func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
 	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
@@ -199,6 +202,20 @@ func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanMode
 	}
 
 	errorMessage := failedStepRunResult.ErrorStr
+	var maxEnvVarSizeInKB int
+	envmanConfigs, err := envman.GetConfigs()
+	if err != nil {
+		maxEnvVarSizeInKB = FallbackEnvVarSizeLimitInKB
+		log.Warnf("Failed to get envman configs: %s, using %dKB as env var size limit", err.Error(), maxEnvVarSizeInKB)
+	} else {
+		maxEnvVarSizeInKB = envmanConfigs.EnvBytesLimitInKB
+	}
+
+	errorMessageSizeInBytes := len([]byte(errorMessage))
+	if errorMessageSizeInBytes > maxEnvVarSizeInKB*1024 {
+		errorMessage = errorMessage[:maxEnvVarSizeInKB*1024]
+		log.Warnf("Truncating error message to %dKB", maxEnvVarSizeInKB)
+	}
 
 	return []envmanModels.EnvironmentItemModel{
 		{"BITRISE_FAILED_STEP_TITLE": failedStepTitle},
