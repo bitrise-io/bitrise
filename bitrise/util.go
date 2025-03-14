@@ -7,16 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"gopkg.in/yaml.v2"
 )
 
 type ValidationType int
@@ -25,6 +26,8 @@ const (
 	ValidationTypeFull ValidationType = iota
 	ValidationTypeMinimal
 )
+
+const FailedStepErrorMessageEnvVarSizeLimitInBytes = 1 * 1024
 
 func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
 	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
@@ -199,6 +202,10 @@ func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanMode
 	}
 
 	errorMessage := failedStepRunResult.ErrorStr
+	errorMessage, limited := tools.LimitEnvVarValue(errorMessage, FailedStepErrorMessageEnvVarSizeLimitInBytes)
+	if limited {
+		log.Warnf("Truncating BITRISE_FAILED_STEP_ERROR_MESSAGE value to %dKB", FailedStepErrorMessageEnvVarSizeLimitInBytes/1024)
+	}
 
 	return []envmanModels.EnvironmentItemModel{
 		{"BITRISE_FAILED_STEP_TITLE": failedStepTitle},

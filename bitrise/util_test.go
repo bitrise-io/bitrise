@@ -2,9 +2,14 @@ package bitrise
 
 import (
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/v2/models"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/go-utils/pointers"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -465,6 +470,63 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
 				require.EqualError(t, err, tt.wantErr)
 			} else {
 				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestFailedStepEnvs(t *testing.T) {
+	tests := []struct {
+		name                string
+		failedStepRunResult models.StepRunResultsModel
+		want                []envmanModels.EnvironmentItemModel
+	}{
+		{
+			name: "Failed step and error message",
+			failedStepRunResult: models.StepRunResultsModel{
+				StepInfo: stepmanModels.StepInfoModel{
+					Step: stepmanModels.StepModel{
+						Title: pointers.NewStringPtr("step title"),
+					},
+					ID: "step-id",
+				},
+				ErrorStr: "error message",
+			},
+			want: []envmanModels.EnvironmentItemModel{
+				{"BITRISE_FAILED_STEP_TITLE": "step title"},
+				{"BITRISE_FAILED_STEP_ERROR_MESSAGE": "error message"},
+			},
+		},
+		{
+			name: "Failed step has no title",
+			failedStepRunResult: models.StepRunResultsModel{
+				StepInfo: stepmanModels.StepInfoModel{
+					ID: "step-id",
+				},
+			},
+			want: []envmanModels.EnvironmentItemModel{
+				{"BITRISE_FAILED_STEP_TITLE": "step-id"},
+				{"BITRISE_FAILED_STEP_ERROR_MESSAGE": ""},
+			},
+		},
+		{
+			name: "Failed step error message is limited",
+			failedStepRunResult: models.StepRunResultsModel{
+				StepInfo: stepmanModels.StepInfoModel{
+					ID: "step-id",
+				},
+				ErrorStr: strings.Repeat("a", 1024) + "a",
+			},
+			want: []envmanModels.EnvironmentItemModel{
+				{"BITRISE_FAILED_STEP_TITLE": "step-id"},
+				{"BITRISE_FAILED_STEP_ERROR_MESSAGE": strings.Repeat("a", 510) + "..." + strings.Repeat("a", 511)},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FailedStepEnvs(tt.failedStepRunResult); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FailedStepEnvs() = %v, want %v", got, tt.want)
 			}
 		})
 	}
