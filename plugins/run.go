@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/log/logwriter"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
@@ -59,7 +60,7 @@ func strip(str string) string {
 func RunPluginByEvent(plugin Plugin, pluginConfig PluginConfig, input []byte) error {
 	pluginConfig[PluginConfigPluginModeKey] = string(TriggerMode)
 
-	return runPlugin(plugin, []string{}, pluginConfig, input)
+	return runPlugin(plugin, []string{}, pluginConfig, input, false)
 }
 
 // RunPluginByCommand ...
@@ -68,7 +69,7 @@ func RunPluginByCommand(plugin Plugin, args []string) error {
 		PluginConfigPluginModeKey: string(CommandMode),
 	}
 
-	return runPlugin(plugin, args, pluginConfig, nil)
+	return runPlugin(plugin, args, pluginConfig, nil, true)
 }
 
 // PrintPluginUpdateInfos ...
@@ -80,7 +81,7 @@ func PrintPluginUpdateInfos(newVersion string, plugin Plugin) {
 	log.Donef("$ bitrise plugin update %s", plugin.Name)
 }
 
-func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []byte) error {
+func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []byte, fromCommand bool) error {
 	if !configs.IsCIMode && configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
 		// Check for new version
 		log.Infof("Checking for plugin (%s) new version...", plugin.Name)
@@ -138,8 +139,22 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 	// $ENV_1 will be printed (and not value).
 	cmd.AppendEnvs(envs...)
 
-	cmd.SetStdout(os.Stdout)
-	cmd.SetStderr(os.Stderr)
+	if fromCommand {
+		cmd.SetStdout(os.Stdout)
+		cmd.SetStderr(os.Stderr)
+	} else {
+		logger := log.NewLogger(log.GetGlobalLoggerOpts())
+		logWriter := logwriter.NewLogWriter(logger)
+
+		cmd.SetStdout(logWriter)
+		cmd.SetStderr(logWriter)
+
+		defer func() {
+			if err := logWriter.Close(); err != nil {
+				log.Warnf("Failed to close command output writer: %s", err)
+			}
+		}()
+	}
 
 	cmdErr := cmd.Run()
 
