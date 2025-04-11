@@ -18,9 +18,9 @@ builds:
   - goos: linux
     goarch: arm64
   ldflags:
-  - -X github.com/bitrise-io/bitrise/version.VERSION={{ .Version }}
-  - -X github.com/bitrise-io/bitrise/version.Commit={{ .FullCommit }}
-  - -X github.com/bitrise-io/bitrise/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
+  - -X github.com/bitrise-io/bitrise/v2/version.VERSION={{ .Version }}
+  - -X github.com/bitrise-io/bitrise/v2/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/bitrise/v2/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
