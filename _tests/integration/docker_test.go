@@ -63,7 +63,7 @@ func Test_Docker(t *testing.T) {
 			requireErr:   true,
 			requireLogs: []string{
 				"failed to start containers:",
-				"bind: address already in use",
+				"address already in use",
 			},
 		},
 		"docker create succeeds when valid port is provided": {
