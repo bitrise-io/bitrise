@@ -217,12 +217,12 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(stringKeyedPushTrigger, "commit_message")
+	commitMessage, err := commitCollectionFilterValue(stringKeyedPushTrigger, "commit_message")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(stringKeyedPushTrigger, "changed_files")
+	changedFiles, err := commitCollectionFilterValue(stringKeyedPushTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
@@ -286,12 +286,12 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(stringKeyedPullRequestTrigger, "commit_message")
+	commitMessage, err := commitCollectionFilterValue(stringKeyedPullRequestTrigger, "commit_message")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(stringKeyedPullRequestTrigger, "changed_files")
+	changedFiles, err := commitCollectionFilterValue(stringKeyedPullRequestTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
@@ -364,6 +364,56 @@ func globOrRegexValue(item map[string]any, key string) (any, error) {
 		return map[string]string{"regex": regex}, nil
 	default:
 		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' key and string value", key)
+	}
+}
+
+func commitCollectionFilterValue(item map[string]any, key string) (any, error) {
+	value, ok := item[key]
+	if !ok {
+		return nil, nil
+	}
+
+	switch value := value.(type) {
+	case string:
+		return value, nil
+	case map[any]any:
+		regexRaw, regexPresent := value["regex"]
+		patternRaw, patternPresent := value["pattern"]
+
+		if regexPresent && patternPresent || !regexPresent && !patternPresent {
+			return nil, fmt.Errorf("'%s' should contain exactly one of 'regex' and 'pattern' keys", key)
+		}
+
+		result := map[string]any{}
+		if regexPresent {
+			regex, ok := regexRaw.(string)
+			if !ok {
+				return nil, fmt.Errorf("'regex' value invalid for '%s', should be a string", key)
+			}
+			result["regex"] = regex
+		}
+
+		if patternPresent {
+			pattern, ok := patternRaw.(string)
+			if !ok {
+				return nil, fmt.Errorf("'pattern' value invalid for '%s', should be a string", key)
+			}
+			result["pattern"] = pattern
+		}
+
+		lastCommitRaw, ok := value["last_commit"]
+		if ok {
+			lastCommit, ok := lastCommitRaw.(bool)
+			if !ok {
+				return nil, fmt.Errorf("'last_commit' value invalid for '%s', should be a bool", key)
+			}
+
+			result["last_commit"] = lastCommit
+		}
+
+		return result, nil
+	default:
+		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' or 'pattern' key and string value", key)
 	}
 }
 
