@@ -142,68 +142,8 @@ pull_request:
 				DraftEnabled:  pointers.NewBoolPtr(false),
 				Label:         map[string]string{"regex": "label"},
 				Comment:       map[string]string{"regex": "comment"},
-				CommitMessage: map[string]any{"regex": "message"},
-				ChangedFiles:  map[string]any{"regex": "file"},
-				Enabled:       pointers.NewBoolPtr(false)},
-			}},
-		},
-		{
-			name: "Parses pull request event trigger item with glob filters for last commit",
-			yamlContent: `
-pull_request:
-- source_branch: source_branch
-  target_branch: target_branch 
-  draft_enabled: false
-  label: label
-  comment: comment
-  commit_message:
-    pattern: message
-    last_commit: true
-  changed_files:
-    pattern: file
-    last_commit: false
-  priority: 100
-  enabled: false`,
-			wantTriggers: Triggers{PullRequestTriggers: []PullRequestGitEventTriggerItem{{
-				SourceBranch:  "source_branch",
-				TargetBranch:  "target_branch",
-				DraftEnabled:  pointers.NewBoolPtr(false),
-				Label:         "label",
-				Comment:       "comment",
-				CommitMessage: map[string]any{"pattern": "message", "last_commit": true},
-				ChangedFiles:  map[string]any{"pattern": "file", "last_commit": false},
-				Priority:      pointers.NewIntPtr(100),
-				Enabled:       pointers.NewBoolPtr(false)},
-			}},
-		},
-		{
-			name: "Parses pull request event trigger item with regex filters for last commit",
-			yamlContent: `
-pull_request:
-- source_branch:
-    regex: source_branch
-  target_branch:
-    regex: target_branch 
-  draft_enabled: false
-  label:
-    regex: label
-  comment:
-    regex: comment
-  commit_message:
-    regex: message
-    last_commit: false
-  changed_files:
-    regex: file
-    last_commit: true
-  enabled: false`,
-			wantTriggers: Triggers{PullRequestTriggers: []PullRequestGitEventTriggerItem{{
-				SourceBranch:  map[string]string{"regex": "source_branch"},
-				TargetBranch:  map[string]string{"regex": "target_branch"},
-				DraftEnabled:  pointers.NewBoolPtr(false),
-				Label:         map[string]string{"regex": "label"},
-				Comment:       map[string]string{"regex": "comment"},
-				CommitMessage: map[string]any{"regex": "message", "last_commit": false},
-				ChangedFiles:  map[string]any{"regex": "file", "last_commit": true},
+				CommitMessage: map[string]string{"regex": "message"},
+				ChangedFiles:  map[string]string{"regex": "file"},
 				Enabled:       pointers.NewBoolPtr(false)},
 			}},
 		},
@@ -421,40 +361,6 @@ pull_request:
 - target_branch:
     include: main`,
 			wantErr: "'triggers.pull_request[0]': 'target_branch' value should be a string or a map with a 'regex' key and string value",
-		},
-		{
-			name: "Push filter should not specify both 'pattern' and 'regex'",
-			yamlContent: `
-pull_request: 
-- commit_message:
-    pattern: match*
-    regex: match.*`,
-			wantErr: "'triggers.pull_request[0]': 'commit_message' should contain exactly one of 'regex' and 'pattern' keys",
-		},
-		{
-			name: "Push filter should contain valid pattern",
-			yamlContent: `
-pull_request: 
-- commit_message:
-    pattern: 23`,
-			wantErr: "'triggers.pull_request[0]': 'pattern' value invalid for 'commit_message', should be a string",
-		},
-		{
-			name: "Push filter should contain valid regex",
-			yamlContent: `
-pull_request: 
-- commit_message:
-    regex: false`,
-			wantErr: "'triggers.pull_request[0]': 'regex' value invalid for 'commit_message', should be a string",
-		},
-		{
-			name: "Push filter should contain valid last_commit",
-			yamlContent: `
-pull_request: 
-- commit_message:
-    pattern: something
-    last_commit: "only"`,
-			wantErr: "'triggers.pull_request[0]': 'last_commit' value invalid for 'commit_message', should be a bool",
 		},
 		{
 			name: "Duplicated pull request trigger items - string filters",

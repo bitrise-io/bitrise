@@ -286,12 +286,12 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 		return nil, err
 	}
 
-	commitMessage, err := commitCollectionFilterValue(stringKeyedPullRequestTrigger, "commit_message")
+	commitMessage, err := globOrRegexValue(stringKeyedPullRequestTrigger, "commit_message")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := commitCollectionFilterValue(stringKeyedPullRequestTrigger, "changed_files")
+	changedFiles, err := globOrRegexValue(stringKeyedPullRequestTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
