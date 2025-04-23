@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	pkgerrors "github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 )
 
@@ -377,6 +378,15 @@ func commitCollectionFilterValue(item map[string]any, key string) (any, error) {
 	case string:
 		return value, nil
 	case map[any]any:
+		stringKeyedTriggers, err := stringKeyedMap(value)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := ensureKeys(stringKeyedTriggers, "pattern", "regex", "last_commit"); err != nil {
+			return nil, pkgerrors.Wrap(err, fmt.Sprintf("'%s': ", key))
+		}
+
 		regexRaw, regexPresent := value["regex"]
 		patternRaw, patternPresent := value["pattern"]
 

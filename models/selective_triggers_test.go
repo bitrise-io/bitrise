@@ -249,6 +249,15 @@ push:
 			wantErr: "'triggers.push[0]': 'branch' value should be a string or a map with a 'regex' key and string value",
 		},
 		{
+			name: "Push filter should not contain unknown keys",
+			yamlContent: `
+push: 
+- commit_message:
+    pattern: match*
+    scope: 'all_commits'`,
+			wantErr: "'triggers.push[0]': 'commit_message': : unknown key(s): scope",
+		},
+		{
 			name: "Push filter should not specify both 'pattern' and 'regex'",
 			yamlContent: `
 push: 
