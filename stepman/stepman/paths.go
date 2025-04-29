@@ -193,7 +193,7 @@ func GetStepCollectionSpecPath(route SteplibRoute) string {
 func GetAllStepCollectionPath() []string {
 	routes, err := readRouteMap()
 	if err != nil {
-		log.Errorf("Failed to read step specs path, error: %s", err)
+		log.Errorf("failed to read step specs path, error: %s", err)
 		return []string{}
 	}
 

@@ -26,17 +26,17 @@ func auditStepBeforeShare(pth string) error {
 func detectStepIDAndVersionFromPath(pth string) (stepID, stepVersion string, err error) {
 	pathComps := strings.Split(pth, "/")
 	if len(pathComps) < 4 {
-		err = fmt.Errorf("Path should contain at least 4 components: steps, step-id, step-version, step.yml: %s", pth)
+		err = fmt.Errorf("path should contain at least 4 components: steps, step-id, step-version, step.yml: %s", pth)
 		return
 	}
 	// we only care about the last 4 component of the path
 	pathComps = pathComps[len(pathComps)-4:]
 	if pathComps[0] != "steps" {
-		err = fmt.Errorf("Invalid step.yml path, 'steps' should be included right before the step-id: %s", pth)
+		err = fmt.Errorf("invalid step.yml path, 'steps' should be included right before the step-id: %s", pth)
 		return
 	}
 	if pathComps[3] != "step.yml" {
-		err = fmt.Errorf("Invalid step.yml path, should end with 'step.yml': %s", pth)
+		err = fmt.Errorf("invalid step.yml path, should end with 'step.yml': %s", pth)
 		return
 	}
 	stepID = pathComps[1]
@@ -60,16 +60,16 @@ func auditStepBeforeSharePullRequest(pth string) error {
 
 func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version string) error {
 	if err := step.Audit(); err != nil {
-		return fmt.Errorf("Failed to audit step infos, error: %s", err)
+		return fmt.Errorf("failed to audit step infos, error: %s", err)
 	}
 
 	pth, err := pathutil.NormalizedOSTempDirPath(stepID + version)
 	if err != nil {
-		return fmt.Errorf("Failed to create a temporary directory for the step's audit, error: %s", err)
+		return fmt.Errorf("failed to create a temporary directory for the step's audit, error: %s", err)
 	}
 
 	if step.Source == nil {
-		return fmt.Errorf("Missing Source porperty")
+		return fmt.Errorf("missing Source porperty")
 	}
 
 	repo, err := git.New(pth)
@@ -81,16 +81,16 @@ func auditStepModelBeforeSharePullRequest(step models.StepModel, stepID, version
 		return repo.CloneTagOrBranch(step.Source.Git, version).Run()
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to git-clone the step (url: %s) version (%s), error: %s",
+		return fmt.Errorf("failed to git-clone the step (url: %s) version (%s), error: %s",
 			step.Source.Git, version, err)
 	}
 
 	latestCommit, err := repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Failed to get commit, error: %s", err)
+		return fmt.Errorf("failed to get commit, error: %s", err)
 	}
 	if latestCommit != step.Source.Commit {
-		return fmt.Errorf("Step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)
+		return fmt.Errorf("step commit hash (%s) should be the  latest commit hash (%s) on git tag", step.Source.Commit, latestCommit)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func auditStepLibBeforeSharePullRequest(gitURI string) error {
 	if exist, err := stepman.RootExistForLibrary(gitURI); err != nil {
 		return err
 	} else if !exist {
-		return fmt.Errorf("Missing routing for collection, call 'stepman setup -c %s' before audit", gitURI)
+		return fmt.Errorf("missing routing for collection, call 'stepman setup -c %s' before audit", gitURI)
 	}
 
 	collection, err := stepman.ReadStepSpec(gitURI)

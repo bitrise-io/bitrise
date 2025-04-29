@@ -34,7 +34,7 @@ func parseExportType(exportTypeStr string) (ExportType, error) {
 	}
 
 	var exportType ExportType
-	return exportType, fmt.Errorf("Invalid export type (%s), available: [full, latest, minimal]", exportTypeStr)
+	return exportType, fmt.Errorf("invalid export type (%s), available: [full, latest, minimal]", exportTypeStr)
 }
 
 func convertToMinimalSpec(stepLib models.StepCollectionModel) models.StepCollectionModel {
@@ -78,11 +78,11 @@ func export(c *cli.Context) error {
 	exportTypeStr := c.String("export-type")
 
 	if steplibURI == "" {
-		return fmt.Errorf("Missing required input: steplib")
+		return fmt.Errorf("missing required input: steplib")
 	}
 
 	if outputPth == "" {
-		return fmt.Errorf("Missing required input: output")
+		return fmt.Errorf("missing required input: output")
 	}
 
 	exportType := exportTypeFull
@@ -98,11 +98,11 @@ func export(c *cli.Context) error {
 
 	// Setup StepLib
 	if exist, err := stepman.RootExistForLibrary(steplibURI); err != nil {
-		return fmt.Errorf("Failed to check if setup was done for StepLib, error: %s", err)
+		return fmt.Errorf("failed to check if setup was done for StepLib, error: %s", err)
 	} else if !exist {
 		log.Infof("StepLib does not exist, setup...")
 		if err := stepman.SetupLibrary(steplibURI, log.NewDefaultLogger(false)); err != nil {
-			return fmt.Errorf("Failed to setup StepLib, error: %s", err)
+			return fmt.Errorf("failed to setup StepLib, error: %s", err)
 		}
 	}
 
@@ -121,7 +121,7 @@ func export(c *cli.Context) error {
 
 	stepLibSpecBytes, err := json.Marshal(stepLibSpec)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal StepLib, error: %s", err)
+		return fmt.Errorf("failed to marshal StepLib, error: %s", err)
 	}
 
 	// Export spec
@@ -129,16 +129,16 @@ func export(c *cli.Context) error {
 
 	exist, err := pathutil.IsDirExists(outputDir)
 	if err != nil {
-		return fmt.Errorf("Failed to check if dir (%s) exist, error: %s", outputDir, err)
+		return fmt.Errorf("failed to check if dir (%s) exist, error: %s", outputDir, err)
 	}
 	if !exist {
 		if err := os.MkdirAll(outputDir, 0777); err != nil {
-			return fmt.Errorf("Failed to create dir (%s), error: %s", outputDir, err)
+			return fmt.Errorf("failed to create dir (%s), error: %s", outputDir, err)
 		}
 	}
 
 	if err := fileutil.WriteBytesToFile(outputPth, stepLibSpecBytes); err != nil {
-		return fmt.Errorf("Failed to write StepLib spec to: %s, error: %s", outputPth, err)
+		return fmt.Errorf("failed to write StepLib spec to: %s, error: %s", outputPth, err)
 	}
 
 	log.Infof("StepLib spec exported to: %s", outputPth)

@@ -72,7 +72,7 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 
 		latestStepVerInfos, isFound := stepGroupInfo.LatestVersion()
 		if !isFound {
-			log.Errorf("No version found for step: %s", stepID)
+			log.Errorf("no version found for step: %s", stepID)
 			continue
 		}
 
@@ -133,7 +133,7 @@ func listSteps(stepLibURI, maintaner string, format string, log stepman.Logger, 
 			return err
 		}
 	default:
-		return fmt.Errorf("Invalid format: %s", format)
+		return fmt.Errorf("invalid format: %s", format)
 	}
 	return nil
 }
@@ -141,7 +141,7 @@ func listSteps(stepLibURI, maintaner string, format string, log stepman.Logger, 
 func listSteplibURIs(log stepman.Logger, stepLibURIs []string, maintaner string, format string, isShort bool) {
 	for _, URI := range stepLibURIs {
 		if err := listSteps(URI, maintaner, format, log, isShort); err != nil {
-			log.Errorf("Failed to list steps in StepLib (%s): %s", URI, err)
+			log.Errorf("failed to list steps in StepLib (%s): %s", URI, err)
 		}
 	}
 }
@@ -160,7 +160,7 @@ func stepList(c *cli.Context) error {
 	format := c.String(FormatKey)
 	if format == "" {
 		format = OutputFormatRaw
-	} else if !(format == OutputFormatRaw || format == OutputFormatJSON) {
+	} else if format != OutputFormatRaw && format != OutputFormatJSON {
 		failf("Invalid format: %s", format)
 	}
 

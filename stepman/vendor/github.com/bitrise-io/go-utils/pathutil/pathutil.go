@@ -51,7 +51,7 @@ func EnsureDirExist(dir string) error {
 
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
-		return nil, false, errors.New("No path provided")
+		return nil, false, errors.New("no path provided")
 	}
 	fileInf, err := os.Lstat(pth)
 	if err == nil {
@@ -82,7 +82,7 @@ func IsDirExists(pth string) (bool, error) {
 		return false, nil
 	}
 	if fileInf == nil {
-		return false, errors.New("No file info available")
+		return false, errors.New("no file info available")
 	}
 	return fileInf.IsDir(), nil
 }
@@ -117,7 +117,7 @@ func (defaultPathModifier) AbsPath(pth string) (string, error) {
 //	then call Go's Abs
 func AbsPath(pth string) (string, error) {
 	if pth == "" {
-		return "", errors.New("No Path provided")
+		return "", errors.New("no Path provided")
 	}
 
 	pth, err := ExpandTilde(pth)
@@ -131,7 +131,7 @@ func AbsPath(pth string) (string, error) {
 // ExpandTilde ...
 func ExpandTilde(pth string) (string, error) {
 	if pth == "" {
-		return "", errors.New("No Path provided")
+		return "", errors.New("no Path provided")
 	}
 
 	if strings.HasPrefix(pth, "~") {

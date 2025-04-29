@@ -9,7 +9,7 @@ import (
 // Join ...
 func Join(elems ...string) (string, error) {
 	if len(elems) < 1 {
-		return "", errors.New("No elements defined to Join")
+		return "", errors.New("no elements defined to Join")
 	}
 
 	url, err := url.Parse(elems[0])
@@ -18,12 +18,12 @@ func Join(elems ...string) (string, error) {
 	}
 	schemeStr := url.Scheme
 	if schemeStr == "" {
-		return "", errors.New("No Scheme defined")
+		return "", errors.New("no Scheme defined")
 	}
 
 	hostStr := url.Host
 	if hostStr == "" {
-		return "", errors.New("No Host defined")
+		return "", errors.New("no Host defined")
 	}
 
 	pathStr := ""
