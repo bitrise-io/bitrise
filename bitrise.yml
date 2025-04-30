@@ -183,13 +183,26 @@ workflows:
             exit 0
 
 step_bundles:
-  run_lint:
+  setup-go:
     steps:
-    - git::https://github.com/bitrise-steplib/steps-check.git:
+      - script:
+          title: Setup pinned Go version
+          inputs:
+            - content: asdf install
+  run_lint:
+    title: Runs tests
+    steps:
+    - bundle::setup-go: {}
+    - script:
+        title: golangci-lint
         inputs:
-        - workflow: lint
-        - skip_step_yml_validation: "yes"
-    - deploy-to-bitrise-io@2: { }
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            INSTALL_DIR=$(go env GOPATH)/bin
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$INSTALL_DIR" v1.64.8
+            asdf reshim golang
+            "$INSTALL_DIR"/golangci-lint run
 
   run_unit_tests:
     steps:
