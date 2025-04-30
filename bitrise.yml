@@ -193,7 +193,7 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- v1.64.8
-            golangci-lint run
+            ./bin/golangci-lint run
 
   run_unit_tests:
     steps:
