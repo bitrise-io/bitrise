@@ -184,12 +184,16 @@ workflows:
 
 step_bundles:
   run_lint:
+    title: Run linter
     steps:
-    - git::https://github.com/bitrise-steplib/steps-check.git:
+    - script:
+        title: golangci-lint
         inputs:
-        - workflow: lint
-        - skip_step_yml_validation: "yes"
-    - deploy-to-bitrise-io@2: { }
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- v1.64.8
+            ./bin/golangci-lint run
 
   run_unit_tests:
     steps:
