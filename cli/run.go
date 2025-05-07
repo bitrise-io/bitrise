@@ -336,6 +336,15 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	// Build finished
 	bitrise.PrintSummary(buildRunResults)
 
+	// Save performance metrics
+	if buildRunResults.PerformanceMetrics != nil {
+		if err := SavePerformanceMetrics(buildRunResults); err != nil {
+			log.Warnf("Failed to save performance metrics: %s", err)
+		} else {
+			log.Infof("Performance metrics saved. Run 'bitrise performance' to view detailed timing information.")
+		}
+	}
+
 	// Trigger WorkflowRunDidFinish
 	buildRunResults.EventName = string(plugins.DidFinishRun)
 	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {

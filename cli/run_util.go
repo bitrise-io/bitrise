@@ -52,10 +52,36 @@ func (r WorkflowRunner) runWorkflow(
 ) models.BuildRunResultsModel {
 	bitrise.PrintRunningWorkflow(plan.WorkflowTitle)
 
+	workflowStartTime := time.Now()
+	
+	// Initialize workflow performance metrics
+	workflowMetrics := models.WorkflowPerformanceMetrics{
+		WorkflowID:    plan.WorkflowID,
+		WorkflowTitle: plan.WorkflowTitle,
+		StartTime:     workflowStartTime,
+	}
+	
+	if buildRunResults.PerformanceMetrics == nil {
+		buildRunResults.PerformanceMetrics = &models.BuildPerformanceMetrics{
+			StartTime: workflowStartTime,
+		}
+	}
+
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
 
-	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties, &workflowMetrics)
+
+	workflowEndTime := time.Now()
+	workflowMetrics.EndTime = workflowEndTime
+	workflowMetrics.CalculateTotalTime()
+	
+	// Add completed workflow metrics to build metrics
+	if buildRunResults.PerformanceMetrics != nil {
+		buildRunResults.PerformanceMetrics.AddWorkflow(workflowMetrics)
+		buildRunResults.PerformanceMetrics.EndTime = workflowEndTime
+		buildRunResults.PerformanceMetrics.CalculateTotalTime()
+	}
 
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	collectToolVersions(tracker)
@@ -72,6 +98,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 	isLastWorkflow bool,
 	tracker analytics.Tracker,
 	workflowIDProperties coreanalytics.Properties,
+	workflowMetrics *models.WorkflowPerformanceMetrics,
 ) models.BuildRunResultsModel {
 	log.Debug("[BITRISE_CLI] - Activating and running steps")
 
@@ -90,10 +117,13 @@ func (r WorkflowRunner) activateAndRunSteps(
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
+		containerStartTime := time.Now()
+		containerSetupDuration := time.Duration(0)
 		if stepPlan.WithGroupUUID != currentStepGroupID {
 			if stepPlan.WithGroupUUID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
 					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
+					containerSetupDuration = time.Since(containerStartTime)
 				}
 			}
 
@@ -120,6 +150,24 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepStartTime := time.Now()
 		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepPlan.UUID}
 		stepStartedProperties := workflowIDProperties.Merge(stepIDProperties)
+		
+		// Initialize step performance metrics
+		stepMetrics := models.StepPerformanceMetrics{
+			StepID:    stepPlan.StepID,
+			StartTime: stepStartTime,
+		}
+		
+		// Get step title if available
+		if stepPlan.Step.Title != nil {
+			stepMetrics.StepTitle = *stepPlan.Step.Title
+		} else {
+			stepMetrics.StepTitle = stepPlan.StepID
+		}
+		
+		// Record container setup time if any
+		if containerSetupDuration > 0 {
+			stepMetrics.AddPhase(models.StepPhaseContainer, containerSetupDuration)
+		}
 
 		result := r.activateAndRunStep(
 			stepPlan.Step,
@@ -136,6 +184,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
+			&stepMetrics,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
@@ -159,6 +208,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
+		
+		// Add step metrics to workflow metrics
+		workflowMetrics.AddStep(stepMetrics)
 
 		currentBuildRunResult := buildRunResults
 		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
@@ -206,13 +258,20 @@ func (r WorkflowRunner) activateAndRunStep(
 	containerID, groupID string,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
+	stepMetrics *models.StepPerformanceMetrics,
 ) activateAndRunStepResult {
 	//
 	// Activate step
 	activateStartTime := time.Now()
 	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
 	activateDuration := time.Since(activateStartTime)
+	
+	// Record activation phase timing
+	stepMetrics.AddPhase(models.StepPhaseActivation, activateDuration)
+	
 	if activateResult.Err != nil {
+		stepMetrics.EndTime = time.Now()
+		stepMetrics.CalculateTotalTime()
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
 	}
 
@@ -254,8 +313,16 @@ func (r WorkflowRunner) activateAndRunStep(
 	}
 
 	// Prepare envs for the step run
+	envPrepStartTime := time.Now()
 	prepareEnvsResult := r.prepareEnvsForStepRun(stepExecutionID, stepDir, mergedStep.Inputs, secrets, buildRunResults, environments)
+	envPrepDuration := time.Since(envPrepStartTime)
+	
+	// Record env preparation phase timing
+	stepMetrics.AddPhase(models.StepPhaseEnvPreparation, envPrepDuration)
+	
 	if prepareEnvsResult.Err != nil {
+		stepMetrics.EndTime = time.Now()
+		stepMetrics.CalculateTotalTime()
 		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, prepareEnvsResult.Err, false, map[string]string{}, nil)
 	}
 
@@ -269,7 +336,14 @@ func (r WorkflowRunner) activateAndRunStep(
 	// Run the step
 	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
+	execStartTime := time.Now()
 	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
+	execDuration := time.Since(execStartTime)
+	
+	// Record execution phase timing
+	stepMetrics.AddPhase(models.StepPhaseExecution, execDuration)
+	stepMetrics.EndTime = time.Now()
+	stepMetrics.CalculateTotalTime()
 
 	if stepTestDir != "" {
 		if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: stepIDx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {

@@ -115,5 +115,6 @@ var (
 		pluginCommand,
 		envmanCommand,
 		mergeConfigCommand,
+		PerformanceCommand(),
 	}
 )

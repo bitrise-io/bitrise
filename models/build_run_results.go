@@ -16,6 +16,7 @@ type BuildRunResultsModel struct {
 	FailedSteps          []StepRunResultsModel `json:"failed_steps" yaml:"failed_steps"`
 	FailedSkippableSteps []StepRunResultsModel `json:"failed_skippable_steps" yaml:"failed_skippable_steps"`
 	SkippedSteps         []StepRunResultsModel `json:"skipped_steps" yaml:"skipped_steps"`
+	PerformanceMetrics   *BuildPerformanceMetrics `json:"performance_metrics,omitempty" yaml:"performance_metrics,omitempty"`
 }
 
 func NewBuildRunResultsModel(workflowID string, start time.Time, projectType string) BuildRunResultsModel {
