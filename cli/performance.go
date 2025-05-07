@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -51,7 +50,7 @@ func LoadPerformanceMetrics() (*models.BuildPerformanceMetrics, error) {
 	}
 
 	// Read the file
-	data, err := ioutil.ReadFile(PerformanceJSONPath)
+	data, err := os.ReadFile(PerformanceJSONPath)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +68,13 @@ func LoadPerformanceMetrics() (*models.BuildPerformanceMetrics, error) {
 func GenerateTraceProfile(metrics *models.BuildPerformanceMetrics, outputPath string) error {
 	// Create a new trace profile
 	profile := models.NewTraceProfile(metrics)
-	
+
 	// Marshal to JSON
 	data, err := json.MarshalIndent(profile, "", "  ")
 	if err != nil {
 		return err
 	}
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(outputPath)
 	if dir != "" && dir != "." {
@@ -83,7 +82,7 @@ func GenerateTraceProfile(metrics *models.BuildPerformanceMetrics, outputPath st
 			return err
 		}
 	}
-	
+
 	// Write to file
 	return os.WriteFile(outputPath, data, 0644)
 }
@@ -202,7 +201,7 @@ func PerformanceCommand() cli.Command {
 					logger.Infof("You can open this file in Chrome by navigating to chrome://tracing")
 				}
 			}
-			
+
 			logger.Infof("\nTo improve build performance, focus on optimizing the steps that take the longest time.")
 			return nil
 		},
