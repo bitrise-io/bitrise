@@ -84,12 +84,14 @@ func (r WorkflowRunner) activateAndRunSteps(
 	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
-	currentStepBundleUUID := ""
-	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
+	prevStepBundleUUID := ""
+	var currentStepBundleInputs []envmanModels.EnvironmentItemModel
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
+		log.Printf("Step %d: %s)", idx, stepPlan.StepID)
+
 		if stepPlan.WithGroupUUID != currentStepGroupID {
 			if stepPlan.WithGroupUUID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
@@ -101,21 +103,12 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 
 		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
-
-		if stepPlan.StepBundleUUID != currentStepBundleUUID {
-			if stepPlan.StepBundleUUID != "" {
-				currentStepBundleEnvVars = append(workflowEnvironments, stepPlan.StepBundleEnvs...)
-			}
-
-			currentStepBundleUUID = stepPlan.StepBundleUUID
+		if stepPlan.StepBundleUUID != prevStepBundleUUID {
+			currentStepBundleInputs = stepPlan.StepBundleEnvs
+			prevStepBundleUUID = stepPlan.StepBundleUUID
 		}
-
-		var envsForStepRun []envmanModels.EnvironmentItemModel
-		if currentStepBundleUUID != "" {
-			envsForStepRun = currentStepBundleEnvVars
-		} else {
-			envsForStepRun = workflowEnvironments
-		}
+		// If not in a Step Bundle, currentStepBundleEnvVars is empty
+		workflowEnvironments = append(workflowEnvironments, currentStepBundleInputs...)
 
 		stepStartTime := time.Now()
 		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepPlan.UUID}
@@ -128,7 +121,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			defaultStepLibSource,
 			stepPlan.UUID,
 			tracker,
-			envsForStepRun,
+			workflowEnvironments,
 			secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
@@ -139,9 +132,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
-		if currentStepBundleUUID != "" {
-			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
-		}
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 
