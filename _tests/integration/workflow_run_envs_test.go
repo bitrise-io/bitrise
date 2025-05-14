@@ -36,8 +36,8 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			expectedToFail: true,
 			expectedStepOutputs: []string{
 				"Failing step\n",
-				"Build status failing inside bundle\nBITRISE_BUILD_STATUS: 1",
-				"Build status failing after bundle\nBITRISE_BUILD_STATUS: 1",
+				"Build status failing inside bundle\nBITRISE_BUILD_STATUS: 1\n",
+				"Build status failing after bundle\nBITRISE_BUILD_STATUS: 1\n",
 			},
 		},
 		{
