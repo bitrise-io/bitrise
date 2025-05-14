@@ -12,6 +12,9 @@ step_bundles:
             #!/bin/bash
             set -e
             echo "Failing step"
+            RED_COLOUR='\x1b[31;1m'
+            NO_COLOUR='\x1b[0m'
+            echo -e "${RED_COLOUR}Step failure reason${NO_COLOUR}"
             exit 2
     - script:
         title: Print failing step and failure reason envs (inside bundle)
@@ -22,6 +25,8 @@ step_bundles:
             set -e
             echo "Build status failing inside bundle"
             echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
+            echo "BITRISE_FAILED_STEP_ERROR_MESSAGE: $BITRISE_FAILED_STEP_ERROR_MESSAGE"
 
 workflows:
   workflow_run_envs_test:
@@ -91,6 +96,8 @@ workflows:
             set -e
             echo "Build status failing after bundle"
             echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
+            echo "BITRISE_FAILED_STEP_ERROR_MESSAGE: $BITRISE_FAILED_STEP_ERROR_MESSAGE"
 
   before_after_workflow_run_envs_test:
     before_run:
