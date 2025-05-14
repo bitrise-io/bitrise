@@ -31,6 +31,16 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			},
 		},
 		{
+			name: "Step bundle build status envs",
+			workflow: "bundle_run_envs_test",
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Failing step\n",
+				"Build status failing inside bundle\nBITRISE_BUILD_STATUS: 1",
+				"Build status failing after bundle\nBITRISE_BUILD_STATUS: 1",
+			},
+		}
+		{
 			name:           "Before, after workflow run build status envs",
 			workflow:       "before_after_workflow_run_envs_test",
 			expectedToFail: true,
