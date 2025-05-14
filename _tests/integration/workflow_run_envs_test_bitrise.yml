@@ -81,7 +81,7 @@ workflows:
 
   bundle_run_envs_test:
     steps:
-    - bundle::_failing_bundle
+    - bundle::_failing_bundle: {}
     - script:
         title: Print failing step and failure reason envs (after bundle)
         is_always_run: true
