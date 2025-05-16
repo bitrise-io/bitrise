@@ -166,10 +166,16 @@ func (r WorkflowRunner) activateAndRunSteps(
 				failedStepRunResult := currentBuildRunResult.FailedSteps[0]
 				failedStepEnvs := bitrise.FailedStepEnvs(failedStepRunResult)
 				*environments = append(*environments, failedStepEnvs...)
+				if currentStepBundleUUID != "" {
+					currentStepBundleEnvVars = append(currentStepBundleEnvVars, failedStepEnvs...)
+				}
 			}
 
 			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
 			*environments = append(*environments, buildStatusEnvs...)
+			if currentStepBundleUUID != "" {
+				currentStepBundleEnvVars = append(currentStepBundleEnvVars, buildStatusEnvs...)
+			}
 		}
 
 	}
