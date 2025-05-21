@@ -240,7 +240,7 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
 
-	envfile.LogLargeEnvWarning(envfile.DefaultEnvfilePathEnv)
+	envfile.LogLargeEnvWarning()
 
 	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {

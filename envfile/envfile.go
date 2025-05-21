@@ -1,11 +1,11 @@
 package envfile
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/colorstring"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"gopkg.in/yaml.v3"
 )
@@ -30,19 +30,27 @@ type EnvFile struct {
 func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath string) (string, error) {
 	originalBuildTriggerEnvs, err := load(envfilePath)
 	if err != nil {
+		// TODO
 		return "", err
 	}
 
 	runtimeEnvValue, ok := runtimeEnvs[key]
 	if !ok {
-		// Same behavior as os.Getenv(key)
-		return "", nil
+		log.Print("Env var not found in runtime envs")
+
+		// Bug-for-bug compatibility with old implementation:
+		// runtimeEnvs doesn't contain env vars added during the workflow execution, but the old implementation
+		// had a fallback to os.Getenv(key) in this case.
+		runtimeEnvValue = os.Getenv(key)
 	}
 
+	
 	if runtimeEnvValue == "" {
+		log.Print("Env var found in runtime envs but is empty")
 		// Env var value was possibly cleared because of its length, we should restore it from
 		// the env file
 		if originalValue, ok := originalBuildTriggerEnvs.Envs[key]; ok {
+			log.Print("Env var value was cleared, restoring from envfile")
 			return originalValue, nil
 		}
 		// Note: !ok means no original value found in envfile, but this can be a valid case
@@ -50,14 +58,20 @@ func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath 
 	}
 
 	// If the value is not empty, it means that it didn't hit the size limit, we can just return it
+	log.Print("Fallback to runtime env value")
 	return runtimeEnvValue, nil
 }
 
-func LogLargeEnvWarning(envfilePath string) {
-	originalBuildTriggerEnvs, err := load(envfilePath)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+func LogLargeEnvWarning() {
+	path := os.Getenv(DefaultEnvfilePathEnv)
+	if path == "" {
+		return
+	}
+
+	originalBuildTriggerEnvs, err := load(path)
+	if err != nil {
 		// We are on the critical path and should not fail here.
-		log.Warnf("Failed to load envfile at $%s: %s", envfilePath, err)
+		log.Warnf("Failed to load envfile at $%s: %s", path, err)
 		return
 	}
 
@@ -71,10 +85,11 @@ func LogLargeEnvWarning(envfilePath string) {
 		clearedEnvList += "\n"
 	}
 
-	message := fmt.Sprintf(`Some env vars were removed because their size would exceed system limits.
+	message := fmt.Sprintf(`
+Some env vars were removed because their size would exceed system limits.
 If you rely on these env vars in steps, you should read the original values from a file on disk. This file is available at $%s.
 The following env vars were removed and are not available in the runtime environment:
-%s`, DefaultEnvfilePathEnv, clearedEnvList)
+%s`, colorstring.Cyan(DefaultEnvfilePathEnv), colorstring.Cyan(clearedEnvList))
 	log.Warnf(message)
 }
 

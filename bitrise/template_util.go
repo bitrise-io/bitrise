@@ -31,7 +31,7 @@ func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
 			return os.Getenv(key)
 		}
 
-		value, err := envfile.GetEnv(key, envList, envfile.DefaultEnvfilePathEnv)
+		value, err := envfile.GetEnv(key, envList, filepath)
 		if err != nil {
 			// TODO
 			log.Warnf("Failed to get env from envfile: %s", err)
