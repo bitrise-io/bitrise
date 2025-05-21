@@ -17,6 +17,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configmerge"
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/log/logwriter"
 	"github.com/bitrise-io/bitrise/v2/models"
@@ -231,6 +232,16 @@ func (r WorkflowRunner) activateAndRunStep(
 		if err != nil {
 			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
 			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+		}
+
+		if true {
+			envfilePath := "TODO"
+			runIfEnvList, err = envfile.MergeEnvfileWithRuntimeEnvs(runIfEnvList, envfilePath)
+			if err != nil {
+				err = fmt.Errorf("restore large envs from envfile: %s", err)
+				return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+			}
+			envfile.LogLargeEnvWarning(envfilePath)
 		}
 
 		isRun, err := bitrise.EvaluateTemplateToBool(*mergedStep.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
