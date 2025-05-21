@@ -28,19 +28,19 @@ func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
 	if filepath != "" {
 		_, err := os.Stat(filepath)
 		if errors.Is(err, os.ErrNotExist) {
-			return envList[key]
+			return os.Getenv(key)
 		}
 
 		value, err := envfile.GetEnv(key, envList, envfile.DefaultEnvfilePathEnv)
 		if err != nil {
 			// TODO
 			log.Warnf("Failed to get env from envfile: %s", err)
-			return envList[key]
+			return os.Getenv(key)
 		}
 
 		return value
 	}
-	return envList[key]
+	return os.Getenv(key)
 }
 
 func createTemplateDataModel(isCI, isPR bool, buildResults models.BuildRunResultsModel) TemplateDataModel {

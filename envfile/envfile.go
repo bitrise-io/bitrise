@@ -19,10 +19,14 @@ type EnvFile struct {
 	ClearedEnvKeys []string          `yaml:"cleared_env_keys"`
 }
 
-// GetEnv...
-// Why this is not in envman? Because (currently) Bitrise CLI interacts with envman through
-// its CLI interface, so the subprocess execution 
-// envfilePath must point to an existing file, you should not call this unconditionally.
+// GetEnv returns the true value of an env var, even if it was not exposed to the CLI process because of its size.
+// Typical large env vars are git-related build trigger env vars, like BITRISE_GIT_COMMIT_MESSAGES or BITRISE_GIT_CHANGED_FILES.
+// If these were exposed as env vars to the CLI process, the execve() syscall would fail because it has a limit on
+// the size of all env vars and arguments. Instead, the agent launching the Bitrise CLI process clears these env vars and
+// stores their original values in a file on disk.
+// Why is this whole thing not implemented in envman? Because (currently) Bitrise CLI interacts with envman through
+// its CLI interface, so that subprocess exec would also fail with the same error when passing large env vars.
+// Note: envfilePath must point to an existing file, you should not call this unconditionally.
 func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath string) (string, error) {
 	originalBuildTriggerEnvs, err := load(envfilePath)
 	if err != nil {
@@ -67,7 +71,7 @@ func LogLargeEnvWarning(envfilePath string) {
 		clearedEnvList += "\n"
 	}
 
-	message := fmt.Sprintf(`Some env vars were removed because their size exceeds system limits.
+	message := fmt.Sprintf(`Some env vars were removed because their size would exceed system limits.
 If you rely on these env vars in steps, you should read the original values from a file on disk. This file is available at $%s.
 The following env vars were removed and are not available in the runtime environment:
 %s`, DefaultEnvfilePathEnv, clearedEnvList)
