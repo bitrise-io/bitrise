@@ -7,12 +7,13 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/bitrise-io/bitrise/v2/envfile"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/goinp/goinp"
 )
 
-// TemplateDataModel ...
 type TemplateDataModel struct {
 	BuildResults  models.BuildRunResultsModel
 	IsBuildFailed bool
@@ -23,14 +24,23 @@ type TemplateDataModel struct {
 }
 
 func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
-	if len(envList) > 0 {
-		for aKey, value := range envList {
-			if aKey == key {
-				return value
-			}
+	filepath := os.Getenv(envfile.DefaultEnvfilePathEnv)
+	if filepath != "" {
+		_, err := os.Stat(filepath)
+		if errors.Is(err, os.ErrNotExist) {
+			return envList[key]
 		}
+
+		value, err := envfile.GetEnv(key, envList, envfile.DefaultEnvfilePathEnv)
+		if err != nil {
+			// TODO
+			log.Warnf("Failed to get env from envfile: %s", err)
+			return envList[key]
+		}
+
+		return value
 	}
-	return os.Getenv(key)
+	return envList[key]
 }
 
 func createTemplateDataModel(isCI, isPR bool, buildResults models.BuildRunResultsModel) TemplateDataModel {
@@ -45,7 +55,6 @@ func createTemplateDataModel(isCI, isPR bool, buildResults models.BuildRunResult
 	}
 }
 
-// EvaluateTemplateToString ...
 func EvaluateTemplateToString(expStr string, isCI, isPR bool, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (string, error) {
 	if expStr == "" {
 		return "", errors.New("EvaluateTemplateToBool: Invalid, empty input: expStr")
@@ -82,7 +91,6 @@ func EvaluateTemplateToString(expStr string, isCI, isPR bool, buildResults model
 	return resBuffer.String(), nil
 }
 
-// EvaluateTemplateToBool ...
 func EvaluateTemplateToBool(expStr string, isCI, isPR bool, buildResults models.BuildRunResultsModel, envList envmanModels.EnvsJSONListModel) (bool, error) {
 	resString, err := EvaluateTemplateToString(expStr, isCI, isPR, buildResults, envList)
 	if err != nil {

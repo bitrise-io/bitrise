@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/plugins"
@@ -238,6 +239,8 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 
 func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRunResultsModel, error) {
 	startTime := time.Now()
+
+	envfile.LogLargeEnvWarning(envfile.DefaultEnvfilePathEnv)
 
 	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {

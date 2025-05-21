@@ -11,21 +11,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestMergeEnvfileWithRuntimeEnvs(t *testing.T) {
+func TestGetEnv(t *testing.T) {
 	tests := []struct {
 		name           string
 		envfileContent map[string]string
 		runtimeEnvs    envmanModels.EnvsJSONListModel
-		expected       map[string]string
+		key            string
+		expected       string
 		wantErr        bool
 	}{
 		{
 			name: "cleared_runtime_envs",
-			envfileContent: map[string]string {
+			envfileContent: map[string]string{
 				"BITRISE_GIT_CHANGED_FILES":   "README.md",
-				"BITRISE_GIT_COMMIT_MESSAGES": "Merge x into y",
+				"BITRISE_GIT_COMMIT_MESSAGES": "Merge x into y\nAnd it goes on and on.....",
 				"KEY3":                        "original_value3",
-				"ENV_ONLY_DEFINED_HERE":      "original_value4",
+				"ENV_ONLY_DEFINED_HERE":       "original_value4",
 			},
 			runtimeEnvs: envmanModels.EnvsJSONListModel{
 				"BITRISE_GIT_CHANGED_FILES":   "README.md",      // This should stay as is
@@ -33,13 +34,9 @@ func TestMergeEnvfileWithRuntimeEnvs(t *testing.T) {
 				"KEY3":                        "runtime_value3", // This should stay as is
 				"KEY5":                        "runtime_value5", // This is only in runtime, should stay
 			},
-			expected: map[string]string{
-				"BITRISE_GIT_CHANGED_FILES":   "README.md",
-				"BITRISE_GIT_COMMIT_MESSAGES": "Merge x into y", // Restored from original
-				"KEY3":                        "runtime_value3",
-				"KEY5":                        "runtime_value5",
-			},
-			wantErr: false,
+			key:      "BITRISE_GIT_COMMIT_MESSAGES",
+			expected: "Merge x into y\nAnd it goes on and on.....", // Restored from original
+			wantErr:  false,
 		},
 		{
 			name:           "empty_envfile",
@@ -48,15 +45,10 @@ func TestMergeEnvfileWithRuntimeEnvs(t *testing.T) {
 				"BITRISE_GIT_CHANGED_FILES":   "README.md",      // This should stay as is
 				"BITRISE_GIT_COMMIT_MESSAGES": "Fix things",     // This should stay as is
 				"KEY3":                        "runtime_value3", // This should stay as is
-				"KEY5":                        "runtime_value5", // This is only in runtime, should stay
 			},
-			expected: map[string]string{
-				"BITRISE_GIT_CHANGED_FILES":   "README.md",
-				"BITRISE_GIT_COMMIT_MESSAGES": "Fix things",
-				"KEY3":                        "runtime_value3",
-				"KEY5":                        "runtime_value5",
-			},
-			wantErr: false,
+			key:      "BITRISE_GIT_COMMIT_MESSAGES",
+			expected: "Fix things", // This should stay as is
+			wantErr:  false,
 		},
 		{
 			name: "runtime_env_overrides_envfile",
@@ -68,11 +60,23 @@ func TestMergeEnvfileWithRuntimeEnvs(t *testing.T) {
 				"BITRISE_SRC_DIR": "/bitrise/src", // This should stay as is
 				"CI":              "false",        // This should override the envfile value
 			},
-			expected: map[string]string{
-				"BITRISE_SRC_DIR": "/bitrise/src",
-				"CI":              "false",
+			key:      "CI",
+			expected: "false", // This should override the envfile value
+			wantErr:  false,
+		},
+		{
+			name: "cleared_runtime_envs",
+			envfileContent: map[string]string{
+				"HOME": "THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_SHORT",
+				"PATH": "$PATH:THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_TOO_LONG",
 			},
-			wantErr: false,
+			runtimeEnvs: envmanModels.EnvsJSONListModel{
+				"HOME": "THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_SHORT",
+				"PATH": "", // This was cleared because of its length
+			},
+			key:      "PATH",
+			expected: "$PATH:THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_TOO_LONG", // Restored from original
+			wantErr:  false,
 		},
 	}
 
@@ -85,13 +89,13 @@ func TestMergeEnvfileWithRuntimeEnvs(t *testing.T) {
 			err = os.WriteFile(testEnvPath, out, 0644)
 			require.NoError(t, err)
 
-			got, err := MergeEnvfileWithRuntimeEnvs(tt.runtimeEnvs, testEnvPath)
+			got, err := GetEnv(tt.key, tt.runtimeEnvs, testEnvPath)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MergeEnvfileWithRuntimeEnvs() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetEnv() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.expected) {
-				t.Errorf("MergeEnvfileWithRuntimeEnvs() = %v, want %v", got, tt.expected)
+				t.Errorf("GetEnv() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
