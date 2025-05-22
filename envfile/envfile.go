@@ -18,13 +18,13 @@ type EnvFile struct {
 	ErasedEnvs []string          `yaml:"erased_envs"`
 }
 
-// GetEnv returns the true value of an env var, even if it was not exposed to the CLI process because of its size.
+// GetEnv returns the true value of an env var, even if its value was erased because of its size.
 // Typical large env vars are git-related build trigger env vars, like BITRISE_GIT_COMMIT_MESSAGES or BITRISE_GIT_CHANGED_FILES.
 // If these were exposed as env vars to the CLI process, the execve() syscall would fail because it has a limit on
 // the size of all env vars and arguments. Instead, the agent launching the Bitrise CLI process clears these env vars and
 // stores their original values in a file on disk.
-// Why is this whole thing not implemented in envman? Because (currently) Bitrise CLI interacts with envman through
-// its CLI interface, so that envman subprocess exec would also fail with the same error when passing large env vars.
+// Why is this whole thing not implemented with envman? Because a step subprocess is started with all env vars (prepared by envman),
+// so that subprocess exec would also fail with the same error when passing large env vars.
 // Note: envfilePath must point to an existing file, you should not call this unconditionally.
 func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath string) (string, error) {
 	originalBuildTriggerEnvs, err := load(envfilePath)
@@ -54,7 +54,7 @@ func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath 
 	return runtimeEnvValue, nil
 }
 
-func LogLargeEnvWarning() {
+func LogEnvVarLimitIfExceeded() {
 	path := os.Getenv(DefaultEnvfilePathEnv)
 	if path == "" {
 		// No envfile path set, CLI is probably running outside of Bitrise CI.
