@@ -39,6 +39,11 @@ func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
 	if err != nil {
 		log.Warnf("Failed to read env from envfile: %s", err)
 		log.Warnf("Falling back to the current value of $%s", key)
+		for aKey, value := range envList {
+			if aKey == key {
+				return value
+			}
+		}
 		return os.Getenv(key)
 	}
 
