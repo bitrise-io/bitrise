@@ -24,13 +24,12 @@ type EnvFile struct {
 // the size of all env vars and arguments. Instead, the agent launching the Bitrise CLI process clears these env vars and
 // stores their original values in a file on disk.
 // Why is this whole thing not implemented in envman? Because (currently) Bitrise CLI interacts with envman through
-// its CLI interface, so that subprocess exec would also fail with the same error when passing large env vars.
+// its CLI interface, so that envman subprocess exec would also fail with the same error when passing large env vars.
 // Note: envfilePath must point to an existing file, you should not call this unconditionally.
 func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath string) (string, error) {
 	originalBuildTriggerEnvs, err := load(envfilePath)
 	if err != nil {
-		// TODO
-		return "", err
+		return "", fmt.Errorf("load envfile at $%s: %w", envfilePath, err)
 	}
 
 	runtimeEnvValue, ok := runtimeEnvs[key]
@@ -82,9 +81,11 @@ func LogLargeEnvWarning() {
 		erasedEnvList += "\n"
 	}
 
-	message := fmt.Sprintf(`
+	log.Printf("\n")
+	message := fmt.Sprintf(`ENV VAR WARNING
 Some env vars were erased because their size would exceed system limits.
-If you rely on these env vars in steps, you should read the original values from a file on disk. This file is available at $%s.
+If you rely on these env vars in steps, you should read the original values from a file on disk.
+This file is available at $%s.
 The following env vars were erased and have an empty value in the runtime environment:
 %s`, colorstring.Cyan(DefaultEnvfilePathEnv), colorstring.Cyan(erasedEnvList))
 	log.Warnf(message)
