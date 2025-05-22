@@ -24,23 +24,25 @@ type TemplateDataModel struct {
 }
 
 func getEnv(key string, envList envmanModels.EnvsJSONListModel) string {
-	filepath := os.Getenv(envfile.DefaultEnvfilePathEnv)
-	if filepath != "" {
-		_, err := os.Stat(filepath)
-		if errors.Is(err, os.ErrNotExist) {
-			return os.Getenv(key)
+	envfilePath := os.Getenv(envfile.DefaultEnvfilePathEnv)
+	_, err := os.Stat(envfilePath)
+	if errors.Is(err, os.ErrNotExist) {
+		for aKey, value := range envList {
+			if aKey == key {
+				return value
+			}
 		}
-
-		value, err := envfile.GetEnv(key, envList, filepath)
-		if err != nil {
-			// TODO
-			log.Warnf("Failed to get env from envfile: %s", err)
-			return os.Getenv(key)
-		}
-
-		return value
+		return os.Getenv(key)
 	}
-	return os.Getenv(key)
+
+	value, err := envfile.GetEnv(key, envList, envfilePath)
+	if err != nil {
+		// TODO
+		log.Warnf("Failed to get env from envfile: %s", err)
+		return os.Getenv(key)
+	}
+
+	return value
 }
 
 func createTemplateDataModel(isCI, isPR bool, buildResults models.BuildRunResultsModel) TemplateDataModel {

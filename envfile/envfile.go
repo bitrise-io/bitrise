@@ -14,9 +14,8 @@ import (
 const DefaultEnvfilePathEnv = "BITRISEIO_ENVFILE_PATH"
 
 type EnvFile struct {
-	Envs           map[string]string `yaml:"envs"`
-	// TODO: naming
-	ClearedEnvKeys []string          `yaml:"cleared_env_keys"`
+	Envs       map[string]string `yaml:"envs"`
+	ErasedEnvs []string          `yaml:"erased_envs"`
 }
 
 // GetEnv returns the true value of an env var, even if it was not exposed to the CLI process because of its size.
@@ -36,21 +35,16 @@ func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath 
 
 	runtimeEnvValue, ok := runtimeEnvs[key]
 	if !ok {
-		log.Print("Env var not found in runtime envs")
-
 		// Bug-for-bug compatibility with old implementation:
 		// runtimeEnvs doesn't contain env vars added during the workflow execution, but the old implementation
-		// had a fallback to os.Getenv(key) in this case.
+		// had a fallback to os.Getenv(key) in this case (and the process envs are somehow magically updated).
 		runtimeEnvValue = os.Getenv(key)
 	}
 
-	
 	if runtimeEnvValue == "" {
-		log.Print("Env var found in runtime envs but is empty")
 		// Env var value was possibly cleared because of its length, we should restore it from
 		// the env file
 		if originalValue, ok := originalBuildTriggerEnvs.Envs[key]; ok {
-			log.Print("Env var value was cleared, restoring from envfile")
 			return originalValue, nil
 		}
 		// Note: !ok means no original value found in envfile, but this can be a valid case
@@ -58,38 +52,41 @@ func GetEnv(key string, runtimeEnvs envmanModels.EnvsJSONListModel, envfilePath 
 	}
 
 	// If the value is not empty, it means that it didn't hit the size limit, we can just return it
-	log.Print("Fallback to runtime env value")
 	return runtimeEnvValue, nil
 }
 
 func LogLargeEnvWarning() {
 	path := os.Getenv(DefaultEnvfilePathEnv)
 	if path == "" {
+		// No envfile path set, CLI is probably running outside of Bitrise CI.
 		return
 	}
 
 	originalBuildTriggerEnvs, err := load(path)
 	if err != nil {
-		// We are on the critical path and should not fail here.
+		// We are on the critical path and should not fail here
 		log.Warnf("Failed to load envfile at $%s: %s", path, err)
 		return
 	}
 
-	if len(originalBuildTriggerEnvs.ClearedEnvKeys) == 0 {
+	if len(originalBuildTriggerEnvs.ErasedEnvs) == 0 {
 		return
 	}
 
-	clearedEnvList := ""
-	for _, key := range originalBuildTriggerEnvs.ClearedEnvKeys {
-		clearedEnvList += fmt.Sprintf("- %s", key)
-		clearedEnvList += "\n"
+	erasedEnvList := ""
+	for _, key := range originalBuildTriggerEnvs.ErasedEnvs {
+		if key == "" {
+			continue
+		}
+		erasedEnvList += fmt.Sprintf("- %s", key)
+		erasedEnvList += "\n"
 	}
 
 	message := fmt.Sprintf(`
-Some env vars were removed because their size would exceed system limits.
+Some env vars were erased because their size would exceed system limits.
 If you rely on these env vars in steps, you should read the original values from a file on disk. This file is available at $%s.
-The following env vars were removed and are not available in the runtime environment:
-%s`, colorstring.Cyan(DefaultEnvfilePathEnv), colorstring.Cyan(clearedEnvList))
+The following env vars were erased and have an empty value in the runtime environment:
+%s`, colorstring.Cyan(DefaultEnvfilePathEnv), colorstring.Cyan(erasedEnvList))
 	log.Warnf(message)
 }
 

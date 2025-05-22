@@ -16,15 +16,16 @@ func TestGetEnv(t *testing.T) {
 		name           string
 		envfileContent map[string]string
 		runtimeEnvs    envmanModels.EnvsJSONListModel
+		cliProcessEnvs map[string]string
 		key            string
 		expected       string
 		wantErr        bool
 	}{
 		{
-			name: "cleared_runtime_envs",
+			name: "Cleared runtime envs",
 			envfileContent: map[string]string{
 				"BITRISE_GIT_CHANGED_FILES":   "README.md",
-				"BITRISE_GIT_COMMIT_MESSAGES": "Merge x into y\nAnd it goes on and on.....",
+				"BITRISE_GIT_COMMIT_MESSAGES": "Merge x into y\nAnd it goes on and on...",
 				"KEY3":                        "original_value3",
 				"ENV_ONLY_DEFINED_HERE":       "original_value4",
 			},
@@ -35,11 +36,11 @@ func TestGetEnv(t *testing.T) {
 				"KEY5":                        "runtime_value5", // This is only in runtime, should stay
 			},
 			key:      "BITRISE_GIT_COMMIT_MESSAGES",
-			expected: "Merge x into y\nAnd it goes on and on.....", // Restored from original
+			expected: "Merge x into y\nAnd it goes on and on...", // Restored from original
 			wantErr:  false,
 		},
 		{
-			name:           "empty_envfile",
+			name:           "Empty envfile",
 			envfileContent: map[string]string{},
 			runtimeEnvs: envmanModels.EnvsJSONListModel{
 				"BITRISE_GIT_CHANGED_FILES":   "README.md",      // This should stay as is
@@ -51,7 +52,7 @@ func TestGetEnv(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "runtime_env_overrides_envfile",
+			name: "Runtime env overrides envfile env",
 			envfileContent: map[string]string{
 				"CI":              "true",
 				"BITRISE_SRC_DIR": "/bitrise/src",
@@ -65,17 +66,23 @@ func TestGetEnv(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "cleared_runtime_envs",
+			// Bug-for-bug compatibility with old impl, see envfile.go for details
+			name: "Mid-workflow exported new env",
 			envfileContent: map[string]string{
-				"HOME": "THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_SHORT",
-				"PATH": "$PATH:THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_TOO_LONG",
+				"CI":              "true",
+				"BITRISE_SRC_DIR": "/bitrise/src",
 			},
 			runtimeEnvs: envmanModels.EnvsJSONListModel{
-				"HOME": "THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_SHORT",
-				"PATH": "", // This was cleared because of its length
+				"CI":              "true",
+				"BITRISE_SRC_DIR": "/bitrise/src/subproject1",
 			},
-			key:      "PATH",
-			expected: "$PATH:THIS_IS_A_BUILD_TRIGGER_OVERRIDE_AND_IS_TOO_LONG", // Restored from original
+			cliProcessEnvs: map[string]string{
+				"CI":              "true",
+				"BITRISE_SRC_DIR": "/bitrise/src",
+				"SHOULD_SKIP":     "1", 
+			},
+			key:      "SHOULD_SKIP",
+			expected: "1",
 			wantErr:  false,
 		},
 	}
@@ -88,6 +95,10 @@ func TestGetEnv(t *testing.T) {
 			require.NoError(t, err)
 			err = os.WriteFile(testEnvPath, out, 0644)
 			require.NoError(t, err)
+
+			for k, v := range tt.cliProcessEnvs {
+				t.Setenv(k, v)
+			}
 
 			got, err := GetEnv(tt.key, tt.runtimeEnvs, testEnvPath)
 			if (err != nil) != tt.wantErr {
