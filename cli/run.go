@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v2/trace"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -34,8 +35,9 @@ const (
 	DefaultSecretsFileName       = ".bitrise.secrets.yml"
 	OutputFormatKey              = "output-format"
 
-	depManagerBrew      = "brew"
-	secretFilteringFlag = "secret-filtering"
+	depManagerBrew            = "brew"
+	secretFilteringFlag       = "secret-filtering"
+	experimentalTraceLogsFlag = "experimental_trace_logs"
 )
 
 var errWorkflowNotSpecified = errors.New("workflow not specified")
@@ -43,10 +45,11 @@ var errUtilityWorkflowSpecified = errors.New("utility workflow specified")
 var errWorkflowRunFailed = errors.New("workflow run failed")
 
 type RunConfig struct {
-	Modes    models.WorkflowRunModes
-	Config   models.BitriseDataModel
-	Workflow string
-	Secrets  []envmanModels.EnvironmentItemModel
+	Modes            models.WorkflowRunModes
+	Config           models.BitriseDataModel
+	Workflow         string
+	Secrets          []envmanModels.EnvironmentItemModel
+	TraceLogsEnabled bool
 }
 
 var runCommand = cli.Command{
@@ -60,6 +63,7 @@ var runCommand = cli.Command{
 		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
 		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
 		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log."},
+		cli.BoolFlag{Name: experimentalTraceLogsFlag, Usage: "Enable experimental trace logging for performance analysis."},
 
 		// cli params used in CI mode
 		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
@@ -175,8 +179,9 @@ type DockerManager interface {
 }
 
 type WorkflowRunner struct {
-	logger log.Logger
-	config RunConfig
+	logger      log.Logger
+	config      RunConfig
+	traceLogger *trace.Logger
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig   *configs.AgentConfig
@@ -186,9 +191,11 @@ type WorkflowRunner struct {
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	traceLogger := trace.NewLogger(config.TraceLogsEnabled)
 	return WorkflowRunner{
 		logger:        logger,
 		config:        config,
+		traceLogger:   traceLogger,
 		dockerManager: docker.NewContainerManager(logger, stepSecretValues),
 		agentConfig:   agentConfig,
 	}
@@ -408,6 +415,8 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 	jsonParams := c.String(JSONParamsKey)
 	jsonParamsBase64 := c.String(JSONParamsBase64Key)
 
+	traceLogsEnabled := c.Bool(experimentalTraceLogsFlag)
+
 	runParams, err := parseRunParams(
 		workflowToRunID,
 		bitriseConfigPath, bitriseConfigBase64Data,
@@ -470,9 +479,10 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 			SecretEnvsFilteringMode: enabledEnvsFiltering,
 			IsSteplibOfflineMode:    isSteplibOfflineMode,
 		},
-		Config:   bitriseConfig,
-		Workflow: runParams.WorkflowToRunID,
-		Secrets:  inventoryEnvironments,
+		Config:           bitriseConfig,
+		Workflow:         runParams.WorkflowToRunID,
+		Secrets:          inventoryEnvironments,
+		TraceLogsEnabled: traceLogsEnabled,
 	}, nil
 }
 

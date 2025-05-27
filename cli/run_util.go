@@ -50,12 +50,24 @@ func (r WorkflowRunner) runWorkflow(
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties,
 ) models.BuildRunResultsModel {
+	workflowStartTime := time.Now()
+	// Log workflow start trace
+	r.traceLogger.LogWorkflowStart(plan.WorkflowID, plan.WorkflowTitle)
+
 	bitrise.PrintRunningWorkflow(plan.WorkflowTitle)
 
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
 
 	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	workflowEndTime := time.Now()
+
+	// Log workflow end trace
+	status := "success"
+	if results.IsBuildFailed() {
+		status = "failed"
+	}
+	r.traceLogger.LogWorkflowEnd(plan.WorkflowID, plan.WorkflowTitle, status, workflowStartTime, workflowEndTime)
 
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 	collectToolVersions(tracker)
@@ -121,6 +133,15 @@ func (r WorkflowRunner) activateAndRunSteps(
 		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepPlan.UUID}
 		stepStartedProperties := workflowIDProperties.Merge(stepIDProperties)
 
+		// Log step start trace
+		stepTitle := ""
+		if stepPlan.Step.Title != nil && *stepPlan.Step.Title != "" {
+			stepTitle = *stepPlan.Step.Title
+		} else {
+			stepTitle = stepPlan.StepID
+		}
+		r.traceLogger.LogStepStart(stepPlan.StepID, stepTitle, plan.WorkflowID)
+
 		result := r.activateAndRunStep(
 			stepPlan.Step,
 			stepPlan.StepID,
@@ -137,6 +158,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepStartTime,
 			stepStartedProperties,
 		)
+
+		stepEndTime := time.Now()
 
 		*environments = append(*environments, result.OutputEnvironments...)
 		if currentStepBundleUUID != "" {
@@ -159,6 +182,15 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
+
+		// Log step end trace
+		stepStatus := "success"
+		if result.StepRunStatus == models.StepRunStatusCodeFailed || result.StepRunStatus == models.StepRunStatusCodeFailedSkippable {
+			stepStatus = "failed"
+		} else if result.StepRunStatus == models.StepRunStatusCodeSkipped || result.StepRunStatus == models.StepRunStatusCodeSkippedWithRunIf {
+			stepStatus = "skipped"
+		}
+		r.traceLogger.LogStepEnd(stepPlan.StepID, stepTitle, plan.WorkflowID, stepStatus, stepStartTime, stepEndTime)
 
 		currentBuildRunResult := buildRunResults
 		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {

@@ -11,3 +11,5 @@ _FAKE_HOME/
 .vscode
 .idea/
 dist/
+_examples/experimentals/trace-log/build-log.txt
+_examples/tutorials/steps-and-workflows/build-log.txt

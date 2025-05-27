@@ -1,0 +1,30 @@
+format_version: "23"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+workflows:
+  trace-log-example-workflow:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@8: {}
+    - script@1:
+        title: Script step one
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+            echo "This is a trace log example."
+    - script@1:
+        title: Step which also prints trace logs
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "This step will also print trace logs."
+
+            # Questions/TODO: Do we have a way for the step to figure out the 'Step ID'?
+            go run ./trace_command.go -step-id="script@1" -- sleep 1
+            go run ./trace_command.go -step-id="script@1" -- curl https://api.bitrise.io/
+            go run ./trace_command.go -step-id="script@1" -- sleep 1
+
+    - deploy-to-bitrise-io@2: {}
