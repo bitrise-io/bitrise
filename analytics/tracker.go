@@ -121,31 +121,25 @@ type Tracker interface {
 type tracker struct {
 	tracker       analytics.Tracker
 	envRepository env.Repository
-	stateChecker  StateChecker
 	logger        utilslog.Logger
 }
 
-func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository, stateChecker StateChecker, logger utilslog.Logger) Tracker {
-	return tracker{tracker: analyticsTracker, envRepository: envRepository, stateChecker: stateChecker, logger: logger}
+func NewTracker(analyticsTracker analytics.Tracker, envRepository env.Repository, logger utilslog.Logger) Tracker {
+	return tracker{tracker: analyticsTracker, envRepository: envRepository, logger: logger}
 }
 
 func NewDefaultTracker() Tracker {
 	envRepository := env.NewRepository()
-	stateChecker := NewStateChecker(envRepository)
 
 	logger := log.NewUtilsLogAdapter()
-	tracker := analytics.NewDefaultTracker(&logger)
+	tracker := analytics.NewDefaultTracker(&logger, envRepository)
 
-	return NewTracker(tracker, envRepository, stateChecker, &logger)
+	return NewTracker(tracker, envRepository, &logger)
 }
 
 // SendWorkflowStarted sends `workflow_started` events. `parent_step_execution_id` can be used to filter those
 // Bitrise CLI events that were started as part of a step (like script).
 func (t tracker) SendWorkflowStarted(properties analytics.Properties, name string, title string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 	isPR := t.envRepository.Get(configs.PRModeEnvKey) == "true"
 	isDebug := t.envRepository.Get(configs.DebugModeEnvKey) == "true"
@@ -195,10 +189,6 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 }
 
 func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bool) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	var statusMessage string
 	if failed {
 		statusMessage = failedValue
@@ -210,10 +200,6 @@ func (t tracker) SendWorkflowFinished(properties analytics.Properties, failed bo
 }
 
 func (t tracker) SendCommandInfo(command, subcommand string, flags []string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
 	cliVersion, _ := version.BitriseCliVersion()
 
@@ -229,10 +215,6 @@ func (t tracker) SendCommandInfo(command, subcommand string, flags []string) {
 }
 
 func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	stackRevID := t.envRepository.Get(stackRevIDKey)
 	if stackRevID == "" {
 		// Legacy
@@ -251,10 +233,6 @@ func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
 }
 
 func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, activateDuration time.Duration, expandedInputs map[string]interface{}, originalInputs map[string]string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	extraProperties := []analytics.Properties{properties, prepareStartProperties(info)}
 	extraProperties = append(extraProperties, analytics.Properties{stepActivateDurationProperty: activateDuration.Milliseconds()})
 	if len(expandedInputs) > 0 {
@@ -278,10 +256,6 @@ func (t tracker) SendStepStartedEvent(properties analytics.Properties, info Step
 }
 
 func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result StepResult) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	eventName, extraProperties, err := mapStepResultToEvent(result)
 	if err != nil {
 		t.SendCLIWarning(err.Error())
@@ -291,10 +265,6 @@ func (t tracker) SendStepFinishedEvent(properties analytics.Properties, result S
 }
 
 func (t tracker) SendCLIWarning(message string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
 	t.tracker.Enqueue(cliWarningEventName, analytics.Properties{messageProperty: message})
 }
 
@@ -303,7 +273,7 @@ func (t tracker) Wait() {
 }
 
 func (t tracker) IsTracking() bool {
-	return t.stateChecker.Enabled()
+	return t.tracker.IsTracking()
 }
 
 func prepareStartProperties(info StepInfo) analytics.Properties {
