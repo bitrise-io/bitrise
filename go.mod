@@ -7,7 +7,7 @@ require (
 	github.com/bitrise-io/envman/v2 v2.5.3
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.13
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.25
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/bitrise-io/stepman v0.17.3
 	github.com/go-git/go-git/v5 v5.13.0
@@ -22,6 +22,7 @@ require (
 	golang.org/x/mod v0.21.0
 	golang.org/x/sys v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -40,6 +41,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gofrs/uuid/v5 v5.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -72,7 +74,6 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
 
