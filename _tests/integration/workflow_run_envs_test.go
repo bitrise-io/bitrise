@@ -86,6 +86,18 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 				"Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
 			},
 		},
+		{
+			name:           "Failing step and failure reason envs test for bundle",
+			workflow:       "failed_step_and_reason_envs_test_bundle",
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Step failure reason\n",
+				"Inside bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+				"Inside bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
+				"After bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+				"After bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
+			},
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			args := []string{"run", "--output-format", "json", tt.workflow, "--config", "workflow_run_envs_test_bitrise.yml"}
