@@ -59,7 +59,7 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			expectedToFail: true,
 			expectedStepOutputs: []string{
 				"Run if BITRISE_BUILD_STATUS is 0\n",
-				"Run if not .I sBuildFailed\n",
+				"Run if not .IsBuildFailed\n",
 				"Run if BITRISE_BUILD_STATUS is 1\n",
 				"Run if .IsBuildFailed\n",
 			},

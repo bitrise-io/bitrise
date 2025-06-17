@@ -182,20 +182,6 @@ workflows:
             set -ex
             exit 0
 
-  debug:
-    steps:
-    - bundle::failing_step_bundle: { }
-    - script@1:
-        is_always_run: true
-        title: Debug
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            echo "$BITRISE_BUILD_STATUS"
-            echo "$FA"
-            echo "$BI"
-
 step_bundles:
   run_lint:
     title: Run linter
@@ -372,7 +358,7 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            #go install github.com/jstemmer/go-junit-report/v2@latest
+            go install github.com/jstemmer/go-junit-report/v2@latest
             asdf reshim golang
 
   setup_goreleaser:
@@ -384,27 +370,6 @@ step_bundles:
             set -ex
             go install github.com/goreleaser/goreleaser/v2@latest
             asdf reshim golang
-
-  failing_step_bundle:
-    title: Failing step
-    steps:
-    - script@1:
-        title: Failing step
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            exit 1
-    - script@1:
-        title: Build status NOT failing
-        is_always_run: true
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            # Ouptuts "0", incorrectly
-            echo "$BITRISE_BUILD_STATUS"
-
 
 meta:
   bitrise.io:
