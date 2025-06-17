@@ -31,6 +31,16 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 			},
 		},
 		{
+			name:           "Step bundle build status envs",
+			workflow:       "bundle_run_envs_test",
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Failing step\n",
+				"Build status failing inside bundle\nBITRISE_BUILD_STATUS: 1\nBITRISE_FAILED_STEP_TITLE: Failing step\n",
+				"Build status failing after bundle\nBITRISE_BUILD_STATUS: 1\nBITRISE_FAILED_STEP_TITLE: Failing step\n",
+			},
+		},
+		{
 			name:           "Before, after workflow run build status envs",
 			workflow:       "before_after_workflow_run_envs_test",
 			expectedToFail: true,
@@ -74,6 +84,18 @@ func Test_WorkflowRunEnvs(t *testing.T) {
 				"Step [REDACTED]\n",
 				"BITRISE_FAILED_STEP_TITLE: Failing step\nBITRISE_FAILED_STEP_ERROR_MESSAGE: Step [REDACTED]\n",
 				"Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+			},
+		},
+		{
+			name:           "Failing step and failure reason envs test for bundle",
+			workflow:       "failed_step_and_reason_envs_bundle_test",
+			expectedToFail: true,
+			expectedStepOutputs: []string{
+				"Step failure reason\n",
+				"Inside bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+				"Inside bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
+				"After bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'\n",
+				"After bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'\n",
 			},
 		},
 	} {
