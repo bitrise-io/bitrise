@@ -371,6 +371,7 @@ step_bundles:
             go install github.com/goreleaser/goreleaser/v2@latest
             asdf reshim golang
 
+
 meta:
   bitrise.io:
     machine_type_id: g2.linux.x-large
