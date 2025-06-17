@@ -15,10 +15,10 @@ It's also useful as a standalone dev tool in your local environment. You can:
     <img src="https://repology.org/badge/vertical-allrepos/bitrise.svg" alt="Packaging status" align="right">
 </a>
 
-There are multiple options to install Bitrise CLI:
+There are multiple ways to install Bitrise CLI:
 
 - Homebrew: `brew install bitrise`
-- Nix: packaged as `bitrise`, run `nix-shell -p bitrise` or your preferred configuration method.
+- Nix: available as `bitrise` [in nixpkgs](https://search.nixos.org/packages?channel=unstable&show=bitrise), run `nix-shell -p bitrise` or your preferred configuration method.
 - Download a pre-built binary from the [releases](https://github.com/bitrise-io/bitrise/releases) page
 - There might be other [community-maintained packages](https://repology.org/project/bitrise/versions)
 
@@ -26,11 +26,7 @@ You can enable shell completion for the `bitrise run` command: [https://blog.bit
 
 ### Building from source
 
-First, set up the right Go version indicated by the `go.mod` file.
-
-```sh
-go install .
-```
+Set up the right Go version indicated by the `go.mod` file, then run `go install .`
 
 ## Documentation
 
