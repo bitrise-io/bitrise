@@ -2,6 +2,59 @@
 format_version: "17"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
+step_bundles:
+  _failing_bundle_with_reason:
+    steps:
+    - script:
+        title: Failing step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            RED_COLOUR='\x1b[31;1m'
+            NO_COLOUR='\x1b[0m'
+            echo -e "${RED_COLOUR}Step failure reason${NO_COLOUR}"
+            exit 2
+    - script:
+        title: Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_TITLE\" \"Failing step\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Inside bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'"
+    - script:
+        title: Run if BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_ERROR_MESSAGE\" \"Step failure reason\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Inside bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'"
+        
+  _failing_bundle:
+    steps:
+    - script:
+        title: Failing step
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Failing step"
+            exit 2
+    - script:
+        title: Print failing step status (inside bundle)
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Build status failing inside bundle"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
+
 workflows:
   workflow_run_envs_test:
     steps:
@@ -57,6 +110,20 @@ workflows:
             #!/bin/bash
             set -e
             echo "Skipped step"
+
+  bundle_run_envs_test:
+    steps:
+    - bundle::_failing_bundle: {}
+    - script:
+        title: Print failing step status (after bundle)
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "Build status failing after bundle"
+            echo "BITRISE_BUILD_STATUS: $BITRISE_BUILD_STATUS"
+            echo "BITRISE_FAILED_STEP_TITLE: $BITRISE_FAILED_STEP_TITLE"
 
   before_after_workflow_run_envs_test:
     before_run:
@@ -220,3 +287,25 @@ workflows:
             #!/bin/bash
             set -e
             echo "Run if BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'"
+
+  failed_step_and_reason_envs_bundle_test:
+    steps:
+    - bundle::_failing_bundle_with_reason: {}
+    - script:
+        title: Run if BITRISE_FAILED_STEP_TITLE is 'Failing step'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_TITLE\" \"Failing step\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "After bundle BITRISE_FAILED_STEP_TITLE is 'Failing step'"
+    - script:
+        title: Run if BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'
+        is_always_run: true
+        run_if: "{{enveq \"BITRISE_FAILED_STEP_ERROR_MESSAGE\" \"Step failure reason\"}}"
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            echo "After bundle BITRISE_FAILED_STEP_ERROR_MESSAGE is 'Step failure reason'"
