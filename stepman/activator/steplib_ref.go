@@ -33,10 +33,11 @@ func ActivateSteplibRefStep(
 		return activationResult, err
 	}
 
-	err = steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
+	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
 	if err != nil {
 		return activationResult, err
 	}
+	activationResult.ExecutablePath = execPath
 
 	// TODO: this is sketchy, we should clean this up, but this pointer originates in the CLI codebase
 	stepInfoPtr.ID = stepInfo.ID
