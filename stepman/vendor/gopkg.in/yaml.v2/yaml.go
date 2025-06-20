@@ -357,10 +357,10 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 			switch field.Type.Kind() {
 			case reflect.Map:
 				if inlineMap >= 0 {
-					return nil, errors.New("multiple ,inline maps in struct " + st.String())
+					return nil, errors.New("Multiple ,inline maps in struct " + st.String())
 				}
 				if field.Type.Key() != reflect.TypeOf("") {
-					return nil, errors.New("option ,inline needs a map with string keys in struct " + st.String())
+					return nil, errors.New("Option ,inline needs a map with string keys in struct " + st.String())
 				}
 				inlineMap = info.Num
 			case reflect.Struct:
@@ -384,7 +384,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				}
 			default:
 				//return nil, errors.New("Option ,inline needs a struct value or map field")
-				return nil, errors.New("option ,inline needs a struct value field")
+				return nil, errors.New("Option ,inline needs a struct value field")
 			}
 			continue
 		}

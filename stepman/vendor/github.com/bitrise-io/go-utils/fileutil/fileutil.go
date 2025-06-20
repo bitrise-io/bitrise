@@ -24,7 +24,7 @@ func WriteStringToFileWithPermission(pth string, fileCont string, perm os.FileMo
 // WriteBytesToFileWithPermission ...
 func WriteBytesToFileWithPermission(pth string, fileCont []byte, perm os.FileMode) error {
 	if pth == "" {
-		return errors.New("no path provided")
+		return errors.New("No path provided")
 	}
 
 	var file *os.File
@@ -75,7 +75,7 @@ func AppendStringToFile(pth string, fileCont string) error {
 // AppendBytesToFile ...
 func AppendBytesToFile(pth string, fileCont []byte) error {
 	if pth == "" {
-		return errors.New("no path provided")
+		return errors.New("No path provided")
 	}
 
 	var file *os.File
