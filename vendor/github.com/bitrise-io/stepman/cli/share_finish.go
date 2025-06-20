@@ -16,7 +16,7 @@ import (
 
 func printFinishShare() {
 	b := colorstring.NewBuilder()
-	b.Plain(GuideTextForFinish()).NewLine()
+	b.Plain("%s", GuideTextForFinish()).NewLine() //nolint:govet
 	b.NewLine()
 	b.Plain("On GitHub you can find a ").Blue("Compare & pull request").Plain(" button, in the section called ").Blue("Your recently pushed branches:").Plain(",").NewLine()
 	b.Plain("which will bring you to the page to ").Blue("Open a pull request").Plain(", where you can review and create your Pull Request.")

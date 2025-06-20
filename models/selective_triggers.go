@@ -18,6 +18,7 @@ type Triggers struct {
 
 type PushGitEventTriggerItem struct {
 	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority      *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
 	Branch        any   `json:"branch,omitempty" yaml:"branch,omitempty"`
 	CommitMessage any   `json:"commit_message,omitempty" yaml:"commit_message,omitempty"`
 	ChangedFiles  any   `json:"changed_files,omitempty" yaml:"changed_files,omitempty"`
@@ -25,6 +26,7 @@ type PushGitEventTriggerItem struct {
 
 type PullRequestGitEventTriggerItem struct {
 	Enabled       *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority      *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
 	DraftEnabled  *bool `json:"draft_enabled,omitempty" yaml:"draft_enabled,omitempty"`
 	SourceBranch  any   `json:"source_branch,omitempty" yaml:"source_branch,omitempty"`
 	TargetBranch  any   `json:"target_branch,omitempty" yaml:"target_branch,omitempty"`
@@ -35,8 +37,9 @@ type PullRequestGitEventTriggerItem struct {
 }
 
 type TagGitEventTriggerItem struct {
-	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Name    any   `json:"name,omitempty" yaml:"name,omitempty"`
+	Enabled  *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Priority *int  `json:"priority,omitempty" yaml:"priority,omitempty"`
+	Name     any   `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 func (pushItem PushGitEventTriggerItem) toString() string {
@@ -195,11 +198,16 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedPushTrigger, "enabled", "branch", "commit_message", "changed_files"); err != nil {
+	if err := ensureKeys(stringKeyedPushTrigger, "enabled", "priority", "branch", "commit_message", "changed_files"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedPushTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedPushTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -209,18 +217,19 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(stringKeyedPushTrigger, "commit_message")
+	commitMessage, err := commitCollectionFilterValue(stringKeyedPushTrigger, "commit_message")
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(stringKeyedPushTrigger, "changed_files")
+	changedFiles, err := commitCollectionFilterValue(stringKeyedPushTrigger, "changed_files")
 	if err != nil {
 		return nil, err
 	}
 
 	return &PushGitEventTriggerItem{
 		Enabled:       enabled,
+		Priority:      priority,
 		Branch:        branch,
 		CommitMessage: commitMessage,
 		ChangedFiles:  changedFiles,
@@ -238,11 +247,16 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedPullRequestTrigger, "enabled", "source_branch", "target_branch", "draft_enabled", "label", "comment", "commit_message", "changed_files"); err != nil {
+	if err := ensureKeys(stringKeyedPullRequestTrigger, "enabled", "priority", "source_branch", "target_branch", "draft_enabled", "label", "comment", "commit_message", "changed_files"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedPullRequestTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedPullRequestTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -284,6 +298,7 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 
 	return &PullRequestGitEventTriggerItem{
 		Enabled:       enabled,
+		Priority:      priority,
 		SourceBranch:  sourceBranch,
 		TargetBranch:  targetBranch,
 		DraftEnabled:  draftEnabled,
@@ -305,11 +320,16 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 		return nil, err
 	}
 
-	if err := ensureKeys(stringKeyedTagTrigger, "enabled", "name"); err != nil {
+	if err := ensureKeys(stringKeyedTagTrigger, "enabled", "priority", "name"); err != nil {
 		return nil, err
 	}
 
 	enabled, err := boolPtrValue(stringKeyedTagTrigger, "enabled")
+	if err != nil {
+		return nil, err
+	}
+
+	priority, err := priorityValue(stringKeyedTagTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -320,8 +340,9 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 	}
 
 	return &TagGitEventTriggerItem{
-		Enabled: enabled,
-		Name:    name,
+		Enabled:  enabled,
+		Priority: priority,
+		Name:     name,
 	}, nil
 }
 
@@ -346,6 +367,65 @@ func globOrRegexValue(item map[string]any, key string) (any, error) {
 	}
 }
 
+func commitCollectionFilterValue(item map[string]any, key string) (any, error) {
+	value, ok := item[key]
+	if !ok {
+		return nil, nil
+	}
+
+	switch value := value.(type) {
+	case string:
+		return value, nil
+	case map[any]any:
+		stringKeyedTriggers, err := stringKeyedMap(value)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := ensureKeys(stringKeyedTriggers, "pattern", "regex", "last_commit"); err != nil {
+			return nil, fmt.Errorf("'%s': %w", key, err)
+		}
+
+		regexRaw, regexPresent := value["regex"]
+		patternRaw, patternPresent := value["pattern"]
+
+		if regexPresent && patternPresent || !regexPresent && !patternPresent {
+			return nil, fmt.Errorf("'%s' should contain exactly one of 'regex' and 'pattern' keys", key)
+		}
+
+		result := map[string]any{}
+		if regexPresent {
+			regex, ok := regexRaw.(string)
+			if !ok {
+				return nil, fmt.Errorf("'regex' value invalid for '%s', should be a string", key)
+			}
+			result["regex"] = regex
+		}
+
+		if patternPresent {
+			pattern, ok := patternRaw.(string)
+			if !ok {
+				return nil, fmt.Errorf("'pattern' value invalid for '%s', should be a string", key)
+			}
+			result["pattern"] = pattern
+		}
+
+		lastCommitRaw, ok := value["last_commit"]
+		if ok {
+			lastCommit, ok := lastCommitRaw.(bool)
+			if !ok {
+				return nil, fmt.Errorf("'last_commit' value invalid for '%s', should be a bool", key)
+			}
+
+			result["last_commit"] = lastCommit
+		}
+
+		return result, nil
+	default:
+		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' or 'pattern' key and string value", key)
+	}
+}
+
 func boolPtrValue(item map[string]any, key string) (*bool, error) {
 	value, ok := item[key]
 	if !ok {
@@ -358,6 +438,30 @@ func boolPtrValue(item map[string]any, key string) (*bool, error) {
 	}
 
 	return &boolValue, nil
+}
+func priorityValue(item map[string]any) (*int, error) {
+	valuePtr, err := intPtrValue(item, "priority")
+	if err != nil {
+		return nil, err
+	}
+	if err := validatePriority(valuePtr); err != nil {
+		return nil, err
+	}
+	return valuePtr, nil
+}
+
+func intPtrValue(item map[string]any, key string) (*int, error) {
+	value, ok := item[key]
+	if !ok {
+		return nil, nil
+	}
+
+	intValue, ok := value.(int)
+	if !ok {
+		return nil, fmt.Errorf("'%s' value should be an integer", key)
+	}
+
+	return &intValue, nil
 }
 
 func ensureKeys(item map[string]any, allowedKeys ...string) error {

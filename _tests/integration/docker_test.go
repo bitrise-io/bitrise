@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func Test_Docker(t *testing.T) {
 			requireErr:   true,
 			requireLogs: []string{
 				"failed to start containers:",
-				"bind: address already in use",
+				"address already in use",
 			},
 		},
 		"docker create succeeds when valid port is provided": {

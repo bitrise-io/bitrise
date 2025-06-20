@@ -193,7 +193,7 @@ func GetStepCollectionSpecPath(route SteplibRoute) string {
 func GetAllStepCollectionPath() []string {
 	routes, err := readRouteMap()
 	if err != nil {
-		log.Errorf("Failed to read step specs path, error: %s", err)
+		log.Errorf("failed to read step specs path, error: %s", err)
 		return []string{}
 	}
 
@@ -206,7 +206,7 @@ func GetAllStepCollectionPath() []string {
 }
 
 // GetStepCacheDirPath ...
-// Step's Cache dir path, where it's code lives.
+// Step's Cache dir path, where its code lives.
 func GetStepCacheDirPath(route SteplibRoute, id, version string) string {
 	return filepath.Join(GetCacheBaseDir(route), id, version)
 }
@@ -217,7 +217,7 @@ func GetStepGlobalInfoPath(route SteplibRoute, id string) string {
 }
 
 // GetStepCollectionDirPath ...
-// Step's Collection dir path, where it's spec (step.yml) lives.
+// Step's Collection dir path, where its spec (step.yml) lives.
 func GetStepCollectionDirPath(route SteplibRoute, id, version string) string {
 	return filepath.Join(GetLibraryBaseDirPath(route), "steps", id, version)
 }

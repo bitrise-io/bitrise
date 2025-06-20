@@ -43,14 +43,14 @@ func start(c *cli.Context) error {
 			failf("Failed to ask for input, error: %s", err)
 		} else {
 			if !val {
-				log.Errorf("Unfortunately we can't continue with sharing without a clean StepLib repository.")
+				log.Errorf("unfortunately we can't continue with sharing without a clean StepLib repository.")
 				failf("Please finish your changes, run this command again and allow it to remove the local StepLib folder!")
 			}
 			if err := stepman.CleanupRoute(route); err != nil {
-				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+				log.Errorf("failed to cleanup route for uri: %s", collectionURI)
 			}
 		}
-	}
+	} 
 
 	// cleanup
 	if err := DeleteShareSteplibFile(); err != nil {
@@ -62,7 +62,7 @@ func start(c *cli.Context) error {
 	defer func() {
 		if !isSuccess {
 			if err := stepman.CleanupRoute(route); err != nil {
-				log.Errorf("Failed to cleanup route for uri: %s", collectionURI)
+				log.Errorf("failed to cleanup route for uri: %s", collectionURI)
 			}
 			if err := DeleteShareSteplibFile(); err != nil {
 				failf("Failed to delete share steplib file, error: %s", err)

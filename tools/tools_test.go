@@ -5,10 +5,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
-	"github.com/bitrise-io/envman/models"
-
+	"github.com/bitrise-io/bitrise/v2/configs"
+	envmanCLI "github.com/bitrise-io/envman/v2/cli"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	"github.com/bitrise-io/envman/v2/envman"
+	"github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
@@ -92,4 +96,118 @@ func TestEnvmanJSONPrint(t *testing.T) {
 	out, err = EnvmanReadEnvList(envstorePth)
 	require.NotEqual(t, nil, err)
 	require.Nil(t, out)
+}
+
+func TestEnvmanAddEnvs(t *testing.T) {
+	defaultConfig, err := envman.GetConfigs()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		envstorePth string
+		envsList    []models.EnvironmentItemModel
+		wantErr     string
+	}{
+		{
+			name:        "add valid envs",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key_1": "value_1"}, {"key_2": "value_2"}},
+		},
+		{
+			name:        "add invalid envs",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key_1": "value_1", "key_2": "value_2"}},
+			wantErr:     "more than 1 environment key specified: [key_1 key_2]",
+		},
+		{
+			name:        "add too large env",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024+1)}},
+			wantErr: `env var (key) value is too large (256.0009765625 KB), max allowed size: 256 KB.
+To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
+		},
+		{
+			name:        "add env to a too large env list",
+			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
+			envsList:    []models.EnvironmentItemModel{{"key_1": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024)}, {"key_2": "a"}},
+			wantErr: `env var list is too large (256.0009765625 KB), max allowed size: 256 KB.
+To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := EnvmanInit(tt.envstorePth, true)
+			require.NoError(t, err)
+
+			err = EnvmanAddEnvs(tt.envstorePth, tt.envsList)
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+
+				gotEnvs, err := EnvmanReadEnvList(tt.envstorePth)
+				require.NoError(t, err)
+
+				wantEnvs, err := envmanCLI.ConvertToEnvsJSONModel(tt.envsList, true, false, &envmanEnv.DefaultEnvironmentSource{})
+				require.Equal(t, wantEnvs, gotEnvs)
+			}
+
+		})
+	}
+}
+
+func Test_createGitHubBinDownloadURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		githubUser  string
+		toolName    string
+		toolVersion string
+		unameGOOS   string
+		unameGOARCH string
+		want        string
+	}{
+		{
+			name:        "envman pre 2.5.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "envman",
+			toolVersion: "2.5.1",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/envman/releases/download/2.5.1/envman-Darwin-arm64",
+		},
+		{
+			name:        "envman post 2.5.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "envman",
+			toolVersion: "2.5.2",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/envman/releases/download/v2.5.2/envman-Darwin-arm64",
+		},
+		{
+			name:        "stepman pre 0.17.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "stepman",
+			toolVersion: "0.17.1",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/stepman/releases/download/0.17.1/stepman-Darwin-arm64",
+		},
+		{
+			name:        "stepman post 0.17.2 version",
+			githubUser:  "bitrise-io",
+			toolName:    "stepman",
+			toolVersion: "0.17.2",
+			unameGOOS:   "Darwin",
+			unameGOARCH: "arm64",
+			want:        "https://github.com/bitrise-io/stepman/releases/download/v0.17.2/stepman-Darwin-arm64",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := createGitHubBinDownloadURL(tt.githubUser, tt.toolName, tt.toolVersion, tt.unameGOOS, tt.unameGOARCH); got != tt.want {
+				t.Errorf("createGitHubBinDownloadURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

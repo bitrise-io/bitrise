@@ -42,7 +42,7 @@ func ReadShareSteplibFromFile() (ShareModel, error) {
 	if exist, err := pathutil.IsPathExists(getShareFilePath()); err != nil {
 		return ShareModel{}, err
 	} else if !exist {
-		return ShareModel{}, errors.New("No share steplib found")
+		return ShareModel{}, errors.New("no share steplib found")
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(getShareFilePath())
@@ -63,7 +63,7 @@ func WriteShareSteplibToFile(share ShareModel) error {
 	var bytes []byte
 	bytes, err := json.MarshalIndent(share, "", "\t")
 	if err != nil {
-		log.Errorf("Failed to parse json, error: %s", err)
+		log.Errorf("failed to parse json, error: %s", err)
 		return err
 	}
 
@@ -166,19 +166,20 @@ func share(c *cli.Context) {
 	b.NewLine()
 	b.Plain("Just follow these steps:").NewLine()
 	b.NewLine()
-	b.Plain("0. ").Plain(GuideTextForStepAudit(toolMode)).NewLine()
+
+	b.Plain("0. ").Plain("%s", GuideTextForStepAudit(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("1. ").Plain(GuideTextForStart()).NewLine()
+	b.Plain("1. ").Plain("%s", GuideTextForStart()).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("2. ").Plain(GuideTextForShareStart(toolMode)).NewLine()
+	b.Plain("2. ").Plain("%s", GuideTextForShareStart(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("3. ").Plain(GuideTextForShareCreate(toolMode)).NewLine()
+	b.Plain("3. ").Plain("%s", GuideTextForShareCreate(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("4. ").Plain(GuideTextForAudit(toolMode)).NewLine()
+	b.Plain("4. ").Plain("%s", GuideTextForAudit(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("5. ").Plain(GuideTextForShareFinish(toolMode)).NewLine()
+	b.Plain("5. ").Plain("%s", GuideTextForShareFinish(toolMode)).NewLine() //nolint:govet
 	b.NewLine()
-	b.Plain("6. ").Plain(GuideTextForFinish()).NewLine()
+	b.Plain("6. ").Plain("%s", GuideTextForFinish()).NewLine() //nolint:govet
 	b.NewLine()
 	fmt.Print(b.String())
 }

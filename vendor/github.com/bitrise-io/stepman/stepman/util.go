@@ -114,7 +114,7 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 
 	route, found := ReadRoute(collectionURI)
 	if !found {
-		return fmt.Errorf("No routing found for lib: %s", collectionURI)
+		return fmt.Errorf("no routing found for lib: %s", collectionURI)
 	}
 
 	stepPth := GetStepCacheDirPath(route, id, version)
@@ -164,11 +164,11 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 				return nil
 			}
 		default:
-			return fmt.Errorf("Failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
+			return fmt.Errorf("failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
 		}
 	}
 
-	return errors.New("Failed to download step")
+	return errors.New("failed to download step")
 }
 
 func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
@@ -200,7 +200,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 
 	stepsCollectionDirPth := GetLibraryBaseDirPath(route)
 	if err := filepath.Walk(stepsCollectionDirPth, func(pth string, f os.FileInfo, err error) error {
-		truncatedPath := strings.Replace(pth, stepsCollectionDirPth+"/", "", -1)
+		truncatedPath := strings.ReplaceAll(pth, stepsCollectionDirPth+"/", "")
 		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
 		if matchErr != nil {
 			return matchErr
@@ -285,7 +285,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 
 		return err
 	}); err != nil {
-		return models.StepCollectionModel{}, fmt.Errorf("Failed to walk through path, error: %s", err)
+		return models.StepCollectionModel{}, fmt.Errorf("failed to walk through path, error: %s", err)
 	}
 
 	collection.Steps = stepHash
@@ -386,20 +386,20 @@ func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
 func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.StepVersionModel, error) {
 	// Input validation
 	if stepID == "" {
-		return models.StepVersionModel{}, errors.New("Missing required input: step id")
+		return models.StepVersionModel{}, errors.New("missing required input: step id")
 	}
 
 	// Check if step exist in collection
 	collection, err := ReadStepSpec(collectionURI)
 	if err != nil {
-		return models.StepVersionModel{}, fmt.Errorf("Failed to read steps spec (spec.json), err: %s", err)
+		return models.StepVersionModel{}, fmt.Errorf("failed to read steps spec (spec.json), err: %s", err)
 	}
 
 	stepWithVersion, stepFound, versionFound := collection.GetStepVersion(stepID, stepVersionID)
 	if !stepFound {
-		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step with id: %s", stepID)
+		return models.StepVersionModel{}, fmt.Errorf("collection doesn't contain step with id: %s", stepID)
 	} else if !versionFound {
-		return models.StepVersionModel{}, fmt.Errorf("Collection doesn't contain step (%s) with version: %s", stepID, stepVersionID)
+		return models.StepVersionModel{}, fmt.Errorf("collection doesn't contain step (%s) with version: %s", stepID, stepVersionID)
 	}
 
 	return stepWithVersion, nil
@@ -411,7 +411,7 @@ func ReGenerateLibrarySpec(route SteplibRoute) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
-		return errors.New("Not initialized")
+		return errors.New("not initialized")
 	}
 
 	specPth := GetStepCollectionSpecPath(route)

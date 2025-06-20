@@ -27,29 +27,23 @@ func ActivateStep(stepLibURI, id, version, destination, destinationStepYML strin
 		return "", fmt.Errorf("failed to find step: %s", err)
 	}
 
-	if os.Getenv(precompiledStepsEnv) == "true" {
+	if (os.Getenv(precompiledStepsEnv) == "true" || os.Getenv(precompiledStepsEnv) == "1") && step.Executables != nil {
 		platform := fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
-		executableForPlatform, ok := step.Executables[platform]
+		executableForPlatform, ok := (*step.Executables)[platform]
 		if ok {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
 			execPath, err := activateStepExecutable(stepLibURI, id, version, executableForPlatform, destination, destinationStepYML)
-			if err != nil {
-				log.Warnf("Failed to download step executable, falling back to source build: %s", err)
-				err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
-				return "", err
+			if err == nil {
+				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
+				return execPath, nil
 			}
-			log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
-			return execPath, nil
-		} else {
-			log.Infof("No prebuilt executable found for %s, falling back to source build", platform)
-			err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
-			return "", err
+			log.Warnf("Failed to download step executable, fallback to step source activation: %s", err)
 		}
-	} else {
-		err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
-		return "", err
+		log.Infof("No prebuilt executable found for %s, fallback to step source activation", platform)
 	}
+	err = activateStepSource(stepCollection, stepLibURI, id, version, step, destination, destinationStepYML, log, isOfflineMode)
+	return "", err
 }
 
 func queryStepMetadata(stepLib models.StepCollectionModel, stepLibURI string, id, version string) (models.StepModel, string, error) {

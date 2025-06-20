@@ -8,7 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
+	
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/hashicorp/go-retryablehttp"
 )
@@ -18,21 +19,30 @@ func activateStepExecutable(
 	stepID string,
 	version string,
 	executable models.Executable,
-	destination string,
+	destinationDir string,
 	destinationStepYML string,
 ) (string, error) {
+	if strings.HasPrefix(executable.Url, "http://") {
+		return "", fmt.Errorf("http URL is unsupported, please use https: %s", executable.Url)
+	}
+
 	resp, err := retryablehttp.Get(executable.Url)
 	if err != nil {
 		return "", fmt.Errorf("fetch from %s: %w", executable.Url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Warnf("Failed to close response body: %s\n", err)
+		}
+	}()
 
-	err = os.MkdirAll(destination, 0755)
+	err = os.MkdirAll(destinationDir, 0755)
 	if err != nil {
-		return "", fmt.Errorf("create directory %s: %w", destination, err)
+		return "", fmt.Errorf("create directory %s: %w", destinationDir, err)
 	}
 
-	path := filepath.Join(destination, stepID)
+	path := filepath.Join(destinationDir, stepID)
 	file, err := os.Create(path)
 	if err != nil {
 		return "", fmt.Errorf("create file %s: %w", path, err)

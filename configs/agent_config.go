@@ -9,10 +9,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const agentConfigFileName = "agent-config.yml"
-const defaultSourceDir = "workspace"
-const defaultDeployDir = "$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts"
-const defaultTestDeployDir = "$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results"
+const (
+	agentConfigFileName  = "agent-config.yml"
+	defaultSourceDir     = "workspace"
+	defaultDeployDir     = "$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts"
+	defaultTestDeployDir = "$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results"
+	defaultHTMLReportDir = "$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports"
+)
 
 type AgentConfig struct {
 	BitriseDirs BitriseDirs `yaml:"bitrise_dirs"`
@@ -117,6 +120,16 @@ func ReadAgentConfig(configFile string) (AgentConfig, error) {
 		return AgentConfig{}, fmt.Errorf("expand BITRISE_TEST_DEPLOY_DIR value: %s", err)
 	}
 	config.BitriseDirs.TestDeployDir = testDeployDir
+
+	// BITRISE_HTML_REPORT_DIR
+	if config.BitriseDirs.HTMLReportDir == "" {
+		config.BitriseDirs.HTMLReportDir = filepath.Join(config.BitriseDirs.BitriseDataHomeDir, defaultHTMLReportDir)
+	}
+	htmlReportDir, err := normalizePath(config.BitriseDirs.HTMLReportDir)
+	if err != nil {
+		return AgentConfig{}, fmt.Errorf("expand BITRISE_HTML_REPORT_DIR value: %w", err)
+	}
+	config.BitriseDirs.HTMLReportDir = htmlReportDir
 
 	// Hooks
 	if config.Hooks.DoOnBuildStart != "" {
