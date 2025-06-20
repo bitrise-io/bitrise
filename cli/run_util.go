@@ -357,6 +357,8 @@ func (r WorkflowRunner) activateStep(
 			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
 		}
 
+		// Merge step fields coming from bitrise.yml with the original step fields defined in step.yml
+		// For example, a `run_if` can be overridden in a specific workflow.
 		mergedStep, err = models.MergeStepWith(specStep, step)
 		if err != nil {
 			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
@@ -620,13 +622,13 @@ func (r WorkflowRunner) executeStep(
 		toolkitName := toolkitForStep.ToolkitName()
 	
 		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
-			return 1, fmt.Errorf("Failed to prepare the step for execution through the required toolkit (%s), error: %s",
+			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
 				toolkitName, err)
 		}
 	
 		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
 		if err != nil {
-			return 1, fmt.Errorf("Toolkit (%s) rejected the step, error: %s",
+			return 1, fmt.Errorf("toolkit (%s) rejected the step, error: %s",
 				toolkitName, err)
 		}
 		cmdArgs = cmdFromToolkit

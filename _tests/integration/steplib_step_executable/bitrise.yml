@@ -6,17 +6,6 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib-playgroun
 workflows:
   step-executable-test:
     steps:
-
-    - script:
-        title: Bash toolkit step
-        inputs:
-        - content: echo 'Hello World!'
-
-    - dummy@1.0.0:
+    - dummy@0.1.0:
         title: Go toolkit step with prebuilt binary
-    
-    - share-pipeline-variable@1.0.0:
-        title: Go toolkit step without prebuilt binary
-        inputs:
-        - variables: HELLO=WORLD
     
