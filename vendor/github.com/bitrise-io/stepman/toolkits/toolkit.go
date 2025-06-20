@@ -96,13 +96,23 @@ func downloadFile(url string, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer func() {
+		closeErr := outFile.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close output file: %w", closeErr)
+		}
+	}()
 
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("downloading %s failed: %s", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		closeErr := resp.Body.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close response body: %w", closeErr)
+		}
+	}()
 
 	_, err = io.Copy(outFile, resp.Body)
 	return err

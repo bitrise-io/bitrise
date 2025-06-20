@@ -16,6 +16,7 @@ func newStepActivator() stepActivator {
 	return stepActivator{}
 }
 
+// Note: even when err != nil, the ActivatedStep struct will be returned with a valid DidStepLibUpdate value
 func (a stepActivator) activateStep(
 	stepIDData stepid.CanonicalID,
 	isStepLibUpdated bool,
@@ -23,7 +24,7 @@ func (a stepActivator) activateStep(
 	workDir string, // $TMPDIR/bitrise
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
-) (stepYMLPth string, didStepLibUpdate bool, err error) {
+) (activator.ActivatedStep, error) {
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
@@ -36,10 +37,9 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return "", false, fmt.Errorf("activate local step: %w", err)
+			return activator.ActivatedStep{}, fmt.Errorf("activate local step: %w", err)
 		}
-
-		stepYMLPth = activatedStep.StepYMLPath
+		return activatedStep, nil
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -50,10 +50,9 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return "", false, fmt.Errorf("activate git step reference: %w", err)
+			return activator.ActivatedStep{}, fmt.Errorf("activate git step reference: %w", err)
 		}
-
-		stepYMLPth = activatedStep.StepYMLPath
+		return activatedStep, nil
 	} else if stepIDData.SteplibSource != "" {
 		activatedStep, err := activator.ActivateSteplibRefStep(
 			stepmanLogger,
@@ -64,15 +63,14 @@ func (a stepActivator) activateStep(
 			isSteplibOfflineMode,
 			stepInfoPtr,
 		)
-		didStepLibUpdate = activatedStep.DidStepLibUpdate
 		if err != nil {
-			return "", didStepLibUpdate, fmt.Errorf("activate steplib step: %w", err)
+			// Note: we return the partial result on purpose because DidStepLibUpdate is important 
+			// even in case of an error
+			return activatedStep, fmt.Errorf("activate steplib step: %w", err)
 		}
+		return activatedStep, nil
 
-		stepYMLPth = activatedStep.StepYMLPath
 	} else {
-		return "", didStepLibUpdate, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
+		return activator.ActivatedStep{}, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
-
-	return stepYMLPth, didStepLibUpdate, nil
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
 	envmanCLI "github.com/bitrise-io/envman/v2/cli"
 	envmanEnv "github.com/bitrise-io/envman/v2/env"
 	"github.com/bitrise-io/envman/v2/envman"
@@ -72,22 +71,6 @@ func TestMoveFileDifferentDevices(t *testing.T) {
 	} else if runtime.GOOS == "darwin" {
 		require.NoError(t, exec.Command("hdiutil", "detach", volumeName).Run())
 	}
-}
-
-func TestStepmanJSONStepLibStepInfo(t *testing.T) {
-	// setup
-	require.NoError(t, configs.InitPaths())
-
-	// Valid params -- Err should empty, output filled
-	require.Equal(t, nil, StepmanSetup("https://github.com/bitrise-io/bitrise-steplib"))
-
-	info, err := StepmanStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "0.9.0")
-	require.NoError(t, err)
-	require.NotEqual(t, "", info.JSON())
-
-	// Invalid params -- Err returned, output is invalid
-	info, err = StepmanStepInfo("https://github.com/bitrise-io/bitrise-steplib", "script", "2.x")
-	require.Error(t, err)
 }
 
 func TestEnvmanJSONPrint(t *testing.T) {

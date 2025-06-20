@@ -78,18 +78,18 @@ func (stepInfo StepInfoModel) CreateFromJSON(jsonStr string) (StepInfoModel, err
 // ValidateSource ...
 func (source StepSourceModel) validateSource() error {
 	if source.Git == "" {
-		return errors.New("Invalid step: missing or empty required 'source.git' property")
+		return errors.New("invalid step: missing or empty required 'source.git' property")
 	}
 
 	if !strings.HasPrefix(source.Git, "http://") && !strings.HasPrefix(source.Git, "https://") {
-		return errors.New("Invalid step: step source should start with http:// or https://")
+		return errors.New("invalid step: step source should start with http:// or https://")
 	}
 	if !strings.HasSuffix(source.Git, ".git") {
-		return errors.New("Invalid step: step source should end with .git")
+		return errors.New("invalid step: step source should end with .git")
 	}
 
 	if source.Commit == "" {
-		return errors.New("Invalid step: missing or empty required 'source.commit' property")
+		return errors.New("invalid step: missing or empty required 'source.commit' property")
 	}
 	return nil
 }
@@ -123,21 +123,21 @@ func (step *StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) erro
 		for _, env := range envs {
 			key, _, err := env.GetKeyValuePair()
 			if err != nil {
-				return fmt.Errorf("Invalid environment (%v), err: %s", env, err)
+				return fmt.Errorf("invalid environment (%v), err: %s", env, err)
 			}
 
 			if err := env.Validate(); err != nil {
-				return fmt.Errorf("Invalid environment (%s), err: %s", key, err)
+				return fmt.Errorf("invalid environment (%s), err: %s", key, err)
 			}
 
 			if checkRequiredFields {
 				options, err := env.GetOptions()
 				if err != nil {
-					return fmt.Errorf("Invalid environment (%s), err: %s", key, err)
+					return fmt.Errorf("invalid environment (%s), err: %s", key, err)
 				}
 
 				if options.Title == nil || *options.Title == "" {
-					return fmt.Errorf("Invalid environment (%s), err: missing or empty title", key)
+					return fmt.Errorf("invalid environment (%s), err: missing or empty title", key)
 				}
 
 				isSensitive := options.IsSensitive
@@ -151,7 +151,7 @@ func (step *StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) erro
 				}
 
 				if *isSensitive && !(*isExpand) {
-					return fmt.Errorf("Invalid environment (%s), err: is_sensitive option is true but is_expand option is not. For sensitive inputs direct value is not allowed", key)
+					return fmt.Errorf("invalid environment (%s), err: is_sensitive option is true but is_expand option is not. For sensitive inputs direct value is not allowed", key)
 				}
 			}
 		}
@@ -164,21 +164,21 @@ func (step *StepModel) ValidateInputAndOutputEnvs(checkRequiredFields bool) erro
 // AuditBeforeShare ...
 func (step *StepModel) AuditBeforeShare() error {
 	if step.Title == nil || *step.Title == "" {
-		return errors.New("Invalid step: missing or empty required 'title' property")
+		return errors.New("invalid step: missing or empty required 'title' property")
 	}
 	if step.Summary == nil || *step.Summary == "" {
-		return errors.New("Invalid step: missing or empty required 'summary' property")
+		return errors.New("invalid step: missing or empty required 'summary' property")
 	}
 	if step.Website == nil || *step.Website == "" {
-		return errors.New("Invalid step: missing or empty required 'website' property")
+		return errors.New("invalid step: missing or empty required 'website' property")
 	}
 
 	if step.Timeout != nil && *step.Timeout < 0 {
-		return errors.New("Invalid step: timeout less then 0")
+		return errors.New("invalid step: timeout less then 0")
 	}
 
 	if step.NoOutputTimeout != nil && *step.NoOutputTimeout < 0 {
-		return errors.New("Invalid step: 'no_output_timeout' is less then 0")
+		return errors.New("invalid step: 'no_output_timeout' is less then 0")
 	}
 
 	return step.ValidateInputAndOutputEnvs(true)
@@ -191,10 +191,10 @@ func (step *StepModel) Audit() error {
 	}
 
 	if step.PublishedAt == nil || (*step.PublishedAt).Equal(time.Time{}) {
-		return errors.New("Invalid step: missing or empty required 'PublishedAt' property")
+		return errors.New("invalid step: missing or empty required 'PublishedAt' property")
 	}
 	if step.Source == nil {
-		return errors.New("Invalid step: missing or empty required 'Source' property")
+		return errors.New("invalid step: missing or empty required 'Source' property")
 	}
 	return step.Source.validateSource()
 }
@@ -289,14 +289,14 @@ func (collection StepCollectionModel) GetStepVersion(id, version string) (stepVe
 func (collection StepCollectionModel) GetDownloadLocations(id, version string) ([]DownloadLocationModel, error) {
 	step, stepFound, versionFound := collection.GetStep(id, version)
 	if !stepFound {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection (%s) doesn't contains step with id: %s", collection.SteplibSource, id)
+		return []DownloadLocationModel{}, fmt.Errorf("collection (%s) doesn't contains step with id: %s", collection.SteplibSource, id)
 	}
 	if !versionFound {
-		return []DownloadLocationModel{}, fmt.Errorf("Collection (%s) doesn't contains step (%s) with version: %s", collection.SteplibSource, id, version)
+		return []DownloadLocationModel{}, fmt.Errorf("collection (%s) doesn't contains step (%s) with version: %s", collection.SteplibSource, id, version)
 	}
 
 	if step.Source == nil {
-		return []DownloadLocationModel{}, errors.New("Missing Source property")
+		return []DownloadLocationModel{}, errors.New("missing Source property")
 	}
 
 	locations := []DownloadLocationModel{}
@@ -316,11 +316,11 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 			}
 			locations = append(locations, location)
 		default:
-			return []DownloadLocationModel{}, fmt.Errorf("Invalid download location (%#v) for step (%#v)", downloadLocation, id)
+			return []DownloadLocationModel{}, fmt.Errorf("invalid download location (%#v) for step (%#v)", downloadLocation, id)
 		}
 	}
 	if len(locations) < 1 {
-		return []DownloadLocationModel{}, fmt.Errorf("No download location found for step (%#v)", id)
+		return []DownloadLocationModel{}, fmt.Errorf("no download location found for step (%#v)", id)
 	}
 	return locations, nil
 }
@@ -330,11 +330,11 @@ func (collection StepCollectionModel) GetLatestStepVersion(id string) (string, e
 	stepHash := collection.Steps
 	stepGroup, found := stepHash[id]
 	if !found {
-		return "", fmt.Errorf("Collection (%s) doesn't contains step (%s)", collection.SteplibSource, id)
+		return "", fmt.Errorf("collection (%s) doesn't contains step (%s)", collection.SteplibSource, id)
 	}
 
 	if stepGroup.LatestVersionNumber == "" {
-		return "", fmt.Errorf("Failed to find latest version of step %s", id)
+		return "", fmt.Errorf("failed to find latest version of step %s", id)
 	}
 
 	return stepGroup.LatestVersionNumber, nil

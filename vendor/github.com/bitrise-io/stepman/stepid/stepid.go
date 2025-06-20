@@ -36,14 +36,14 @@ func CreateCanonicalIDFromString(compositeVersionStr, defaultStepLibSource strin
 	src := getStepSource(compositeVersionStr)
 	if src == "" {
 		if defaultStepLibSource == "" {
-			return CanonicalID{}, errors.New("No default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
+			return CanonicalID{}, errors.New("no default StepLib source, in this case the composite ID should contain the source, separated with a '::' separator from the step ID (" + compositeVersionStr + ")")
 		}
 		src = defaultStepLibSource
 	}
 
 	id := getStepID(compositeVersionStr)
 	if id == "" {
-		return CanonicalID{}, errors.New("No ID found at all (" + compositeVersionStr + ")")
+		return CanonicalID{}, errors.New("no ID found at all (" + compositeVersionStr + ")")
 	}
 
 	version := getStepVersion(compositeVersionStr)
