@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
 	envmanCLI "github.com/bitrise-io/envman/v2/cli"
 	envmanEnv "github.com/bitrise-io/envman/v2/env"
 	"github.com/bitrise-io/envman/v2/envman"
