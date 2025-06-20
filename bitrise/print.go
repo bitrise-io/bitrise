@@ -7,9 +7,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/utils"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"

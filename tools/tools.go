@@ -1,21 +1,30 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	envman "github.com/bitrise-io/envman/cli"
-	envmanEnv "github.com/bitrise-io/envman/env"
-	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	envman "github.com/bitrise-io/envman/v2/cli"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/hashicorp/go-retryablehttp"
+	"golang.org/x/mod/semver"
 	"golang.org/x/sys/unix"
+)
+
+const envVarLimitErrorKnowledgeBaseURL = "https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large"
+
+const (
+	EnvmanToolName  = "envman"
+	StepmanToolName = "stepman"
 )
 
 func UnameGOOS() (string, error) {
@@ -25,7 +34,7 @@ func UnameGOOS() (string, error) {
 	case "linux":
 		return "Linux", nil
 	}
-	return "", fmt.Errorf("Unsupported platform (%s)", runtime.GOOS)
+	return "", fmt.Errorf("unsupported platform (%s)", runtime.GOOS)
 }
 
 func UnameGOARCH() (string, error) {
@@ -35,21 +44,39 @@ func UnameGOARCH() (string, error) {
 	case "arm64":
 		return "arm64", nil
 	}
-	return "", fmt.Errorf("Unsupported architecture (%s)", runtime.GOARCH)
+	return "", fmt.Errorf("unsupported architecture (%s)", runtime.GOARCH)
 }
 
-func InstallToolFromGitHub(toolname, githubUser, toolVersion string) error {
+func InstallToolFromGitHub(toolName, githubUser, toolVersion string) error {
 	unameGOOS, err := UnameGOOS()
 	if err != nil {
-		return fmt.Errorf("Failed to determine OS: %s", err)
+		return fmt.Errorf("failed to determine OS: %w", err)
 	}
 	unameGOARCH, err := UnameGOARCH()
 	if err != nil {
-		return fmt.Errorf("Failed to determine ARCH: %s", err)
+		return fmt.Errorf("failed to determine ARCH: %w", err)
 	}
-	downloadURL := "https://github.com/" + githubUser + "/" + toolname + "/releases/download/" + toolVersion + "/" + toolname + "-" + unameGOOS + "-" + unameGOARCH
 
-	return InstallFromURL(toolname, downloadURL)
+	downloadURL := createGitHubBinDownloadURL(githubUser, toolName, toolVersion, unameGOOS, unameGOARCH)
+	return InstallFromURL(toolName, downloadURL)
+}
+
+func createGitHubBinDownloadURL(githubUser, toolName, toolVersion, unameGOOS, unameGOARCH string) string {
+	shouldAddVPrefix := false
+	if toolName == EnvmanToolName {
+		if semver.Compare("v"+toolVersion, "v2.5.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	} else if toolName == StepmanToolName {
+		if semver.Compare("v"+toolVersion, "v0.17.2") >= 0 {
+			shouldAddVPrefix = true
+		}
+	}
+	if shouldAddVPrefix {
+		toolVersion = "v" + toolVersion
+	}
+
+	return "https://github.com/" + githubUser + "/" + toolName + "/releases/download/" + toolVersion + "/" + toolName + "-" + unameGOOS + "-" + unameGOARCH
 }
 
 func DownloadFile(downloadURL, targetDirPath string) error {
@@ -63,7 +90,11 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 		return fmt.Errorf("create %s: %s", targetDirPath, err)
 	}
 
-	resp, err := retryablehttp.Get(downloadURL)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	client := retryablehttp.NewClient()
+	client.Logger = &httpLogAdaptor{logger: logger}
+	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
+	resp, err := client.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("download %s: %s", downloadURL, err)
 	}
@@ -156,10 +187,6 @@ func EnvmanInit(envStorePth string, clear bool) error {
 	return envman.InitEnvStore(envStorePth, clear)
 }
 
-func EnvmanAdd(envStorePth, key, value string, expand, skipIfEmpty, sensitive bool) error {
-	return envman.AddEnv(envStorePth, key, value, expand, false, skipIfEmpty, sensitive)
-}
-
 func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemModel) error {
 	for _, env := range envsList {
 		key, value, err := env.GetKeyValuePair()
@@ -187,7 +214,12 @@ func EnvmanAddEnvs(envstorePth string, envsList []envmanModels.EnvironmentItemMo
 			sensitive = *opts.IsSensitive
 		}
 
-		if err := EnvmanAdd(envstorePth, key, value, isExpand, skipIfEmpty, sensitive); err != nil {
+		if err := envman.AddEnv(envstorePth, key, value, isExpand, false, skipIfEmpty, sensitive); err != nil {
+			var envVarValueTooLargeErr envman.EnvVarValueTooLargeError
+			var envVarListTooLargeErr envman.EnvVarListTooLargeError
+			if errors.As(err, &envVarValueTooLargeErr) || errors.As(err, &envVarListTooLargeErr) {
+				return fmt.Errorf("%w.\nTo increase env var limits please visit: %s", err, envVarLimitErrorKnowledgeBaseURL)
+			}
 			return err
 		}
 	}
@@ -267,4 +299,14 @@ func IsBuiltInFlagTypeKey(env string) bool {
 	default:
 		return false
 	}
+}
+
+// httpLogAdaptor adapts the retryablehttp.Logger interface to the log.Logger.
+type httpLogAdaptor struct {
+	logger log.Logger
+}
+
+// Printf implements the retryablehttp.Logger interface
+func (a *httpLogAdaptor) Printf(fmtStr string, vars ...interface{}) {
+	a.logger.Debugf(fmtStr, vars...)
 }

@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/envman/env"
-	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/envman/v2/env"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/parseutil"
 )
 

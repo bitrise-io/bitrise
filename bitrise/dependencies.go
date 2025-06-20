@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/bitrise/progress"
-	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/bitrise/utils"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/progress"
+	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v2/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/retry"
@@ -191,16 +191,14 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 
 // CheckIsEnvmanInstalled ...
 func CheckIsEnvmanInstalled(minEnvmanVersion string) error {
-	toolname := "envman"
 	minVersion := minEnvmanVersion
-	return checkIsBitriseToolInstalled(toolname, minVersion, true)
+	return checkIsBitriseToolInstalled(tools.EnvmanToolName, minVersion, true)
 }
 
 // CheckIsStepmanInstalled ...
 func CheckIsStepmanInstalled(minStepmanVersion string) error {
-	toolname := "stepman"
 	minVersion := minStepmanVersion
-	return checkIsBitriseToolInstalled(toolname, minVersion, true)
+	return checkIsBitriseToolInstalled(tools.StepmanToolName, minVersion, true)
 }
 
 func checkIfBrewPackageInstalled(packageName string) bool {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/plugins"
-	"github.com/bitrise-io/bitrise/version"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/toolkits"
 )
@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	minEnvmanVersion  = "2.4.3"
+	minEnvmanVersion  = "2.5.3"
 	minStepmanVersion = "0.16.3"
 )
 
@@ -164,11 +164,11 @@ func doSetupBitriseCoreTools() error {
 	log.Infof("Checking Bitrise Core tools...")
 
 	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
-		return fmt.Errorf("Envman failed to install: %s", err)
+		return fmt.Errorf("failed to install envman: %s", err)
 	}
 
 	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
-		return fmt.Errorf("Stepman failed to install: %s", err)
+		return fmt.Errorf("failed to install stepman: %s", err)
 	}
 
 	return nil

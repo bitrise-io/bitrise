@@ -18,9 +18,9 @@ builds:
   - goos: linux
     goarch: arm64
   ldflags:
-  - -X github.com/bitrise-io/bitrise/version.VERSION={{ .Version }}
-  - -X github.com/bitrise-io/bitrise/version.Commit={{ .FullCommit }}
-  - -X github.com/bitrise-io/bitrise/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
+  - -X github.com/bitrise-io/bitrise/v2/version.VERSION={{ .Version }}
+  - -X github.com/bitrise-io/bitrise/v2/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/bitrise/v2/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
@@ -35,12 +35,12 @@ archives:
 
 - format: binary
   id: s3
-  name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Tag }}"
+  name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Version }}"
 
 blobs:
 - provider: gs
   bucket: bitrise-cli-releases-prod
-  directory: /{{ .Tag }}
+  directory: /{{ .Version }}
   ids:
   - default
 - provider: s3
@@ -59,23 +59,26 @@ release:
   - default
   draft: true
   mode: replace
+  name_template: "{{ .Version }}"
   footer: |
-    ### Install or upgrade
+    ### Install instructions
 
-    To install this version, run the following command (in a bash shell):
+    <a href="https://repology.org/project/bitrise/versions">
+      <img src="https://repology.org/badge/vertical-allrepos/bitrise.svg" alt="Packaging status" align="right">
+    </a>
 
-      ```bash
-      curl -fL https://github.com/bitrise-io/{{ .ProjectName }}/releases/download/{{ .Tag }}/{{ .ProjectName }}-"$(uname -s)"-"$(uname -m)" > /usr/local/bin/{{ .ProjectName }}
-      ```
-    ℹ️ Apple Silicon: Please note by default `/usr/local/bin` does not exist and isn't encouraged by the community over `/opt/bin`. Use a custom folder path or use your own `bin` folder path. i.e `/opt/bin`
+    There are multiple way to install Bitrise CLI:
 
-    Then:
+    - Homebrew: `brew install bitrise`
+    - Nix: available as `bitrise` [in nixpkgs](https://search.nixos.org/packages?channel=unstable&show=bitrise), run `nix-shell -p bitrise` or your preferred configuration method.
+    - Download a pre-built binary below
+    - There might be other [community-maintained packages](https://repology.org/project/bitrise/versions)
 
-      ```
-      chmod +x /usr/local/bin/{{ .ProjectName }}
-      ```
+    You can enable shell completion for the `bitrise run` command: [https://blog.bitrise.io/workflow-id-completion](https://blog.bitrise.io/workflow-id-completion)
 
-      That's all, you're ready to call `{{ .ProjectName }}`!
+    #### Building from source
+
+    Set up the right Go version indicated by the `go.mod` file, then run `go install .`
 
 checksum:
   name_template: checksums.txt

@@ -12,21 +12,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/analytics"
-	"github.com/bitrise-io/bitrise/bitrise"
-	"github.com/bitrise-io/bitrise/cli/docker"
-	"github.com/bitrise-io/bitrise/configmerge"
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/log"
-	"github.com/bitrise-io/bitrise/log/logwriter"
-	"github.com/bitrise-io/bitrise/models"
-	"github.com/bitrise-io/bitrise/stepruncmd"
-	"github.com/bitrise-io/bitrise/tools"
-	"github.com/bitrise-io/bitrise/toolversions"
-	envman "github.com/bitrise-io/envman/cli"
-	"github.com/bitrise-io/envman/env"
-	envmanEnv "github.com/bitrise-io/envman/env"
-	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/bitrise/v2/analytics"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/docker"
+	"github.com/bitrise-io/bitrise/v2/configmerge"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/log/logwriter"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/stepruncmd"
+	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v2/toolversions"
+	envman "github.com/bitrise-io/envman/v2/cli"
+	"github.com/bitrise-io/envman/v2/env"
+	envmanEnv "github.com/bitrise-io/envman/v2/env"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-steputils/v2/secretkeys"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -145,7 +145,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 
-		// Shut down containers if the step is in a 'With' group, and it's the last step in the group
+		// Shut down containers if the step is in a 'With group', and it's the last step in the group
 		if currentStepGroupID != "" {
 			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
 			if isLastStepInWorkflow || doesStepGroupChange {
@@ -155,12 +155,29 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
 
+		previousBuildRunResult := buildRunResults
+
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
-		if err := bitrise.SetBuildFailedEnv(buildRunResults.IsBuildFailed()); err != nil {
-			log.Error("Failed to set Build Status envs")
+		currentBuildRunResult := buildRunResults
+		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
+			if len(currentBuildRunResult.FailedSteps) == 1 {
+				failedStepRunResult := currentBuildRunResult.FailedSteps[0]
+				failedStepEnvs := bitrise.FailedStepEnvs(failedStepRunResult)
+				*environments = append(*environments, failedStepEnvs...)
+				if currentStepBundleUUID != "" {
+					currentStepBundleEnvVars = append(currentStepBundleEnvVars, failedStepEnvs...)
+				}
+			}
+
+			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
+			*environments = append(*environments, buildStatusEnvs...)
+			if currentStepBundleUUID != "" {
+				currentStepBundleEnvVars = append(currentStepBundleEnvVars, buildStatusEnvs...)
+			}
 		}
+
 	}
 
 	return buildRunResults
@@ -216,9 +233,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	// Evaluate run conditions
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
-		buildFailedEnvs := bitrise.BuildFailedEnvs(buildRunResults.IsBuildFailed())
-		runIfEnvs := append(environments, buildFailedEnvs...)
-		runIfEnvList, err := envman.ConvertToEnvsJSONModel(runIfEnvs, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {
 			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
 			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)

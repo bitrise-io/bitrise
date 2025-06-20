@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/models"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"

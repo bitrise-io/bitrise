@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/envman/v2/models"
 )
 
 func envListToMap(envs []string) (map[string]string, error) {
@@ -58,4 +58,25 @@ func ExpandEnvItems(toExpand []models.EnvironmentItemModel, externalEnvs []strin
 	}
 
 	return expanded, nil
+}
+
+func LimitEnvVarValue(value string, limitInBytes int) (string, bool) {
+	if limitInBytes < 5 {
+		// limit indicator is '...' and
+		// the minimal limit is the length of the indicator + 1 leading and 1 trailing character (1byte each)
+		return value, false
+	}
+
+	if len(value) <= limitInBytes {
+		return value, false
+	}
+
+	// Calculate the length of the prefix and suffix
+	prefixLength := (limitInBytes - 3) / 2
+	suffixLength := limitInBytes - 3 - prefixLength
+
+	// Trim the middle of the value and insert '...'
+	trimmedValue := value[:prefixLength] + "..." + value[len(value)-suffixLength:]
+
+	return trimmedValue, true
 }

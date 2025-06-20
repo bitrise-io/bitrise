@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
-	"github.com/heimdalr/dag"
-
-	"github.com/bitrise-io/bitrise/exitcode"
-	envmanModels "github.com/bitrise-io/envman/models"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/heimdalr/dag"
 )
 
+// TODO: can we replace these with slices package functions?
 func containsWorkflowName(title string, workflowStack []string) bool {
 	for _, t := range workflowStack {
 		if t == title {
@@ -34,6 +35,35 @@ func removeWorkflowName(title string, workflowStack []string) []string {
 		}
 	}
 	return newStack
+}
+
+func checkStepBundleReferenceCycle(stepBundleID string, stepBundle StepBundleModel, bitriseConfig BitriseDataModel, stepBundleStack []string) error {
+	if sliceutil.IsStringInSlice(stepBundleID, stepBundleStack) {
+		stackStr := ""
+		for _, aStepBundleID := range stepBundleStack {
+			stackStr += aStepBundleID + " -> "
+		}
+		stackStr += stepBundleID
+		return fmt.Errorf("step bundle reference cycle found: %s", stackStr)
+	}
+	stepBundleStack = append(stepBundleStack, stepBundleID)
+
+	for _, stepListItem := range stepBundle.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			return err
+		}
+		if t == StepListItemTypeBundle {
+			definition := bitriseConfig.StepBundles[key]
+
+			err := checkStepBundleReferenceCycle(key, definition, bitriseConfig, stepBundleStack)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitriseConfig BitriseDataModel, workflowStack []string) error {
@@ -111,16 +141,36 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 
 func (bundle *StepBundleModel) Normalize() error {
 	for idx, stepListItem := range bundle.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
 
-		if err := step.Normalize(); err != nil {
-			return err
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return err
+			}
+
+			if err := step.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[key] = *step
+			bundle.Steps[idx] = stepListItem
+		} else if t == StepListItemTypeBundle {
+			b, err := stepListItem.GetBundle()
+			if err != nil {
+				return err
+			}
+
+			if err := b.Normalize(); err != nil {
+				return err
+			}
+
+			stepListItem[StepListItemStepBundleKeyPrefix+key] = *b
+			bundle.Steps[idx] = stepListItem
 		}
-		stepListItem[stepID] = step
-		bundle.Steps[idx] = stepListItem
 	}
 
 	for i, input := range bundle.Inputs {
@@ -337,25 +387,44 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	return nil
 }
 
-func (bundle *StepBundleModel) Validate() ([]string, error) {
+func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel) ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
+		key, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return warnings, err
 		}
 
-		if stepID == StepListItemWithKey {
-			return warnings, errors.New("'with' group is not allowed in a step bundle's step list")
-		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
-			return warnings, errors.New("step bundle is not allowed in a step bundle's step list")
+		if t == StepListItemTypeWith {
+			return warnings, errors.New("'with group' is not allowed in a step bundle")
 		}
 
-		warns, err := validateStep(stepID, step)
-		warnings = append(warnings, warns...)
-		if err != nil {
-			return warnings, err
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err != nil {
+				return warnings, err
+			}
+
+			warns, err := validateStep(key, *step)
+			warnings = append(warnings, warns...)
+			if err != nil {
+				return warnings, err
+			}
+		} else if t == StepListItemTypeBundle {
+			override, err := stepListItem.GetBundle()
+			if err != nil {
+				return warnings, err
+			}
+
+			definition, ok := stepBundleDefinitions[key]
+			if !ok {
+				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
+			}
+
+			if err := override.Validate(definition); err != nil {
+				return warnings, err
+			}
 		}
 	}
 
@@ -411,9 +480,9 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 		}
 
 		if stepID == StepListItemWithKey {
-			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): 'with' group is not allowed in a 'with' group's step list", workflowID)
+			return warnings, fmt.Errorf("invalid 'with group' in workflow (%s): 'with group' is not allowed in a 'with group''s step list", workflowID)
 		} else if strings.HasPrefix(stepID, StepListItemStepBundleKeyPrefix) {
-			return warnings, fmt.Errorf("invalid 'with' group in workflow (%s): step bundle is not allowed in a 'with' group's step list", workflowID)
+			return warnings, fmt.Errorf("invalid 'with group' in workflow (%s): step bundle is not allowed in a 'with group''s step list", workflowID)
 		}
 
 		warns, err := validateStep(stepID, step)
@@ -446,6 +515,17 @@ func validateStatusReportName(statusReportName string) error {
 	re := regexp.MustCompile(statusReportNameRegex)
 	if !re.MatchString(statusReportName) {
 		return fmt.Errorf("status_report_name (%s) contains invalid characters, should match the '%s' regex", statusReportName, statusReportNameRegex)
+	}
+	return nil
+}
+
+func validatePriority(priority *int) error {
+	if priority == nil {
+		return nil
+	}
+
+	if *priority > 100 || *priority < -100 {
+		return fmt.Errorf("priority (%d) should be between -100 and 100", *priority)
 	}
 	return nil
 }
@@ -587,12 +667,24 @@ func validateContainers(config BitriseDataModel) error {
 func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	var warnings []string
 
-	for bundleID, bundle := range config.StepBundles {
+	bundleIDs := make([]string, len(config.StepBundles))
+	for bundleID := range config.StepBundles {
 		if bundleID == "" {
 			return warnings, fmt.Errorf("step bundle has empty ID defined")
 		}
 
-		warns, err := bundle.Validate()
+		bundleIDs = append(bundleIDs, bundleID)
+	}
+	sort.Strings(bundleIDs)
+
+	for _, bundleID := range bundleIDs {
+		bundle := config.StepBundles[bundleID]
+
+		if err := checkStepBundleReferenceCycle(bundleID, bundle, config, []string{}); err != nil {
+			return warnings, err
+		}
+
+		warns, err := bundle.Validate(config.StepBundles)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)
@@ -642,7 +734,11 @@ func validatePipelines(config *BitriseDataModel) ([]string, error) {
 		}
 
 		if err := validateStatusReportName(pipeline.StatusReportName); err != nil {
-			return pipelineWarnings, err
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has invalid status_report_name: %w", pipelineID, err)
+		}
+
+		if err := validatePriority(pipeline.Priority); err != nil {
+			return pipelineWarnings, fmt.Errorf("pipeline (%s) has invalid priority: %w", pipelineID, err)
 		}
 
 		hasStages := len(pipeline.Stages) > 0
@@ -696,14 +792,17 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 			return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a utility workflow", pipelineWorkflowID, pipelineID)
 		}
 
+		isParallelizedWorkflow := pipelineWorkflow.Parallel != ""
+		if isParallelizedWorkflow {
+			if err := validateParallelizedWorkflow(pipelineID, pipelineWorkflowID, pipelineWorkflow, config); err != nil {
+				return err
+			}
+		}
+
 		isWorkflowVariant := pipelineWorkflow.Uses != ""
 		if isWorkflowVariant {
-			if _, ok := config.Workflows[pipelineWorkflow.Uses]; !ok {
-				return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", pipelineWorkflow.Uses, pipelineID, pipelineWorkflowID)
-			}
-
-			if _, ok := config.Workflows[pipelineWorkflowID]; ok {
-				return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a variant of another workflow, but it is also defined as a workflow", pipelineWorkflowID, pipelineID)
+			if err := validateWorkflowVariant(pipelineID, pipelineWorkflowID, pipelineWorkflow, config); err != nil {
+				return err
 			}
 		} else {
 			if _, ok := config.Workflows[pipelineWorkflowID]; !ok {
@@ -731,6 +830,77 @@ func validateDAGPipeline(pipelineID string, pipeline *PipelineModel, config *Bit
 	}
 
 	return validateGraph(pipeline)
+}
+
+func validateParallelizedWorkflow(pipelineID, workflowID string, workflow GraphPipelineWorkflowModel, config *BitriseDataModel) error {
+	isDynamic := false
+	parallel, err := strconv.Atoi(workflow.Parallel)
+	if err != nil {
+		isDynamic = strings.HasPrefix(workflow.Parallel, "$")
+
+		if !isDynamic {
+			return fmt.Errorf("workflow (%s) defined in pipeline (%s) has invalid parallel value (%s), should be an integer or a reference to an environment variable", workflowID, pipelineID, workflow.Parallel)
+		}
+	}
+
+	if isDynamic {
+		return validateDynamicParallelizedWorkflow(pipelineID, workflowID, config)
+	}
+
+	return validateStaticParallelizedWorkflow(pipelineID, workflowID, parallel, config)
+}
+
+func validateStaticParallelizedWorkflow(pipelineID, workflowID string, parallel int, config *BitriseDataModel) error {
+	if parallel < 1 {
+		return fmt.Errorf("workflow (%s) defined in pipeline (%s) has invalid parallel value (%d), should be at least 1", workflowID, pipelineID, parallel)
+	}
+
+	for i := 1; i <= parallel; i++ {
+		generatedWorkflowID := fmt.Sprintf("%s_%d", workflowID, i)
+		if _, ok := config.Workflows[generatedWorkflowID]; ok {
+			return fmt.Errorf("parallel workflow variant (%s) would be generated by workflow (%s) defined in pipeline (%s), but it is also defined as a workflow", generatedWorkflowID, workflowID, pipelineID)
+		}
+	}
+
+	return nil
+}
+
+func validateDynamicParallelizedWorkflow(pipelineID, workflowID string, config *BitriseDataModel) error {
+	pattern := fmt.Sprintf("^%s_[0-9]+$", workflowID)
+
+	for workflowName := range config.Pipelines[pipelineID].Workflows {
+		matched, err := regexp.MatchString(pattern, workflowName)
+		if err != nil {
+			return err
+		}
+		if matched {
+			return fmt.Errorf("dynamic parallel workflow (%s) could collide with pipeline workflow (%s) during runtime", workflowID, workflowName)
+		}
+	}
+
+	for workflowName := range config.Workflows {
+		matched, err := regexp.MatchString(pattern, workflowName)
+		if err != nil {
+			return err
+		}
+		if matched {
+			return fmt.Errorf("dynamic parallel workflow (%s) could collide with workflow (%s) during runtime", workflowID, workflowName)
+		}
+	}
+
+	return nil
+}
+
+func validateWorkflowVariant(pipelineID, workflowID string, workflow GraphPipelineWorkflowModel, config *BitriseDataModel) error {
+	if _, ok := config.Workflows[workflow.Uses]; !ok {
+		return fmt.Errorf("workflow (%s) referenced in pipeline (%s) in workflow variant (%s) is not found in the workflow definitions", workflow.Uses, pipelineID, workflowID)
+	}
+
+	if _, ok := config.Workflows[workflowID]; ok {
+		return fmt.Errorf("workflow (%s) defined in pipeline (%s) is a variant of another workflow, but it is also defined as a workflow", workflowID, pipelineID)
+	}
+
+	return nil
 }
 
 func validateGraph(pipeline *PipelineModel) error {
@@ -826,7 +996,11 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 		}
 
 		if err := workflow.Validate(); err != nil {
-			return warnings, fmt.Errorf("validation error in workflow: %s: %s", workflowID, err)
+			return warnings, fmt.Errorf("workflow (%s) has config issue: %w", workflowID, err)
+		}
+
+		if err := validatePriority(workflow.Priority); err != nil {
+			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
 		for _, stepListItem := range workflow.Steps {
@@ -1306,8 +1480,138 @@ func getStageID(stageListItem StageListItemModel) (string, error) {
 	return "", errors.New("StageListItemModel does not contain a key-value pair")
 }
 
-// ----------------------------
-// --- StepIDData
+func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := json.Unmarshal(b, &stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var raw map[string]interface{}
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem StepListStepBundleItemModel
+		if err := unmarshal(&stepBundleItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem StepListStepItemModel
+		if err := unmarshal(&stepItem); err != nil {
+			return err
+		}
+
+		*stepListItem = map[string]interface{}{}
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
+	if stepListItem == nil {
+		return "", StepListItemTypeUnknown, nil
+	}
+
+	if len(*stepListItem) == 0 {
+		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
+	}
+
+	if len(*stepListItem) > 1 {
+		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+	}
+
+	for key := range *stepListItem {
+		switch {
+		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
+		case key == StepListItemWithKey:
+			return key, StepListItemTypeWith, fmt.Errorf("'with group' is not allowed in a step bundle's step list")
+		default:
+			return key, StepListItemTypeStep, nil
+		}
+	}
+
+	return "", StepListItemTypeUnknown, nil
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		bundle, ok := value.(StepBundleListItemModel)
+		if ok {
+			return &bundle, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a StepBundle")
+}
+
+func (stepListItem *StepListItemStepOrBundleModel) GetStep() (*stepmanModels.StepModel, error) {
+	if stepListItem == nil {
+		return nil, fmt.Errorf("empty stepListItem")
+	}
+
+	for _, value := range *stepListItem {
+		s, ok := value.(stepmanModels.StepModel)
+		if ok {
+			return &s, nil
+		}
+		break
+	}
+
+	return nil, fmt.Errorf("stepListItem is not a Step")
+}
 
 func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -1402,6 +1706,9 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 
 	return nil
 }
+
+// ----------------------------
+// --- StepIDData
 
 func (stepListStepItem *StepListStepItemModel) GetStepIDAndStep() (string, stepmanModels.StepModel, error) {
 	if stepListStepItem == nil {
@@ -1500,91 +1807,13 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	var stepPtr *stepmanModels.StepModel
 	for _, value := range *stepListItem {
 		s, ok := value.(stepmanModels.StepModel)
 		if ok {
-			stepPtr = &s
-			break
+			return &s, nil
 		}
-
 		break
 	}
 
-	if stepPtr == nil {
-		return nil, fmt.Errorf("stepListItem is not a Step")
-	}
-
-	return stepPtr, nil
-}
-
-// ----------------------------
-// --- BuildRunResults
-
-func (buildRes BuildRunResultsModel) IsStepLibUpdated(stepLib string) bool {
-	return (buildRes.StepmanUpdates[stepLib] > 0)
-}
-
-func (buildRes BuildRunResultsModel) IsBuildFailed() bool {
-	return len(buildRes.FailedSteps) > 0
-}
-
-func (buildRes BuildRunResultsModel) ExitCode() int {
-	if !buildRes.IsBuildFailed() {
-		return 0
-	}
-
-	if buildRes.isBuildAbortedWithNoOutputTimeout() {
-		return exitcode.CLIAbortedWithNoOutputTimeout
-	}
-
-	if buildRes.isBuildAbortedWithTimeout() {
-		return exitcode.CLIAbortedWithCustomTimeout
-	}
-
-	return exitcode.CLIFailed
-}
-
-func (buildRes BuildRunResultsModel) HasFailedSkippableSteps() bool {
-	return len(buildRes.FailedSkippableSteps) > 0
-}
-
-func (buildRes BuildRunResultsModel) ResultsCount() int {
-	return len(buildRes.SuccessSteps) + len(buildRes.FailedSteps) + len(buildRes.FailedSkippableSteps) + len(buildRes.SkippedSteps)
-}
-
-func (buildRes BuildRunResultsModel) isBuildAbortedWithTimeout() bool {
-	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedWithCustomTimeout {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (buildRes BuildRunResultsModel) isBuildAbortedWithNoOutputTimeout() bool {
-	for _, stepResult := range buildRes.FailedSteps {
-		if stepResult.Status == StepRunStatusAbortedWithNoOutputTimeout {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (buildRes BuildRunResultsModel) unorderedResults() []StepRunResultsModel {
-	results := append([]StepRunResultsModel{}, buildRes.SuccessSteps...)
-	results = append(results, buildRes.FailedSteps...)
-	results = append(results, buildRes.FailedSkippableSteps...)
-	return append(results, buildRes.SkippedSteps...)
-}
-
-func (buildRes BuildRunResultsModel) OrderedResults() []StepRunResultsModel {
-	results := make([]StepRunResultsModel, buildRes.ResultsCount())
-	unorderedResults := buildRes.unorderedResults()
-	for _, result := range unorderedResults {
-		results[result.Idx] = result
-	}
-	return results
+	return nil, fmt.Errorf("stepListItem is not a Step")
 }

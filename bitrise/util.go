@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
-	"github.com/bitrise-io/bitrise/configs"
-	"github.com/bitrise-io/bitrise/models"
-	envmanModels "github.com/bitrise-io/envman/models"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/tools"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
+	"gopkg.in/yaml.v2"
 )
 
 type ValidationType int
@@ -26,6 +26,8 @@ const (
 	ValidationTypeFull ValidationType = iota
 	ValidationTypeMinimal
 )
+
+const FailedStepErrorMessageEnvVarSizeLimitInBytes = 1 * 1024
 
 func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.EnvsSerializeModel, err error) {
 	if err = yaml.Unmarshal(inventoryBytes, &inventory); err != nil {
@@ -181,9 +183,9 @@ func CleanupStepWorkDir() error {
 	return nil
 }
 
-func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
+func BuildStatusEnvs(isBuildFailed bool) []envmanModels.EnvironmentItemModel {
 	statusStr := "0"
-	if failed {
+	if isBuildFailed {
 		statusStr = "1"
 	}
 
@@ -193,17 +195,22 @@ func BuildFailedEnvs(failed bool) []envmanModels.EnvironmentItemModel {
 	}
 }
 
-func SetBuildFailedEnv(failed bool) error {
-	envs := BuildFailedEnvs(failed)
-	for _, env := range envs {
-		key, value, err := env.GetKeyValuePair()
-		if err == nil {
-			if err := os.Setenv(key, value); err != nil {
-				return err
-			}
-		}
+func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanModels.EnvironmentItemModel {
+	failedStepTitle := failedStepRunResult.StepInfo.ID
+	if failedStepRunResult.StepInfo.Step.Title != nil && len(*failedStepRunResult.StepInfo.Step.Title) > 0 {
+		failedStepTitle = *failedStepRunResult.StepInfo.Step.Title
 	}
-	return nil
+
+	errorMessage := failedStepRunResult.ErrorStr
+	errorMessage, limited := tools.LimitEnvVarValue(errorMessage, FailedStepErrorMessageEnvVarSizeLimitInBytes)
+	if limited {
+		log.Warnf("Truncating BITRISE_FAILED_STEP_ERROR_MESSAGE value to %dKB", FailedStepErrorMessageEnvVarSizeLimitInBytes/1024)
+	}
+
+	return []envmanModels.EnvironmentItemModel{
+		{"BITRISE_FAILED_STEP_TITLE": failedStepTitle},
+		{"BITRISE_FAILED_STEP_ERROR_MESSAGE": errorMessage},
+	}
 }
 
 func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {

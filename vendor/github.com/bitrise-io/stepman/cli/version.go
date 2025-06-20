@@ -58,11 +58,12 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	var log flog.Logger
-	if format == "raw" {
+	switch format {
+	case "raw":
 		log = flog.NewDefaultRawLogger()
-	} else if format == "json" {
+	case "json":
 		log = flog.NewDefaultJSONLoger()
-	} else {
+	default:
 		failf("Invalid format: %s", format)
 	}
 
