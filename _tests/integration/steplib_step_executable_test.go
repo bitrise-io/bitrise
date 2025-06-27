@@ -12,7 +12,9 @@ import (
 
 func TestSteplibStepExecutable(t *testing.T) {
 	cmd := command.New(binPath(), "run", "step-executable-test", "-c", "steplib_step_executable/bitrise.yml")
-	cmd.SetEnvs("BITRISE_EXPERIMENT_PRECOMPILED_STEPS=true")
+	envs := os.Environ()
+	envs = append(envs, "BITRISE_EXPERIMENT_PRECOMPILED_STEPS=true")
+	cmd.SetEnvs(envs...)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 }
