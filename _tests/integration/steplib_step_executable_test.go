@@ -5,6 +5,7 @@ package integration
 
 import (
 	"testing"
+	"os"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
