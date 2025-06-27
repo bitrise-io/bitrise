@@ -47,6 +47,12 @@ func activateStepExecutable(
 	if err != nil {
 		return "", fmt.Errorf("create file %s: %w", path, err)
 	}
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Warnf("Failed to close file %s: %s\n", path, err)
+		}
+	}()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
