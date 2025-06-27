@@ -1,6 +1,8 @@
 module github.com/bitrise-io/bitrise/v2
 
-go 1.23.8
+go 1.23.0
+
+toolchain go1.23.10 // https://github.com/golang/go/issues/72877
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
@@ -9,7 +11,7 @@ require (
 	github.com/bitrise-io/go-utils v1.0.13
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.17.3
+	github.com/bitrise-io/stepman v0.18.2
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-retryablehttp v0.7.7

@@ -74,11 +74,12 @@ func collections(c *cli.Context) error {
 	}
 
 	var log flog.Logger
-	if format == OutputFormatRaw {
+	switch format {
+	case OutputFormatRaw:
 		log = flog.NewDefaultRawLogger()
-	} else if format == OutputFormatJSON {
+	case OutputFormatJSON:
 		log = flog.NewDefaultJSONLoger()
-	} else {
+	default:
 		failf("invalid format: %s", format)
 	}
 

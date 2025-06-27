@@ -1209,7 +1209,7 @@ workflows:
         inputs:
         - content: echo "Hello"
           BAD_KEY: value`,
-			wantErr: "Invalid environment (map[BAD_KEY:value content:echo \"Hello\"]), err: more than 1 environment key specified: [BAD_KEY content]",
+			wantErr: "invalid environment (map[BAD_KEY:value content:echo \"Hello\"]), err: more than 1 environment key specified: [BAD_KEY content]",
 		},
 		{
 			name: "valid workflow - Warning: duplicated inputs",
