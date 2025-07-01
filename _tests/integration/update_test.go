@@ -15,19 +15,19 @@ import (
 
 func Test_Update(t *testing.T) {
 
-	t.Log("Update --version 1.28.0")
+	t.Log("Update --version 2.31.0")
 	{
 		// save original binary
 		if err := cli.CopyFile(binPath(), binPath()+"_original", false); err != nil {
 			t.Fatal(err)
 		}
 
-		out, err := command.New(binPath(), "update", "--version", "1.28.0").RunAndReturnTrimmedCombinedOutput()
+		out, err := command.New(binPath(), "update", "--version", "2.31.0").RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
 		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath(), "version")
 		require.NoError(t, err)
-		require.Equal(t, "1.28.0", updatedVer)
+		require.Equal(t, "2.31.0", updatedVer)
 
 		// restore original binary
 		if err := cli.CopyFile(binPath()+"_original", binPath(), true); err != nil {
