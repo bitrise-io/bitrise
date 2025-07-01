@@ -24,7 +24,7 @@ import (
 
 const (
 	tagsURL     = "https://api.github.com/repos/bitrise-io/bitrise/tags"
-	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/%s/bitrise-%s-x86_64"
+	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s/bitrise-%s-x86_64"
 )
 
 var updateCommand = cli.Command{
