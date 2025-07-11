@@ -35,6 +35,11 @@ type StepExecutionPlan struct {
 	// Step Bundle group
 	StepBundleUUID string                              `json:"step_bundle_uuid,omitempty"`
 	StepBundleEnvs []envmanModels.EnvironmentItemModel `json:"-"`
+
+	// StepBundleRunIfs stores each run_if statements of the including Step Bundles.
+	// The first element is the run_if statement of the top most Step Bundle including the given Step.
+	// To execute the Step, all run_if statements must be evaluated to true.
+	StepBundleRunIfs []string `json:"-"`
 }
 
 type WorkflowExecutionPlan struct {
@@ -169,7 +174,16 @@ func NewWorkflowRunPlan(
 					ID: bundleID,
 				}
 
-				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, stepBundles, stepBundlePlans, uuidProvider)
+				runIf := bundleDefinition.RunIf
+				if bundleOverride.RunIf != nil {
+					runIf = *bundleOverride.RunIf
+				}
+				var runIfs []string
+				if runIf != "" {
+					runIfs = []string{runIf}
+				}
+
+				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
 				if err != nil {
 					return WorkflowRunPlan{}, err
 				}
@@ -228,7 +242,7 @@ func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workfl
 	return workflowStack
 }
 
-func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, stepBundles map[string]StepBundleModel, stepBundlePlans map[string]StepBundlePlan, uuidProvider func() string) ([]StepExecutionPlan, error) {
+func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, runIfs []string, stepBundles map[string]StepBundleModel, stepBundlePlans map[string]StepBundlePlan, uuidProvider func() string) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	stepIDX := -1
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
@@ -246,10 +260,11 @@ func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bund
 
 			stepID := key
 			stepPlan := StepExecutionPlan{
-				UUID:           uuidProvider(),
-				StepID:         stepID,
-				Step:           *step,
-				StepBundleUUID: bundleUUID,
+				UUID:             uuidProvider(),
+				StepID:           stepID,
+				Step:             *step,
+				StepBundleUUID:   bundleUUID,
+				StepBundleRunIfs: runIfs,
 			}
 
 			if stepIDX == 0 {
@@ -281,7 +296,15 @@ func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bund
 				ID: bundleID,
 			}
 
-			plans, err := gatherBundleSteps(definition, uuid, envs, stepBundles, stepBundlePlans, uuidProvider)
+			runIf := definition.RunIf
+			if override.RunIf != nil {
+				runIf = *override.RunIf
+			}
+			if runIf != "" {
+				runIfs = append(runIfs, runIf)
+			}
+
+			plans, err := gatherBundleSteps(definition, uuid, envs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
 			if err != nil {
 				return nil, err
 			}

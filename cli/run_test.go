@@ -167,6 +167,68 @@ workflows:
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 }
 
+func TestStepBundleRunIf(t *testing.T) {
+	configStr := `
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    envs:
+    - RUN_IF_1: "true"
+    - RUN_IF_2: "false"
+    - RUN_IF_3: "true"
+    steps:
+    - script:
+        inputs:
+        - content: echo "Shouldn't be skipped 1"
+    - bundle::run_if_test_1:
+    - bundle::run_if_test_3:
+
+step_bundles:
+  run_if_test_1:
+    run_if: '{{enveq "RUN_IF_1" "true"}}'
+    steps:
+    - script@1:
+        title: run_if_test_1 script
+        inputs:
+        - content: echo "bundle::run_if_test_1"
+    - bundle::run_if_test_2: { }
+
+  run_if_test_2:
+    run_if: '{{enveq "RUN_IF_2" "true"}}'
+    steps:
+    - script@1:
+        title: run_if_test_2 script
+        inputs:
+        - content: echo "bundle::run_if_test_2"
+    - bundle::run_if_test_3: { }
+
+  run_if_test_3:
+    run_if: '{{enveq "RUN_IF_3" "true"}}'
+    steps:
+    - script@1:
+        title: run_if_test_3 script
+        inputs:
+        - content: echo "bundle::run_if_test_3"
+`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test", Secrets: nil}
+	runner := NewWorkflowRunner(runConfig, nil)
+	buildRunResults, err := runner.runWorkflows(noOpTracker{})
+	require.NoError(t, err)
+	require.Equal(t, 3, len(buildRunResults.SuccessSteps)) // script; run_if_test_1.script; run_if_test_3.script
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 2, len(buildRunResults.SkippedSteps)) // run_if_test_2.script; run_if_test_2.run_if_test_3.script
+}
+
 func TestStepOutputsInTemplate(t *testing.T) {
 	inventoryStr := `
 envs:
