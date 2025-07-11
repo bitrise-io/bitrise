@@ -57,8 +57,8 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_6", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{}},
-						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIf: "{{.IsCI}}"},
-						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIf: "{{.IsCI}}"},
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{"{{.IsCI}}"}},
+						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{"{{.IsCI}}"}},
 						{UUID: "uuid_5", StepID: "step2", Step: stepmanModels.StepModel{}},
 					}},
 				},
