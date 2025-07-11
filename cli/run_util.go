@@ -136,6 +136,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
+			stepPlan.StepBundleRunIf,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
@@ -212,19 +213,42 @@ func (r WorkflowRunner) activateAndRunStep(
 	containerID, groupID string,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
+	stepBundleRunIf string,
 ) activateAndRunStepResult {
+	stepInfoPtr, stepIDData, err := newStepInfoPtr(stepID, defaultStepLibSource, step)
+	if err != nil {
+		return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+	}
+
+	if stepBundleRunIf != "" {
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		if err != nil {
+			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+		}
+
+		isRun, err := bitrise.EvaluateTemplateToBool(stepBundleRunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+		if err != nil {
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+		}
+		if !isRun {
+			stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, false, map[string]string{}, nil)
+		}
+	}
+
 	//
 	// Activate step
 	activateStartTime := time.Now()
-	activateResult := r.activateStep(step, stepID, defaultStepLibSource, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
 	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
 	}
 
-	stepInfoPtr := activateResult.StepInfoPtr
+	stepInfoPtr = activateResult.StepInfoPtr
 	mergedStep := activateResult.Step
-	stepIDData := activateResult.StepIDData
+	stepIDData = activateResult.StepIDData
 	stepDir := activateResult.StepDir
 
 	//
@@ -299,25 +323,19 @@ func (r WorkflowRunner) activateAndRunStep(
 }
 
 type activateStepResult struct {
-	Step        stepmanModels.StepModel
-	StepInfoPtr stepmanModels.StepInfoModel
-	StepIDData  stepid.CanonicalID
-	StepDir     string
+	Step           stepmanModels.StepModel
+	StepInfoPtr    stepmanModels.StepInfoModel
+	StepIDData     stepid.CanonicalID
+	StepDir        string
 	ExecutablePath string
-	Err         error
+	Err            error
 }
 
 func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepIDData stepid.CanonicalID, stepDir, executablePath string, err error) activateStepResult {
 	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepIDData: stepIDData, StepDir: stepDir, ExecutablePath: executablePath, Err: err}
 }
 
-func (r WorkflowRunner) activateStep(
-	step stepmanModels.StepModel,
-	stepID string,
-	defaultStepLibSource string,
-	buildRunResults models.BuildRunResultsModel,
-	isStepLibOfflineMode bool,
-) activateStepResult {
+func newStepInfoPtr(stepID, defaultStepLibSource string, step stepmanModels.StepModel) (stepmanModels.StepInfoModel, stepid.CanonicalID, error) {
 	// TODO: stepInfoPtr.Step is not a real step, only stores presentation properties (printed in the step boxes)
 	stepInfoPtr := stepmanModels.StepInfoModel{}
 
@@ -331,8 +349,9 @@ func (r WorkflowRunner) activateStep(
 
 	stepIDData, err := stepid.CreateCanonicalIDFromString(compositeStepIDStr, defaultStepLibSource)
 	if err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepid.CanonicalID{}, "", "", err)
+		return stepInfoPtr, stepIDData, err
 	}
+
 	stepInfoPtr.ID = stepIDData.IDorURI
 	if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
 		stepInfoPtr.Step.Title = pointers.NewStringPtr(stepIDData.IDorURI)
@@ -340,6 +359,16 @@ func (r WorkflowRunner) activateStep(
 	stepInfoPtr.Version = stepIDData.Version
 	stepInfoPtr.Library = stepIDData.SteplibSource
 
+	return stepInfoPtr, stepIDData, nil
+}
+
+func (r WorkflowRunner) activateStep(
+	step stepmanModels.StepModel,
+	stepInfoPtr stepmanModels.StepInfoModel,
+	stepIDData stepid.CanonicalID,
+	buildRunResults models.BuildRunResultsModel,
+	isStepLibOfflineMode bool,
+) activateStepResult {
 	//
 	// Activating the step
 	if err := bitrise.CleanupStepWorkDir(); err != nil {
@@ -635,12 +664,12 @@ func (r WorkflowRunner) executeStep(
 	} else {
 		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 		toolkitName := toolkitForStep.ToolkitName()
-	
+
 		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
 				toolkitName, err)
 		}
-	
+
 		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
 		if err != nil {
 			return 1, fmt.Errorf("toolkit (%s) rejected the step, error: %s",
