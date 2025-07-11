@@ -217,28 +217,26 @@ func (r WorkflowRunner) activateAndRunStep(
 ) activateAndRunStepResult {
 	stepInfoPtr, stepIDData, err := newStepInfoPtr(stepID, defaultStepLibSource, step)
 	if err != nil {
-		return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+		return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
 	}
 
 	if len(stepBundleRunIfs) > 0 {
 		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {
 			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
-			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
 		}
 
 		// To run the Step each of the including Step Bundles run_if statements must evaluate to true, from the top most to the bottom most.
 		for _, stepBundleRunIf := range stepBundleRunIfs {
 			isRun, err := bitrise.EvaluateTemplateToBool(stepBundleRunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
 			if err != nil {
-				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, false, map[string]string{}, nil)
+				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
 			}
 			if !isRun {
-				logStepStarted(r.logger, stepInfoPtr, step, stepIDx, stepExecutionID, stepStartTime)
-
 				// In the workflow run logs stepInfoPtr.Step.RunIf is used as a reason for skipping the step.
 				stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf)
-				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, false, map[string]string{}, nil)
+				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, true, map[string]string{}, nil)
 			}
 		}
 	}
