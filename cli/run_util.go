@@ -248,7 +248,6 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	stepInfoPtr = activateResult.StepInfoPtr
 	mergedStep := activateResult.Step
-	stepIDData = activateResult.StepIDData
 	stepDir := activateResult.StepDir
 
 	//
@@ -325,14 +324,13 @@ func (r WorkflowRunner) activateAndRunStep(
 type activateStepResult struct {
 	Step           stepmanModels.StepModel
 	StepInfoPtr    stepmanModels.StepInfoModel
-	StepIDData     stepid.CanonicalID
 	StepDir        string
 	ExecutablePath string
 	Err            error
 }
 
-func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepIDData stepid.CanonicalID, stepDir, executablePath string, err error) activateStepResult {
-	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepIDData: stepIDData, StepDir: stepDir, ExecutablePath: executablePath, Err: err}
+func newActivateStepResult(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel, stepDir, executablePath string, err error) activateStepResult {
+	return activateStepResult{Step: step, StepInfoPtr: stepInfoPtr, StepDir: stepDir, ExecutablePath: executablePath, Err: err}
 }
 
 func newStepInfoPtr(stepID, defaultStepLibSource string, step stepmanModels.StepModel) (stepmanModels.StepInfoModel, stepid.CanonicalID, error) {
@@ -372,7 +370,7 @@ func (r WorkflowRunner) activateStep(
 	//
 	// Activating the step
 	if err := bitrise.CleanupStepWorkDir(); err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, "", "", err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, "", "", err)
 	}
 
 	stepDir := configs.BitriseWorkStepsDirPath
@@ -388,7 +386,7 @@ func (r WorkflowRunner) activateStep(
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
 	if err != nil {
-		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, "", err)
+		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepDir, "", err)
 	}
 
 	// Fill step info with default step info, if exist
@@ -398,14 +396,14 @@ func (r WorkflowRunner) activateStep(
 		log.Debugf("Spec read from YML: %#v", specStep)
 		if err != nil {
 			err = fmt.Errorf("parse step.yml of '%s': %s", stepIDData.IDorURI, err)
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepDir, activatedStep.ExecutablePath, err)
 		}
 
 		// Merge step fields coming from bitrise.yml with the original step fields defined in step.yml
 		// For example, a `run_if` can be overridden in a specific workflow.
 		mergedStep, err = models.MergeStepWith(specStep, step)
 		if err != nil {
-			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, err)
+			return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepDir, activatedStep.ExecutablePath, err)
 		}
 	}
 
@@ -441,7 +439,7 @@ func (r WorkflowRunner) activateStep(
 		}
 	}
 
-	return newActivateStepResult(mergedStep, stepInfoPtr, stepIDData, stepDir, activatedStep.ExecutablePath, nil)
+	return newActivateStepResult(mergedStep, stepInfoPtr, stepDir, activatedStep.ExecutablePath, nil)
 }
 
 type prepareEnvsForStepRunResult struct {
