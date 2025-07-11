@@ -178,9 +178,9 @@ func NewWorkflowRunPlan(
 				if bundleOverride.RunIf != nil {
 					runIf = *bundleOverride.RunIf
 				}
-				runIfs := []string{}
+				var runIfs []string
 				if runIf != "" {
-					runIfs = append(runIfs, runIf)
+					runIfs = []string{runIf}
 				}
 
 				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
