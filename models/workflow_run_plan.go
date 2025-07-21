@@ -242,7 +242,15 @@ func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workfl
 	return workflowStack
 }
 
-func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, runIfs []string, stepBundles map[string]StepBundleModel, stepBundlePlans map[string]StepBundlePlan, uuidProvider func() string) ([]StepExecutionPlan, error) {
+func gatherBundleSteps(
+	bundleDefinition StepBundleModel,
+	bundleUUID string,
+	bundleEnvs []envmanModels.EnvironmentItemModel,
+	runIfs []string,
+	stepBundles map[string]StepBundleModel,
+	stepBundlePlans map[string]StepBundlePlan,
+	uuidProvider func() string,
+) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	stepIDX := -1
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
@@ -300,11 +308,14 @@ func gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bund
 			if override.RunIf != nil {
 				runIf = *override.RunIf
 			}
+
+			internalSlice := make([]string, len(runIfs))
+			copy(internalSlice, runIfs)
 			if runIf != "" {
-				runIfs = append(runIfs, runIf)
+				internalSlice = append(internalSlice, runIf)
 			}
 
-			plans, err := gatherBundleSteps(definition, uuid, envs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
+			plans, err := gatherBundleSteps(definition, uuid, envs, internalSlice, stepBundles, stepBundlePlans, uuidProvider)
 			if err != nil {
 				return nil, err
 			}
