@@ -1,12 +1,12 @@
 module github.com/bitrise-io/bitrise/v2
 
-go 1.23.0
+go 1.24.2
 
-toolchain go1.23.10 // https://github.com/golang/go/issues/72877
+toolchain go1.24.5 // https://github.com/golang/go/issues/72877
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.5.3
+	github.com/bitrise-io/envman/v2 v2.5.4
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
 	github.com/bitrise-io/go-utils v1.0.13
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
