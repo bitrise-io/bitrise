@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.23.10 // https://github.com/golang/go/issues/72877
 
 require (
+	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman/v2 v2.5.3
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
@@ -36,6 +37,9 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/distribution/reference v0.5.0 // indirect
+	github.com/docker/docker v28.0.0+incompatible
+	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -43,6 +47,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -53,6 +58,7 @@ require (
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -76,12 +82,4 @@ require (
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-)
-
-require (
-	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v28.0.0+incompatible
-	github.com/docker/go-connections v0.5.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/opencontainers/image-spec v1.0.2 // indirect
 )
