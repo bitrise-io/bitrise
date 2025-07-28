@@ -309,13 +309,20 @@ func gatherBundleSteps(
 				runIf = *override.RunIf
 			}
 
-			internalSlice := make([]string, len(runIfs))
-			copy(internalSlice, runIfs)
+			// Create a new runIfs slice that includes the runIf of the current bundle, instead of modifying the original slice.
+			// This is necessary to ensure that the runIfs of the current bundle are evaluated correctly in the context of the parent bundle.
+			// The Go slice wraps a pointer to the actual data inside.
+			// So passing it around and adding items to it would update all the slices internal data storage.
+			var newBundleRunIfs []string
+			if len(runIfs) > 0 {
+				newBundleRunIfs = make([]string, len(runIfs))
+				copy(newBundleRunIfs, runIfs)
+			}
 			if runIf != "" {
-				internalSlice = append(internalSlice, runIf)
+				newBundleRunIfs = append(newBundleRunIfs, runIf)
 			}
 
-			plans, err := gatherBundleSteps(definition, uuid, envs, internalSlice, stepBundles, stepBundlePlans, uuidProvider)
+			plans, err := gatherBundleSteps(definition, uuid, envs, newBundleRunIfs, stepBundles, stepBundlePlans, uuidProvider)
 			if err != nil {
 				return nil, err
 			}
