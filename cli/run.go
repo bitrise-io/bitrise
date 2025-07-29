@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/colorstring"
@@ -269,7 +270,11 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
 	// Toolprovider entrypoint
-	// r.config.Config.Tools
+	err := toolprovider.Run(r.config.Config)
+	if err != nil {
+		// TODO: better error logging
+		return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
+	}
 	// append to environments
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
