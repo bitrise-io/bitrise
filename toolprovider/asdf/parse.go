@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/hashicorp/go-version"
 )
 
@@ -31,7 +31,7 @@ func (a *AsdfToolProvider) asdfVersion() (*version.Version, error) {
 }
 
 // TODO: check if tool-plugin is installed
-func (a *AsdfToolProvider) listInstalled(toolName toolprovider.ToolID) ([]string, error) {
+func (a *AsdfToolProvider) listInstalled(toolName provider.ToolID) ([]string, error) {
 	output, err := a.ExecEnv.RunAsdf("list", string(toolName))
 	if err != nil {
 		// asdf 0.16.0+ returns exit code 1 if no versions are installed
@@ -50,7 +50,7 @@ func (a *AsdfToolProvider) listInstalled(toolName toolprovider.ToolID) ([]string
 }
 
 // TODO: check if tool-plugin is installed
-func (a *AsdfToolProvider) listReleased(toolName toolprovider.ToolID) ([]string, error) {
+func (a *AsdfToolProvider) listReleased(toolName provider.ToolID) ([]string, error) {
 	asdfVer, err := a.asdfVersion()
 	if err != nil {
 		return nil, err

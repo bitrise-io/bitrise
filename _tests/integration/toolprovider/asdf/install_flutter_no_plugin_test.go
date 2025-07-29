@@ -6,7 +6,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/stretchr/testify/require"
 )
@@ -15,12 +15,12 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 	tests := []struct {
 		name               string
 		requestedVersion   string
-		resolutionStrategy toolprovider.ResolutionStrategy
+		resolutionStrategy provider.ResolutionStrategy
 		plugin             string
 		expectedVersion    string
 	}{
-		{"Install specific version", "3.32.5-stable", toolprovider.ResolutionStrategyStrict, "flutter::https://github.com/asdf-community/asdf-flutter.git", "3.32.5-stable"},
-		{"Install specific version", "3.32.1-stable", toolprovider.ResolutionStrategyStrict, "", "3.32.1-stable"},
+		{"Install specific version", "3.32.5-stable", provider.ResolutionStrategyStrict, "flutter::https://github.com/asdf-community/asdf-flutter.git", "3.32.5-stable"},
+		{"Install specific version", "3.32.1-stable", provider.ResolutionStrategyStrict, "", "3.32.1-stable"},
 	}
 
 	for _, tt := range tests {
@@ -34,7 +34,7 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 			ExecEnv: testEnv.toExecEnv(),
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			request := toolprovider.ToolRequest{
+			request := provider.ToolRequest{
 				ToolName:           "flutter",
 				UnparsedVersion:    tt.requestedVersion,
 				ResolutionStrategy: tt.resolutionStrategy,
@@ -42,7 +42,7 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 			}
 			result, err := asdfProvider.InstallTool(request)
 			require.NoError(t, err)
-			require.Equal(t, toolprovider.ToolID("flutter"), result.ToolName)
+			require.Equal(t, provider.ToolID("flutter"), result.ToolName)
 			require.Equal(t, tt.expectedVersion, result.ConcreteVersion)
 			require.False(t, result.IsAlreadyInstalled)
 		})

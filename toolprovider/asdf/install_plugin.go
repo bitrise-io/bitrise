@@ -5,18 +5,18 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
 // Unlikely to conflict with any plugin name or URL, but clearly separates the plugin name and URL.
 const PluginSourceSeparator = "::"
 
 type PluginSource struct {
-	PluginName  toolprovider.ToolID
+	PluginName  provider.ToolID
 	GitCloneURL string
 }
 
-var pluginSourceMap = map[toolprovider.ToolID]PluginSource{
+var pluginSourceMap = map[provider.ToolID]PluginSource{
 	"flutter": {PluginName: "flutter", GitCloneURL: "https://github.com/asdf-community/asdf-flutter.git"},
 	"golang":  {PluginName: "golang", GitCloneURL: "https://github.com/asdf-community/asdf-golang.git"},
 	"nodejs":  {PluginName: "nodejs", GitCloneURL: "https://github.com/asdf-vm/asdf-nodejs.git"},
@@ -29,11 +29,11 @@ var pluginSourceMap = map[toolprovider.ToolID]PluginSource{
 //
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using asdf.
-func (a AsdfToolProvider) InstallPlugin(tool toolprovider.ToolRequest) error {
+func (a AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	plugin, err := fetchPluginSource(tool)
 	if err != nil {
 		// E.g. parse error while resolving plugin source.
-		return toolprovider.ToolInstallError{
+		return provider.ToolInstallError{
 			ToolName:         string(tool.ToolName),
 			RequestedVersion: tool.UnparsedVersion,
 			Cause:            fmt.Sprintf("Couldn't resolve plugin source: %s", err),
@@ -41,7 +41,7 @@ func (a AsdfToolProvider) InstallPlugin(tool toolprovider.ToolRequest) error {
 		}
 	}
 	if plugin == nil {
-		return toolprovider.ToolInstallError{
+		return provider.ToolInstallError{
 			ToolName:         string(tool.ToolName),
 			RequestedVersion: tool.UnparsedVersion,
 			Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
@@ -109,7 +109,7 @@ func (a *AsdfToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 	return false, nil
 }
 
-func fetchPluginSource(toolRequest toolprovider.ToolRequest) (*PluginSource, error) {
+func fetchPluginSource(toolRequest provider.ToolRequest) (*PluginSource, error) {
 	if toolRequest.PluginIdentifier != nil {
 		pluginInput := strings.TrimSpace(*toolRequest.PluginIdentifier)
 		if pluginInput != "" {
@@ -157,7 +157,7 @@ func parsePluginSourceFromInput(pluginIdentifier string) (*PluginSource, error) 
 	}
 
 	return &PluginSource{
-		PluginName:  toolprovider.ToolID(pluginName),
+		PluginName:  provider.ToolID(pluginName),
 		GitCloneURL: pluginURL,
 	}, nil
 }

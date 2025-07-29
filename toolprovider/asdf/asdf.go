@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
 )
 
@@ -31,22 +31,22 @@ func (a AsdfToolProvider) Bootstrap() error {
 	return nil
 }
 
-func (a AsdfToolProvider) InstallTool(tool toolprovider.ToolRequest) (toolprovider.ToolInstallResult, error) {
+func (a AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	err := a.InstallPlugin(tool)
 	if err != nil {
-		return toolprovider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
 	}
 
 	installedVersions, err := a.listInstalled(tool.ToolName)
 	if err != nil {
-		return toolprovider.ToolInstallResult{}, fmt.Errorf("list installed versions: %w", err)
+		return provider.ToolInstallResult{}, fmt.Errorf("list installed versions: %w", err)
 	}
 
 	// Short-circuit for exact version match among installed versions.
 	// Fetching released versions is a slow operation that we want to avoid.
 	v := strings.TrimSpace(tool.UnparsedVersion)
-	if tool.ResolutionStrategy == toolprovider.ResolutionStrategyStrict && slices.Contains(installedVersions, v) {
-		return toolprovider.ToolInstallResult{
+	if tool.ResolutionStrategy == provider.ResolutionStrategyStrict && slices.Contains(installedVersions, v) {
+		return provider.ToolInstallResult{
 			ToolName:           tool.ToolName,
 			IsAlreadyInstalled: true,
 			ConcreteVersion:    v,
@@ -55,11 +55,11 @@ func (a AsdfToolProvider) InstallTool(tool toolprovider.ToolRequest) (toolprovid
 
 	releasedVersions, err := a.listReleased(tool.ToolName)
 	if err != nil {
-		return toolprovider.ToolInstallResult{}, fmt.Errorf("list released versions: %w", err)
+		return provider.ToolInstallResult{}, fmt.Errorf("list released versions: %w", err)
 	}
 
 	if len(releasedVersions) == 0 && len(installedVersions) == 0 {
-		return toolprovider.ToolInstallResult{}, &ErrNoMatchingVersion{
+		return provider.ToolInstallResult{}, &ErrNoMatchingVersion{
 			RequestedVersion:  tool.UnparsedVersion,
 			AvailableVersions: releasedVersions,
 		}
@@ -73,32 +73,32 @@ func (a AsdfToolProvider) InstallTool(tool toolprovider.ToolRequest) (toolprovid
 			// Some asdf plugins hardcode the list of installable versions and need a new plugin release to support new versions.
 			_, err = a.ExecEnv.RunAsdf("plugin", "update", string(tool.ToolName))
 			if err != nil {
-				return toolprovider.ToolInstallResult{}, fmt.Errorf("update plugin: %w", err)
+				return provider.ToolInstallResult{}, fmt.Errorf("update plugin: %w", err)
 			}
 			releasedVersions, err = a.listReleased(tool.ToolName)
 			if err != nil {
-				return toolprovider.ToolInstallResult{}, fmt.Errorf("list released versions after plugin update: %w", err)
+				return provider.ToolInstallResult{}, fmt.Errorf("list released versions after plugin update: %w", err)
 			}
 			resolution, err = ResolveVersion(tool, releasedVersions, installedVersions)
 			if err != nil {
 				if errors.As(err, &nomatchErr) {
-					errorDetails := toolprovider.ToolInstallError{
+					errorDetails := provider.ToolInstallError{
 						ToolName:         string(tool.ToolName),
 						RequestedVersion: tool.UnparsedVersion,
 						Cause:            nomatchErr.Error(),
 						Recommendation:   fmt.Sprintf("You might want to use `%s:installed` or `%s:latest` to install the latest installed or latest released version of %s %s.", tool.UnparsedVersion, tool.UnparsedVersion, tool.ToolName, tool.UnparsedVersion),
 					}
-					return toolprovider.ToolInstallResult{}, errorDetails
+					return provider.ToolInstallResult{}, errorDetails
 				}
-				return toolprovider.ToolInstallResult{}, fmt.Errorf("resolve version: %w", err)
+				return provider.ToolInstallResult{}, fmt.Errorf("resolve version: %w", err)
 			}
 		}
 
-		return toolprovider.ToolInstallResult{}, fmt.Errorf("resolve version: %w", err)
+		return provider.ToolInstallResult{}, fmt.Errorf("resolve version: %w", err)
 	}
 
 	if resolution.IsInstalled {
-		return toolprovider.ToolInstallResult{
+		return provider.ToolInstallResult{
 			ToolName:           tool.ToolName,
 			IsAlreadyInstalled: true,
 			ConcreteVersion:    resolution.VersionString,
@@ -106,10 +106,10 @@ func (a AsdfToolProvider) InstallTool(tool toolprovider.ToolRequest) (toolprovid
 	} else {
 		err = a.installToolVersion(tool.ToolName, resolution.VersionString)
 		if err != nil {
-			return toolprovider.ToolInstallResult{}, err
+			return provider.ToolInstallResult{}, err
 		}
 
-		return toolprovider.ToolInstallResult{
+		return provider.ToolInstallResult{
 			ToolName:           tool.ToolName,
 			IsAlreadyInstalled: false,
 			ConcreteVersion:    resolution.VersionString,

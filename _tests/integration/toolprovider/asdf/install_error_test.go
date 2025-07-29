@@ -6,7 +6,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/stretchr/testify/require"
 )
@@ -22,15 +22,15 @@ func TestNoMatchingVersionError(t *testing.T) {
 	asdfProvider := asdf.AsdfToolProvider{
 		ExecEnv: testEnv.toExecEnv(),
 	}
-	request := toolprovider.ToolRequest{
+	request := provider.ToolRequest{
 		ToolName:           "nodejs",
 		UnparsedVersion:    "22",
-		ResolutionStrategy: toolprovider.ResolutionStrategyStrict,
+		ResolutionStrategy: provider.ResolutionStrategyStrict,
 	}
 	_, err = asdfProvider.InstallTool(request)
 	require.Error(t, err)
 
-	var installErr toolprovider.ToolInstallError
+	var installErr provider.ToolInstallError
 	require.ErrorAs(t, err, &installErr)
 	require.Equal(t, "nodejs", installErr.ToolName)
 	require.Equal(t, "22", installErr.RequestedVersion)
@@ -50,15 +50,15 @@ func TestNewToolPluginError(t *testing.T) {
 	asdfProvider := asdf.AsdfToolProvider{
 		ExecEnv: testEnv.toExecEnv(),
 	}
-	request := toolprovider.ToolRequest{
+	request := provider.ToolRequest{
 		ToolName:           "foo",
 		UnparsedVersion:    "1.0.0",
-		ResolutionStrategy: toolprovider.ResolutionStrategyStrict,
+		ResolutionStrategy: provider.ResolutionStrategyStrict,
 	}
 	_, err = asdfProvider.InstallTool(request)
 	require.Error(t, err)
 
-	var installErr toolprovider.ToolInstallError
+	var installErr provider.ToolInstallError
 	require.ErrorAs(t, err, &installErr)
 	require.Equal(t, "foo", installErr.ToolName)
 	require.Equal(t, "1.0.0", installErr.RequestedVersion)

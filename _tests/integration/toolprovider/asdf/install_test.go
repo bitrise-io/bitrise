@@ -6,7 +6,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/stretchr/testify/require"
 )
@@ -23,13 +23,13 @@ func TestAsdfInstallClassic(t *testing.T) {
 		ExecEnv: testEnv.toExecEnv(),
 	}
 
-	request := toolprovider.ToolRequest{
+	request := provider.ToolRequest{
 		ToolName:        "nodejs",
 		UnparsedVersion: "18.16.0",
 	}
 	result, err := asdfProvider.InstallTool(request)
 	require.NoError(t, err)
-	require.Equal(t, toolprovider.ToolID("nodejs"), result.ToolName)
+	require.Equal(t, provider.ToolID("nodejs"), result.ToolName)
 	require.Equal(t, "18.16.0", result.ConcreteVersion)
 	require.False(t, result.IsAlreadyInstalled)
 }
@@ -46,13 +46,13 @@ func TestAsdfInstallRewrite(t *testing.T) {
 		ExecEnv: testEnv.toExecEnv(),
 	}
 
-	request := toolprovider.ToolRequest{
+	request := provider.ToolRequest{
 		ToolName:        "nodejs",
 		UnparsedVersion: "18.16.0",
 	}
 	result, err := asdfProvider.InstallTool(request)
 	require.NoError(t, err)
-	require.Equal(t, toolprovider.ToolID("nodejs"), result.ToolName)
+	require.Equal(t, provider.ToolID("nodejs"), result.ToolName)
 	require.Equal(t, "18.16.0", result.ConcreteVersion)
 	require.False(t, result.IsAlreadyInstalled)
 }

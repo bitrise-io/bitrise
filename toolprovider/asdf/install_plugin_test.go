@@ -3,7 +3,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,38 +19,38 @@ var (
 func TestResolvePluginSource(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    toolprovider.ToolRequest
+		input    provider.ToolRequest
 		expected PluginSource
 		wantErr  bool
 	}{
 		{
 			name: "pluginIdentifier set in correct format",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &fullPluginId,
 			},
 			expected: PluginSource{
-				toolprovider.ToolID(pluginName),
+				provider.ToolID(pluginName),
 				pluginGitCloneURL,
 			},
 		},
 		{
 			name: "pluginIdentifier set with name only",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &pluginName,
 			},
 			expected: PluginSource{
-				PluginName: toolprovider.ToolID(pluginName),
+				PluginName: provider.ToolID(pluginName),
 				GitCloneURL:  "",
 			},
 		},
 		{
 			name: "pluginIdentifier set with url only",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &pluginGitCloneURL,
 			},
@@ -59,20 +59,20 @@ func TestResolvePluginSource(t *testing.T) {
 		},
 		{
 			name: "pluginIdentifier set with empty url",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &nameOnlySeparatorPluginId,
 			},
 			expected: PluginSource{
-				PluginName: toolprovider.ToolID(pluginName),
+				PluginName: provider.ToolID(pluginName),
 				GitCloneURL:  "",
 			},
 		},
 		{
 			name: "pluginIdentifier set with empty name",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &urlOnlySeparatorPluginId,
 			},
@@ -81,8 +81,8 @@ func TestResolvePluginSource(t *testing.T) {
 		},
 		{
 			name: "pluginIdentifier set with multiple separators",
-			input: toolprovider.ToolRequest{
-				ToolName:         toolprovider.ToolID(pluginName),
+			input: provider.ToolRequest{
+				ToolName:         provider.ToolID(pluginName),
 				UnparsedVersion:  "18.16.0",
 				PluginIdentifier: &multipleSeparatorPluginId,
 			},

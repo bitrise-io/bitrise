@@ -1,8 +1,6 @@
-package toolprovider
+package provider
 
 import "fmt"
-
-var SupportedProviders = []string{"asdf", "mise"}
 
 type ToolProvider interface {
 	ID() string
