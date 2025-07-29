@@ -268,6 +268,10 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	// App level environment
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
+	// Toolprovider entrypoint
+	// r.config.Config.Tools
+	// append to environments
+
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
 	}
