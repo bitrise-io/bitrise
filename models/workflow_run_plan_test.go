@@ -20,14 +20,12 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 		stepBundles    map[string]StepBundleModel
 		containers     map[string]Container
 		services       map[string]Container
-		uuidProvider   func() string
 		want           WorkflowRunPlan
 		wantErr        assert.ErrorAssertionFunc
 	}{
 		{
 			name:           "steps within a bundle inherit the bundle's run_if condition",
 			modes:          WorkflowRunModes{},
-			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
 			stepBundles: map[string]StepBundleModel{
 				"bundle1": {
@@ -67,7 +65,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 		{
 			name:           "steps within embedded bundles inherit the all the parent bundles' run_if condition",
 			modes:          WorkflowRunModes{},
-			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
 			stepBundles: map[string]StepBundleModel{
 				"bundle1": {
@@ -116,10 +113,51 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:           "steps mixed with embedded bundles inside bundle",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle2": StepBundleListItemModel{}},
+						{"bundle1-step1": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle2": {
+					RunIf: `{{enveq "RUN_IF_1" "true"}}`,
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle2-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          version.VERSION,
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+					"uuid_2": {ID: "bundle2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`}},
+						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+					}},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, tt.uuidProvider)
+			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
