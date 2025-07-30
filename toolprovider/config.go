@@ -16,11 +16,19 @@ func getToolRequests(config models.BitriseDataModel) ([]provider.ToolRequest, er
 		if err != nil {
 			return nil, fmt.Errorf("parse %s version: %w", toolID, err)
 		}
+
+		var pluginIdentifier *string
+		if config.ToolConfig != nil && config.ToolConfig.ExtraPlugins != nil {
+			if pluginID, ok := config.ToolConfig.ExtraPlugins[toolID]; ok {
+				pluginIdentifier = &pluginID
+			}
+		}
+
 		toolRequests = append(toolRequests, provider.ToolRequest{
 			ToolName:           provider.ToolID(toolID),
 			UnparsedVersion:    v,
 			ResolutionStrategy: strategy,
-			// TODO: plugin identifier
+			PluginIdentifier: pluginIdentifier,
 		})
 	}
 

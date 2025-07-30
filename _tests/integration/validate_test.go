@@ -94,7 +94,7 @@ func Test_ValidateTest(t *testing.T) {
 			cmd := command.New(binPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
-		require.NoError(t, err)
+		require.NoError(t, err, out)
 		require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
@@ -251,7 +251,7 @@ func Test_ValidToolConfigValidateTest(t *testing.T) {
 		cmd := command.New(binPath(), "validate", "-c", configPth)
 		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 	})
-	require.NoError(t, err)
+	require.NoError(t, err, out)
 	require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
 	require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 }
@@ -269,7 +269,7 @@ func Test_InvalidToolConfigValidateTest(t *testing.T) {
 	})
 	require.Error(t, err, out)
 	require.Contains(t, out, "Config is valid: \x1b[31;1mfalse\x1b[0m")
-	require.Contains(t, out, "invalid provider")
+	require.Contains(t, out, "URL of extra plugin empty-url-tool is empty")
 	require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 }
 
