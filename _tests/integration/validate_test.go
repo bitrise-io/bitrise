@@ -43,6 +43,39 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   invalid:id:
 `
+const validToolConfigYML = `format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+tools:
+  golang: "1.20.3"
+  nodejs: "20:latest"
+  ruby: "3.2:installed"
+
+tool_config:
+  provider: "asdf"
+  extra_plugins:
+    flutter: "https://github.com/asdf-community/asdf-flutter.git"
+    custom-tool: "https://github.com/user/asdf-custom-tool.git"
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: echo "hello"
+`
+const invalidToolConfigYML = `format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+tools:
+  golang: "invalid:syntax:here"
+  nodejs: ""
+
+tool_config:
+  provider: "unsupported"
+  extra_plugins:
+    empty-url-tool: ""
+`
 const runtimeLimit = 1000 * time.Millisecond
 const runningTimeMsg = "test case too slow: %s is %s above limit"
 
@@ -205,6 +238,39 @@ func Test_ValidateTestJSON(t *testing.T) {
 		require.Equal(t, expected, out)
 		require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 	}
+}
+
+func Test_ValidToolConfigValidateTest(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPth := filepath.Join(tmpDir, "bitrise.yml")
+	require.NoError(t, fileutil.WriteStringToFile(configPth, validToolConfigYML))
+
+	var out string
+	var err error
+	elapsed := withRunningTimeCheck(func() {
+		cmd := command.New(binPath(), "validate", "-c", configPth)
+		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Config is valid: \x1b[32;1mtrue\x1b[0m", out)
+	require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
+}
+
+func Test_InvalidToolConfigValidateTest(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPth := filepath.Join(tmpDir, "bitrise.yml")
+	require.NoError(t, fileutil.WriteStringToFile(configPth, invalidToolConfigYML))
+
+	var out string
+	var err error
+	elapsed := withRunningTimeCheck(func() {
+		cmd := command.New(binPath(), "validate", "-c", configPth)
+		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
+	})
+	require.Error(t, err, out)
+	require.Contains(t, out, "Config is valid: \x1b[31;1mfalse\x1b[0m")
+	require.Contains(t, out, "invalid provider")
+	require.Equal(t, true, elapsed < runtimeLimit, runningTimeMsg, elapsed, elapsed-runtimeLimit)
 }
 
 func Test_SecretValidateTest(t *testing.T) {
