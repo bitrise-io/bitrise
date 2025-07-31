@@ -6,7 +6,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/stretchr/testify/require"
 )
@@ -15,12 +15,12 @@ func TestAsdfInstallGolangVersion(t *testing.T) {
 	tests := []struct {
 		name               string
 		requestedVersion   string
-		resolutionStrategy toolprovider.ResolutionStrategy
+		resolutionStrategy provider.ResolutionStrategy
 		expectedVersion    string
 	}{
-		{"Install specific version", "1.23.4", toolprovider.ResolutionStrategyStrict, "1.23.4"},
-		{"Install partial major.minor version", "1.22", toolprovider.ResolutionStrategyLatestInstalled, "1.22.12"},
-		{"Install partial major.minor version, latest released", "1.22", toolprovider.ResolutionStrategyLatestReleased, "1.22.12"},
+		{"Install specific version", "1.23.4", provider.ResolutionStrategyStrict, "1.23.4"},
+		{"Install partial major.minor version", "1.22", provider.ResolutionStrategyLatestInstalled, "1.22.12"},
+		{"Install partial major.minor version, latest released", "1.22", provider.ResolutionStrategyLatestReleased, "1.22.12"},
 	}
 
 	for _, tt := range tests {
@@ -35,14 +35,14 @@ func TestAsdfInstallGolangVersion(t *testing.T) {
 			ExecEnv: testEnv.toExecEnv(),
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			request := toolprovider.ToolRequest{
+			request := provider.ToolRequest{
 				ToolName:           "golang",
 				UnparsedVersion:    tt.requestedVersion,
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 			result, err := asdfProvider.InstallTool(request)
 			require.NoError(t, err)
-			require.Equal(t, toolprovider.ToolID("golang"), result.ToolName)
+			require.Equal(t, provider.ToolID("golang"), result.ToolName)
 			require.Equal(t, tt.expectedVersion, result.ConcreteVersion)
 			require.False(t, result.IsAlreadyInstalled)
 		})

@@ -6,7 +6,7 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/stretchr/testify/require"
 )
@@ -15,12 +15,12 @@ func TestAsdfInstallNodeVersion(t *testing.T) {
 	tests := []struct {
 		name               string
 		requestedVersion   string
-		resolutionStrategy toolprovider.ResolutionStrategy
+		resolutionStrategy provider.ResolutionStrategy
 		expectedVersion    string
 	}{
-		{"Install specific version", "18.16.0", toolprovider.ResolutionStrategyStrict, "18.16.0"},
-		{"Install partial major version", "18", toolprovider.ResolutionStrategyLatestInstalled, "18.20.8"},
-		{"Install partial major.minor version", "18.10", toolprovider.ResolutionStrategyLatestReleased, "18.10.0"},
+		{"Install specific version", "18.16.0", provider.ResolutionStrategyStrict, "18.16.0"},
+		{"Install partial major version", "18", provider.ResolutionStrategyLatestInstalled, "18.20.8"},
+		{"Install partial major.minor version", "18.10", provider.ResolutionStrategyLatestReleased, "18.10.0"},
 	}
 
 	for _, tt := range tests {
@@ -35,14 +35,14 @@ func TestAsdfInstallNodeVersion(t *testing.T) {
 			ExecEnv: testEnv.toExecEnv(),
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			request := toolprovider.ToolRequest{
+			request := provider.ToolRequest{
 				ToolName:           "nodejs",
 				UnparsedVersion:    tt.requestedVersion,
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 			result, err := asdfProvider.InstallTool(request)
 			require.NoError(t, err)
-			require.Equal(t, toolprovider.ToolID("nodejs"), result.ToolName)
+			require.Equal(t, provider.ToolID("nodejs"), result.ToolName)
 			require.Equal(t, tt.expectedVersion, result.ConcreteVersion)
 			require.False(t, result.IsAlreadyInstalled)
 		})
@@ -60,13 +60,13 @@ func TestCorepackWithNewNodeInstall(t *testing.T) {
 	asdfProvider := asdf.AsdfToolProvider{
 		ExecEnv: testEnv.toExecEnv(),
 	}
-	request := toolprovider.ToolRequest{
+	request := provider.ToolRequest{
 		ToolName:        "nodejs",
 		UnparsedVersion: "22.17.0",
 	}
 	result, err := asdfProvider.InstallTool(request)
 	require.NoError(t, err)
-	require.Equal(t, toolprovider.ToolID("nodejs"), result.ToolName)
+	require.Equal(t, provider.ToolID("nodejs"), result.ToolName)
 	require.Equal(t, "22.17.0", result.ConcreteVersion)
 	require.False(t, result.IsAlreadyInstalled)
 

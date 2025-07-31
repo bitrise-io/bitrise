@@ -3,12 +3,12 @@ package asdf
 import (
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/workarounds"
 )
 
 func (a *AsdfToolProvider) installToolVersion(
-	toolName toolprovider.ToolID,
+	toolName provider.ToolID,
 	versionString string,
 ) error {
 	if toolName == "" || versionString == "" {
@@ -17,7 +17,7 @@ func (a *AsdfToolProvider) installToolVersion(
 
 	out, err := a.ExecEnv.RunAsdf("install", string(toolName), versionString)
 	if err != nil {
-		return toolprovider.ToolInstallError{
+		return provider.ToolInstallError{
 			ToolName:         string(toolName),
 			RequestedVersion: versionString,
 			Cause:            fmt.Sprintf("asdf install %s %s: %s", string(toolName), versionString, err),

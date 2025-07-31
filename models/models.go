@@ -183,18 +183,6 @@ type AppModel struct {
 	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 }
 
-type ToolID string
-
-// ToolsModel is a mapping of tool IDs to their versions (see package toolprovider about the version syntax)
-type ToolsModel map[ToolID]string
-
-type ToolConfigModel struct {
-	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
-	
-	// Extra tool-plugins on top of Bitrise-vetted integrations. This is very provider-specific, but the map value is a URL to the plugin source.
-	ExtraPlugins map[ToolID]string `json:"extra_plugins,omitempty" yaml:"extra_plugins,omitempty"`
-}
-
 type BitriseDataModel struct {
 	FormatVersion        string `json:"format_version" yaml:"format_version"`
 	DefaultStepLibSource string `json:"default_step_lib_source,omitempty" yaml:"default_step_lib_source,omitempty"`

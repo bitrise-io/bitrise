@@ -3,7 +3,7 @@ package asdf_test
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/assert"
@@ -263,7 +263,7 @@ func TestStrictResolution(t *testing.T) {
 		},
 	}
 
-	runVersionResolutionTests(t, tests, toolprovider.ResolutionStrategyStrict)
+	runVersionResolutionTests(t, tests, provider.ResolutionStrategyStrict)
 }
 
 func TestLatestInstalledResolution(t *testing.T) {
@@ -637,7 +637,7 @@ func TestLatestInstalledResolution(t *testing.T) {
 		},
 	}
 
-	runVersionResolutionTests(t, tests, toolprovider.ResolutionStrategyLatestInstalled)
+	runVersionResolutionTests(t, tests, provider.ResolutionStrategyLatestInstalled)
 }
 
 func TestLatestReleasedResolution(t *testing.T) {
@@ -1005,7 +1005,7 @@ func TestLatestReleasedResolution(t *testing.T) {
 		},
 	}
 
-	runVersionResolutionTests(t, tests, toolprovider.ResolutionStrategyLatestReleased)
+	runVersionResolutionTests(t, tests, provider.ResolutionStrategyLatestReleased)
 }
 
 func runVersionResolutionTests(
@@ -1018,11 +1018,11 @@ func runVersionResolutionTests(
 		expectedResolution asdf.VersionResolution
 		expectedErr        error
 	},
-	strategy toolprovider.ResolutionStrategy,
+	strategy provider.ResolutionStrategy,
 ) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			declaration := toolprovider.ToolRequest{
+			declaration := provider.ToolRequest{
 				ToolName:           "test-tool",
 				UnparsedVersion:    tt.requestedVersion,
 				ResolutionStrategy: strategy,

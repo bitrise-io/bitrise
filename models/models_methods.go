@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/sliceutil"
@@ -1080,39 +1078,6 @@ func validateID(id, modelType string) (string, error) {
 	}
 
 	return "", nil
-}
-
-func validateTools(config *BitriseDataModel) error {
-	if config.Tools == nil {
-		return nil
-	}
-
-	for toolID, versionString := range config.Tools {
-		_, _, err := toolprovider.ParseVersionString(versionString)
-		if err != nil {
-			return fmt.Errorf("%s: invalid version syntax %s: %w", toolID, versionString, err)
-		}
-	}
-
-	return nil
-}
-
-func validateToolConfig(toolConfig *ToolConfigModel) error {
-	if toolConfig == nil {
-		return nil
-	}
-
-	if toolConfig.Provider != "" && !slices.Contains(toolprovider.SupportedProviders, toolConfig.Provider) {
-		return fmt.Errorf("invalid provider: %s, should be one of: %v", toolConfig.Provider, toolprovider.SupportedProviders)
-	}
-
-	for id, url := range toolConfig.ExtraPlugins {
-		if url == "" {
-			return fmt.Errorf("URL of extra plugin %s is empty", id)
-		}
-	}
-
-	return nil
 }
 
 // ----------------------------
