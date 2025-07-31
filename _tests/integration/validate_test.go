@@ -72,7 +72,6 @@ tools:
   nodejs: ""
 
 tool_config:
-  provider: "unsupported"
   extra_plugins:
     empty-url-tool: ""
 `

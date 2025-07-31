@@ -25,7 +25,7 @@ const ToolSyntaxPatternLatest = `(.*):latest$`
 const ToolSyntaxPatternInstalled = `(.*):installed$`
 
 func isProviderSupported(providerName string) bool {
-	return providerName != "" && slices.Contains(ToolProviders, providerName)
+	return slices.Contains(ToolProviders, providerName) || providerName == "" // Provider is optional, there is a default provider.
 }
 
 func validateToolConfig(toolConfig *ToolConfigModel) error {
