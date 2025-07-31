@@ -269,14 +269,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	// App level environment
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
-	// Toolprovider entrypoint
-	err := toolprovider.Run(r.config.Config)
-	if err != nil {
-		// TODO: better error logging
-		return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
-	}
-	// append to environments
-
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
 	}
@@ -287,6 +279,14 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	environments = append(environments, buildRunResultEnvs...)
 
 	environments = append(environments, targetWorkflow.Environments...)
+
+	// Toolprovider entrypoint
+	toolEnvs, err := toolprovider.Run(r.config.Config)
+	if err != nil {
+		// TODO: better error logging
+		return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
+	}
+	environments = append(environments, toolEnvs...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
