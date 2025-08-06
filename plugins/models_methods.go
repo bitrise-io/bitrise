@@ -112,15 +112,8 @@ func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
 		return errors.New("missing name")
 	}
 
-	osxRemoteExecutable := false
-	if plugin.Executable.OSX != "" {
-		osxRemoteExecutable = true
-	}
-
-	linuxRemoteExecutable := false
-	if plugin.Executable.Linux != "" {
-		linuxRemoteExecutable = true
-	}
+	osxRemoteExecutable := plugin.Executable.OSX != ""
+	linuxRemoteExecutable := plugin.Executable.Linux != ""
 
 	if linuxRemoteExecutable != osxRemoteExecutable {
 		return errors.New("both osx and linux executable should be defined, or non of them")

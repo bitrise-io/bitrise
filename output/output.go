@@ -36,7 +36,7 @@ func ConfigureOutputFormat(c *cli.Context) error {
 		Format = FormatRaw
 	default:
 		// invalid
-		return fmt.Errorf("Invalid Output Format: %s", outFmt)
+		return fmt.Errorf("invalid output format: %s", outFmt)
 	}
 	return nil
 }

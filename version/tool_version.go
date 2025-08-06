@@ -21,7 +21,7 @@ func StepmanVersion() (version.Version, error) {
 		return version.Version{}, err
 	}
 	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", versionOut)
+		return version.Version{}, fmt.Errorf("parse version %s", versionOut)
 	}
 
 	return *versionPtr, nil
@@ -40,7 +40,7 @@ func EnvmanVersion(binPath string) (version.Version, error) {
 		return version.Version{}, err
 	}
 	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", versionOut)
+		return version.Version{}, fmt.Errorf("parse version %s", versionOut)
 	}
 
 	return *versionPtr, nil
@@ -53,7 +53,7 @@ func BitriseCliVersion() (version.Version, error) {
 		return version.Version{}, err
 	}
 	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("Failed to parse version (%s)", VERSION)
+		return version.Version{}, fmt.Errorf("parse version %s", VERSION)
 	}
 
 	return *versionPtr, nil

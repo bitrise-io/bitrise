@@ -150,7 +150,7 @@ func (v ValidationModel) String() string {
 func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string) (*ValidationItemModel, error) {
 	pth, err := GetBitriseConfigFilePath(bitriseConfigPath)
 	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
-		return nil, fmt.Errorf("Failed to get config path, err: %s", err)
+		return nil, fmt.Errorf("failed to get config path, err: %s", err)
 	}
 
 	if pth != "" || (pth == "" && bitriseConfigBase64Data != "") {
@@ -174,7 +174,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 func validateInventory(inventoryPath string, inventoryBase64Data string) (*ValidationItemModel, error) {
 	pth, err := GetInventoryFilePath(inventoryPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get secrets path, err: %s", err)
+		return nil, fmt.Errorf("failed to get secrets path, err: %s", err)
 	}
 
 	if pth != "" || inventoryBase64Data != "" {
@@ -212,7 +212,7 @@ func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inven
 	}
 
 	if validation.Config == nil && validation.Secrets == nil {
-		return &validation, warnings, fmt.Errorf("No config or secrets found for validation")
+		return &validation, warnings, fmt.Errorf("no config or secrets found for validation")
 	}
 
 	return &validation, warnings, nil

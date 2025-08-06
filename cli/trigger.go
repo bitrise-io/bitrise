@@ -122,7 +122,7 @@ func trigger(c *cli.Context) error {
 		inventoryPath, inventoryBase64Data,
 		jsonParams, jsonParamsBase64)
 	if err != nil {
-		return fmt.Errorf("Failed to parse trigger command params, error: %s", err)
+		return fmt.Errorf("failed to parse trigger command params, error: %s", err)
 	}
 
 	// Inventory validation

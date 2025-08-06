@@ -170,6 +170,7 @@ var failingDeployStepErrorMessages = []string{`failed to create file artifact: /
   failed to create file artifact: /bitrise/src/assets:
     failed to get file size, error: file not exist at: /bitrise/src/assets`}
 
+//nolint:staticcheck
 const failingDeployStepLog = `[34;1mCollecting files to deploy...
 [0mBuild Artifact deployment mode: deploying single file
 List of files to deploy:
