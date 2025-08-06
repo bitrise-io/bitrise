@@ -30,8 +30,15 @@ func (a *AsdfToolProvider) asdfVersion() (*version.Version, error) {
 	return ver, nil
 }
 
-// TODO: check if tool-plugin is installed
 func (a *AsdfToolProvider) listInstalled(toolName provider.ToolID) ([]string, error) {
+	isInstalled, err := a.isPluginInstalled(PluginSource{PluginName: provider.ToolID(toolName)})
+	if err != nil {
+		return nil, fmt.Errorf("check if %s is installed: %w", toolName, err)
+	}
+	if !isInstalled {
+		return nil, fmt.Errorf("tool plugin %s is not installed", toolName)
+	}
+
 	output, err := a.ExecEnv.RunAsdf("list", string(toolName))
 	if err != nil {
 		// asdf 0.16.0+ returns exit code 1 if no versions are installed
@@ -49,8 +56,15 @@ func (a *AsdfToolProvider) listInstalled(toolName provider.ToolID) ([]string, er
 	return filteredVersions, nil
 }
 
-// TODO: check if tool-plugin is installed
 func (a *AsdfToolProvider) listReleased(toolName provider.ToolID) ([]string, error) {
+	isInstalled, err := a.isPluginInstalled(PluginSource{PluginName: provider.ToolID(toolName)})
+	if err != nil {
+		return nil, fmt.Errorf("check if %s is installed: %w", toolName, err)
+	}
+	if !isInstalled {
+		return nil, fmt.Errorf("tool plugin %s is not installed", toolName)
+	}
+
 	asdfVer, err := a.asdfVersion()
 	if err != nil {
 		return nil, err

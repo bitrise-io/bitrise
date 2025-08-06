@@ -13,6 +13,8 @@ func (a AsdfToolProvider) ActivateEnv(result provider.ToolInstallResult) (provid
 		ContributedEnvVars: map[string]string{
 			envKey: result.ConcreteVersion,
 		},
-		ContributedPaths: []string{}, // TODO: shims dir?
+		// Only required path is the shims dir, but we rely on the system-wide asdf install anyway
+		// (see Bootstrap() for details)
+		ContributedPaths: []string{},
 	}, nil
 }
