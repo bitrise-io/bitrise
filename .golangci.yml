@@ -18,6 +18,9 @@ linters:
     rules:
       - linters:
           - staticcheck
+        text: QF1003 # https://staticcheck.dev/docs/checks#QF1003
+      - linters:
+          - staticcheck
         path: cli/update.go
       - linters:
           - govet
