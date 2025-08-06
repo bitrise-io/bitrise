@@ -24,10 +24,8 @@ func (a AsdfToolProvider) ID() string {
 }
 
 func (a AsdfToolProvider) Bootstrap() error {
-	// TODO:
-	// Check if asdf is installed
-	// Check if asdf version satisfies the supported version range
-
+	// TODO: not implemented yet. asdf has been installed to stacks for a while now, so this is not needed.
+	// We might be able to replace asdf with Mise first.
 	return nil
 }
 
