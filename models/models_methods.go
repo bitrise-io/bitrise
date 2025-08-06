@@ -101,7 +101,7 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 		}
 	}
 
-	workflowStack = removeWorkflowName(workflowID, workflowStack)
+	removeWorkflowName(workflowID, workflowStack)
 
 	return nil
 }

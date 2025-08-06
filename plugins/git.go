@@ -60,12 +60,6 @@ func runForOutputAndHandle(cmd *command.Model) (string, error) {
 	return out, nil
 }
 
-func commitHashOfTag(cloneIntoDir, tag string) (string, error) {
-	cmd := command.New("git", "show-ref", "--hash", tag)
-	cmd.SetDir(cloneIntoDir)
-	return runForOutputAndHandle(cmd)
-}
-
 func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
 	cmd := command.New("git", "ls-remote", "--tags")
 	cmd.SetDir(cloneIntoDir)
@@ -123,12 +117,6 @@ func gitCheckout(cloneIntoDir, gitCheckoutParam string) error {
 	cmd := command.New("git", "checkout", gitCheckoutParam)
 	cmd.SetDir(cloneIntoDir)
 	return runAndHandle(cmd)
-}
-
-func gitLog(cloneIntoDir, formatParam string) (string, error) {
-	cmd := command.New("git", "log", "-1", "--format="+formatParam)
-	cmd.SetDir(cloneIntoDir)
-	return runForOutputAndHandle(cmd)
 }
 
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {

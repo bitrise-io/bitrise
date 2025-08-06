@@ -149,6 +149,7 @@ To increase env var limits please visit: https://support.bitrise.io/en/articles/
 
 				wantEnvs, err := envmanCLI.ConvertToEnvsJSONModel(tt.envsList, true, false, &envmanEnv.DefaultEnvironmentSource{})
 				require.Equal(t, wantEnvs, gotEnvs)
+				require.NoError(t, err)
 			}
 
 		})

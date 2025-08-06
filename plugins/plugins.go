@@ -59,7 +59,7 @@ func ParseArgs(args []string) (string, []string, bool) {
 
 			pluginName = pluginSplits[1]
 			if len(args) > idx {
-				pluginArgs = args[idx+1 : len(args)]
+				pluginArgs = args[idx+1:]
 			}
 			return pluginName, pluginArgs, true
 		}
@@ -123,7 +123,7 @@ func LoadPlugin(name string) (Plugin, bool, error) {
 	pluginDir := GetPluginDir(name)
 
 	if exists, err := pathutil.IsDirExists(pluginDir); err != nil {
-		return Plugin{}, false, fmt.Errorf("Failed to check dir (%s), err: %s", pluginDir, err)
+		return Plugin{}, false, fmt.Errorf("failed to check dir (%s), err: %s", pluginDir, err)
 	} else if !exists {
 		return Plugin{}, false, nil
 	}
