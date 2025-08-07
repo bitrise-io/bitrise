@@ -103,7 +103,7 @@ func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doClean
 	}
 
 	log.Print()
-	log.Donef("All the required tools are installed! We're ready to rock!!")
+	log.Donef("Bitrise tools are installed and ready to use!")
 
 	if err := configs.SaveSetupSuccessForVersion(appVersion); err != nil {
 		return fmt.Errorf("failed to save setup-success into config file, error: %s", err)
