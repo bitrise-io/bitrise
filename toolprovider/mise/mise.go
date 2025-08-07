@@ -65,6 +65,18 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		return provider.ToolInstallResult{}, err
 	}
 
+	versionExists, err := m.versionExists(tool.ToolName, tool.UnparsedVersion)
+	if err != nil {
+		return provider.ToolInstallResult{}, fmt.Errorf("check if version exists: %w", err)
+	}
+	if !versionExists {
+		return provider.ToolInstallResult{}, provider.ToolInstallError{
+			ToolName:         tool.ToolName,
+			RequestedVersion: tool.UnparsedVersion,
+			Cause:            fmt.Sprintf("no match for requested version %s", tool.UnparsedVersion),
+		}
+	}
+
 	err = m.installToolVersion(tool)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

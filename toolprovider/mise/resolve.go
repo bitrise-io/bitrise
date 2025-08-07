@@ -55,3 +55,17 @@ func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, ve
 
 	return v, nil
 }
+
+func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version string) (bool, error) {
+	// Notes:
+	// - ls-remote accepts both fuzzy and concrete versions
+	// - it can return multiple versions (one per line) when a fuzzy version is provided
+	// - in case of no matching version, the exit code is still 0, just there is no output
+	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
+	output, err := m.ExecEnv.RunMise("ls-remote", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+	if err != nil {
+		return false, fmt.Errorf("mise ls-remote %s@%s: %w", toolName, version, err)
+	}
+
+	return strings.TrimSpace(string(output)) != "", nil
+}
