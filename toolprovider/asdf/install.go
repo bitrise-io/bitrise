@@ -18,7 +18,7 @@ func (a *AsdfToolProvider) installToolVersion(
 	out, err := a.ExecEnv.RunAsdf("install", string(toolName), versionString)
 	if err != nil {
 		return provider.ToolInstallError{
-			ToolName:         string(toolName),
+			ToolName:         toolName,
 			RequestedVersion: versionString,
 			Cause:            fmt.Sprintf("asdf install %s %s: %s", string(toolName), versionString, err),
 			RawOutput:        out,

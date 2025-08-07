@@ -34,7 +34,7 @@ func (a AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	if err != nil {
 		// E.g. parse error while resolving plugin source.
 		return provider.ToolInstallError{
-			ToolName:         string(tool.ToolName),
+			ToolName:         tool.ToolName,
 			RequestedVersion: tool.UnparsedVersion,
 			Cause:            fmt.Sprintf("Couldn't resolve plugin source: %s", err),
 			Recommendation:   "Review the syntax of the `plugin` field",
@@ -42,7 +42,7 @@ func (a AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	}
 	if plugin == nil {
 		return provider.ToolInstallError{
-			ToolName:         string(tool.ToolName),
+			ToolName:         tool.ToolName,
 			RequestedVersion: tool.UnparsedVersion,
 			Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
 			Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and provide it in the `plugin` field of the tool declaration. For example: `plugin: %s::https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
