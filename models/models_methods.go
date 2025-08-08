@@ -73,14 +73,14 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 			stackStr += aWorkflowID + " -> "
 		}
 		stackStr += workflowID
-		return fmt.Errorf("Workflow reference cycle found: %s", stackStr)
+		return fmt.Errorf("workflow reference cycle found: %s", stackStr)
 	}
 	workflowStack = append(workflowStack, workflowID)
 
 	for _, beforeWorkflowName := range workflow.BeforeRun {
 		beforeWorkflow, exist := bitriseConfig.Workflows[beforeWorkflowName]
 		if !exist {
-			return errors.New("Workflow does not exist with name " + beforeWorkflowName)
+			return errors.New("workflow does not exist with name " + beforeWorkflowName)
 		}
 
 		err := checkWorkflowReferenceCycle(beforeWorkflowName, beforeWorkflow, bitriseConfig, workflowStack)
@@ -101,7 +101,7 @@ func checkWorkflowReferenceCycle(workflowID string, workflow WorkflowModel, bitr
 		}
 	}
 
-	workflowStack = removeWorkflowName(workflowID, workflowStack)
+	removeWorkflowName(workflowID, workflowStack)
 
 	return nil
 }
@@ -1275,7 +1275,7 @@ func MergeEnvironmentWith(env *envmanModels.EnvironmentItemModel, otherEnv envma
 	}
 
 	if otherKey != key {
-		return errors.New("Env keys are diferent")
+		return errors.New("env keys are diferent")
 	}
 
 	(*env)[key] = otherValue

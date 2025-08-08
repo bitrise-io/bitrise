@@ -102,30 +102,6 @@ var (
 		Name:  OuputFormatKey,
 		Usage: "Output format. Accepted: json, yml.",
 	}
-	flOutputPath = cli.StringFlag{
-		Name:  OuputPathKey,
-		Usage: "Output path, where the exported file will be saved.",
-	}
-	flPretty = cli.BoolFlag{
-		Name:  PrettyFormatKey,
-		Usage: "Pretty printed export?",
-	}
-	flID = cli.StringFlag{
-		Name:  IDKey + ", " + idKeyShort,
-		Usage: "Step id.",
-	}
-	flVersion = cli.StringFlag{
-		Name:  VersionKey + ", " + versionKeyShort,
-		Usage: "Step version.",
-	}
-	flShort = cli.BoolFlag{
-		Name:  ShortKey,
-		Usage: "Show short version of infos.",
-	}
-	flStepYML = cli.StringFlag{
-		Name:  StepYMLKey,
-		Usage: "Path of step.yml",
-	}
 
 	// Stepman share
 	flTag = cli.StringFlag{

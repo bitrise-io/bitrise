@@ -47,7 +47,7 @@ func downloadPluginBin(sourceURL, destinationPth string) error {
 
 	// Download local binary
 	if url.Scheme == "file" {
-		src := strings.Replace(sourceURL, url.Scheme+"://", "", -1)
+		src := strings.ReplaceAll(sourceURL, url.Scheme+"://", "")
 
 		if err := command.CopyFile(src, destinationPth); err != nil {
 			return fmt.Errorf("failed to copy (%s) to (%s)", src, destinationPth)

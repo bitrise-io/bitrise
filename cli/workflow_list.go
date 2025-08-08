@@ -104,7 +104,7 @@ func (output WorkflowListOutputModel) String() string {
 			workflowIDs = append(workflowIDs, id)
 		}
 
-		if !idOnly && (info == nil || len(info) == 0) {
+		if !idOnly && len(info) == 0 {
 			idOnly = true
 		}
 		if minimal && info["description"] != "" {
@@ -153,7 +153,7 @@ func (output WorkflowListOutputModel) JSON() string {
 			workflowIDs = append(workflowIDs, id)
 		}
 
-		if !idOnly && (info == nil || len(info) == 0) {
+		if !idOnly && len(info) == 0 {
 			idOnly = true
 		}
 	}

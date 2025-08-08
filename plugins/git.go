@@ -60,12 +60,6 @@ func runForOutputAndHandle(cmd *command.Model) (string, error) {
 	return out, nil
 }
 
-func commitHashOfTag(cloneIntoDir, tag string) (string, error) {
-	cmd := command.New("git", "show-ref", "--hash", tag)
-	cmd.SetDir(cloneIntoDir)
-	return runForOutputAndHandle(cmd)
-}
-
 func gitRemoteTagList(cloneIntoDir string) ([]string, error) {
 	cmd := command.New("git", "ls-remote", "--tags")
 	cmd.SetDir(cloneIntoDir)
@@ -125,34 +119,28 @@ func gitCheckout(cloneIntoDir, gitCheckoutParam string) error {
 	return runAndHandle(cmd)
 }
 
-func gitLog(cloneIntoDir, formatParam string) (string, error) {
-	cmd := command.New("git", "log", "-1", "--format="+formatParam)
-	cmd.SetDir(cloneIntoDir)
-	return runForOutputAndHandle(cmd)
-}
-
 func gitInitWithRemote(cloneIntoDir, repositoryURL string) error {
 	gitCheckPath := filepath.Join(cloneIntoDir, ".git")
 	if exist, err := pathutil.IsPathExists(gitCheckPath); err != nil {
-		return fmt.Errorf("Failed to check if file path exists (%s), err: %s", gitCheckPath, err)
+		return fmt.Errorf("failed to check if file path exists (%s), err: %s", gitCheckPath, err)
 	} else if exist {
 		return fmt.Errorf(".git folder already exists in the destination dir (%s)", gitCheckPath)
 	}
 
 	if err := os.MkdirAll(cloneIntoDir, 0755); err != nil {
-		return fmt.Errorf("Failed to create the clone_destination_dir at: %s", cloneIntoDir)
+		return fmt.Errorf("failed to create the clone_destination_dir at: %s", cloneIntoDir)
 	}
 
 	if err := gitInit(cloneIntoDir); err != nil {
-		return fmt.Errorf("Could not init git repository, err: %s", cloneIntoDir)
+		return fmt.Errorf("could not init git repository, err: %s", cloneIntoDir)
 	}
 
 	if err := gitAddRemote(cloneIntoDir, repositoryURL); err != nil {
-		return fmt.Errorf("Could not add remote, err: %s", err)
+		return fmt.Errorf("could not add remote, err: %s", err)
 	}
 
 	if err := gitFetch(cloneIntoDir); err != nil {
-		return fmt.Errorf("Could not fetch from repository, err: %s", err)
+		return fmt.Errorf("could not fetch from repository, err: %s", err)
 	}
 
 	return nil
@@ -179,7 +167,7 @@ func (s ByVersion) Less(i, j int) bool {
 func GitVersionTags(gitRepoDir string) ([]*ver.Version, error) {
 	tagList, err := gitRemoteTagList(gitRepoDir)
 	if err != nil {
-		return []*ver.Version{}, fmt.Errorf("Could not get version tag list, error: %s", err)
+		return []*ver.Version{}, fmt.Errorf("could not get version tag list, error: %s", err)
 	}
 
 	tags := filterVersionTags(tagList)

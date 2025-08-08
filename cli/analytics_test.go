@@ -3,7 +3,6 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/envman/v2/models"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +22,7 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 			name: "Secret filtering",
 			args: args{
 				environments: map[string]string{"secret_simulator_device": "secret_a_secret_b_secret_c"},
-				inputs: []models.EnvironmentItemModel{
+				inputs: []envmanModels.EnvironmentItemModel{
 					{"secret_simulator_device": "secret_a_secret_b_secret_c"},
 				},
 				secretValues: []string{"secret_a_secret_b_secret_c"},
@@ -36,7 +35,7 @@ func Test_expandStepInputsForAnalytics(t *testing.T) {
 			name: "Input is empty, and skip_if_empty is true",
 			args: args{
 				environments: map[string]string{},
-				inputs: []models.EnvironmentItemModel{
+				inputs: []envmanModels.EnvironmentItemModel{
 					{"myinput": ""},
 				},
 			},

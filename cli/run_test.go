@@ -1055,16 +1055,11 @@ func Test0Steps1Workflows(t *testing.T) {
 	_, err := config.Validate()
 	require.NoError(t, err)
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
-		StepmanUpdates: map[string]int{},
-	}
-
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "zero_steps"}
 	runner := NewWorkflowRunner(runConfig, nil)
-	buildRunResults, err = runner.runWorkflows(noOpTracker{})
+	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 0, len(buildRunResults.FailedSteps))
@@ -1095,16 +1090,11 @@ func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
 	_, err := config.Validate()
 	require.NoError(t, err)
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
-		StepmanUpdates: map[string]int{},
-	}
-
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
 	runner := NewWorkflowRunner(runConfig, nil)
-	buildRunResults, err = runner.runWorkflows(noOpTracker{})
+	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 
 	require.NoError(t, err)
 	require.Equal(t, 0, len(buildRunResults.SuccessSteps))
@@ -1151,16 +1141,11 @@ workflows:
 	require.NoError(t, err)
 	require.Equal(t, 0, len(warnings))
 
-	buildRunResults := models.BuildRunResultsModel{
-		StartTime:      time.Now(),
-		StepmanUpdates: map[string]int{},
-	}
-
 	require.NoError(t, configs.InitPaths())
 
 	runConfig := RunConfig{Config: config, Workflow: "trivial_fail"}
 	runner := NewWorkflowRunner(runConfig, nil)
-	buildRunResults, err = runner.runWorkflows(noOpTracker{})
+	buildRunResults, err := runner.runWorkflows(noOpTracker{})
 
 	require.NoError(t, err)
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
@@ -1813,7 +1798,7 @@ workflows:
 
 	runConfig := RunConfig{Config: config, Workflow: "out-test"}
 	runner := NewWorkflowRunner(runConfig, nil)
-	buildRunResults, err := runner.runWorkflows(noOpTracker{})
+	buildRunResults, _ := runner.runWorkflows(noOpTracker{})
 	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
 	require.Equal(t, 3, len(buildRunResults.SuccessSteps))
 	require.Equal(t, 1, len(buildRunResults.FailedSteps))
@@ -1943,7 +1928,7 @@ workflows:
 
 	runConfig := RunConfig{Config: config, Workflow: "target"}
 	runner := NewWorkflowRunner(runConfig, nil)
-	results, err := runner.runWorkflows(noOpTracker{})
+	results, _ := runner.runWorkflows(noOpTracker{})
 	require.Equal(t, 1, len(results.StepmanUpdates))
 }
 

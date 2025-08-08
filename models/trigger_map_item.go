@@ -425,7 +425,7 @@ func (item TriggerMapItemModel) validateNoPullRequestConditionsSet(idx int, fiel
 	if isStringLiteralOrRegexSet(item.PullRequestTargetBranch) {
 		return fmt.Errorf("trigger item #%d: both %s and pull_request_target_branch defined", idx+1, field)
 	}
-	//nolint:gosimple
+	//nolint:staticcheck
 	if item.IsDraftPullRequestEnabled() != defaultDraftPullRequestEnabled {
 		return fmt.Errorf("trigger item #%d: both %s and draft_pull_request_enabled defined", idx+1, field)
 	}
@@ -461,7 +461,7 @@ func (item TriggerMapItemModel) conditionsString() string {
 
 		if tag == "draft_pull_request_enabled" {
 			if boolPtrValue, ok := value.(*bool); ok {
-				//nolint:gosimple
+				//nolint:staticcheck
 				if boolPtrValue == nil || *boolPtrValue == defaultDraftPullRequestEnabled {
 					continue
 				}

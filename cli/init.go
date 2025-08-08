@@ -28,7 +28,7 @@ var initCmd = cli.Command{
 				logger.Print()
 
 				if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false); err != nil {
-					return fmt.Errorf("Setup failed, error: %s", err)
+					return fmt.Errorf("setup failed, error: %s", err)
 				}
 
 				if err := initConfig(c); err != nil {
@@ -54,7 +54,7 @@ func initConfig(c *cli.Context) error {
 	pluginName := "init"
 	plugin, found, err := plugins.LoadPlugin(pluginName)
 	if err != nil {
-		return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)
+		return fmt.Errorf("failed to get plugin (%s), error: %s", pluginName, err)
 	}
 
 	if !found {
@@ -66,7 +66,7 @@ func initConfig(c *cli.Context) error {
 		pluginArgs = []string{"--minimal"}
 	}
 	if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-		return fmt.Errorf("Failed to run plugin (%s), error: %s", pluginName, err)
+		return fmt.Errorf("failed to run plugin (%s), error: %s", pluginName, err)
 	}
 
 	return nil

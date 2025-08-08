@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -27,7 +28,7 @@ func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 			name: "Error log",
 			messages: []string{`[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`},
-			want: `[31;1mfailed to create file artifact: /bitrise/src/assets:
+  			want: `[31;1mfailed to create file artifact: /bitrise/src/assets:
   failed to get file size, error: file not exist at: /bitrise/src/assets[0m`,
 		},
 	}
@@ -59,6 +60,7 @@ func Test_GivenWriter_WhenConsoleLogging_ThenTransmitsLogs(t *testing.T) {
 	}
 }
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenConsoleLoggingAndSecretFiltering_ThenRedactsSecrets(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -70,6 +72,7 @@ func Test_GivenWriter_WhenConsoleLoggingAndSecretFiltering_ThenRedactsSecrets(t 
 		{
 			name:        "Simple message with error",
 			secrets:     []string{"1234"},
+			
 			messages:    []string{`[31;1mInvalid password: 1234[0m`},
 			wantMessage: `[31;1mInvalid password: [REDACTED][0m`,
 			wantError:   "Invalid password: [REDACTED]",
@@ -109,6 +112,7 @@ func Test_GivenWriter_WhenConsoleLoggingAndSecretFiltering_ThenRedactsSecrets(t 
 	}
 }
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenJSONLogging_ThenWritesJSON(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -159,6 +163,7 @@ func Test_GivenWriter_WhenJSONLogging_ThenWritesJSON(t *testing.T) {
 	}
 }
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -225,6 +230,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenWritesJSON(t *testin
 	}
 }
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -275,6 +281,7 @@ func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenReturnsError(t *test
 	}
 }
 
+//nolint:staticcheck
 func Test_GivenWriter_WhenJSONLoggingAndSecretFiltering_ThenRedactsSecrets(t *testing.T) {
 	tests := []struct {
 		name        string

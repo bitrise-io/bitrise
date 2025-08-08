@@ -84,7 +84,7 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("Failed to install plugin, error: %s", err)
+			return fmt.Errorf("failed to install plugin, error: %s", err)
 		}
 
 		if len(plugin.Description) > 0 {
@@ -118,7 +118,7 @@ func CheckIsHomebrewInstalled() error {
 	verStr, err := command.RunCommandAndReturnStdout("brew", "--version")
 	if err != nil {
 		log.Infof("")
-		return errors.New("Failed to get version")
+		return errors.New("failed to get version")
 	}
 
 	verSplit := strings.Split(verStr, "\n")
@@ -180,7 +180,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	if !isVersionOk {
 		if !isInstall {
 			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, versionOutput)
-			return errors.New("Failed to install required version")
+			return errors.New("failed to install required version")
 		}
 		return doInstall()
 	}

@@ -24,7 +24,7 @@ func TestEvaluateStepTemplateToBool(t *testing.T) {
 	require.Equal(t, nil, err)
 	require.Equal(t, false, isYes)
 
-	isYes, err = EvaluateTemplateToBool("", false, false, buildRes, envmanModels.EnvsJSONListModel{})
+	_, err = EvaluateTemplateToBool("", false, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.NotEqual(t, nil, err)
 
 	// these all should be `true`
@@ -309,7 +309,7 @@ func TestEvaluateTemplateToString(t *testing.T) {
 	buildRes := models.BuildRunResultsModel{}
 
 	propTempCont := ""
-	value, err := EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
+	_, err := EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.NotEqual(t, nil, err)
 
 	propTempCont = `
@@ -317,7 +317,7 @@ func TestEvaluateTemplateToString(t *testing.T) {
 value in case of IsCI
 {{ end }}
 `
-	value, err = EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
+	value, err := EvaluateTemplateToString(propTempCont, true, false, buildRes, envmanModels.EnvsJSONListModel{})
 	require.Equal(t, nil, err)
 	require.Equal(t, true, strings.Contains(value, "value in case of IsCI"))
 
