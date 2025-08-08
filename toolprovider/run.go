@@ -3,7 +3,9 @@ package toolprovider
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/bitrise-io/colorstring"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -14,6 +16,7 @@ import (
 )
 
 func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, error) {
+	startTime := time.Now()
 	toolRequests, err := getToolRequests(config)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -53,6 +56,7 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
+		toolStartTime := time.Now()
 		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
@@ -68,7 +72,7 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 			return nil, fmt.Errorf("install %s %s: %w", toolRequest.ToolName, toolRequest.UnparsedVersion, err)
 		}
 		toolInstalls = append(toolInstalls, result)
-		printInstallResult(toolRequest, result)		
+		printInstallResult(toolRequest, result, time.Since(toolStartTime))		
 	}
 
 	var activations []provider.EnvironmentActivation
@@ -79,7 +83,9 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 		}
 		activations = append(activations, activation)
 	}
-	log.Donef("✓ Tool setup complete")
+
+	duration := time.Since(startTime).Round(time.Millisecond)
+	log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
 	log.Printf("")
 
 	return convertToEnvmanEnvs(activations), nil

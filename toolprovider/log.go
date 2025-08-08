@@ -2,6 +2,7 @@ package toolprovider
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -52,19 +53,20 @@ func printInstallStart(toolRequest provider.ToolRequest) {
 	)
 }
 
-func printInstallResult(toolRequest provider.ToolRequest, result provider.ToolInstallResult) {
+func printInstallResult(toolRequest provider.ToolRequest, result provider.ToolInstallResult, duration time.Duration) {
 	var status string
 	if result.IsAlreadyInstalled {
 		status = "already installed"
 	} else {
 		status = "installed"
 	}
+
 	ver := ""
 	if result.ConcreteVersion != toolRequest.UnparsedVersion {
-		ver = fmt.Sprintf("(%s)", colorstring.Cyan(result.ConcreteVersion))
+		ver = fmt.Sprintf(" → %s", colorstring.Cyan(result.ConcreteVersion))
 	}
 
-	log.Printf("%s %s %s", colorstring.Green("✓"), status, ver)
+	log.Printf("%s %s%s (took %s)", colorstring.Green("✓"), status, ver, duration.Round(time.Millisecond))
 	log.Printf("")
 }
 

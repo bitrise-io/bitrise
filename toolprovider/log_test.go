@@ -3,6 +3,7 @@ package toolprovider
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -122,6 +123,7 @@ func TestPrintInstallStart(t *testing.T) {
 }
 
 func TestPrintInstallResult(t *testing.T) {
+	duration := time.Millisecond * 1234
 	tests := []struct {
 		name           string
 		toolRequest    provider.ToolRequest
@@ -139,7 +141,7 @@ func TestPrintInstallResult(t *testing.T) {
 				IsAlreadyInstalled: true,
 				ConcreteVersion:    "1.20.3",
 			},
-			expectedOutput: "\x1b[32;1m✓\x1b[0m already installed \n\n",
+			expectedOutput: "\x1b[32;1m✓\x1b[0m already installed (took 1.234s)\n\n",
 		},
 		{
 			name: "Newly installed with same version",
@@ -152,7 +154,7 @@ func TestPrintInstallResult(t *testing.T) {
 				IsAlreadyInstalled: false,
 				ConcreteVersion:    "20.0.0",
 			},
-			expectedOutput: "\x1b[32;1m✓\x1b[0m installed \n\n",
+			expectedOutput: "\x1b[32;1m✓\x1b[0m installed (took 1.234s)\n\n",
 		},
 		{
 			name: "Installed with different concrete version",
@@ -165,7 +167,7 @@ func TestPrintInstallResult(t *testing.T) {
 				IsAlreadyInstalled: false,
 				ConcreteVersion:    "3.2.1",
 			},
-			expectedOutput: "\x1b[32;1m✓\x1b[0m installed (\x1b[36;1m3.2.1\x1b[0m)\n\n",
+			expectedOutput: "\x1b[32;1m✓\x1b[0m installed → \x1b[36;1m3.2.1\x1b[0m (took 1.234s)\n\n",
 		},
 	}
 
@@ -173,7 +175,7 @@ func TestPrintInstallResult(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := setupTestLogger()
 
-			printInstallResult(tt.toolRequest, tt.result)
+			printInstallResult(tt.toolRequest, tt.result, duration)
 
 			assert.Equal(t, tt.expectedOutput, buf.String())
 		})
