@@ -19,7 +19,7 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 		plugin             string
 		expectedVersion    string
 	}{
-		{"Install specific version", "3.32.5-stable", provider.ResolutionStrategyStrict, "flutter::https://github.com/asdf-community/asdf-flutter.git", "3.32.5-stable"},
+		{"Install specific version", "3.32.5-stable", provider.ResolutionStrategyStrict, "https://github.com/asdf-community/asdf-flutter.git", "3.32.5-stable"},
 		{"Install specific version", "3.32.1-stable", provider.ResolutionStrategyStrict, "", "3.32.1-stable"},
 	}
 

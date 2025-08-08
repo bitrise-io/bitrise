@@ -63,5 +63,5 @@ func TestNewToolPluginError(t *testing.T) {
 	require.Equal(t, provider.ToolID("foo"), installErr.ToolName)
 	require.Equal(t, "1.0.0", installErr.RequestedVersion)
 	require.Equal(t, installErr.Cause, "This tool integration (foo) is not tested or vetted by Bitrise.")
-	require.Equal(t, installErr.Recommendation, "If you want to use this tool anyway, look up its asdf plugin and provide it in the `plugin` field of the tool declaration. For example: `plugin: foo::https://github/url/to/asdf/plugin/repo.git`")
+	require.Equal(t, installErr.Recommendation, "If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `foo: https://github/url/to/asdf/plugin/repo.git`")
 }
