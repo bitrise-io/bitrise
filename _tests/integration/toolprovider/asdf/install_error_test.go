@@ -32,7 +32,7 @@ func TestNoMatchingVersionError(t *testing.T) {
 
 	var installErr provider.ToolInstallError
 	require.ErrorAs(t, err, &installErr)
-	require.Equal(t, "nodejs", installErr.ToolName)
+	require.Equal(t, provider.ToolID("nodejs"), installErr.ToolName)
 	require.Equal(t, "22", installErr.RequestedVersion)
 	require.Contains(t, installErr.Error(), "no match for requested version 22")
 	require.Contains(t, installErr.Recommendation, "22:latest")
@@ -60,7 +60,7 @@ func TestNewToolPluginError(t *testing.T) {
 
 	var installErr provider.ToolInstallError
 	require.ErrorAs(t, err, &installErr)
-	require.Equal(t, "foo", installErr.ToolName)
+	require.Equal(t, provider.ToolID("foo"), installErr.ToolName)
 	require.Equal(t, "1.0.0", installErr.RequestedVersion)
 	require.Equal(t, installErr.Cause, "This tool integration (foo) is not tested or vetted by Bitrise.")
 	require.Equal(t, installErr.Recommendation, "If you want to use this tool anyway, look up its asdf plugin and provide it in the `plugin` field of the tool declaration. For example: `plugin: foo::https://github/url/to/asdf/plugin/repo.git`")
