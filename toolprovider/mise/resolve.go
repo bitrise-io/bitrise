@@ -43,7 +43,7 @@ func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, ver
 
 func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := m.ExecEnv.RunMise("latest", "--installed", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := m.ExecEnv.RunMise("latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest --installed %s@%s: %w", toolName, version, err)
 	}
