@@ -3,7 +3,6 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/envman/v2/models"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/stretchr/testify/require"
 )
@@ -33,12 +32,12 @@ func Test_prepareStepEnvironment(t *testing.T) {
 			params: prepareStepInputParams{
 				environment: []envmanModels.EnvironmentItemModel{},
 				inputs: []envmanModels.EnvironmentItemModel{
-					{"D": "{{.IsCI}}", "opts": models.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
+					{"D": "{{.IsCI}}", "opts": envmanModels.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
 				},
 				isCIMode: true,
 			},
 			want1: []envmanModels.EnvironmentItemModel{
-				{"D": "true", "opts": models.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
+				{"D": "true", "opts": envmanModels.EnvironmentItemOptionsModel{IsTemplate: newBool(true)}},
 			},
 			want2: map[string]string{
 				"D": "true",
@@ -52,12 +51,12 @@ func Test_prepareStepEnvironment(t *testing.T) {
 					{"A": "B", "opts": map[string]interface{}{}},
 				},
 				inputs: []envmanModels.EnvironmentItemModel{
-					{"myinput": "$A", "opts": models.EnvironmentItemOptionsModel{IsExpand: nil}},
+					{"myinput": "$A", "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: nil}},
 				},
 			},
 			want1: []envmanModels.EnvironmentItemModel{
-				{"A": "B", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
-				{"myinput": "$A", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"A": "B", "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"myinput": "$A", "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
 			},
 			want2: map[string]string{
 				"A":       "B",
@@ -72,16 +71,16 @@ func Test_prepareStepEnvironment(t *testing.T) {
 					{"A": "B", "opts": map[string]interface{}{}},
 				},
 				inputs: []envmanModels.EnvironmentItemModel{
-					{"bool": true, "opts": models.EnvironmentItemOptionsModel{IsExpand: nil}},
-					{"bool2": true, "opts": models.EnvironmentItemOptionsModel{IsExpand: nil, IsTemplate: newBool(true)}},
-					{"number": 12, "opts": models.EnvironmentItemOptionsModel{IsExpand: nil}},
+					{"bool": true, "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: nil}},
+					{"bool2": true, "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: nil, IsTemplate: newBool(true)}},
+					{"number": 12, "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: nil}},
 				},
 			},
 			want1: []envmanModels.EnvironmentItemModel{
-				{"A": "B", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
-				{"bool": true, "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
-				{"bool2": "true", "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true), IsTemplate: newBool(true)}},
-				{"number": 12, "opts": models.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"A": "B", "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"bool": true, "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
+				{"bool2": "true", "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true), IsTemplate: newBool(true)}},
+				{"number": 12, "opts": envmanModels.EnvironmentItemOptionsModel{IsExpand: newBool(true)}},
 			},
 			want2: map[string]string{
 				"A":      "B",

@@ -12,7 +12,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"
@@ -112,15 +111,8 @@ func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
 		return errors.New("missing name")
 	}
 
-	osxRemoteExecutable := false
-	if plugin.Executable.OSX != "" {
-		osxRemoteExecutable = true
-	}
-
-	linuxRemoteExecutable := false
-	if plugin.Executable.Linux != "" {
-		linuxRemoteExecutable = true
-	}
+	osxRemoteExecutable := plugin.Executable.OSX != ""
+	linuxRemoteExecutable := plugin.Executable.Linux != ""
 
 	if linuxRemoteExecutable != osxRemoteExecutable {
 		return errors.New("both osx and linux executable should be defined, or non of them")
@@ -179,13 +171,6 @@ func (plugin Plugin) String() string {
 	return pluginStr
 }
 
-func systemOsName() (string, error) {
-	osOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("uname", "-s")
-	if err != nil {
-		return "", err
-	}
-	return strip(osOut), nil
-}
 
 // ExecutableURL ...
 func (plugin Plugin) ExecutableURL() string {

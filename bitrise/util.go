@@ -36,13 +36,13 @@ func InventoryModelFromYAMLBytes(inventoryBytes []byte) (inventory envmanModels.
 
 	for _, env := range inventory.Envs {
 		if err := env.Normalize(); err != nil {
-			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to normalize bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("failed to normalize bitrise inventory, error: %s", err)
 		}
 		if err := env.FillMissingDefaults(); err != nil {
-			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to fill bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("failed to fill bitrise inventory, error: %s", err)
 		}
 		if err := env.Validate(); err != nil {
-			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("Failed to validate bitrise inventory, error: %s", err)
+			return envmanModels.EnvsSerializeModel{}, fmt.Errorf("failed to validate bitrise inventory, error: %s", err)
 		}
 	}
 
@@ -304,7 +304,7 @@ func ReadBitriseConfig(pth string, validation ValidationType) (models.BitriseDat
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return models.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
-		return models.BitriseDataModel{}, []string{}, fmt.Errorf("No file found at path: %s", pth)
+		return models.BitriseDataModel{}, []string{}, fmt.Errorf("no file found at path: %s", pth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)
@@ -323,7 +323,7 @@ func ReadSpecStep(pth string) (stepmanModels.StepModel, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
 		return stepmanModels.StepModel{}, err
 	} else if !isExists {
-		return stepmanModels.StepModel{}, fmt.Errorf("No file found at path: %s", pth)
+		return stepmanModels.StepModel{}, fmt.Errorf("no file found at path: %s", pth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)

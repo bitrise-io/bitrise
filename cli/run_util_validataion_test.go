@@ -61,7 +61,7 @@ workflows:
   b: {}
 `,
 			validation: bitrise.ValidationTypeMinimal,
-			wantErr:    "failed to get Bitrise config (bitrise.yml) from base 64 data: Failed to parse bitrise config, error: Workflow does not exist with name c",
+			wantErr:    "failed to get Bitrise config (bitrise.yml) from base 64 data: failed to parse bitrise config, error: workflow does not exist with name c",
 		},
 	}
 

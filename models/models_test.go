@@ -51,7 +51,7 @@ func TestStatusReasonPreparationFailed(t *testing.T) {
 }
 
 func TestStatusReasonFailedSkippable(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:   StepRunStatusCodeFailedSkippable,
 		ExitCode: 10,
 		ErrorStr: "ABCD",
@@ -65,7 +65,7 @@ func TestStatusReasonFailedSkippable(t *testing.T) {
 }
 
 func TestStatusReasonSkipped(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status: StepRunStatusCodeSkipped,
 	}
 	expectedStatusReason := `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`
@@ -78,13 +78,13 @@ func TestStatusReasonSkipped(t *testing.T) {
 
 func TestStatusReasonSkippedWithRunIf(t *testing.T) {
 	var runif = "2+2==4"
-	var model models.StepModel = models.StepModel{
+	var model = models.StepModel{
 		RunIf: &runif,
 	}
-	var info models.StepInfoModel = models.StepInfoModel{
+	var info = models.StepInfoModel{
 		Step: model,
 	}
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:   StepRunStatusCodeSkippedWithRunIf,
 		StepInfo: info,
 	}
@@ -103,7 +103,7 @@ func TestStatusReasonCustomTimeout(t *testing.T) {
 	info := models.StepInfoModel{
 		Step: model,
 	}
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:   StepRunStatusAbortedWithCustomTimeout,
 		StepInfo: info,
 		ExitCode: 5,
@@ -124,7 +124,7 @@ func TestStatusReasonNoOutputTimeout(t *testing.T) {
 	info := models.StepInfoModel{
 		Step: model,
 	}
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status:          StepRunStatusAbortedWithNoOutputTimeout,
 		StepInfo:        info,
 		ExitCode:        6,
@@ -140,7 +140,7 @@ func TestStatusReasonNoOutputTimeout(t *testing.T) {
 }
 
 func TestStatusReasonDefault(t *testing.T) {
-	var s StepRunResultsModel = StepRunResultsModel{
+	var s = StepRunResultsModel{
 		Status: -999,
 	}
 	expectedStatusReason := ""
@@ -185,7 +185,7 @@ func TestShortReason(t *testing.T) {
 	actual := make(map[StepRunStatus]string)
 
 	for k := range expected {
-		var s StepRunResultsModel = StepRunResultsModel{
+		var s = StepRunResultsModel{
 			Status: k,
 		}
 		actual[k] = s.Status.Name()

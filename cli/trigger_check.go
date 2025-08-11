@@ -135,7 +135,7 @@ func triggerCheck(c *cli.Context) error {
 	// Format validation
 	if triggerParams.Format == "" {
 		triggerParams.Format = output.FormatRaw
-	} else if !(triggerParams.Format == output.FormatRaw || triggerParams.Format == output.FormatJSON) {
+	} else if triggerParams.Format != output.FormatRaw && triggerParams.Format != output.FormatJSON {
 		registerFatal(fmt.Sprintf("Invalid format: %s", triggerParams.Format), warnings, output.FormatJSON)
 	}
 
@@ -194,7 +194,6 @@ func triggerCheck(c *cli.Context) error {
 			}
 		}
 		log.Print(msg)
-		break
 	case output.FormatJSON:
 		bytes, err := json.Marshal(triggerModel)
 		if err != nil {
@@ -202,7 +201,6 @@ func triggerCheck(c *cli.Context) error {
 		}
 
 		log.Print(string(bytes))
-		break
 	default:
 		registerFatal(fmt.Sprintf("Invalid format: %s", triggerParams.Format), warnings, output.FormatJSON)
 	}

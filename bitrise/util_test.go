@@ -32,7 +32,7 @@ func TestApplyOutputAliases(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(updatedEnvs))
 
-		updatedKey, value, err := updatedEnvs[0].GetKeyValuePair()
+		updatedKey, value, _ := updatedEnvs[0].GetKeyValuePair()
 		require.Equal(t, "ALIAS_KEY", updatedKey)
 		require.Equal(t, "value", value)
 	}

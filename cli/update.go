@@ -179,7 +179,7 @@ func download(version string) error {
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf(downloadURL, version, strings.Title(runtime.GOOS))
+	url := fmt.Sprintf(downloadURL, version, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
 
 	tmpfile, err := os.CreateTemp("", "bitrise")
 	if err != nil {

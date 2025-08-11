@@ -24,7 +24,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/bitrise/v2/toolversions"
 	envman "github.com/bitrise-io/envman/v2/cli"
-	"github.com/bitrise-io/envman/v2/env"
 	envmanEnv "github.com/bitrise-io/envman/v2/env"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-steputils/v2/secretkeys"
@@ -513,7 +512,7 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 	}
 
 	environmentItemModels := append(environments, additionalEnvironments...)
-	envSource := &env.DefaultEnvironmentSource{}
+	envSource := &envmanEnv.DefaultEnvironmentSource{}
 	stepDeclaredEnvironments, expandedStepEnvironment, redactedInputsWithType, err := prepareStepEnvironment(prepareStepInputParams{
 		environment:       environmentItemModels,
 		inputs:            stepInputs,
@@ -584,7 +583,7 @@ func (r WorkflowRunner) runStep(
 		return checkAndInstallStepDependencies(step)
 	}); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{},
-			fmt.Errorf("Failed to install Step dependency, error: %s", err)
+			fmt.Errorf("failed to install Step dependency, error: %s", err)
 	}
 
 	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
@@ -719,7 +718,7 @@ func (r WorkflowRunner) executeStep(
 		name = "docker"
 		runningContainer := r.dockerManager.GetContainerForStepGroup(groupID)
 		if runningContainer == nil {
-			return 1, fmt.Errorf("Docker container does not exist")
+			return 1, fmt.Errorf("docker container does not exist")
 		}
 
 		args = runningContainer.ExecuteCommandArgs(envs)
@@ -941,12 +940,12 @@ func isDirEmpty(path string) (bool, error) {
 func GetBitriseConfigFromBase64Data(configBase64Str string, validation bitrise.ValidationType) (models.BitriseDataModel, []string, error) {
 	configBase64Bytes, err := base64.StdEncoding.DecodeString(configBase64Str)
 	if err != nil {
-		return models.BitriseDataModel{}, []string{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+		return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to decode base 64 string, error: %s", err)
 	}
 
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytesWithValidation(configBase64Bytes, validation)
 	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("Failed to parse bitrise config, error: %s", err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise config, error: %s", err)
 	}
 
 	return config, warnings, nil
@@ -1032,7 +1031,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 func GetInventoryFromBase64Data(inventoryBase64Str string) ([]envmanModels.EnvironmentItemModel, error) {
 	inventoryBase64Bytes, err := base64.StdEncoding.DecodeString(inventoryBase64Str)
 	if err != nil {
-		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to decode base 64 string, error: %s", err)
+		return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to decode base 64 string, error: %s", err)
 	}
 
 	inventory, err := bitrise.InventoryModelFromYAMLBytes(inventoryBase64Bytes)
@@ -1064,13 +1063,13 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 	if inventoryBase64Data != "" {
 		inventory, err := GetInventoryFromBase64Data(inventoryBase64Data)
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory from base 64 data, err: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get inventory from base 64 data, err: %s", err)
 		}
 		inventoryEnvironments = inventory
 	} else {
 		inventoryPath, err := GetInventoryFilePath(inventoryPath)
 		if err != nil {
-			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Failed to get inventory path: %s", err)
+			return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("failed to get inventory path: %s", err)
 		}
 
 		if inventoryPath != "" {
@@ -1085,7 +1084,7 @@ func CreateInventoryFromCLIParams(inventoryBase64Data, inventoryPath string) ([]
 
 			inventory, err := bitrise.CollectEnvironmentsFromFile(inventoryPath)
 			if err != nil {
-				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("Invalid inventory format: %s", err)
+				return []envmanModels.EnvironmentItemModel{}, fmt.Errorf("invalid inventory format: %s", err)
 			}
 			inventoryEnvironments = inventory
 		}
@@ -1156,7 +1155,6 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 				} else {
 					isSkippedBecauseOfPlatform = true
 				}
-				break
 			default:
 				return errors.New("Not supported dependency (" + dep.Manager + ") (" + dep.Name + ")")
 			}

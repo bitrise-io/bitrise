@@ -138,12 +138,8 @@ func CheckIsCLIUpdateCheckRequired() bool {
 		return false
 	}
 
-	duration := time.Now().Sub(config.LastCLIUpdateCheck)
-	if duration >= selfUpdateInterval {
-		return true
-	}
-
-	return false
+	duration := time.Since(config.LastCLIUpdateCheck)
+	return duration >= selfUpdateInterval
 }
 
 func SaveCLIUpdateCheck() error {
@@ -163,12 +159,8 @@ func CheckIsPluginUpdateCheckRequired(plugin string) bool {
 		return false
 	}
 
-	duration := time.Now().Sub(config.LastPluginUpdateChecks[plugin])
-	if duration >= PluginUpdateInterval {
-		return true
-	}
-
-	return false
+	duration := time.Since(config.LastPluginUpdateChecks[plugin])
+	return duration >= PluginUpdateInterval
 }
 
 func SavePluginUpdateCheck(plugin string) error {

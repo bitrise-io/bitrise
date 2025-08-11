@@ -79,13 +79,13 @@ func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doClean
 	}
 
 	if err := doSetupBitriseCoreTools(); err != nil {
-		return fmt.Errorf("Failed to do common/platform independent setup, error: %s", err)
+		return fmt.Errorf("failed to do common/platform independent setup, error: %s", err)
 	}
 
 	switch runtime.GOOS {
 	case "darwin":
 		if err := doSetupOnOSX(); err != nil {
-			return fmt.Errorf("Failed to do macOS-specific setup, error: %s", err)
+			return fmt.Errorf("failed to do macOS-specific setup, error: %s", err)
 		}
 	case "linux":
 	default:
@@ -94,12 +94,12 @@ func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doClean
 
 	if setupMode != SetupModeMinimal {
 		if err := doSetupPlugins(); err != nil {
-			return fmt.Errorf("Failed to do Plugins setup, error: %s", err)
+			return fmt.Errorf("failed to do Plugins setup, error: %s", err)
 		}
 	}
 
 	if err := doSetupToolkits(logger); err != nil {
-		return fmt.Errorf("Failed to do Toolkits setup, error: %s", err)
+		return fmt.Errorf("failed to do Toolkits setup, error: %s", err)
 	}
 
 	log.Print()
@@ -122,22 +122,22 @@ func doSetupToolkits(logger log.Logger) error {
 		toolkitName := aCoreTK.ToolkitName()
 		isInstallRequired, checkResult, err := aCoreTK.Check()
 		if err != nil {
-			return fmt.Errorf("Failed to perform toolkit check (%s), error: %s", toolkitName, err)
+			return fmt.Errorf("failed to perform toolkit check (%s), error: %s", toolkitName, err)
 		}
 
 		if isInstallRequired {
 			log.Warnf("No installed/suitable %s found, installing toolkit ...", toolkitName)
 			if err := aCoreTK.Install(); err != nil {
-				return fmt.Errorf("Failed to install toolkit (%s), error: %s", toolkitName, err)
+				return fmt.Errorf("failed to install toolkit (%s), error: %s", toolkitName, err)
 			}
 
 			isInstallRequired, checkResult, err = aCoreTK.Check()
 			if err != nil {
-				return fmt.Errorf("Failed to perform toolkit check (%s), error: %s", toolkitName, err)
+				return fmt.Errorf("failed to perform toolkit check (%s), error: %s", toolkitName, err)
 			}
 		}
 		if isInstallRequired {
-			return fmt.Errorf("Toolkit (%s) still reports that it isn't (properly) installed", toolkitName)
+			return fmt.Errorf("toolkit (%s) still reports that it isn't (properly) installed", toolkitName)
 		}
 
 		log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolkitName, checkResult.Version, checkResult.Path)
@@ -152,7 +152,7 @@ func doSetupPlugins() error {
 
 	for pluginName, pluginDependency := range PluginDependencyMap {
 		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
-			return fmt.Errorf("Plugin (%s) failed to install: %s", pluginName, err)
+			return fmt.Errorf("plugin (%s) failed to install: %s", pluginName, err)
 		}
 	}
 

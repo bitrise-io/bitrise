@@ -94,10 +94,10 @@ func Run() {
 
 			plugin, found, err := plugins.LoadPlugin(pluginName)
 			if err != nil {
-				return fmt.Errorf("Failed to get plugin (%s), error: %s", pluginName, err)
+				return fmt.Errorf("failed to get plugin (%s), error: %s", pluginName, err)
 			}
 			if !found {
-				return fmt.Errorf("Plugin (%s) not installed", pluginName)
+				return fmt.Errorf("plugin (%s) not installed", pluginName)
 			}
 
 			if err := bitrise.RunSetupIfNeeded(logger); err != nil {
@@ -105,11 +105,11 @@ func Run() {
 			}
 
 			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-				return fmt.Errorf("Failed to run plugin (%s), error: %s", pluginName, err)
+				return fmt.Errorf("failed to run plugin (%s), error: %s", pluginName, err)
 			}
 		} else {
 			if err := cli.ShowAppHelp(c); err != nil {
-				return fmt.Errorf("Failed to show help, error: %s", err)
+				return fmt.Errorf("failed to show help, error: %s", err)
 			}
 			return errors.New("")
 		}

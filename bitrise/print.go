@@ -92,7 +92,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 
 	icon := ""
 	title := getTrimmedStepName(stepRunResult)
-	coloringFunc := colorstring.Green
+	var coloringFunc func(...interface{}) string
 
 	switch stepRunResult.Status {
 	case models.StepRunStatusCodeSuccess:
@@ -118,7 +118,7 @@ func getRunningStepFooterMainSection(stepRunResult models.StepRunResultsModel) s
 	iconBox := fmt.Sprintf(" %s ", coloringFunc(icon))
 
 	titleWhiteSpaceWidth := titleBoxWidth - len(title)
-	coloredTitle := title
+	var coloredTitle string
 	if strings.HasPrefix(title, "[Deprecated]") {
 		title := strings.TrimPrefix(title, "[Deprecated]")
 		coloredTitle = fmt.Sprintf("%s%s", colorstring.Red("[Deprecated]"), coloringFunc(title))
@@ -155,7 +155,7 @@ func getDeprecateNotesRows(notes string) string {
 
 	boxContentWidth := stepRunSummaryBoxWidthInChars - 4
 
-	notesWithoutNewLine := strings.Replace(notes, "\n", " ", -1)
+	notesWithoutNewLine := strings.ReplaceAll(notes, "\n", " ")
 	words := strings.Split(notesWithoutNewLine, " ")
 	if len(words) == 0 {
 		return ""
@@ -393,7 +393,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		if content != "" {
 			content = fmt.Sprintf("%s\n%s", content, issueRow)
 		} else {
-			content = fmt.Sprintf("%s", issueRow)
+			content = issueRow
 		}
 	}
 
@@ -402,7 +402,7 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		if content != "" {
 			content = fmt.Sprintf("%s\n%s", content, sourceRow)
 		} else {
-			content = fmt.Sprintf("%s", sourceRow)
+			content = sourceRow
 		}
 	}
 
@@ -411,14 +411,14 @@ func getRunningStepFooterSubSection(stepRunResult models.StepRunResultsModel) st
 		if content != "" {
 			content = fmt.Sprintf("%s\n%s", content, removalDateRow)
 		} else {
-			content = fmt.Sprintf("%s", removalDateRow)
+			content = removalDateRow
 		}
 
 		if deprecateNotes != "" {
 			if content != "" {
 				content = fmt.Sprintf("%s\n%s", content, deprecateNotesRow)
 			} else {
-				content = fmt.Sprintf("%s", deprecateNotesRow)
+				content = deprecateNotesRow
 			}
 		}
 	}
