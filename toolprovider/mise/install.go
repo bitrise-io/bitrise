@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -13,7 +14,7 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 		return err
 	}
 
-	output, err := m.ExecEnv.RunMise("install", "--yes", versionString)
+	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.InstallTimeout, "install", "--yes", versionString)
 	if err != nil {
 		return provider.ToolInstallError{
 			ToolName:         tool.ToolName,
