@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"golang.org/x/exp/maps"
 )
@@ -16,8 +17,9 @@ type envOutput map[string]string
 // envVarsForTool returns the env vars required for the given tool version to be available and work correctly in
 // a shell environment. This includes $PATH additions and other env vars, such as $JAVA_HOME, $GOROOT, etc.
 func (m *MiseToolProvider) envVarsForTool(installResult provider.ToolInstallResult) (envOutput, error) {
+	versionString := fmt.Sprintf("%s@%s", installResult.ToolName, installResult.ConcreteVersion)
 	// Note: --quiet hides warnings and other plain text lines that would break JSON parsing.
-	data, err := m.ExecEnv.RunMise("env", "--quiet", "--json", fmt.Sprintf("%s@%s", installResult.ToolName, installResult.ConcreteVersion))
+	data, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "env", "--quiet", "--json", versionString)
 	if err != nil {
 		return envOutput{}, fmt.Errorf("mise env %s@%s: %w", installResult.ToolName, installResult.ConcreteVersion, err)
 	}

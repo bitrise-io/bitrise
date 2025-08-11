@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -28,7 +29,7 @@ func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.To
 
 func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := m.ExecEnv.RunMise("latest", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest %s@%s: %w", toolName, version, err)
 	}
@@ -43,7 +44,7 @@ func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, ver
 
 func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := m.ExecEnv.RunMise("latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest --installed %s@%s: %w", toolName, version, err)
 	}
@@ -62,7 +63,7 @@ func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version strin
 	// - it can return multiple versions (one per line) when a fuzzy version is provided
 	// - in case of no matching version, the exit code is still 0, just there is no output
 	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
-	output, err := m.ExecEnv.RunMise("ls-remote", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return false, fmt.Errorf("mise ls-remote %s@%s: %w", toolName, version, err)
 	}
