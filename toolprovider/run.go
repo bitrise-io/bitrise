@@ -1,8 +1,11 @@
 package toolprovider
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
+	"github.com/bitrise-io/colorstring"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -13,6 +16,7 @@ import (
 )
 
 func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, error) {
+	startTime := time.Now()
 	toolRequests, err := getToolRequests(config)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -52,22 +56,23 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
+		toolStartTime := time.Now()
 		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
-		log.Printf("Installing %s %s...\n", canonicalToolID, toolRequest.UnparsedVersion)
+		printInstallStart(toolRequest)
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
-			// TODO: better error message
+			var toolErr provider.ToolInstallError
+			if errors.As(err, &toolErr) {
+				printInstallError(toolErr)
+				return nil, fmt.Errorf("see error details above")
+			}
+
 			return nil, fmt.Errorf("install %s %s: %w", toolRequest.ToolName, toolRequest.UnparsedVersion, err)
 		}
 		toolInstalls = append(toolInstalls, result)
-
-		if result.IsAlreadyInstalled {
-			log.Printf("%s %s is already installed.\n", result.ToolName, result.ConcreteVersion)
-		} else {
-			log.Printf("Successfully installed %s %s.\n", result.ToolName, result.ConcreteVersion)
-		}
+		printInstallResult(toolRequest, result, time.Since(toolStartTime))		
 	}
 
 	var activations []provider.EnvironmentActivation
@@ -78,30 +83,10 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 		}
 		activations = append(activations, activation)
 	}
-	fmt.Print("Environment setup complete!")
+
+	duration := time.Since(startTime).Round(time.Millisecond)
+	log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
+	log.Printf("")
 
 	return convertToEnvmanEnvs(activations), nil
-}
-
-func printToolRequests(toolRequests []provider.ToolRequest) {
-	log.Info("Tools to set up:")
-
-	for _, toolRequest := range toolRequests {
-		strategy := "strict" // default
-		switch toolRequest.ResolutionStrategy {
-		case provider.ResolutionStrategyLatestInstalled:
-			strategy = "latest installed"
-		case provider.ResolutionStrategyLatestReleased:
-			strategy = "latest released"
-		}
-
-		log.Printf("- %s %s (resolution: %s)\n",
-			toolRequest.ToolName,
-			toolRequest.UnparsedVersion,
-			strategy)
-	}
-
-	if len(toolRequests) > 0 {
-		log.Infof("Installing missing tools...")
-	}
 }
