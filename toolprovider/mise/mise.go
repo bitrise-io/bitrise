@@ -12,7 +12,7 @@ import (
 // We pin one Mise version because:
 // - Mise doesn't follow SemVer, there are breaking changes in regular releases sometimes
 // - We depend on the exact layout of the release .tar.gz archive in Bootstrap(), this is probably not stable
-const miseVersion = "v2025.7.18"
+const miseVersion = "v2025.8.7"
 
 type MiseToolProvider struct {
 	ExecEnv execenv.ExecEnv
