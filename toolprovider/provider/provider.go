@@ -52,7 +52,7 @@ type EnvironmentActivation struct {
 }
 
 type ToolInstallError struct {
-	ToolName         string
+	ToolName         ToolID
 	RequestedVersion string
 
 	// Optional fields
