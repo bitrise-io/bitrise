@@ -416,7 +416,7 @@ step_bundles:
             # asdf alias golang 1 1.24.3
             # asdf alias golang 1.23 1.23.9
             # asdf alias golang 1.24 1.24.3
-            asdf global golang 1.24.3
+            # asdf global golang 1.24.3
             asdf install golang
             command -v go
             which go
