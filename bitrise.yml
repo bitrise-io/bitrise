@@ -14,9 +14,13 @@ pipelines:
       pull_request:
       - source_branch: "*"
     stages:
+    - replace_golang_plugin: { }
     - run_tests: { }
 
 stages:
+  replace_golang_plugin:
+    workflows:
+    - install_asdf_golang_auto_reshim: { }
   run_tests:
     workflows:
     - run_lint: { }
@@ -101,6 +105,49 @@ workflows:
     - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
+
+  install_asdf_golang_auto_reshim:
+    steps:
+    - script@1:
+        title: Clean previous Go installations
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            PLUGIN_URL="https://github.com/marcell-vida/asdf-golang.git"
+            CURRENT_URL=$(asdf plugin list --urls | grep '^golang ' | awk '{print $2}')
+
+            if [ "$CURRENT_URL" = "$PLUGIN_URL" ]; then
+              echo "golang plugin already installed with correct URL, skipping script."
+              exit 0
+            fi
+
+            asdf alias golang --list
+            asdf alias golang 1 --remove
+            asdf alias golang 1.23 --remove
+            asdf alias golang 1.24 --remove
+            asdf uninstall golang 1.23.9
+            asdf uninstall golang 1.24.3
+
+            asdf list golang
+            asdf plugin remove golang
+            asdf plugin add golang https://github.com/marcell-vida/asdf-golang.git
+            asdf plugin list --urls
+
+            asdf install golang 1.24.3
+            asdf install golang 1.23.9
+            asdf alias golang 1 1.24
+            asdf alias golang 1.23 1.23.9
+            asdf alias golang 1.24 1.24.3
+            asdf global golang 1.24.3
+            asdf alias golang --list
+            asdf current golang
+            command -v go
+            which go
+            asdf which golang
+            asdf where golang
+            go version
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
@@ -359,7 +406,6 @@ step_bundles:
             #!/usr/bin/env bash
             set -ex
             go install github.com/jstemmer/go-junit-report/v2@latest
-            asdf reshim golang
 
   setup_goreleaser:
     steps:
@@ -369,7 +415,6 @@ step_bundles:
             #!/bin/bash
             set -ex
             go install github.com/goreleaser/goreleaser/v2@latest
-            asdf reshim golang
 
 
 meta:
