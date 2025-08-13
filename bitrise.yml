@@ -420,7 +420,6 @@ step_bundles:
             command -v go
             which go
             asdf which go
-            asdf where golang
             go version
     - script:
         title: Setup Go version
