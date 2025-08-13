@@ -398,10 +398,10 @@ step_bundles:
               exit 0
             fi
 
-            asdf alias golang --list
-            asdf alias golang 1 --remove
-            asdf alias golang 1.23 --remove
-            asdf alias golang 1.24 --remove
+            # asdf alias golang --list
+            # asdf alias golang 1 --remove
+            # asdf alias golang 1.23 --remove
+            # asdf alias golang 1.24 --remove
             asdf uninstall golang 1.23.9
             asdf uninstall golang 1.24.3
 
@@ -410,13 +410,13 @@ step_bundles:
             asdf plugin add golang https://github.com/marcell-vida/asdf-golang.git
             asdf plugin list --urls
 
-            asdf install golang 1.24.3
-            asdf install golang 1.23.9
-            asdf alias golang 1 1.24.3
-            asdf alias golang 1.23 1.23.9
-            asdf alias golang 1.24 1.24.3
-            asdf global golang 1.24.3
             asdf alias golang --list
+            # asdf install golang 1.24.3
+            # asdf install golang 1.23.9
+            # asdf alias golang 1 1.24.3
+            # asdf alias golang 1.23 1.23.9
+            # asdf alias golang 1.24 1.24.3
+            asdf global golang 1.24.3
             asdf install golang
             command -v go
             which go
