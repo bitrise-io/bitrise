@@ -85,6 +85,13 @@ workflows:
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
+  
+  # Note: this workflow is triggered externally during stack testing, do not remove or break.
+  run_system_asdf_tests:
+    steps:
+    - bundle::setup_repo: { }
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_system_asdf_integration_tests: { }
 
   test_binary_build_macos:
     steps:
@@ -277,6 +284,21 @@ step_bundles:
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
     - deploy-to-bitrise-io@2: { }
+
+  run_system_asdf_integration_tests:
+    steps:
+      - script@1:
+          title: Run integration tests against system asdf
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -ex
+
+                # Special test mode that doesn't use the test harness but uses the system-wide asdf install and config
+                export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
+                # We test the system bitrise executable, not one built from source
+                export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+                go test -v --tags linux_and_mac ./_tests/integration/toolprovider/asdf/... -timeout 360s
 
   run_docker_integration_tests:
     steps:
