@@ -410,7 +410,6 @@ step_bundles:
             asdf plugin add golang https://github.com/marcell-vida/asdf-golang.git
 
             asdf plugin list --urls
-            asdf alias golang --list
             asdf list golang
 
             # asdf install golang 1.24.3
