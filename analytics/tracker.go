@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
@@ -31,6 +32,7 @@ const (
 	cliWarningEventName            = "cli_warning"
 	toolVersionSnapshotEventName   = "tool_version_snapshot"
 	cliCommandEventName            = "cli_command"
+	toolSetupEventName             = "cli_tool_setup"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -114,6 +116,7 @@ type Tracker interface {
 	SendCLIWarning(message string)
 	SendToolVersionSnapshot(toolVersions, snapshotType string)
 	SendCommandInfo(command, subcommand string, flags []string)
+	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
 	IsTracking() bool
 	Wait()
 }
@@ -365,4 +368,36 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 	extraProperties[runTimeProperty] = int64(result.Runtime.Seconds())
 
 	return eventName, extraProperties, nil
+}
+
+func (t tracker) SendToolSetupEvent(
+	provider string,
+	request provider.ToolRequest,
+	result provider.ToolInstallResult,
+	is_successful bool,
+	setupTime time.Duration,
+) {
+	if !t.stateChecker.Enabled() {
+		return
+	}
+
+	cliVersion, _ := version.BitriseCliVersion()
+	buildSlug := t.envRepository.Get(buildSlugEnvKey)
+	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
+
+	props := analytics.Properties{
+		"provider":             provider,
+		"tool_name":            request.ToolName,
+		"requested_version":    request.UnparsedVersion,
+		"resolution_strategy":  request.ResolutionStrategy,
+		"custom_plugin_id":     request.PluginIdentifier,
+		"is_successful":        is_successful,
+		"setup_time_ms":        setupTime.Milliseconds(),
+		"is_already_installed": result.IsAlreadyInstalled,
+		"concrete_version":     result.ConcreteVersion,
+		"cli_version":          cliVersion,
+		"is_ci":                isCI,
+		"build_slug":           buildSlug,
+	}
+	t.tracker.Enqueue(toolSetupEventName, props)
 }
