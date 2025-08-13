@@ -145,7 +145,7 @@ workflows:
             asdf current golang
             command -v go
             which go
-            asdf which golang
+            asdf which go
             asdf where golang
             go version
 
