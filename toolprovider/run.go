@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/colorstring"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 
+	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
@@ -18,7 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, error) {
+func Run(config models.BitriseDataModel, tracker analytics.Tracker) ([]envmanModels.EnvironmentItemModel, error) {
 	startTime := time.Now()
 	toolRequests, err := getToolRequests(config)
 	if err != nil {
@@ -87,10 +88,13 @@ func Run(config models.BitriseDataModel) ([]envmanModels.EnvironmentItemModel, e
 				return nil, fmt.Errorf("see error details above")
 			}
 
+			tracker.SendToolSetupEvent(providerID, toolRequest, result, false, time.Since(toolStartTime))
 			return nil, fmt.Errorf("install %s %s: %w", toolRequest.ToolName, toolRequest.UnparsedVersion, err)
 		}
 		toolInstalls = append(toolInstalls, result)
-		printInstallResult(toolRequest, result, time.Since(toolStartTime))
+		duration := time.Since(toolStartTime)
+		printInstallResult(toolRequest, result, duration)
+		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
 	var activations []provider.EnvironmentActivation
