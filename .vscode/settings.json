@@ -1,0 +1,4 @@
+{
+    "go.testTags": "linux_and_mac",
+    "go.buildTags": "linux_and_mac"
+}

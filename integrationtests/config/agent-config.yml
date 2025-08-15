@@ -1,0 +1,16 @@
+bitrise_dirs:
+  BITRISE_DATA_HOME_DIR: $INTEGRATION_TEST_BINARY_PATH/../agent
+  BITRISE_SOURCE_DIR: $INTEGRATION_TEST_BINARY_PATH/../agent/workspace/$BITRISE_APP_SLUG
+  BITRISE_DEPLOY_DIR: $INTEGRATION_TEST_BINARY_PATH/../agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
+  BITRISE_TEST_DEPLOY_DIR: $INTEGRATION_TEST_BINARY_PATH/../agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
+  BITRISE_HTML_REPORT_DIR: $INTEGRATION_TEST_BINARY_PATH/../agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
+
+hooks:
+  cleanup_on_workflow_start:
+  - $BITRISE_DEPLOY_DIR
+
+  cleanup_on_workflow_end:
+  - $BITRISE_TEST_DEPLOY_DIR
+
+  do_on_build_start: agent_hook_build_start.sh
+  do_on_build_end: agent_hook_build_end.sh

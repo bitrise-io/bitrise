@@ -1,0 +1,54 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+trigger_map:
+- pattern: deprecated_pipeline*
+  is_pull_request_allowed: false
+  pipeline: deprecated_pipeline
+- pattern: deprecated_code_push*
+  is_pull_request_allowed: false
+  workflow: deprecated_code_push
+- pattern: deprecated_pr*
+  is_pull_request_allowed: true
+  workflow: deprecated_pr
+
+- push_branch: pipeline_code_push*
+  pipeline: pipeline_code_push
+- push_branch: code_push*
+  workflow: code_push
+- pull_request_source_branch: pr_source
+  pull_request_target_branch: pr_target
+  workflow: pr_source_and_target
+- pull_request_target_branch: pr_target_only
+  workflow: pr_target
+- pull_request_source_branch: pr_source_only
+  workflow: pr_source
+- pull_request_source_branch: no_draft_pr
+  draft_pull_request_enabled: false
+  workflow: no_draft_pr
+
+pipelines:
+  deprecated_pipeline:
+    stages:
+    - deprecated_stage: { }
+  pipeline_code_push:
+    stages:
+    - stage_code_push: { }
+
+stages:
+  deprecated_stage:
+    workflows:
+    - deprecated_code_push: { }
+  stage_code_push:
+    workflows:
+    - code_push: { }
+
+workflows:
+  deprecated_code_push:
+  deprecated_pr:
+
+  code_push:
+  pr_source_and_target:
+  pr_target:
+  pr_source:
+  no_draft_pr:
