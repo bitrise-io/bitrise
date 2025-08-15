@@ -1,0 +1,53 @@
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test_bitrise_dirs:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            set -ex
+            if [[ "$BITRISE_DATA_HOME_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent ]]; then
+              echo "BITRISE_DATA_HOME_DIR does not point to the expected directory"
+              exit 1
+            fi
+
+            ls $BITRISE_DATA_HOME_DIR
+
+            if [[ "$BITRISE_SOURCE_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/workspace/$BITRISE_APP_SLUG ]]; then
+              echo "BITRISE_SOURCE_DIR does not point to the expected directory"
+              exit 1
+            fi
+
+            ls $BITRISE_SOURCE_DIR
+
+            if [[ "$BITRISE_DEPLOY_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts ]]; then
+              echo "BITRISE_DEPLOY_DIR does not point to the expected directory"
+              exit 1
+            fi
+
+            ls $BITRISE_DEPLOY_DIR
+
+            if [[ "$BITRISE_TEST_DEPLOY_DIR" != $(dirname $INTEGRATION_TEST_BINARY_PATH)/agent/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results ]]; then
+              echo "BITRISE_TEST_DEPLOY_DIR does not point to the expected directory"
+              exit 1
+            fi
+
+            ls $BITRISE_TEST_DEPLOY_DIR
+  test_build_hooks_success:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            echo "Let's see what happens after a successful workflow"
+            exit 0
+  test_build_hooks_failure:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            set -ex
+            echo "Let's see what happens after a failed workflow"
+            exit 42

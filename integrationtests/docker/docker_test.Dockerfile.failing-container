@@ -1,0 +1,2 @@
+FROM frolvlad/alpine-bash:latest
+ENTRYPOINT ["nonexistent-command"]

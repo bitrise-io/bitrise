@@ -1202,7 +1202,7 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 func collectToolVersions(tracker analytics.Tracker) {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Warnf("user home dir not found: %w", err)
+		log.Warnf("user home dir not found: %s", err)
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())

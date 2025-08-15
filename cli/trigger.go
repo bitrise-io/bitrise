@@ -194,7 +194,7 @@ func trigger(c *cli.Context) error {
 	}
 	agentConfig, err := setupAgentConfig()
 	if err != nil {
-		failf("Failed to process agent config: %w", err)
+		failf("Failed to process agent config: %s", err)
 	}
 
 	runner := NewWorkflowRunner(runConfig, agentConfig)

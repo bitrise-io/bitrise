@@ -1,0 +1,1 @@
+curl -Ls 'https://raw.githubusercontent.com/bitrise-steplib/steps-script/master/step.sh' | bash
