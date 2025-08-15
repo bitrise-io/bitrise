@@ -81,7 +81,7 @@ func (a AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolI
 			if err != nil {
 				if errors.As(err, &nomatchErr) {
 					errorDetails := provider.ToolInstallError{
-						ToolName:         string(tool.ToolName),
+						ToolName:         tool.ToolName,
 						RequestedVersion: tool.UnparsedVersion,
 						Cause:            nomatchErr.Error(),
 						Recommendation:   fmt.Sprintf("You might want to use `%s:installed` or `%s:latest` to install the latest installed or latest released version of %s %s.", tool.UnparsedVersion, tool.UnparsedVersion, tool.ToolName, tool.UnparsedVersion),

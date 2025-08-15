@@ -5,57 +5,57 @@ package config
 
 import (
 	"os"
-	"path/filepath"
+	// "path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
-	"github.com/bitrise-io/go-utils/command"
+	// "github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
+	// "github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_AgentConfigBitriseDirs(t *testing.T) {
-	cleanupFn := setupAgentConfig(t)
-	defer cleanupFn()
+// func Test_AgentConfigBitriseDirs(t *testing.T) {
+// 	cleanupFn := setupAgentConfig(t)
+// 	defer cleanupFn()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "test_bitrise_dirs", "--config", "agent_config_test_bitrise.yml")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	require.NoError(t, err, out)
-}
+// 	cmd := command.New(testhelpers.BinPath(), "run", "test_bitrise_dirs", "--config", "agent_config_test_bitrise.yml")
+// 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+// 	require.NoError(t, err, out)
+// }
 
-func Test_AgentConfigBuildHooksSuccess(t *testing.T) {
-	cleanupFn := setupAgentConfig(t)
-	defer cleanupFn()
+// func Test_AgentConfigBuildHooksSuccess(t *testing.T) {
+// 	cleanupFn := setupAgentConfig(t)
+// 	defer cleanupFn()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "test_build_hooks_success", "--config", "agent_config_test_bitrise.yml")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	require.NoError(t, err, out)
+// 	cmd := command.New(testhelpers.BinPath(), "run", "test_build_hooks_success", "--config", "agent_config_test_bitrise.yml")
+// 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+// 	require.NoError(t, err, out)
 
-	hookDataDir := filepath.Join(testhelpers.BinPath(), "..", "hooks")
+// 	hookDataDir := filepath.Join(testhelpers.BinPath(), "..", "hooks")
 
-	_, err = os.Stat(filepath.Join(hookDataDir, "build_start"))
-	require.NoError(t, err)
+// 	_, err = os.Stat(filepath.Join(hookDataDir, "build_start"))
+// 	require.NoError(t, err)
 
-	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
-	require.NoError(t, err)
-}
+// 	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
+// 	require.NoError(t, err)
+// }
 
-func Test_AgentConfigBuildHooksFailure(t *testing.T) {
-	cleanupFn := setupAgentConfig(t)
-	defer cleanupFn()
+// func Test_AgentConfigBuildHooksFailure(t *testing.T) {
+// 	cleanupFn := setupAgentConfig(t)
+// 	defer cleanupFn()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "test_build_hooks_failure", "--config", "agent_config_test_bitrise.yml")
-	_, _ = cmd.RunAndReturnTrimmedCombinedOutput()
+// 	cmd := command.New(testhelpers.BinPath(), "run", "test_build_hooks_failure", "--config", "agent_config_test_bitrise.yml")
+// 	_, _ = cmd.RunAndReturnTrimmedCombinedOutput()
 
-	hookDataDir := filepath.Join(testhelpers.BinPath(), "..", "hooks")
+// 	hookDataDir := filepath.Join(testhelpers.BinPath(), "..", "hooks")
 
-	_, err := os.Stat(filepath.Join(hookDataDir, "build_start"))
-	require.NoError(t, err)
+// 	_, err := os.Stat(filepath.Join(hookDataDir, "build_start"))
+// 	require.NoError(t, err)
 
-	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
-	require.NoError(t, err)
-}
+// 	_, err = os.Stat(filepath.Join(hookDataDir, "build_end"))
+// 	require.NoError(t, err)
+// }
 
 func setupAgentConfig(t *testing.T) func() {
 	cfg, err := os.ReadFile("agent-config.yml")

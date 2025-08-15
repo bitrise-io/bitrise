@@ -16,3 +16,9 @@ func TestToolProvider(t *testing.T) {
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 }
+
+func TestMiseToolProvider(t *testing.T) {
+	cmd := command.New(testhelpers.BinPath(), "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, out)
+}
