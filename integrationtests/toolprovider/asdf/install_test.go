@@ -6,12 +6,16 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAsdfInstallClassic(t *testing.T) {
+	if useSystemAsdf() {
+		t.Skip("Irrelevant test when using system asdf")
+	}
+
 	testEnv, err := createTestEnv(t, asdfInstallation{
 		flavor:  flavorAsdfClassic,
 		version: "0.14.0",
@@ -35,6 +39,10 @@ func TestAsdfInstallClassic(t *testing.T) {
 }
 
 func TestAsdfInstallRewrite(t *testing.T) {
+	if useSystemAsdf() {
+		t.Skip("Irrelevant test when using system asdf")
+	}
+
 	testEnv, err := createTestEnv(t, asdfInstallation{
 		flavor:  flavorAsdfRewrite,
 		version: "0.18.0",

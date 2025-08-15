@@ -99,7 +99,7 @@ func run(c *cli.Context) error {
 
 	agentConfig, err := setupAgentConfig()
 	if err != nil {
-		failf("Failed to process agent config: %w", err)
+		failf("Failed to process agent config: %s", err)
 	}
 	if agentConfig != nil && os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
 		// Edge case: this Bitrise process was started by a script step running `bitrise run x`.

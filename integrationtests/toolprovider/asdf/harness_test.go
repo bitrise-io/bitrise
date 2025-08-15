@@ -42,6 +42,25 @@ type testEnv struct {
 
 // createTestEnv creates an isolated installation of a given asdf version for testing.
 func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, error) {
+	if useSystemAsdf() {
+		// Remove installed tools between test runs because tests don't run their own isolated asdf install in this mode
+		out, err := exec.Command("bash", "-c", "rm -rf ~/.asdf/installs").CombinedOutput()
+		if err != nil {
+			t.Log(string(out))
+			return testEnv{}, fmt.Errorf("cleanup asdf installs between tests: %w", err)
+		}
+		out, err = exec.Command("bash", "-lc", "asdf reshim").CombinedOutput()
+		if err != nil {
+			t.Log(string(out))
+			return testEnv{}, fmt.Errorf("asdf reshim between tests: %w", err)
+		}
+
+		return testEnv{
+			envVars:   map[string]string{},
+			shellInit: "",
+		}, nil
+	}
+
 	homeDir := t.TempDir()
 	dataDir := t.TempDir()
 	shimsDir := filepath.Join(dataDir, "shims")
@@ -84,7 +103,7 @@ func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, erro
 func (te *testEnv) toExecEnv() execenv.ExecEnv {
 	return execenv.ExecEnv{
 		EnvVars:            te.envVars,
-		ClearInheritedEnvs: true,
+		ClearInheritedEnvs: !useSystemAsdf(),
 		ShellInit:          te.shellInit,
 	}
 }
@@ -222,4 +241,9 @@ func downloadReleaseBinary(t *testing.T, version string, targetDir string) error
 	}
 
 	return nil
+}
+
+func useSystemAsdf() bool {
+	useSystemAsdfFlag := strings.TrimSpace(os.Getenv("TOOLPROVIDER_TEST_USE_SYSTEM_ASDF"))
+	return useSystemAsdfFlag == "1" || strings.ToLower(useSystemAsdfFlag) == "true"
 }
