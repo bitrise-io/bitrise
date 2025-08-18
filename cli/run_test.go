@@ -16,6 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/analytics"
@@ -2105,5 +2106,6 @@ func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string)  
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool)                     {}
 func (n noOpTracker) SendToolVersionSnapshot(string, string)                              {}
 func (n noOpTracker) SendCommandInfo(string, string, []string)                            {}
-func (n noOpTracker) Wait()                                                               {}
-func (n noOpTracker) IsTracking() bool                                                    { return false }
+func (n noOpTracker) SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration) {}
+func (n noOpTracker) Wait()            {}
+func (n noOpTracker) IsTracking() bool { return false }
