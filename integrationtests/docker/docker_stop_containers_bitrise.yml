@@ -1,0 +1,51 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  container-1:
+    image: frolvlad/alpine-bash:latest
+services:
+  service-1:
+    image: healthy-image
+    options: --health-cmd "stat /ready || exit 1" --health-interval 1s --health-timeout 3s --health-retries 3
+workflows:
+  docker-stops-containers:
+    title: Expected to pass docker pull
+    steps:
+    - script:
+        title: Build service container
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.healthy-container .
+    - script:
+        title: Initial number of containers
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            INITIAL_CONTAINER_NUM=$(docker ps -q | wc -l)
+            envman add --key INITIAL_CONTAINER_NUM --value "$INITIAL_CONTAINER_NUM"
+    - with:
+        container: container-1
+        services:
+        - service-1
+        steps:
+        - script:
+            title: Hello World!
+            inputs:
+            - content: |-
+                #!/usr/bin/env bash
+                set -ex
+                echo "Hello World!"
+    - script:
+        title: Check number of containers
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            CONTAINER_NUM=$(docker ps -q | wc -l)
+            if [ "$CONTAINER_NUM" -ne "$INITIAL_CONTAINER_NUM" ]; then
+              echo "Expected $INITIAL_CONTAINER_NUM containers, got $CONTAINER_NUM"
+              exit 1
+            fi

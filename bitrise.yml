@@ -271,7 +271,11 @@ step_bundles:
             fi
 
             # Run tests and generate report
-            go test -v --tags linux_and_mac ./_tests/integration/... 2>&1 | tee "./${test_log_file_name}.log"
+            set +e  # Temporarily disable exit on error
+            # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
+            cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+            test_exit_code=$?
+            set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
             cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
@@ -283,6 +287,8 @@ step_bundles:
             mkdir -p "${test_results_dir}"
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+
+            exit $test_exit_code
     - deploy-to-bitrise-io@2: { }
 
   run_system_asdf_integration_tests:
@@ -298,7 +304,7 @@ step_bundles:
                 export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
                 # We test the system bitrise executable, not one built from source
                 export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-                go test -v --tags linux_and_mac ./_tests/integration/toolprovider/asdf/... -timeout 360s
+                cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
 
   run_docker_integration_tests:
     steps:
@@ -333,7 +339,10 @@ step_bundles:
             linux_only_test_log_file_name="linux_only_integration_tests"
 
             # Run tests and generate report
-            go test -v --tags linux_only ./_tests/integration/... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+            set +e  # Temporarily disable exit on error
+            cd ./integrationtests && go test -v -p 1 --tags linux_only ./... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+            test_exit_code=$?
+            set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
             cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
@@ -345,6 +354,9 @@ step_bundles:
             mkdir -p "${test_results_dir}"
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
             echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+
+            # Exit with the original test exit code
+            exit $test_exit_code
     - deploy-to-bitrise-io@2: { }
 
   test_binary_build:
@@ -397,7 +409,6 @@ step_bundles:
             set -ex
             go install github.com/goreleaser/goreleaser/v2@latest
             asdf reshim golang
-
 
 meta:
   bitrise.io:
