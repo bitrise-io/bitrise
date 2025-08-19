@@ -371,7 +371,7 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 }
 
 func (t tracker) SendToolSetupEvent(
-	provider string,
+	toolProvider string,
 	request provider.ToolRequest,
 	result provider.ToolInstallResult,
 	is_successful bool,
@@ -384,18 +384,27 @@ func (t tracker) SendToolSetupEvent(
 	cliVersion, _ := version.BitriseCliVersion()
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
+	var resolutionStrategy string
+	switch request.ResolutionStrategy {
+	case provider.ResolutionStrategyLatestInstalled:
+		resolutionStrategy = "latest_installed"
+	case provider.ResolutionStrategyStrict:
+		resolutionStrategy = "strict"
+	case provider.ResolutionStrategyLatestReleased:
+		resolutionStrategy = "latest_released"
+	}
 
 	props := analytics.Properties{
-		"provider":             provider,
+		"provider":             toolProvider,
 		"tool_name":            request.ToolName,
 		"requested_version":    request.UnparsedVersion,
-		"resolution_strategy":  request.ResolutionStrategy,
+		"resolution_strategy":  resolutionStrategy,
 		"custom_plugin_id":     request.PluginIdentifier,
 		"is_successful":        is_successful,
 		"setup_time_ms":        setupTime.Milliseconds(),
 		"is_already_installed": result.IsAlreadyInstalled,
 		"concrete_version":     result.ConcreteVersion,
-		"cli_version":          cliVersion,
+		"cli_version":          cliVersion.String(),
 		"is_ci":                isCI,
 		"build_slug":           buildSlug,
 	}
