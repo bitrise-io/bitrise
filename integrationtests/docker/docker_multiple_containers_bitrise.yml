@@ -78,7 +78,7 @@ workflows:
               -e REGISTRY_AUTH_HTPASSWD_PATH=/auth_$PORT/htpasswd \
               registry
             docker login localhost:$PORT -u $USR -p $PASS
-            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.healthy-container .
+            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.healthy-container .
             docker tag healthy-image localhost:$PORT/healthy-image
             docker push localhost:$PORT/healthy-image
             docker logout localhost:$PORT

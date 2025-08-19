@@ -288,7 +288,6 @@ step_bundles:
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
 
-            # Exit with the original test exit code
             exit $test_exit_code
     - deploy-to-bitrise-io@2: { }
 
@@ -305,7 +304,7 @@ step_bundles:
                 export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
                 # We test the system bitrise executable, not one built from source
                 export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-                go test -v --tags linux_and_mac ./_tests/integration/toolprovider/asdf/... -timeout 360s
+                cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
 
   run_docker_integration_tests:
     steps:

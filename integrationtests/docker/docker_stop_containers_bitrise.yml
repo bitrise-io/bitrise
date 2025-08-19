@@ -17,7 +17,7 @@ workflows:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/_tests/integration/docker_test.Dockerfile.healthy-container .
+            docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.healthy-container .
     - script:
         title: Initial number of containers
         inputs:
