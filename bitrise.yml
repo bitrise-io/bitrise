@@ -310,6 +310,11 @@ step_bundles:
   run_docker_integration_tests:
     steps:
     - script@1:
+        title: Docker login for pulls
+        run_if: .IsCI
+        inputs:
+          - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
+    - script@1:
         title: Run integration tests
         inputs:
         - content: |-
