@@ -6,6 +6,9 @@ project_type: other
 app:
   status_report_name: Run <target_id> pipeline
 
+tools:
+  go: "1.23.10"
+
 pipelines:
   ci:
     triggers:
@@ -379,15 +382,6 @@ step_bundles:
     - git-clone@8:
         inputs:
         - fetch_tags: "yes"
-    - script:
-        title: Setup Go version
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            asdf plugin add golang || true # TODO: can be removed once all workflows are migrated to Ubuntu 22
-            asdf install golang
 
   setup_go_junit_report:
     steps:
