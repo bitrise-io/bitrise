@@ -4,7 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   test-sensitive-env-and-output:
     steps:
-    - script:
+    - script@1.2.1:
         title: Add a sensitive env
         inputs:
         - content: |-
@@ -16,7 +16,7 @@ workflows:
           opts:
             is_sensitive: true
 
-    - script:
+    - script@1.2.1:
         title: Add a sensitive env (needs expansion)
         inputs:
         - content: |-
@@ -41,7 +41,7 @@ workflows:
           opts:
             is_sensitive: true
 
-    - script:
+    - script@1.2.1:
         title: Try to print sensitive env and sensitive output
         inputs:
         - content: |-

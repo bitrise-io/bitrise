@@ -22,7 +22,7 @@ workflows:
     - with:
         container: success
         steps:
-        - script:
+        - script@1.2.1:
             title: Should pass
             inputs:
             - content: exit 0
@@ -32,7 +32,7 @@ workflows:
     - with:
         container: fails-404
         steps:
-        - script:
+        - script@1.2.1:
             title: Should fail
             inputs:
             - content: exit 0
@@ -42,7 +42,7 @@ workflows:
     - with:
         container: login-fail
         steps:
-        - script:
+        - script@1.2.1:
             title: Should fail
             inputs:
             - content: exit 0
@@ -56,13 +56,13 @@ workflows:
     - with:
         container: login-success
         steps:
-        - script:
+        - script@1.2.1:
             title: Should pass
             inputs:
             - content: exit 0
   _start_mock_registry:
     steps:
-    - script:
+    - script@1.2.1:
         title: setup mock registry
         inputs:
         - content: |-
@@ -75,7 +75,7 @@ workflows:
             docker logout localhost:5001
   _cleanup_mock_registry:
     steps:
-    - script:
+    - script@1.2.1:
         is_always_run: true
         title: cleanup mock registry
         inputs:

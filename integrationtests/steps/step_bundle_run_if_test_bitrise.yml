@@ -8,7 +8,7 @@ workflows:
     - RUN_IF_2: "false"
     - RUN_IF_3: "true"
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: echo "script"
     - bundle::run_if_test_1:
@@ -18,7 +18,7 @@ step_bundles:
   run_if_test_1:
     run_if: '{{enveq "RUN_IF_1" "true"}}'
     steps:
-    - script@1:
+    - script@1.2.1:
         title: run_if_test_1 script
         inputs:
         - content: echo "run_if_test_1.script"
@@ -27,7 +27,7 @@ step_bundles:
   run_if_test_2:
     run_if: '{{enveq "RUN_IF_2" "true"}}'
     steps:
-    - script@1:
+    - script@1.2.1:
         title: run_if_test_2 script
         inputs:
         - content: echo "run_if_test_2.script"
@@ -36,7 +36,7 @@ step_bundles:
   run_if_test_3:
     run_if: '{{enveq "RUN_IF_3" "true"}}'
     steps:
-    - script@1:
+    - script@1.2.1:
         title: run_if_test_3 script
         inputs:
         - content: echo "run_if_test_3.script"

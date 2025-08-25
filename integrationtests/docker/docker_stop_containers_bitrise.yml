@@ -11,14 +11,14 @@ workflows:
   docker-stops-containers:
     title: Expected to pass docker pull
     steps:
-    - script:
+    - script@1.2.1:
         title: Build service container
         inputs:
         - content: |-
             #!/usr/bin/env bash
             set -ex
             docker build -t healthy-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.healthy-container .
-    - script:
+    - script@1.2.1:
         title: Initial number of containers
         inputs:
         - content: |-
@@ -31,14 +31,14 @@ workflows:
         services:
         - service-1
         steps:
-        - script:
+        - script@1.2.1:
             title: Hello World!
             inputs:
             - content: |-
                 #!/usr/bin/env bash
                 set -ex
                 echo "Hello World!"
-    - script:
+    - script@1.2.1:
         title: Check number of containers
         inputs:
         - content: |-

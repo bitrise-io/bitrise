@@ -7,7 +7,7 @@ tools:
 workflows:
   toolprovider_test:
     steps:
-      - script@1:
+      - script@1.2.1:
           title: Test activated tool
           inputs:
             - content: set -ex; node --version | grep -q "22"

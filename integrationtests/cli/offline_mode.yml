@@ -4,12 +4,12 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   prepare:
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/usr/bin/env bash
             envman add --key TMP_DIR --value $(mktemp -d -t offline_modeXXXXXX)
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/usr/bin/env bash

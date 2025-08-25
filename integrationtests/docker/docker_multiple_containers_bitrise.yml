@@ -37,7 +37,7 @@ workflows:
         - service_1_container
         - service_2_container
         steps:
-        - script:
+        - script@1.2.1:
             title: Should pass
             inputs:
             - content: exit 0
@@ -64,7 +64,7 @@ workflows:
     - _start_mock_registry
   _start_mock_registry:
     steps:
-    - script:
+    - script@1.2.1:
         title: setup mock registry for step execution container
         inputs:
         - content: |-
@@ -99,7 +99,7 @@ workflows:
     - _cleanup_mock_registry
   _cleanup_mock_registry:
     steps:
-    - script:
+    - script@1.2.1:
         is_always_run: true
         title: cleanup mock registry
         inputs:

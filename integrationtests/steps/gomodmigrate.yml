@@ -15,12 +15,12 @@ workflows:
 
   gomod:
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/usr/bin/env bash
             envman add --key TMP_DIR --value $(mktemp -d -t gomodmigrateXXXXXX)
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/usr/bin/env bash

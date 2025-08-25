@@ -61,7 +61,7 @@ tool_config:
 workflows:
   test:
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: echo "hello"
 `
@@ -93,7 +93,7 @@ tool_config:
 workflows:
   test:
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: echo "hello"
 `
