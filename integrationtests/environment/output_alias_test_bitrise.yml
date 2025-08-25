@@ -11,7 +11,7 @@ workflows:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
         # - ISO_DATETIME:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
@@ -26,7 +26,7 @@ workflows:
       of the first step, while the alias should be of the second step.
     steps:
     - timestamp:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY" != "" ]] ; then exit 1; fi
@@ -36,7 +36,7 @@ workflows:
     - timestamp:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi
@@ -51,7 +51,7 @@ workflows:
     - timestamp:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY_1
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY_1" == "" ]] ; then exit 1; fi
@@ -61,7 +61,7 @@ workflows:
     - timestamp:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY_2
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |
             if [[ "$BITRISE_ALIAS_KEY_2" == "" ]] ; then exit 1; fi
@@ -81,7 +81,7 @@ workflows:
     - timestamp:
         outputs:
         - UNIX_TIMESTAMP: BITRISE_ALIAS_KEY
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             if [[ "$BITRISE_ALIAS_KEY" == "" ]] ; then exit 1; fi

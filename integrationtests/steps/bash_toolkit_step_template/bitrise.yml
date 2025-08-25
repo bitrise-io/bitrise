@@ -4,7 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   test:
     steps:
-    - change-workdir:
+    - change-workdir@1.0.3:
         title: Switch working dir to test / _tmp dir
         description: |-
           To prevent step testing issues, like referencing relative
@@ -56,7 +56,7 @@ workflows:
       Once it finishes the only thing left is to actually create a Pull Request,
       the way described in the guide printed at the end of the process.
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/bin/bash

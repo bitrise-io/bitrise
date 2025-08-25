@@ -6,7 +6,7 @@ step_bundles:
     inputs:
     - name: World
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: echo "Hello $name!"
 
@@ -14,7 +14,7 @@ step_bundles:
     inputs:
     - bundle1_input1: bundle1_input1
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             echo "bundle1"
@@ -29,7 +29,7 @@ step_bundles:
     - bundle::bundle1:
         inputs:
         - bundle1_input1: bundle1_input1_override
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             echo "bundle2"
@@ -46,7 +46,7 @@ workflows:
   test_nested_step_bundle:
     steps:
     - bundle::bundle2: { }
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             echo "workflow step"

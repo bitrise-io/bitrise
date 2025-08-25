@@ -1,7 +1,7 @@
 step_bundles:
   print:
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: echo "Hello $NAME!"
 

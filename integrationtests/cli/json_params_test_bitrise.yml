@@ -10,6 +10,6 @@ workflows:
   json_params_test_target:
     title: json params test target
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: exit 0

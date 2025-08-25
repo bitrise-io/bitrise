@@ -21,14 +21,14 @@ workflows:
 
   fail_in_ci_mode:
     steps:
-    - script:
+    - script@1.2.1:
         run_if: .IsCI
         inputs:
         - content: exit 1
 
   fail_in_not_ci_mode:
     steps:
-    - script:
+    - script@1.2.1:
         run_if: not .IsCI
         inputs:
         - content: exit 1

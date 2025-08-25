@@ -9,7 +9,7 @@ workflows:
     after_run: []
     envs: []
     steps:
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             #!/usr/bin/env bash

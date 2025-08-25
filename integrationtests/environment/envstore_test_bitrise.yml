@@ -4,7 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   envstore_test:
     steps:
-    - script:
+    - script@1.2.1:
         title: Ensure initial output envstore
         inputs:
         - content: |-
@@ -16,7 +16,7 @@ workflows:
             fi
 
             envman add --key OUTPUT1 --value output1
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             if [ $OUTPUT1 != "output1" ] ; then
@@ -33,7 +33,7 @@ workflows:
             fi
 
             envman add --key OUTPUT2 --value output2
-    - script:
+    - script@1.2.1:
         inputs:
         - content: |-
             if [ $OUTPUT1 != "output1" ] ; then

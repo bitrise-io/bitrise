@@ -22,7 +22,7 @@ workflows:
     - with:
         container: invalid-port
         steps:
-        - script:
+        - script@1.2.1:
             title: Should not run due to prev error
             inputs:
             - content: exit 0
@@ -32,7 +32,7 @@ workflows:
     - with:
         container: valid-port
         steps:
-        - script:
+        - script@1.2.1:
             title: Should succeed
             inputs:
             - content: exit 0
@@ -43,7 +43,7 @@ workflows:
     - with:
         container: unhealthy-container
         steps:
-        - script:
+        - script@1.2.1:
             title: Should succceed
             inputs:
             - content: exit 0
@@ -54,7 +54,7 @@ workflows:
     - with:
         container: invalid-option
         steps:
-        - script:
+        - script@1.2.1:
             title: Should fail
             inputs:
             - content: exit 0

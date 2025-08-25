@@ -4,7 +4,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   output_consistent:
     steps:
-    - script@1:
+    - script@1.2.1:
         title: Output is consistently received
         no_output_timeout: 10
         inputs:
@@ -19,7 +19,7 @@ workflows:
 
   output_slows_down:
     steps:
-    - script@1:
+    - script@1.2.1:
         title: Output is slower and slower
         no_output_timeout: 12
         inputs:

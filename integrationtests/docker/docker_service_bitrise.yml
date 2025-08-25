@@ -15,7 +15,7 @@ workflows:
         services:
         - failing-service
         steps:
-        - script:
+        - script@1.2.1:
             title: Should succeed, but services related errors are logged
             inputs:
             - content: exit 0
@@ -27,20 +27,20 @@ workflows:
         services:
         - slow-booting-service
         steps:
-        - script:
+        - script@1.2.1:
             title: Should succeed, but services related errors are logged
             inputs:
             - content: exit 0
   _build-failing-image:
     steps:
-    - script:
+    - script@1.2.1:
         title: Build failing image
         inputs:
         - content: |-
               docker build -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.failing-container .
   _build-slow-starting-image:
     steps:
-    - script:
+    - script@1.2.1:
         title: Build slow starting image
         inputs:
         - content: |-

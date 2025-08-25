@@ -19,7 +19,7 @@ workflows:
   exit_code_test_fail:
     title: Exit code of bitrise CLI should be 1
     steps:
-    - script:
+    - script@1.2.1:
         title: Fail
         inputs:
         - content: exit 1
@@ -27,7 +27,7 @@ workflows:
   exit_code_test_ok:
     title: Exit code test
     steps:
-    - script:
+    - script@1.2.1:
         title: Exit code of bitrise CLI should be 0
         inputs:
         - content: exit 0
@@ -35,7 +35,7 @@ workflows:
   exit_code_test_sippable_fail:
     title: Exit code test
     steps:
-    - script:
+    - script@1.2.1:
         title: Exit code of bitrise CLI should be 0
         is_skippable: true
         inputs:
@@ -44,7 +44,7 @@ workflows:
   exit_code_test_sippable_ok:
     title: Exit code test
     steps:
-    - script:
+    - script@1.2.1:
         title: Exit code of bitrise CLI should be 0
         is_skippable: true
         inputs:

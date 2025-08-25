@@ -5,7 +5,7 @@ project_type: other
 workflows:
   debug_log:
     steps:
-    - script:
+    - script@1.2.1:
         title: Success
         inputs:
         - content: |-
@@ -17,7 +17,7 @@ workflows:
     title: Fails
     description: Workflow will fail
     steps:
-    - script:
+    - script@1.2.1:
         title: Success
         inputs:
         - content: |-
@@ -37,7 +37,7 @@ workflows:
         - content: |-
             set -ex
             exit 2
-    - script:
+    - script@1.2.1:
         title: Skipping success
         is_always_run: false
         inputs:
