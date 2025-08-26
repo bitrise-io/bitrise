@@ -19,7 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker) ([]envmanModels.EnvironmentItemModel, error) {
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool) ([]envmanModels.EnvironmentItemModel, error) {
 	startTime := time.Now()
 	toolRequests, err := getToolRequests(config)
 	if err != nil {
@@ -33,6 +33,12 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker) ([]envmanMod
 	}
 
 	var toolProvider provider.ToolProvider
+	if providerID == "asdf" && !isCI {
+		// asdf bootstrap is not implemented yet and the local env might not have it installed.
+		// We also want to dogfood the Mise provider and it can bootstrap itself
+		// TODO: clean this up once Mise is the default for everyone
+		providerID = "mise"
+	}
 	switch providerID {
 	case "asdf":
 		toolProvider = asdf.AsdfToolProvider{
