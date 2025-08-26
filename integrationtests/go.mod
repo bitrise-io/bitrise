@@ -10,7 +10,6 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/bitrise/v2 v2.0.0
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/stepman v0.18.2
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0
 )
@@ -25,6 +24,7 @@ require (
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19 // indirect
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22 // indirect
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef // indirect
+	github.com/bitrise-io/stepman v0.18.3-0.20250826132520-a81f7dade180 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
