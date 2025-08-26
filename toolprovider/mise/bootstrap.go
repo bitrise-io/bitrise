@@ -15,18 +15,11 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-func installReleaseBinary(version string, targetDir string) error {
-	artifactName, err := artifactName(version)
+func installReleaseBinary(version, checksum string, targetDir string) error {
+	url, err := downloadURL(version)
 	if err != nil {
 		return err
 	}
-
-	checksum, err := fetchChecksum(version, artifactName)
-	if err != nil {
-		return err
-	}
-
-	url := artifactDownloadURL(version, artifactName)
 
 	resp, err := retryablehttp.Get(url)
 	if err != nil {
@@ -119,7 +112,7 @@ func installReleaseBinary(version string, targetDir string) error {
 	return nil
 }
 
-func artifactName(version string) (string, error) {
+func downloadURL(version string) (string, error) {
 	osMap := map[string]string{
 		"darwin": "macos",
 		"linux":  "linux",
@@ -140,44 +133,8 @@ func artifactName(version string) (string, error) {
 	}
 	version = strings.TrimPrefix(version, "v")
 	artifactName := fmt.Sprintf("mise-v%s-%s-%s.tar.gz", version, osString, archString)
-	return artifactName, nil
-}
-
-func artifactDownloadURL(version, artifactName string) string {
-	return fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/%s", version, artifactName)
-}
-
-// fetchChecksum retrieves the SHA256 checksum for the specified artifact version
-// by downloading the checksum file from the GitHub releases page.
-func fetchChecksum(version, artifactName string) (string, error) {
-	url := fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/SHASUMS256.txt", version)
-
-	resp, err := retryablehttp.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("download %s: %w", url, err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download %s: received status code %d", url, resp.StatusCode)
-	}
-
-	content, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read checksum file: %w", err)
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for _, line := range lines {
-		parts := strings.Fields(line)
-		if len(parts) >= 2 && strings.HasSuffix(parts[1], artifactName) {
-			return parts[0], nil
-		}
-	}
-
-	return "", fmt.Errorf("checksum not found for %s", artifactName)
+	url := fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/%s", version, artifactName)
+	return url, nil
 }
 
 func processHeader(header *tar.Header, targetDir string) (string, bool) {
