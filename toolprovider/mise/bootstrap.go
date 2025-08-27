@@ -3,6 +3,7 @@ package mise
 import (
 	"archive/tar"
 	"compress/gzip"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,34 +15,102 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-func installReleaseBinary(version string, targetDir string) error {
-	url, err := downloadURL(version)
+// installReleaseBinary installs the release binary for the specified version of Mise.
+func installReleaseBinary(version string, checksums map[string]string, targetDir string) error {
+	platformName, err := getPlatformName()
 	if err != nil {
 		return err
 	}
 
+	checksum, ok := checksums[platformName]
+	if !ok {
+		return fmt.Errorf("checksum not found for %s", platformName)
+	}
+
+	url := downloadURL(version, platformName)
+
+	tempPath, err := downloadAndVerify(url, checksum)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = os.Remove(tempPath)
+	}()
+
+	miseBinFound, err := extractTarball(tempPath, targetDir)
+	if err != nil {
+		return err
+	}
+
+	if !miseBinFound {
+		return fmt.Errorf("mise binary not found in tarball from %s", url)
+	}
+
+	return nil
+}
+
+// downloadAndVerify downloads a file from the given URL, verifies its checksum,
+// and returns the path to the downloaded file.
+func downloadAndVerify(url, expectedChecksum string) (string, error) {
+	// Get the tarball, check status
 	resp, err := retryablehttp.Get(url)
 	if err != nil {
-		return fmt.Errorf("download %s: %w", url, err)
+		return "", fmt.Errorf("download %s: %w", url, err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download %s: received status code %d", url, resp.StatusCode)
+		return "", fmt.Errorf("download %s: received status code %d", url, resp.StatusCode)
 	}
 
-	gzipReader, err := gzip.NewReader(resp.Body)
+	tempFile, err := os.CreateTemp("", "mise-*.tar.gz")
 	if err != nil {
-		return fmt.Errorf("create gzip reader: %w", err)
+		return "", fmt.Errorf("create temp file: %w", err)
+	}
+	tempPath := tempFile.Name()
+	defer func() {
+		_ = tempFile.Close()
+	}()
+
+	// Compute SHA256 hash of the downloaded file and store contents in the temp file
+	hash := sha256.New()
+	multiWriter := io.MultiWriter(tempFile, hash)
+	if _, err := io.Copy(multiWriter, resp.Body); err != nil {
+		return "", fmt.Errorf("save download to temp file: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return "", fmt.Errorf("close temp file: %w", err)
+	}
+	calculatedChecksum := fmt.Sprintf("%x", hash.Sum(nil))
+	if calculatedChecksum != expectedChecksum {
+		return "", fmt.Errorf("checksum validation failed: expected %s, got %s", expectedChecksum, calculatedChecksum)
+	}
+
+	return tempPath, nil
+}
+
+// extractTarball extracts a tarball file to the specified directory
+// and returns whether the mise binary was found inside.
+func extractTarball(tarballPath, targetDir string) (bool, error) {
+	file, err := os.Open(tarballPath)
+	if err != nil {
+		return false, fmt.Errorf("open temp file: %w", err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		return false, fmt.Errorf("create gzip reader: %w", err)
 	}
 	defer func() {
 		_ = gzipReader.Close()
 	}()
 
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
-		return fmt.Errorf("create directory for %s: %w", targetDir, err)
+		return false, fmt.Errorf("create directory for %s: %w", targetDir, err)
 	}
 
 	tarReader := tar.NewReader(gzipReader)
@@ -53,12 +122,12 @@ func installReleaseBinary(version string, targetDir string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("read tar header: %w", err)
+			return false, fmt.Errorf("read tar header: %w", err)
 		}
 
 		if extractedPath, shouldExtract := processHeader(header, targetDir); shouldExtract {
 			if err := extractFile(tarReader, header, extractedPath); err != nil {
-				return err
+				return false, err
 			}
 			if filepath.Base(extractedPath) == "mise" {
 				miseBinFound = true
@@ -66,14 +135,11 @@ func installReleaseBinary(version string, targetDir string) error {
 		}
 	}
 
-	if !miseBinFound {
-		return fmt.Errorf("mise binary not found in tarball from %s", url)
-	}
-
-	return nil
+	return miseBinFound, nil
 }
 
-func downloadURL(version string) (string, error) {
+// getPlatformName returns OS and architecture in a format used for Mise binaries.
+func getPlatformName() (string, error) {
 	osMap := map[string]string{
 		"darwin": "macos",
 		"linux":  "linux",
@@ -92,12 +158,19 @@ func downloadURL(version string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("unsupported architecture: %s", runtime.GOARCH)
 	}
-	version = strings.TrimPrefix(version, "v")
-	artifactName := fmt.Sprintf("mise-v%s-%s-%s.tar.gz", version, osString, archString)
-	url := fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/%s", version, artifactName)
-	return url, nil
+
+	return fmt.Sprintf("%s-%s", osString, archString), nil
 }
 
+// downloadURL returns the download URL for a specific Mise version and platform.
+func downloadURL(version, platformName string) string {
+	version = strings.TrimPrefix(version, "v")
+	artifactName := fmt.Sprintf("mise-v%s-%s.tar.gz", version, platformName)
+	url := fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/%s", version, artifactName)
+	return url
+}
+
+// processHeader processes a tar header and determines the target extraction path.
 func processHeader(header *tar.Header, targetDir string) (string, bool) {
 	// Skip the top-level "mise" directory and extract its contents directly
 	pathParts := strings.Split(header.Name, "/")
@@ -119,6 +192,7 @@ func processHeader(header *tar.Header, targetDir string) (string, bool) {
 	return targetPath, true
 }
 
+// extractFile extracts a file from the tar reader to the target path.
 func extractFile(tarReader *tar.Reader, header *tar.Header, targetPath string) error {
 	switch header.Typeflag {
 	case tar.TypeDir:

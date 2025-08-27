@@ -14,6 +14,13 @@ import (
 // - We depend on the exact layout of the release .tar.gz archive in Bootstrap(), this is probably not stable
 const miseVersion = "v2025.8.7"
 
+var miseChecksums = map[string]string{
+	"linux-x64":   "c2d67d52880373931166343ef9a3b97665175ac2796dc95b9310179d341b2713",
+	"linux-arm64": "d8dfa34d55762125e90b56ce8c9aaa037f7890fd00ac0c9cd8a097cc8530b126",
+	"macos-x64":   "2b685b3507339f07d0da97b7dcf99354a3b14a16e8767af73057711e0ddce72f",
+	"macos-arm64": "0b5893de7c8c274736867b7c4c7ed565b4429f4d6272521ace802f8a21422319",
+}
+
 type MiseToolProvider struct {
 	ExecEnv execenv.ExecEnv
 }
@@ -51,7 +58,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 	fmt.Printf("Installing Mise %s...", miseVersion)
 	fmt.Println()
 
-	err := installReleaseBinary(miseVersion, m.ExecEnv.InstallDir)
+	err := installReleaseBinary(miseVersion, miseChecksums, m.ExecEnv.InstallDir)
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
 	}
