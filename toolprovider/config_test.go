@@ -137,6 +137,40 @@ func TestGetToolRequests(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "workflow tools unset some global tools",
+			config: models.BitriseDataModel{
+				Tools: models.ToolsModel{
+					"python": "3.8.0",
+					"ruby":   "2.7.0",
+				},
+				Workflows: map[string]models.WorkflowModel{
+					"test": {
+						Tools: models.ToolsModel{
+							"python": "3.9.0",     // Override global python version
+							"node":   "16:latest", // Additional tool not in global
+							"ruby":   "unset",     // Unset global ruby version
+						},
+					},
+				},
+			},
+			workflowID: "test",
+			expected: []provider.ToolRequest{
+				{
+					ToolName:           "python",
+					UnparsedVersion:    "3.9.0", // Should use workflow version
+					ResolutionStrategy: provider.ResolutionStrategyStrict,
+					PluginIdentifier:   nil,
+				},
+				{
+					ToolName:           "node",
+					UnparsedVersion:    "16", // Workflow-only tool
+					ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
+					PluginIdentifier:   nil,
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "tools with plugin identifiers",
 			config: models.BitriseDataModel{
 				Tools: models.ToolsModel{
