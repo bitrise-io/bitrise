@@ -7,11 +7,24 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func getToolRequests(config models.BitriseDataModel) ([]provider.ToolRequest, error) {
-	tools := config.Tools
+func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provider.ToolRequest, error) {
+	globalTools := config.Tools
+	workflow, ok := config.Workflows[workflowID]
+	if !ok {
+		return nil, fmt.Errorf("workflow %s not found", workflowID)
+	}
+	workflowTools := workflow.Tools
+
+	mergedTools := globalTools
+	if mergedTools == nil {
+		mergedTools = workflowTools
+	}
+	for toolID, toolVersion := range workflowTools {
+		mergedTools[toolID] = toolVersion
+	}
 
 	var toolRequests []provider.ToolRequest
-	for toolID, toolVersion := range tools {
+	for toolID, toolVersion := range mergedTools {
 		v, strategy, err := ParseVersionString(toolVersion)
 		if err != nil {
 			return nil, fmt.Errorf("parse %s version: %w", toolID, err)
@@ -28,7 +41,7 @@ func getToolRequests(config models.BitriseDataModel) ([]provider.ToolRequest, er
 			ToolName:           provider.ToolID(toolID),
 			UnparsedVersion:    v,
 			ResolutionStrategy: strategy,
-			PluginIdentifier: pluginIdentifier,
+			PluginIdentifier:   pluginIdentifier,
 		})
 	}
 

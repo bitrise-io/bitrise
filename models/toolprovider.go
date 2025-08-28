@@ -47,7 +47,7 @@ func validateToolConfig(toolConfig *ToolConfigModel) error {
 }
 
 func validateTools(config *BitriseDataModel) error {
-	if config.Tools == nil {
+	if config == nil {
 		return nil
 	}
 
@@ -55,6 +55,15 @@ func validateTools(config *BitriseDataModel) error {
 		err := validateVersionString(versionString)
 		if err != nil {
 			return fmt.Errorf("%s: invalid version syntax %s: %w", toolID, versionString, err)
+		}
+	}
+
+	for _, wf := range config.Workflows {
+		for toolID, versionString := range wf.Tools {
+			err := validateVersionString(versionString)
+			if err != nil {
+				return fmt.Errorf("%s: invalid version syntax %s: %w", toolID, versionString, err)
+			}
 		}
 	}
 
