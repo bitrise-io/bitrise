@@ -281,7 +281,7 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	environments = append(environments, targetWorkflow.Environments...)
 
 	// Toolprovider entrypoint
-	toolEnvs, err := toolprovider.Run(r.config.Config, tracker, r.config.Modes.CIMode)
+	toolEnvs, err := toolprovider.Run(r.config.Config, tracker, r.config.Modes.CIMode, r.config.Workflow)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 	}

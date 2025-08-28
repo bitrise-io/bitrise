@@ -158,6 +158,7 @@ type WorkflowModel struct {
 	Environments     []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps            []StepListItemModel                 `json:"steps,omitempty" yaml:"steps,omitempty"`
 	Priority         *int                                `json:"priority,omitempty" yaml:"priority,omitempty"`
+	Tools            ToolsModel                          `json:"tools,omitempty" yaml:"tools,omitempty"`
 	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 

@@ -19,9 +19,9 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool) ([]envmanModels.EnvironmentItemModel, error) {
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
 	startTime := time.Now()
-	toolRequests, err := getToolRequests(config)
+	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
 	}
