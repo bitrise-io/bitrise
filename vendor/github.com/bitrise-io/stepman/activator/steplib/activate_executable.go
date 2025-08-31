@@ -4,14 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepman/filelock"
+	"github.com/hashicorp/go-retryablehttp"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	
-	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/hashicorp/go-retryablehttp"
+	"time"
 )
 
 func activateStepExecutable(
@@ -26,6 +28,46 @@ func activateStepExecutable(
 		return "", fmt.Errorf("http URL is unsupported, please use https: %s", executable.Url)
 	}
 
+	finalPath := filepath.Join(destinationDir, stepID)
+	lockPath := finalPath + ".download.lock"
+
+	// Acquire lock to prevent concurrent downloads
+	lock := filelock.NewFileLock(lockPath)
+	if err := lock.TryLock(); err != nil {
+		// Another process is downloading, wait and check if file exists
+		log.Warnf("Another process is downloading %s, waiting...", stepID)
+		time.Sleep(2 * time.Second)
+		if exists, _ := pathutil.IsPathExists(finalPath); exists {
+			// File was created by other process, verify hash and return
+			if hashErr := validateHash(finalPath, executable.Hash); hashErr == nil {
+				return finalPath, nil
+			}
+		}
+		// Try to acquire lock with timeout
+		if err := lock.Lock(); err != nil {
+			return "", fmt.Errorf("failed to acquire download lock: %w", err)
+		}
+	}
+	defer func() { _ = lock.Unlock() }()
+
+	// Check if file was created while waiting for lock
+	if exists, _ := pathutil.IsPathExists(finalPath); exists {
+		if err := validateHash(finalPath, executable.Hash); err == nil {
+			return finalPath, nil
+		}
+		// File exists but hash is invalid, remove and re-download
+		_ = os.Remove(finalPath)
+	}
+
+	// Ensure destination directory exists
+	if err := os.MkdirAll(destinationDir, 0755); err != nil {
+		return "", fmt.Errorf("create directory %s: %w", destinationDir, err)
+	}
+
+	// Download to temporary file first
+	tempPath := finalPath + fmt.Sprintf(".tmp.%d", os.Getpid())
+	defer func() { _ = os.Remove(tempPath) }() // Clean up temp file on any error
+
 	resp, err := retryablehttp.Get(executable.Url)
 	if err != nil {
 		return "", fmt.Errorf("fetch from %s: %w", executable.Url, err)
@@ -37,43 +79,45 @@ func activateStepExecutable(
 		}
 	}()
 
-	err = os.MkdirAll(destinationDir, 0755)
+	file, err := os.Create(tempPath)
 	if err != nil {
-		return "", fmt.Errorf("create directory %s: %w", destinationDir, err)
-	}
-
-	path := filepath.Join(destinationDir, stepID)
-	file, err := os.Create(path)
-	if err != nil {
-		return "", fmt.Errorf("create file %s: %w", path, err)
+		return "", fmt.Errorf("create temp file %s: %w", tempPath, err)
 	}
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			log.Warnf("Failed to close file %s: %s\n", path, err)
+			log.Warnf("Failed to close temp file %s: %s\n", tempPath, err)
 		}
 	}()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("download %s to %s: %w", executable.Url, path, err)
+		return "", fmt.Errorf("download %s to %s: %w", executable.Url, tempPath, err)
 	}
 
-	err = validateHash(path, executable.Hash)
+	_ = file.Close() // Close before validation
+
+	err = validateHash(tempPath, executable.Hash)
 	if err != nil {
 		return "", fmt.Errorf("validate hash: %s", err)
 	}
 
-	err = os.Chmod(path, 0755)
+	// Make executable before moving
+	err = os.Chmod(tempPath, 0755)
 	if err != nil {
-		return "", fmt.Errorf("set executable permission on file: %s", err)
+		return "", fmt.Errorf("set executable permission on temp file: %s", err)
+	}
+
+	// Atomic move to final location
+	if err := os.Rename(tempPath, finalPath); err != nil {
+		return "", fmt.Errorf("move temp file to final location: %w", err)
 	}
 
 	if err := copyStepYML(stepLibURI, stepID, version, destinationStepYML); err != nil {
 		return "", fmt.Errorf("copy step.yml: %s", err)
 	}
 
-	return path, nil
+	return finalPath, nil
 }
 
 func validateHash(filePath string, expectedHash string) error {

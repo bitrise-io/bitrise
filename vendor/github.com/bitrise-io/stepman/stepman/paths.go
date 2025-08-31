@@ -11,6 +11,8 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/stepman/atomicwrite"
+	"github.com/bitrise-io/stepman/stepman/filelock"
 )
 
 const (
@@ -59,15 +61,24 @@ func ReadRoute(uri string) (route SteplibRoute, found bool) {
 }
 
 func (routes SteplibRoutes) writeToFile() error {
+	lockPath := getRoutingFilePath() + ".lock"
+	lock := filelock.NewFileLock(lockPath)
+	if err := lock.Lock(); err != nil {
+		return fmt.Errorf("failed to acquire routing lock: %w", err)
+	}
+	defer func() { _ = lock.Unlock() }()
+	
+	// Clean up any stale locks
+	if err := filelock.CleanupStale(lockPath); err != nil {
+		log.Warnf("Failed to cleanup stale lock: %s", err)
+	}
+	
 	routeMap := map[string]string{}
 	for _, route := range routes {
 		routeMap[route.SteplibURI] = route.FolderAlias
 	}
-	bytes, err := json.MarshalIndent(routeMap, "", "\t")
-	if err != nil {
-		return err
-	}
-	return fileutil.WriteBytesToFile(getRoutingFilePath(), bytes)
+	
+	return atomicwrite.WriteJSONAtomic(getRoutingFilePath(), routeMap)
 }
 
 // CleanupRoute ...
@@ -132,6 +143,13 @@ func GenerateFolderAlias() string {
 }
 
 func readRouteMap() (SteplibRoutes, error) {
+	lockPath := getRoutingFilePath() + ".lock"
+	lock := filelock.NewFileLock(lockPath)
+	if err := lock.Lock(); err != nil {
+		return SteplibRoutes{}, fmt.Errorf("failed to acquire routing read lock: %w", err)
+	}
+	defer func() { _ = lock.Unlock() }()
+	
 	exist, err := pathutil.IsPathExists(getRoutingFilePath())
 	if err != nil {
 		return SteplibRoutes{}, err

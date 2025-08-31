@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -19,6 +18,8 @@ import (
 	"github.com/bitrise-io/go-utils/urlutil"
 	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepman/atomicwrite"
+	"github.com/bitrise-io/stepman/stepman/filelock"
 	"gopkg.in/yaml.v2"
 )
 
@@ -318,49 +319,35 @@ func generateSlimStepModel(collection models.StepCollectionModel) models.StepCol
 
 // WriteStepSpecToFile ...
 func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route SteplibRoute) error {
-	pth := GetStepSpecPath(route)
-
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
-		return err
-	} else if !exist {
-		dir, _ := path.Split(pth)
-		err := os.MkdirAll(dir, 0777)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := os.Remove(pth)
-		if err != nil {
-			return err
-		}
+	specPath := GetStepSpecPath(route)
+	slimPath := GetSlimStepSpecPath(route)
+	
+	// Use directory of spec file for lock to prevent concurrent spec writes
+	lockPath := filepath.Dir(specPath) + "/.write.lock"
+	lock := filelock.NewFileLock(lockPath)
+	if err := lock.Lock(); err != nil {
+		return fmt.Errorf("failed to acquire spec write lock: %w", err)
 	}
-
+	defer func() { _ = lock.Unlock() }()
+	
+	// Ensure directory exists (safe because we have lock)
+	if err := os.MkdirAll(filepath.Dir(specPath), 0777); err != nil {
+		return fmt.Errorf("failed to create spec directory: %w", err)
+	}
+	
 	collection, err := parseStepCollection(route, templateCollection)
 	if err != nil {
 		return err
 	}
-
-	bytes, err := json.MarshalIndent(collection, "", "\t")
-	if err != nil {
-		return err
+	
+	// Atomic write of spec.json
+	if err := atomicwrite.WriteJSONAtomic(specPath, collection); err != nil {
+		return fmt.Errorf("failed to write spec file: %w", err)
 	}
-
-	if err := fileutil.WriteBytesToFile(pth, bytes); err != nil {
-		return err
-	}
-
-	pth = GetSlimStepSpecPath(route)
+	
+	// Atomic write of slim-spec.json
 	slimCollection := generateSlimStepModel(collection)
-	if err != nil {
-		return err
-	}
-
-	bytes, err = json.MarshalIndent(slimCollection, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	return fileutil.WriteBytesToFile(pth, bytes)
+	return atomicwrite.WriteJSONAtomic(slimPath, slimCollection)
 }
 
 // ReadStepSpec ...

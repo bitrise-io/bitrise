@@ -229,7 +229,7 @@ step_bundles:
             fi
 
             # Run tests and generate report
-            go test -v -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+            go test -v ./... 2>&1 | tee "./${test_log_file_name}.log"
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
             cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
             go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
@@ -276,7 +276,7 @@ step_bundles:
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
             # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
-            cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+            cd ./integrationtests && go test -v --tags linux_and_mac ./... 2>&1 | tee "./${test_log_file_name}.log"
             test_exit_code=$?
             set -e  # Re-enable exit on error
 
@@ -343,7 +343,7 @@ step_bundles:
 
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
-            cd ./integrationtests && go test -v -p 1 --tags linux_only ./... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+            cd ./integrationtests && go test -v --tags linux_only ./... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
             test_exit_code=$?
             set -e  # Re-enable exit on error
 
