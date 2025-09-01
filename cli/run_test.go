@@ -2104,7 +2104,6 @@ func (n noOpTracker) SendStepFinishedEvent(analytics.Properties, cliAnalytics.St
 func (n noOpTracker) SendCLIWarning(string)                                               {}
 func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string)            {}
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool)                     {}
-func (n noOpTracker) SendToolVersionSnapshot(string, string)                              {}
 func (n noOpTracker) SendCommandInfo(string, string, []string)                            {}
 func (n noOpTracker) SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration) {}
 func (n noOpTracker) Wait()            {}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
@@ -30,7 +29,6 @@ const (
 	stepPreparationFailedEventName = "step_preparation_failed"
 	stepSkippedEventName           = "step_skipped"
 	cliWarningEventName            = "cli_warning"
-	toolVersionSnapshotEventName   = "tool_version_snapshot"
 	cliCommandEventName            = "cli_command"
 	toolSetupEventName             = "cli_tool_setup"
 
@@ -63,7 +61,6 @@ const (
 	osProperty                    = "os"
 	stackRevIDProperty            = "stack_rev_id"
 	snapshotProperty              = "snapshot"
-	toolVersionsProperty          = "tool_versions"
 	commandProperty               = "command"
 	subcommandProperty            = "subcommand"
 	flagsProperty                 = "flags"
@@ -114,7 +111,6 @@ type Tracker interface {
 	SendStepStartedEvent(properties analytics.Properties, info StepInfo, activateDuration time.Duration, expandedInputs map[string]interface{}, originalInputs map[string]string)
 	SendStepFinishedEvent(properties analytics.Properties, result StepResult)
 	SendCLIWarning(message string)
-	SendToolVersionSnapshot(toolVersions, snapshotType string)
 	SendCommandInfo(command, subcommand string, flags []string)
 	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
 	IsTracking() bool
@@ -229,28 +225,6 @@ func (t tracker) SendCommandInfo(command, subcommand string, flags []string) {
 	}
 
 	t.tracker.Enqueue(cliCommandEventName, properties)
-}
-
-func (t tracker) SendToolVersionSnapshot(toolVersions, snapshotType string) {
-	if !t.stateChecker.Enabled() {
-		return
-	}
-
-	stackRevID := t.envRepository.Get(stackRevIDKey)
-	if stackRevID == "" {
-		// Legacy
-		stackRevID = t.envRepository.Get(macStackRevIDKey)
-	}
-
-	properties := analytics.Properties{
-		ciModeProperty:       t.envRepository.Get(configs.CIModeEnvKey) == "true",
-		osProperty:           runtime.GOOS,
-		stackRevIDProperty:   stackRevID,
-		snapshotProperty:     snapshotType,
-		toolVersionsProperty: toolVersions,
-	}
-
-	t.tracker.Enqueue(toolVersionSnapshotEventName, properties)
 }
 
 func (t tracker) SendStepStartedEvent(properties analytics.Properties, info StepInfo, activateDuration time.Duration, expandedInputs map[string]interface{}, originalInputs map[string]string) {
