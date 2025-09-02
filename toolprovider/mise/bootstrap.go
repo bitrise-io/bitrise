@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
+const fallbackDownloadURLBase = "https://storage.googleapis.com/mise-release-mirror"
+
 // installReleaseBinary installs the release binary for the specified version of Mise.
 func installReleaseBinary(version string, checksums map[string]string, targetDir string) error {
 	platformName, err := getPlatformName()
@@ -27,11 +29,15 @@ func installReleaseBinary(version string, checksums map[string]string, targetDir
 		return fmt.Errorf("checksum not found for %s", platformName)
 	}
 
-	url := downloadURL(version, platformName)
+	url := primaryDownloadURL(version, platformName)
 
 	tempPath, err := downloadAndVerify(url, checksum)
 	if err != nil {
-		return err
+		url = FallbackDownloadURL(version, platformName)
+		tempPath, err = downloadAndVerify(url, checksum)
+		if err != nil {
+			return err
+		}
 	}
 	defer func() {
 		_ = os.Remove(tempPath)
@@ -162,11 +168,17 @@ func getPlatformName() (string, error) {
 	return fmt.Sprintf("%s-%s", osString, archString), nil
 }
 
-// downloadURL returns the download URL for a specific Mise version and platform.
-func downloadURL(version, platformName string) string {
+func primaryDownloadURL(version, platformName string) string {
 	version = strings.TrimPrefix(version, "v")
 	artifactName := fmt.Sprintf("mise-v%s-%s.tar.gz", version, platformName)
 	url := fmt.Sprintf("https://github.com/jdx/mise/releases/download/v%s/%s", version, artifactName)
+	return url
+}
+
+func FallbackDownloadURL(version, platformName string) string {
+	version = strings.TrimPrefix(version, "v")
+	artifactName := fmt.Sprintf("mise-v%s-%s.tar.gz", version, platformName)
+	url := fmt.Sprintf("%s/v%s/%s", fallbackDownloadURLBase, version, artifactName)
 	return url
 }
 
