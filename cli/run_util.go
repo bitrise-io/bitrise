@@ -22,7 +22,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/stepruncmd"
 	"github.com/bitrise-io/bitrise/v2/tools"
-	"github.com/bitrise-io/bitrise/v2/toolversions"
 	envman "github.com/bitrise-io/envman/v2/cli"
 	envmanEnv "github.com/bitrise-io/envman/v2/env"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
@@ -33,8 +32,6 @@ import (
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
-	commandV2 "github.com/bitrise-io/go-utils/v2/command"
-	envV2 "github.com/bitrise-io/go-utils/v2/env"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -57,7 +54,6 @@ func (r WorkflowRunner) runWorkflow(
 	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
 
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
-	collectToolVersions(tracker)
 
 	return results
 }
@@ -1197,34 +1193,6 @@ func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanM
 		StepSource:  pointers.StringWithDefault(step.SourceCodeURL, ""),
 		Skippable:   pointers.BoolWithDefault(step.IsSkippable, false),
 	}
-}
-
-func collectToolVersions(tracker analytics.Tracker) {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Warnf("user home dir not found: %s", err)
-	}
-
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	reporter := toolversions.NewASDFVersionReporter(envV2.NewCommandLocator(), commandV2.NewFactory(envV2.NewRepository()), logger, userHomeDir)
-
-	if !reporter.IsAvailable() {
-		log.Debugf("ASDF is not available, skipping tool version reporting")
-		return
-	}
-
-	toolVersions, err := reporter.CurrentToolVersions()
-	if err != nil {
-		log.Warnf("Tool version reporting: %s", err)
-		return
-	}
-	toolVersionsBytes, err := json.Marshal(toolVersions)
-	if err != nil {
-		logger.Warnf("Tool version reporting: JSON marshal: %s", err)
-		return
-	}
-
-	tracker.SendToolVersionSnapshot(string(toolVersionsBytes), analytics.ToolSnapshotEndOfWorkflowValue)
 }
 
 func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultStepInfo) error {
