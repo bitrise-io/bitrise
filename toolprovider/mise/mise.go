@@ -12,9 +12,16 @@ import (
 // We pin one Mise version because:
 // - Mise doesn't follow SemVer, there are breaking changes in regular releases sometimes
 // - We depend on the exact layout of the release .tar.gz archive in Bootstrap(), this is probably not stable
-const miseVersion = "v2025.8.7"
 
-var miseChecksums = map[string]string{
+// UPDATE PROCESS:
+// 1. Pick a new version, review changelog between the two releases
+// 2. Download release artifacts: $ gh release download --repo jdx/mise v2025.8.7 --pattern 'mise-v*-*-*.tar.gz'
+// 3. Verify checksums
+// 4. Update version string and checksums below
+// 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
+const MiseVersion = "v2025.8.7"
+
+var MiseChecksums = map[string]string{
 	"linux-x64":   "c2d67d52880373931166343ef9a3b97665175ac2796dc95b9310179d341b2713",
 	"linux-arm64": "d8dfa34d55762125e90b56ce8c9aaa037f7890fd00ac0c9cd8a097cc8530b126",
 	"macos-x64":   "2b685b3507339f07d0da97b7dcf99354a3b14a16e8767af73057711e0ddce72f",
@@ -55,10 +62,10 @@ func (m *MiseToolProvider) ID() string {
 }
 
 func (m *MiseToolProvider) Bootstrap() error {
-	fmt.Printf("Installing Mise %s...", miseVersion)
+	fmt.Printf("Installing Mise %s...", MiseVersion)
 	fmt.Println()
 
-	err := installReleaseBinary(miseVersion, miseChecksums, m.ExecEnv.InstallDir)
+	err := installReleaseBinary(MiseVersion, MiseChecksums, m.ExecEnv.InstallDir)
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
 	}
