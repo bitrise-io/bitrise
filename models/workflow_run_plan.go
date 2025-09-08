@@ -273,10 +273,7 @@ func gatherBundleSteps(
 				Step:             *step,
 				StepBundleUUID:   bundleUUID,
 				StepBundleRunIfs: runIfs,
-			}
-
-			if stepIDX == 0 {
-				stepPlan.StepBundleEnvs = bundleEnvs
+				StepBundleEnvs:   bundleEnvs,
 			}
 
 			stepPlans = append(stepPlans, stepPlan)
