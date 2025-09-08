@@ -23,9 +23,9 @@ func TestResolvePluginSource(t *testing.T) {
 		{
 			name: "pluginIdentifier set in correct format",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginNameUnknown),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &pluginGitCloneURL,
+				ToolName:        provider.ToolID(pluginNameUnknown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &pluginGitCloneURL,
 			},
 			expected: &PluginSource{
 				PluginName:  provider.ToolID(pluginNameUnknown),
@@ -35,9 +35,9 @@ func TestResolvePluginSource(t *testing.T) {
 		{
 			name: "pluginIdentifier set with empty url but known tool ID",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginNameKnown),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &emptyGitCloneURL,
+				ToolName:        provider.ToolID(pluginNameKnown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &emptyGitCloneURL,
 			},
 			expected: &PluginSource{
 				PluginName:  provider.ToolID(pluginNameKnown),
@@ -47,9 +47,9 @@ func TestResolvePluginSource(t *testing.T) {
 		{
 			name: "pluginIdentifier set with empty url and unknown tool ID",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginNameUnknown),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &emptyGitCloneURL,
+				ToolName:        provider.ToolID(pluginNameUnknown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &emptyGitCloneURL,
 			},
 			expected: nil,
 		},

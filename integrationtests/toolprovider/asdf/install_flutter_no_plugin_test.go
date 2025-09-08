@@ -6,8 +6,8 @@ package asdf
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,7 +38,7 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 				ToolName:           "flutter",
 				UnparsedVersion:    tt.requestedVersion,
 				ResolutionStrategy: tt.resolutionStrategy,
-				PluginIdentifier:   &tt.plugin,
+				PluginURL:          &tt.plugin,
 			}
 			result, err := asdfProvider.InstallTool(request)
 			require.NoError(t, err)

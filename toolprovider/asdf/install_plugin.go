@@ -101,13 +101,13 @@ func (a *AsdfToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 }
 
 func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
-	if toolRequest.PluginIdentifier != nil {
-		pluginID := strings.TrimSpace(*toolRequest.PluginIdentifier)
-		if pluginID != "" {
+	if toolRequest.PluginURL != nil {
+		url := strings.TrimSpace(*toolRequest.PluginURL)
+		if url != "" {
 			// User provided a non empty plugin identifier, use it as a git clone URL to the asdf plugin.
 			return &PluginSource{
 				PluginName:  toolRequest.ToolName,
-				GitCloneURL: pluginID,
+				GitCloneURL: url,
 			}
 		}
 	}
