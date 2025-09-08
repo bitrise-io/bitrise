@@ -40,7 +40,7 @@ bundle2_input1: bundle2_input1
 bundle1_input1: bundle1_input1_override
 bundle2_input1: bundle2_input1
 `,
-		`bundle2 step1
+		`bundle2 step2
 bundle1_input1: 
 bundle2_input1: bundle2_input1
 `,
