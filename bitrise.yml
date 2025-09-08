@@ -9,6 +9,9 @@ app:
 tools:
   go: "1.23.10"
 
+tool_config:
+  provider: mise
+
 pipelines:
   ci:
     triggers:
