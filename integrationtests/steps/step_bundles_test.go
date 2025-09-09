@@ -27,7 +27,11 @@ func TestNestedStepBundle(t *testing.T) {
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 	stepOutputs := testhelpers.CollectStepOutputs(out, t)
-	require.Equal(t, stepOutputs, []string{
+	require.Equal(t, []string{
+		`bundle2 step1
+bundle1_input1: 
+bundle2_input1: bundle2_input1
+`,
 		`bundle1
 bundle1_input1: bundle1_input1
 bundle2_input1: bundle2_input1
@@ -36,7 +40,7 @@ bundle2_input1: bundle2_input1
 bundle1_input1: bundle1_input1_override
 bundle2_input1: bundle2_input1
 `,
-		`bundle2
+		`bundle2 step2
 bundle1_input1: 
 bundle2_input1: bundle2_input1
 `,
@@ -44,5 +48,5 @@ bundle2_input1: bundle2_input1
 bundle1_input1: 
 bundle2_input1: 
 `,
-	})
+	}, stepOutputs)
 }
