@@ -8,97 +8,56 @@ import (
 )
 
 var (
-	pluginName                = "nodejs"
-	pluginGitCloneURL         = "https://github.com/asdf-vm/asdf-nodejs.git"
-	fullPluginId              = pluginName + "::" + pluginGitCloneURL
-	nameOnlySeparatorPluginId = pluginName + "::"
-	urlOnlySeparatorPluginId  = "::" + pluginGitCloneURL
-	multipleSeparatorPluginId = pluginName + "::" + "latest" + "::" + pluginGitCloneURL
+	pluginNameKnown   = "nodejs"
+	pluginNameUnknown = "unknown-tool"
+	pluginGitCloneURL = "https://github.com/asdf-vm/asdf-nodejs.git"
+	emptyGitCloneURL  = ""
 )
 
 func TestResolvePluginSource(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    provider.ToolRequest
-		expected PluginSource
-		wantErr  bool
+		expected *PluginSource
 	}{
 		{
 			name: "pluginIdentifier set in correct format",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &fullPluginId,
+				ToolName:        provider.ToolID(pluginNameUnknown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &pluginGitCloneURL,
 			},
-			expected: PluginSource{
-				provider.ToolID(pluginName),
-				pluginGitCloneURL,
-			},
-		},
-		{
-			name: "pluginIdentifier set with name only",
-			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &pluginName,
-			},
-			expected: PluginSource{
-				PluginName: provider.ToolID(pluginName),
-				GitCloneURL:  "",
+			expected: &PluginSource{
+				PluginName:  provider.ToolID(pluginNameUnknown),
+				GitCloneURL: pluginGitCloneURL,
 			},
 		},
 		{
-			name: "pluginIdentifier set with url only",
+			name: "pluginIdentifier set with empty url but known tool ID",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &pluginGitCloneURL,
+				ToolName:        provider.ToolID(pluginNameKnown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &emptyGitCloneURL,
 			},
-			expected: PluginSource{},
-			wantErr:  true, // Expecting an error because only URL is provided without a name
-		},
-		{
-			name: "pluginIdentifier set with empty url",
-			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &nameOnlySeparatorPluginId,
-			},
-			expected: PluginSource{
-				PluginName: provider.ToolID(pluginName),
-				GitCloneURL:  "",
+			expected: &PluginSource{
+				PluginName:  provider.ToolID(pluginNameKnown),
+				GitCloneURL: pluginGitCloneURL,
 			},
 		},
 		{
-			name: "pluginIdentifier set with empty name",
+			name: "pluginIdentifier set with empty url and unknown tool ID",
 			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &urlOnlySeparatorPluginId,
+				ToolName:        provider.ToolID(pluginNameUnknown),
+				UnparsedVersion: "18.16.0",
+				PluginURL:       &emptyGitCloneURL,
 			},
-			expected: PluginSource{},
-			wantErr:  true,
-		},
-		{
-			name: "pluginIdentifier set with multiple separators",
-			input: provider.ToolRequest{
-				ToolName:         provider.ToolID(pluginName),
-				UnparsedVersion:  "18.16.0",
-				PluginIdentifier: &multipleSeparatorPluginId,
-			},
-			expected: PluginSource{},
-			wantErr:  true,
+			expected: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := fetchPluginSource(tt.input)
-			if tt.wantErr {
-				assert.Error(t, err, "Expected error for input: %v", tt.input)
-			} else {
-				assert.NoError(t, err, "Unexpected error for input: %v", tt.input)
-				assert.Equal(t, tt.expected, *got, "Expected plugin source to match")
-			}
+			got := parsePluginSource(tt.input)
+			assert.Equal(t, tt.expected, got, "Expected plugin source to match")
 		})
 	}
 }
