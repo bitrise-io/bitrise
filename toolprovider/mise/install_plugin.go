@@ -14,11 +14,6 @@ type PluginSource struct {
 	GitCloneURL string
 }
 
-var pluginSourceMap = map[provider.ToolID]PluginSource{
-	"flutter": {PluginName: "flutter", GitCloneURL: "https://github.com/asdf-community/asdf-flutter.git"},
-	"tuist":   {PluginName: "tuist", GitCloneURL: "https://github.com/tuist/asdf-tuist.git"},
-}
-
 var miseCoreTools = []string{
 	"bun",
 	"deno",
@@ -41,8 +36,8 @@ var miseCoreTools = []string{
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using mise.
 func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
-	if slices.Contains(miseCoreTools, string(tool.ToolName)) {
-		// Core tools do not require plugin installation.
+	if (tool.PluginURL == nil || strings.TrimSpace(*tool.PluginURL) == "") && slices.Contains(miseCoreTools, string(tool.ToolName)) {
+		// Core tools do not require plugin installation, if user did not specify a custom plugin URL.
 		return nil
 	}
 
@@ -93,7 +88,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 }
 
 func (m *MiseToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) {
-	pluginListArgs := []string{"list", "--urls"}
+	pluginListArgs := []string{"list", "--urls", "--quiet"}
 	out, err := m.ExecEnv.RunMisePlugin(pluginListArgs...)
 	if err != nil {
 		return false, err
@@ -116,6 +111,18 @@ func (m *MiseToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 	return false, nil
 }
 
+func (m *MiseToolProvider) isPluginInRegistry(name string) (bool, error) {
+	registryArgs := []string{"registry", name, "--quiet"}
+	_, err := m.ExecEnv.RunMise(registryArgs...)
+	if err != nil {
+		// If the tool is not found in registry, mise returns exit code 1 with error message
+		// "tool not found in registry: <toolname>"
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
 	if toolRequest.PluginURL != nil {
 		url := strings.TrimSpace(*toolRequest.PluginURL)
@@ -128,9 +135,12 @@ func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
 		}
 	}
 
-	// Check if we have a predefined plugin source.
-	if toolPlugin, exists := pluginSourceMap[toolRequest.ToolName]; exists {
-		return &toolPlugin
+	// Check if the tool name exists in the registry.
+	if exists, err := (&MiseToolProvider{}).isPluginInRegistry(string(toolRequest.ToolName)); err == nil && exists {
+		return &PluginSource{
+			PluginName:  toolRequest.ToolName,
+			GitCloneURL: "",
+		}
 	}
 
 	// No predefined plugin source found and no error in plugin identifier parsing,
