@@ -1,13 +1,17 @@
 package execenv
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"al.essio.dev/pkg/shellescape"
 )
+
+const PluginInstallTimeout = 1 * time.Minute
 
 // ExecEnv contains everything needed to run asdf commands in a specific environment
 // that is installed and pre-configured.
@@ -32,10 +36,18 @@ func (e *ExecEnv) RunAsdf(args ...string) (string, error) {
 
 func (e *ExecEnv) RunAsdfPlugin(args ...string) (string, error) {
 	cmdWithArgs := append([]string{"asdf", "plugin"}, args...)
-	return e.RunCommand(nil, cmdWithArgs...)
+	
+	// Use timeout for all plugin operations as they involve unknown code execution
+	ctx, cancel := context.WithTimeout(context.Background(), PluginInstallTimeout)
+	defer cancel()
+	return e.RunCommandWithTimeout(ctx, nil, cmdWithArgs...)
 }
 
 func (e *ExecEnv) RunCommand(extraEnvs map[string]string, args ...string) (string, error) {
+	return e.RunCommandWithTimeout(context.Background(), extraEnvs, args...)
+}
+
+func (e *ExecEnv) RunCommandWithTimeout(ctx context.Context, extraEnvs map[string]string, args ...string) (string, error) {
 	innerShellCmd := []string{}
 	if e.ShellInit != "" {
 		innerShellCmd = append(innerShellCmd, e.ShellInit+" &&")
@@ -45,7 +57,7 @@ func (e *ExecEnv) RunCommand(extraEnvs map[string]string, args ...string) (strin
 	// We need to spawn a sub-shell because classic asdf is implemented in bash and
 	// relies on shell features.
 	bashArgs := []string{"-c", strings.Join(innerShellCmd, " ")}
-	bashCmd := exec.Command("bash", bashArgs...)
+	bashCmd := exec.CommandContext(ctx, "bash", bashArgs...)
 	if !e.ClearInheritedEnvs {
 		bashCmd.Env = os.Environ()
 	}
@@ -58,6 +70,9 @@ func (e *ExecEnv) RunCommand(extraEnvs map[string]string, args ...string) (strin
 
 	output, err := bashCmd.CombinedOutput()
 	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("command timed out after %v: %s %v", ctx.Value("timeout"), "bash", bashArgs)
+		}
 		return "", fmt.Errorf("%s %v: %w\n\nOutput:\n%s", "bash", bashArgs, err, output)
 	}
 
