@@ -22,8 +22,9 @@ type ToolRequest struct {
 	UnparsedVersion    string
 	ResolutionStrategy ResolutionStrategy
 
-	// PluginIdentifier is an optional user-defined identifier for the tool-plugin.
-	PluginIdentifier *string
+	// PluginURL is an optional user-defined install URL for the tool-plugin.
+	// Note: this is provider-dependent and may not be supported by all providers.
+	PluginURL *string
 }
 
 type ResolutionStrategy int
