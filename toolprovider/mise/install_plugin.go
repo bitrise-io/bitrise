@@ -2,6 +2,7 @@ package mise
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -18,11 +19,33 @@ var pluginSourceMap = map[provider.ToolID]PluginSource{
 	"tuist":   {PluginName: "tuist", GitCloneURL: "https://github.com/tuist/asdf-tuist.git"},
 }
 
+var miseCoreTools = []string{
+	"bun",
+	"deno",
+	"elixir",
+	"erlang",
+	"go",
+	"golang",
+	"java",
+	"node",
+	"nodejs",
+	"python",
+	"ruby",
+	"rust",
+	"swift",
+	"zig",
+}
+
 // InstallPlugin installs a plugin for the specified tool, if needed.
 //
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using mise.
 func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
+	if slices.Contains(miseCoreTools, string(tool.ToolName)) {
+		// Core tools do not require plugin installation.
+		return nil
+	}
+
 	plugin := parsePluginSource(tool)
 	if plugin == nil {
 		return provider.ToolInstallError{
