@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -59,7 +60,11 @@ func installReleaseBinary(version string, checksums map[string]string, targetDir
 // and returns the path to the downloaded file.
 func downloadAndVerify(url, expectedChecksum string) (string, error) {
 	// Get the tarball, check status
-	resp, err := retryablehttp.Get(url)
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	client := retryablehttp.NewClient()
+	client.Logger = &log.HTTPLogAdaptor{Logger: logger}
+	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("download %s: %w", url, err)
 	}
