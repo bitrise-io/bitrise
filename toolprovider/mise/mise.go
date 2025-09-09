@@ -82,6 +82,11 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
+	err := m.InstallPlugin(tool)
+	if err != nil {
+		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+	}
+
 	isAlreadyInstalled, err := isAlreadyInstalled(tool, m.resolveToLatestInstalled)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

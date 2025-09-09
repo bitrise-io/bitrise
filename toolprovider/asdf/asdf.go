@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
 type ProviderOptions struct {
@@ -19,17 +19,17 @@ type AsdfToolProvider struct {
 	ExecEnv execenv.ExecEnv
 }
 
-func (a AsdfToolProvider) ID() string {
+func (a *AsdfToolProvider) ID() string {
 	return "asdf"
 }
 
-func (a AsdfToolProvider) Bootstrap() error {
+func (a *AsdfToolProvider) Bootstrap() error {
 	// TODO: not implemented yet. asdf has been installed to stacks for a while now, so this is not needed.
 	// We might be able to replace asdf with Mise first.
 	return nil
 }
 
-func (a AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
+func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	err := a.InstallPlugin(tool)
 	if err != nil {
 		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAsdfInstallFlutter(t *testing.T) {
+func TestMiseInstallFlutter(t *testing.T) {
 	tests := []struct {
 		name               string
 		requestedVersion   string

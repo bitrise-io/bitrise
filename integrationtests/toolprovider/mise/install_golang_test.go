@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAsdfInstallGolangVersion(t *testing.T) {
+func TestMiseInstallGolangVersion(t *testing.T) {
 	tests := []struct {
 		name               string
 		requestedVersion   string
