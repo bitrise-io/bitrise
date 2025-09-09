@@ -373,7 +373,7 @@ func (t tracker) SendToolSetupEvent(
 		"tool_name":            request.ToolName,
 		"requested_version":    request.UnparsedVersion,
 		"resolution_strategy":  resolutionStrategy,
-		"custom_plugin_id":     request.PluginIdentifier,
+		"custom_plugin_id":     request.PluginURL,
 		"is_successful":        is_successful,
 		"setup_time_ms":        setupTime.Milliseconds(),
 		"is_already_installed": result.IsAlreadyInstalled,

@@ -45,7 +45,7 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 			ToolName:           provider.ToolID(toolID),
 			UnparsedVersion:    v,
 			ResolutionStrategy: strategy,
-			PluginIdentifier:   pluginIdentifier,
+			PluginURL:          pluginIdentifier,
 		})
 	}
 

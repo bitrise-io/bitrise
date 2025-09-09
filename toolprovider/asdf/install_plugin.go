@@ -30,22 +30,13 @@ var pluginSourceMap = map[provider.ToolID]PluginSource{
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using asdf.
 func (a AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
-	plugin, err := fetchPluginSource(tool)
-	if err != nil {
-		// E.g. parse error while resolving plugin source.
-		return provider.ToolInstallError{
-			ToolName:         tool.ToolName,
-			RequestedVersion: tool.UnparsedVersion,
-			Cause:            fmt.Sprintf("Couldn't resolve plugin source: %s", err),
-			Recommendation:   "Review the syntax of the `plugin` field",
-		}
-	}
+	plugin := parsePluginSource(tool)
 	if plugin == nil {
 		return provider.ToolInstallError{
 			ToolName:         tool.ToolName,
 			RequestedVersion: tool.UnparsedVersion,
 			Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
-			Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and provide it in the `plugin` field of the tool declaration. For example: `plugin: %s::https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
+			Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `%s: https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
 		}
 	}
 	if plugin.PluginName == "" {
@@ -109,55 +100,24 @@ func (a *AsdfToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 	return false, nil
 }
 
-func fetchPluginSource(toolRequest provider.ToolRequest) (*PluginSource, error) {
-	if toolRequest.PluginIdentifier != nil {
-		pluginInput := strings.TrimSpace(*toolRequest.PluginIdentifier)
-		if pluginInput != "" {
-			// User provided a non empty plugin identifier, parse it.
-			plugin, err := parsePluginSourceFromInput(pluginInput)
-			if err != nil {
-				return nil, fmt.Errorf("parse plugin identifier %s: %w", pluginInput, err)
+func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
+	if toolRequest.PluginURL != nil {
+		url := strings.TrimSpace(*toolRequest.PluginURL)
+		if url != "" {
+			// User provided a non empty plugin identifier, use it as a git clone URL to the asdf plugin.
+			return &PluginSource{
+				PluginName:  toolRequest.ToolName,
+				GitCloneURL: url,
 			}
-			return plugin, nil
 		}
 	}
 
 	// Check if we have a predefined plugin source.
 	if toolPlugin, exists := pluginSourceMap[toolRequest.ToolName]; exists {
-		return &toolPlugin, nil
+		return &toolPlugin
 	}
 
 	// No predefined plugin source found and no error in plugin identifier parsing,
 	// return nil to indicate that no plugin source is defined for this tool.
-	return nil, nil
-}
-
-// parsePluginSourceFromInput parses a plugin identifier string into a PluginSource struct.
-// The expected format is "pluginName::[gitCloneURL]", where gitCloneURL is optional.
-func parsePluginSourceFromInput(pluginIdentifier string) (*PluginSource, error) {
-	parts := strings.Split(pluginIdentifier, PluginSourceSeparator)
-	if len(parts) > 2 {
-		return nil, fmt.Errorf("invalid plugin identifier format: %s, expected format is 'pluginName%s[gitCloneURL]'", pluginIdentifier, PluginSourceSeparator)
-	}
-
-	if len(parts) == 0 {
-		return nil, fmt.Errorf("invalid plugin identifier format: %s", pluginIdentifier)
-	}
-	pluginName := strings.TrimSpace(parts[0])
-	if pluginName == "" {
-		return nil, fmt.Errorf("plugin name cannot be empty in identifier: %s", pluginIdentifier)
-	}
-	if strings.HasPrefix(pluginName, "http://") || strings.HasPrefix(pluginName, "https://") {
-		return nil, fmt.Errorf("plugin name should not contain URL: %s", pluginName)
-	}
-
-	pluginURL := ""
-	if len(parts) > 1 {
-		pluginURL = strings.TrimSpace(parts[1])
-	}
-
-	return &PluginSource{
-		PluginName:  provider.ToolID(pluginName),
-		GitCloneURL: pluginURL,
-	}, nil
+	return nil
 }
