@@ -92,7 +92,7 @@ func DownloadFile(downloadURL, targetDirPath string) error {
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	client := retryablehttp.NewClient()
-	client.Logger = &httpLogAdaptor{logger: logger}
+	client.Logger = &log.HTTPLogAdaptor{Logger: logger}
 	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	resp, err := client.Get(downloadURL)
 	if err != nil {
@@ -299,14 +299,4 @@ func IsBuiltInFlagTypeKey(env string) bool {
 	default:
 		return false
 	}
-}
-
-// httpLogAdaptor adapts the retryablehttp.Logger interface to the log.Logger.
-type httpLogAdaptor struct {
-	logger log.Logger
-}
-
-// Printf implements the retryablehttp.Logger interface
-func (a *httpLogAdaptor) Printf(fmtStr string, vars ...interface{}) {
-	a.logger.Debugf(fmtStr, vars...)
 }
