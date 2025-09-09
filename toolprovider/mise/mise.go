@@ -3,6 +3,7 @@ package mise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -38,6 +39,16 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 	}
 	if dataDir == "" {
 		return nil, errors.New("data directory must be provided")
+	}
+
+	err := os.MkdirAll(installDir, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("create install dir at %s: %w", installDir, err)
+	}
+
+	err = os.MkdirAll(dataDir, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("create data dir at %s: %w", dataDir, err)
 	}
 
 	return &MiseToolProvider{
