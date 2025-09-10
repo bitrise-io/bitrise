@@ -38,32 +38,17 @@ var miseCoreTools = []string{
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using mise.
 func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
-	if (tool.PluginURL == nil || strings.TrimSpace(*tool.PluginURL) == "") && slices.Contains(miseCoreTools, string(tool.ToolName)) {
-		// Core tools do not require plugin installation, if user did not specify a custom plugin URL.
+	plugin, err := m.pluginToInstall(tool)
+	if err != nil {
+		return err
+	}
+	if plugin == nil {
+		// No plugin installation needed (either core tool or registry tool).
+		log.Debugf("No plugin installation needed for tool %s", tool.ToolName)
 		return nil
 	}
 
-	plugin := parsePluginSource(tool)
-	if plugin == nil {
-		if err := m.isPluginInRegistry(string(tool.ToolName)); err != nil {
-			// The tool is not found in the registry, and no plugin source is defined.
-			return provider.ToolInstallError{
-				ToolName:         tool.ToolName,
-				RequestedVersion: tool.UnparsedVersion,
-				Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
-				Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `%s: https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
-			}
-		} else {
-			// Tool found in registry will be installed using the registry info automatically.
-			return nil
-		}
-	}
-	if plugin.PluginName == "" {
-		// Plugin name is required to install the plugin.
-		return fmt.Errorf("plugin name for tool %s is not defined", tool.ToolName)
-	}
-
-	installed, err := m.isPluginInstalled(*plugin)
+	installed, err := m.isPluginInstalled(plugin)
 	if err != nil {
 		log.Warnf("Failed to check if plugin is already installed: %v", err)
 	}
@@ -84,7 +69,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	}
 
 	// Check if the plugin is found in the list of installed plugins after adding.
-	installed, err = m.isPluginInstalled(*plugin)
+	installed, err = m.isPluginInstalled(plugin)
 	if err != nil {
 		return fmt.Errorf("check if plugin was installed successfully: %w", err)
 	}
@@ -95,7 +80,55 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	return nil
 }
 
-func (m *MiseToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) {
+// RegistryChecker interface required for testing
+type RegistryChecker interface {
+	isPluginInRegistry(name string) error
+}
+
+// pluginToInstall is a wrapper to call the pure function with the MiseToolProvider as RegistryChecker
+func (m *MiseToolProvider) pluginToInstall(tool provider.ToolRequest) (*PluginSource, error) {
+	return pluginToInstall(tool, m)
+}
+
+// pluginToInstall is a pure function that determines what plugin needs to be installed for a given tool request.
+// It takes a RegistryChecker interface to allow for easy testing with mocks.
+func pluginToInstall(tool provider.ToolRequest, registryChecker RegistryChecker) (*PluginSource, error) {
+	pluginName := tool.ToolName
+	if pluginName == "" {
+		// Plugin name is required to install the plugin.
+		return nil, fmt.Errorf("tool name is not defined for plugin installation")
+	}
+
+	if tool.PluginURL != nil {
+		url := strings.TrimSpace(*tool.PluginURL)
+		if url != "" {
+			// User provided a non empty plugin git clone URL, use it as a git clone URL to the asdf plugin.
+			return &PluginSource{
+				PluginName:  pluginName,
+				GitCloneURL: url,
+			}, nil
+		}
+	}
+
+	if slices.Contains(miseCoreTools, string(pluginName)) {
+		// Core tools do not require plugin installation, if user did not specify a custom plugin URL.
+		return nil, nil
+	}
+
+	if err := registryChecker.isPluginInRegistry(string(pluginName)); err == nil {
+		// The tool is found in the registry, no need to install a plugin.
+		return nil, nil
+	}
+
+	return nil, provider.ToolInstallError{
+		ToolName:         pluginName,
+		RequestedVersion: tool.UnparsedVersion,
+		Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", pluginName),
+		Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `%s: https://github/url/to/asdf/plugin/repo.git`", pluginName),
+	}
+}
+
+func (m *MiseToolProvider) isPluginInstalled(plugin *PluginSource) (bool, error) {
 	pluginListArgs := []string{"list", "--urls", "--quiet"}
 	out, err := m.ExecEnv.RunMisePlugin(pluginListArgs...)
 	if err != nil {
@@ -120,10 +153,6 @@ func (m *MiseToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 }
 
 func (m *MiseToolProvider) isPluginInRegistry(name string) error {
-	if name == "" {
-		return fmt.Errorf("plugin name is empty")
-	}
-
 	registryArgs := []string{"registry", name, "--quiet"}
 	_, err := m.ExecEnv.RunMise(registryArgs...)
 	if err != nil {
@@ -132,22 +161,5 @@ func (m *MiseToolProvider) isPluginInRegistry(name string) error {
 		return fmt.Errorf("tool not found in registry: %s", name)
 	}
 
-	return nil
-}
-
-func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
-	if toolRequest.PluginURL != nil {
-		url := strings.TrimSpace(*toolRequest.PluginURL)
-		if url != "" {
-			// User provided a non empty plugin identifier, use it as a git clone URL to the asdf plugin.
-			return &PluginSource{
-				PluginName:  toolRequest.ToolName,
-				GitCloneURL: url,
-			}
-		}
-	}
-
-	// No predefined plugin source found and no error in plugin identifier parsing,
-	// return nil to indicate that no plugin source is defined for this tool.
 	return nil
 }
