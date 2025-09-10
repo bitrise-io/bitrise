@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	pluginNameKnown   = "tuist"
-	pluginNameUnknown = "unknown-tool"
+	pluginName        = "tuist"
 	pluginGitCloneURL = "https://github.com/tuist/asdf-tuist.git"
 	emptyGitCloneURL  = ""
 )
@@ -23,19 +22,19 @@ func TestResolvePluginSource(t *testing.T) {
 		{
 			name: "pluginIdentifier set in correct format",
 			input: provider.ToolRequest{
-				ToolName:        provider.ToolID(pluginNameUnknown),
+				ToolName:        provider.ToolID(pluginName),
 				UnparsedVersion: "4.68.0",
 				PluginURL:       &pluginGitCloneURL,
 			},
 			expected: &PluginSource{
-				PluginName:  provider.ToolID(pluginNameUnknown),
+				PluginName:  provider.ToolID(pluginName),
 				GitCloneURL: pluginGitCloneURL,
 			},
 		},
 		{
 			name: "pluginIdentifier set with empty url and unknown tool ID",
 			input: provider.ToolRequest{
-				ToolName:        provider.ToolID(pluginNameUnknown),
+				ToolName:        provider.ToolID(pluginName),
 				UnparsedVersion: "4.68.0",
 				PluginURL:       &emptyGitCloneURL,
 			},
