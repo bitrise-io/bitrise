@@ -14,6 +14,8 @@ type PluginSource struct {
 	GitCloneURL string
 }
 
+// Ref: https://mise.jdx.dev/core-tools.html
+// Note: we might need to sync this list from time to time
 var miseCoreTools = []string{
 	"bun",
 	"deno",
