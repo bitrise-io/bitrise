@@ -43,11 +43,17 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 
 	plugin := parsePluginSource(tool)
 	if plugin == nil {
-		return provider.ToolInstallError{
-			ToolName:         tool.ToolName,
-			RequestedVersion: tool.UnparsedVersion,
-			Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
-			Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `%s: https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
+		if err := m.isPluginInRegistry(string(tool.ToolName)); err != nil {
+			// The tool is not found in the registry, and no plugin source is defined.
+			return provider.ToolInstallError{
+				ToolName:         tool.ToolName,
+				RequestedVersion: tool.UnparsedVersion,
+				Cause:            fmt.Sprintf("This tool integration (%s) is not tested or vetted by Bitrise.", tool.ToolName),
+				Recommendation:   fmt.Sprintf("If you want to use this tool anyway, look up its asdf plugin and set its git clone URL in tool_config.extra_plugins. For example: `%s: https://github/url/to/asdf/plugin/repo.git`", tool.ToolName),
+			}
+		} else {
+			// Tool found in registry will be installed using the registry info automatically.
+			return nil
 		}
 	}
 	if plugin.PluginName == "" {
@@ -111,16 +117,20 @@ func (m *MiseToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 	return false, nil
 }
 
-func (m *MiseToolProvider) isPluginInRegistry(name string) (bool, error) {
+func (m *MiseToolProvider) isPluginInRegistry(name string) error {
+	if name == "" {
+		return fmt.Errorf("plugin name is empty")
+	}
+
 	registryArgs := []string{"registry", name, "--quiet"}
 	_, err := m.ExecEnv.RunMise(registryArgs...)
 	if err != nil {
 		// If the tool is not found in registry, mise returns exit code 1 with error message
 		// "tool not found in registry: <toolname>"
-		return false, nil
+		return fmt.Errorf("tool not found in registry: %s", name)
 	}
 
-	return true, nil
+	return nil
 }
 
 func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
@@ -132,14 +142,6 @@ func parsePluginSource(toolRequest provider.ToolRequest) *PluginSource {
 				PluginName:  toolRequest.ToolName,
 				GitCloneURL: url,
 			}
-		}
-	}
-
-	// Check if the tool name exists in the registry.
-	if exists, err := (&MiseToolProvider{}).isPluginInRegistry(string(toolRequest.ToolName)); err == nil && exists {
-		return &PluginSource{
-			PluginName:  toolRequest.ToolName,
-			GitCloneURL: "",
 		}
 	}
 

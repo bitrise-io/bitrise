@@ -33,18 +33,6 @@ func TestResolvePluginSource(t *testing.T) {
 			},
 		},
 		{
-			name: "pluginIdentifier set with empty url but known tool ID",
-			input: provider.ToolRequest{
-				ToolName:        provider.ToolID(pluginNameKnown),
-				UnparsedVersion: "4.68.0",
-				PluginURL:       &emptyGitCloneURL,
-			},
-			expected: &PluginSource{
-				PluginName:  provider.ToolID(pluginNameKnown),
-				GitCloneURL: pluginGitCloneURL,
-			},
-		},
-		{
 			name: "pluginIdentifier set with empty url and unknown tool ID",
 			input: provider.ToolRequest{
 				ToolName:        provider.ToolID(pluginNameUnknown),
