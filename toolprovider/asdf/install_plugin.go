@@ -8,9 +8,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-// Unlikely to conflict with any plugin name or URL, but clearly separates the plugin name and URL.
-const PluginSourceSeparator = "::"
-
 type PluginSource struct {
 	PluginName  provider.ToolID
 	GitCloneURL string
@@ -29,7 +26,7 @@ var pluginSourceMap = map[provider.ToolID]PluginSource{
 //
 // It resolves the plugin source from the tool request or predefined map,
 // checks if the plugin is already installed, and if not, installs it using asdf.
-func (a AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
+func (a *AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	plugin := parsePluginSource(tool)
 	if plugin == nil {
 		return provider.ToolInstallError{
