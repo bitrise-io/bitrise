@@ -39,7 +39,7 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	}
 	switch providerID {
 	case "asdf":
-		toolProvider = asdf.AsdfToolProvider{
+		toolProvider = &asdf.AsdfToolProvider{
 			ExecEnv: execenv.ExecEnv{
 				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
 				EnvVars:            map[string]string{},
