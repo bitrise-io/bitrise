@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-func Dirs() (installDir, dataDir string) {
+func Dirs(miseVersion string) (installDir, dataDir string) {
 	dataHomeDir := os.Getenv("XDG_DATA_HOME")
 	if dataHomeDir == "" {
 		dataHomeDir = filepath.Join(os.Getenv("HOME"), ".local", "share")
@@ -17,7 +17,7 @@ func Dirs() (installDir, dataDir string) {
 
 	// We want to use an isolated mise instance with a pinned version, even in
 	// local executions, so we install our version to the cache dir:
-	installDir = filepath.Join(cacheHomeDir, "bitrise", "toolprovider", "mise")
+	installDir = filepath.Join(cacheHomeDir, "bitrise", "toolprovider", "mise", miseVersion)
 
 	// ...but reuse the installed tool versions (if present in local runs) because those
 	// are expensive to install and take up a lot of space.
