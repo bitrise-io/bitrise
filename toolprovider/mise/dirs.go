@@ -3,13 +3,7 @@ package mise
 import (
 	"os"
 	"path/filepath"
-	"strings"
 )
-
-// versionForPath converts a version string to be filesystem-safe by replacing dots with dashes
-func versionForPath(version string) string {
-	return strings.ReplaceAll(version, ".", "-")
-}
 
 func Dirs(miseVersion string) (installDir, dataDir string) {
 	dataHomeDir := os.Getenv("XDG_DATA_HOME")
@@ -23,7 +17,7 @@ func Dirs(miseVersion string) (installDir, dataDir string) {
 
 	// We want to use an isolated mise instance with a pinned version, even in
 	// local executions, so we install our version to the cache dir:
-	installDir = filepath.Join(cacheHomeDir, "bitrise", "toolprovider", "mise", versionForPath(miseVersion))
+	installDir = filepath.Join(cacheHomeDir, "bitrise", "toolprovider", "mise", miseVersion)
 
 	// ...but reuse the installed tool versions (if present in local runs) because those
 	// are expensive to install and take up a lot of space.

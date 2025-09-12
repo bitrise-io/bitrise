@@ -18,7 +18,7 @@ const (
 )
 
 func TestDirs(t *testing.T) {
-	sanitizedVersion := versionForPath(MiseVersion)
+	sanitizedVersion := MiseVersion
 
 	tests := []struct {
 		name               string
@@ -84,42 +84,6 @@ func TestDirs(t *testing.T) {
 
 			require.Equal(t, tt.expectedInstallDir, installDir)
 			require.Equal(t, tt.expectedDataDir, dataDir)
-		})
-	}
-}
-
-func TestVersionForPath(t *testing.T) {
-	tests := []struct {
-		name     string
-		version  string
-		expected string
-	}{
-		{
-			name:     "version with dots",
-			version:  "v2025.8.7",
-			expected: "v2025-8-7",
-		},
-		{
-			name:     "version without dots",
-			version:  "v20250807",
-			expected: "v20250807",
-		},
-		{
-			name:     "empty version",
-			version:  "",
-			expected: "",
-		},
-		{
-			name:     "version with multiple dots",
-			version:  "v1.2.3.4",
-			expected: "v1-2-3-4",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := versionForPath(tt.version)
-			require.Equal(t, tt.expected, result)
 		})
 	}
 }
