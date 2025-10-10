@@ -130,13 +130,15 @@ func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
 	// ---
 
 	// Ensure dependencies
-	currentVersionMap, err := version.ToolVersionMap(binPath)
-	if err != nil {
-		return fmt.Errorf("failed to get current version map, error: %s", err)
-	}
-
-	if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
-		return fmt.Errorf("requirements validation failed, error: %s", err)
+	if len(plugin.Requirements) > 0 {
+		currentVersionMap, err := version.ToolVersionMap(binPath)
+		if err != nil {
+			return fmt.Errorf("check Bitrise tool versions: %s\nhint: run `bitrise setup --clean` and try again", err)
+		}
+	
+		if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
+			return fmt.Errorf("validate requirements: %s", err)
+		}
 	}
 	// ---
 
