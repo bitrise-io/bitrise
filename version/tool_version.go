@@ -13,7 +13,7 @@ func StepmanVersion() (version.Version, error) {
 
 	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr("stepman", args...)
 	if err != nil {
-		return version.Version{}, err
+		return version.Version{}, fmt.Errorf("stepman --version: %s", versionOut)
 	}
 
 	versionPtr, err := version.NewVersion(versionOut)
@@ -32,7 +32,7 @@ func EnvmanVersion(binPath string) (version.Version, error) {
 	args := []string{"envman", "--version"}
 	versionOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, args...)
 	if err != nil {
-		return version.Version{}, err
+		return version.Version{}, fmt.Errorf("envman --version: %s", versionOut)
 	}
 
 	versionPtr, err := version.NewVersion(versionOut)
