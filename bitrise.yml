@@ -95,6 +95,13 @@ workflows:
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_system_asdf_integration_tests: { }
+  
+  # Note: this workflow is triggered externally during stack testing, do not remove or break.
+  run_system_mise_tests:
+    steps:
+    - bundle::setup_repo: { }
+    - bundle::setup_go_junit_report: { }
+    - bundle::run_system_mise_integration_tests: { }
 
   test_binary_build_macos:
     steps:
@@ -308,6 +315,19 @@ step_bundles:
                 # We test the system bitrise executable, not one built from source
                 export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
                 cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
+
+  run_system_mise_integration_tests:
+    steps:
+      - script@1:
+          title: Run mise integration tests against system
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -ex
+
+                # We test the system bitrise executable, not one built from source
+                export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+                cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/mise/... -timeout 360s
 
   run_docker_integration_tests:
     steps:
