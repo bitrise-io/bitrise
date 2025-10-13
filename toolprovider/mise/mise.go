@@ -3,8 +3,10 @@ package mise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
@@ -40,6 +42,16 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 		return nil, errors.New("data directory must be provided")
 	}
 
+	err := os.MkdirAll(installDir, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("create install dir at %s: %w", installDir, err)
+	}
+
+	err = os.MkdirAll(dataDir, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("create data dir at %s: %w", dataDir, err)
+	}
+
 	return &MiseToolProvider{
 		ExecEnv: execenv.ExecEnv{
 			InstallDir: installDir,
@@ -62,6 +74,11 @@ func (m *MiseToolProvider) ID() string {
 }
 
 func (m *MiseToolProvider) Bootstrap() error {
+	if isMiseInstalled(m.ExecEnv.InstallDir) {
+		log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", m.ExecEnv.InstallDir)
+		return nil
+	}
+
 	err := installReleaseBinary(MiseVersion, MiseChecksums, m.ExecEnv.InstallDir)
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
@@ -71,6 +88,11 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
+	err := m.InstallPlugin(tool)
+	if err != nil {
+		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+	}
+
 	isAlreadyInstalled, err := isAlreadyInstalled(tool, m.resolveToLatestInstalled)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

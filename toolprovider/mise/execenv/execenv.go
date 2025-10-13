@@ -28,6 +28,13 @@ func (e *ExecEnv) RunMise(args ...string) (string, error) {
 	return e.RunMiseWithTimeout(0, args...)
 }
 
+func (e *ExecEnv) RunMisePlugin(args ...string) (string, error) {
+	cmdWithArgs := append([]string{"plugin"}, args...)
+
+	// Use timeout for all plugin operations as they involve unknown code execution
+	return e.RunMiseWithTimeout(DefaultTimeout, cmdWithArgs...)
+}
+
 // RunMiseWithTimeout runs mise commands that involve untrusted operations (plugin execution, remote network calls)
 // with a timeout to prevent hanging
 func (e *ExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error) {

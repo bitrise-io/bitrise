@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -17,6 +18,27 @@ import (
 )
 
 const fallbackDownloadURLBase = "https://storage.googleapis.com/mise-release-mirror"
+
+// isMiseInstalled checks if bin/mise is available and runnable in the target folder.
+func isMiseInstalled(targetDir string) bool {
+	misePath := filepath.Join(targetDir, "bin", "mise")
+
+	// Check if the file exists and is executable
+	info, err := os.Stat(misePath)
+	if err != nil {
+		return false
+	}
+
+	// Check if it's a regular file and has execute permissions
+	if !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 {
+		return false
+	}
+
+	// Try to run mise --version to verify it's actually runnable
+	cmd := exec.Command(misePath, "--version")
+	err = cmd.Run()
+	return err == nil
+}
 
 // installReleaseBinary installs the release binary for the specified version of Mise.
 func installReleaseBinary(version string, checksums map[string]string, targetDir string) error {

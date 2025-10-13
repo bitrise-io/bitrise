@@ -18,13 +18,14 @@ builds:
   - goos: linux
     goarch: arm64
   ldflags:
+  - -w -s # strip debug info and symbol table
   - -X github.com/bitrise-io/bitrise/v2/version.VERSION={{ .Version }}
   - -X github.com/bitrise-io/bitrise/v2/version.Commit={{ .FullCommit }}
   - -X github.com/bitrise-io/bitrise/v2/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
-- format: binary
+- formats: [ binary ]
   id: default
   # Name format should match the curl install script
   name_template: >-
@@ -33,7 +34,7 @@ archives:
     {{- if eq .Arch "amd64" }}x86_64
     {{- else }}{{ .Arch }}{{ end }}
 
-- format: binary
+- formats: [ binary ]
   id: s3
   name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Version }}"
 
@@ -84,7 +85,7 @@ checksum:
   name_template: checksums.txt
 snapshot:
   # Run `goreleaser release --snapshot` locally to create binaries without publishing and checks
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:

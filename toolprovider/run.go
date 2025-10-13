@@ -3,8 +3,6 @@ package toolprovider
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/bitrise-io/colorstring"
@@ -41,7 +39,7 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	}
 	switch providerID {
 	case "asdf":
-		toolProvider = asdf.AsdfToolProvider{
+		toolProvider = &asdf.AsdfToolProvider{
 			ExecEnv: execenv.ExecEnv{
 				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
 				EnvVars:            map[string]string{},
@@ -50,17 +48,8 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 			},
 		}
 	case "mise":
-		// At this time, we isolate Mise from any system-wide config or other Mise instances.
-		// We might want to re-use the data dir of the system-wide Mise instance in the future.
-		// (Local execution is not in focus yet)
-		rootDir := os.Getenv("XDG_STATE_HOME")
-		if rootDir == "" {
-			rootDir = filepath.Join(os.Getenv("HOME"), ".local", "state")
-		}
-		rootDir = filepath.Join(rootDir, "bitrise", "toolprovider")
-		installDir := filepath.Join(rootDir, "mise", "install")
-		dataDir := filepath.Join(rootDir, "mise", "data")
-		toolProvider, err = mise.NewToolProvider(installDir, dataDir)
+		miseInstallDir, miseDataDir := mise.Dirs(mise.MiseVersion)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}
