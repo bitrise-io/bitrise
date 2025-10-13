@@ -23,6 +23,11 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
 	}
+
+	if len(toolRequests) == 0 {
+		return nil, nil
+	}
+
 	providerID := defaultToolConfig().Provider
 	if config.ToolConfig != nil {
 		if config.ToolConfig.Provider != "" {
@@ -60,10 +65,6 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	err = toolProvider.Bootstrap()
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
-	}
-
-	if len(toolRequests) == 0 {
-		return nil, nil
 	}
 
 	printToolRequests(toolRequests)
