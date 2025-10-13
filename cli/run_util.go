@@ -46,8 +46,6 @@ func (r WorkflowRunner) runWorkflow(
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties,
 ) models.BuildRunResultsModel {
-	bitrise.PrintRunningWorkflow(plan.WorkflowTitle)
-
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
 

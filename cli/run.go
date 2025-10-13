@@ -280,13 +280,6 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	environments = append(environments, targetWorkflow.Environments...)
 
-	// Toolprovider entrypoint
-	toolEnvs, err := toolprovider.Run(r.config.Config, tracker, r.config.Modes.CIMode, r.config.Workflow)
-	if err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
-	}
-	environments = append(environments, toolEnvs...)
-
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
 		toolkitName := aToolkit.ToolkitName()
@@ -338,9 +331,19 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 
 	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
+		bitrise.PrintRunningWorkflow(workflowRunPlan.WorkflowTitle)
+
 		isLastWorkflow := i == len(plan.ExecutionPlan)-1
 		workflowToRun := r.config.Config.Workflows[workflowRunPlan.WorkflowID]
 		environments = append(environments, workflowToRun.Environments...)
+
+		// Toolprovider entrypoint
+		toolEnvs, err := toolprovider.Run(r.config.Config, tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID)
+		if err != nil {
+			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
+		}
+		environments = append(environments, toolEnvs...)
+
 		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
 	}
 

@@ -1,0 +1,18 @@
+format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  setup_node:
+    # We define the tool in this workflow that gets chained in other workflows
+    tools:
+      nodejs: 22:latest
+
+  toolprovider_test:
+    before_run:
+      # We chain the setup_node workflow to get the tool activated, it should has a "side-effect" on this workflow's environment too
+      - setup_node
+    steps:
+      - script@1:
+          title: Test activated tool
+          inputs:
+            - content: set -ex; node --version | grep -q "22"
