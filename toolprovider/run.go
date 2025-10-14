@@ -36,12 +36,6 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	}
 
 	var toolProvider provider.ToolProvider
-	if providerID == "asdf" && !isCI {
-		// asdf bootstrap is not implemented yet and the local env might not have it installed.
-		// We also want to dogfood the Mise provider and it can bootstrap itself
-		// TODO: clean this up once Mise is the default for everyone
-		providerID = "mise"
-	}
 	switch providerID {
 	case "asdf":
 		toolProvider = &asdf.AsdfToolProvider{
