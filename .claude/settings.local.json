@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(gh release list:*)",
+      "Bash(awk:*)",
+      "WebFetch(domain:mise.jdx.dev)",
+      "Bash(gh release view:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
