@@ -13,3 +13,14 @@ workflows:
           title: Test activated tool
           inputs:
             - content: set -ex; node --version | grep -q "22"
+  node_corepack_test:
+    steps:
+      - script@1:
+          title: Test package managers
+          inputs:
+            - content: |-
+                set -exo pipefail
+                node --version
+                npm --version
+                yarn --version
+                pnpm --version

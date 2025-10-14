@@ -64,6 +64,10 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 				"MISE_CONFIG_DIR":         filepath.Join(dataDir),
 				"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
 				"MISE_GLOBAL_CONFIG_ROOT": dataDir,
+
+				// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
+				// https://mise.jdx.dev/lang/node.html#environment-variables
+				"MISE_NODE_COREPACK": "1",
 			},
 		},
 	}, nil
