@@ -4,6 +4,9 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 tools:
   nodejs: 22:latest
 
+tool_config:
+  provider: asdf
+
 workflows:
   toolprovider_test:
     steps:

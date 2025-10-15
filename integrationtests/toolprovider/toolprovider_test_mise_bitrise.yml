@@ -15,5 +15,15 @@ workflows:
             - content: |
                 set -ex
                 node --version | grep -q "22"
-                npm install -g yarn
+                npm install -g @expo/cli
+  node_corepack_test:
+    steps:
+      - script@1:
+          title: Test package managers
+          inputs:
+            - content: |-
+                set -exo pipefail
+                node --version
+                npm --version
                 yarn --version
+                pnpm --version
