@@ -12,7 +12,11 @@ workflows:
       - script@1:
           title: Test activated tool
           inputs:
-            - content: set -ex; node --version | grep -q "22"
+            - content: |
+                set -ex
+                node --version | grep -q "22"
+                npm install -g yarn
+                yarn --version
   node_corepack_test:
     steps:
       - script@1:

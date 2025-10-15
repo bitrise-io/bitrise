@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -47,7 +47,7 @@ func (e *ExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) (str
 		defer cancel()
 	}
 
-	executable := path.Join(e.InstallDir, "bin", "mise")
+	executable := filepath.Join(e.InstallDir, "bin", "mise")
 	cmd := exec.CommandContext(ctx, executable, args...)
 	cmd.Env = os.Environ()
 	for k, v := range e.ExtraEnvs {

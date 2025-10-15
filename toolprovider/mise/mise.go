@@ -137,5 +137,9 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 		return provider.EnvironmentActivation{}, fmt.Errorf("get mise env: %w", err)
 	}
 
-	return processEnvOutput(envs), nil
+	activationResult := processEnvOutput(envs)
+	// Some core plugins create shims to executables (e.g. npm). These shims call `mise reshim` and require the `mise` binary to be in $PATH.
+	miseExecPath := filepath.Join(m.ExecEnv.InstallDir, "bin")
+	activationResult.ContributedPaths = append(activationResult.ContributedPaths, miseExecPath)
+	return activationResult, nil
 }
