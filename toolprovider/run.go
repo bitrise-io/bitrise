@@ -47,7 +47,7 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 			},
 		}
 	case "mise":
-		miseInstallDir, miseDataDir := mise.Dirs(mise.MiseVersion)
+		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
 		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
