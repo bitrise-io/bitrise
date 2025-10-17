@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -23,9 +22,9 @@ import (
 // 3. Verify checksums
 // 4. Update version string and checksums below
 // 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
-const miseVersion = "v2025.10.8"
+const misePreviewVersion = "v2025.10.8"
 
-var miseChecksums = map[string]string{
+var misePreviewChecksums = map[string]string{
 	"linux-x64":   "895db0eb777b90c449c4c79a36bd5f749fd614749876782ea32ede02c45e6bc2",
 	"linux-arm64": "c949d574a46b68bf8d5834d099614818d6774935d908f53051f47d24ac0601c8",
 	"macos-x64":   "422260046b8a24f0c72bfad60ac94837f834c83b5e7823e79f997ae7ff660de2",
@@ -39,11 +38,6 @@ var miseStableChecksums = map[string]string{
 	"linux-arm64": "d8dfa34d55762125e90b56ce8c9aaa037f7890fd00ac0c9cd8a097cc8530b126",
 	"macos-x64":   "2b685b3507339f07d0da97b7dcf99354a3b14a16e8767af73057711e0ddce72f",
 	"macos-arm64": "0b5893de7c8c274736867b7c4c7ed565b4429f4d6272521ace802f8a21422319",
-}
-
-var stackTypeCache struct {
-	once   sync.Once
-	isEdge bool
 }
 
 type MiseToolProvider struct {
@@ -160,20 +154,19 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	return activationResult, nil
 }
 
-func isEdgeStack() bool {
-	stackTypeCache.once.Do(func() {
-		if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
-			log.Debugf("Mise: Detected edge stack: %s", stack)
-			// Cache the result so that we don't have to check multiple times
-			stackTypeCache.isEdge = true
-		}
-	})
-	return stackTypeCache.isEdge
+func isEdgeStack() (isEdge bool) {
+	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
+		isEdge = true
+	} else {
+		isEdge = false
+	}
+	log.Debugf("Mise: Stack is edge: %s", isEdge)
+	return
 }
 
 func GetMiseVersion() string {
 	if isEdgeStack() {
-		return miseVersion
+		return misePreviewVersion
 	}
 	// Fallback to stable version for non-edge stacks
 	return miseStableVersion
@@ -181,7 +174,7 @@ func GetMiseVersion() string {
 
 func GetMiseChecksums() map[string]string {
 	if isEdgeStack() {
-		return miseChecksums
+		return misePreviewChecksums
 	}
 	// Fallback to stable version for non-edge stacks
 	return miseStableChecksums
