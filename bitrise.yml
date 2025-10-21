@@ -60,9 +60,8 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
-    tools:
-      golang: "1.23.10"
     steps:
+    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
@@ -79,12 +78,14 @@ workflows:
 
   run_integration_tests_linux:
     steps:
+    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
 
   run_docker_integration_tests_linux:
     steps:
+    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_docker_integration_tests:
@@ -117,6 +118,7 @@ workflows:
 
   test_binary_build_linux:
     steps:
+    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
@@ -200,6 +202,28 @@ workflows:
         - content: |-
             set -ex
             exit 0
+
+  unpin-go-version:
+    title: Unpin Go version from .tool-versions
+    description: Removes golang line from .tool-versions file, so the global version is used.
+    steps:
+    - script@1:
+        title: Unpin Go version
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            TOOL_VERSIONS_FILE=".tool-versions"
+
+            if [ ! -f "$TOOL_VERSIONS_FILE" ]; then
+                echo "Error: $TOOL_VERSIONS_FILE not found"
+                exit 1
+            fi
+
+            # Remove lines with golang from .tool-versions
+            grep -v '^golang ' "$TOOL_VERSIONS_FILE" > "$TOOL_VERSIONS_FILE.tmp" || true
+            mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
 
 step_bundles:
   run_lint:
