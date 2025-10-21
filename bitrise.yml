@@ -60,6 +60,8 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
+    tools:
+      golang: "1.23.10"
     steps:
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
@@ -213,8 +215,6 @@ step_bundles:
             ./bin/golangci-lint run
 
   run_unit_tests:
-    tools:
-      golang: "1.23.10"
     steps:
     - script@1:
         title: Run unit tests
