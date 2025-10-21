@@ -60,8 +60,9 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
+    before_run:
+      - unpin-go-version
     steps:
-    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
@@ -77,15 +78,17 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
+    before_run:
+      - unpin-go-version
     steps:
-    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
 
   run_docker_integration_tests_linux:
+    before_run:
+      - unpin-go-version
     steps:
-    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_docker_integration_tests:
@@ -117,8 +120,9 @@ workflows:
         machine_type_id: g2.mac.large
 
   test_binary_build_linux:
+    before_run:
+      - unpin-go-version
     steps:
-    - unpin-go-version: { }
     - bundle::setup_repo: { }
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
