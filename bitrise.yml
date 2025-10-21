@@ -60,10 +60,11 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
-    before_run:
-      - unpin-go-version
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
 
@@ -78,30 +79,32 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
-    before_run:
-      - unpin-go-version
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
 
   run_docker_integration_tests_linux:
-    before_run:
-      - unpin-go-version
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
-  
+
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_asdf_tests:
     steps:
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_system_asdf_integration_tests: { }
-  
+
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_mise_tests:
     steps:
@@ -120,10 +123,11 @@ workflows:
         machine_type_id: g2.mac.large
 
   test_binary_build_linux:
-    before_run:
-      - unpin-go-version
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
 
