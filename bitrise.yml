@@ -213,6 +213,8 @@ step_bundles:
             ./bin/golangci-lint run
 
   run_unit_tests:
+    tools:
+      golang: "1.23.10"
     steps:
     - script@1:
         title: Run unit tests
