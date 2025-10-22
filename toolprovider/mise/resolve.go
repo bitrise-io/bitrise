@@ -63,9 +63,32 @@ func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version strin
 	// - it can return multiple versions (one per line) when a fuzzy version is provided
 	// - in case of no matching version, the exit code is still 0, just there is no output
 	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
-	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+
+	if version == "installed" {
+		// List all installed versions to see if there is at least one version available.
+		output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--quiet", string(toolName))
+		if err != nil {
+			return false, fmt.Errorf("mise ls --installed %s: %w", toolName, err)
+		}
+
+		trimmed := strings.TrimSpace(string(output))
+		if trimmed == "" {
+			return false, nil
+		}
+
+		// Mise outputs installed versions line by line, first is header (in some cases).
+		lines := strings.Split(trimmed, "\n")
+		return len(lines) > 1 || (len(lines) == 1 && !strings.HasPrefix(lines[0], "Tool")), nil
+	}
+
+	search := string(toolName)
+	if version != "" && version != "latest" {
+		search = fmt.Sprintf("%s@%s", toolName, version)
+	}
+
+	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", search)
 	if err != nil {
-		return false, fmt.Errorf("mise ls-remote %s@%s: %w", toolName, version, err)
+		return false, fmt.Errorf("mise ls-remote %s: %w", search, err)
 	}
 
 	return strings.TrimSpace(string(output)) != "", nil
