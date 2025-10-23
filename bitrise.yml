@@ -213,7 +213,10 @@ workflows:
 
   unpin-go-version:
     title: Unpin Go version from .tool-versions
-    description: Removes golang line from .tool-versions file, so the global version is used.
+    description: |-
+      Removes golang line from .tool-versions file, so the global version is used.
+      TODO: this is only needed as long as Go steps are built from source
+      (because tool setup has no influence on the environment of the CLI process itself, just the environment of the workflow).
     steps:
     - script@1:
         title: Unpin Go version
