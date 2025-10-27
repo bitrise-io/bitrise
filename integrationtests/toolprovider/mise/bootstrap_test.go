@@ -39,8 +39,9 @@ func TestFallbackDownloadURLs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s-%s", tt.os, tt.arch), func(t *testing.T) {
 			platformName := fmt.Sprintf("%s-%s", tt.os, tt.arch)
-			expectedChecksum := mise.MiseChecksums[platformName]
-			url := mise.FallbackDownloadURL(mise.MiseVersion, platformName)
+			checksums := mise.GetMiseChecksums()
+			expectedChecksum := checksums[platformName]
+			url := mise.FallbackDownloadURL(mise.GetMiseVersion(), platformName)
 
 			resp, err := retryablehttp.Get(url)
 			require.NoError(t, err)

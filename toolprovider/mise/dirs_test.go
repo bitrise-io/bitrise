@@ -18,7 +18,7 @@ const (
 )
 
 func TestDirs(t *testing.T) {
-	sanitizedVersion := MiseVersion
+	sanitizedVersion := GetMiseVersion()
 
 	tests := []struct {
 		name               string
@@ -80,7 +80,7 @@ func TestDirs(t *testing.T) {
 				t.Setenv("MISE_DATA_DIR", tt.miseDataDir)
 			}
 
-			installDir, dataDir := Dirs(MiseVersion)
+			installDir, dataDir := Dirs(GetMiseVersion())
 
 			require.Equal(t, tt.expectedInstallDir, installDir)
 			require.Equal(t, tt.expectedDataDir, dataDir)
