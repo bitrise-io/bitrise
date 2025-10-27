@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -21,9 +22,18 @@ import (
 // 3. Verify checksums
 // 4. Update version string and checksums below
 // 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
-const MiseVersion = "v2025.8.7"
+const misePreviewVersion = "v2025.10.8"
 
-var MiseChecksums = map[string]string{
+var misePreviewChecksums = map[string]string{
+	"linux-x64":   "895db0eb777b90c449c4c79a36bd5f749fd614749876782ea32ede02c45e6bc2",
+	"linux-arm64": "c949d574a46b68bf8d5834d099614818d6774935d908f53051f47d24ac0601c8",
+	"macos-x64":   "422260046b8a24f0c72bfad60ac94837f834c83b5e7823e79f997ae7ff660de2",
+	"macos-arm64": "bc7c40c48a43dfd80537e7ca5e55a2cf7dd37924bf7595d74b29848a6ab0e2ea",
+}
+
+const miseStableVersion = "v2025.8.7"
+
+var miseStableChecksums = map[string]string{
 	"linux-x64":   "c2d67d52880373931166343ef9a3b97665175ac2796dc95b9310179d341b2713",
 	"linux-arm64": "d8dfa34d55762125e90b56ce8c9aaa037f7890fd00ac0c9cd8a097cc8530b126",
 	"macos-x64":   "2b685b3507339f07d0da97b7dcf99354a3b14a16e8767af73057711e0ddce72f",
@@ -83,7 +93,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 		return nil
 	}
 
-	err := installReleaseBinary(MiseVersion, MiseChecksums, m.ExecEnv.InstallDir)
+	err := installReleaseBinary(GetMiseVersion(), GetMiseChecksums(), m.ExecEnv.InstallDir)
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
 	}
@@ -142,4 +152,30 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	miseExecPath := filepath.Join(m.ExecEnv.InstallDir, "bin")
 	activationResult.ContributedPaths = append(activationResult.ContributedPaths, miseExecPath)
 	return activationResult, nil
+}
+
+func isEdgeStack() (isEdge bool) {
+	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
+		isEdge = true
+	} else {
+		isEdge = false
+	}
+	log.Debugf("Mise: Stack is edge: %s", isEdge)
+	return
+}
+
+func GetMiseVersion() string {
+	if isEdgeStack() {
+		return misePreviewVersion
+	}
+	// Fallback to stable version for non-edge stacks
+	return miseStableVersion
+}
+
+func GetMiseChecksums() map[string]string {
+	if isEdgeStack() {
+		return misePreviewChecksums
+	}
+	// Fallback to stable version for non-edge stacks
+	return miseStableChecksums
 }

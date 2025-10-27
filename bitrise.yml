@@ -62,6 +62,9 @@ workflows:
   run_unit_tests_linux:
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_unit_tests: { }
 
@@ -78,24 +81,30 @@ workflows:
   run_integration_tests_linux:
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_integration_tests: { }
 
   run_docker_integration_tests_linux:
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_go_junit_report: { }
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
-  
+
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_asdf_tests:
     steps:
     - bundle::setup_repo: { }
     - bundle::setup_go_junit_report: { }
     - bundle::run_system_asdf_integration_tests: { }
-  
+
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_mise_tests:
     steps:
@@ -116,6 +125,9 @@ workflows:
   test_binary_build_linux:
     steps:
     - bundle::setup_repo: { }
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
     - bundle::setup_goreleaser: { }
     - bundle::test_binary_build: { }
 
@@ -198,6 +210,31 @@ workflows:
         - content: |-
             set -ex
             exit 0
+
+  unpin-go-version:
+    title: Unpin Go version from .tool-versions
+    description: |-
+      Removes golang line from .tool-versions file, so the global version is used.
+      TODO: this is only needed as long as Go steps are built from source
+      (because tool setup has no influence on the environment of the CLI process itself, just the environment of the workflow).
+    steps:
+    - script@1:
+        title: Unpin Go version
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+
+            TOOL_VERSIONS_FILE=".tool-versions"
+
+            if [ ! -f "$TOOL_VERSIONS_FILE" ]; then
+                echo "Error: $TOOL_VERSIONS_FILE not found"
+                exit 1
+            fi
+
+            # Remove lines with golang from .tool-versions
+            grep -v '^golang ' "$TOOL_VERSIONS_FILE" > "$TOOL_VERSIONS_FILE.tmp" || true
+            mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
 
 step_bundles:
   run_lint:
