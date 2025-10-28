@@ -53,7 +53,11 @@ func miseLatestCmd(tool provider.ToolID, version string) string {
 }
 
 func miseLatestInstalledCmd(tool provider.ToolID, version string) string {
-	return fmt.Sprintf("latest --installed --quiet %s@%s", tool, version)
+	var toolString = string(tool)
+	if version != "" && version != "installed" {
+		toolString = fmt.Sprintf("%s@%s", tool, version)
+	}
+	return fmt.Sprintf("latest --installed --quiet %s", toolString)
 }
 
 func miseLsInstalledCmd(tool provider.ToolID) string {
