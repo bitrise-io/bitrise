@@ -11,6 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func cliVersion() string {
+	if version.IsAlternativeInstallation {
+		return fmt.Sprintf("%s (%s)", version.VERSION, version.Commit)
+	}
+	return version.VERSION
+}
+
 func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -46,7 +53,7 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -96,7 +103,7 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -139,7 +146,7 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -201,7 +208,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -255,7 +262,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -319,7 +326,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          version.VERSION,
+				Version:          cliVersion(),
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
