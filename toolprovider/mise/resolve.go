@@ -1,15 +1,22 @@
 package mise
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
 var errNoMatchingVersion = errors.New("no matching version found")
+
+// MiseExecutor defines the interface for executing mise commands
+type MiseExecutor interface {
+	RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error)
+}
 
 func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.ToolRequest) (string, error) {
 	// Mise doesn't tell us what version it resolved to when installing the user-provided (and potentially fuzzy) version.
@@ -28,8 +35,12 @@ func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.To
 }
 
 func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, version string) (string, error) {
+	return resolveToLatestReleased(&m.ExecEnv, toolName, version)
+}
+
+func resolveToLatestReleased(executor MiseExecutor, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest %s@%s: %w", toolName, version, err)
 	}
@@ -43,8 +54,12 @@ func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, ver
 }
 
 func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, version string) (string, error) {
+	return resolveToLatestInstalled(&m.ExecEnv, toolName, version)
+}
+
+func resolveToLatestInstalled(executor MiseExecutor, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest --installed %s@%s: %w", toolName, version, err)
 	}
@@ -58,6 +73,10 @@ func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, ve
 }
 
 func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version string) (bool, error) {
+	return versionExists(&m.ExecEnv, toolName, version)
+}
+
+func versionExists(executor MiseExecutor, toolName provider.ToolID, version string) (bool, error) {
 	// Notes:
 	// - ls-remote accepts both fuzzy and concrete versions
 	// - it can return multiple versions (one per line) when a fuzzy version is provided
@@ -66,30 +85,49 @@ func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version strin
 
 	if version == "installed" {
 		// List all installed versions to see if there is at least one version available.
-		output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--quiet", string(toolName))
+		output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--json", "--quiet", string(toolName))
 		if err != nil {
 			return false, fmt.Errorf("mise ls --installed %s: %w", toolName, err)
 		}
 
 		trimmed := strings.TrimSpace(string(output))
-		if trimmed == "" {
-			return false, nil
+		if trimmed != "" && trimmed != "[]" {
+			// Parse JSON array returned by mise.
+			if installedExists, err := parseInstalledVersionsJSON(trimmed); err != nil {
+				return false, fmt.Errorf("parsing mise ls --installed %s output: %w", toolName, err)
+			} else if installedExists {
+				return true, nil
+			}
 		}
 
-		// Mise outputs installed versions line by line, first is header (in some cases).
-		lines := strings.Split(trimmed, "\n")
-		return len(lines) > 1 || (len(lines) == 1 && !strings.HasPrefix(lines[0], "Tool")), nil
+		// Fallback: no installed versions found, fall through to remote (ls-remote) existence check.
 	}
 
 	search := string(toolName)
-	if version != "" && version != "latest" {
+	if version != "" && version != "latest" && version != "installed" {
 		search = fmt.Sprintf("%s@%s", toolName, version)
 	}
 
-	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", search)
+	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", search)
 	if err != nil {
 		return false, fmt.Errorf("mise ls-remote %s: %w", search, err)
 	}
 
 	return strings.TrimSpace(string(output)) != "", nil
+}
+
+// parseInstalledVersionsJSON returns true if at least one installed entry is present.
+func parseInstalledVersionsJSON(raw string) (bool, error) {
+	var entries []struct {
+		Installed bool `json:"installed"`
+	}
+	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+		return false, err
+	}
+	for _, e := range entries {
+		if e.Installed {
+			return true, nil
+		}
+	}
+	return false, nil
 }
