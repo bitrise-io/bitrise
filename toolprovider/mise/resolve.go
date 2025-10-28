@@ -59,7 +59,13 @@ func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, ve
 
 func resolveToLatestInstalled(executor MiseExecutor, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
+	var toolString = string(toolName)
+	if version != "" && version != "installed" {
+		// tool@installed is not valid, so only append version when it's not "installed"
+		toolString = fmt.Sprintf("%s@%s", toolName, version)
+	}
+
+	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", toolString)
 	if err != nil {
 		return "", fmt.Errorf("mise latest --installed %s@%s: %w", toolName, version, err)
 	}
