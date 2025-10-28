@@ -67,7 +67,7 @@ func resolveToLatestInstalled(executor MiseExecutor, toolName provider.ToolID, v
 
 	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--installed", "--quiet", toolString)
 	if err != nil {
-		return "", fmt.Errorf("mise latest --installed %s@%s: %w", toolName, version, err)
+		return "", fmt.Errorf("mise latest --installed %s: %w", toolString, err)
 	}
 
 	v := strings.TrimSpace(string(output))
@@ -83,12 +83,6 @@ func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version strin
 }
 
 func versionExists(executor MiseExecutor, toolName provider.ToolID, version string) (bool, error) {
-	// Notes:
-	// - ls-remote accepts both fuzzy and concrete versions
-	// - it can return multiple versions (one per line) when a fuzzy version is provided
-	// - in case of no matching version, the exit code is still 0, just there is no output
-	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
-
 	if version == "installed" {
 		// List all installed versions to see if there is at least one version available.
 		output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--json", "--quiet", string(toolName))
@@ -97,7 +91,7 @@ func versionExists(executor MiseExecutor, toolName provider.ToolID, version stri
 		}
 
 		trimmed := strings.TrimSpace(string(output))
-		if trimmed != "" && trimmed != "[]" {
+		if trimmed != "" {
 			// Parse JSON array returned by mise.
 			if installedExists, err := parseInstalledVersionsJSON(trimmed); err != nil {
 				return false, fmt.Errorf("parsing mise ls --installed %s output: %w", toolName, err)
@@ -114,6 +108,11 @@ func versionExists(executor MiseExecutor, toolName provider.ToolID, version stri
 		search = fmt.Sprintf("%s@%s", toolName, version)
 	}
 
+	// Notes:
+	// - ls-remote accepts both fuzzy and concrete versions
+	// - it can return multiple versions (one per line) when a fuzzy version is provided
+	// - in case of no matching version, the exit code is still 0, just there is no output
+	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
 	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", search)
 	if err != nil {
 		return false, fmt.Errorf("mise ls-remote %s: %w", search, err)
