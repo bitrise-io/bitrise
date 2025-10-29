@@ -7,7 +7,7 @@ app:
   status_report_name: Run <target_id> pipeline
 
 tools:
-  go: "1.23.10"
+  go: "1.25.3"
 
 pipelines:
   ci:
