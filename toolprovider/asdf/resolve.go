@@ -13,9 +13,9 @@ import (
 // Special cases are versions that do not follow the usual versioning scheme.
 // These are typically used to request the latest released or installed version.
 var specialCases = []string{
-	// If user did not provide a version before the colon, i.e. ":latest" or "".
+	// If user did not provide a version after the colon, i.e. "tool:".
 	"",
-	// If user did provide a version, but it is a keyword instead of a version, i.e. "latest:installed" or "installed".
+	// If user did provide a version, but it is a keyword instead of a version, i.e. "tool:installed" or "tool:latest".
 	"latest",
 	"installed",
 }
