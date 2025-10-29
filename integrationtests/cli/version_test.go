@@ -28,7 +28,7 @@ format version: %s
 os: %s
 go: %s
 build number: 
-commit: (devel)`, version.VERSION, models.FormatVersion, expectedOSVersion, runtime.Version())
+commit: %s`, version.VERSION, models.FormatVersion, expectedOSVersion, runtime.Version(), version.Commit)
 
 		require.Equal(t, expectedVersionOut, out)
 	}
