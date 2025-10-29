@@ -1,6 +1,8 @@
 module github.com/bitrise-io/bitrise/v2
 
-go 1.25.3
+go 1.23.0
+
+toolchain go1.25.3
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0

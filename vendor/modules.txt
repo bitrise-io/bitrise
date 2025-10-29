@@ -69,7 +69,6 @@ github.com/bitrise-io/go-utils/versions
 # github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
-github.com/bitrise-io/go-utils/v2/command
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
 github.com/bitrise-io/go-utils/v2/log/colorstring
