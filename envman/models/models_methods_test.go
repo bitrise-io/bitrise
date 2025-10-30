@@ -560,7 +560,7 @@ func Test_EnvsSerializeModel_Normalize(t *testing.T) {
 				key, value, err := env.GetKeyValuePair()
 				require.NoError(t, err)
 
-				if key == "KEY_ONE" {
+				if key == "KEY_ONE" { //nolint:staticcheck // QF1003: preserving original logic
 					require.Equal(t, "first value", value)
 
 					options, err := env.GetOptions()
