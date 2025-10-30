@@ -1,8 +1,6 @@
 module github.com/bitrise-io/stepman
 
-go 1.23.0
-
-toolchain go1.23.10 // https://github.com/golang/go/issues/72877
+go 1.25.3
 
 require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
