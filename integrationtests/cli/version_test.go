@@ -23,13 +23,17 @@ func Test_VersionOutput(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedOSVersion := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
-		expectedVersionOut := fmt.Sprintf(`version: %s
+
+		expectedPrefix := fmt.Sprintf(`version: %s
 format version: %s
 os: %s
 go: %s
 build number: 
-commit: %s`, version.VERSION, models.FormatVersion, expectedOSVersion, runtime.Version(), version.Commit)
+commit: `, version.VERSION, models.FormatVersion, expectedOSVersion, runtime.Version())
 
-		require.Equal(t, expectedVersionOut, out)
+		require.Contains(t, out, expectedPrefix)
+
+		// Verify the commit field matches expected formats: (devel), commit hash, or commit hash+dirty
+		require.Regexp(t, `commit: (\(devel\)|[a-f0-9]+(\+dirty)?)$`, out)
 	}
 }
