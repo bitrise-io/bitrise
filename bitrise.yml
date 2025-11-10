@@ -7,7 +7,7 @@ app:
   status_report_name: Run <target_id> pipeline
 
 tools:
-  go: "1.23.10"
+  go: "1.25.3"
 
 pipelines:
   ci:
@@ -246,7 +246,7 @@ step_bundles:
         - content: |-
             #!/usr/bin/env bash
             set -ex
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s v2.3.1
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s v2.6.0
             ./bin/golangci-lint run
 
   run_unit_tests:

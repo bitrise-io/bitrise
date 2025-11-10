@@ -1,29 +1,27 @@
 module github.com/bitrise-io/bitrise/v2
 
-go 1.23.0
-
-toolchain go1.23.10 // https://github.com/golang/go/issues/72877
+go 1.25.3
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.5.3
+	github.com/bitrise-io/envman/v2 v2.5.5
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
-	github.com/bitrise-io/go-utils v1.0.13
+	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.18.2
+	github.com/bitrise-io/stepman v0.18.3
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/gofrs/uuid v4.3.1+incompatible
-	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/go-version v1.4.0
 	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli v1.22.15
+	github.com/urfave/cli v1.22.17
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/mod v0.21.0
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.37.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -34,7 +32,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
@@ -74,10 +72,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/term v0.36.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

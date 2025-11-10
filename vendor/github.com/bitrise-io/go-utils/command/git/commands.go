@@ -30,6 +30,11 @@ func (g *Git) CloneTagOrBranch(repo, tagOrBranch string, opts ...string) *comman
 	return g.command(args...)
 }
 
+// RemoteBranches lists all the remote branches.
+func (g *Git) RemoteBranches() *command.Model {
+	return g.command("ls-remote", "-b")
+}
+
 // RemoteList shows a list of existing remote urls with remote names.
 func (g *Git) RemoteList() *command.Model {
 	return g.command("remote", "-v")
@@ -48,9 +53,10 @@ func (g *Git) Fetch(opts ...string) *command.Model {
 }
 
 // Checkout switches branches or restore working tree files.
-// Arg can be a commit hash, a branch or a tag.
-func (g *Git) Checkout(arg string) *command.Model {
-	return g.command("checkout", arg)
+func (g *Git) Checkout(args ...string) *command.Model {
+	a := []string{"checkout"}
+	a = append(a, args...)
+	return g.command(a...)
 }
 
 // Merge joins two or more development histories together.

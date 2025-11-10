@@ -196,7 +196,7 @@ func generateFormattedYMLForEnvModels(envs []models.EnvironmentItemModel) (model
 // WriteEnvMapToFile ...
 func WriteEnvMapToFile(pth string, envs []models.EnvironmentItemModel) error {
 	if pth == "" {
-		return errors.New("No path provided")
+		return errors.New("no path provided")
 	}
 
 	envYML, err := generateFormattedYMLForEnvModels(envs)

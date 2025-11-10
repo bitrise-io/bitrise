@@ -87,8 +87,8 @@ Some env vars were erased because their size would exceed system limits.
 If you rely on these env vars in steps, you should read the original values from a file on disk.
 This file is available at $%s.
 The following env vars were erased and have an empty value in the runtime environment:
-%s`, colorstring.Cyan(DefaultEnvfilePathEnv), colorstring.Cyan(erasedEnvList)) //nolint:govet
-	log.Warnf(message)
+%s`, colorstring.Cyan("%s", DefaultEnvfilePathEnv), colorstring.Cyan("%s", erasedEnvList))
+	log.Warnf("%s", message)
 }
 
 func load(filepath string) (EnvFile, error) {
