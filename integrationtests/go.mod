@@ -1,6 +1,6 @@
 module github.com/bitrise-io/bitrise/v2/integrationtests
 
-go 1.23.0
+go 1.25.3
 
 // Magic trick that allows us to exclude integration tests from the main Go package
 // (other repos consume the main package as a Go lib) and keep full Go LSP support for this package.
