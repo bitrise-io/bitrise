@@ -353,7 +353,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			mock := newMockMiseExecutor()
 			tt.setupMock(mock)
 
-			version, err := resolveToLatestReleased(mock, tt.toolName, tt.version)
+			version, err := resolveToLatestReleased(mock, string(tt.toolName), tt.version)
 
 			if tt.wantErr {
 				if err == nil {
@@ -468,7 +468,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			mock := newMockMiseExecutor()
 			tt.setupMock(mock)
 
-			version, err := resolveToLatestInstalled(mock, tt.toolName, tt.version)
+			version, err := resolveToLatestInstalled(mock, string(tt.toolName), tt.version)
 
 			if tt.wantErr {
 				if err == nil {
