@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -39,6 +40,9 @@ var miseStableChecksums = map[string]string{
 	"macos-x64":   "2b685b3507339f07d0da97b7dcf99354a3b14a16e8767af73057711e0ddce72f",
 	"macos-arm64": "0b5893de7c8c274736867b7c4c7ed565b4429f4d6272521ace802f8a21422319",
 }
+
+const nixpkgsPluginGitURL = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
+const nixpkgsPluginCommit = "7e688b5a79e8aa4b083ad58636f0912440f6d170" // Can be a branch, tag, or commit hash
 
 type MiseToolProvider struct {
 	ExecEnv execenv.ExecEnv
@@ -102,9 +106,22 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	err := m.InstallPlugin(tool)
-	if err != nil {
-		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+	useNix := useNixPkgs(tool)
+
+	if useNix {
+		if err := m.getNixpkgsPlugin(); err != nil {
+			log.Warnf("Failed to link nixpkgs plugin: %v. Falling back to legacy installation.", err)
+			// Disable Nix package usage
+			useNix = false
+		}
+		// TODO: custom check for version in index
+	}
+
+	if !useNix {
+		err := m.InstallPlugin(tool)
+		if err != nil {
+			return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+		}
 	}
 
 	isAlreadyInstalled, err := isAlreadyInstalled(tool, m.resolveToLatestInstalled)
@@ -160,7 +177,7 @@ func isEdgeStack() (isEdge bool) {
 	} else {
 		isEdge = false
 	}
-	log.Debugf("Mise: Stack is edge: %s", isEdge)
+	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
 	return
 }
 
@@ -178,4 +195,93 @@ func GetMiseChecksums() map[string]string {
 	}
 	// Fallback to stable version for non-edge stacks
 	return miseStableChecksums
+}
+
+func useNixPkgs(tool provider.ToolRequest) bool {
+	// Note: Add other tools here if needed
+	if tool.ToolName != "ruby" {
+		log.Debugf("[TOOLPROVIDER] Nix packages are only supported for ruby tool, current tool: %s", tool.ToolName)
+		return false
+	}
+
+	if value, variablePresent := os.LookupEnv("BITRISEIO_MISE_LEGACY_INSTALL"); variablePresent && strings.Contains(value, "1") {
+		log.Debugf("[TOOLPROVIDER] Using legacy install (non-nix) for tool: %s", tool.ToolName)
+		return false
+	}
+
+	return true
+}
+
+// getNixpkgsPlugin clones or updates the nixpkgs backend plugin and links it to mise.
+// If the plugin directory doesn't exist, it clones from the git URL.
+// If it exists, it checks out the specified commit/branch.
+func (m *MiseToolProvider) getNixpkgsPlugin() error {
+	// Find bitrise binary path
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("get executable path: %w", err)
+	}
+
+	execDir := filepath.Dir(execPath)
+	pluginPath := filepath.Join(execDir, "mise-nixpkgs-plugin")
+
+	// Check if the plugin directory exists besides the binary
+	needsClone := false
+	if _, err := os.Stat(pluginPath); os.IsNotExist(err) {
+		// Try dev location
+		pluginPath = filepath.Join(execDir, "..", "mise-nixpkgs-plugin")
+		if _, err := os.Stat(pluginPath); os.IsNotExist(err) {
+			needsClone = true
+		}
+	}
+
+	if needsClone {
+		if err := cloneGitRepo(nixpkgsPluginGitURL, pluginPath, nixpkgsPluginCommit); err != nil {
+			return fmt.Errorf("clone nixpkgs plugin: %w", err)
+		}
+	} else {
+		if err := checkoutGitCommit(pluginPath, nixpkgsPluginCommit); err != nil {
+			log.Warnf("Failed to checkout nixpkgs plugin commit: %v. Using current version.", err)
+		}
+	}
+
+	// Link the plugin using mise plugin link
+	_, err = m.ExecEnv.RunMisePlugin("link", "--force", "nixpkgs", pluginPath)
+	if err != nil {
+		return fmt.Errorf("link nixpkgs plugin: %w", err)
+	}
+
+	return nil
+}
+
+// TODO
+// func versionIsAvailableInIndex(toolName provider.ToolID, version string) (bool, error) {
+// }
+
+// cloneGitRepo clones a git repository to the specified path with minimal history at a specific branch/commit.
+func cloneGitRepo(repoURL, destPath, commitRef string) error {
+	cmd := exec.Command("git", "clone", "--depth", "1", "--no-tags", "--branch", commitRef, repoURL, destPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git clone failed: %w: %s", err, string(output))
+	}
+	return nil
+}
+
+// checkoutGitCommit checks out a specific commit, branch, or tag in a git repository.
+func checkoutGitCommit(repoPath, commitRef string) error {
+	fetchCmd := exec.Command("git", "fetch", "--depth", "1", "origin", commitRef)
+	fetchCmd.Dir = repoPath
+	if output, err := fetchCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git fetch failed: %w: %s", err, string(output))
+	}
+
+	// Reset to the fetched ref
+	resetCmd := exec.Command("git", "reset", "--hard", "FETCH_HEAD")
+	resetCmd.Dir = repoPath
+	output, err := resetCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git reset failed: %w: %s", err, string(output))
+	}
+	return nil
 }

@@ -44,7 +44,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	}
 	if plugin == nil {
 		// No plugin installation needed (either core tool or registry tool).
-		log.Debugf("No plugin installation needed for tool %s", tool.ToolName)
+		log.Debugf("[TOOLPROVIDER] No plugin installation needed for tool %s", tool.ToolName)
 		return nil
 	}
 
@@ -53,7 +53,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 		log.Warnf("Failed to check if plugin is already installed: %v", err)
 	}
 	if installed {
-		log.Debugf("Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
 		return nil
 	}
 

@@ -9,7 +9,12 @@ import (
 )
 
 func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
-	versionString, err := miseVersionString(tool, m.resolveToLatestInstalled)
+	backend := ""
+	if useNixPkgs(tool) {
+		backend = "nixpkgs"
+	}
+
+	versionString, err := miseVersionString(tool, m.resolveToLatestInstalled, backend)
 	if err != nil {
 		return err
 	}
@@ -46,7 +51,7 @@ func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver lates
 	return isAlreadyInstalled, nil
 }
 
-func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (string, error) {
+func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver, backend string) (string, error) {
 	var miseVersionString string
 	resolutionStrategy := tool.ResolutionStrategy
 	if tool.UnparsedVersion == "installed" {
@@ -74,6 +79,12 @@ func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latest
 	default:
 		return "", fmt.Errorf("unknown resolution strategy: %v", tool.ResolutionStrategy)
 	}
+
+	if backend != "" {
+		// https://mise.jdx.dev/configuration.html#backends
+		miseVersionString = fmt.Sprintf("%s:%s", backend, miseVersionString)
+	}
+
 	return miseVersionString, nil
 
 }

@@ -13,6 +13,7 @@ func TestMiseVersionString(t *testing.T) {
 	tests := []struct {
 		name    string
 		tool    provider.ToolRequest
+		backend string
 		want    string
 		wantErr bool
 	}{
@@ -23,6 +24,7 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "18.20.0",
 				ResolutionStrategy: provider.ResolutionStrategyStrict,
 			},
+			backend: "",
 			want:    "node@18.20.0",
 			wantErr: false,
 		},
@@ -33,6 +35,7 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "3.11",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
+			backend: "",
 			want:    "python@prefix:3.11",
 			wantErr: false,
 		},
@@ -43,6 +46,7 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "1.21",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
+			backend: "",
 			want:    "go@1.21.5",
 			wantErr: false,
 		},
@@ -53,6 +57,7 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "17",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
+			backend: "",
 			want:    "java@prefix:17",
 			wantErr: false,
 		},
@@ -63,6 +68,7 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "3.0",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
+			backend: "",
 			want:    "",
 			wantErr: true,
 		},
@@ -73,8 +79,31 @@ func TestMiseVersionString(t *testing.T) {
 				UnparsedVersion:    "18.0.0",
 				ResolutionStrategy: provider.ResolutionStrategy(999),
 			},
+			backend: "",
 			want:    "",
 			wantErr: true,
+		},
+		{
+			name: "strict resolution with nixpkgs backend",
+			tool: provider.ToolRequest{
+				ToolName:           "ruby",
+				UnparsedVersion:    "3.3.0",
+				ResolutionStrategy: provider.ResolutionStrategyStrict,
+			},
+			backend: "nixpkgs",
+			want:    "nixpkgs:ruby@3.3.0",
+			wantErr: false,
+		},
+		{
+			name: "latest released with nixpkgs backend",
+			tool: provider.ToolRequest{
+				ToolName:           "ruby",
+				UnparsedVersion:    "3.3",
+				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
+			},
+			backend: "nixpkgs",
+			want:    "nixpkgs:ruby@prefix:3.3",
+			wantErr: false,
 		},
 	}
 
@@ -96,7 +125,7 @@ func TestMiseVersionString(t *testing.T) {
 				return "", fmt.Errorf("no fake behavior defined for tool %s", toolName)
 			}
 
-			got, err := miseVersionString(tt.tool, latestInstalledResolver)
+			got, err := miseVersionString(tt.tool, latestInstalledResolver, tt.backend)
 
 			if tt.wantErr {
 				require.Error(t, err)
