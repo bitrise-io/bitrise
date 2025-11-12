@@ -1,7 +1,6 @@
 package mise
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -127,6 +126,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	}
 
 	if !useNix {
+		// Nix already checks version existence previously
 		versionExists, err := m.versionExists(tool.ToolName, tool.UnparsedVersion)
 		if err != nil {
 			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists: %w", err)
@@ -224,7 +224,9 @@ func (m *MiseToolProvider) shouldUseNixPkgs(tool provider.ToolRequest) bool {
 		return false
 	}
 
-	available, err := availableInNixIndex(tool.ToolName, tool.UnparsedVersion)
+	nameWithBackend := provider.ToolID(fmt.Sprintf("nixpkgs:%s", tool.ToolName))
+
+	available, err := m.versionExists(nameWithBackend, tool.UnparsedVersion)
 	if err != nil || !available {
 		log.Warnf("Failed to check nixpkgs index for %s@%s: %v. Falling back to legacy installation.", tool.ToolName, tool.UnparsedVersion, err)
 		return false
@@ -304,47 +306,6 @@ func (m *MiseToolProvider) getNixpkgsPlugin() error {
 	}
 
 	return nil
-}
-
-type nixpkgsIndex struct {
-	Pkgs map[string]map[string]interface{} `json:"pkgs"`
-}
-
-func availableInNixIndex(toolName provider.ToolID, version string) (bool, error) {
-	// Find the index file
-	indexPath, err := findIndexPath()
-	if err != nil {
-		return false, err
-	}
-
-	// Read the index file
-	data, err := os.ReadFile(indexPath)
-	if err != nil {
-		return false, fmt.Errorf("read index file: %w", err)
-	}
-
-	// Parse JSON
-	var index nixpkgsIndex
-	if err := json.Unmarshal(data, &index); err != nil {
-		return false, fmt.Errorf("parse index JSON: %w", err)
-	}
-
-	// Check if tool exists
-	toolVersions, toolExists := index.Pkgs[string(toolName)]
-	if !toolExists {
-		log.Debugf("[TOOLPROVIDER] Tool %s not found in nixpkgs index", toolName)
-		return false, nil
-	}
-
-	// Check if version exists
-	_, versionExists := toolVersions[version]
-	if !versionExists {
-		log.Debugf("[TOOLPROVIDER] Version %s not found for tool %s in nixpkgs index", version, toolName)
-		return false, nil
-	}
-
-	log.Debugf("[TOOLPROVIDER] Tool %s version %s found in nixpkgs index", toolName, version)
-	return true, nil
 }
 
 // cloneGitRepo clones a git repository to the specified path with minimal history.
