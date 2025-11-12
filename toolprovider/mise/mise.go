@@ -42,9 +42,8 @@ var miseStableChecksums = map[string]string{
 }
 
 const (
-	nixpkgsPluginGitURL  = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
-	nixpkgsPluginName    = "mise-nixpkgs-plugin"
-	nixpkgsIndexFileName = "nixpkgs-index.json"
+	nixpkgsPluginGitURL = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
+	nixpkgsPluginName   = "mise-nixpkgs-plugin"
 )
 
 type MiseToolProvider struct {
@@ -257,19 +256,6 @@ func findPluginPath() (string, error) {
 	}
 
 	return pluginPath, nil
-}
-
-// findIndexPath finds the nixpkgs-index.json file in the plugin folder.
-func findIndexPath() (string, error) {
-	pluginPath, err := findPluginPath()
-	if err == nil {
-		indexPath := filepath.Join(pluginPath, nixpkgsIndexFileName)
-		if _, err := os.Stat(indexPath); err == nil {
-			return indexPath, nil
-		}
-	}
-
-	return "", fmt.Errorf("%s not found in plugin folder", nixpkgsIndexFileName)
 }
 
 // getNixpkgsPlugin clones or updates the nixpkgs backend plugin and links it to mise.

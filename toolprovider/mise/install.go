@@ -29,10 +29,10 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 // Helper for easier testing.
 // Inputs: tool ID, tool version
 // Returns: latest installed version of the tool, or an error if no matching version is installed
-type latestInstalledResolver func(string, string) (string, error)
+type latestInstalledResolver func(provider.ToolID, string) (string, error)
 
 func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
-	_, err := latestInstalledResolver(string(tool.ToolName), tool.UnparsedVersion)
+	_, err := latestInstalledResolver(tool.ToolName, tool.UnparsedVersion)
 	var isAlreadyInstalled bool
 	if err != nil {
 		if errors.Is(err, errNoMatchingVersion) {
@@ -60,7 +60,7 @@ func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latest
 		// https://mise.jdx.dev/configuration.html#scopes
 		miseVersionString = fmt.Sprintf("%s@prefix:%s", tool.ToolName, tool.UnparsedVersion)
 	case provider.ResolutionStrategyLatestInstalled:
-		latestInstalledV, err := latestInstalledResolver(string(tool.ToolName), tool.UnparsedVersion)
+		latestInstalledV, err := latestInstalledResolver(tool.ToolName, tool.UnparsedVersion)
 		if err == nil {
 			miseVersionString = fmt.Sprintf("%s@%s", tool.ToolName, latestInstalledV)
 		} else {
@@ -74,7 +74,6 @@ func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latest
 	default:
 		return "", fmt.Errorf("unknown resolution strategy: %v", tool.ResolutionStrategy)
 	}
-
 	return miseVersionString, nil
 
 }

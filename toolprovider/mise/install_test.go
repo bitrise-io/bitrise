@@ -13,7 +13,6 @@ func TestMiseVersionString(t *testing.T) {
 	tests := []struct {
 		name    string
 		tool    provider.ToolRequest
-		backend string
 		want    string
 		wantErr bool
 	}{
@@ -91,7 +90,7 @@ func TestMiseVersionString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			latestInstalledResolver := func(toolName, version string) (string, error) {
+			latestInstalledResolver := func(toolName provider.ToolID, version string) (string, error) {
 				// Setup fake behavior based on test case
 				switch tt.tool.ToolName {
 				case "go":
@@ -162,7 +161,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			latestInstalledResolver := func(toolName, version string) (string, error) {
+			latestInstalledResolver := func(toolName provider.ToolID, version string) (string, error) {
 				if tt.latestInstalledError != nil {
 					return "", tt.latestInstalledError
 				}

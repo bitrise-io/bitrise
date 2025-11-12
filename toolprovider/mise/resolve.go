@@ -23,22 +23,22 @@ func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.To
 	// But we can use `mise latest` to find out the concrete version.
 	switch tool.ResolutionStrategy {
 	case provider.ResolutionStrategyLatestInstalled:
-		return m.resolveToLatestInstalled(string(tool.ToolName), tool.UnparsedVersion)
+		return m.resolveToLatestInstalled(tool.ToolName, tool.UnparsedVersion)
 	case provider.ResolutionStrategyLatestReleased, provider.ResolutionStrategyStrict:
 		// Mise works with fuzzy versions by default, so it happily installs both node@20 and node@20.19.3.
 		// Therefore, when the Bitrise config contains simply 20 (and not 20:latest), it actually behaves
 		// as "latest released".
-		return m.resolveToLatestReleased(string(tool.ToolName), tool.UnparsedVersion)
+		return m.resolveToLatestReleased(tool.ToolName, tool.UnparsedVersion)
 	default:
 		return "", fmt.Errorf("unknown resolution strategy: %v", tool.ResolutionStrategy)
 	}
 }
 
-func (m *MiseToolProvider) resolveToLatestReleased(toolName, version string) (string, error) {
+func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, version string) (string, error) {
 	return resolveToLatestReleased(&m.ExecEnv, toolName, version)
 }
 
-func resolveToLatestReleased(executor MiseExecutor, toolName, version string) (string, error) {
+func resolveToLatestReleased(executor MiseExecutor, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
 	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
@@ -53,13 +53,13 @@ func resolveToLatestReleased(executor MiseExecutor, toolName, version string) (s
 	return v, nil
 }
 
-func (m *MiseToolProvider) resolveToLatestInstalled(toolName, version string) (string, error) {
+func (m *MiseToolProvider) resolveToLatestInstalled(toolName provider.ToolID, version string) (string, error) {
 	return resolveToLatestInstalled(&m.ExecEnv, toolName, version)
 }
 
-func resolveToLatestInstalled(executor MiseExecutor, toolName, version string) (string, error) {
+func resolveToLatestInstalled(executor MiseExecutor, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	var toolString = toolName
+	var toolString = string(toolName)
 	if version != "" && version != "installed" {
 		// tool@installed is not valid, so only append version when it's not "installed"
 		toolString = fmt.Sprintf("%s@%s", toolName, version)
