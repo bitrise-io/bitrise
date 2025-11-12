@@ -43,10 +43,9 @@ var miseStableChecksums = map[string]string{
 }
 
 const (
-	nixpkgsPluginGitURL   = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
-	nixpkgsPluginName     = "mise-nixpkgs-plugin"
-	nixpkgsPluginLinkName = "nixpkgs"
-	nixpkgsIndexFileName  = "nixpkgs-index.json"
+	nixpkgsPluginGitURL  = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
+	nixpkgsPluginName    = "mise-nixpkgs-plugin"
+	nixpkgsIndexFileName = "nixpkgs-index.json"
 )
 
 type MiseToolProvider struct {
@@ -113,7 +112,9 @@ func (m *MiseToolProvider) Bootstrap() error {
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	useNix := m.shouldUseNixPkgs(tool)
 
-	if !useNix {
+	if useNix {
+		tool.ToolName = provider.ToolID(fmt.Sprintf("nixpkgs:%s", tool.ToolName))
+	} else {
 		err := m.InstallPlugin(tool)
 		if err != nil {
 			return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
@@ -292,7 +293,7 @@ func (m *MiseToolProvider) getNixpkgsPlugin() error {
 	}
 
 	// Link the plugin using mise plugin link
-	_, err = m.ExecEnv.RunMisePlugin("link", "--force", nixpkgsPluginLinkName, pluginPath)
+	_, err = m.ExecEnv.RunMisePlugin("link", "--force", "nixpkgs", pluginPath)
 	if err != nil {
 		return fmt.Errorf("link nixpkgs plugin: %w", err)
 	}

@@ -9,12 +9,7 @@ import (
 )
 
 func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
-	backend := ""
-	if useNixPkgs(tool) {
-		backend = nixpkgsPluginLinkName
-	}
-
-	versionString, err := miseVersionString(tool, m.resolveToLatestInstalled, backend)
+	versionString, err := miseVersionString(tool, m.resolveToLatestInstalled)
 	if err != nil {
 		return err
 	}
@@ -37,11 +32,7 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 type latestInstalledResolver func(string, string) (string, error)
 
 func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
-	toolName := string(tool.ToolName)
-	if useNixPkgs(tool) {
-		toolName = nixpkgsPluginLinkName + ":" + toolName
-	}
-	_, err := latestInstalledResolver(toolName, tool.UnparsedVersion)
+	_, err := latestInstalledResolver(string(tool.ToolName), tool.UnparsedVersion)
 	var isAlreadyInstalled bool
 	if err != nil {
 		if errors.Is(err, errNoMatchingVersion) {
@@ -55,7 +46,7 @@ func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver lates
 	return isAlreadyInstalled, nil
 }
 
-func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver, backend string) (string, error) {
+func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (string, error) {
 	var miseVersionString string
 	resolutionStrategy := tool.ResolutionStrategy
 	if tool.UnparsedVersion == "installed" {
@@ -82,11 +73,6 @@ func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latest
 		}
 	default:
 		return "", fmt.Errorf("unknown resolution strategy: %v", tool.ResolutionStrategy)
-	}
-
-	if backend != "" {
-		// https://mise.jdx.dev/configuration.html#backends
-		miseVersionString = fmt.Sprintf("%s:%s", backend, miseVersionString)
 	}
 
 	return miseVersionString, nil
