@@ -18,7 +18,7 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 		resolutionStrategy provider.ResolutionStrategy
 		expectedVersion    string
 	}{
-		{"Install specific version", "ruby", provider.ResolutionStrategyStrict, "3.3.9"},
+		{"Install specific version", "3.3.9", provider.ResolutionStrategyStrict, "3.3.9"},
 	}
 
 	for _, tt := range tests {
