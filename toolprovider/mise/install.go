@@ -37,11 +37,11 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 type latestInstalledResolver func(string, string) (string, error)
 
 func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
-	backend := ""
+	toolName := string(tool.ToolName)
 	if useNixPkgs(tool) {
-		backend = nixpkgsPluginLinkName
+		toolName = nixpkgsPluginLinkName + ":" + toolName
 	}
-	_, err := latestInstalledResolver(fmt.Sprintf("%s:%s", backend, tool.ToolName), tool.UnparsedVersion)
+	_, err := latestInstalledResolver(toolName, tool.UnparsedVersion)
 	var isAlreadyInstalled bool
 	if err != nil {
 		if errors.Is(err, errNoMatchingVersion) {
