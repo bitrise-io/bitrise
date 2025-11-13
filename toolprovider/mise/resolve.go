@@ -103,9 +103,9 @@ func versionExists(executor MiseExecutor, toolName provider.ToolID, version stri
 		// Fallback: no installed versions found, fall through to remote (ls-remote) existence check.
 	}
 
-	search := string(toolName)
+	versionString := string(toolName)
 	if version != "" && version != "latest" && version != "installed" {
-		search = fmt.Sprintf("%s@%s", toolName, version)
+		versionString = fmt.Sprintf("%s@%s", toolName, version)
 	}
 
 	// Notes:
@@ -113,9 +113,9 @@ func versionExists(executor MiseExecutor, toolName provider.ToolID, version stri
 	// - it can return multiple versions (one per line) when a fuzzy version is provided
 	// - in case of no matching version, the exit code is still 0, just there is no output
 	// - in case of a non-existing tool, the exit code is 1, but a non-existing tool ID fails earlier than this check
-	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", search)
+	output, err := executor.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", versionString)
 	if err != nil {
-		return false, fmt.Errorf("mise ls-remote %s: %w", search, err)
+		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
 	}
 
 	return strings.TrimSpace(string(output)) != "", nil

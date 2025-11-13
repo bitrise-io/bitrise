@@ -86,6 +86,7 @@ func TestMiseVersionString(t *testing.T) {
 			want:    "nixpkgs:ruby@3.3.0",
 			wantErr: false,
 		},
+		// TODO: more test cases?
 	}
 
 	for _, tt := range tests {
