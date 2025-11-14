@@ -2,49 +2,10 @@ package mise
 
 import (
 	"fmt"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
-
-// mockMiseExecutor is a mock implementation of MiseExecutor for testing
-type mockMiseExecutor struct {
-	// responses maps command strings to their outputs
-	responses map[string]string
-	// errors maps command strings to errors
-	errors map[string]error
-}
-
-func newMockMiseExecutor() *mockMiseExecutor {
-	return &mockMiseExecutor{
-		responses: make(map[string]string),
-		errors:    make(map[string]error),
-	}
-}
-
-func (m *mockMiseExecutor) setResponse(cmdKey string, output string) {
-	m.responses[cmdKey] = output
-}
-
-func (m *mockMiseExecutor) setError(cmdKey string, err error) {
-	m.errors[cmdKey] = err
-}
-
-func (m *mockMiseExecutor) RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error) {
-	cmdKey := strings.Join(args, " ")
-
-	if err, ok := m.errors[cmdKey]; ok {
-		return "", err
-	}
-
-	if output, ok := m.responses[cmdKey]; ok {
-		return output, nil
-	}
-
-	return "", fmt.Errorf("no mock response configured for command: %s", cmdKey)
-}
 
 // Helper functions to construct mise command strings for mocking
 
@@ -125,7 +86,7 @@ func TestVersionExists(t *testing.T) {
 		name           string
 		toolName       provider.ToolID
 		version        string
-		setupMock      func(*mockMiseExecutor)
+		setupFake      func(*fakeExecEnv)
 		expectedExists bool
 		wantErr        bool
 	}{
@@ -133,7 +94,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "version exists in ls-remote",
 			toolName: "ruby",
 			version:  "3.3.0",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsRemoteCmd("ruby", "3.3.0"), "3.3.0\n3.3.1\n3.3.2")
 			},
 			expectedExists: true,
@@ -143,7 +104,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "version does not exist in ls-remote",
 			toolName: "ruby",
 			version:  "9.9.9",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsRemoteCmd("ruby", "9.9.9"), "")
 			},
 			expectedExists: false,
@@ -153,7 +114,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "installed version exists",
 			toolName: "ruby",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsInstalledCmd("ruby"), installedVersionsJSON)
 			},
 			expectedExists: true,
@@ -163,7 +124,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "installed version does not exist - empty array",
 			toolName: "ruby",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsInstalledCmd("ruby"), "[]")
 				// ls-remote called for fallback
 				m.setResponse(miseLsRemoteCmd("ruby", ""), "3.3.0\n3.3.1")
@@ -175,7 +136,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "installed version with none actually installed - falls through to ls-remote",
 			toolName: "ruby",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				// Entries exist but none are installed
 				m.setResponse(miseLsInstalledCmd("ruby"), `[{"installed":false}]`)
 				// Falls through to ls-remote
@@ -188,7 +149,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "installed version does not exist - empty response",
 			toolName: "node",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsInstalledCmd("node"), "")
 				m.setResponse(miseLsRemoteCmd("node", ""), "")
 			},
@@ -199,7 +160,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "latest version",
 			toolName: "go",
 			version:  "latest",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsRemoteCmd("go", "latest"), "1.21.0\n1.22.0\n1.23.0")
 			},
 			expectedExists: true,
@@ -209,7 +170,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "empty version defaults to tool name search",
 			toolName: "python",
 			version:  "",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsRemoteCmd("python", ""), "3.11.0\n3.12.0")
 			},
 			expectedExists: true,
@@ -219,7 +180,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "ls-remote error",
 			toolName: "java",
 			version:  "17",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setError(miseLsRemoteCmd("java", "17"), fmt.Errorf("network error"))
 			},
 			expectedExists: false,
@@ -229,7 +190,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "ls installed error",
 			toolName: "ruby",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setError(miseLsInstalledCmd("ruby"), fmt.Errorf("command failed"))
 			},
 			expectedExists: false,
@@ -239,7 +200,7 @@ func TestVersionExists(t *testing.T) {
 			name:     "installed with malformed JSON",
 			toolName: "ruby",
 			version:  "installed",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLsInstalledCmd("ruby"), `{"invalid": "json"}`)
 			},
 			expectedExists: false,
@@ -249,10 +210,10 @@ func TestVersionExists(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock := newMockMiseExecutor()
-			tt.setupMock(mock)
+			fake := newFakeExecEnv()
+			tt.setupFake(fake)
 
-			exists, err := versionExists(mock, tt.toolName, tt.version)
+			exists, err := versionExists(fake, tt.toolName, tt.version)
 
 			if tt.wantErr && err == nil {
 				t.Errorf("expected error but got nil")
@@ -272,7 +233,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 		name            string
 		toolName        provider.ToolID
 		version         string
-		setupMock       func(*mockMiseExecutor)
+		setupFake       func(*fakeExecEnv)
 		expectedVersion string
 		wantErr         bool
 	}{
@@ -280,7 +241,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "resolve specific version",
 			toolName: "ruby",
 			version:  "3.3",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("ruby", "3.3"), "3.3.8")
 			},
 			expectedVersion: "3.3.8",
@@ -290,7 +251,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "resolve latest version with empty string",
 			toolName: "node",
 			version:  "",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("node", ""), "22.11.0")
 			},
 			expectedVersion: "22.11.0",
@@ -300,7 +261,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "resolve exact version",
 			toolName: "go",
 			version:  "1.23.0",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("go", "1.23.0"), "1.23.0")
 			},
 			expectedVersion: "1.23.0",
@@ -310,7 +271,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "no matching version - empty output",
 			toolName: "python",
 			version:  "9.9",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("python", "9.9"), "")
 			},
 			expectedVersion: "",
@@ -320,7 +281,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "command error",
 			toolName: "java",
 			version:  "17",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setError(miseLatestCmd("java", "17"), fmt.Errorf("network timeout"))
 			},
 			expectedVersion: "",
@@ -330,7 +291,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "output with whitespace is trimmed",
 			toolName: "ruby",
 			version:  "3.4",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("ruby", "3.4"), "  3.4.1  \n")
 			},
 			expectedVersion: "3.4.1",
@@ -340,7 +301,7 @@ func TestResolveToLatestReleased(t *testing.T) {
 			name:     "fuzzy version prefix",
 			toolName: "node",
 			version:  "20",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestCmd("node", "20"), "20.18.1")
 			},
 			expectedVersion: "20.18.1",
@@ -350,8 +311,8 @@ func TestResolveToLatestReleased(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock := newMockMiseExecutor()
-			tt.setupMock(mock)
+			mock := newFakeExecEnv()
+			tt.setupFake(mock)
 
 			version, err := resolveToLatestReleased(mock, tt.toolName, tt.version)
 
@@ -376,7 +337,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 		name            string
 		toolName        provider.ToolID
 		version         string
-		setupMock       func(*mockMiseExecutor)
+		setupFake       func(*fakeExecEnv)
 		expectedVersion string
 		wantErr         bool
 	}{
@@ -384,7 +345,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "resolve latest installed for fuzzy version",
 			toolName: "ruby",
 			version:  "3.3",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("ruby", "3.3"), "3.3.8")
 			},
 			expectedVersion: "3.3.8",
@@ -394,7 +355,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "resolve latest installed with empty version",
 			toolName: "node",
 			version:  "",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("node", ""), "22.10.0")
 			},
 			expectedVersion: "22.10.0",
@@ -404,7 +365,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "exact version already installed",
 			toolName: "go",
 			version:  "1.23.0",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("go", "1.23.0"), "1.23.0")
 			},
 			expectedVersion: "1.23.0",
@@ -414,7 +375,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "no matching installed version - empty output",
 			toolName: "python",
 			version:  "3.12",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("python", "3.12"), "")
 			},
 			expectedVersion: "",
@@ -424,7 +385,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "command error - not installed",
 			toolName: "java",
 			version:  "21",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setError(miseLatestInstalledCmd("java", "21"), fmt.Errorf("no versions installed"))
 			},
 			expectedVersion: "",
@@ -434,7 +395,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "output with whitespace is trimmed",
 			toolName: "ruby",
 			version:  "3.4",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("ruby", "3.4"), "\n  3.4.1  \n")
 			},
 			expectedVersion: "3.4.1",
@@ -444,7 +405,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "multiple versions installed - returns latest",
 			toolName: "node",
 			version:  "20",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				// mise latest returns only the highest matching version
 				m.setResponse(miseLatestInstalledCmd("node", "20"), "20.18.0")
 			},
@@ -455,7 +416,7 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			name:     "latest installed without version constraint",
 			toolName: "python",
 			version:  "",
-			setupMock: func(m *mockMiseExecutor) {
+			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("python", ""), "3.13.0")
 			},
 			expectedVersion: "3.13.0",
@@ -465,8 +426,8 @@ func TestResolveToLatestInstalled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock := newMockMiseExecutor()
-			tt.setupMock(mock)
+			mock := newFakeExecEnv()
+			tt.setupFake(mock)
 
 			version, err := resolveToLatestInstalled(mock, tt.toolName, tt.version)
 

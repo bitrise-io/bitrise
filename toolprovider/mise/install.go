@@ -24,29 +24,29 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 	}
 }
 
-func (m *MiseToolProvider) canBeInstalledWithNix(tool provider.ToolRequest) (bool, error) {
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) bool {
 	if !nixpkgs.ShouldUseBackend(tool) {
-		return false, nil
+		return false
 	}
 
-	output, err := m.ExecEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
+	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
-		return false, fmt.Errorf("install %s: %s", nixpkgs.PluginGitURL, output)
+		log.Warnf("Error while installing nixpkgs plugin (%s). Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
+		return false
 	}
 
 	nameWithBackend := provider.ToolID(fmt.Sprintf("nixpkgs:%s", tool.ToolName))
-
-	available, err := m.versionExists(nameWithBackend, tool.UnparsedVersion)
+	available, err := versionExists(execEnv, nameWithBackend, tool.UnparsedVersion)
 	if err != nil {
 		log.Warnf("Error while checking nixpkgs index for %s@%s: %v. Falling back to core plugin installation.", tool.ToolName, tool.UnparsedVersion, err)
-		return false, nil
+		return false
 	}
 	if !available {
 		log.Warnf("%s@%s not found in nixpkgs index, doing a source build. This may take some time...", tool.ToolName, tool.UnparsedVersion)
-		return false, nil
+		return false
 	}
 
-	return true, nil
+	return true
 }
 
 func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {

@@ -4,9 +4,7 @@
 package mise
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -16,12 +14,19 @@ import (
 func TestMiseInstallNixpkgsRuby(t *testing.T) {
 	tests := []struct {
 		name               string
-		requestedVersion   string
+		version            string
 		resolutionStrategy provider.ResolutionStrategy
-		expectedVersion    string
+		want               string
 	}{
-		{"Install specific version", "3.3.9", provider.ResolutionStrategyStrict, "3.3.9"},
+		{
+			name:               "Install specific version",
+			version:            "3.3.9",
+			resolutionStrategy: provider.ResolutionStrategyStrict,
+			want:               "3.3.9",
+		},
 	}
+
+	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "1")
 
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()
@@ -33,32 +38,17 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-			defer cancel()
-
-			done := make(chan bool)
-			var result provider.ToolInstallResult
-			var installErr error
-
-			go func() {
-				request := provider.ToolRequest{
-					ToolName:           "ruby",
-					UnparsedVersion:    tt.requestedVersion,
-					ResolutionStrategy: tt.resolutionStrategy,
-				}
-				result, installErr = miseProvider.InstallTool(request)
-				done <- true
-			}()
-
-			select {
-			case <-done:
-				require.NoError(t, installErr)
-				require.Equal(t, provider.ToolID("ruby"), result.ToolName)
-				require.Equal(t, tt.expectedVersion, result.ConcreteVersion)
-				require.False(t, result.IsAlreadyInstalled)
-			case <-ctx.Done():
-				t.Fatal("Test exceeded 1 minute timeout, installation was too slow for nixpkgs ruby")
+			request := provider.ToolRequest{
+				ToolName:           "ruby",
+				UnparsedVersion:    tt.version,
+				ResolutionStrategy: tt.resolutionStrategy,
 			}
+			result, installErr := miseProvider.InstallTool(request)
+
+			require.NoError(t, installErr)
+			require.Equal(t, provider.ToolID("ruby"), result.ToolName)
+			require.Equal(t, tt.want, result.ConcreteVersion)
+			require.False(t, result.IsAlreadyInstalled)
 		})
 	}
 }

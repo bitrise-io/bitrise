@@ -10,7 +10,7 @@ import (
 
 const (
 	PluginGitURL = "https://github.com/bitrise-io/mise-nixpkgs-plugin.git"
-	PluginName   = "mise-nixpkgs-plugin"
+	PluginName   = "nixpkgs"
 )
 
 // TODO: check if Nix works at all
