@@ -46,7 +46,7 @@ func (a *AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 		log.Warnf("Failed to check if plugin is already installed: %v", err)
 	}
 	if installed {
-		log.Debugf("Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
 		return nil
 	}
 

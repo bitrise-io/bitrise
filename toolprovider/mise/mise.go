@@ -63,23 +63,20 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 	}
 
 	return &MiseToolProvider{
-		ExecEnv: execenv.ExecEnv{
-			InstallDir: installDir,
-
+		ExecEnv: execenv.NewMiseExecEnv(installDir, map[string]string{
 			// https://mise.jdx.dev/configuration.html#environment-variables
-			ExtraEnvs: map[string]string{
-				"MISE_DATA_DIR": dataDir,
+			"MISE_DATA_DIR": dataDir,
 
-				// Isolate this mise instance's "global" config from system-wide config
-				"MISE_CONFIG_DIR":         filepath.Join(dataDir),
-				"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
-				"MISE_GLOBAL_CONFIG_ROOT": dataDir,
+			// Isolate this mise instance's "global" config from system-wide config
+			"MISE_CONFIG_DIR":         filepath.Join(dataDir),
+			"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
+			"MISE_GLOBAL_CONFIG_ROOT": dataDir,
 
-				// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
-				// https://mise.jdx.dev/lang/node.html#environment-variables
-				"MISE_NODE_COREPACK": "1",
-			},
+			// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
+			// https://mise.jdx.dev/lang/node.html#environment-variables
+			"MISE_NODE_COREPACK": "1",
 		},
+		),
 	}, nil
 }
 
@@ -88,12 +85,12 @@ func (m *MiseToolProvider) ID() string {
 }
 
 func (m *MiseToolProvider) Bootstrap() error {
-	if isMiseInstalled(m.ExecEnv.InstallDir) {
+	if isMiseInstalled(m.ExecEnv.InstallDir()) {
 		log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", m.ExecEnv.InstallDir)
 		return nil
 	}
 
-	err := installReleaseBinary(GetMiseVersion(), GetMiseChecksums(), m.ExecEnv.InstallDir)
+	err := installReleaseBinary(GetMiseVersion(), GetMiseChecksums(), m.ExecEnv.InstallDir())
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
 	}
@@ -102,12 +99,16 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	err := m.InstallPlugin(tool)
-	if err != nil {
-		return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
-	}
+	useNix := canBeInstalledWithNix(tool, m.ExecEnv)
+	if !useNix {
+		err := m.InstallPlugin(tool)
+		if err != nil {
+			return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+		}
+	} // else: nixpkgs plugin is already installed in ShouldInstallWithNix()
 
-	isAlreadyInstalled, err := isAlreadyInstalled(tool, m.resolveToLatestInstalled)
+	installRequest := installRequest(tool, useNix)
+	isAlreadyInstalled, err := isAlreadyInstalled(installRequest, m.resolveToLatestInstalled)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
@@ -124,18 +125,21 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		}
 	}
 
-	err = m.installToolVersion(tool)
+	err = m.installToolVersion(installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
 
-	concreteVersion, err := m.resolveToConcreteVersionAfterInstall(tool)
+	concreteVersion, err := m.resolveToConcreteVersionAfterInstall(installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, fmt.Errorf("resolve exact version after install: %w", err)
 	}
 
 	return provider.ToolInstallResult{
-		ToolName:           tool.ToolName,
+		// Note: we return installRequest.ToolName instead of the original tool.ToolName.
+		// This is because installRequest might use a custom backend plugin and the value returned here
+		// is what gets used in ActivateEnv(), the two should be consistent.
+		ToolName:           installRequest.ToolName,
 		IsAlreadyInstalled: isAlreadyInstalled,
 		ConcreteVersion:    concreteVersion,
 	}, nil
@@ -149,7 +153,7 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 
 	activationResult := processEnvOutput(envs)
 	// Some core plugins create shims to executables (e.g. npm). These shims call `mise reshim` and require the `mise` binary to be in $PATH.
-	miseExecPath := filepath.Join(m.ExecEnv.InstallDir, "bin")
+	miseExecPath := filepath.Join(m.ExecEnv.InstallDir(), "bin")
 	activationResult.ContributedPaths = append(activationResult.ContributedPaths, miseExecPath)
 	return activationResult, nil
 }
@@ -160,7 +164,7 @@ func isEdgeStack() (isEdge bool) {
 	} else {
 		isEdge = false
 	}
-	log.Debugf("Mise: Stack is edge: %s", isEdge)
+	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
 	return
 }
 
