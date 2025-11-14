@@ -3,6 +3,7 @@ package mise
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -14,7 +15,7 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 	if useNix {
 		return provider.ToolRequest{
 			// Use Mise's backend plugin convention of pluginID:toolID
-			ToolName:           provider.ToolID(fmt.Sprintf("%s:%s", nixpkgs.PluginName,toolRequest.ToolName)),
+			ToolName:           provider.ToolID(fmt.Sprintf("%s:%s", nixpkgs.PluginName, toolRequest.ToolName)),
 			UnparsedVersion:    toolRequest.UnparsedVersion,
 			ResolutionStrategy: toolRequest.ResolutionStrategy,
 			PluginURL:          nil, // Not relevant when using nixpkgs backend plugin
@@ -24,29 +25,41 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 	}
 }
 
-func (m *MiseToolProvider) canBeInstalledWithNix(tool provider.ToolRequest) (bool, error) {
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) bool {
 	if !nixpkgs.ShouldUseBackend(tool) {
-		return false, nil
+		return false
 	}
 
-	output, err := m.ExecEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
+	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
+	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "1"
+
+	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
-		return false, fmt.Errorf("install %s: %s", nixpkgs.PluginGitURL, output)
+		if forceNix {
+			return true
+		}
+		log.Warnf("Error while installing nixpkgs plugin (%s). Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
+		return false
 	}
 
 	nameWithBackend := provider.ToolID(fmt.Sprintf("nixpkgs:%s", tool.ToolName))
-
-	available, err := m.versionExists(nameWithBackend, tool.UnparsedVersion)
+	available, err := versionExists(execEnv, nameWithBackend, tool.UnparsedVersion)
 	if err != nil {
+		if forceNix {
+			return true
+		}
 		log.Warnf("Error while checking nixpkgs index for %s@%s: %v. Falling back to core plugin installation.", tool.ToolName, tool.UnparsedVersion, err)
-		return false, nil
+		return false
 	}
 	if !available {
+		if forceNix {
+			return true
+		}
 		log.Warnf("%s@%s not found in nixpkgs index, doing a source build. This may take some time...", tool.ToolName, tool.UnparsedVersion)
-		return false, nil
+		return false
 	}
 
-	return true, nil
+	return true
 }
 
 func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
