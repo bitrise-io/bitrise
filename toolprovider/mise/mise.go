@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -161,13 +160,15 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 }
 
 func isEdgeStack() (isEdge bool) {
-	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
-		isEdge = true
-	} else {
-		isEdge = false
-	}
-	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
-	return
+	// if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
+	// 	isEdge = true
+	// } else {
+	// 	isEdge = false
+	// }
+	// log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
+	// return
+	// TODO: temporary
+	return true
 }
 
 func GetMiseVersion() string {
