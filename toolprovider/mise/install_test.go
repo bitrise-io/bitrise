@@ -251,7 +251,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 		},
 	}
 
-	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "1")
+	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "true")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			execEnv := newFakeExecEnv()

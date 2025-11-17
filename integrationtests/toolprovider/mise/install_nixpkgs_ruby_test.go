@@ -57,8 +57,8 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 		},
 	}
 
-	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "1")
-	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE", "1")
+	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "true")
+	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE", "true")
 
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()

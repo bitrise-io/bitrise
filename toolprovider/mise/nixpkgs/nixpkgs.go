@@ -21,7 +21,7 @@ func ShouldUseBackend(request provider.ToolRequest) bool {
 	}
 
 	value, ok := os.LookupEnv("BITRISE_TOOLSETUP_FAST_INSTALL")
-	if !ok || strings.TrimSpace(value) != "1" {
+	if !ok || strings.TrimSpace(value) != "true" {
 		log.Debugf("[TOOLPROVIDER] Using core mise plugin for %s", request.ToolName)
 		return false
 	}

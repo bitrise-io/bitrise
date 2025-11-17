@@ -27,7 +27,7 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 
 func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
-	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "1"
+	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
 	if forceNix {
 		return true
 	}
