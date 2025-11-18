@@ -1,3 +1,6 @@
+//go:build linux_and_mac
+// +build linux_and_mac
+
 package steps
 
 import (
