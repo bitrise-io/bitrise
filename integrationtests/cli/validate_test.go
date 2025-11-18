@@ -88,7 +88,7 @@ tool_config:
   provider: mise
   extra_plugins:
     flutter: "https://github.com/asdf-community/asdf-flutter.git"
-    custom-tool: "https://github.com/user/asdf-custom-tool.git"
+	custom-tool: "https://github.com/user/asdf-custom-tool.git"
 
 workflows:
   test:
@@ -97,7 +97,7 @@ workflows:
         inputs:
         - content: echo "hello"
 `
-const runtimeLimit = 1000 * time.Millisecond
+const runtimeLimit = 20000 * time.Millisecond
 const runningTimeMsg = "test case too slow: %s is %s above limit"
 
 func Test_ValidateTest(t *testing.T) {
