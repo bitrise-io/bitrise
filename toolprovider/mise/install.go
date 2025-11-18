@@ -18,7 +18,9 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 			ToolName:           provider.ToolID(fmt.Sprintf("%s:%s", nixpkgs.PluginName, toolRequest.ToolName)),
 			UnparsedVersion:    toolRequest.UnparsedVersion,
 			ResolutionStrategy: toolRequest.ResolutionStrategy,
-			PluginURL:          nil, // Not relevant when using nixpkgs backend plugin
+			// Only relevant for plugins, that are not handled by the given backend.
+			// Nixpkgs handles all tools it supports internally, we should not install anything extra.
+			PluginURL: nil,
 		}
 	} else {
 		return toolRequest
@@ -38,7 +40,7 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) b
 
 	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
-		log.Warnf("Error while installing nixpkgs plugin (%s). Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
+		log.Warnf("Error while installing nixpkgs plugin (%s): %v. Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
 		return false
 	}
 

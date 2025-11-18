@@ -44,7 +44,7 @@ func isNixAvailable() bool {
 	cmd := exec.Command("nix", "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Debugf("[TOOLPROVIDER] Exec nix --version: %s, output:\n%s", err, out)
+		log.Debugf("[TOOLPROVIDER] Exec nix --version failed: %v\nOutput: %s", err, string(out))
 		return false
 	}
 

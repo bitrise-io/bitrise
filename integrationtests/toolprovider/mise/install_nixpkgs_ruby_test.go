@@ -71,7 +71,7 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			request := provider.ToolRequest{
-				ToolName:           "ruby",
+				ToolName:           provider.ToolID(tt.tool),
 				UnparsedVersion:    tt.version,
 				ResolutionStrategy: tt.resolutionStrategy,
 			}

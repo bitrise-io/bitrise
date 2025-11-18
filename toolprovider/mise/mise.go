@@ -84,12 +84,13 @@ func (m *MiseToolProvider) ID() string {
 }
 
 func (m *MiseToolProvider) Bootstrap() error {
-	if isMiseInstalled(m.ExecEnv.InstallDir()) {
-		log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", m.ExecEnv.InstallDir)
+	installDir := m.ExecEnv.InstallDir()
+	if isMiseInstalled(installDir) {
+		log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", installDir)
 		return nil
 	}
 
-	err := installReleaseBinary(GetMiseVersion(), GetMiseChecksums(), m.ExecEnv.InstallDir())
+	err := installReleaseBinary(GetMiseVersion(), GetMiseChecksums(), installDir)
 	if err != nil {
 		return fmt.Errorf("bootstrap mise: %w", err)
 	}
