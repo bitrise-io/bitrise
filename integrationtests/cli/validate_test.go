@@ -88,7 +88,7 @@ tool_config:
   provider: mise
   extra_plugins:
     flutter: "https://github.com/asdf-community/asdf-flutter.git"
-	custom-tool: "https://github.com/user/asdf-custom-tool.git"
+    custom-tool: "https://github.com/user/asdf-custom-tool.git"
 
 workflows:
   test:
