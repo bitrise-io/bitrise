@@ -184,70 +184,74 @@ func TestIsAlreadyInstalled(t *testing.T) {
 
 func TestCanBeInstalledWithNix(t *testing.T) {
 	tests := []struct {
-		name      string
-		toolID    provider.ToolID
-		version   string
+		name               string
+		toolID             provider.ToolID
+		version            string
 		resolutionStrategy provider.ResolutionStrategy
-		setupFake func(m *fakeExecEnv)
-		want      bool
+		setupFake          func(m *fakeExecEnv)
+		want               bool
 	}{
 		{
-			name: "concrete Ruby version that exists in index",
-			toolID: provider.ToolID("ruby"),
-			version: "3.3.9",
+			name:               "concrete Ruby version that exists in index",
+			toolID:             provider.ToolID("ruby"),
+			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
+				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
 				m.setResponse("ls-remote --quiet nixpkgs:ruby@3.3.9", "3.3.9")
 			},
-			want:    true,
+			want: true,
 		},
 		{
-			name: "fuzzy Ruby version that matches an existing version in index",
-			toolID: provider.ToolID("ruby"),
-			version: "3.3",
+			name:               "fuzzy Ruby version that matches an existing version in index",
+			toolID:             provider.ToolID("ruby"),
+			version:            "3.3",
 			resolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
+				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
 				m.setResponse("ls-remote --quiet nixpkgs:ruby@3.3", "3.3.8\n3.3.9")
 			},
-			want:    true,
+			want: true,
 		},
 		{
-			name: "concrete Ruby version that doesn't exist in index",
-			toolID: provider.ToolID("ruby"),
-			version: "0.0.1",
+			name:               "concrete Ruby version that doesn't exist in index",
+			toolID:             provider.ToolID("ruby"),
+			version:            "0.0.1",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
+				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
 				m.setResponse("ls-remote --quiet nixpkgs:ruby@0.0.1", "")
 			},
-			want:    false,
+			want: false,
 		},
 		{
-			name: "nixpkgs plugin install error",
-			toolID: provider.ToolID("ruby"),
-			version: "3.3.9",
+			name:               "nixpkgs plugin install error",
+			toolID:             provider.ToolID("ruby"),
+			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
 				m.setError(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), fmt.Errorf("fake error"))
 			},
-			want:    false,
+			want: false,
 		},
 		{
-			name: "nixpkgs index check error",
-			toolID: provider.ToolID("ruby"),
-			version: "3.3.9",
+			name:               "nixpkgs index check error",
+			toolID:             provider.ToolID("ruby"),
+			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
+				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
 				m.setError("ls-remote --quiet nixpkgs:ruby@3.3.9", fmt.Errorf("fake error"))
 			},
-			want:    false,
+			want: false,
 		},
 	}
 
@@ -258,8 +262,8 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			tt.setupFake(execEnv)
 
 			request := provider.ToolRequest{
-				ToolName:        tt.toolID,
-				UnparsedVersion: tt.version,
+				ToolName:           tt.toolID,
+				UnparsedVersion:    tt.version,
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 
@@ -280,28 +284,28 @@ func TestInstallRequest(t *testing.T) {
 		{
 			name: "without nixpkgs",
 			tool: provider.ToolRequest{
-				ToolName:        "node",
-				UnparsedVersion: "18.20.0",
+				ToolName:           "node",
+				UnparsedVersion:    "18.20.0",
 				ResolutionStrategy: provider.ResolutionStrategyStrict,
 			},
 			useNix: false,
 			want: provider.ToolRequest{
-				ToolName:        "node",
-				UnparsedVersion: "18.20.0",
+				ToolName:           "node",
+				UnparsedVersion:    "18.20.0",
 				ResolutionStrategy: provider.ResolutionStrategyStrict,
 			},
 		},
 		{
 			name: "with nixpkgs",
 			tool: provider.ToolRequest{
-				ToolName:        "node",
-				UnparsedVersion: "18",
+				ToolName:           "node",
+				UnparsedVersion:    "18",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
 			useNix: true,
 			want: provider.ToolRequest{
-				ToolName:        "nixpkgs:node",
-				UnparsedVersion: "18",
+				ToolName:           "nixpkgs:node",
+				UnparsedVersion:    "18",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
 		},
