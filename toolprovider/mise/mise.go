@@ -108,6 +108,8 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	} // else: nixpkgs plugin is already installed in ShouldInstallWithNix()
 
 	installRequest := installRequest(tool, useNix)
+
+	// Note: tools get reinstalled with Nix even if they are already installed with the core plugin for consistency.
 	isAlreadyInstalled, err := isAlreadyInstalled(installRequest, m.resolveToLatestInstalled)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

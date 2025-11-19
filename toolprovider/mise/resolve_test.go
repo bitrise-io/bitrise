@@ -422,6 +422,17 @@ func TestResolveToLatestInstalled(t *testing.T) {
 			expectedVersion: "3.13.0",
 			wantErr:         false,
 		},
+		{
+			name:     "tool name with backend prefix",
+			toolName: "nixpkgs:ruby",
+			version:  "",
+			setupFake: func(m *fakeExecEnv) {
+				m.setResponse(miseLatestInstalledCmd("nixpkgs:ruby", ""), "3.3.7")
+				m.setResponse(miseLatestInstalledCmd("ruby", ""), "3.13.0")
+			},
+			expectedVersion: "3.3.7",
+			wantErr:         false,
+		},
 	}
 
 	for _, tt := range tests {

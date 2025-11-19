@@ -42,7 +42,14 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) b
 		return false
 	}
 
+	_, err = execEnv.RunMisePlugin("update", nixpkgs.PluginName)
+	if err != nil {
+		log.Warnf("Error while updating nixpkgs plugin (%s): %v. Possibly using outdated plugin version.", nixpkgs.PluginGitURL, err)
+	}
+
 	if forceNix {
+		// In force mode, we do not care about version existence, as failure is expected if the version is not in nixpkgs.
+		// But we still need to make sure the plugin above is installed.
 		return true
 	}
 

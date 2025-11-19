@@ -82,7 +82,12 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 				return
 			}
 			require.NoError(t, installErr)
-			require.Equal(t, provider.ToolID("ruby"), result.ToolName)
+			if tt.tool == "ruby" {
+				// We purposely return ruby with the nixpkgs: prefix for environment activation later
+				require.Equal(t, provider.ToolID("nixpkgs:ruby"), result.ToolName)
+			} else {
+				require.Equal(t, provider.ToolID(tt.tool), result.ToolName)
+			}
 			require.Equal(t, tt.want, result.ConcreteVersion)
 			require.False(t, result.IsAlreadyInstalled)
 		})
