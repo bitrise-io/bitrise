@@ -97,7 +97,7 @@ workflows:
         inputs:
         - content: echo "hello"
 `
-const runtimeLimit = 20000 * time.Millisecond
+const runtimeLimit = 1000 * time.Millisecond
 const runningTimeMsg = "test case too slow: %s is %s above limit"
 
 func Test_ValidateTest(t *testing.T) {
