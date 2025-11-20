@@ -111,6 +111,7 @@ var (
 						flTag,
 						flGit,
 						flStepID,
+						flStepYMLOverride,
 						flToolMode,
 					},
 				},

@@ -27,6 +27,24 @@ import (
 
 const maxSummaryLength = 100
 
+func applyStepYMLOverride(overridePath string, baseModel models.StepModel) (models.StepModel, error) {
+	overrideBytes, err := fileutil.ReadBytesFromFile(overridePath)
+	if err != nil {
+		return models.StepModel{}, fmt.Errorf("failed to read override step.yml: %w", err)
+	}
+
+	var overrideModel models.StepModel
+	if err := yaml.Unmarshal(overrideBytes, &overrideModel); err != nil {
+		return models.StepModel{}, fmt.Errorf("failed to unmarshal override step.yml: %w", err)
+	}
+
+	// Preserve auto-generated fields from base model
+	overrideModel.Source = baseModel.Source
+	overrideModel.PublishedAt = baseModel.PublishedAt
+
+	return overrideModel, nil
+}
+
 func getStepIDFromGit(git string) string {
 	splits := strings.Split(git, "/")
 	lastPart := splits[len(splits)-1]
@@ -135,6 +153,18 @@ func create(c *cli.Context) error {
 			}
 		}
 	}
+
+	// Validate override file if provided
+	stepYMLOverridePath := c.String(StepYMLOverrideKey)
+	if stepYMLOverridePath != "" {
+		if exist, err := pathutil.IsPathExists(stepYMLOverridePath); err != nil {
+			failf("Failed to check override step.yml path, err: %s", err)
+		} else if !exist {
+			failf("Override step.yml file does not exist at path: %s", stepYMLOverridePath)
+		}
+		log.Printf("Override step.yml will be used from: %s", stepYMLOverridePath)
+	}
+
 	log.Donef("all inputs are valid")
 
 	// Clone Step to tmp dir
@@ -209,6 +239,16 @@ func create(c *cli.Context) error {
 		log.Warnf("Step summary should contain maximum (%d) characters, actual: (%d)!", maxSummaryLength, utf8.RuneCountInString(*stepModel.Summary))
 	}
 	log.Donef("step is valid")
+
+	if stepYMLOverridePath != "" {
+		log.Printf("Reading override step.yml from: %s", stepYMLOverridePath)
+		overrideModel, err := applyStepYMLOverride(stepYMLOverridePath, stepModel)
+		if err != nil {
+			failf("Failed to apply override step.yml: %s", err)
+		}
+		stepModel = overrideModel
+		log.Donef("override step.yml applied")
+	}
 
 	// Copy step.yml to steplib
 	fmt.Println()
