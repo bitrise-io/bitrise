@@ -31,11 +31,18 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) b
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
 
-	if !forceNix && !nixpkgs.ShouldUseBackend(tool) {
+	useNix, err := nixpkgs.ShouldUseBackend(tool)
+	if err != nil {
+		// if Nix is unavailable we cannot force install
+		log.Warnf("Error while checking if nixpkgs backend should be used: %v. Falling back to core plugin installation.", err)
 		return false
 	}
 
-	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
+	if !forceNix && !useNix {
+		return false
+	}
+
+	_, err = execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
 		log.Warnf("Error while installing nixpkgs plugin (%s): %v. Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
 		// Warning, if false is not returned here, force install will be allowed even though plugin install failed.
