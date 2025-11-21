@@ -228,7 +228,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			},
 		},
 		{
-			name:           "order of steps -  nested step bundles",
+			name:           "order of steps - nested step bundles",
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
@@ -363,6 +363,80 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 							{"input1": "value3"}, {"input3": ""},
 							// bundle2 override inputs
 							{"input3": "value3"}}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundles title added to the plan",
+			modes:          WorkflowRunModes{},
+			uuidProvider:   (&MockUUIDProvider{}).UUID,
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Title: "My Bundle 1",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
+					"uuid_3": {ID: "bundle1", Title: "My Bundle 1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundles title overrides definition title",
+			modes:          WorkflowRunModes{},
+			uuidProvider:   (&MockUUIDProvider{}).UUID,
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Title: "My Bundle 1",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 1"}},
+						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 2"}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1", Title: "My Bundle Override 1"},
+					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
 					}},
 				},
 			},
