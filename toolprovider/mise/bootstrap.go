@@ -23,18 +23,18 @@ const fallbackDownloadURLBase = "https://storage.googleapis.com/mise-release-mir
 func isMiseInstalled(targetDir string) bool {
 	misePath := filepath.Join(targetDir, "bin", "mise")
 
-	// Check if the file exists and is executable
+	// Check if the file exists and is executable.
 	info, err := os.Stat(misePath)
 	if err != nil {
 		return false
 	}
 
-	// Check if it's a regular file and has execute permissions
+	// Check if it's a regular file and has execute permissions.
 	if !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 {
 		return false
 	}
 
-	// Try to run mise --version to verify it's actually runnable
+	// Try to run mise --version to verify it's actually runnable.
 	cmd := exec.Command(misePath, "--version")
 	err = cmd.Run()
 	return err == nil
@@ -106,7 +106,7 @@ func downloadAndVerify(url, expectedChecksum string) (string, error) {
 		_ = tempFile.Close()
 	}()
 
-	// Compute SHA256 hash of the downloaded file and store contents in the temp file
+	// Compute SHA256 hash of the downloaded file and store contents in the temp file.
 	hash := sha256.New()
 	multiWriter := io.MultiWriter(tempFile, hash)
 	if _, err := io.Copy(multiWriter, resp.Body); err != nil {
@@ -211,18 +211,18 @@ func FallbackDownloadURL(version, platformName string) string {
 
 // processHeader processes a tar header and determines the target extraction path.
 func processHeader(header *tar.Header, targetDir string) (string, bool) {
-	// Skip the top-level "mise" directory and extract its contents directly
+	// Skip the top-level "mise" directory and extract its contents directly.
 	pathParts := strings.Split(header.Name, "/")
 	if len(pathParts) > 0 && pathParts[0] == "mise" {
 		if len(pathParts) == 1 {
-			// This is the top-level "mise" directory itself, skip it
+			// This is the top-level "mise" directory itself, skip it.
 			return "", false
 		}
-		// Remove the top-level "mise" directory from the path
+		// Remove the top-level "mise" directory from the path.
 		header.Name = strings.Join(pathParts[1:], "/")
 	}
 
-	// Clean the path to prevent directory traversal attacks
+	// Clean the path to prevent directory traversal attacks.
 	targetPath := filepath.Join(targetDir, header.Name)
 	if !strings.HasPrefix(targetPath, filepath.Clean(targetDir)) {
 		return "", false
@@ -260,14 +260,14 @@ func extractFile(tarReader *tar.Reader, header *tar.Header, targetPath string) e
 		}
 
 		if filepath.Base(targetPath) == "mise" {
-			// Make mise binary executable
+			// Make mise binary executable.
 			err = os.Chmod(targetPath, 0755)
 			if err != nil {
 				return fmt.Errorf("make mise binary executable %s: %w", targetPath, err)
 			}
 		}
 	default:
-		// Skip other file types (symlinks, etc.)
+		// Skip other file types (symlinks, etc.).
 	}
 	return nil
 }

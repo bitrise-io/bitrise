@@ -92,16 +92,16 @@ func TestMiseVersionString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			latestInstalledResolver := func(toolName provider.ToolID, version string) (string, error) {
-				// Setup fake behavior based on test case
+				// Setup fake behavior based on test case.
 				switch tt.tool.ToolName {
 				case "go":
-					// Fake successful resolution
+					// Fake successful resolution.
 					return "1.21.5", nil
 				case "java":
-					// Fake no matching version found
+					// Fake no matching version found.
 					return "", errNoMatchingVersion
 				case "ruby":
-					// Fake other error
+					// Fake other error.
 					return "", errors.New("some other error")
 				}
 				return "", fmt.Errorf("no fake behavior defined for tool %s", toolName)
@@ -256,6 +256,8 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 	}
 
 	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "true")
+	// Nix might not be available in the test environment, but we don't actually test Nix functionality here.
+	t.Setenv("BITRISE_TEST_SKIP_NIX_CHECK", "true")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			execEnv := newFakeExecEnv()

@@ -66,7 +66,7 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 			// https://mise.jdx.dev/configuration.html#environment-variables
 			"MISE_DATA_DIR": dataDir,
 
-			// Isolate this mise instance's "global" config from system-wide config
+			// Isolate this mise instance's "global" config from system-wide config.
 			"MISE_CONFIG_DIR":         filepath.Join(dataDir),
 			"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
 			"MISE_GLOBAL_CONFIG_ROOT": dataDir,

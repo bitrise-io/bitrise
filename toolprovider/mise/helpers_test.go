@@ -7,9 +7,9 @@ import (
 )
 
 type fakeExecEnv struct {
-	// responses maps command strings to their outputs
+	// responses maps command strings to their outputs.
 	responses map[string]string
-	// errors maps command strings to errors
+	// errors maps command strings to errors.
 	errors map[string]error
 }
 

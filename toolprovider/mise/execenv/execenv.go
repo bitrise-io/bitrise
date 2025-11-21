@@ -45,12 +45,12 @@ func (e MiseExecEnv) RunMise(args ...string) (string, error) {
 func (e MiseExecEnv) RunMisePlugin(args ...string) (string, error) {
 	cmdWithArgs := append([]string{"plugin"}, args...)
 
-	// Use timeout for all plugin operations as they involve unknown code execution
+	// Use timeout for all plugin operations as they involve unknown code execution.
 	return e.RunMiseWithTimeout(DefaultTimeout, cmdWithArgs...)
 }
 
 // RunMiseWithTimeout runs mise commands that involve untrusted operations (plugin execution, remote network calls)
-// with a timeout to prevent hanging
+// with a timeout to prevent hanging.
 func (e MiseExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error) {
 	var ctx context.Context
 	if timeout == 0 {

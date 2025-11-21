@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-// Helper functions to construct mise command strings for mocking
+// Helper functions to construct mise command strings for mocking.
 
 func miseLatestCmd(tool provider.ToolID, version string) string {
 	return fmt.Sprintf("latest %s@%s", tool, version)

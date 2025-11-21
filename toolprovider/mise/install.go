@@ -14,7 +14,7 @@ import (
 func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.ToolRequest {
 	if useNix {
 		return provider.ToolRequest{
-			// Use Mise's backend plugin convention of pluginID:toolID
+			// Use Mise's backend plugin convention of pluginID:toolID.
 			ToolName:           provider.ToolID(fmt.Sprintf("%s:%s", nixpkgs.PluginName, toolRequest.ToolName)),
 			UnparsedVersion:    toolRequest.UnparsedVersion,
 			ResolutionStrategy: toolRequest.ResolutionStrategy,
@@ -33,7 +33,7 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) b
 
 	useNix, err := nixpkgs.ShouldUseBackend(tool)
 	if err != nil {
-		// if Nix is unavailable we cannot force install
+		// Note: if Nix is unavailable we cannot force install.
 		log.Warnf("Error while checking if nixpkgs backend should be used: %v. Falling back to core plugin installation.", err)
 		return false
 	}
@@ -93,8 +93,8 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 }
 
 // Helper for easier testing.
-// Inputs: tool ID, tool version
-// Returns: latest installed version of the tool, or an error if no matching version is installed
+// Inputs: tool ID, tool version.
+// Returns: latest installed version of the tool, or an error if no matching version is installed.
 type latestInstalledResolver func(provider.ToolID, string) (string, error)
 
 func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
@@ -131,7 +131,7 @@ func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latest
 			miseVersionString = fmt.Sprintf("%s@%s", tool.ToolName, latestInstalledV)
 		} else {
 			if errors.Is(err, errNoMatchingVersion) {
-				// No local version satisfies the request -> fallback to latest released
+				// No local version satisfies the request -> fallback to latest released.
 				miseVersionString = fmt.Sprintf("%s@prefix:%s", tool.ToolName, tool.UnparsedVersion)
 			} else {
 				return "", fmt.Errorf("resolve %s %s to latest installed version: %w", tool.ToolName, tool.UnparsedVersion, err)
