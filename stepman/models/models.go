@@ -127,8 +127,8 @@ type StepGroupModel struct {
 type Executables map[string]Executable
 
 type Executable struct {
-	Url string `json:"url,omitempty" yaml:"url,omitempty"`
-	Hash string `json:"hash,omitempty" yaml:"hash,omitempty"`
+	StorageURI string `json:"storage_uri,omitempty" yaml:"storage_uri,omitempty"`
+	Hash       string `json:"hash,omitempty" yaml:"hash,omitempty"`
 }
 
 func (stepGroup StepGroupModel) LatestVersion() (StepModel, bool) {
