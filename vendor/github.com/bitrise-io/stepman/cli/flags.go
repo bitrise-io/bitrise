@@ -78,6 +78,8 @@ const (
 
 	// StepYMLKey ...
 	StepYMLKey = "step-yml"
+
+	StepYMLOverrideKey = "stepyml-override"
 )
 
 var (
@@ -136,6 +138,10 @@ var (
 	flToolMode = cli.BoolFlag{
 		Name:  ToolMode,
 		Usage: "Stepman called as tool.",
+	}
+	flStepYMLOverride = cli.StringFlag{
+		Name:  StepYMLOverrideKey,
+		Usage: "Path to a step.yml file that will override the one from the git checkout.",
 	}
 )
 
