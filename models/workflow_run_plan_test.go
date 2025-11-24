@@ -420,6 +420,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
 						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 1"}},
 						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 2"}},
 					},
@@ -430,13 +431,15 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				LogFormatVersion: "2",
 				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
-					"uuid_1": {ID: "bundle1", Title: "My Bundle Override 1"},
-					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 2"},
+					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
+					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 1"},
+					"uuid_5": {ID: "bundle1", Title: "My Bundle Override 2"},
 				},
 				ExecutionPlan: []WorkflowExecutionPlan{
-					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
 						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
+						{UUID: "uuid_6", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_5"},
 					}},
 				},
 			},
