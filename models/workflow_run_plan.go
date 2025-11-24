@@ -60,7 +60,8 @@ type WithGroupPlan struct {
 }
 
 type StepBundlePlan struct {
-	ID string `json:"id"`
+	ID    string `json:"id"`
+	Title string `json:"title,omitempty"`
 }
 
 type WorkflowRunPlan struct {
@@ -169,9 +170,14 @@ func NewWorkflowRunPlan(
 				}
 
 				bundleUUID := uuidProvider()
+				title := bundleDefinition.Title
+				if bundleOverride.Title != "" {
+					title = bundleOverride.Title
+				}
 
 				stepBundlePlans[bundleUUID] = StepBundlePlan{
-					ID: bundleID,
+					ID:    bundleID,
+					Title: title,
 				}
 
 				runIf := bundleDefinition.RunIf
@@ -296,9 +302,14 @@ func gatherBundleSteps(
 			envs = append(bundleEnvs, envs...)
 
 			uuid := uuidProvider()
+			title := definition.Title
+			if override.Title != "" {
+				title = override.Title
+			}
 
 			stepBundlePlans[uuid] = StepBundlePlan{
-				ID: bundleID,
+				ID:    bundleID,
+				Title: title,
 			}
 
 			runIf := definition.RunIf
