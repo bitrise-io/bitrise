@@ -22,13 +22,15 @@ func activateStepExecutable(
 	destinationDir string,
 	destinationStepYML string,
 ) (string, error) {
-	if strings.HasPrefix(executable.Url, "http://") {
-		return "", fmt.Errorf("http URL is unsupported, please use https: %s", executable.Url)
+	url := downloadURL(executable)
+
+	if strings.HasPrefix(url, "http://") {
+		return "", fmt.Errorf("http URL is unsupported, please use https: %s", url)
 	}
 
-	resp, err := retryablehttp.Get(executable.Url)
+	resp, err := retryablehttp.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("fetch from %s: %w", executable.Url, err)
+		return "", fmt.Errorf("fetch from %s: %w", url, err)
 	}
 	defer func() {
 		err := resp.Body.Close()
@@ -56,7 +58,7 @@ func activateStepExecutable(
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("download %s to %s: %w", executable.Url, path, err)
+		return "", fmt.Errorf("download %s to %s: %w", url, path, err)
 	}
 
 	err = validateHash(path, executable.Hash)
@@ -102,4 +104,13 @@ func validateHash(filePath string, expectedHash string) error {
 		return fmt.Errorf("hash mismatch: expected sha256-%s, got sha256-%s", expectedHash, actualHash)
 	}
 	return nil
+}
+
+func downloadURL(executable models.Executable) string {
+	baseURL := os.Getenv(precompiledStepsPrimaryStorageEnv)
+	if baseURL == "" {
+		baseURL = precompiledStepsDefaultStorage
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	return fmt.Sprintf("%s/%s", baseURL, strings.TrimLeft(executable.StorageURI, "/"))
 }
