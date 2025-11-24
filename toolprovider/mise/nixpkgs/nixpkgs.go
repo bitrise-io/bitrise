@@ -37,11 +37,6 @@ func ShouldUseBackend(request provider.ToolRequest) (bool, error) {
 }
 
 func isNixAvailable() bool {
-	// Check for testing override first.
-	if value, ok := os.LookupEnv("BITRISE_TEST_SKIP_NIX_CHECK"); ok && strings.TrimSpace(value) == "true" {
-		return true
-	}
-
 	_, err := exec.LookPath("nix")
 	if err != nil {
 		return false

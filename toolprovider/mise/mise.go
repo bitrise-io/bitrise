@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -99,7 +100,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	useNix := canBeInstalledWithNix(tool, m.ExecEnv)
+	useNix := canBeInstalledWithNix(tool, m.ExecEnv, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {

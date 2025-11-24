@@ -256,8 +256,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 	}
 
 	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "true")
-	// Nix might not be available in the test environment, but we don't actually test Nix functionality here.
-	t.Setenv("BITRISE_TEST_SKIP_NIX_CHECK", "true")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			execEnv := newFakeExecEnv()
@@ -269,7 +267,11 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 
-			got := canBeInstalledWithNix(request, execEnv)
+			nixChecker := func(tool provider.ToolRequest) (bool, error) {
+				return true, nil
+			}
+
+			got := canBeInstalledWithNix(request, execEnv, nixChecker)
 			require.Equal(t, tt.want, got)
 
 		})

@@ -27,11 +27,15 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 	}
 }
 
-func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv) bool {
+// nixChecker is a helper for testing.
+// The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
+type nixChecker func(tool provider.ToolRequest) (bool, error)
+
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
 
-	useNix, err := nixpkgs.ShouldUseBackend(tool)
+	useNix, err := nixChecker(tool)
 	if err != nil {
 		// Note: if Nix is unavailable we cannot force install.
 		log.Warnf("Error while checking if nixpkgs backend should be used: %v. Falling back to core plugin installation.", err)
