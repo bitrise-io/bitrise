@@ -61,7 +61,7 @@ type WithGroupPlan struct {
 
 type StepBundlePlan struct {
 	ID    string `json:"id"`
-	Title string `json:"title"`
+	Title string `json:"title,omitempty"`
 }
 
 type WorkflowRunPlan struct {
