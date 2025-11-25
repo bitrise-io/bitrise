@@ -75,7 +75,8 @@ workflows:
     - bundle::run_integration_tests: { }
     meta:
       bitrise.io:
-        stack: osx-xcode-edge # TODO: temporary
+        # TODO: switch to stable stack when Nix is rolled out there
+        stack: osx-xcode-edge
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
@@ -88,6 +89,7 @@ workflows:
     - bundle::run_integration_tests: { }
     meta:
       bitrise.io:
+        # TODO: switch to stable stack when Nix is rolled out there
         stack: ubuntu-noble-24.04-bitrise-2025-android
         machine_type_id: g2.linux.x-large
 

@@ -48,6 +48,8 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, n
 		return forceNix
 	}
 
+	// Note: even we just installed the plugin above, it might get preinstalled to the environment one day. To be safe, we update it here
+	// because the index might be outdated.
 	_, err = execEnv.RunMisePlugin("update", nixpkgs.PluginName)
 	if err != nil {
 		log.Warnf("Error while updating nixpkgs plugin (%s): %v. Possibly using outdated plugin version.", nixpkgs.PluginGitURL, err)
