@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockRegistryChecker is a mock implementation of RegistryChecker for testing
+// MockRegistryChecker is a mock implementation of RegistryChecker for testing.
 type MockRegistryChecker struct {
 	registryTools map[string]bool
 }
@@ -234,7 +234,7 @@ func TestMiseCoreTools_Consistency(t *testing.T) {
 	}
 }
 
-// stringPtr helper for creating string pointers
+// stringPtr helper for creating string pointers.
 func stringPtr(s string) *string {
 	return &s
 }

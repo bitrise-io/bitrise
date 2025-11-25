@@ -44,7 +44,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	}
 	if plugin == nil {
 		// No plugin installation needed (either core tool or registry tool).
-		log.Debugf("No plugin installation needed for tool %s", tool.ToolName)
+		log.Debugf("[TOOLPROVIDER] No plugin installation needed for tool %s", tool.ToolName)
 		return nil
 	}
 
@@ -53,7 +53,7 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 		log.Warnf("Failed to check if plugin is already installed: %v", err)
 	}
 	if installed {
-		log.Debugf("Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
 		return nil
 	}
 
@@ -80,12 +80,12 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	return nil
 }
 
-// RegistryChecker interface required for testing
+// RegistryChecker interface required for testing.
 type RegistryChecker interface {
 	isPluginInRegistry(name string) error
 }
 
-// pluginToInstall is a wrapper to call the pure function with the MiseToolProvider as RegistryChecker
+// pluginToInstall is a wrapper to call the pure function with the MiseToolProvider as RegistryChecker.
 func (m *MiseToolProvider) pluginToInstall(tool provider.ToolRequest) (*PluginSource, error) {
 	return pluginToInstall(tool, m)
 }
@@ -157,7 +157,7 @@ func (m *MiseToolProvider) isPluginInRegistry(name string) error {
 	_, err := m.ExecEnv.RunMise(registryArgs...)
 	if err != nil {
 		// If the tool is not found in registry, mise returns exit code 1 with error message
-		// "tool not found in registry: <toolname>"
+		// "tool not found in registry: <toolname>".
 		return fmt.Errorf("tool not found in registry: %s", name)
 	}
 
