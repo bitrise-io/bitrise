@@ -267,8 +267,8 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 
-			nixChecker := func(tool provider.ToolRequest) (bool, error) {
-				return true, nil
+			nixChecker := func(tool provider.ToolRequest) bool {
+				return true
 			}
 
 			got := canBeInstalledWithNix(request, execEnv, nixChecker)

@@ -1,7 +1,6 @@
 package nixpkgs
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,25 +14,25 @@ const (
 	PluginName   = "nixpkgs"
 )
 
-func ShouldUseBackend(request provider.ToolRequest) (bool, error) {
+func ShouldUseBackend(request provider.ToolRequest) bool {
 	if request.ToolName != "ruby" {
 		log.Debugf("[TOOLPROVIDER] The mise-nixpkgs backend is only enabled for Ruby for now. Using core plugin to install %s", request.ToolName)
-		return false, nil
+		return false
 	}
 
 	value, ok := os.LookupEnv("BITRISE_TOOLSETUP_FAST_INSTALL")
 	if !ok || strings.TrimSpace(value) != "true" {
 		log.Debugf("[TOOLPROVIDER] Using core mise plugin for %s", request.ToolName)
-		return false, nil
+		return false
 	}
 
 	if !isNixAvailable() {
 		log.Debugf("[TOOLPROVIDER] Nix is not available on the system, cannot use nixpkgs backend for %s", request.ToolName)
-		return false, fmt.Errorf("nix not available on system")
+		return false
 	}
 
 	log.Debugf("[TOOLPROVIDER] Using nixpkgs backend for %s as BITRISE_TOOLSETUP_FAST_INSTALL is set", request.ToolName)
-	return true, nil
+	return true
 }
 
 func isNixAvailable() bool {

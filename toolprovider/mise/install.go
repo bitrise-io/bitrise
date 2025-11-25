@@ -29,28 +29,23 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 
 // nixChecker is a helper for testing.
 // The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
-type nixChecker func(tool provider.ToolRequest) (bool, error)
+type nixChecker func(tool provider.ToolRequest) bool
 
 func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
 
-	useNix, err := nixChecker(tool)
-	if err != nil {
-		// Note: if Nix is unavailable we cannot force install.
-		log.Warnf("Error while checking if nixpkgs backend should be used: %v. Falling back to core plugin installation.", err)
-		return false
-	}
+	useNix := nixChecker(tool)
 
 	if !forceNix && !useNix {
 		return false
 	}
 
-	_, err = execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
+	// If the plugin is already installed, Mise will not throw an error.
+	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
-		log.Warnf("Error while installing nixpkgs plugin (%s): %v. Falling back to core plugin installation.", nixpkgs.PluginGitURL, err)
-		// Warning, if false is not returned here, force install will be allowed even though plugin install failed.
-		return false
+		log.Warnf("Error while installing nixpkgs plugin (%s): %v.", nixpkgs.PluginGitURL, err)
+		return forceNix
 	}
 
 	_, err = execEnv.RunMisePlugin("update", nixpkgs.PluginName)
