@@ -107,7 +107,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		if err != nil {
 			return provider.ToolInstallResult{}, fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
 		}
-	} // else: nixpkgs plugin is already installed in ShouldInstallWithNix()
+	} // else: nixpkgs plugin is already installed in canBeInstalledWithNix()
 
 	installRequest := installRequest(tool, useNix)
 
