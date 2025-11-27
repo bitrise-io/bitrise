@@ -34,7 +34,6 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 			toolConfig.Provider = config.ToolConfig.Provider
 		}
 		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-		toolConfig.ExperimentalFastInstallForce = config.ToolConfig.ExperimentalFastInstallForce
 	}
 	providerID := toolConfig.Provider
 

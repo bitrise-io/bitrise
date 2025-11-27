@@ -3,6 +3,7 @@ package mise
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
@@ -33,20 +34,12 @@ type nixChecker func(tool provider.ToolRequest) bool
 
 func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, toolConfig models.ToolConfigModel, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
-	// Check config first, then fall back to env var for backwards compatibility
-	forceNix := toolConfig.ExperimentalFastInstallForce
-
-	// Check config first, then fall back to env var for backwards compatibility
+	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
 	fastInstall := toolConfig.ExperimentalFastInstall
-
-	// If fast install is not enabled, skip nixpkgs backend
-	if !fastInstall && !forceNix {
-		return false
-	}
-
 	useNix := nixChecker(tool)
 
-	if !useNix && !forceNix {
+	canProceed := (fastInstall && useNix) || forceNix
+	if !canProceed {
 		return false
 	}
 

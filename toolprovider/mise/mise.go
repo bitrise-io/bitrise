@@ -61,9 +61,8 @@ func NewToolProvider(installDir string, dataDir string, toolConfig ...models.Too
 		config = toolConfig[0]
 	} else {
 		config = models.ToolConfigModel{
-			Provider:                     "mise",
-			ExperimentalFastInstall:      false,
-			ExperimentalFastInstallForce: false,
+			Provider:                "mise",
+			ExperimentalFastInstall: false,
 		}
 	}
 
