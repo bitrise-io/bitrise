@@ -89,6 +89,8 @@ tool_config:
   extra_plugins:
     flutter: "https://github.com/asdf-community/asdf-flutter.git"
     custom-tool: "https://github.com/user/asdf-custom-tool.git"
+  experimental_fast_install: true
+  experimental_fast_install_force: false
 
 workflows:
   test:

@@ -19,6 +19,12 @@ type ToolConfigModel struct {
 
 	// Extra tool-plugins on top of Bitrise-vetted integrations. This is very provider-specific, but the map value is a URL to the plugin source.
 	ExtraPlugins map[ToolID]string `json:"extra_plugins,omitempty" yaml:"extra_plugins,omitempty"`
+
+	// ExperimentalFastInstall enables the use of nixpkgs backend for faster tool installation (currently Ruby only).
+	ExperimentalFastInstall bool `json:"experimental_fast_install,omitempty" yaml:"experimental_fast_install,omitempty"`
+
+	// ExperimentalFastInstallForce forces the use of nixpkgs backend without fallback to regular installation.
+	ExperimentalFastInstallForce bool `json:"experimental_fast_install_force,omitempty" yaml:"experimental_fast_install_force,omitempty"`
 }
 
 const ToolSyntaxPatternLatest = `(.*):latest$`

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -42,15 +43,28 @@ var miseStableChecksums = map[string]string{
 }
 
 type MiseToolProvider struct {
-	ExecEnv execenv.ExecEnv
+	ExecEnv    execenv.ExecEnv
+	ToolConfig models.ToolConfigModel
 }
 
-func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, toolConfig ...models.ToolConfigModel) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
 	if dataDir == "" {
 		return nil, errors.New("data directory must be provided")
+	}
+
+	// Use provided config or default to empty config with false values
+	var config models.ToolConfigModel
+	if len(toolConfig) > 0 {
+		config = toolConfig[0]
+	} else {
+		config = models.ToolConfigModel{
+			Provider:                     "mise",
+			ExperimentalFastInstall:      false,
+			ExperimentalFastInstallForce: false,
+		}
 	}
 
 	err := os.MkdirAll(installDir, 0755)
@@ -78,6 +92,7 @@ func NewToolProvider(installDir string, dataDir string) (*MiseToolProvider, erro
 			"MISE_NODE_COREPACK": "1",
 		},
 		),
+		ToolConfig: config,
 	}, nil
 }
 
@@ -101,7 +116,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	useNix := canBeInstalledWithNix(tool, m.ExecEnv, nixpkgs.ShouldUseBackend)
+	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.ToolConfig, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {

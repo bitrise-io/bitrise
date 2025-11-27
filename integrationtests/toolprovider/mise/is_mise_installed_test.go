@@ -16,7 +16,8 @@ import (
 func TestBootstrapSkipsInstallationWhenMiseAlreadyInstalled(t *testing.T) {
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir)
+	toolConfig := defaultTestToolConfig()
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
 	require.NoError(t, err)
 
 	// Should install

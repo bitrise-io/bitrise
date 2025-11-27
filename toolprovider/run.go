@@ -28,12 +28,15 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		return nil, nil
 	}
 
-	providerID := defaultToolConfig().Provider
+	toolConfig := defaultToolConfig()
 	if config.ToolConfig != nil {
 		if config.ToolConfig.Provider != "" {
-			providerID = config.ToolConfig.Provider
+			toolConfig.Provider = config.ToolConfig.Provider
 		}
+		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
+		toolConfig.ExperimentalFastInstallForce = config.ToolConfig.ExperimentalFastInstallForce
 	}
+	providerID := toolConfig.Provider
 
 	var toolProvider provider.ToolProvider
 	switch providerID {
@@ -48,7 +51,7 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		}
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}

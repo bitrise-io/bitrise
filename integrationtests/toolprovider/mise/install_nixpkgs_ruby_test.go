@@ -57,13 +57,11 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 		},
 	}
 
-	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL", "true")
-	t.Setenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE", "true")
-
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()
 		miseDataDir := t.TempDir()
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir)
+		toolConfig := fastInstallToolConfig()
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
 		require.NoError(t, err)
 
 		err = miseProvider.Bootstrap()

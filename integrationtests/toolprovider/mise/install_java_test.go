@@ -6,8 +6,8 @@ package mise
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,7 +47,8 @@ func TestMiseInstallJavaVersion(t *testing.T) {
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()
 		miseDataDir := t.TempDir()
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir)
+		toolConfig := defaultTestToolConfig()
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
 		require.NoError(t, err)
 
 		err = miseProvider.Bootstrap()
