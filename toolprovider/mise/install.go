@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -31,13 +32,14 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 // The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
 type nixChecker func(tool provider.ToolRequest) bool
 
-func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, nixChecker nixChecker) bool {
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, toolConfig models.ToolConfigModel, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
-
+	fastInstall := toolConfig.ExperimentalFastInstall
 	useNix := nixChecker(tool)
 
-	if !forceNix && !useNix {
+	canProceed := (fastInstall && useNix) || forceNix
+	if !canProceed {
 		return false
 	}
 
