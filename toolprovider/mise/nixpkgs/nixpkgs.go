@@ -23,7 +23,7 @@ func ShouldUseBackend(request provider.ToolRequest) bool {
 		return false
 	}
 
-	log.Debugf("[TOOLPROVIDER] Using nixpkgs backend for %s as experimental_fast_install is enabled", request.ToolName)
+	log.Debugf("[TOOLPROVIDER] Nix backend is available for %s", request.ToolName)
 	return true
 }
 
