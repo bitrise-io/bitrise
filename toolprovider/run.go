@@ -17,32 +17,18 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
+// installTools is a shared function that installs tools using the specified provider
+func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker) ([]envmanModels.EnvironmentItemModel, error) {
 	startTime := time.Now()
-	toolRequests, err := getToolRequests(config, workflowID)
-	if err != nil {
-		return nil, fmt.Errorf("tools: %w", err)
-	}
-
-	if len(toolRequests) == 0 {
-		return nil, nil
-	}
-
-	toolConfig := defaultToolConfig()
-	if config.ToolConfig != nil {
-		if config.ToolConfig.Provider != "" {
-			toolConfig.Provider = config.ToolConfig.Provider
-		}
-		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-	}
 	providerID := toolConfig.Provider
 
 	var toolProvider provider.ToolProvider
+	var err error
+
 	switch providerID {
 	case "asdf":
 		toolProvider = &asdf.AsdfToolProvider{
 			ExecEnv: execenv.ExecEnv{
-				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
 				EnvVars:            map[string]string{},
 				ShellInit:          "",
 				ClearInheritedEnvs: false,
@@ -103,4 +89,25 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 	log.Printf("")
 
 	return convertToEnvmanEnvs(activations), nil
+}
+
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
+	toolRequests, err := getToolRequests(config, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("tools: %w", err)
+	}
+
+	if len(toolRequests) == 0 {
+		return nil, nil
+	}
+
+	toolConfig := defaultToolConfig()
+	if config.ToolConfig != nil {
+		if config.ToolConfig.Provider != "" {
+			toolConfig.Provider = config.ToolConfig.Provider
+		}
+		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
+	}
+
+	return installTools(toolRequests, toolConfig, tracker)
 }
