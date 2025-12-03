@@ -11,7 +11,14 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/urfave/cli"
+)
+
+const (
+	outputFormatPlaintext = "plaintext"
+	outputFormatJSON      = "json"
+	outputFormatBash      = "bash"
 )
 
 var toolsCommand = cli.Command{
@@ -49,6 +56,11 @@ var toolsCommand = cli.Command{
 					Name:  "fast-install",
 					Usage: "Enable experimental fast install (currently Ruby only with mise)",
 				},
+				cli.StringFlag{
+					Name:  "format, f",
+					Usage: `Output format of the env vars that activate the tool. Options: plaintext (default), json, bash`,
+					Value: outputFormatPlaintext,
+				},
 			},
 		},
 		{
@@ -65,9 +77,10 @@ var toolsCommand = cli.Command{
 				return nil
 			},
 			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "json",
-					Usage: "Output in JSON format",
+				cli.StringFlag{
+					Name:  "format, f",
+					Usage: `Output format. Options: plaintext (default), json`,
+					Value: outputFormatPlaintext,
 				},
 				cli.StringFlag{
 					Name:  "provider",
@@ -84,6 +97,14 @@ func toolsSetup(c *cli.Context) error {
 	provider := c.String("provider")
 	fastInstall := c.Bool("fast-install")
 	workflowID := c.String(WorkflowKey)
+
+	format := c.String("format")
+	switch format {
+	case outputFormatPlaintext, outputFormatJSON, outputFormatBash:
+		// valid formats
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
 
 	// Check if any file looks like a bitrise config.
 	var bitriseConfigPath string
@@ -110,20 +131,11 @@ func toolsSetup(c *cli.Context) error {
 			return err
 		}
 
-		if len(envs) > 0 {
-			log.Printf("")
-			log.Infof("Environment variables set:")
-			for _, env := range envs {
-				key, value, err := env.GetKeyValuePair()
-				if err != nil {
-					log.Warnf("Failed to get env var: %s", err)
-					continue
-				}
-				log.Printf("  %s=%s", key, value)
-			}
+		output, err := convertToOutputFormat(envs, format)
+		if err != nil {
+			return fmt.Errorf("convert to output format: %w", err)
 		}
-
-		return nil
+		fmt.Println(output)
 	}
 
 	opts := toolprovider.SetupOptions{
@@ -138,22 +150,12 @@ func toolsSetup(c *cli.Context) error {
 		return err
 	}
 
-	if len(envs) > 0 {
-		log.Printf("")
-		log.Infof("Environment variables set:")
-		for _, env := range envs {
-			key, value, err := env.GetKeyValuePair()
-			if err != nil {
-				log.Warnf("Failed to get env var: %s", err)
-				continue
-			}
-			log.Printf("  %s=%s", key, value)
-		}
-		log.Printf("")
-		log.Infof("Run the following to apply environment changes:")
-		log.Printf("  export $(bitrise tools setup --from ... | grep export)")
+	output, err := convertToOutputFormat(envs, format)
+	if err != nil {
+		return fmt.Errorf("convert to output format: %w", err)
 	}
-
+	// TODO: avoid printing other log output when --bash or --json is used
+	fmt.Println(output)
 	return nil
 }
 
@@ -162,9 +164,48 @@ func isBitriseConfig(path string) bool {
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
 
+func convertToOutputFormat(envs []envmanModels.EnvironmentItemModel, format string) (string, error) {
+	if len(envs) == 0 {
+		return "", nil
+	}
+
+	switch format {
+	case outputFormatPlaintext:
+		var builder strings.Builder
+		builder.WriteString("Env vars to activate installed tools:\n")
+		for _, env := range envs {
+			key, value, err := env.GetKeyValuePair()
+			if err != nil {
+				return "", fmt.Errorf("get env var: %w", err)
+			}
+			builder.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+		}
+		return builder.String(), nil
+	case outputFormatJSON:
+		// TODO: print a sane output structure
+		data, err := json.MarshalIndent(envs, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("marshal JSON: %w", err)
+		}
+		return string(data), nil
+	case outputFormatBash:
+		var builder strings.Builder
+		for _, env := range envs {
+			key, value, err := env.GetKeyValuePair()
+			if err != nil {
+				return "", fmt.Errorf("get env var: %w", err)
+			}
+			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", key, value))
+		}
+		return builder.String(), nil
+	default:
+		return "", fmt.Errorf("unsupported output format: %s", format)
+	}
+}
+
 func toolsInfo(c *cli.Context) error {
 	provider := c.String("provider")
-	jsonOutput := c.Bool("json")
+	format := c.String("format")
 
 	tools, err := toolprovider.ListInstalledTools(provider)
 	if err != nil {
@@ -176,7 +217,7 @@ func toolsInfo(c *cli.Context) error {
 		return nil
 	}
 
-	if jsonOutput {
+	if format == outputFormatJSON {
 		data, err := json.MarshalIndent(tools, "", "  ")
 		if err != nil {
 			return fmt.Errorf("marshal JSON: %w", err)
