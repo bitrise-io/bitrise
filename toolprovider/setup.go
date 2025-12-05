@@ -33,7 +33,7 @@ type SetupOptions struct {
 }
 
 // SetupFromVersionFiles installs tools from version files.
-func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker) ([]envmanModels.EnvironmentItemModel, error) {
+func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
 	// If no version files specified, search in working directory.
 	if len(opts.VersionFiles) == 0 {
 		if opts.WorkingDir == "" {
@@ -50,12 +50,14 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker) ([]envm
 		}
 
 		if len(foundFiles) == 0 {
-			log.Warnf("No version files found in %s", opts.WorkingDir)
+			if !silent {
+				log.Warnf("No version files found in %s", opts.WorkingDir)
+			}
 			return nil, nil
 		}
 
 		opts.VersionFiles = foundFiles
-		log.Infof("Found version files: %v", foundFiles)
+		log.Debugf("Found version files: %v", foundFiles)
 	}
 
 	// Parse all version files.
@@ -66,7 +68,7 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker) ([]envm
 			return nil, fmt.Errorf("resolve path %s: %w", versionFile, err)
 		}
 
-		log.Infof("Reading version file: %s", absPath)
+		log.Debugf("Reading version file: %s", absPath)
 		tools, err := versionfile.ParseVersionFile(absPath)
 		if err != nil {
 			return nil, fmt.Errorf("parse version file %s: %w", absPath, err)
@@ -113,5 +115,5 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker) ([]envm
 		toolConfig.Provider = "mise"
 	}
 
-	return installTools(toolRequests, toolConfig, tracker)
+	return installTools(toolRequests, toolConfig, tracker, silent)
 }

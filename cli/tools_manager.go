@@ -105,6 +105,7 @@ func toolsSetup(c *cli.Context) error {
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
 	}
+	silent := format == outputFormatJSON || format == outputFormatBash
 
 	// Check if any file looks like a bitrise config.
 	var bitriseConfigPath string
@@ -126,7 +127,7 @@ func toolsSetup(c *cli.Context) error {
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.Run(config, tracker, false, workflowID)
+		envs, err := toolprovider.Run(config, tracker, false, workflowID, silent)
 		if err != nil {
 			return err
 		}
@@ -145,7 +146,7 @@ func toolsSetup(c *cli.Context) error {
 	}
 
 	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.SetupFromVersionFiles(opts, tracker)
+	envs, err := toolprovider.SetupFromVersionFiles(opts, tracker, silent)
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,6 @@ func toolsSetup(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("convert to output format: %w", err)
 	}
-	// TODO: avoid printing other log output when --bash or --json is used
 	fmt.Println(output)
 	return nil
 }
