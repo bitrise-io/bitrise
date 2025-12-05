@@ -18,7 +18,7 @@ import (
 )
 
 // installTools is a shared function that installs tools using the specified provider
-func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker) ([]envmanModels.EnvironmentItemModel, error) {
+func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
 	startTime := time.Now()
 	providerID := toolConfig.Provider
 
@@ -49,7 +49,9 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
 	}
 
-	printToolRequests(toolRequests)
+	if !silent {
+		printToolRequests(toolRequests)
+	}
 
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
@@ -57,7 +59,10 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
-		printInstallStart(toolRequest)
+		if !silent {
+			printInstallStart(toolRequest)
+		}
+		
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
 			var toolErr provider.ToolInstallError
@@ -71,7 +76,9 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		}
 		toolInstalls = append(toolInstalls, result)
 		duration := time.Since(toolStartTime)
-		printInstallResult(toolRequest, result, duration)
+		if !silent {
+			printInstallResult(toolRequest, result, duration)
+		}
 		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
@@ -84,14 +91,16 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		activations = append(activations, activation)
 	}
 
-	duration := time.Since(startTime).Round(time.Millisecond)
-	log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
-	log.Printf("")
+	if !silent {
+		duration := time.Since(startTime).Round(time.Millisecond)
+		log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
+		log.Printf("")
+	}
 
 	return convertToEnvmanEnvs(activations), nil
 }
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -109,5 +118,5 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
 	}
 
-	return installTools(toolRequests, toolConfig, tracker)
+	return installTools(toolRequests, toolConfig, tracker, silent)
 }
