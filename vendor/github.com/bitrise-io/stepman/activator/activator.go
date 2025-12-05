@@ -3,6 +3,8 @@ package activator
 type ActivatedStep struct {
 	StepYMLPath string
 
+	ActivationType ActivationType
+
 	// ExecutablePath is a local path to the main entrypoint of the step, ready for execution.
 	// This can be an empty string if:
 	// - step was activated from a git reference (we checked out the source dir directly)
@@ -16,3 +18,12 @@ type ActivatedStep struct {
 	// (stepman should keep track of this info in a file probably)
 	DidStepLibUpdate bool
 }
+
+type ActivationType string
+
+const (
+	ActivationTypeSteplibExecutable ActivationType = "steplib_executable"
+	ActivationTypeSteplibSource     ActivationType = "steplib_source"
+	ActivationTypePathRef           ActivationType = "path"
+	ActivationTypeGitRef            ActivationType = "git"
+)
