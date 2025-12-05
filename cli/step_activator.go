@@ -69,7 +69,6 @@ func (a stepActivator) activateStep(
 			return activatedStep, fmt.Errorf("activate steplib step: %w", err)
 		}
 		return activatedStep, nil
-
 	} else {
 		return activator.ActivatedStep{}, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}

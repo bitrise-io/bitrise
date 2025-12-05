@@ -237,7 +237,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	//
 	// Activate step
 	activateStartTime := time.Now()
-	activateResult := r.activateStep(step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(tracker, step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
 	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
@@ -358,6 +358,7 @@ func newStepInfoPtr(stepID, defaultStepLibSource string, step stepmanModels.Step
 }
 
 func (r WorkflowRunner) activateStep(
+	tracker analytics.Tracker,
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIDData stepid.CanonicalID,
@@ -377,8 +378,16 @@ func (r WorkflowRunner) activateStep(
 		isStepLibUpdated = buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
 	}
 
+	activationStartedAt := time.Now()
 	activator := newStepActivator()
 	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	tracker.SendStepActivationEvent(
+		activatedStep.ActivationType,
+		stepIDData.IDorURI,
+		err == nil,
+		time.Since(activationStartedAt),
+		activatedStep.DidStepLibUpdate,
+	)
 	if activatedStep.DidStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}

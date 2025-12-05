@@ -20,6 +20,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/analytics"
+	"github.com/bitrise-io/stepman/activator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -2106,5 +2107,6 @@ func (n noOpTracker) SendWorkflowStarted(analytics.Properties, string, string)  
 func (n noOpTracker) SendWorkflowFinished(analytics.Properties, bool)                     {}
 func (n noOpTracker) SendCommandInfo(string, string, []string)                            {}
 func (n noOpTracker) SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration) {}
+func (n noOpTracker)SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {}
 func (n noOpTracker) Wait()            {}
 func (n noOpTracker) IsTracking() bool { return false }

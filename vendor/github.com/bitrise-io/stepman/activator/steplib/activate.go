@@ -32,7 +32,7 @@ func ActivateStep(stepLibURI, id, version, destination, destinationStepYML strin
 	if (os.Getenv(precompiledStepsEnv) == "true" || os.Getenv(precompiledStepsEnv) == "1") && step.Executables != nil {
 		platform := fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
 		executableForPlatform, ok := (*step.Executables)[platform]
-		if ok {
+		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
 			execPath, err := activateStepExecutable(stepLibURI, id, version, executableForPlatform, destination, destinationStepYML)
