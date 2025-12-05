@@ -344,7 +344,7 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 		}
-		environments = append(environments, toolEnvs...)
+		environments = append(environments, toolprovider.ConvertToEnvmanEnvs(toolEnvs)...)
 
 		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, buildIDProperties)
 	}

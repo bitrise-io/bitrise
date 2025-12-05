@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/urfave/cli"
 )
 
@@ -164,7 +164,7 @@ func isBitriseConfig(path string) bool {
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
 
-func convertToOutputFormat(envs []envmanModels.EnvironmentItemModel, format string) (string, error) {
+func convertToOutputFormat(envs []provider.EnvironmentActivation, format string) (string, error) {
 	if len(envs) == 0 {
 		return "", nil
 	}
@@ -174,16 +174,24 @@ func convertToOutputFormat(envs []envmanModels.EnvironmentItemModel, format stri
 		var builder strings.Builder
 		builder.WriteString("Env vars to activate installed tools:\n")
 		for _, env := range envs {
-			key, value, err := env.GetKeyValuePair()
-			if err != nil {
-				return "", fmt.Errorf("get env var: %w", err)
+			for k, v := range env.ContributedEnvVars {
+				builder.WriteString(fmt.Sprintf("%s=%s\n", k, v))
 			}
-			builder.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+			newPaths := strings.Join(env.ContributedPaths, ":")
+			builder.WriteString(fmt.Sprintf("PATH=%s:$PATH\n", newPaths))
 		}
 		return builder.String(), nil
 	case outputFormatJSON:
-		// TODO: print a sane output structure
-		data, err := json.MarshalIndent(envs, "", "  ")
+		envMap := make(map[string]string)
+		for _, env := range envs {
+			// TODO: we should probably deduplicate keys (especially PATH), see toolprovider/env.go
+			for k, v := range env.ContributedEnvVars {
+				envMap[k] = v
+			}
+			newPaths := strings.Join(env.ContributedPaths, ":")
+			envMap["PATH"] = fmt.Sprintf("%s:$PATH", newPaths)
+		}
+		data, err := json.MarshalIndent(envMap, "", "  ")
 		if err != nil {
 			return "", fmt.Errorf("marshal JSON: %w", err)
 		}
@@ -191,11 +199,12 @@ func convertToOutputFormat(envs []envmanModels.EnvironmentItemModel, format stri
 	case outputFormatBash:
 		var builder strings.Builder
 		for _, env := range envs {
-			key, value, err := env.GetKeyValuePair()
-			if err != nil {
-				return "", fmt.Errorf("get env var: %w", err)
+			for k, v := range env.ContributedEnvVars {
+				builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
 			}
-			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", key, value))
+			newPaths := strings.Join(env.ContributedPaths, ":")
+			value := fmt.Sprintf("%s:$PATH", newPaths)
+			builder.WriteString(fmt.Sprintf("export PATH=\"%s\"\n", value))
 		}
 		return builder.String(), nil
 	default:
