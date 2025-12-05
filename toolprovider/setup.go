@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	envmanModels "github.com/bitrise-io/envman/v2/models"
-
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
@@ -33,7 +31,7 @@ type SetupOptions struct {
 }
 
 // SetupFromVersionFiles installs tools from version files.
-func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
+func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	// If no version files specified, search in working directory.
 	if len(opts.VersionFiles) == 0 {
 		if opts.WorkingDir == "" {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/colorstring"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -18,7 +17,7 @@ import (
 )
 
 // installTools is a shared function that installs tools using the specified provider
-func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
+func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
 	providerID := toolConfig.Provider
 
@@ -97,10 +96,11 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		log.Printf("")
 	}
 
-	return convertToEnvmanEnvs(activations), nil
+	return activations, nil
 }
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]envmanModels.EnvironmentItemModel, error) {
+// TODO: if it's called Run(), shouldn't it also do the activation?
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
