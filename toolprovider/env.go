@@ -10,7 +10,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func convertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
 	envs := make([]envmanModels.EnvironmentItemModel, 0)
 	for _, activation := range activations {
 		for k, v := range activation.ContributedEnvVars {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/colorstring"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -17,32 +16,18 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
+// installTools is a shared function that installs tools using the specified provider
+func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
-	toolRequests, err := getToolRequests(config, workflowID)
-	if err != nil {
-		return nil, fmt.Errorf("tools: %w", err)
-	}
-
-	if len(toolRequests) == 0 {
-		return nil, nil
-	}
-
-	toolConfig := defaultToolConfig()
-	if config.ToolConfig != nil {
-		if config.ToolConfig.Provider != "" {
-			toolConfig.Provider = config.ToolConfig.Provider
-		}
-		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-	}
 	providerID := toolConfig.Provider
 
 	var toolProvider provider.ToolProvider
+	var err error
+
 	switch providerID {
 	case "asdf":
 		toolProvider = &asdf.AsdfToolProvider{
 			ExecEnv: execenv.ExecEnv{
-				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
 				EnvVars:            map[string]string{},
 				ShellInit:          "",
 				ClearInheritedEnvs: false,
@@ -63,7 +48,9 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
 	}
 
-	printToolRequests(toolRequests)
+	if !silent {
+		printToolRequests(toolRequests)
+	}
 
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
@@ -71,7 +58,10 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
-		printInstallStart(toolRequest)
+		if !silent {
+			printInstallStart(toolRequest)
+		}
+		
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
 			var toolErr provider.ToolInstallError
@@ -85,7 +75,9 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		}
 		toolInstalls = append(toolInstalls, result)
 		duration := time.Since(toolStartTime)
-		printInstallResult(toolRequest, result, duration)
+		if !silent {
+			printInstallResult(toolRequest, result, duration)
+		}
 		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
@@ -98,9 +90,33 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		activations = append(activations, activation)
 	}
 
-	duration := time.Since(startTime).Round(time.Millisecond)
-	log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
-	log.Printf("")
+	if !silent {
+		duration := time.Since(startTime).Round(time.Millisecond)
+		log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
+		log.Printf("")
+	}
 
-	return convertToEnvmanEnvs(activations), nil
+	return activations, nil
+}
+
+// TODO: if it's called Run(), shouldn't it also do the activation?
+func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
+	toolRequests, err := getToolRequests(config, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("tools: %w", err)
+	}
+
+	if len(toolRequests) == 0 {
+		return nil, nil
+	}
+
+	toolConfig := defaultToolConfig()
+	if config.ToolConfig != nil {
+		if config.ToolConfig.Provider != "" {
+			toolConfig.Provider = config.ToolConfig.Provider
+		}
+		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
+	}
+
+	return installTools(toolRequests, toolConfig, tracker, silent)
 }
