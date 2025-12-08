@@ -10,7 +10,11 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath string) []envmanModels.EnvironmentItemModel {
+	if currentPath == "" {
+		currentPath = os.Getenv("PATH")
+	}
+
 	envs := make([]envmanModels.EnvironmentItemModel, 0)
 	for _, activation := range activations {
 		for k, v := range activation.ContributedEnvVars {
@@ -30,7 +34,7 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanM
 	}
 
 	if len(newPathEntries) > 0 {
-		newPath := prependPath(os.Getenv("PATH"), strings.Join(newPathEntries, ":"))
+		newPath := prependPath(currentPath, strings.Join(newPathEntries, ":"))
 		if newPath != "" {
 			envs = append(envs, envmanModels.EnvironmentItemModel{
 				"PATH": newPath,

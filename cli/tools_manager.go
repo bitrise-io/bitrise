@@ -96,12 +96,11 @@ func toolsSetup(c *cli.Context) error {
 	silent := false
 
 	switch format {
+	case outputFormatJSON, outputFormatBash:
+		// valid formats
+		silent = true
 	case outputFormatPlaintext:
 		// valid format
-		break
-	case outputFormatJSON, outputFormatBash:
-		silent = true
-		// valid formats
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
 	}
@@ -174,43 +173,28 @@ func isYMLConfig(path string) bool {
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
 
-func buildPathValue(paths []string) string {
-	if len(paths) == 0 {
-		return ""
-	}
-	newPaths := strings.Join(paths, ":")
-	return fmt.Sprintf("%s:$PATH", newPaths)
-}
-
 func convertToOutputFormat(envs []provider.EnvironmentActivation, format string) (string, error) {
 	if len(envs) == 0 {
 		return "", nil
 	}
 
+	// Note: passing "$PATH" to keep existing PATH in the output
+	envItems := toolprovider.ConvertToEnvmanEnvs(envs, "$PATH")
+
+	result := ""
+	envMap := make(map[string]string)
+	for _, item := range envItems {
+		for k, v := range item {
+			result += fmt.Sprintf("%s=%s\n", k, v)
+		}
+	}
+
 	switch format {
 	case outputFormatPlaintext:
 		var builder strings.Builder
-		builder.WriteString("Env vars to activate installed tools:\n")
-		for _, env := range envs {
-			for k, v := range env.ContributedEnvVars {
-				builder.WriteString(fmt.Sprintf("%s=%s\n", k, v))
-			}
-			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
-				builder.WriteString(fmt.Sprintf("PATH=%s\n", pathValue))
-			}
-		}
+		builder.WriteString(fmt.Sprintf("Env vars to activate installed tools:\n%s", result))
 		return builder.String(), nil
 	case outputFormatJSON:
-		envMap := make(map[string]string)
-		for _, env := range envs {
-			// TODO: we should probably deduplicate keys (especially PATH), see toolprovider/env.go
-			for k, v := range env.ContributedEnvVars {
-				envMap[k] = v
-			}
-			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
-				envMap["PATH"] = pathValue
-			}
-		}
 		data, err := json.MarshalIndent(envMap, "", "  ")
 		if err != nil {
 			return "", fmt.Errorf("marshal JSON: %w", err)
@@ -218,14 +202,7 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 		return string(data), nil
 	case outputFormatBash:
 		var builder strings.Builder
-		for _, env := range envs {
-			for k, v := range env.ContributedEnvVars {
-				builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
-			}
-			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
-				builder.WriteString(fmt.Sprintf("export PATH=\"%s\"\n", pathValue))
-			}
-		}
+		builder.WriteString(result)
 		return builder.String(), nil
 	default:
 		return "", fmt.Errorf("unsupported output format: %s", format)
