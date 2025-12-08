@@ -23,7 +23,7 @@ const (
 
 var toolsCommand = cli.Command{
 	Name:  "tools",
-	Usage: "Manage development tools.",
+	Usage: "Manage available tools from inside the workflow.",
 	Subcommands: []cli.Command{
 		{
 			Name:        "setup",
@@ -44,17 +44,8 @@ var toolsCommand = cli.Command{
 					Usage: "Config or version file path(s) to install tools from. Can be specified multiple times. Auto-detects if not provided.",
 				},
 				cli.StringFlag{
-					Name:  "provider",
-					Usage: "Tool provider to use (asdf, mise). Default: mise",
-					Value: "mise",
-				},
-				cli.StringFlag{
 					Name:  WorkflowKey + ", w",
 					Usage: "Workflow ID to use when installing from bitrise config (optional, uses global tools if not specified)",
-				},
-				cli.BoolFlag{
-					Name:  "fast-install",
-					Usage: "Enable experimental fast install (currently Ruby only with mise)",
 				},
 				cli.StringFlag{
 					Name:  "format, f",
@@ -82,11 +73,6 @@ var toolsCommand = cli.Command{
 					Usage: `Output format. Options: plaintext (default), json`,
 					Value: outputFormatPlaintext,
 				},
-				cli.StringFlag{
-					Name:  "provider",
-					Usage: "Tool provider to query (asdf, mise). Default: mise",
-					Value: "mise",
-				},
 			},
 		},
 	},
@@ -94,8 +80,6 @@ var toolsCommand = cli.Command{
 
 func toolsSetup(c *cli.Context) error {
 	configFiles := c.StringSlice(ConfigKey)
-	provider := c.String("provider")
-	fastInstall := c.Bool("fast-install")
 	workflowID := c.String(WorkflowKey)
 
 	format := c.String("format")
@@ -140,9 +124,7 @@ func toolsSetup(c *cli.Context) error {
 	}
 
 	opts := toolprovider.SetupOptions{
-		VersionFiles:            configFiles,
-		ProviderName:            provider,
-		ExperimentalFastInstall: fastInstall,
+		VersionFiles: configFiles,
 	}
 
 	tracker := analytics.NewDefaultTracker()
@@ -213,10 +195,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 }
 
 func toolsInfo(c *cli.Context) error {
-	provider := c.String("provider")
 	format := c.String("format")
 
-	tools, err := toolprovider.ListInstalledTools(provider)
+	tools, err := toolprovider.ListInstalledTools("mise")
 	if err != nil {
 		return err
 	}
@@ -235,7 +216,7 @@ func toolsInfo(c *cli.Context) error {
 		return nil
 	}
 
-	log.Infof("Installed tools (%s):", provider)
+	log.Infof("Installed tools:")
 	log.Printf("")
 
 	maxNameLen := 0

@@ -26,11 +26,10 @@ func TestSetupFromVersionFilesIntegration(t *testing.T) {
 
 		opts := toolprovider.SetupOptions{
 			VersionFiles: []string{toolVersionsPath},
-			ProviderName: "mise",
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.SetupFromVersionFiles(opts, tracker)
+		envs, err := toolprovider.SetupFromVersionFiles(opts, tracker, false)
 
 		// Note: This may fail in test environment without proper tool setup.
 		if err != nil {
@@ -48,12 +47,11 @@ func TestSetupFromVersionFilesIntegration(t *testing.T) {
 		require.NoError(t, err)
 
 		opts := toolprovider.SetupOptions{
-			WorkingDir:   tmpDir,
-			ProviderName: "mise",
+			WorkingDir: tmpDir,
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		_, err = toolprovider.SetupFromVersionFiles(opts, tracker)
+		_, err = toolprovider.SetupFromVersionFiles(opts, tracker, false)
 
 		// Should not panic, may error if tools not available.
 		if err != nil {
@@ -65,12 +63,11 @@ func TestSetupFromVersionFilesIntegration(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		opts := toolprovider.SetupOptions{
-			WorkingDir:   tmpDir,
-			ProviderName: "mise",
+			WorkingDir: tmpDir,
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.SetupFromVersionFiles(opts, tracker)
+		envs, err := toolprovider.SetupFromVersionFiles(opts, tracker, false)
 
 		require.NoError(t, err)
 		assert.Nil(t, envs)
@@ -79,11 +76,10 @@ func TestSetupFromVersionFilesIntegration(t *testing.T) {
 	t.Run("invalid version file path", func(t *testing.T) {
 		opts := toolprovider.SetupOptions{
 			VersionFiles: []string{"/nonexistent/path/.tool-versions"},
-			ProviderName: "mise",
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		_, err := toolprovider.SetupFromVersionFiles(opts, tracker)
+		_, err := toolprovider.SetupFromVersionFiles(opts, tracker, false)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "parse version file")
@@ -99,14 +95,13 @@ func TestSetupFromVersionFilesIntegration(t *testing.T) {
 
 		opts := toolprovider.SetupOptions{
 			VersionFiles: []string{toolVersionsPath},
-			ProviderName: "mise",
 			ExtraPlugins: map[models.ToolID]string{
 				"custom-tool": "https://github.com/example/custom-tool-plugin",
 			},
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		_, err = toolprovider.SetupFromVersionFiles(opts, tracker)
+		_, err = toolprovider.SetupFromVersionFiles(opts, tracker, false)
 
 		// Will likely fail without the actual plugin, but should parse correctly.
 		if err != nil {

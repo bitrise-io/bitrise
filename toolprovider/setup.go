@@ -20,12 +20,6 @@ type SetupOptions struct {
 	// WorkingDir is the directory to search for version files if not explicitly provided.
 	WorkingDir string
 
-	// ProviderName is the tool provider to use (asdf, mise).
-	ProviderName string
-
-	// ExperimentalFastInstall enables experimental fast install.
-	ExperimentalFastInstall bool
-
 	// ExtraPlugins contains additional plugin sources.
 	ExtraPlugins map[models.ToolID]string
 }
@@ -104,13 +98,9 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent 
 	}
 
 	toolConfig := models.ToolConfigModel{
-		Provider:                opts.ProviderName,
-		ExperimentalFastInstall: opts.ExperimentalFastInstall,
+		Provider:                "mise",
+		ExperimentalFastInstall: false,
 		ExtraPlugins:            opts.ExtraPlugins,
-	}
-
-	if toolConfig.Provider == "" {
-		toolConfig.Provider = "mise"
 	}
 
 	return installTools(toolRequests, toolConfig, tracker, silent)
