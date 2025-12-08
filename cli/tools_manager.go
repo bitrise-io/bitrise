@@ -19,6 +19,17 @@ const (
 	outputFormatPlaintext = "plaintext"
 	outputFormatJSON      = "json"
 	outputFormatBash      = "bash"
+
+	toolsSetupCommandName = "setup"
+	toolsInfoCommandName  = "info"
+
+	toolsConfigKey      = "config"
+	toolsConfigShortKey = "c"
+
+	toolsWorkflowKey = "workflow"
+
+	toolsOutputFormatKey      = "format"
+	toolsOutputFormatShortKey = "f"
 )
 
 var toolsCommand = cli.Command{
@@ -26,7 +37,7 @@ var toolsCommand = cli.Command{
 	Usage: "Manage available tools from inside the workflow.",
 	Subcommands: []cli.Command{
 		{
-			Name:        "setup",
+			Name:        toolsSetupCommandName,
 			Usage:       "Install tools from version files or bitrise config.",
 			UsageText:   "bitrise tools setup [--config FILE]...",
 			Description: "Install development tools from version files.",
@@ -40,22 +51,22 @@ var toolsCommand = cli.Command{
 			},
 			Flags: []cli.Flag{
 				cli.StringSliceFlag{
-					Name:  ConfigKey + ", " + configShortKey,
+					Name:  toolsConfigKey + ", " + toolsConfigShortKey,
 					Usage: "Config or version file path(s) to install tools from. Can be specified multiple times. Auto-detects if not provided.",
 				},
 				cli.StringFlag{
-					Name:  WorkflowKey + ", w",
+					Name:  toolsWorkflowKey + ", w",
 					Usage: "Workflow ID to use when installing from bitrise config (optional, uses global tools if not specified)",
 				},
 				cli.StringFlag{
-					Name:  "format, f",
+					Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
 					Usage: `Output format of the env vars that activate the tool. Options: plaintext (default), json, bash`,
 					Value: outputFormatPlaintext,
 				},
 			},
 		},
 		{
-			Name:        "info",
+			Name:        toolsInfoCommandName,
 			Usage:       "Show information about installed tools.",
 			UsageText:   "bitrise tools info [--json]",
 			Description: "Display information about currently installed development tools.",
@@ -69,7 +80,7 @@ var toolsCommand = cli.Command{
 			},
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "format, f",
+					Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
 					Usage: `Output format. Options: plaintext (default), json`,
 					Value: outputFormatPlaintext,
 				},
@@ -81,26 +92,42 @@ var toolsCommand = cli.Command{
 func toolsSetup(c *cli.Context) error {
 	configFiles := c.StringSlice(ConfigKey)
 	workflowID := c.String(WorkflowKey)
+	format := c.String(OutputFormatKey)
+	silent := false
 
-	format := c.String("format")
 	switch format {
-	case outputFormatPlaintext, outputFormatJSON, outputFormatBash:
+	case outputFormatPlaintext:
+		// valid format
+		break
+	case outputFormatJSON, outputFormatBash:
+		silent = true
 		// valid formats
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
 	}
-	silent := format == outputFormatJSON || format == outputFormatBash
 
-	// Check if any file looks like a bitrise config.
 	var bitriseConfigPath string
+	var versionFilePaths []string
 	for _, file := range configFiles {
-		if isBitriseConfig(file) {
-			bitriseConfigPath = file
-			break
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return fmt.Errorf("file does not exist: %s", file)
 		}
+
+		if isYMLConfig(file) {
+			if bitriseConfigPath != "" {
+				return fmt.Errorf("multiple bitrise config files specified: %s and %s", bitriseConfigPath, file)
+			}
+
+			bitriseConfigPath = file
+			continue
+		}
+
+		// Separate version files from bitrise config.
+		versionFilePaths = append(versionFilePaths, file)
 	}
 
 	if bitriseConfigPath != "" {
+		// Setting up from bitrise config.
 		config, warnings, err := CreateBitriseConfigFromCLIParams("", bitriseConfigPath, bitrise.ValidationTypeFull)
 		if err != nil {
 			return fmt.Errorf("load config: %w", err)
@@ -123,8 +150,9 @@ func toolsSetup(c *cli.Context) error {
 		fmt.Println(output)
 	}
 
+	// Setting up from all the other version files.
 	opts := toolprovider.SetupOptions{
-		VersionFiles: configFiles,
+		VersionFiles: versionFilePaths,
 	}
 
 	tracker := analytics.NewDefaultTracker()
@@ -141,7 +169,7 @@ func toolsSetup(c *cli.Context) error {
 	return nil
 }
 
-func isBitriseConfig(path string) bool {
+func isYMLConfig(path string) bool {
 	base := strings.ToLower(filepath.Base(path))
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
