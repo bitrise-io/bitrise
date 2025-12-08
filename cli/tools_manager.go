@@ -146,6 +146,14 @@ func isBitriseConfig(path string) bool {
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
 
+func buildPathValue(paths []string) string {
+	if len(paths) == 0 {
+		return ""
+	}
+	newPaths := strings.Join(paths, ":")
+	return fmt.Sprintf("%s:$PATH", newPaths)
+}
+
 func convertToOutputFormat(envs []provider.EnvironmentActivation, format string) (string, error) {
 	if len(envs) == 0 {
 		return "", nil
@@ -159,8 +167,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 			for k, v := range env.ContributedEnvVars {
 				builder.WriteString(fmt.Sprintf("%s=%s\n", k, v))
 			}
-			newPaths := strings.Join(env.ContributedPaths, ":")
-			builder.WriteString(fmt.Sprintf("PATH=%s:$PATH\n", newPaths))
+			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
+				builder.WriteString(fmt.Sprintf("PATH=%s\n", pathValue))
+			}
 		}
 		return builder.String(), nil
 	case outputFormatJSON:
@@ -170,8 +179,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 			for k, v := range env.ContributedEnvVars {
 				envMap[k] = v
 			}
-			newPaths := strings.Join(env.ContributedPaths, ":")
-			envMap["PATH"] = fmt.Sprintf("%s:$PATH", newPaths)
+			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
+				envMap["PATH"] = pathValue
+			}
 		}
 		data, err := json.MarshalIndent(envMap, "", "  ")
 		if err != nil {
@@ -184,9 +194,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 			for k, v := range env.ContributedEnvVars {
 				builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
 			}
-			newPaths := strings.Join(env.ContributedPaths, ":")
-			value := fmt.Sprintf("%s:$PATH", newPaths)
-			builder.WriteString(fmt.Sprintf("export PATH=\"%s\"\n", value))
+			if pathValue := buildPathValue(env.ContributedPaths); pathValue != "" {
+				builder.WriteString(fmt.Sprintf("export PATH=\"%s\"\n", pathValue))
+			}
 		}
 		return builder.String(), nil
 	default:

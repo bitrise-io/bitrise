@@ -85,7 +85,8 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent 
 		var pluginURL *string
 		if opts.ExtraPlugins != nil {
 			if url, ok := opts.ExtraPlugins[models.ToolID(tool.ToolName)]; ok {
-				pluginURL = &url
+				pluginURLCopy := url
+				pluginURL = &pluginURLCopy
 			}
 		}
 

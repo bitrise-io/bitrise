@@ -75,6 +75,9 @@ func ParseSingleToolVersion(path string) (ToolVersion, error) {
 	if idx := strings.IndexAny(version, "\n\r"); idx != -1 {
 		version = version[:idx]
 		version = strings.TrimSpace(version)
+		if version == "" {
+			return ToolVersion{}, fmt.Errorf("%s: empty version on first line", path)
+		}
 	}
 
 	filename := filepath.Base(path)
