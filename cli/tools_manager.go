@@ -90,9 +90,9 @@ var toolsCommand = cli.Command{
 }
 
 func toolsSetup(c *cli.Context) error {
-	configFiles := c.StringSlice(ConfigKey)
-	workflowID := c.String(WorkflowKey)
-	format := c.String(OutputFormatKey)
+	configFiles := c.StringSlice(toolsConfigKey)
+	workflowID := c.String(toolsWorkflowKey)
+	format := c.String(toolsOutputFormatKey)
 	silent := false
 
 	switch format {

@@ -35,6 +35,52 @@ python 3.11.0`
 		assert.Equal(t, "3.2.0", tools[0].Version)
 		assert.Equal(t, "nodejs", string(tools[1].ToolName))
 		assert.Equal(t, "20.0.0", tools[1].Version)
+		assert.Equal(t, "golang", string(tools[2].ToolName))
+		assert.Equal(t, "1.21.0", tools[2].Version)
+		assert.Equal(t, "python", string(tools[3].ToolName))
+		assert.Equal(t, "3.11.0", tools[3].Version)
+	})
+
+	t.Run("parse .tool-versions with many tools", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		toolVersionsPath := filepath.Join(tmpDir, ".tool-versions")
+
+		// Test with 7+ tools to ensure no arbitrary limits.
+		content := `ruby 3.2.0
+nodejs 20.0.0
+golang 1.21.0
+python 3.11.0
+java openjdk-11
+terraform 1.5.0
+kubectl 1.28.0
+rust 1.70.0`
+
+		err := os.WriteFile(toolVersionsPath, []byte(content), 0644)
+		require.NoError(t, err)
+
+		tools, err := versionfile.ParseVersionFile(toolVersionsPath)
+		require.NoError(t, err)
+		require.Len(t, tools, 8)
+
+		// Verify all tools are parsed correctly.
+		expected := []struct {
+			name    string
+			version string
+		}{
+			{"ruby", "3.2.0"},
+			{"nodejs", "20.0.0"},
+			{"golang", "1.21.0"},
+			{"python", "3.11.0"},
+			{"java", "openjdk-11"},
+			{"terraform", "1.5.0"},
+			{"kubectl", "1.28.0"},
+			{"rust", "1.70.0"},
+		}
+
+		for i, exp := range expected {
+			assert.Equal(t, exp.name, string(tools[i].ToolName))
+			assert.Equal(t, exp.version, tools[i].Version)
+		}
 	})
 
 	t.Run("find multiple version files in directory", func(t *testing.T) {
@@ -69,6 +115,46 @@ python 3.11.0`
 		for expectedFile := range files {
 			assert.True(t, foundMap[expectedFile], "expected to find %s", expectedFile)
 		}
+	})
+
+	t.Run("parse multiple version files with overlapping tools", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		// Create .tool-versions with ruby and nodejs.
+		toolVersionsPath := filepath.Join(tmpDir, ".tool-versions")
+		err := os.WriteFile(toolVersionsPath, []byte("ruby 3.2.0\nnodejs 20.0.0"), 0644)
+		require.NoError(t, err)
+
+		// Create .ruby-version with different version.
+		rubyVersionPath := filepath.Join(tmpDir, ".ruby-version")
+		err = os.WriteFile(rubyVersionPath, []byte("3.2.1"), 0644)
+		require.NoError(t, err)
+
+		// Create .node-version with different version.
+		nodeVersionPath := filepath.Join(tmpDir, ".node-version")
+		err = os.WriteFile(nodeVersionPath, []byte("18.0.0"), 0644)
+		require.NoError(t, err)
+
+		// Parse all files and check for duplicates.
+		foundFiles, err := versionfile.FindVersionFiles(tmpDir)
+		require.NoError(t, err)
+
+		var allTools []versionfile.ToolVersion
+		for _, file := range foundFiles {
+			tools, err := versionfile.ParseVersionFile(file)
+			require.NoError(t, err)
+			allTools = append(allTools, tools...)
+		}
+
+		require.Len(t, allTools, 4)
+
+		toolCounts := make(map[string]int)
+		for _, tool := range allTools {
+			toolCounts[string(tool.ToolName)]++
+		}
+
+		assert.Equal(t, 2, toolCounts["ruby"], "ruby should appear twice")
+		assert.Equal(t, 2, toolCounts["nodejs"], "nodejs should appear twice")
 	})
 
 	t.Run("parse version files with special characters", func(t *testing.T) {
@@ -112,5 +198,43 @@ python 3.11.0`
 			assert.Equal(t, tc.wantTool, string(tools[0].ToolName))
 			assert.Equal(t, tc.wantVer, tools[0].Version)
 		}
+	})
+
+	t.Run("malformed .tool-versions file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		toolVersionsPath := filepath.Join(tmpDir, ".tool-versions")
+
+		// Line with only tool name, no version.
+		content := "ruby 3.2.0\nnodejs\npython 3.11.0"
+		err := os.WriteFile(toolVersionsPath, []byte(content), 0644)
+		require.NoError(t, err)
+
+		_, err = versionfile.ParseVersionFile(toolVersionsPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid format")
+	})
+
+	t.Run("empty individual version file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		rubyVersionPath := filepath.Join(tmpDir, ".ruby-version")
+
+		err := os.WriteFile(rubyVersionPath, []byte(""), 0644)
+		require.NoError(t, err)
+
+		_, err = versionfile.ParseVersionFile(rubyVersionPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "empty")
+	})
+
+	t.Run("version file with only whitespace", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		nodeVersionPath := filepath.Join(tmpDir, ".node-version")
+
+		err := os.WriteFile(nodeVersionPath, []byte("   \n\t\n   "), 0644)
+		require.NoError(t, err)
+
+		_, err = versionfile.ParseVersionFile(nodeVersionPath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "empty")
 	})
 }
