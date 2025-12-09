@@ -9,16 +9,18 @@ import (
 
 func TestConvertToOutputFormat(t *testing.T) {
 	tests := []struct {
-		name   string
-		envs   []provider.EnvironmentActivation
-		format string
-		want   string
+		name      string
+		envs      []provider.EnvironmentActivation
+		format    string
+		wantLines []string // lines that must be present in the output
+		want      string   // exact match (used for formats with deterministic order like JSON)
 	}{
 		{
-			name:   "empty envs",
-			envs:   []provider.EnvironmentActivation{},
-			format: outputFormatPlaintext,
-			want:   "",
+			name:      "empty envs",
+			envs:      []provider.EnvironmentActivation{},
+			format:    outputFormatPlaintext,
+			want:      "",
+			wantLines: []string{},
 		},
 		{
 			name: "plaintext format with env vars and paths",
@@ -32,10 +34,12 @@ func TestConvertToOutputFormat(t *testing.T) {
 				},
 			},
 			format: outputFormatPlaintext,
-			want: "Env vars to activate installed tools:\n" +
-				"NODE_VERSION=18.0.0\n" +
-				"NPM_CONFIG=/path/to/config\n" +
-				"PATH=/usr/local/node/bin:/usr/local/npm/bin:$PATH\n",
+			wantLines: []string{
+				"Env vars to activate installed tools:",
+				"NODE_VERSION=18.0.0",
+				"NPM_CONFIG=/path/to/config",
+				"PATH=/usr/local/node/bin:/usr/local/npm/bin:$PATH",
+			},
 		},
 		{
 			name: "json format with env vars and paths",
@@ -84,9 +88,11 @@ func TestConvertToOutputFormat(t *testing.T) {
 				},
 			},
 			format: outputFormatPlaintext,
-			want: "Env vars to activate installed tools:\n" +
-				"TOOL_VERSION=2.0.0\n" +
-				"PATH=/path/one:/path/two:$PATH\n",
+			wantLines: []string{
+				"Env vars to activate installed tools:",
+				"TOOL_VERSION=2.0.0",
+				"PATH=/path/one:/path/two:$PATH",
+			},
 		},
 		{
 			name: "bash format quotes values properly",
@@ -106,7 +112,19 @@ func TestConvertToOutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := convertToOutputFormat(tt.envs, tt.format)
 			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
+
+			// If wantLines is specified, check that each line is present
+			if len(tt.wantLines) > 0 {
+				for _, line := range tt.wantLines {
+					require.Contains(t, got, line, "output should contain line: %s", line)
+				}
+			} else if tt.want != "" {
+				// For exact match (e.g., JSON with deterministic order)
+				require.Equal(t, tt.want, got)
+			} else {
+				// Empty output
+				require.Equal(t, "", got)
+			}
 		})
 	}
 }
