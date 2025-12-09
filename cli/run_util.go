@@ -1164,14 +1164,14 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExecutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
 	}
 
 	params := log.StepStartedParams{
-		ExecutionID: stepExcutionID,
+		ExecutionID: stepExecutionID,
 		Position:    idx,
 		Title:       title,
 		ID:          stepInfo.ID,
