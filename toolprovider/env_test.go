@@ -263,3 +263,199 @@ func TestConvertToEnvmanEnvs(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertToEnvMap(t *testing.T) {
+	originalPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", originalPath)
+
+	tests := []struct {
+		name        string
+		activations []provider.EnvironmentActivation
+		pathEnv     string
+		expected    map[string]string
+	}{
+		{
+			name:        "empty activations",
+			activations: []provider.EnvironmentActivation{},
+			pathEnv:     "/usr/bin:/bin",
+			expected:    map[string]string{},
+		},
+		{
+			name: "single activation with env vars only",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"FOO": "bar",
+						"BAZ": "qux",
+					},
+					ContributedPaths: []string{},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"FOO": "bar",
+				"BAZ": "qux",
+			},
+		},
+		{
+			name: "single activation with paths only",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{},
+					ContributedPaths:   []string{"/usr/local/bin", "/opt/bin"},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"PATH": "/usr/local/bin:/opt/bin:/usr/bin:/bin",
+			},
+		},
+		{
+			name: "single activation with both env vars and paths",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"NODE_ENV": "development",
+					},
+					ContributedPaths: []string{"/usr/local/bin"},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"NODE_ENV": "development",
+				"PATH":     "/usr/local/bin:/usr/bin:/bin",
+			},
+		},
+		{
+			name: "multiple activations",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"TOOL1_HOME": "/opt/tool1",
+					},
+					ContributedPaths: []string{"/opt/tool1/bin"},
+				},
+				{
+					ContributedEnvVars: map[string]string{
+						"TOOL2_VERSION": "1.2.3",
+					},
+					ContributedPaths: []string{"/opt/tool2/bin"},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"TOOL1_HOME":    "/opt/tool1",
+				"TOOL2_VERSION": "1.2.3",
+				"PATH":          "/opt/tool1/bin:/opt/tool2/bin:/usr/bin:/bin",
+			},
+		},
+		{
+			name: "activation with empty path entries",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"TEST": "value",
+					},
+					ContributedPaths: []string{"", "/valid/path", ""},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"TEST": "value",
+				"PATH": "/valid/path:/usr/bin:/bin",
+			},
+		},
+		{
+			name: "empty PATH environment",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{},
+					ContributedPaths:   []string{"/new/path"},
+				},
+			},
+			pathEnv: "",
+			expected: map[string]string{
+				"PATH": "/new/path",
+			},
+		},
+		{
+			name: "no contributed paths but has env vars",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"ONLY_VAR": "value",
+					},
+					ContributedPaths: []string{},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"ONLY_VAR": "value",
+			},
+		},
+		{
+			name: "all empty paths filtered out",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{},
+					ContributedPaths:   []string{"", "", ""},
+				},
+			},
+			pathEnv:  "/usr/bin:/bin",
+			expected: map[string]string{},
+		},
+		{
+			name: "nil pathEnv uses system PATH",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"TEST_VAR": "test",
+					},
+					ContributedPaths: []string{"/new/bin"},
+				},
+			},
+			pathEnv: "",
+			expected: map[string]string{
+				"TEST_VAR": "test",
+				"PATH":     "/new/bin",
+			},
+		},
+		{
+			name: "overlapping env vars should keep last",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{
+						"SHARED_VAR": "first",
+					},
+					ContributedPaths: []string{},
+				},
+				{
+					ContributedEnvVars: map[string]string{
+						"SHARED_VAR": "second",
+					},
+					ContributedPaths: []string{},
+				},
+			},
+			pathEnv: "/usr/bin:/bin",
+			expected: map[string]string{
+				"SHARED_VAR": "second",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var pathPtr *string
+			if tt.name == "nil pathEnv uses system PATH" {
+				os.Setenv("PATH", "")
+				pathPtr = nil
+			} else {
+				pathPtr = &tt.pathEnv
+			}
+
+			result := ConvertToEnvMap(tt.activations, pathPtr)
+
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

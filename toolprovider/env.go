@@ -8,7 +8,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath *string) []envmanModels.EnvironmentItemModel {
+func ConvertToEnvMap(activations []provider.EnvironmentActivation, currentPath *string) map[string]string {
 	usedPath := ""
 	if currentPath == nil {
 		usedPath = os.Getenv("PATH")
@@ -16,12 +16,10 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPa
 		usedPath = *currentPath
 	}
 
-	envs := make([]envmanModels.EnvironmentItemModel, 0)
+	envMap := make(map[string]string)
 	for _, activation := range activations {
 		for k, v := range activation.ContributedEnvVars {
-			envs = append(envs, envmanModels.EnvironmentItemModel{
-				k: v,
-			})
+			envMap[k] = v
 		}
 	}
 
@@ -37,10 +35,21 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPa
 	if len(newPathEntries) > 0 {
 		newPath := prependPaths(usedPath, newPathEntries)
 		if newPath != "" {
-			envs = append(envs, envmanModels.EnvironmentItemModel{
-				"PATH": newPath,
-			})
+			envMap["PATH"] = newPath
 		}
+	}
+
+	return envMap
+}
+
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath *string) []envmanModels.EnvironmentItemModel {
+	envMap := ConvertToEnvMap(activations, currentPath)
+
+	envs := make([]envmanModels.EnvironmentItemModel, 0, len(envMap))
+	for k, v := range envMap {
+		envs = append(envs, envmanModels.EnvironmentItemModel{
+			k: v,
+		})
 	}
 
 	return envs
