@@ -212,7 +212,8 @@ func TestConvertToEnvmanEnvs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ConvertToEnvmanEnvs(tt.activations, tt.pathEnv)
+			path := tt.pathEnv
+			result := ConvertToEnvmanEnvs(tt.activations, &path)
 
 			assert.Len(t, result, len(tt.expected))
 

@@ -10,9 +10,13 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath string) []envmanModels.EnvironmentItemModel {
-	if currentPath == "" {
-		currentPath = os.Getenv("PATH")
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath *string) []envmanModels.EnvironmentItemModel {
+	usedPath := ""
+	if currentPath == nil {
+		path := os.Getenv("PATH")
+		currentPath = &path
+	} else {
+		usedPath = *currentPath
 	}
 
 	envs := make([]envmanModels.EnvironmentItemModel, 0)
@@ -34,7 +38,7 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPa
 	}
 
 	if len(newPathEntries) > 0 {
-		newPath := prependPath(currentPath, strings.Join(newPathEntries, ":"))
+		newPath := prependPath(usedPath, strings.Join(newPathEntries, ":"))
 		if newPath != "" {
 			envs = append(envs, envmanModels.EnvironmentItemModel{
 				"PATH": newPath,

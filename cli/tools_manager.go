@@ -179,13 +179,16 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 	}
 
 	// Note: passing "$PATH" to keep existing PATH in the output
-	envItems := toolprovider.ConvertToEnvmanEnvs(envs, "$PATH")
+	path := "$PATH"
+	envItems := toolprovider.ConvertToEnvmanEnvs(envs, &path)
 
 	result := ""
 	envMap := make(map[string]string)
 	for _, item := range envItems {
 		for k, v := range item {
-			result += fmt.Sprintf("%s=%s\n", k, v)
+			vStr := fmt.Sprintf("%s", v)
+			result += fmt.Sprintf("%s=%s\n", k, vStr)
+			envMap[k] = vStr
 		}
 	}
 
