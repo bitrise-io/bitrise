@@ -9,60 +9,84 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPrependPath(t *testing.T) {
+func TestPrependPaths(t *testing.T) {
 	tests := []struct {
-		name     string
-		pathEnv  string
-		newPath  string
-		expected string
+		name       string
+		pathEnv    string
+		pathsToAdd []string
+		expected   string
 	}{
 		{
-			name:     "empty path env",
-			pathEnv:  "",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin",
+			name:       "empty path env, single new path",
+			pathEnv:    "",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin",
 		},
 		{
-			name:     "prepend to existing path",
-			pathEnv:  "/usr/bin:/bin",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin:/usr/bin:/bin",
+			name:       "empty path env, multiple new paths",
+			pathEnv:    "",
+			pathsToAdd: []string{"/usr/local/bin", "/opt/bin"},
+			expected:   "/usr/local/bin:/opt/bin",
 		},
 		{
-			name:     "remove duplicate and prepend",
-			pathEnv:  "/usr/bin:/usr/local/bin:/bin",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin:/usr/bin:/bin",
+			name:       "prepend single path to existing",
+			pathEnv:    "/usr/bin:/bin",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin:/usr/bin:/bin",
 		},
 		{
-			name:     "duplicate at end",
-			pathEnv:  "/usr/bin:/bin:/usr/local/bin",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin:/usr/bin:/bin",
+			name:       "prepend multiple paths to existing",
+			pathEnv:    "/usr/bin:/bin",
+			pathsToAdd: []string{"/usr/local/bin", "/opt/bin"},
+			expected:   "/usr/local/bin:/opt/bin:/usr/bin:/bin",
 		},
 		{
-			name:     "single path duplicate",
-			pathEnv:  "/usr/local/bin",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin",
+			name:       "remove duplicate and prepend",
+			pathEnv:    "/usr/bin:/usr/local/bin:/bin",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin:/usr/bin:/bin",
 		},
 		{
-			name:     "empty new path",
-			pathEnv:  "/usr/bin:/bin",
-			newPath:  "",
-			expected: ":/usr/bin:/bin",
+			name:       "duplicate at end",
+			pathEnv:    "/usr/bin:/bin:/usr/local/bin",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin:/usr/bin:/bin",
 		},
 		{
-			name:     "multiple duplicates",
-			pathEnv:  "/usr/local/bin:/usr/bin:/usr/local/bin:/bin:/usr/local/bin",
-			newPath:  "/usr/local/bin",
-			expected: "/usr/local/bin:/usr/bin:/bin",
+			name:       "multiple new paths with one duplicate",
+			pathEnv:    "/usr/bin:/opt/bin:/bin",
+			pathsToAdd: []string{"/usr/local/bin", "/opt/bin"},
+			expected:   "/usr/local/bin:/opt/bin:/usr/bin:/bin",
+		},
+		{
+			name:       "empty paths list",
+			pathEnv:    "/usr/bin:/bin",
+			pathsToAdd: []string{},
+			expected:   "/usr/bin:/bin",
+		},
+		{
+			name:       "both empty",
+			pathEnv:    "",
+			pathsToAdd: []string{},
+			expected:   "",
+		},
+		{
+			name:       "filter empty string entries in existing path",
+			pathEnv:    "/usr/bin::/bin",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin:/usr/bin:/bin",
+		},
+		{
+			name:       "multiple duplicates",
+			pathEnv:    "/usr/local/bin:/usr/bin:/usr/local/bin:/bin:/usr/local/bin",
+			pathsToAdd: []string{"/usr/local/bin"},
+			expected:   "/usr/local/bin:/usr/bin:/bin",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := prependPath(tt.pathEnv, tt.newPath)
+			result := prependPaths(tt.pathEnv, tt.pathsToAdd)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

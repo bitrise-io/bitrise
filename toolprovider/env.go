@@ -1,9 +1,7 @@
 package toolprovider
 
 import (
-	"fmt"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -13,8 +11,7 @@ import (
 func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath *string) []envmanModels.EnvironmentItemModel {
 	usedPath := ""
 	if currentPath == nil {
-		path := os.Getenv("PATH")
-		currentPath = &path
+		usedPath = os.Getenv("PATH")
 	} else {
 		usedPath = *currentPath
 	}
@@ -38,7 +35,7 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPa
 	}
 
 	if len(newPathEntries) > 0 {
-		newPath := prependPath(usedPath, strings.Join(newPathEntries, ":"))
+		newPath := prependPaths(usedPath, newPathEntries)
 		if newPath != "" {
 			envs = append(envs, envmanModels.EnvironmentItemModel{
 				"PATH": newPath,
@@ -49,19 +46,47 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPa
 	return envs
 }
 
-func prependPath(pathEnv, addition string) string {
+func prependPaths(pathEnv string, pathsToAdd []string) string {
+	if pathEnv == "" && len(pathsToAdd) == 0 {
+		return ""
+	}
 	if pathEnv == "" {
-		return addition
+		return strings.Join(pathsToAdd, ":")
+	}
+	if len(pathsToAdd) == 0 {
+		return pathEnv
 	}
 
-	pathItems := strings.Split(pathEnv, ":")
-	pathItems = slices.DeleteFunc(pathItems, func(p string) bool {
-		return p == addition
-	})
+	existingPaths := strings.Split(pathEnv, ":")
 
-	if len(pathItems) == 0 {
-		return addition
+	// Create a map of existing paths for O(1) lookup
+	existingPathsMap := make(map[string]bool)
+	for _, p := range existingPaths {
+		if p != "" {
+			existingPathsMap[p] = true
+		}
 	}
 
-	return fmt.Sprintf("%s:%s", addition, strings.Join(pathItems, ":"))
+	// Remove paths that we're about to add from the existing list to avoid duplicates
+	dedupedExisting := make([]string, 0, len(existingPaths))
+	for _, p := range existingPaths {
+		if p == "" {
+			continue
+		}
+		// Check if this path is in our pathsToAdd list
+		shouldRemove := false
+		for _, newPath := range pathsToAdd {
+			if p == newPath {
+				shouldRemove = true
+				break
+			}
+		}
+		if !shouldRemove {
+			dedupedExisting = append(dedupedExisting, p)
+		}
+	}
+
+	// Prepend the new paths
+	allPaths := append(pathsToAdd, dedupedExisting...)
+	return strings.Join(allPaths, ":")
 }
