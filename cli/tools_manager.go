@@ -178,19 +178,17 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 		return "", nil
 	}
 
-	// Note: passing "$PATH" to keep existing PATH in the output
+	// Use ConvertToEnvMap to handle deduplication and PATH merging
 	path := "$PATH"
 	envMap := toolprovider.ConvertToEnvMap(envs, &path)
-
-	result := ""
-	for k, v := range envMap {
-		result += fmt.Sprintf("%s=%s\n", k, v)
-	}
 
 	switch format {
 	case outputFormatPlaintext:
 		var builder strings.Builder
-		builder.WriteString(fmt.Sprintf("Env vars to activate installed tools:\n%s", result))
+		builder.WriteString("Env vars to activate installed tools:\n")
+		for k, v := range envMap {
+			builder.WriteString(fmt.Sprintf("%s=%s\n", k, v))
+		}
 		return builder.String(), nil
 	case outputFormatJSON:
 		data, err := json.MarshalIndent(envMap, "", "  ")
@@ -200,7 +198,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 		return string(data), nil
 	case outputFormatBash:
 		var builder strings.Builder
-		builder.WriteString(result)
+		for k, v := range envMap {
+			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
+		}
 		return builder.String(), nil
 	default:
 		return "", fmt.Errorf("unsupported output format: %s", format)
