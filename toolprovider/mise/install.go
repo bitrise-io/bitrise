@@ -43,6 +43,12 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, t
 		return false
 	}
 
+	// Enable experimental settings for custom backend
+	if _, err := execEnv.RunMise("settings", "experimental=true"); err != nil {
+		log.Warnf("Error while enabling experimental settings: %v.", err)
+		return forceNix
+	}
+
 	// If the plugin is already installed, Mise will not throw an error.
 	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
