@@ -14,6 +14,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
 	utilslog "github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/stepman/activator"
 )
 
 const (
@@ -31,6 +32,7 @@ const (
 	cliWarningEventName            = "cli_warning"
 	cliCommandEventName            = "cli_command"
 	toolSetupEventName             = "cli_tool_setup"
+	stepActivationEventName        = "step_activation"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -113,6 +115,7 @@ type Tracker interface {
 	SendCLIWarning(message string)
 	SendCommandInfo(command, subcommand string, flags []string)
 	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
+	SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
 	IsTracking() bool
 	Wait()
 }
@@ -383,4 +386,23 @@ func (t tracker) SendToolSetupEvent(
 		"build_slug":           buildSlug,
 	}
 	t.tracker.Enqueue(toolSetupEventName, props)
+}
+
+func (t tracker) SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
+	if !t.stateChecker.Enabled() {
+		return
+	}
+
+	props := analytics.Properties{
+		"is_successful":      isSuccessful,
+		"step_ref":           ref,
+		"duration_ms":        duration.Milliseconds(),
+	}
+
+	if isSuccessful {
+		props["activation_type"] = activationType
+		props["did_steplib_update"] = didSteplibUpdate
+	}
+
+	t.tracker.Enqueue(stepActivationEventName, props)
 }

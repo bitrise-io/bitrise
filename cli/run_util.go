@@ -44,14 +44,14 @@ func (r WorkflowRunner) runWorkflow(
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
 	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
-	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties,
+	isLastWorkflow bool, buildIDProperties coreanalytics.Properties,
 ) models.BuildRunResultsModel {
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
-	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
+	r.tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
 
-	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, workflowIDProperties)
 
-	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
+	r.tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 
 	return results
 }
@@ -63,7 +63,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 	environments *[]envmanModels.EnvironmentItemModel,
 	secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool,
-	tracker analytics.Tracker,
 	workflowIDProperties coreanalytics.Properties,
 ) models.BuildRunResultsModel {
 	log.Debug("[BITRISE_CLI] - Activating and running steps")
@@ -73,7 +72,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 		return buildRunResults
 	}
 
-	runResultCollector := newBuildRunResultCollector(r.logger, tracker)
+	runResultCollector := newBuildRunResultCollector(r.logger, r.tracker)
 	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
@@ -120,7 +119,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			idx,
 			defaultStepLibSource,
 			stepPlan.UUID,
-			tracker,
 			envsForStepRun,
 			secrets,
 			buildRunResults,
@@ -198,7 +196,6 @@ func (r WorkflowRunner) activateAndRunStep(
 	stepIDx int,
 	defaultStepLibSource string,
 	stepExecutionID string,
-	tracker analytics.Tracker,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
@@ -293,7 +290,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	redactedStepInputs := prepareEnvsResult.RedactedStepInputs
 
 	// Run the step
-	tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
+	r.tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
 	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
 
@@ -377,8 +374,16 @@ func (r WorkflowRunner) activateStep(
 		isStepLibUpdated = buildRunResults.IsStepLibUpdated(stepIDData.SteplibSource)
 	}
 
+	activationStartedAt := time.Now()
 	activator := newStepActivator()
 	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	r.tracker.SendStepActivationEvent(
+		activatedStep.ActivationType,
+		stepIDData.IDorURI,
+		err == nil,
+		time.Since(activationStartedAt),
+		activatedStep.DidStepLibUpdate,
+	)
 	if activatedStep.DidStepLibUpdate {
 		buildRunResults.StepmanUpdates[stepIDData.SteplibSource]++
 	}
