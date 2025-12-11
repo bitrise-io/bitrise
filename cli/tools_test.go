@@ -104,7 +104,7 @@ func TestConvertToOutputFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := convertToOutputFormat(tt.envs, tt.format)
+			got, err := convertToOutputFormat(tt.envs, tt.format, true)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
@@ -118,7 +118,7 @@ func TestConvertToOutputFormat_InvalidFormat(t *testing.T) {
 		},
 	}
 
-	_, err := convertToOutputFormat(envs, "invalid")
+	_, err := convertToOutputFormat(envs, "invalid", false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unsupported output format")
 }

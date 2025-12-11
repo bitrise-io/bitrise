@@ -10,9 +10,11 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/colorstring"
 	"github.com/urfave/cli"
 )
@@ -144,7 +146,9 @@ func toolsSetup(c *cli.Context) error {
 			return err
 		}
 
-		output, err := convertToOutputFormat(envs, format)
+		exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+
+		output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
 		if err != nil {
 			return fmt.Errorf("convert to output format: %w", err)
 		}
@@ -162,7 +166,9 @@ func toolsSetup(c *cli.Context) error {
 		return err
 	}
 
-	output, err := convertToOutputFormat(envs, format)
+	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+
+	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
 	if err != nil {
 		return fmt.Errorf("convert to output format: %w", err)
 	}
@@ -175,7 +181,7 @@ func isYMLConfig(path string) bool {
 	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
 }
 
-func convertToOutputFormat(envs []provider.EnvironmentActivation, format string) (string, error) {
+func convertToOutputFormat(envs []provider.EnvironmentActivation, format string, exposedWithEnvman bool) (string, error) {
 	// TODO: is this valid for all formats?
 	if len(envs) == 0 {
 		return "", nil
@@ -186,11 +192,13 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 	var builder strings.Builder
 	switch format {
 	case outputFormatPlaintext:
-		builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
-		builder.WriteString("\n")
+		if exposedWithEnvman {
+			builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
+			builder.WriteString("\n")
+		}
 		builder.WriteString(fmt.Sprintf(
 			"%s %s %s\n",
-			colorstring.Yellow("! If you need tools in the current shell session, run", ),
+			colorstring.Yellow("! If you need tools in the current shell session, run"),
 			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
 			colorstring.Yellow("instead."),
 		))
@@ -222,6 +230,18 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 	default:
 		return "", fmt.Errorf("unsupported output format: %s", format)
 	}
+}
+
+func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent bool) bool {
+	envs := toolprovider.ConvertToEnvmanEnvs(activations)
+	err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, envs)
+	if err != nil {
+		if !silent {
+			log.Warnf("! Failed to expose tool envs with envman: %s", err)
+		}
+		return false
+	}
+	return true
 }
 
 func toolsInfo(c *cli.Context) error {
