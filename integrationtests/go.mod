@@ -10,7 +10,7 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/bitrise/v2 v2.0.0
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/stepman v0.18.5-0.20251205121648-1c7bbe9a9641
+	github.com/bitrise-io/stepman v0.18.5-0.20251211111922-778981f9dba4
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0
