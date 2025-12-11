@@ -8,19 +8,20 @@ import (
 )
 
 func TestConvertToOutputFormat(t *testing.T) {
+	// Set a static $PATH for predictable output
+	t.Setenv("PATH", "/usr/bin")
+
 	tests := []struct {
-		name      string
-		envs      []provider.EnvironmentActivation
-		format    string
-		wantLines []string // lines that must be present in the output
-		want      string   // exact match (used for formats with deterministic order like JSON)
+		name   string
+		envs   []provider.EnvironmentActivation
+		format string
+		want   string
 	}{
 		{
-			name:      "empty envs",
-			envs:      []provider.EnvironmentActivation{},
-			format:    outputFormatPlaintext,
-			want:      "",
-			wantLines: []string{},
+			name:   "empty envs",
+			envs:   []provider.EnvironmentActivation{},
+			format: outputFormatPlaintext,
+			want:   "",
 		},
 		{
 			name: "plaintext format with env vars and paths",
@@ -34,15 +35,10 @@ func TestConvertToOutputFormat(t *testing.T) {
 				},
 			},
 			format: outputFormatPlaintext,
-			wantLines: []string{
-				"Env vars to activate installed tools:",
-				"NODE_VERSION=18.0.0",
-				"NPM_CONFIG=/path/to/config",
-				"PATH=/usr/local/node/bin:/usr/local/npm/bin:$PATH",
-			},
+			want:   "\x1b[32;1m✓ Tools activated for subsequent steps in the workflow\x1b[0m\n\x1b[33;1m! If you need tools in the current shell session, run\x1b[0m \x1b[36;1meval \"$(bitrise tools setup --format bash ...)\"\x1b[0m \x1b[33;1minstead.\x1b[0m\n",
 		},
 		{
-			name: "json format with env vars and paths",
+			name: "JSON format with env vars and paths",
 			envs: []provider.EnvironmentActivation{
 				{
 					ContributedEnvVars: map[string]string{
@@ -54,7 +50,7 @@ func TestConvertToOutputFormat(t *testing.T) {
 			format: outputFormatJSON,
 			want: `{
   "GO_VERSION": "1.21.0",
-  "PATH": "/usr/local/go/bin:$PATH"
+  "PATH": "/usr/local/go/bin:/usr/bin"
 }`,
 		},
 		{
@@ -68,8 +64,7 @@ func TestConvertToOutputFormat(t *testing.T) {
 				},
 			},
 			format: outputFormatBash,
-			want: "export JAVA_HOME=\"/usr/lib/jvm/java-17\"\n" +
-				"export PATH=\"/usr/lib/jvm/java-17/bin:$PATH\"\n",
+			want:   "export JAVA_HOME=\"/usr/lib/jvm/java-17\"\nexport PATH=\"/usr/lib/jvm/java-17/bin:/usr/bin\"\n# \x1b[33;1mNOTE: Tools have been installed, but they need to be activated for the current shell session.\x1b[0m\n# Make sure to run \x1b[36;1meval \"$(bitrise tools setup --format bash ...)\"\x1b[0m instead\n",
 		},
 		{
 			name: "multiple activations deduplicate env vars",
@@ -87,12 +82,11 @@ func TestConvertToOutputFormat(t *testing.T) {
 					ContributedPaths: []string{"/path/two"},
 				},
 			},
-			format: outputFormatPlaintext,
-			wantLines: []string{
-				"Env vars to activate installed tools:",
-				"TOOL_VERSION=2.0.0",
-				"PATH=/path/one:/path/two:$PATH",
-			},
+			format: outputFormatJSON,
+			want: `{
+  "PATH": "/path/one:/path/two:/usr/bin",
+  "TOOL_VERSION": "2.0.0"
+}`,
 		},
 		{
 			name: "bash format quotes values properly",
@@ -104,7 +98,7 @@ func TestConvertToOutputFormat(t *testing.T) {
 				},
 			},
 			format: outputFormatBash,
-			want:   "export VAR_WITH_SPACE=\"value with spaces\"\n",
+			want:   "export VAR_WITH_SPACE=\"value with spaces\"\n# \x1b[33;1mNOTE: Tools have been installed, but they need to be activated for the current shell session.\x1b[0m\n# Make sure to run \x1b[36;1meval \"$(bitrise tools setup --format bash ...)\"\x1b[0m instead\n",
 		},
 	}
 
@@ -112,19 +106,7 @@ func TestConvertToOutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := convertToOutputFormat(tt.envs, tt.format)
 			require.NoError(t, err)
-
-			// If wantLines is specified, check that each line is present
-			if len(tt.wantLines) > 0 {
-				for _, line := range tt.wantLines {
-					require.Contains(t, got, line, "output should contain line: %s", line)
-				}
-			} else if tt.want != "" {
-				// For exact match (e.g., JSON with deterministic order)
-				require.Equal(t, tt.want, got)
-			} else {
-				// Empty output
-				require.Equal(t, "", got)
-			}
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

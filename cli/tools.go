@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
@@ -12,6 +13,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/colorstring"
 	"github.com/urfave/cli"
 )
 
@@ -174,20 +176,24 @@ func isYMLConfig(path string) bool {
 }
 
 func convertToOutputFormat(envs []provider.EnvironmentActivation, format string) (string, error) {
+	// TODO: is this valid for all formats?
 	if len(envs) == 0 {
 		return "", nil
 	}
 
-	// Use ConvertToEnvMap to handle deduplication and PATH merging
 	envMap := toolprovider.ConvertToEnvMap(envs)
 
+	var builder strings.Builder
 	switch format {
 	case outputFormatPlaintext:
-		var builder strings.Builder
-		builder.WriteString("Env vars to activate installed tools:\n")
-		for k, v := range envMap {
-			builder.WriteString(fmt.Sprintf("%s=%s\n", k, v))
-		}
+		builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
+		builder.WriteString("\n")
+		builder.WriteString(fmt.Sprintf(
+			"%s %s %s\n",
+			colorstring.Yellow("! If you need tools in the current shell session, run", ),
+			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
+			colorstring.Yellow("instead."),
+		))
 		return builder.String(), nil
 	case outputFormatJSON:
 		data, err := json.MarshalIndent(envMap, "", "  ")
@@ -196,10 +202,22 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 		}
 		return string(data), nil
 	case outputFormatBash:
-		var builder strings.Builder
-		for k, v := range envMap {
+		// Sort K=V pairs for deterministic output (mostly for our own tests, but also generally useful).
+		sortedKeys := make([]string, 0, len(envMap))
+		for k := range envMap {
+			sortedKeys = append(sortedKeys, k)
+		}
+		slices.Sort(sortedKeys)
+		for _, k := range sortedKeys {
+			v := envMap[k]
 			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
 		}
+		message := fmt.Sprintf(
+			"# %s\n# Make sure to run %s instead\n",
+			colorstring.Yellow("NOTE: Tools have been installed, but they need to be activated for the current shell session."),
+			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
+		)
+		builder.WriteString(message)
 		return builder.String(), nil
 	default:
 		return "", fmt.Errorf("unsupported output format: %s", format)
