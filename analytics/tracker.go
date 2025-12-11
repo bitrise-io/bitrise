@@ -32,7 +32,7 @@ const (
 	cliWarningEventName            = "cli_warning"
 	cliCommandEventName            = "cli_command"
 	toolSetupEventName             = "cli_tool_setup"
-	stepActivationEventName        = "step_activation"
+	stepActivationEventName        = "cli_step_activation"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -393,10 +393,17 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 		return
 	}
 
+	cliVersion, _ := version.BitriseCliVersion()
+	buildSlug := t.envRepository.Get(buildSlugEnvKey)
+	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
+
 	props := analytics.Properties{
-		"is_successful":      isSuccessful,
-		"step_ref":           ref,
-		"duration_ms":        duration.Milliseconds(),
+		"is_successful": isSuccessful,
+		"step_ref":      ref,
+		"duration_ms":   duration.Milliseconds(),
+		"cli_version":   cliVersion.String(),
+		"is_ci":         isCI,
+		"build_slug":    buildSlug,
 	}
 
 	if isSuccessful {
