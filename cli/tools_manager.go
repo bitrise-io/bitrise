@@ -179,8 +179,7 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string)
 	}
 
 	// Use ConvertToEnvMap to handle deduplication and PATH merging
-	path := "$PATH"
-	envMap := toolprovider.ConvertToEnvMap(envs, &path)
+	envMap := toolprovider.ConvertToEnvMap(envs)
 
 	switch format {
 	case outputFormatPlaintext:

@@ -8,13 +8,8 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func ConvertToEnvMap(activations []provider.EnvironmentActivation, currentPath *string) map[string]string {
-	usedPath := ""
-	if currentPath == nil {
-		usedPath = os.Getenv("PATH")
-	} else {
-		usedPath = *currentPath
-	}
+func ConvertToEnvMap(activations []provider.EnvironmentActivation) map[string]string {
+	pathValue := os.Getenv("PATH")
 
 	envMap := make(map[string]string)
 	for _, activation := range activations {
@@ -33,7 +28,7 @@ func ConvertToEnvMap(activations []provider.EnvironmentActivation, currentPath *
 	}
 
 	if len(newPathEntries) > 0 {
-		newPath := prependPaths(usedPath, newPathEntries)
+		newPath := prependPaths(pathValue, newPathEntries)
 		if newPath != "" {
 			envMap["PATH"] = newPath
 		}
@@ -42,8 +37,8 @@ func ConvertToEnvMap(activations []provider.EnvironmentActivation, currentPath *
 	return envMap
 }
 
-func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation, currentPath *string) []envmanModels.EnvironmentItemModel {
-	envMap := ConvertToEnvMap(activations, currentPath)
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
+	envMap := ConvertToEnvMap(activations)
 
 	envs := make([]envmanModels.EnvironmentItemModel, 0, len(envMap))
 	for k, v := range envMap {
