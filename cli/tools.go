@@ -25,7 +25,6 @@ const (
 	outputFormatBash      = "bash"
 
 	toolsSetupCommandName = "setup"
-	toolsInfoCommandName  = "info"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -70,27 +69,6 @@ var toolsCommand = cli.Command{
 				cli.StringFlag{
 					Name:  toolsWorkflowKey + ", w",
 					Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
-				},
-			},
-		},
-		{
-			Name:        toolsInfoCommandName,
-			Usage:       "Show information about installed tools.",
-			UsageText:   "bitrise tools info [--json]",
-			Description: "Display information about currently installed development tools.",
-			Action: func(c *cli.Context) error {
-				logCommandParameters(c)
-				if err := toolsInfo(c); err != nil {
-					log.Errorf("Failed to get tool info: %s", err)
-					os.Exit(1)
-				}
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
-					Usage: `Output format. Options: plaintext (default), json`,
-					Value: outputFormatPlaintext,
 				},
 			},
 		},
@@ -242,55 +220,4 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 		return false
 	}
 	return true
-}
-
-func toolsInfo(c *cli.Context) error {
-	format := c.String("format")
-
-	tools, err := toolprovider.ListInstalledTools("mise")
-	if err != nil {
-		return err
-	}
-
-	if len(tools) == 0 {
-		log.Infof("No tools installed")
-		return nil
-	}
-
-	if format == outputFormatJSON {
-		data, err := json.MarshalIndent(tools, "", "  ")
-		if err != nil {
-			return fmt.Errorf("marshal JSON: %w", err)
-		}
-		fmt.Println(string(data))
-		return nil
-	}
-
-	log.Infof("Installed tools:")
-	log.Printf("")
-
-	maxNameLen := 0
-	for _, tool := range tools {
-		if len(tool.Name) > maxNameLen {
-			maxNameLen = len(tool.Name)
-		}
-	}
-
-	for _, tool := range tools {
-		padding := strings.Repeat(" ", maxNameLen-len(tool.Name)+2)
-
-		if tool.ActiveVersion != "" {
-			log.Printf("  %s%s%s (active)", tool.Name, padding, tool.ActiveVersion)
-		} else if len(tool.InstalledVersions) > 0 {
-			log.Printf("  %s%s%s", tool.Name, padding, tool.InstalledVersions[0])
-			for i := 1; i < len(tool.InstalledVersions); i++ {
-				log.Printf("  %s%s%s", strings.Repeat(" ", len(tool.Name)), padding, tool.InstalledVersions[i])
-			}
-		} else {
-			log.Printf("  %s%s(no versions installed)", tool.Name, padding)
-		}
-	}
-
-	log.Printf("")
-	return nil
 }
