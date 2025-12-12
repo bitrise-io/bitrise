@@ -1,7 +1,9 @@
 package toolprovider
 
 import (
+	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -51,9 +53,6 @@ func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanM
 }
 
 func prependPaths(pathEnv string, pathsToAdd []string) string {
-	if pathEnv == "" && len(pathsToAdd) == 0 {
-		return ""
-	}
 	if pathEnv == "" {
 		return strings.Join(pathsToAdd, ":")
 	}
@@ -61,36 +60,16 @@ func prependPaths(pathEnv string, pathsToAdd []string) string {
 		return pathEnv
 	}
 
-	existingPaths := strings.Split(pathEnv, ":")
+	pathItems := strings.Split(pathEnv, ":")
+	pathItems = slices.DeleteFunc(pathItems, func(p string) bool {
+		// Remove any paths that are in pathsToAdd to avoid duplicates
+		// We'll prepend them anyway, no point in keeping them in the existing list
+		return slices.Contains(pathsToAdd, p) || p == ""
+	})
 
-	// Create a map of existing paths for O(1) lookup
-	existingPathsMap := make(map[string]bool)
-	for _, p := range existingPaths {
-		if p != "" {
-			existingPathsMap[p] = true
-		}
+	if len(pathItems) == 0 {
+		return strings.Join(pathsToAdd, ":")
 	}
 
-	// Remove paths that we're about to add from the existing list to avoid duplicates
-	dedupedExisting := make([]string, 0, len(existingPaths))
-	for _, p := range existingPaths {
-		if p == "" {
-			continue
-		}
-		// Check if this path is in our pathsToAdd list
-		shouldRemove := false
-		for _, newPath := range pathsToAdd {
-			if p == newPath {
-				shouldRemove = true
-				break
-			}
-		}
-		if !shouldRemove {
-			dedupedExisting = append(dedupedExisting, p)
-		}
-	}
-
-	// Prepend the new paths
-	allPaths := append(pathsToAdd, dedupedExisting...)
-	return strings.Join(allPaths, ":")
+	return fmt.Sprintf("%s:%s", strings.Join(pathsToAdd, ":"), strings.Join(pathItems, ":"))
 }
