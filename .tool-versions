@@ -1,1 +1,1 @@
-golang 1.25.3
+golang 1.25.5
