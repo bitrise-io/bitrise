@@ -293,3 +293,21 @@ func (l testLogger) Errorf(format string, v ...interface{}) {
 func (l testLogger) Infof(format string, v ...interface{}) {
 	l.t.Logf(format, v...)
 }
+
+func TestGoToolkit_Install(t *testing.T) {
+	logger := testLogger{t: t}
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "Install Go Toolkit",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			toolkit := NewGoToolkit(logger)
+			gotErr := toolkit.Install()
+			require.NoError(t, gotErr)
+		})
+	}
+}
