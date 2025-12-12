@@ -43,7 +43,17 @@ var toolsCommand = cli.Command{
 			Name:        toolsSetupCommandName,
 			Usage:       "Install tools from version files or bitrise.yml",
 			UsageText:   "bitrise tools setup [--config FILE]...",
-			Description: "Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.",
+			Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
+
+EXAMPLES:
+   Setup from .tool-versions:
+   bitrise tools setup --config .tool-versions
+
+   Setup from bitrise.yml:
+   bitrise tools setup --config bitrise.yml
+
+   Setup and activate in current shell session:
+   eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
 			Action: func(c *cli.Context) error {
 				logCommandParameters(c)
 				if err := toolsSetup(c); err != nil {
@@ -103,7 +113,7 @@ func toolsSetup(c *cli.Context) error {
 
 		if isYMLConfig(file) {
 			if bitriseConfigPath != "" {
-				return fmt.Errorf("multiple bitrise config files specified: %s and %s", bitriseConfigPath, file)
+				return fmt.Errorf("multiple bitrise config files specified: %s and %s (only one bitrise.yml can be used)", bitriseConfigPath, file)
 			}
 
 			bitriseConfigPath = file
@@ -212,6 +222,8 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 	}
 }
 
+// exposeEnvsWithEnvman calls envman to expose the given env vars for subsequent steps in the workflow.
+// Returns true if successful (since envman is not always available, e.g. in local runs).
 func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent bool) bool {
 	envs := toolprovider.ConvertToEnvmanEnvs(activations)
 	err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, envs)
