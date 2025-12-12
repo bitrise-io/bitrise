@@ -1,28 +1,237 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 
-	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/bitrise/v2/analytics"
+	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/colorstring"
 	"github.com/urfave/cli"
 )
 
-var envmanCommand = cli.Command{
-	Name:            "envman",
-	Usage:           "Runs an envman command.",
-	SkipFlagParsing: true,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+const (
+	outputFormatPlaintext = "plaintext"
+	outputFormatJSON      = "json"
+	outputFormatBash      = "bash"
 
-		if err := runCommandWith("envman", c); err != nil {
-			failf("Command failed, error: %s", err)
-		}
-		return nil
+	toolsSetupCommandName = "setup"
+
+	toolsConfigKey      = "config"
+	toolsConfigShortKey = "c"
+
+	toolsWorkflowKey = "workflow"
+
+	toolsOutputFormatKey      = "format"
+	toolsOutputFormatShortKey = "f"
+)
+
+var toolsCommand = cli.Command{
+	Name:  "tools",
+	Usage: "Manage available tools from inside the workflow.",
+	Subcommands: []cli.Command{
+		{
+			Name:        toolsSetupCommandName,
+			Usage:       "Install tools from version files or bitrise.yml",
+			UsageText:   "bitrise tools setup [--config FILE]...",
+			Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
+
+EXAMPLES:
+   Setup from .tool-versions:
+   bitrise tools setup --config .tool-versions
+
+   Setup from bitrise.yml:
+   bitrise tools setup --config bitrise.yml
+
+   Setup and activate in current shell session:
+   eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
+			Action: func(c *cli.Context) error {
+				logCommandParameters(c)
+				if err := toolsSetup(c); err != nil {
+					log.Errorf("Tool setup failed: %s", err)
+					os.Exit(1)
+				}
+				return nil
+			},
+			Flags: []cli.Flag{
+				cli.StringSliceFlag{
+					Name: toolsConfigKey + ", " + toolsConfigShortKey,
+					Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
+	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
+	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
+	- bitrise.yml: tools defined in the "tools" section`,
+					TakesFile: true,
+				},
+				cli.StringFlag{
+					Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
+					Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
+					Value: outputFormatPlaintext,
+				},
+				cli.StringFlag{
+					Name:  toolsWorkflowKey + ", w",
+					Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
+				},
+			},
+		},
 	},
 }
 
-func runCommandWith(toolName string, c *cli.Context) error {
-	args := c.Args()
-	cmd := command.NewWithStandardOuts(toolName, args...).SetStdin(os.Stdin)
-	return cmd.Run()
+func toolsSetup(c *cli.Context) error {
+	configFiles := c.StringSlice(toolsConfigKey)
+	workflowID := c.String(toolsWorkflowKey)
+	format := c.String(toolsOutputFormatKey)
+	silent := false
+
+	switch format {
+	case outputFormatJSON, outputFormatBash:
+		// valid formats
+		silent = true
+	case outputFormatPlaintext:
+		// valid format
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	var bitriseConfigPath string
+	var versionFilePaths []string
+	for _, file := range configFiles {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			if !silent {
+				log.Warnf("file does not exist: %s", file)
+			}
+			continue
+		}
+
+		if isYMLConfig(file) {
+			if bitriseConfigPath != "" {
+				return fmt.Errorf("multiple bitrise config files specified: %s and %s (only one bitrise.yml can be used)", bitriseConfigPath, file)
+			}
+
+			bitriseConfigPath = file
+			continue
+		}
+
+		versionFilePaths = append(versionFilePaths, file)
+	}
+
+	if bitriseConfigPath != "" {
+		config, warnings, err := CreateBitriseConfigFromCLIParams("", bitriseConfigPath, bitrise.ValidationTypeFull)
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
+
+		for _, warning := range warnings {
+			log.Warnf("Config warning: %s", warning)
+		}
+
+		tracker := analytics.NewDefaultTracker()
+		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent)
+		if err != nil {
+			return err
+		}
+
+		exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+
+		output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+		if err != nil {
+			return fmt.Errorf("convert to output format: %w", err)
+		}
+		fmt.Println(output)
+	}
+
+	// Setting up from all the other version files.
+	tracker := analytics.NewDefaultTracker()
+	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent)
+	if err != nil {
+		return err
+	}
+
+	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+
+	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+	if err != nil {
+		return fmt.Errorf("convert to output format: %w", err)
+	}
+	fmt.Println(output)
+	return nil
+}
+
+func isYMLConfig(path string) bool {
+	base := strings.ToLower(filepath.Base(path))
+	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
+}
+
+func convertToOutputFormat(envs []provider.EnvironmentActivation, format string, exposedWithEnvman bool) (string, error) {
+	envMap := toolprovider.ConvertToEnvMap(envs)
+
+	var builder strings.Builder
+	switch format {
+	case outputFormatPlaintext:
+		if len(envs) == 0 {
+			return "No new tools were installed.", nil
+		}
+		if exposedWithEnvman {
+			builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
+			builder.WriteString("\n")
+		}
+		builder.WriteString(fmt.Sprintf(
+			"%s %s %s\n",
+			colorstring.Yellow("! If you need tools in the current shell session, run"),
+			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
+			colorstring.Yellow("instead."),
+		))
+		return builder.String(), nil
+	case outputFormatJSON:
+		data, err := json.MarshalIndent(envMap, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("marshal JSON: %w", err)
+		}
+		return string(data), nil
+	case outputFormatBash:
+		if len(envs) == 0 {
+			return "# No new tools were installed.", nil
+		}
+		// Sort K=V pairs for deterministic output (mostly for our own tests, but also generally useful).
+		sortedKeys := make([]string, 0, len(envMap))
+		for k := range envMap {
+			sortedKeys = append(sortedKeys, k)
+		}
+		slices.Sort(sortedKeys)
+		for _, k := range sortedKeys {
+			v := envMap[k]
+			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
+		}
+		message := fmt.Sprintf(
+			"# %s\n# Make sure to run %s instead\n",
+			colorstring.Yellow("NOTE: Tools have been installed, but they need to be activated for the current shell session."),
+			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
+		)
+		builder.WriteString(message)
+		return builder.String(), nil
+	default:
+		return "", fmt.Errorf("unsupported output format: %s", format)
+	}
+}
+
+// exposeEnvsWithEnvman calls envman to expose the given env vars for subsequent steps in the workflow.
+// Returns true if successful (since envman is not always available, e.g. in local runs).
+func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent bool) bool {
+	envs := toolprovider.ConvertToEnvmanEnvs(activations)
+	err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, envs)
+	if err != nil {
+		if !silent {
+			log.Warnf("! Failed to expose tool envs with envman: %s", err)
+		}
+		return false
+	}
+	return true
 }

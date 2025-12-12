@@ -10,13 +10,13 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
-func convertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
-	envs := make([]envmanModels.EnvironmentItemModel, 0)
+func ConvertToEnvMap(activations []provider.EnvironmentActivation) map[string]string {
+	pathValue := os.Getenv("PATH")
+
+	envMap := make(map[string]string)
 	for _, activation := range activations {
 		for k, v := range activation.ContributedEnvVars {
-			envs = append(envs, envmanModels.EnvironmentItemModel{
-				k: v,
-			})
+			envMap[k] = v
 		}
 	}
 
@@ -30,30 +30,46 @@ func convertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanM
 	}
 
 	if len(newPathEntries) > 0 {
-		newPath := prependPath(os.Getenv("PATH"), strings.Join(newPathEntries, ":"))
+		newPath := prependPaths(pathValue, newPathEntries)
 		if newPath != "" {
-			envs = append(envs, envmanModels.EnvironmentItemModel{
-				"PATH": newPath,
-			})
+			envMap["PATH"] = newPath
 		}
+	}
+
+	return envMap
+}
+
+func ConvertToEnvmanEnvs(activations []provider.EnvironmentActivation) []envmanModels.EnvironmentItemModel {
+	envMap := ConvertToEnvMap(activations)
+
+	envs := make([]envmanModels.EnvironmentItemModel, 0, len(envMap))
+	for k, v := range envMap {
+		envs = append(envs, envmanModels.EnvironmentItemModel{
+			k: v,
+		})
 	}
 
 	return envs
 }
 
-func prependPath(pathEnv, addition string) string {
+func prependPaths(pathEnv string, pathsToAdd []string) string {
 	if pathEnv == "" {
-		return addition
+		return strings.Join(pathsToAdd, ":")
+	}
+	if len(pathsToAdd) == 0 {
+		return pathEnv
 	}
 
 	pathItems := strings.Split(pathEnv, ":")
 	pathItems = slices.DeleteFunc(pathItems, func(p string) bool {
-		return p == addition
+		// Remove any paths that are in pathsToAdd to avoid duplicates
+		// We'll prepend them anyway, no point in keeping them in the existing list
+		return slices.Contains(pathsToAdd, p) || p == ""
 	})
 
 	if len(pathItems) == 0 {
-		return addition
+		return strings.Join(pathsToAdd, ":")
 	}
 
-	return fmt.Sprintf("%s:%s", addition, strings.Join(pathItems, ":"))
+	return fmt.Sprintf("%s:%s", strings.Join(pathsToAdd, ":"), strings.Join(pathItems, ":"))
 }

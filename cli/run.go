@@ -176,8 +176,8 @@ type DockerManager interface {
 }
 
 type WorkflowRunner struct {
-	logger log.Logger
-	config RunConfig
+	logger  log.Logger
+	config  RunConfig
 	tracker analytics.Tracker
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
@@ -340,11 +340,11 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		environments = append(environments, workflowToRun.Environments...)
 
 		// Toolprovider entrypoint
-		toolEnvs, err := toolprovider.Run(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID)
+		toolEnvs, err := toolprovider.RunDeclarativeSetup(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID, false)
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 		}
-		environments = append(environments, toolEnvs...)
+		environments = append(environments, toolprovider.ConvertToEnvmanEnvs(toolEnvs)...)
 
 		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, buildIDProperties)
 	}
