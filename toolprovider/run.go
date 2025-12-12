@@ -49,6 +49,7 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 	case "asdf":
 		toolProvider = &asdf.AsdfToolProvider{
 			ExecEnv: execenv.ExecEnv{
+				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
 				EnvVars:            map[string]string{},
 				ShellInit:          "",
 				ClearInheritedEnvs: false,
