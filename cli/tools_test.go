@@ -18,10 +18,22 @@ func TestConvertToOutputFormat(t *testing.T) {
 		want   string
 	}{
 		{
-			name:   "empty envs",
+			name:   "empty envs and plaintext format",
 			envs:   []provider.EnvironmentActivation{},
 			format: outputFormatPlaintext,
-			want:   "",
+			want:   "No new tools were installed.",
+		},
+		{
+			name:   "empty envs and JSON format",
+			envs:   []provider.EnvironmentActivation{},
+			format: outputFormatJSON,
+			want:   "{}",
+		},
+		{
+			name:   "empty envs and Bash format",
+			envs:   []provider.EnvironmentActivation{},
+			format: outputFormatBash,
+			want:   "# No new tools were installed.",
 		},
 		{
 			name: "plaintext format with env vars and paths",

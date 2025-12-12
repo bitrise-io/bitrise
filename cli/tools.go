@@ -98,6 +98,7 @@ func toolsSetup(c *cli.Context) error {
 			if !silent {
 				log.Warnf("file does not exist: %s", file)
 			}
+			continue
 		}
 
 		if isYMLConfig(file) {
@@ -160,16 +161,14 @@ func isYMLConfig(path string) bool {
 }
 
 func convertToOutputFormat(envs []provider.EnvironmentActivation, format string, exposedWithEnvman bool) (string, error) {
-	// TODO: is this valid for all formats?
-	if len(envs) == 0 {
-		return "", nil
-	}
-
 	envMap := toolprovider.ConvertToEnvMap(envs)
 
 	var builder strings.Builder
 	switch format {
 	case outputFormatPlaintext:
+		if len(envs) == 0 {
+			return "No new tools were installed.", nil
+		}
 		if exposedWithEnvman {
 			builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
 			builder.WriteString("\n")
@@ -188,6 +187,9 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 		}
 		return string(data), nil
 	case outputFormatBash:
+		if len(envs) == 0 {
+			return "# No new tools were installed.", nil
+		}
 		// Sort K=V pairs for deterministic output (mostly for our own tests, but also generally useful).
 		sortedKeys := make([]string, 0, len(envMap))
 		for k := range envMap {
