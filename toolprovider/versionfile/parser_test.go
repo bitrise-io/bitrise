@@ -74,7 +74,7 @@ nodejs 18.0.0
 			err := os.WriteFile(path, []byte(tt.content), 0644)
 			require.NoError(t, err)
 
-			got, err := ParseToolVersions(path)
+			got, err := parseToolVersionsFile(path)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -145,7 +145,7 @@ func TestParseSingleToolVersion(t *testing.T) {
 			err := os.WriteFile(path, []byte(tt.content), 0644)
 			require.NoError(t, err)
 
-			got, err := ParseSingleToolVersion(path)
+			got, err := parseSingleToolVersion(path)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -160,7 +160,7 @@ func TestParseSingleToolVersion(t *testing.T) {
 func TestInferToolName(t *testing.T) {
 	tests := []struct {
 		filename string
-		want     string
+		want     provider.ToolID
 	}{
 		{".ruby-version", "ruby"},
 		{".node-version", "nodejs"},
@@ -172,7 +172,7 @@ func TestInferToolName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.filename, func(t *testing.T) {
-			got := inferToolName(tt.filename)
+			got := inferToolID(tt.filename)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -215,7 +215,7 @@ nodejs 18.0.0`
 		err := os.WriteFile(path, []byte(content), 0644)
 		require.NoError(t, err)
 
-		tools, err := ParseVersionFile(path)
+		tools, err := Parse(path)
 		require.NoError(t, err)
 		assert.Len(t, tools, 2)
 		assert.Equal(t, provider.ToolID("ruby"), tools[0].ToolName)
@@ -228,7 +228,7 @@ nodejs 18.0.0`
 		err := os.WriteFile(path, []byte("3.2.0"), 0644)
 		require.NoError(t, err)
 
-		tools, err := ParseVersionFile(path)
+		tools, err := Parse(path)
 		require.NoError(t, err)
 		assert.Len(t, tools, 1)
 		assert.Equal(t, provider.ToolID("ruby"), tools[0].ToolName)

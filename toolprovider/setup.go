@@ -61,7 +61,7 @@ func SetupFromVersionFiles(opts SetupOptions, tracker analytics.Tracker, silent 
 		}
 
 		log.Debugf("Reading version file: %s", absPath)
-		tools, err := versionfile.ParseVersionFile(absPath)
+		tools, err := versionfile.Parse(absPath)
 		if err != nil {
 			return nil, fmt.Errorf("parse version file %s: %w", absPath, err)
 		}

@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
@@ -55,7 +56,7 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
 		toolStartTime := time.Now()
-		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
+		canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
 		if !silent {
