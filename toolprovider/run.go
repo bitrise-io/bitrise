@@ -17,7 +17,27 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-// installTools is a shared function that installs tools using the specified provider
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
+	toolRequests, err := getToolRequests(config, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("tools: %w", err)
+	}
+
+	if len(toolRequests) == 0 {
+		return nil, nil
+	}
+
+	toolConfig := defaultToolConfig()
+	if config.ToolConfig != nil {
+		if config.ToolConfig.Provider != "" {
+			toolConfig.Provider = config.ToolConfig.Provider
+		}
+		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
+	}
+
+	return installTools(toolRequests, toolConfig, tracker, silent)
+}
+
 func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
 	providerID := toolConfig.Provider
@@ -62,7 +82,7 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		if !silent {
 			printInstallStart(toolRequest)
 		}
-		
+
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
 			var toolErr provider.ToolInstallError
@@ -98,26 +118,4 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 	}
 
 	return activations, nil
-}
-
-// TODO: if it's called Run(), shouldn't it also do the activation?
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
-	toolRequests, err := getToolRequests(config, workflowID)
-	if err != nil {
-		return nil, fmt.Errorf("tools: %w", err)
-	}
-
-	if len(toolRequests) == 0 {
-		return nil, nil
-	}
-
-	toolConfig := defaultToolConfig()
-	if config.ToolConfig != nil {
-		if config.ToolConfig.Provider != "" {
-			toolConfig.Provider = config.ToolConfig.Provider
-		}
-		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-	}
-
-	return installTools(toolRequests, toolConfig, tracker, silent)
 }

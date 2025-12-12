@@ -141,7 +141,7 @@ func toolsSetup(c *cli.Context) error {
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.Run(config, tracker, false, workflowID, silent)
+		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent)
 		if err != nil {
 			return err
 		}
@@ -156,12 +156,8 @@ func toolsSetup(c *cli.Context) error {
 	}
 
 	// Setting up from all the other version files.
-	opts := toolprovider.SetupOptions{
-		VersionFiles: versionFilePaths,
-	}
-
 	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.SetupFromVersionFiles(opts, tracker, silent)
+	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent)
 	if err != nil {
 		return err
 	}
