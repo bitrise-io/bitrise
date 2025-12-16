@@ -62,9 +62,7 @@ func defaultToolConfig() models.ToolConfigModel {
 func stackStatusDependentToolConfig() models.ToolConfigModel {
 	isEdge := configs.IsEdgeStack()
 	if isEdge {
-		return models.ToolConfigModel{
-			Provider: "mise",
-		}
+		return defaultToolConfig()
 	}
 	return models.ToolConfigModel{
 		Provider:                       "mise",
