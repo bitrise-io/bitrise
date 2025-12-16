@@ -35,10 +35,9 @@ type nixChecker func(tool provider.ToolRequest) bool
 func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, toolConfig models.ToolConfigModel, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
-	disableFastInstall := toolConfig.ExperimentalDisableFastInstall
 	useNix := nixChecker(tool)
 
-	canProceed := (!disableFastInstall && useNix) || forceNix
+	canProceed := (toolConfig.FastInstall && useNix) || forceNix
 	if !canProceed {
 		return false
 	}

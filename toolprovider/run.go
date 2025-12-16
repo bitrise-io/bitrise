@@ -32,8 +32,8 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		if config.ToolConfig.Provider != "" {
 			toolConfig.Provider = config.ToolConfig.Provider
 		}
-		if config.ToolConfig.ExperimentalDisableFastInstall {
-			toolConfig.ExperimentalDisableFastInstall = config.ToolConfig.ExperimentalDisableFastInstall
+		if config.ToolConfig.FastInstall {
+			toolConfig.FastInstall = config.ToolConfig.FastInstall
 		}
 	}
 
@@ -47,9 +47,9 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 	var toolProvider provider.ToolProvider
 	var err error
 
-	if !toolConfig.ExperimentalDisableFastInstall && !silent {
+	if toolConfig.FastInstall && !silent {
 		log.Printf("")
-		log.Warn("Using experimental fast Ruby install because running on edge stack. If you see issues, switch to a stable stack")
+		log.Warn("Using fast Ruby install because running on edge stack. If you see issues, switch to a stable stack")
 	}
 
 	switch providerID {

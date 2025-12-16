@@ -277,7 +277,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			}
 
 			toolConfig := models.ToolConfigModel{
-				ExperimentalDisableFastInstall: false,
+				FastInstall: true,
 			}
 
 			got := canBeInstalledWithNix(request, execEnv, toolConfig, nixChecker)

@@ -65,7 +65,7 @@ func stackStatusDependentToolConfig() models.ToolConfigModel {
 		return defaultToolConfig()
 	}
 	return models.ToolConfigModel{
-		Provider:                       "mise",
-		ExperimentalDisableFastInstall: true,
+		Provider:    "mise",
+		FastInstall: false,
 	}
 }

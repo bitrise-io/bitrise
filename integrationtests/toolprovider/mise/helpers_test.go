@@ -10,7 +10,7 @@ import (
 // fastInstallToolConfig returns a ToolConfigModel with fast install enabled
 func fastInstallToolConfig() models.ToolConfigModel {
 	return models.ToolConfigModel{
-		Provider:                       "mise",
-		ExperimentalDisableFastInstall: false,
+		Provider:    "mise",
+		FastInstall: true,
 	}
 }
