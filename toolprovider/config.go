@@ -55,7 +55,8 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 
 func defaultToolConfig() models.ToolConfigModel {
 	return models.ToolConfigModel{
-		Provider: "mise",
+		Provider:    "mise",
+		FastInstall: true,
 	}
 }
 
