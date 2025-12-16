@@ -20,8 +20,7 @@ func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, s
 	}
 
 	toolConfig := models.ToolConfigModel{
-		Provider:                "mise",
-		ExperimentalFastInstall: false,
+		Provider: "mise",
 	}
 
 	return installTools(toolRequests, toolConfig, tracker, silent)

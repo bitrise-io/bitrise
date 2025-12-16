@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -81,6 +82,17 @@ const (
 // IsDebugUseSystemTools ...
 func IsDebugUseSystemTools() bool {
 	return os.Getenv(DebugUseSystemTools) == "true"
+}
+
+// IsEdgeStack checks if the current stack is an edge stack based on environment variables
+func IsEdgeStack() bool {
+	if stackStatus, variablePresent := os.LookupEnv("BITRISEIO_STACK_STATUS"); variablePresent && strings.Contains(stackStatus, "edge") {
+		return true
+	}
+	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
+		return true
+	}
+	return false
 }
 
 func loadBitriseConfig() (ConfigModel, error) {

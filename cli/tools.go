@@ -24,7 +24,7 @@ const (
 	outputFormatJSON      = "json"
 	outputFormatBash      = "bash"
 
-	toolsSetupCommandName = "setup"
+	toolsSetupSubcommandName = "setup"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -35,15 +35,11 @@ const (
 	toolsOutputFormatShortKey = "f"
 )
 
-var toolsCommand = cli.Command{
-	Name:  "tools",
-	Usage: "Manage available tools from inside the workflow.",
-	Subcommands: []cli.Command{
-		{
-			Name:        toolsSetupCommandName,
-			Usage:       "Install tools from version files or bitrise.yml",
-			UsageText:   "bitrise tools setup [--config FILE]...",
-			Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
+var toolsSetupSubcommand = cli.Command{
+	Name:      toolsSetupSubcommandName,
+	Usage:     "Install tools from version files or bitrise.yml",
+	UsageText: "bitrise tools setup [--config FILE]...",
+	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
 
 EXAMPLES:
    Setup from .tool-versions:
@@ -54,34 +50,40 @@ EXAMPLES:
 
    Setup and activate in current shell session:
    eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
-			Action: func(c *cli.Context) error {
-				logCommandParameters(c)
-				if err := toolsSetup(c); err != nil {
-					log.Errorf("Tool setup failed: %s", err)
-					os.Exit(1)
-				}
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.StringSliceFlag{
-					Name: toolsConfigKey + ", " + toolsConfigShortKey,
-					Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsSetup(c); err != nil {
+			log.Errorf("Tool setup failed: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		cli.StringSliceFlag{
+			Name: toolsConfigKey + ", " + toolsConfigShortKey,
+			Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
 	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
 	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
 	- bitrise.yml: tools defined in the "tools" section`,
-					TakesFile: true,
-				},
-				cli.StringFlag{
-					Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
-					Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
-					Value: outputFormatPlaintext,
-				},
-				cli.StringFlag{
-					Name:  toolsWorkflowKey + ", w",
-					Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
-				},
-			},
+			TakesFile: true,
 		},
+		cli.StringFlag{
+			Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
+			Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
+			Value: outputFormatPlaintext,
+		},
+		cli.StringFlag{
+			Name:  toolsWorkflowKey + ", w",
+			Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
+		},
+	},
+}
+
+var toolsCommand = cli.Command{
+	Name:  "tools",
+	Usage: "Manage available tools from inside the workflow.",
+	Subcommands: []cli.Command{
+		toolsSetupSubcommand,
 	},
 }
 

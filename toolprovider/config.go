@@ -3,6 +3,7 @@ package toolprovider
 import (
 	"fmt"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
@@ -54,7 +55,19 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 
 func defaultToolConfig() models.ToolConfigModel {
 	return models.ToolConfigModel{
-		Provider:                "mise",
-		ExperimentalFastInstall: false,
+		Provider: "mise",
+	}
+}
+
+func stackStatusDependentToolConfig() models.ToolConfigModel {
+	isEdge := configs.IsEdgeStack()
+	if isEdge {
+		return models.ToolConfigModel{
+			Provider: "mise",
+		}
+	}
+	return models.ToolConfigModel{
+		Provider:                       "mise",
+		ExperimentalDisableFastInstall: true,
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -61,8 +61,7 @@ func NewToolProvider(installDir string, dataDir string, toolConfig ...models.Too
 		config = toolConfig[0]
 	} else {
 		config = models.ToolConfigModel{
-			Provider:                "mise",
-			ExperimentalFastInstall: false,
+			Provider: "mise",
 		}
 	}
 
@@ -178,18 +177,10 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	return activationResult, nil
 }
 
-func isEdgeStack() (isEdge bool) {
-	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
-		isEdge = true
-	} else {
-		isEdge = false
-	}
-	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
-	return isEdge
-}
-
 func GetMiseVersion() string {
-	if isEdgeStack() {
+	isEdge := configs.IsEdgeStack()
+	log.Debugf("[TOOLPROVIDER] Stack is edge: %t", isEdge)
+	if isEdge {
 		return misePreviewVersion
 	}
 	// Fallback to stable version for non-edge stacks
@@ -197,7 +188,7 @@ func GetMiseVersion() string {
 }
 
 func GetMiseChecksums() map[string]string {
-	if isEdgeStack() {
+	if configs.IsEdgeStack() {
 		return misePreviewChecksums
 	}
 	// Fallback to stable version for non-edge stacks
