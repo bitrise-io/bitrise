@@ -27,23 +27,24 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		return nil, nil
 	}
 
-	toolConfig := defaultToolConfig()
-	if config.ToolConfig != nil {
-		if config.ToolConfig.Provider != "" {
-			toolConfig.Provider = config.ToolConfig.Provider
-		}
-		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-	}
+	provider := selectProvider(config)
+	useFastInstall := selectFastInstall(config)
 
-	return installTools(toolRequests, toolConfig, tracker, silent)
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
 }
 
-func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolConfigModel, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
-	providerID := toolConfig.Provider
+
+	log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
 
 	var toolProvider provider.ToolProvider
 	var err error
+
+	if useFastInstall && !silent {
+		log.Printf("")
+		log.Warn("Using fast Ruby install because running on edge stack. This behavior is going to be the default on stable stacks soon. If you notice issues, switch to a stable stack temporarily and let us know at https://github.com/bitrise-io/bitrise/issues/new?title=Fast%20tool%20install%20issue:%20")
+	}
 
 	switch providerID {
 	case "asdf":
@@ -57,7 +58,7 @@ func installTools(toolRequests []provider.ToolRequest, toolConfig models.ToolCon
 		}
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}

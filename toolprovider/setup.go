@@ -19,12 +19,11 @@ func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, s
 		return nil, err
 	}
 
-	toolConfig := models.ToolConfigModel{
-		Provider:                "mise",
-		ExperimentalFastInstall: false,
-	}
-
-	return installTools(toolRequests, toolConfig, tracker, silent)
+	// TODO: we might want to make these configurable via CLI flags later
+	dummyConfig := models.BitriseDataModel{}
+	provider := selectProvider(dummyConfig)
+	useFastInstall := selectFastInstall(dummyConfig)
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
 }
 
 func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRequest, error) {

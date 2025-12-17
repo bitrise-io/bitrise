@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -43,27 +42,16 @@ var miseStableChecksums = map[string]string{
 }
 
 type MiseToolProvider struct {
-	ExecEnv    execenv.ExecEnv
-	ToolConfig models.ToolConfigModel
+	ExecEnv        execenv.ExecEnv
+	UseFastInstall bool
 }
 
-func NewToolProvider(installDir string, dataDir string, toolConfig ...models.ToolConfigModel) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, useFastInstall bool) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
 	if dataDir == "" {
 		return nil, errors.New("data directory must be provided")
-	}
-
-	// Use provided config or default to empty config with false values
-	var config models.ToolConfigModel
-	if len(toolConfig) > 0 {
-		config = toolConfig[0]
-	} else {
-		config = models.ToolConfigModel{
-			Provider:                "mise",
-			ExperimentalFastInstall: false,
-		}
 	}
 
 	err := os.MkdirAll(installDir, 0755)
@@ -91,7 +79,7 @@ func NewToolProvider(installDir string, dataDir string, toolConfig ...models.Too
 			"MISE_NODE_COREPACK": "1",
 		},
 		),
-		ToolConfig: config,
+		UseFastInstall: useFastInstall,
 	}, nil
 }
 
@@ -115,7 +103,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.ToolConfig, nixpkgs.ShouldUseBackend)
+	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -178,18 +166,10 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	return activationResult, nil
 }
 
-func isEdgeStack() (isEdge bool) {
-	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
-		isEdge = true
-	} else {
-		isEdge = false
-	}
-	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
-	return isEdge
-}
-
 func GetMiseVersion() string {
-	if isEdgeStack() {
+	isEdge := configs.IsEdgeStack()
+	log.Debugf("[TOOLPROVIDER] Stack is edge: %t", isEdge)
+	if isEdge {
 		return misePreviewVersion
 	}
 	// Fallback to stable version for non-edge stacks
@@ -197,7 +177,7 @@ func GetMiseVersion() string {
 }
 
 func GetMiseChecksums() map[string]string {
-	if isEdgeStack() {
+	if configs.IsEdgeStack() {
 		return misePreviewChecksums
 	}
 	// Fallback to stable version for non-edge stacks
