@@ -43,7 +43,7 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 
 	if useFastInstall && !silent {
 		log.Printf("")
-		log.Warn("Using fast Ruby install because running on edge stack. If you see issues, switch to a stable stack")
+		log.Warn("Using fast Ruby install because running on edge stack. This behavior is going to be the default on stable stacks soon. If you notice issues, switch to a stable stack temporarily and let us know at https://github.com/bitrise-io/bitrise/issues/new?title=Fast%20tool%20install%20issue:%20")
 	}
 
 	switch providerID {

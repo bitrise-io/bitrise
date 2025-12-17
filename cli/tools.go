@@ -41,6 +41,8 @@ var toolsSetupSubcommand = cli.Command{
 	UsageText: "bitrise tools setup [--config FILE]...",
 	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
 
+This is meant to be called from scripts/steps running inside a workflow.
+
 EXAMPLES:
    Setup from .tool-versions:
    bitrise tools setup --config .tool-versions
