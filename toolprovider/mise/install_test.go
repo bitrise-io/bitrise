@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
@@ -276,11 +275,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				return true
 			}
 
-			toolConfig := models.ToolConfigModel{
-				FastInstall: true,
-			}
-
-			got := canBeInstalledWithNix(request, execEnv, toolConfig, nixChecker)
+			got := canBeInstalledWithNix(request, execEnv, true, nixChecker)
 			require.Equal(t, tt.want, got)
 
 		})

@@ -6,7 +6,6 @@ package mise
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
@@ -63,11 +62,7 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()
 		miseDataDir := t.TempDir()
-		toolConfig := models.ToolConfigModel{
-			Provider:    "mise",
-			FastInstall: true,
-		}
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, true)
 		require.NoError(t, err)
 
 		err = miseProvider.Bootstrap()

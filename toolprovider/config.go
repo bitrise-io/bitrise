@@ -53,20 +53,20 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 	return toolRequests, nil
 }
 
-func defaultToolConfig() models.ToolConfigModel {
-	return models.ToolConfigModel{
-		Provider:    "mise",
-		FastInstall: true,
+func selectProvider(bitriseConfig models.BitriseDataModel) string {
+	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.Provider != "" {
+		return bitriseConfig.ToolConfig.Provider
 	}
+	return "mise"
 }
 
-func stackStatusDependentToolConfig() models.ToolConfigModel {
+func selectFastInstall(bitriseConfig models.BitriseDataModel) bool {
+	// If explicitly set in the config, use that value.
+	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.FastInstall != nil {
+		return *bitriseConfig.ToolConfig.FastInstall
+	}
+
+	// Default behavior: use fast install on edge stacks.
 	isEdge := configs.IsEdgeStack()
-	if isEdge {
-		return defaultToolConfig()
-	}
-	return models.ToolConfigModel{
-		Provider:    "mise",
-		FastInstall: false,
-	}
+	return isEdge
 }
