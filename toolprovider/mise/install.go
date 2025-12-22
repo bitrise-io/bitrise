@@ -102,24 +102,54 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 // Helper for easier testing.
 // Inputs: tool ID, tool version.
 // Returns: latest installed version of the tool, or an error if no matching version is installed.
-type latestInstalledResolver func(provider.ToolID, string) (string, error)
+type latestResolver func(provider.ToolID, string) (string, error)
 
-func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
-	_, err := latestInstalledResolver(tool.ToolName, tool.UnparsedVersion)
-	var isAlreadyInstalled bool
-	if err != nil {
-		if errors.Is(err, errNoMatchingVersion) {
-			isAlreadyInstalled = false
-		} else {
-			return false, err
+func (m *MiseToolProvider) isAlreadyInstalled(tool provider.ToolRequest) (bool, error) {
+	latestInstalledResolver := func(toolName provider.ToolID, versionPrefix string) (string, error) {
+		if _, err := m.resolveToLatestInstalled(toolName, versionPrefix); err != nil {
+			return "", err
 		}
-	} else {
-		isAlreadyInstalled = true
+		// This is a secondary check for installed versions as a list too, because 'latest --installed tool@version' command
+		// is not reliable.
+		exists, err := versionExistsLocal(m.ExecEnv, toolName, versionPrefix)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return "", errNoMatchingVersion
+		}
+		return versionPrefix, nil
 	}
-	return isAlreadyInstalled, nil
+
+	return isAlreadyInstalled(tool, latestInstalledResolver, m.resolveToLatestReleased)
 }
 
-func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (string, error) {
+func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver, latestReleasedResolver latestResolver) (bool, error) {
+	toolVersion := tool.UnparsedVersion
+	if tool.ResolutionStrategy == provider.ResolutionStrategyLatestReleased {
+		// User might gave an incomplete version string, need to resolve to the full version first,
+		// so we compare the wanted version to installed versions.
+		// e.g. 3.3 -> 3.3.9
+		v, err := latestReleasedResolver(tool.ToolName, toolVersion)
+		if err != nil {
+			return false, err
+		}
+		toolVersion = v
+	}
+
+	_, err := latestInstalledResolver(tool.ToolName, toolVersion)
+	if err == nil {
+		return true, nil
+	}
+
+	if errors.Is(err, errNoMatchingVersion) {
+		return false, nil
+	}
+
+	return false, err
+}
+
+func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestResolver) (string, error) {
 	var miseVersionString string
 	resolutionStrategy := tool.ResolutionStrategy
 	if tool.UnparsedVersion == "installed" {

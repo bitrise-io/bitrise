@@ -67,7 +67,7 @@ func TestParseInstalledVersionsJSON(t *testing.T) {
 		{"malformed", `{"installed":true}`, false, true},
 	}
 	for _, tc := range cases {
-		got, err := parseInstalledVersionsJSON(tc.input)
+		got, err := parseInstalledVersionsJSON(tc.input, "")
 		if tc.wantErr && err == nil {
 			// nolint:staticcheck
 			t.Fatalf("%s: expected error, got nil", tc.name)

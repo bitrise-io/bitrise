@@ -114,7 +114,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	installRequest := installRequest(tool, useNix)
 
 	// Note: tools get reinstalled with Nix even if they are already installed with the core plugin for consistency.
-	isAlreadyInstalled, err := isAlreadyInstalled(installRequest, m.resolveToLatestInstalled)
+	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
