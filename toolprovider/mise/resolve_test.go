@@ -70,7 +70,7 @@ line3`,
 // Helper functions to construct mise command strings for mocking.
 
 func miseLatestCmd(tool provider.ToolID, version string) string {
-	return fmt.Sprintf("latest %s@%s", tool, version)
+	return fmt.Sprintf("latest --quiet %s@%s", tool, version)
 }
 
 func miseLatestInstalledCmd(tool provider.ToolID, version string) string {

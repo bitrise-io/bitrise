@@ -106,19 +106,20 @@ type latestResolver func(provider.ToolID, string) (string, error)
 
 func (m *MiseToolProvider) isAlreadyInstalled(tool provider.ToolRequest) (bool, error) {
 	latestInstalledResolver := func(toolName provider.ToolID, versionPrefix string) (string, error) {
-		if _, err := m.resolveToLatestInstalled(toolName, versionPrefix); err != nil {
+		resolvedVersion, err := m.resolveToLatestInstalled(toolName, versionPrefix)
+		if err != nil {
 			return "", err
 		}
 		// This is a secondary check for installed versions as a list too, because 'latest --installed tool@version' command
 		// is not reliable.
-		exists, err := versionExistsLocal(m.ExecEnv, toolName, versionPrefix)
+		exists, err := versionExistsLocal(m.ExecEnv, toolName, resolvedVersion)
 		if err != nil {
 			return "", err
 		}
 		if !exists {
 			return "", errNoMatchingVersion
 		}
-		return versionPrefix, nil
+		return resolvedVersion, nil
 	}
 
 	return isAlreadyInstalled(tool, latestInstalledResolver, m.resolveToLatestReleased)
