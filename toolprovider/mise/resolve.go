@@ -12,6 +12,19 @@ import (
 
 var errNoMatchingVersion = errors.New("no matching version found")
 
+// extractLastLine extracts the last non-empty line from multi-line output.
+// This is needed because mise may output plugin installation messages before the actual version.
+func extractLastLine(output string) string {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			return line
+		}
+	}
+	return ""
+}
+
 func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.ToolRequest) (string, error) {
 	// Mise doesn't tell us what version it resolved to when installing the user-provided (and potentially fuzzy) version.
 	// But we can use `mise latest` to find out the concrete version.
@@ -34,12 +47,13 @@ func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, ver
 
 func resolveToLatestReleased(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest %s@%s: %w", toolName, version, err)
 	}
 
-	v := strings.TrimSpace(string(output))
+	// Extract the last non-empty line, as mise may output plugin installation messages before the version
+	v := extractLastLine(string(output))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
@@ -64,7 +78,8 @@ func resolveToLatestInstalled(execEnv execenv.ExecEnv, toolName provider.ToolID,
 		return "", fmt.Errorf("mise latest --installed %s: %w", toolString, err)
 	}
 
-	v := strings.TrimSpace(string(output))
+	// Extract the last non-empty line, as mise may output plugin installation messages before the version
+	v := extractLastLine(string(output))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
