@@ -398,21 +398,21 @@ func toolsInfo(c *cli.Context) error {
 		return err
 	}
 
-	if len(tools) == 0 {
-		if activeOnly {
-			log.Infof("No active tools in current context")
-		} else {
-			log.Infof("No tools installed")
-		}
-		return nil
-	}
-
 	if format == outputFormatJSON {
 		data, err := json.MarshalIndent(tools, "", "  ")
 		if err != nil {
 			return fmt.Errorf("marshal JSON: %w", err)
 		}
 		fmt.Println(string(data))
+		return nil
+	}
+
+	if len(tools) == 0 {
+		if activeOnly {
+			log.Infof("No active tools in current context")
+		} else {
+			log.Infof("No tools installed")
+		}
 		return nil
 	}
 
