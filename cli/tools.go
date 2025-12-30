@@ -416,9 +416,14 @@ func toolsInfo(c *cli.Context) error {
 		return nil
 	}
 
-	// Calculate column widths for aligned output
-	maxNameLen := 0
-	maxVersionLen := 0
+	printToolsInfo(tools, activeOnly)
+	return nil
+}
+
+func printToolsInfo(tools []toolprovider.InstalledTool, activeOnly bool) {
+	// Colun width calculation.
+	maxNameLen := len("Tool")
+	maxVersionLen := len("Version")
 	for _, tool := range tools {
 		if len(tool.Name) > maxNameLen {
 			maxNameLen = len(tool.Name)
@@ -432,44 +437,47 @@ func toolsInfo(c *cli.Context) error {
 		}
 	}
 
+	namePad := strings.Repeat(" ", maxNameLen+2)
+	versionPad := strings.Repeat(" ", maxVersionLen+2)
+
 	if activeOnly {
 		log.Infof("Active tools:")
-		log.Printf("")
-
-		for _, tool := range tools {
-			namePadding := strings.Repeat(" ", maxNameLen-len(tool.Name)+2)
-
-			version := tool.ActiveVersion
-			versionPadding := strings.Repeat(" ", maxVersionLen-len(version)+2)
-
-			source := ""
-			if tool.Source != "" {
-				source = fmt.Sprintf("(%s)", tool.Source)
-			}
-			log.Printf("  %s%s%s%s%s", tool.Name, namePadding, colorstring.Green("%s", version), versionPadding, source)
-		}
 	} else {
 		log.Infof("Installed tools:")
-		log.Printf("")
+	}
+	log.Printf("")
 
-		for _, tool := range tools {
-			padding := strings.Repeat(" ", maxNameLen-len(tool.Name)+2)
+	// Header.
+	toolHeader := colorstring.Blue("Tool")
+	versionHeader := colorstring.Blue("Version")
+	sourceHeader := colorstring.Blue("Source")
+	log.Printf("  %s%s%s%s%s", toolHeader, namePad[:maxNameLen-len("Tool")+2], versionHeader, versionPad[:maxVersionLen-len("Version")+2], sourceHeader)
 
-			if tool.ActiveVersion != "" {
-				log.Printf("  %s%s%s (active)", tool.Name, padding, colorstring.Green("%s", tool.ActiveVersion))
-			} else if len(tool.InstalledVersions) > 0 {
-				log.Printf("  %s%s%s", tool.Name, padding, tool.InstalledVersions[0])
-				for i := 1; i < len(tool.InstalledVersions); i++ {
-					log.Printf("  %s%s%s", strings.Repeat(" ", len(tool.Name)), padding, tool.InstalledVersions[i])
-				}
-			} else {
-				log.Printf("  %s%s(no versions installed)", tool.Name, padding)
-			}
+	for _, tool := range tools {
+		if activeOnly {
+			version := tool.ActiveVersion
+			log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], colorstring.Green("%s", version), versionPad[:maxVersionLen-len(version)+2], tool.Source)
+			continue
+		}
+
+		if tool.ActiveVersion != "" {
+			log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], colorstring.Green("%s", tool.ActiveVersion), versionPad[:maxVersionLen-len(tool.ActiveVersion)+2], tool.Source)
+			continue
+		}
+
+		if len(tool.InstalledVersions) == 0 {
+			log.Printf("  %s%s(no versions installed)", tool.Name, namePad[:maxNameLen-len(tool.Name)+2])
+			continue
+		}
+
+		version := tool.InstalledVersions[0]
+		log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], version, versionPad[:maxVersionLen-len(version)+2], tool.Source)
+		for i := 1; i < len(tool.InstalledVersions); i++ {
+			log.Printf("  %s%s%s", namePad[:len(tool.Name)], namePad[:maxNameLen-len(tool.Name)+2], tool.InstalledVersions[i])
 		}
 	}
 
 	log.Printf("")
-	return nil
 }
 
 func toolsInstall(c *cli.Context, isLatest bool) error {
