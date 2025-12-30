@@ -158,3 +158,108 @@ func TestIsYMLConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestParseToolSpec(t *testing.T) {
+	tests := []struct {
+		name        string
+		toolSpec    string
+		isLatest    bool
+		wantTool    string
+		wantVersion string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:        "exact version with @",
+			toolSpec:    "node@20.10.0",
+			isLatest:    false,
+			wantTool:    "node",
+			wantVersion: "20.10.0",
+			wantErr:     false,
+		},
+		{
+			name:        "exact version with @ for python",
+			toolSpec:    "python@3.12.1",
+			isLatest:    false,
+			wantTool:    "python",
+			wantVersion: "3.12.1",
+			wantErr:     false,
+		},
+		{
+			name:        "version prefix with @ for latest",
+			toolSpec:    "node@20",
+			isLatest:    true,
+			wantTool:    "node",
+			wantVersion: "20",
+			wantErr:     false,
+		},
+		{
+			name:        "tool without version for latest",
+			toolSpec:    "node",
+			isLatest:    true,
+			wantTool:    "node",
+			wantVersion: "",
+			wantErr:     false,
+		},
+		{
+			name:        "tool without version for install (error)",
+			toolSpec:    "node",
+			isLatest:    false,
+			wantErr:     true,
+			errContains: "version required",
+		},
+		{
+			name:        "empty version after @ for install (error)",
+			toolSpec:    "node@",
+			isLatest:    false,
+			wantErr:     true,
+			errContains: "version cannot be empty",
+		},
+		{
+			name:        "empty tool name (error)",
+			toolSpec:    "@20.10.0",
+			isLatest:    false,
+			wantErr:     true,
+			errContains: "tool name cannot be empty",
+		},
+		{
+			name:        "multiple @ symbols (error)",
+			toolSpec:    "node@20@10",
+			isLatest:    false,
+			wantErr:     true,
+			errContains: "invalid tool specification",
+		},
+		{
+			name:        "tool with version prefix for latest",
+			toolSpec:    "python@3.12",
+			isLatest:    true,
+			wantTool:    "python",
+			wantVersion: "3.12",
+			wantErr:     false,
+		},
+		{
+			name:        "tool without @ for install (error)",
+			toolSpec:    "ruby3.2.0",
+			isLatest:    false,
+			wantErr:     true,
+			errContains: "version required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTool, gotVersion, err := parseToolSpec(tt.toolSpec, tt.isLatest)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.errContains != "" {
+					require.Contains(t, err.Error(), tt.errContains)
+				}
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.wantTool, gotTool)
+				require.Equal(t, tt.wantVersion, gotVersion)
+			}
+		})
+	}
+}
