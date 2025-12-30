@@ -24,7 +24,9 @@ const (
 	outputFormatJSON      = "json"
 	outputFormatBash      = "bash"
 
-	toolsSetupSubcommandName = "setup"
+	toolsSetupSubcommandName   = "setup"
+	toolsInstallSubcommandName = "install"
+	toolsLatestSubcommandName  = "latest"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -33,7 +35,123 @@ const (
 
 	toolsOutputFormatKey      = "format"
 	toolsOutputFormatShortKey = "f"
+
+	toolsInstalledKey      = "installed"
+	toolsInstalledShortKey = "i"
+
+	toolsProviderKey      = "provider"
+	toolsProviderShortKey = "p"
 )
+
+var (
+	flToolsProvider = cli.StringFlag{
+		Name:  toolsProviderKey + ", " + toolsProviderShortKey,
+		Usage: `Tool provider to use (asdf/mise). If not specified, uses the default.`,
+	}
+
+	flToolsOutputFormat = cli.StringFlag{
+		Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
+		Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
+		Value: outputFormatPlaintext,
+	}
+
+	flToolsInstalled = cli.BoolFlag{
+		Name:  toolsInstalledKey + ", " + toolsInstalledShortKey,
+		Usage: `Install the latest already installed version instead of the latest available release`,
+	}
+
+	flToolsConfig = cli.StringSliceFlag{
+		Name: toolsConfigKey + ", " + toolsConfigShortKey,
+		Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
+	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
+	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
+	- bitrise.yml: tools defined in the "tools" section`,
+		TakesFile: true,
+	}
+
+	flToolsWorkflow = cli.StringFlag{
+		Name:  toolsWorkflowKey + ", w",
+		Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
+	}
+)
+
+var toolsInstallSubcommand = cli.Command{
+	Name:      toolsInstallSubcommandName,
+	Usage:     "Install a specific tool version",
+	UsageText: "bitrise tools install <TOOL@VERSION> [--provider PROVIDER] [--format FORMAT]",
+	Description: `Install a specific version of a tool using the configured tool provider.
+
+The tool specification uses the format TOOL@VERSION where:
+  - TOOL is a valid tool identifier (e.g., node, ruby, python, go, java)
+  - VERSION is an exact version number (e.g., 20.10.0, 3.12.1)
+
+EXAMPLES:
+   Install Node.js 20.10.0:
+   bitrise tools install node@20.10.0
+
+   Install Python 3.12.1:
+   bitrise tools install python@3.12.1
+
+   Install and activate in current shell session:
+   eval "$(bitrise tools install ruby@3.2.0 --format bash)"
+
+   Use specific provider:
+   bitrise tools install go@1.21.5 --provider mise`,
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsInstall(c, false); err != nil {
+			log.Errorf("Tool install failed: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		flToolsProvider,
+		flToolsOutputFormat,
+	},
+}
+
+var toolsLatestSubcommand = cli.Command{
+	Name:      toolsLatestSubcommandName,
+	Usage:     "Install the latest version of a tool",
+	UsageText: "bitrise tools latest [-i|--installed] <TOOL[@VERSION]> [--provider PROVIDER] [--format FORMAT]",
+	Description: `Install the latest version of a tool, optionally matching a version prefix.
+
+The tool specification uses the format TOOL[@VERSION] where:
+  - TOOL is a valid tool identifier (e.g., node, ruby, python, go, java)
+  - VERSION is an optional version prefix (e.g., 20, 3.12)
+
+By default, installs the latest available release. Use --installed to get the latest of the already installed versions.
+
+EXAMPLES:
+   Install latest available Node.js 20.x:
+   bitrise tools latest node@20
+
+   Install latest already installed Python 3.12.x:
+   bitrise tools latest --installed python@3.12
+
+   Install latest available Node.js (any version):
+   bitrise tools latest node
+
+   Install and activate in current shell session:
+   eval "$(bitrise tools latest ruby@3 --format bash)"
+
+   Use specific provider:
+   bitrise tools latest --installed go@1.21 --provider mise`,
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsInstall(c, true); err != nil {
+			log.Errorf("Tool install failed: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		flToolsInstalled,
+		flToolsProvider,
+		flToolsOutputFormat,
+	},
+}
 
 var toolsSetupSubcommand = cli.Command{
 	Name:      toolsSetupSubcommandName,
@@ -61,23 +179,9 @@ EXAMPLES:
 		return nil
 	},
 	Flags: []cli.Flag{
-		cli.StringSliceFlag{
-			Name: toolsConfigKey + ", " + toolsConfigShortKey,
-			Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
-	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
-	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
-	- bitrise.yml: tools defined in the "tools" section`,
-			TakesFile: true,
-		},
-		cli.StringFlag{
-			Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
-			Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
-			Value: outputFormatPlaintext,
-		},
-		cli.StringFlag{
-			Name:  toolsWorkflowKey + ", w",
-			Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
-		},
+		flToolsConfig,
+		flToolsOutputFormat,
+		flToolsWorkflow,
 	},
 }
 
@@ -86,6 +190,8 @@ var toolsCommand = cli.Command{
 	Usage: "Manage available tools from inside the workflow.",
 	Subcommands: []cli.Command{
 		toolsSetupSubcommand,
+		toolsInstallSubcommand,
+		toolsLatestSubcommand,
 	},
 }
 
@@ -238,4 +344,110 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 		return false
 	}
 	return true
+}
+
+func toolsInstall(c *cli.Context, isLatest bool) error {
+	args := c.Args()
+	if len(args) != 1 {
+		if isLatest {
+			return fmt.Errorf("requires exactly 1 argument: <TOOL[@VERSION]>\nUsage: bitrise tools latest <TOOL[@VERSION]>")
+		}
+		return fmt.Errorf("requires exactly 1 argument: <TOOL@VERSION>\nUsage: bitrise tools install <TOOL@VERSION>")
+	}
+
+	toolSpec := args[0]
+	providerID := c.String(toolsProviderKey)
+	format := c.String(toolsOutputFormatKey)
+	silent := false
+
+	switch format {
+	case outputFormatJSON, outputFormatBash:
+		silent = true
+	case outputFormatPlaintext:
+		// valid format
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	toolName, versionStr, err := parseToolSpec(toolSpec, isLatest)
+	if err != nil {
+		return err
+	}
+
+	var strategy provider.ResolutionStrategy
+	if isLatest {
+		if c.Bool(toolsInstalledKey) {
+			strategy = provider.ResolutionStrategyLatestInstalled
+		} else {
+			strategy = provider.ResolutionStrategyLatestReleased
+		}
+	} else {
+		strategy = provider.ResolutionStrategyStrict
+	}
+
+	toolRequest := provider.ToolRequest{
+		ToolName:           provider.ToolID(toolName),
+		UnparsedVersion:    versionStr,
+		ResolutionStrategy: strategy,
+		PluginURL:          nil,
+	}
+
+	if providerID == "" {
+		providerID = "mise"
+	}
+
+	if providerID != "asdf" && providerID != "mise" {
+		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+	}
+
+	// For tools install, we'll use fast install regardless of the stack type
+	useFastInstall := true
+
+	tracker := analytics.NewDefaultTracker()
+	envs, err := toolprovider.InstallSingleTool(toolRequest, providerID, useFastInstall, tracker, silent)
+	if err != nil {
+		return err
+	}
+
+	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+
+	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+	if err != nil {
+		return fmt.Errorf("convert to output format: %w", err)
+	}
+	fmt.Println(output)
+
+	return nil
+}
+
+// parseToolSpec parses a tool specification in the format TOOL@VERSION or just TOOL.
+// For install command, VERSION is required. For latest command, VERSION is optional.
+func parseToolSpec(toolSpec string, isLatest bool) (toolName string, version string, err error) {
+	parts := strings.Split(toolSpec, "@")
+
+	if len(parts) > 2 {
+		return "", "", fmt.Errorf("invalid tool specification: %s (expected TOOL@VERSION or TOOL)", toolSpec)
+	}
+
+	if len(parts) == 1 {
+		// No version specified
+		if !isLatest {
+			return "", "", fmt.Errorf("version required for install command: %s (use format TOOL@VERSION)", toolSpec)
+		}
+		return parts[0], "", nil
+	}
+
+	// parts[0] is tool name, parts[1] is version
+	toolName = parts[0]
+	version = parts[1]
+
+	if toolName == "" {
+		return "", "", fmt.Errorf("tool name cannot be empty in: %s", toolSpec)
+	}
+
+	if version == "" && !isLatest {
+		return "", "", fmt.Errorf("version cannot be empty for install command in: %s", toolSpec)
+	}
+
+	return toolName, version, nil
 }

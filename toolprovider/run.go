@@ -121,3 +121,9 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 
 	return activations, nil
 }
+
+// InstallSingleTool installs a single tool with the specified version using the given provider.
+// This is a convenience wrapper around installTools for installing just one tool.
+func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
+}
