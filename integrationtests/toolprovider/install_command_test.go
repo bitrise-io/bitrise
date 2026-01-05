@@ -238,7 +238,7 @@ func TestToolsLatestCommand(t *testing.T) {
 		},
 		{
 			name:         "latest with JSON format",
-			toolSpec:     "go@1",
+			toolSpec:     "python@3",
 			outputFormat: "json",
 			validateOutput: func(t *testing.T, output string, err error) {
 				require.NoError(t, err, "output: %s", output)

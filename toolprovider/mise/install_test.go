@@ -12,174 +12,97 @@ import (
 
 func TestMiseVersionString(t *testing.T) {
 	tests := []struct {
-		name    string
-		tool    provider.ToolRequest
-		want    string
-		wantErr bool
+		name            string
+		toolName        provider.ToolID
+		concreteVersion string
+		want            string
 	}{
 		{
-			name: "strict resolution strategy, exact version",
-			tool: provider.ToolRequest{
-				ToolName:           "node",
-				UnparsedVersion:    "18.20.0",
-				ResolutionStrategy: provider.ResolutionStrategyStrict,
-			},
-			want:    "node@18.20.0",
-			wantErr: false,
+			name:            "concrete node version",
+			toolName:        "node",
+			concreteVersion: "18.20.0",
+			want:            "node@18.20.0",
 		},
 		{
-			name: "latest released resolution strategy, partial version",
-			tool: provider.ToolRequest{
-				ToolName:           "python",
-				UnparsedVersion:    "3.11",
-				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
-			},
-			want:    "python@prefix:3.11",
-			wantErr: false,
+			name:            "concrete python version",
+			toolName:        "python",
+			concreteVersion: "3.11.5",
+			want:            "python@3.11.5",
 		},
 		{
-			name: "latest installed resolution strategy, partial version, version found",
-			tool: provider.ToolRequest{
-				ToolName:           "go",
-				UnparsedVersion:    "1.21",
-				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
-			},
-			want:    "go@1.21.5",
-			wantErr: false,
-		},
-		{
-			name: "latest installed resolution strategy, no version found, fallback to latest released",
-			tool: provider.ToolRequest{
-				ToolName:           "java",
-				UnparsedVersion:    "17",
-				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
-			},
-			want:    "java@prefix:17",
-			wantErr: false,
-		},
-		{
-			name: "latest installed resolution strategy - error resolving",
-			tool: provider.ToolRequest{
-				ToolName:           "ruby",
-				UnparsedVersion:    "3.0",
-				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
-			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "unknown resolution strategy",
-			tool: provider.ToolRequest{
-				ToolName:           "node",
-				UnparsedVersion:    "18.0.0",
-				ResolutionStrategy: provider.ResolutionStrategy(999),
-			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "strict resolution with nixpkgs backend",
-			tool: provider.ToolRequest{
-				ToolName:           "nixpkgs:ruby",
-				UnparsedVersion:    "3.3.0",
-				ResolutionStrategy: provider.ResolutionStrategyStrict,
-			},
-			want:    "nixpkgs:ruby@3.3.0",
-			wantErr: false,
+			name:            "nixpkgs backend",
+			toolName:        "nixpkgs:ruby",
+			concreteVersion: "3.3.0",
+			want:            "nixpkgs:ruby@3.3.0",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			latestInstalledResolver := func(toolName provider.ToolID, version string) (string, error) {
-				// Setup fake behavior based on test case.
-				switch tt.tool.ToolName {
-				case "go":
-					// Fake successful resolution.
-					return "1.21.5", nil
-				case "java":
-					// Fake no matching version found.
-					return "", errNoMatchingVersion
-				case "ruby":
-					// Fake other error.
-					return "", errors.New("some other error")
-				}
-				return "", fmt.Errorf("no fake behavior defined for tool %s", toolName)
-			}
-
-			got, err := miseVersionString(tt.tool, latestInstalledResolver)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				require.Empty(t, got)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.want, got)
-			}
+			got := miseVersionString(tt.toolName, tt.concreteVersion)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestIsAlreadyInstalled(t *testing.T) {
 	tests := []struct {
-		name                 string
-		tool                 provider.ToolRequest
-		latestInstalledError error
-		latestReleasedError  error
-		want                 bool
-		wantErr              bool
+		name            string
+		toolName        provider.ToolID
+		concreteVersion string
+		setupFake       func(*fakeExecEnv)
+		want            bool
+		wantErr         bool
 	}{
 		{
-			name: "tool is already installed",
-			tool: provider.ToolRequest{
-				ToolName:        "node",
-				UnparsedVersion: "18.20.0",
+			name:            "concrete version is already installed",
+			toolName:        "node",
+			concreteVersion: "18.20.0",
+			setupFake: func(m *fakeExecEnv) {
+				m.setResponse(miseLsInstalledCmd("node"), `[{"version": "18.20.0", "installed": true}]`)
 			},
-			latestInstalledError: nil,
-			latestReleasedError:  nil,
-			want:                 true,
-			wantErr:              false,
+			want:    true,
+			wantErr: false,
 		},
 		{
-			name: "tool is not installed - no matching version",
-			tool: provider.ToolRequest{
-				ToolName:        "python",
-				UnparsedVersion: "3.11",
+			name:            "concrete version is not installed",
+			toolName:        "python",
+			concreteVersion: "3.11.5",
+			setupFake: func(m *fakeExecEnv) {
+				m.setResponse(miseLsInstalledCmd("python"), `[{"version": "3.11.4", "installed": true}]`)
 			},
-			latestInstalledError: errNoMatchingVersion,
-			latestReleasedError:  nil,
-			want:                 false,
-			wantErr:              false,
+			want:    false,
+			wantErr: false,
 		},
 		{
-			name: "error resolving installed versions",
-			tool: provider.ToolRequest{
-				ToolName:        "ruby",
-				UnparsedVersion: "3.0",
+			name:            "no versions installed",
+			toolName:        "ruby",
+			concreteVersion: "3.3.0",
+			setupFake: func(m *fakeExecEnv) {
+				m.setResponse(miseLsInstalledCmd("ruby"), "[]")
 			},
-			latestInstalledError: errors.New("failed to list installed versions"),
-			latestReleasedError:  nil,
-			want:                 false,
-			wantErr:              true,
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:            "error listing installed versions",
+			toolName:        "go",
+			concreteVersion: "1.21.5",
+			setupFake: func(m *fakeExecEnv) {
+				m.setError(miseLsInstalledCmd("go"), errors.New("failed to list"))
+			},
+			want:    false,
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			latestInstalledResolver := func(toolName provider.ToolID, version string) (string, error) {
-				if tt.latestInstalledError != nil {
-					return "", tt.latestInstalledError
-				}
-				return "fake.version", nil
-			}
-			latestReleasedResolver := func(toolName provider.ToolID, version string) (string, error) {
-				if tt.latestInstalledError != nil {
-					return "", tt.latestReleasedError
-				}
-				return "fake.version", nil
-			}
+			fake := newFakeExecEnv()
+			tt.setupFake(fake)
 
-			got, err := isAlreadyInstalled(tt.tool, latestInstalledResolver, latestReleasedResolver)
+			provider := &MiseToolProvider{ExecEnv: fake}
+			got, err := provider.isAlreadyInstalled(tt.toolName, tt.concreteVersion)
 
 			if tt.wantErr {
 				require.Error(t, err)
