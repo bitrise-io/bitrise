@@ -14,6 +14,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+//nolint:exhaustruct // CLI command definitions don't need all fields initialized
 var stepInfoCommand = cli.Command{
 	Name:  "step-info",
 	Usage: "Prints the step definition (step.yml content).",
@@ -153,11 +154,14 @@ func QueryStepInfoFromGit(gitURL, tagOrBranch string) (models.StepInfoModel, err
 	}
 
 	return models.StepInfoModel{
-		Library:       "git",
-		ID:            gitURL,
-		Version:       tagOrBranch,
-		Step:          step,
-		DefinitionPth: stepDefinitionPth,
+		Library:         "git",
+		ID:              gitURL,
+		Version:         tagOrBranch,
+		OriginalVersion: "",
+		LatestVersion:   "",
+		GroupInfo:       models.StepGroupInfoModel{},
+		Step:            step,
+		DefinitionPth:   stepDefinitionPth,
 	}, nil
 }
 
@@ -176,11 +180,14 @@ func QueryStepInfoFromPath(dir string) (models.StepInfoModel, error) {
 	}
 
 	return models.StepInfoModel{
-		Library:       "path",
-		ID:            dir,
-		Version:       "",
-		Step:          step,
-		DefinitionPth: stepDefinitionPth,
+		Library:         "path",
+		ID:              dir,
+		Version:         "",
+		OriginalVersion: "",
+		LatestVersion:   "",
+		GroupInfo:       models.StepGroupInfoModel{},
+		Step:            step,
+		DefinitionPth:   stepDefinitionPth,
 	}, nil
 }
 
@@ -216,12 +223,13 @@ func QueryStepInfoFromLibrary(library, id, version string, log stepman.Logger) (
 	}
 
 	return models.StepInfoModel{
-		Library:       library,
-		ID:            id,
-		Version:       stepVersion.Version,
-		LatestVersion: stepVersion.LatestAvailableVersion,
-		Step:          stepVersion.Step,
-		DefinitionPth: stepDefinitionPth,
-		GroupInfo:     groupInfo,
+		Library:         library,
+		ID:              id,
+		Version:         stepVersion.Version,
+		OriginalVersion: "",
+		LatestVersion:   stepVersion.LatestAvailableVersion,
+		GroupInfo:       groupInfo,
+		Step:            stepVersion.Step,
+		DefinitionPth:   stepDefinitionPth,
 	}, nil
 }
