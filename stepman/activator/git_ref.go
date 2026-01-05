@@ -52,5 +52,7 @@ even if the repository is open source!`)
 	return ActivatedStep{
 		StepYMLPath:     stepYMLPath,
 		DidStepLibUpdate: false,
+		ActivationType: ActivationTypeGitRef,
+		ExecutablePath: "",
 	}, nil
 }

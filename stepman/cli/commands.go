@@ -2,6 +2,7 @@ package cli
 
 import "github.com/urfave/cli"
 
+//nolint:exhaustruct // CLI command definitions don't need all fields initialized
 var (
 	commands = []cli.Command{
 		{

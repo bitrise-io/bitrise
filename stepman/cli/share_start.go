@@ -106,6 +106,8 @@ func start(c *cli.Context) error {
 
 	share := ShareModel{
 		Collection: collectionURI,
+		StepID:     "",
+		StepTag:    "",
 	}
 	if err := WriteShareSteplibToFile(share); err != nil {
 		failf("Failed to save share steplib to file, error: %s", err)

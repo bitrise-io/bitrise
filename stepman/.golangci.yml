@@ -1,0 +1,14 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+  - exhaustruct
+  settings:
+    exhaustruct:
+      allow-empty: true  # Allow all-empty structs, only flag partially filled ones
+  exclusions:
+    rules:
+    - path: (.+)_test\.go
+      linters:
+      - exhaustruct

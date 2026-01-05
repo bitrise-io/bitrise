@@ -82,6 +82,7 @@ const (
 	StepYMLOverrideKey = "stepyml-override"
 )
 
+//nolint:exhaustruct // CLI command definitions don't need all fields initialized
 var (
 	// App flags
 	flLogLevel = cli.StringFlag{
@@ -145,6 +146,7 @@ var (
 	}
 )
 
+//nolint:exhaustruct // CLI command definitions don't need all fields initialized
 func initHelpAndVersionFlags() {
 	cli.HelpFlag = cli.BoolFlag{
 		Name:  HelpKey + ", " + helpKeyShort,

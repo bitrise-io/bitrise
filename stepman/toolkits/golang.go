@@ -79,7 +79,7 @@ func selectGoConfiguration(logger stepman.Logger) (bool, ToolkitCheckResult, GoC
 	{
 		binPath, err := exec.LookPath("go")
 		if err == nil {
-			potentialGoConfigurations = append(potentialGoConfigurations, GoConfigurationModel{GoBinaryPath: binPath})
+			potentialGoConfigurations = append(potentialGoConfigurations, GoConfigurationModel{GoBinaryPath: binPath, GOROOT: ""})
 		}
 	}
 	// from Bitrise Toolkits

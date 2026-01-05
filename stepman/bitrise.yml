@@ -36,7 +36,7 @@ workflows:
 
             curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$INSTALL_DIR" v2.6.0
             asdf reshim golang
-            "$INSTALL_DIR"/golangci-lint run
+            "$INSTALL_DIR"/golangci-lint run --config .golangci.yml
     - go-test: { }
     - script:
         title: Run integration tests
