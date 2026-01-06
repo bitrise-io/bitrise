@@ -125,6 +125,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 		name                 string
 		tool                 provider.ToolRequest
 		latestInstalledError error
+		latestReleasedError  error
 		want                 bool
 		wantErr              bool
 	}{
@@ -135,6 +136,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "18.20.0",
 			},
 			latestInstalledError: nil,
+			latestReleasedError:  nil,
 			want:                 true,
 			wantErr:              false,
 		},
@@ -145,6 +147,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "3.11",
 			},
 			latestInstalledError: errNoMatchingVersion,
+			latestReleasedError:  nil,
 			want:                 false,
 			wantErr:              false,
 		},
@@ -155,6 +158,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "3.0",
 			},
 			latestInstalledError: errors.New("failed to list installed versions"),
+			latestReleasedError:  nil,
 			want:                 false,
 			wantErr:              true,
 		},
@@ -168,8 +172,14 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				}
 				return "fake.version", nil
 			}
+			latestReleasedResolver := func(toolName provider.ToolID, version string) (string, error) {
+				if tt.latestInstalledError != nil {
+					return "", tt.latestReleasedError
+				}
+				return "fake.version", nil
+			}
 
-			got, err := isAlreadyInstalled(tt.tool, latestInstalledResolver)
+			got, err := isAlreadyInstalled(tt.tool, latestInstalledResolver, latestReleasedResolver)
 
 			if tt.wantErr {
 				require.Error(t, err)
