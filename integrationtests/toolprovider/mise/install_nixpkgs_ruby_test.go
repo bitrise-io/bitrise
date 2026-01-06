@@ -4,6 +4,7 @@
 package mise
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
@@ -12,6 +13,9 @@ import (
 )
 
 func TestMiseInstallNixpkgsRuby(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Skipping Nixpkgs Ruby install test on non-macOS platform")
+	}
 	tests := []struct {
 		name               string
 		tool               string

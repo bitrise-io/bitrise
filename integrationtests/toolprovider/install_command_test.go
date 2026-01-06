@@ -238,10 +238,10 @@ func TestToolsLatestCommand(t *testing.T) {
 		},
 		{
 			name:         "latest with JSON format",
-			toolSpec:     "ruby@3",
+			toolSpec:     "go@1",
 			outputFormat: "json",
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
+				require.NoError(t, err, "output: %s", output)
 				var result map[string]string
 				jsonErr := json.Unmarshal([]byte(output), &result)
 				require.NoError(t, jsonErr)
