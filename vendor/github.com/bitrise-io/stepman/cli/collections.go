@@ -54,13 +54,15 @@ func (output OutputModel) JSON() string {
 // NewOutput ...
 func NewOutput(steplibInfos []models.SteplibInfoModel) OutputModel {
 	return OutputModel{
-		Data: &steplibInfos,
+		Data:  &steplibInfos,
+		Error: "",
 	}
 }
 
 // NewErrorOutput ...
 func NewErrorOutput(err error) OutputModel {
 	return OutputModel{
+		Data:  nil,
 		Error: err.Error(),
 	}
 }

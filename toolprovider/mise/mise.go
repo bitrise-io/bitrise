@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -24,13 +23,13 @@ import (
 // 3. Verify checksums
 // 4. Update version string and checksums below
 // 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
-const misePreviewVersion = "v2025.10.8"
+const misePreviewVersion = "v2025.12.1"
 
 var misePreviewChecksums = map[string]string{
-	"linux-x64":   "895db0eb777b90c449c4c79a36bd5f749fd614749876782ea32ede02c45e6bc2",
-	"linux-arm64": "c949d574a46b68bf8d5834d099614818d6774935d908f53051f47d24ac0601c8",
-	"macos-x64":   "422260046b8a24f0c72bfad60ac94837f834c83b5e7823e79f997ae7ff660de2",
-	"macos-arm64": "bc7c40c48a43dfd80537e7ca5e55a2cf7dd37924bf7595d74b29848a6ab0e2ea",
+	"linux-x64":   "0e62b1a0a8b87329d0cf24fc6af5d1c3aae0819194bea2f43fcf3f556edc9c29",
+	"linux-arm64": "35573ccc8f13895884b8e7a3365736c2942ad531ce24fc420ba0a941dbb57ce5",
+	"macos-x64":   "68b250632b1f1f29f6116ca513d1641097dfdc2cf05520ee0ca23907962b3d6f",
+	"macos-arm64": "94659ac9b7b30d149464ef4a76498182b0c5cadeccef1811ab9e75ff3d1ad159",
 }
 
 const miseStableVersion = "v2025.10.8"
@@ -43,27 +42,16 @@ var miseStableChecksums = map[string]string{
 }
 
 type MiseToolProvider struct {
-	ExecEnv    execenv.ExecEnv
-	ToolConfig models.ToolConfigModel
+	ExecEnv        execenv.ExecEnv
+	UseFastInstall bool
 }
 
-func NewToolProvider(installDir string, dataDir string, toolConfig ...models.ToolConfigModel) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, useFastInstall bool) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
 	if dataDir == "" {
 		return nil, errors.New("data directory must be provided")
-	}
-
-	// Use provided config or default to empty config with false values
-	var config models.ToolConfigModel
-	if len(toolConfig) > 0 {
-		config = toolConfig[0]
-	} else {
-		config = models.ToolConfigModel{
-			Provider:                "mise",
-			ExperimentalFastInstall: false,
-		}
 	}
 
 	err := os.MkdirAll(installDir, 0755)
@@ -91,7 +79,7 @@ func NewToolProvider(installDir string, dataDir string, toolConfig ...models.Too
 			"MISE_NODE_COREPACK": "1",
 		},
 		),
-		ToolConfig: config,
+		UseFastInstall: useFastInstall,
 	}, nil
 }
 
@@ -115,7 +103,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.ToolConfig, nixpkgs.ShouldUseBackend)
+	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -126,7 +114,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	installRequest := installRequest(tool, useNix)
 
 	// Note: tools get reinstalled with Nix even if they are already installed with the core plugin for consistency.
-	isAlreadyInstalled, err := isAlreadyInstalled(installRequest, m.resolveToLatestInstalled)
+	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
@@ -178,18 +166,10 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	return activationResult, nil
 }
 
-func isEdgeStack() (isEdge bool) {
-	if stack, variablePresent := os.LookupEnv("BITRISEIO_STACK_ID"); variablePresent && strings.Contains(stack, "edge") {
-		isEdge = true
-	} else {
-		isEdge = false
-	}
-	log.Debugf("[TOOLPROVIDER] Stack is edge: %s", isEdge)
-	return isEdge
-}
-
 func GetMiseVersion() string {
-	if isEdgeStack() {
+	isEdge := configs.IsEdgeStack()
+	log.Debugf("[TOOLPROVIDER] Stack is edge: %t", isEdge)
+	if isEdge {
 		return misePreviewVersion
 	}
 	// Fallback to stable version for non-edge stacks
@@ -197,7 +177,7 @@ func GetMiseVersion() string {
 }
 
 func GetMiseChecksums() map[string]string {
-	if isEdgeStack() {
+	if configs.IsEdgeStack() {
 		return misePreviewChecksums
 	}
 	// Fallback to stable version for non-edge stacks

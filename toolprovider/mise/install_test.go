@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
@@ -126,6 +125,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 		name                 string
 		tool                 provider.ToolRequest
 		latestInstalledError error
+		latestReleasedError  error
 		want                 bool
 		wantErr              bool
 	}{
@@ -136,6 +136,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "18.20.0",
 			},
 			latestInstalledError: nil,
+			latestReleasedError:  nil,
 			want:                 true,
 			wantErr:              false,
 		},
@@ -146,6 +147,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "3.11",
 			},
 			latestInstalledError: errNoMatchingVersion,
+			latestReleasedError:  nil,
 			want:                 false,
 			wantErr:              false,
 		},
@@ -156,6 +158,7 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				UnparsedVersion: "3.0",
 			},
 			latestInstalledError: errors.New("failed to list installed versions"),
+			latestReleasedError:  nil,
 			want:                 false,
 			wantErr:              true,
 		},
@@ -169,8 +172,14 @@ func TestIsAlreadyInstalled(t *testing.T) {
 				}
 				return "fake.version", nil
 			}
+			latestReleasedResolver := func(toolName provider.ToolID, version string) (string, error) {
+				if tt.latestInstalledError != nil {
+					return "", tt.latestReleasedError
+				}
+				return "fake.version", nil
+			}
 
-			got, err := isAlreadyInstalled(tt.tool, latestInstalledResolver)
+			got, err := isAlreadyInstalled(tt.tool, latestInstalledResolver, latestReleasedResolver)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -198,6 +207,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
+				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -211,6 +221,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3",
 			resolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			setupFake: func(m *fakeExecEnv) {
+				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -224,6 +235,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "0.0.1",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
+				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -237,6 +249,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
+				m.setResponse("settings experimental=true", "")
 				m.setError(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), fmt.Errorf("fake error"))
 			},
 			want: false,
@@ -247,6 +260,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
+				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -271,11 +285,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				return true
 			}
 
-			toolConfig := models.ToolConfigModel{
-				ExperimentalFastInstall: true,
-			}
-
-			got := canBeInstalledWithNix(request, execEnv, toolConfig, nixChecker)
+			got := canBeInstalledWithNix(request, execEnv, true, nixChecker)
 			require.Equal(t, tt.want, got)
 
 		})

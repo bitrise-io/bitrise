@@ -25,6 +25,7 @@ var (
 		initCmd,
 		setupCommand,
 		stepsCommand,
+		toolsCommand,
 		{
 			Name:   "version",
 			Usage:  "Prints the version",

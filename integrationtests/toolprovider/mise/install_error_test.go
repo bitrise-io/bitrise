@@ -14,7 +14,7 @@ import (
 func TestNoMatchingVersionError(t *testing.T) {
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false)
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()

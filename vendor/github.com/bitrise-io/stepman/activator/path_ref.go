@@ -52,5 +52,7 @@ func ActivatePathRefStep(
 	return ActivatedStep{
 		StepYMLPath:     activatedStepYMLPath,
 		DidStepLibUpdate: false,
+		ActivationType: ActivationTypePathRef,
+		ExecutablePath: "",
 	}, nil
 }

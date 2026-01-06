@@ -3,22 +3,22 @@ package toolprovider
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/bitrise-io/colorstring"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string) ([]envmanModels.EnvironmentItemModel, error) {
-	startTime := time.Now()
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -28,16 +28,28 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		return nil, nil
 	}
 
-	toolConfig := defaultToolConfig()
-	if config.ToolConfig != nil {
-		if config.ToolConfig.Provider != "" {
-			toolConfig.Provider = config.ToolConfig.Provider
-		}
-		toolConfig.ExperimentalFastInstall = config.ToolConfig.ExperimentalFastInstall
-	}
-	providerID := toolConfig.Provider
+	provider := selectProvider(config)
+	useFastInstall := selectFastInstall(config)
+
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
+}
+
+func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+	startTime := time.Now()
+
+	log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
 
 	var toolProvider provider.ToolProvider
+	var err error
+
+	hasRubyRequest := slices.ContainsFunc(toolRequests, func(tr provider.ToolRequest) bool {
+		return tr.ToolName == "ruby"
+	})
+	if useFastInstall && !silent && hasRubyRequest {
+		log.Printf("")
+		log.Warn("Using fast Ruby install because running on edge stack. This behavior is going to be the default on stable stacks soon. If you notice issues, switch to a stable stack temporarily and let us know at https://github.com/bitrise-io/bitrise/issues/new?title=Fast%20tool%20install%20issue:%20")
+	}
+
 	switch providerID {
 	case "asdf":
 		toolProvider = &asdf.AsdfToolProvider{
@@ -50,7 +62,7 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		}
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, toolConfig)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}
@@ -63,15 +75,20 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
 	}
 
-	printToolRequests(toolRequests)
+	if !silent {
+		printToolRequests(toolRequests)
+	}
 
 	var toolInstalls []provider.ToolInstallResult
 	for _, toolRequest := range toolRequests {
 		toolStartTime := time.Now()
-		canonicalToolID := getCanonicalToolID(toolRequest.ToolName)
+		canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 		toolRequest.ToolName = canonicalToolID
 
-		printInstallStart(toolRequest)
+		if !silent {
+			printInstallStart(toolRequest)
+		}
+
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
 			var toolErr provider.ToolInstallError
@@ -85,7 +102,9 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		}
 		toolInstalls = append(toolInstalls, result)
 		duration := time.Since(toolStartTime)
-		printInstallResult(toolRequest, result, duration)
+		if !silent {
+			printInstallResult(toolRequest, result, duration)
+		}
 		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
@@ -98,9 +117,17 @@ func Run(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, w
 		activations = append(activations, activation)
 	}
 
-	duration := time.Since(startTime).Round(time.Millisecond)
-	log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
-	log.Printf("")
+	if !silent {
+		duration := time.Since(startTime).Round(time.Millisecond)
+		log.Printf("%s (took %s)", colorstring.Green("✓ Tool setup complete"), duration)
+		log.Printf("")
+	}
 
-	return convertToEnvmanEnvs(activations), nil
+	return activations, nil
+}
+
+// InstallSingleTool installs a single tool with the specified version using the given provider.
+// This is a convenience wrapper around installTools for installing just one tool.
+func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
 }

@@ -12,6 +12,19 @@ import (
 
 var errNoMatchingVersion = errors.New("no matching version found")
 
+// extractLastLine extracts the last non-empty line from multi-line output.
+// This is needed because mise may output plugin installation messages before the actual version.
+func extractLastLine(output string) string {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			return line
+		}
+	}
+	return ""
+}
+
 func (m *MiseToolProvider) resolveToConcreteVersionAfterInstall(tool provider.ToolRequest) (string, error) {
 	// Mise doesn't tell us what version it resolved to when installing the user-provided (and potentially fuzzy) version.
 	// But we can use `mise latest` to find out the concrete version.
@@ -34,12 +47,13 @@ func (m *MiseToolProvider) resolveToLatestReleased(toolName provider.ToolID, ver
 
 func resolveToLatestReleased(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (string, error) {
 	// Even if version is empty string "sometool@" will not cause an error.
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", fmt.Sprintf("%s@%s", toolName, version))
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
 	if err != nil {
 		return "", fmt.Errorf("mise latest %s@%s: %w", toolName, version, err)
 	}
 
-	v := strings.TrimSpace(string(output))
+	// Extract the last non-empty line, as mise may output plugin installation messages before the version
+	v := extractLastLine(string(output))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
@@ -64,7 +78,8 @@ func resolveToLatestInstalled(execEnv execenv.ExecEnv, toolName provider.ToolID,
 		return "", fmt.Errorf("mise latest --installed %s: %w", toolString, err)
 	}
 
-	v := strings.TrimSpace(string(output))
+	// Extract the last non-empty line, as mise may output plugin installation messages before the version
+	v := extractLastLine(string(output))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
@@ -72,26 +87,49 @@ func resolveToLatestInstalled(execEnv execenv.ExecEnv, toolName provider.ToolID,
 	return v, nil
 }
 
+// versionExists checks whether the given version of the tool is available.
+// Note: this checks both local and remote availability, does not check strategy.
 func (m *MiseToolProvider) versionExists(toolName provider.ToolID, version string) (bool, error) {
 	return versionExists(m.ExecEnv, toolName, version)
 }
 
-func versionExists(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
-	if version == "installed" {
-		// List all installed versions to see if there is at least one version available.
-		output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--json", "--quiet", string(toolName))
+// versionExistsLocal checks whether the given version of the tool is installed locally.
+// Or if version is empty, checks whether at least one version is installed.
+func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
+	// List all installed versions to see if there is at least one version available (or a specific one).
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls", "--installed", "--json", "--quiet", string(toolName))
+	if err != nil {
+		return false, fmt.Errorf("mise ls --installed %s: %w", toolName, err)
+	}
+
+	trimmed := strings.TrimSpace(string(output))
+	if trimmed != "" {
+		// Parse JSON array returned by mise and check if the provided version is installed (when version is not empty).
+		installedExists, err := parseInstalledVersionsJSON(trimmed, version)
 		if err != nil {
-			return false, fmt.Errorf("mise ls --installed %s: %w", toolName, err)
+			return false, fmt.Errorf("parsing mise ls --installed %s output: %w", toolName, err)
 		}
 
-		trimmed := strings.TrimSpace(string(output))
-		if trimmed != "" {
-			// Parse JSON array returned by mise.
-			if installedExists, err := parseInstalledVersionsJSON(trimmed); err != nil {
-				return false, fmt.Errorf("parsing mise ls --installed %s output: %w", toolName, err)
-			} else if installedExists {
-				return true, nil
-			}
+		if installedExists {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// versionExists checks whether the given version of the tool is available.
+// Note: this checks both local and remote availability, does not check strategy.
+func versionExists(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
+	// This and 'latest' keywords are not equal to strategy.
+	if version == "installed" {
+		existsLocally, err := versionExistsLocal(execEnv, toolName, "")
+		if err != nil {
+			return false, err
+		}
+
+		if existsLocally {
+			return true, nil
 		}
 
 		// Fallback: no installed versions found, fall through to remote (ls-remote) existence check.
@@ -116,16 +154,22 @@ func versionExists(execEnv execenv.ExecEnv, toolName provider.ToolID, version st
 }
 
 // parseInstalledVersionsJSON returns true if at least one installed entry is present.
-func parseInstalledVersionsJSON(raw string) (bool, error) {
+func parseInstalledVersionsJSON(raw, requiredVersion string) (bool, error) {
 	var entries []struct {
-		Installed bool `json:"installed"`
+		Version   string `json:"version"`
+		Installed bool   `json:"installed"`
 	}
 	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
 		return false, err
 	}
 	for _, e := range entries {
 		if e.Installed {
-			return true, nil
+			if requiredVersion == "" {
+				return true, nil
+			}
+			if e.Version == requiredVersion {
+				return true, nil
+			}
 		}
 	}
 	return false, nil

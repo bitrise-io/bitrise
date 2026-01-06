@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
@@ -32,15 +31,20 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 // The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
 type nixChecker func(tool provider.ToolRequest) bool
 
-func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, toolConfig models.ToolConfigModel, nixChecker nixChecker) bool {
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, useFastInstall bool, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
-	fastInstall := toolConfig.ExperimentalFastInstall
 	useNix := nixChecker(tool)
 
-	canProceed := (fastInstall && useNix) || forceNix
+	canProceed := (useFastInstall && useNix) || forceNix
 	if !canProceed {
 		return false
+	}
+
+	// Enable experimental settings for custom backend
+	if _, err := execEnv.RunMise("settings", "experimental=true"); err != nil {
+		log.Warnf("Error while enabling experimental settings: %v.", err)
+		return forceNix
 	}
 
 	// If the plugin is already installed, Mise will not throw an error.
@@ -95,27 +99,58 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 	return nil
 }
 
-// Helper for easier testing.
-// Inputs: tool ID, tool version.
-// Returns: latest installed version of the tool, or an error if no matching version is installed.
-type latestInstalledResolver func(provider.ToolID, string) (string, error)
+// latestResolver is a function type for resolving tool versions.
+// It takes a tool ID and a version prefix/pattern, and returns the latest matching version.
+// Returns an error if no matching version is found.
+type latestResolver func(provider.ToolID, string) (string, error)
 
-func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (bool, error) {
-	_, err := latestInstalledResolver(tool.ToolName, tool.UnparsedVersion)
-	var isAlreadyInstalled bool
-	if err != nil {
-		if errors.Is(err, errNoMatchingVersion) {
-			isAlreadyInstalled = false
-		} else {
-			return false, err
+func (m *MiseToolProvider) isAlreadyInstalled(tool provider.ToolRequest) (bool, error) {
+	latestInstalledResolver := func(toolName provider.ToolID, versionPrefix string) (string, error) {
+		resolvedVersion, err := m.resolveToLatestInstalled(toolName, versionPrefix)
+		if err != nil {
+			return "", err
 		}
-	} else {
-		isAlreadyInstalled = true
+		// This is a secondary check for installed versions as a list too, because 'latest --installed tool@version' command
+		// is not reliable.
+		exists, err := versionExistsLocal(m.ExecEnv, toolName, resolvedVersion)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return "", errNoMatchingVersion
+		}
+		return resolvedVersion, nil
 	}
-	return isAlreadyInstalled, nil
+
+	return isAlreadyInstalled(tool, latestInstalledResolver, m.resolveToLatestReleased)
 }
 
-func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestInstalledResolver) (string, error) {
+func isAlreadyInstalled(tool provider.ToolRequest, latestInstalledResolver, latestReleasedResolver latestResolver) (bool, error) {
+	toolVersion := tool.UnparsedVersion
+	if tool.ResolutionStrategy == provider.ResolutionStrategyLatestReleased {
+		// User might gave an incomplete version string, need to resolve to the full version first,
+		// so we compare the wanted version to installed versions.
+		// e.g. 3.3 -> 3.3.9
+		v, err := latestReleasedResolver(tool.ToolName, toolVersion)
+		if err != nil {
+			return false, err
+		}
+		toolVersion = v
+	}
+
+	_, err := latestInstalledResolver(tool.ToolName, toolVersion)
+	if err == nil {
+		return true, nil
+	}
+
+	if errors.Is(err, errNoMatchingVersion) {
+		return false, nil
+	}
+
+	return false, err
+}
+
+func miseVersionString(tool provider.ToolRequest, latestInstalledResolver latestResolver) (string, error) {
 	var miseVersionString string
 	resolutionStrategy := tool.ResolutionStrategy
 	if tool.UnparsedVersion == "installed" {
