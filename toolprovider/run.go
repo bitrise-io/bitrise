@@ -3,6 +3,7 @@ package toolprovider
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/bitrise-io/colorstring"
@@ -41,7 +42,10 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 	var toolProvider provider.ToolProvider
 	var err error
 
-	if useFastInstall && !silent {
+	hasRubyRequest := slices.ContainsFunc(toolRequests, func(tr provider.ToolRequest) bool {
+		return tr.ToolName == "ruby"
+	})
+	if useFastInstall && !silent && hasRubyRequest {
 		log.Printf("")
 		log.Warn("Using fast Ruby install because running on edge stack. This behavior is going to be the default on stable stacks soon. If you notice issues, switch to a stable stack temporarily and let us know at https://github.com/bitrise-io/bitrise/issues/new?title=Fast%20tool%20install%20issue:%20")
 	}
