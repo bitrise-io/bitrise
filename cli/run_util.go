@@ -121,7 +121,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepPlan.UUID,
 			tracker,
 			envsForStepRun,
-			r.config.Secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
 			stepPlan.ContainerID,
@@ -201,7 +200,6 @@ func (r WorkflowRunner) activateAndRunStep(
 	stepExecutionID string,
 	tracker analytics.Tracker,
 	environments []envmanModels.EnvironmentItemModel,
-	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
 	isStepLibOfflineMode bool,
 	containerID, groupID string,
@@ -281,7 +279,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	}
 
 	// Prepare envs for the step run
-	prepareEnvsResult := r.prepareEnvsForStepRun(stepExecutionID, stepDir, mergedStep.Inputs, secrets, buildRunResults, environments)
+	prepareEnvsResult := r.prepareEnvsForStepRun(stepExecutionID, stepDir, mergedStep.Inputs, buildRunResults, environments)
 	if prepareEnvsResult.Err != nil {
 		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, prepareEnvsResult.Err, false, map[string]string{}, nil)
 	}
@@ -458,7 +456,6 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 	stepExecutionID string,
 	stepDir string,
 	stepInputs []envmanModels.EnvironmentItemModel,
-	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
 	environments []envmanModels.EnvironmentItemModel,
 ) prepareEnvsForStepRunResult {
@@ -520,7 +517,7 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 		return newPrepareEnvsForStepRunResult(nil, nil, nil, nil, nil, "", err)
 	}
 
-	stepSecretKeys, stepSecretValues := tools.GetSecretKeysAndValues(secrets)
+	stepSecretKeys, stepSecretValues := tools.GetSecretKeysAndValues(r.config.Secrets)
 	if configs.IsSecretEnvsFiltering {
 		sensitiveEnvs, err := getSensitiveEnvs(stepDeclaredEnvironments, expandedStepEnvironment)
 		if err != nil {

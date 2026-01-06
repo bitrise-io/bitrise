@@ -255,7 +255,19 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		targetWorkflow.Title = r.config.Workflow
 	}
 
-	r.workflowEnvManager = envmanager.NewWorkflowEnvManager(r.config.Secrets, r.config.Config.App.Environments, r.config.Workflow, targetWorkflow.Title, targetWorkflow.Environments)
+	// TODO: envman init is still needed here.
+	//  We initialise the envstore, that will be used by steps to write step output envs.
+	//  After the step run process output envs are read and the envstore is clear for the next step.
+	appEnvs := r.config.Config.App.Environments
+	appEnvs = append(appEnvs, envmanModels.EnvironmentItemModel{
+		configs.EnvstorePathEnvKey: configs.OutputEnvstorePath,
+	})
+	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
+		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %w", err)
+	}
+	//
+
+	r.workflowEnvManager = envmanager.NewWorkflowEnvManager(r.config.Secrets, appEnvs, r.config.Workflow, targetWorkflow.Title, targetWorkflow.Environments)
 
 	//// App level environment
 	//environments := append(r.config.Secrets, r.config.Config.App.Environments...)
