@@ -99,9 +99,9 @@ func (m *MiseToolProvider) installToolVersion(tool provider.ToolRequest) error {
 	return nil
 }
 
-// Helper for easier testing.
-// Inputs: tool ID, tool version.
-// Returns: latest installed version of the tool, or an error if no matching version is installed.
+// latestResolver is a function type for resolving tool versions.
+// It takes a tool ID and a version prefix/pattern, and returns the latest matching version.
+// Returns an error if no matching version is found.
 type latestResolver func(provider.ToolID, string) (string, error)
 
 func (m *MiseToolProvider) isAlreadyInstalled(tool provider.ToolRequest) (bool, error) {
