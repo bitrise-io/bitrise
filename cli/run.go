@@ -14,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
+	"github.com/bitrise-io/bitrise/v2/cli/envmanager"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -180,8 +181,9 @@ type WorkflowRunner struct {
 	config RunConfig
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig   *configs.AgentConfig
-	dockerManager DockerManager
+	agentConfig        *configs.AgentConfig
+	dockerManager      DockerManager
+	workflowEnvManager *envmanager.WorkflowEnvManager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig) WorkflowRunner {
@@ -253,32 +255,21 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 		targetWorkflow.Title = r.config.Workflow
 	}
 
-	// Envman setup
-	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.EnvstorePathEnvKey, err)
-	}
+	r.workflowEnvManager = envmanager.NewWorkflowEnvManager(r.config.Secrets, r.config.Config.App.Environments, r.config.Workflow, targetWorkflow.Title, targetWorkflow.Environments)
 
-	if err := os.Setenv(configs.FormattedOutputPathEnvKey, configs.FormattedOutputPath); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.FormattedOutputPathEnvKey, err)
-	}
-
-	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %w", err)
-	}
-
-	// App level environment
-	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
-
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
-	}
-	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
-		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
-	}
-	buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
-	environments = append(environments, buildRunResultEnvs...)
-
-	environments = append(environments, targetWorkflow.Environments...)
+	//// App level environment
+	//environments := append(r.config.Secrets, r.config.Config.App.Environments...)
+	//
+	//if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
+	//	return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
+	//}
+	//if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_TITLE", targetWorkflow.Title); err != nil {
+	//	return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_TITLE env: %w", err)
+	//}
+	//buildRunResultEnvs := bitrise.BuildStatusEnvs(false)
+	//environments = append(environments, buildRunResultEnvs...)
+	//
+	//environments = append(environments, targetWorkflow.Environments...)
 
 	// Bootstrap Toolkits
 	for _, aToolkit := range toolkits.AllSupportedToolkits(r.logger) {
@@ -333,18 +324,22 @@ func (r WorkflowRunner) runWorkflows(tracker analytics.Tracker) (models.BuildRun
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		bitrise.PrintRunningWorkflow(workflowRunPlan.WorkflowTitle)
 
-		isLastWorkflow := i == len(plan.ExecutionPlan)-1
 		workflowToRun := r.config.Config.Workflows[workflowRunPlan.WorkflowID]
-		environments = append(environments, workflowToRun.Environments...)
+
+		//environments = append(environments, workflowToRun.Environments...)
 
 		// Toolprovider entrypoint
 		toolEnvs, err := toolprovider.Run(r.config.Config, tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID)
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 		}
-		environments = append(environments, toolEnvs...)
+		//environments = append(environments, toolEnvs...)
 
-		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, tracker, buildIDProperties)
+		workflowRunEnvs := append(workflowToRun.Environments, toolEnvs...)
+		r.workflowEnvManager.WorkflowStart(workflowRunEnvs)
+
+		isLastWorkflow := i == len(plan.ExecutionPlan)-1
+		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, isLastWorkflow, tracker, buildIDProperties)
 	}
 
 	// Build finished

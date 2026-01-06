@@ -43,13 +43,12 @@ func (r WorkflowRunner) runWorkflow(
 	plan models.WorkflowExecutionPlan,
 	steplibSource string,
 	buildRunResults models.BuildRunResultsModel,
-	environments *[]envmanModels.EnvironmentItemModel, secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool, tracker analytics.Tracker, buildIDProperties coreanalytics.Properties,
 ) models.BuildRunResultsModel {
 	workflowIDProperties := coreanalytics.Properties{analytics.WorkflowExecutionID: plan.UUID}
 	tracker.SendWorkflowStarted(buildIDProperties.Merge(workflowIDProperties), plan.WorkflowID, plan.WorkflowTitle)
 
-	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, environments, secrets, isLastWorkflow, tracker, workflowIDProperties)
+	results := r.activateAndRunSteps(plan, steplibSource, buildRunResults, isLastWorkflow, tracker, workflowIDProperties)
 
 	tracker.SendWorkflowFinished(workflowIDProperties, results.IsBuildFailed())
 
@@ -60,8 +59,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 	plan models.WorkflowExecutionPlan,
 	defaultStepLibSource string,
 	buildRunResults models.BuildRunResultsModel,
-	environments *[]envmanModels.EnvironmentItemModel,
-	secrets []envmanModels.EnvironmentItemModel,
 	isLastWorkflow bool,
 	tracker analytics.Tracker,
 	workflowIDProperties coreanalytics.Properties,
@@ -77,38 +74,40 @@ func (r WorkflowRunner) activateAndRunSteps(
 	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
-	currentStepBundleUUID := ""
-	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
+	//currentStepBundleUUID := ""
+	//var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
 
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
+		envsForStepRun := r.workflowEnvManager.EnvsForStepStart(stepPlan)
+
 		if stepPlan.WithGroupUUID != currentStepGroupID {
 			if stepPlan.WithGroupUUID != "" {
 				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
+					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, envsForStepRun, stepPlan.WithGroupUUID, plan.WorkflowTitle)
 				}
 			}
 
 			currentStepGroupID = stepPlan.WithGroupUUID
 		}
 
-		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
-
-		if stepPlan.StepBundleUUID != currentStepBundleUUID {
-			if stepPlan.StepBundleUUID != "" {
-				currentStepBundleEnvVars = append(workflowEnvironments, stepPlan.StepBundleEnvs...)
-			}
-
-			currentStepBundleUUID = stepPlan.StepBundleUUID
-		}
-
-		var envsForStepRun []envmanModels.EnvironmentItemModel
-		if currentStepBundleUUID != "" {
-			envsForStepRun = currentStepBundleEnvVars
-		} else {
-			envsForStepRun = workflowEnvironments
-		}
+		//workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
+		//
+		//if stepPlan.StepBundleUUID != currentStepBundleUUID {
+		//	if stepPlan.StepBundleUUID != "" {
+		//		currentStepBundleEnvVars = append(workflowEnvironments, stepPlan.StepBundleEnvs...)
+		//	}
+		//
+		//	currentStepBundleUUID = stepPlan.StepBundleUUID
+		//}
+		//
+		//var envsForStepRun []envmanModels.EnvironmentItemModel
+		//if currentStepBundleUUID != "" {
+		//	envsForStepRun = currentStepBundleEnvVars
+		//} else {
+		//	envsForStepRun = workflowEnvironments
+		//}
 
 		stepStartTime := time.Now()
 		stepIDProperties := coreanalytics.Properties{analytics.StepExecutionID: stepPlan.UUID}
@@ -122,7 +121,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepPlan.UUID,
 			tracker,
 			envsForStepRun,
-			secrets,
+			r.config.Secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
 			stepPlan.ContainerID,
@@ -132,10 +131,10 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepPlan.StepBundleRunIfs,
 		)
 
-		*environments = append(*environments, result.OutputEnvironments...)
-		if currentStepBundleUUID != "" {
-			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
-		}
+		//*environments = append(*environments, result.OutputEnvironments...)
+		//if currentStepBundleUUID != "" {
+		//	currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
+		//}
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 
@@ -149,28 +148,30 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
 
-		previousBuildRunResult := buildRunResults
+		//previousBuildRunResult := buildRunResults
 
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
 
-		currentBuildRunResult := buildRunResults
-		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
-			if len(currentBuildRunResult.FailedSteps) == 1 {
-				failedStepRunResult := currentBuildRunResult.FailedSteps[0]
-				failedStepEnvs := bitrise.FailedStepEnvs(failedStepRunResult)
-				*environments = append(*environments, failedStepEnvs...)
-				if currentStepBundleUUID != "" {
-					currentStepBundleEnvVars = append(currentStepBundleEnvVars, failedStepEnvs...)
-				}
-			}
+		r.workflowEnvManager.UpdateWithStepFinished(result.OutputEnvironments, buildRunResults)
 
-			buildStatusEnvs := bitrise.BuildStatusEnvs(true)
-			*environments = append(*environments, buildStatusEnvs...)
-			if currentStepBundleUUID != "" {
-				currentStepBundleEnvVars = append(currentStepBundleEnvVars, buildStatusEnvs...)
-			}
-		}
+		//currentBuildRunResult := buildRunResults
+		//if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
+		//	if len(currentBuildRunResult.FailedSteps) == 1 {
+		//		failedStepRunResult := currentBuildRunResult.FailedSteps[0]
+		//		failedStepEnvs := bitrise.FailedStepEnvs(failedStepRunResult)
+		//		*environments = append(*environments, failedStepEnvs...)
+		//		if currentStepBundleUUID != "" {
+		//			currentStepBundleEnvVars = append(currentStepBundleEnvVars, failedStepEnvs...)
+		//		}
+		//	}
+		//
+		//	buildStatusEnvs := bitrise.BuildStatusEnvs(true)
+		//	*environments = append(*environments, buildStatusEnvs...)
+		//	if currentStepBundleUUID != "" {
+		//		currentStepBundleEnvVars = append(currentStepBundleEnvVars, buildStatusEnvs...)
+		//	}
+		//}
 
 	}
 
