@@ -114,6 +114,10 @@ func downloadFile(url string, targetPath string) error {
 		}
 	}()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received HTTP status %s downloading: %s", resp.Status, url)
+	}
+
 	_, err = io.Copy(outFile, resp.Body)
 	return err
 }

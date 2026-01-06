@@ -22,6 +22,7 @@ func ActivateSteplibRefStep(
 	stepInfoPtr *models.StepInfoModel,
 ) (ActivatedStep, error) {
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
+	//nolint:exhaustruct // missing fields are added down below based on activation result
 	activationResult := ActivatedStep{
 		StepYMLPath:      stepYMLPath,
 		DidStepLibUpdate: false,
@@ -34,10 +35,15 @@ func ActivateSteplibRefStep(
 	}
 
 	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
+	activationResult.ExecutablePath = execPath
+	if execPath != "" {
+		activationResult.ActivationType = ActivationTypeSteplibExecutable
+	} else {
+		activationResult.ActivationType = ActivationTypeSteplibSource
+	}
 	if err != nil {
 		return activationResult, err
 	}
-	activationResult.ExecutablePath = execPath
 
 	// TODO: this is sketchy, we should clean this up, but this pointer originates in the CLI codebase
 	stepInfoPtr.ID = stepInfo.ID

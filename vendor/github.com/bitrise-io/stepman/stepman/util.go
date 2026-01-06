@@ -194,9 +194,8 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 		SteplibSource:         templateCollection.SteplibSource,
 		DownloadLocations:     templateCollection.DownloadLocations,
 		AssetsDownloadBaseURI: templateCollection.AssetsDownloadBaseURI,
+		Steps: models.StepHash{},
 	}
-
-	stepHash := models.StepHash{}
 
 	stepsCollectionDirPth := GetLibraryBaseDirPath(route)
 	if err := filepath.Walk(stepsCollectionDirPth, func(pth string, f os.FileInfo, err error) error {
@@ -266,10 +265,12 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 				}
 
 				// Add to stepgroup
-				stepGroup, found := stepHash[stepID]
+				stepGroup, found := collection.Steps[stepID]
 				if !found {
 					stepGroup = models.StepGroupModel{
 						Versions: map[string]models.StepModel{},
+						Info: models.StepGroupInfoModel{},
+						LatestVersionNumber: "",
 					}
 				}
 				stepGroup, err = addStepVersionToStepGroup(step, stepVersion, stepGroup)
@@ -279,7 +280,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 
 				stepGroup.Info = stepGroupInfo
 
-				stepHash[stepID] = stepGroup
+				collection.Steps[stepID] = stepGroup
 			}
 		}
 
@@ -287,8 +288,6 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 	}); err != nil {
 		return models.StepCollectionModel{}, fmt.Errorf("failed to walk through path, error: %s", err)
 	}
-
-	collection.Steps = stepHash
 
 	return collection, nil
 }
@@ -301,17 +300,16 @@ func generateSlimStepModel(collection models.StepCollectionModel) models.StepCol
 		SteplibSource:         collection.SteplibSource,
 		DownloadLocations:     collection.DownloadLocations,
 		AssetsDownloadBaseURI: collection.AssetsDownloadBaseURI,
+		Steps: models.StepHash{},
 	}
-	steps := models.StepHash{}
 
 	for stepID, stepGroupModel := range collection.Steps {
-		steps[stepID] = models.StepGroupModel{
+		slimCollection.Steps[stepID] = models.StepGroupModel{
 			Info:     stepGroupModel.Info,
 			Versions: map[string]models.StepModel{stepGroupModel.LatestVersionNumber: stepGroupModel.Versions[stepGroupModel.LatestVersionNumber]},
+			LatestVersionNumber: stepGroupModel.LatestVersionNumber,
 		}
 	}
-
-	slimCollection.Steps = steps
 
 	return slimCollection
 }
