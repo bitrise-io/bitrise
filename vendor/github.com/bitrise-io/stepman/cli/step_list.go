@@ -96,6 +96,7 @@ func printRawStepList(log stepman.Logger, stepLibURI string, maintaner string, s
 func printJSONStepList(stepLibURI string, stepLib models.StepCollectionModel, _ bool) error {
 	stepList := models.StepListModel{
 		StepLib: stepLibURI,
+		Steps:   nil,
 	}
 	for stepID := range stepLib.Steps {
 		stepList.Steps = append(stepList.Steps, stepID)

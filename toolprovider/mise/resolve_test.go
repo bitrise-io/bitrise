@@ -7,10 +7,70 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
+func TestExtractLastLine(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single line",
+			input:    "4.116.2",
+			expected: "4.116.2",
+		},
+		{
+			name:     "single line with whitespace",
+			input:    "  4.116.2  \n",
+			expected: "4.116.2",
+		},
+		{
+			name: "multiple lines with plugin installation",
+			input: `mise plugin:tuist    clone https://github.com/mise-plugins/mise-tuist.git
+mise plugin:tuist  ✓ https://github.com/mise-plugins/mise-tuist.git#a24ea40
+4.116.2`,
+			expected: "4.116.2",
+		},
+		{
+			name: "multiple lines with trailing whitespace",
+			input: `mise plugin:tuist    clone https://github.com/mise-plugins/mise-tuist.git
+mise plugin:tuist  ✓ https://github.com/mise-plugins/mise-tuist.git#a24ea40
+4.116.2
+`,
+			expected: "4.116.2",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only whitespace",
+			input:    "  \n  \n  ",
+			expected: "",
+		},
+		{
+			name: "multiple lines all with content",
+			input: `line1
+line2
+line3`,
+			expected: "line3",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractLastLine(tt.input)
+			if result != tt.expected {
+				t.Errorf("extractLastLine() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
 // Helper functions to construct mise command strings for mocking.
 
 func miseLatestCmd(tool provider.ToolID, version string) string {
-	return fmt.Sprintf("latest %s@%s", tool, version)
+	return fmt.Sprintf("latest --quiet %s@%s", tool, version)
 }
 
 func miseLatestInstalledCmd(tool provider.ToolID, version string) string {
@@ -67,7 +127,7 @@ func TestParseInstalledVersionsJSON(t *testing.T) {
 		{"malformed", `{"installed":true}`, false, true},
 	}
 	for _, tc := range cases {
-		got, err := parseInstalledVersionsJSON(tc.input)
+		got, err := parseInstalledVersionsJSON(tc.input, "")
 		if tc.wantErr && err == nil {
 			// nolint:staticcheck
 			t.Fatalf("%s: expected error, got nil", tc.name)

@@ -79,7 +79,7 @@ func selectGoConfiguration(logger stepman.Logger) (bool, ToolkitCheckResult, GoC
 	{
 		binPath, err := exec.LookPath("go")
 		if err == nil {
-			potentialGoConfigurations = append(potentialGoConfigurations, GoConfigurationModel{GoBinaryPath: binPath})
+			potentialGoConfigurations = append(potentialGoConfigurations, GoConfigurationModel{GoBinaryPath: binPath, GOROOT: ""})
 		}
 	}
 	// from Bitrise Toolkits
@@ -197,7 +197,7 @@ func (toolkit GoToolkit) Install() error {
 	if osStr == "windows" {
 		extentionStr = "zip"
 	}
-	downloadURL := fmt.Sprintf("https://storage.googleapis.com/golang/go%s.%s-%s.%s", versionStr, osStr, archStr, extentionStr)
+	downloadURL := fmt.Sprintf("https://go.dev/dl/go%s.%s-%s.%s", versionStr, osStr, archStr, extentionStr)
 
 	goTmpDirPath := goToolkitTmpDirPath()
 	if err := pathutil.EnsureDirExist(goTmpDirPath); err != nil {

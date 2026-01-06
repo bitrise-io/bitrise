@@ -64,6 +64,7 @@ func convertToLatestSpec(stepLib models.StepCollectionModel) models.StepCollecti
 				latestVersionStr: latestStep,
 			},
 			Info: groupInfo,
+			LatestVersionNumber: latestVersionStr,
 		}
 	}
 
