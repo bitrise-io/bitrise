@@ -6,9 +6,6 @@ project_type: other
 app:
   status_report_name: Run <target_id> pipeline
 
-tools:
-  go: "1.25.5"
-
 pipelines:
   ci:
     triggers:
@@ -16,20 +13,15 @@ pipelines:
       - branch: master
       pull_request:
       - source_branch: "*"
-    stages:
-    - run_tests: { }
-
-stages:
-  run_tests:
     workflows:
-    - run_lint: { }
-    - run_unit_tests_macos: { }
-    - run_unit_tests_linux: { }
-    - run_integration_tests_macos: { }
-    - run_integration_tests_linux: { }
-    - run_docker_integration_tests_linux: { }
-    - test_binary_build_macos: { }
-    - test_binary_build_linux: { }
+      run_lint: {}
+      run_unit_tests_macos: {}
+      run_unit_tests_linux: {}
+      run_integration_tests_macos: {}
+      run_integration_tests_linux: {}
+      run_docker_integration_tests_linux: {}
+      test_binary_build_macos: {}
+      test_binary_build_linux: {}
 
 workflows:
   release:
@@ -46,14 +38,16 @@ workflows:
 
   run_lint:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::run_lint: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::run_lint: {}
 
   run_unit_tests_macos:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_unit_tests: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_unit_tests: {}
     meta:
       bitrise.io:
         stack: osx-xcode-16.4.x
@@ -61,18 +55,19 @@ workflows:
 
   run_unit_tests_linux:
     steps:
-    - bundle::setup_repo: { }
-    - bitrise-run@0:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
         inputs:
-        - workflow_id: unpin-go-version
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_unit_tests: { }
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_unit_tests: {}
 
   run_integration_tests_macos:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_integration_tests: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_integration_tests: {}
     meta:
       bitrise.io:
         # TODO: switch to stable stack when Nix is rolled out there
@@ -81,12 +76,12 @@ workflows:
 
   run_integration_tests_linux:
     steps:
-    - bundle::setup_repo: { }
-    - bitrise-run@0:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
         inputs:
-        - workflow_id: unpin-go-version
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_integration_tests: { }
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_integration_tests: {}
     meta:
       bitrise.io:
         # TODO: switch to stable stack when Nix is rolled out there
@@ -95,11 +90,11 @@ workflows:
 
   run_docker_integration_tests_linux:
     steps:
-    - bundle::setup_repo: { }
-    - bitrise-run@0:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
         inputs:
-        - workflow_id: unpin-go-version
-    - bundle::setup_go_junit_report: { }
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_go_junit_report: {}
     - bundle::run_docker_integration_tests:
         envs:
         - SRC_DIR_IN_GOPATH: $BITRISE_SOURCE_DIR
@@ -107,22 +102,25 @@ workflows:
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_asdf_tests:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_system_asdf_integration_tests: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_system_asdf_integration_tests: {}
 
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_mise_tests:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::setup_go_junit_report: { }
-    - bundle::run_system_mise_integration_tests: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_system_mise_integration_tests: {}
 
   test_binary_build_macos:
     steps:
-    - bundle::setup_repo: { }
-    - bundle::setup_goreleaser: { }
-    - bundle::test_binary_build: { }
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_goreleaser: {}
+    - bundle::test_binary_build: {}
     meta:
       bitrise.io:
         stack: osx-xcode-16.4.x
@@ -130,17 +128,17 @@ workflows:
 
   test_binary_build_linux:
     steps:
-    - bundle::setup_repo: { }
-    - bitrise-run@0:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
         inputs:
-        - workflow_id: unpin-go-version
-    - bundle::setup_goreleaser: { }
-    - bundle::test_binary_build: { }
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_goreleaser: {}
+    - bundle::test_binary_build: {}
 
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:
-    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN  # Goreleaser expects this env var
+    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
     # R2 bucket connection params
     - AWS_ENDPOINT_URL: $AWS_ENDPOINT_PROD
     - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
@@ -289,7 +287,7 @@ step_bundles:
             mkdir -p "${test_results_dir}"
             cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
-    - deploy-to-bitrise-io@2: { }
+    - deploy-to-bitrise-io@2: {}
 
   run_integration_tests:
     steps:
@@ -344,35 +342,35 @@ step_bundles:
             echo "${test_name_json}" > "${test_results_dir}/test-info.json"
 
             exit $test_exit_code
-    - deploy-to-bitrise-io@2: { }
+    - deploy-to-bitrise-io@2: {}
 
   run_system_asdf_integration_tests:
     steps:
-      - script@1:
-          title: Run integration tests against system asdf
-          inputs:
-            - content: |
-                #!/bin/bash
-                set -ex
+    - script@1:
+        title: Run integration tests against system asdf
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
 
-                # Special test mode that doesn't use the test harness but uses the system-wide asdf install and config
-                export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
-                # We test the system bitrise executable, not one built from source
-                export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-                cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
+            # Special test mode that doesn't use the test harness but uses the system-wide asdf install and config
+            export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
+            # We test the system bitrise executable, not one built from source
+            export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+            cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
 
   run_system_mise_integration_tests:
     steps:
-      - script@1:
-          title: Run mise integration tests against system
-          inputs:
-            - content: |
-                #!/bin/bash
-                set -ex
+    - script@1:
+        title: Run mise integration tests against system
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
 
-                # We test the system bitrise executable, not one built from source
-                export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-                cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/mise/... -timeout 360s
+            # We test the system bitrise executable, not one built from source
+            export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+            cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/mise/... -timeout 360s
 
   run_docker_integration_tests:
     steps:
@@ -425,7 +423,7 @@ step_bundles:
 
             # Exit with the original test exit code
             exit $test_exit_code
-    - deploy-to-bitrise-io@2: { }
+    - deploy-to-bitrise-io@2: {}
 
   test_binary_build:
     steps:
@@ -440,7 +438,7 @@ step_bundles:
             set -ex
 
             goreleaser release --snapshot --clean
-    - deploy-to-bitrise-io@2: { }
+    - deploy-to-bitrise-io@2: {}
 
   setup_repo:
     steps:
@@ -468,6 +466,48 @@ step_bundles:
             set -ex
             go install github.com/goreleaser/goreleaser/v2@latest
             asdf reshim golang
+  install_dependencies:
+    steps:
+    - bitrise-run@0:
+        inputs:
+        - workflow_id: unpin-go-version
+        run_if: "{{ not (enveq \"IGNORE_CUSTOM_GOLANG\" \"true\") }}"
+    - script@1:
+        inputs:
+        - content: >-
+            #!/usr/bin/env bash
+
+            # fail if any commands fails
+
+            set -e
+
+            # make pipelines' return status equal the last command to exit with
+            a non-zero status, or zero if all commands exit successfully
+
+            set -o pipefail
+
+            # debug log
+
+            set -x
+
+
+            bitrise tools setup --config .tool-versions
+        title: Install .tool-versions dependencies
+    inputs:
+    - IGNORE_CUSTOM_GOLANG: "false"
+      opts:
+        title: Skip Custom Golang Version Installation
+        value_options:
+        - "true"
+        - "false"
+        description: >-
+          Removes golang line from .tool-versions file, so the global version is
+          used.
+
+          TODO: this is only needed as long as Go steps are built from source
+
+          (because tool setup has no influence on the environment of the CLI
+          process itself, just the environment of the workflow).
 
 meta:
   bitrise.io:
