@@ -76,11 +76,11 @@ type WorkflowRunPlan struct {
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
 
-	WithGroupPlans            map[string]WithGroupPlan  `json:"with_groups,omitempty"`
-	StepBundlePlans           map[string]StepBundlePlan `json:"step_bundles,omitempty"`
-	ExecutionContainerPlans   map[string]ContainerPlan  `json:"execution_containers,omitempty"`
-	ServiceContainerPlans     map[string]ContainerPlan  `json:"service_containers,omitempty"`
-	ExecutionPlan             []WorkflowExecutionPlan   `json:"execution_plan"`
+	WithGroupPlans          map[string]WithGroupPlan  `json:"with_groups,omitempty"`
+	StepBundlePlans         map[string]StepBundlePlan `json:"step_bundles,omitempty"`
+	ExecutionContainerPlans map[string]ContainerPlan  `json:"execution_containers,omitempty"`
+	ServiceContainerPlans   map[string]ContainerPlan  `json:"service_containers,omitempty"`
+	ExecutionPlan           []WorkflowExecutionPlan   `json:"execution_plan"`
 }
 
 func NewWorkflowRunPlan(
@@ -315,6 +315,29 @@ func gatherBundleSteps(
 			}
 
 			stepID := key
+
+			// Determine which container and services to use
+			// Step's own config overrides bundle config (per design decision Q1)
+			stepContainerID := containerID
+			if step.ContainerID != "" {
+				stepContainerID = step.ContainerID
+				// Add step's container to the plan maps
+				if _, exists := executionContainerPlans[stepContainerID]; !exists {
+					executionContainerPlans[stepContainerID] = ContainerPlan{Image: containers[stepContainerID].Image}
+				}
+			}
+
+			stepServiceIDs := serviceContainerIDs
+			if len(step.ServiceIDs) > 0 {
+				stepServiceIDs = step.ServiceIDs
+				// Add step's services to the plan maps
+				for _, serviceID := range stepServiceIDs {
+					if _, exists := serviceContainerPlans[serviceID]; !exists {
+						serviceContainerPlans[serviceID] = ContainerPlan{Image: services[serviceID].Image}
+					}
+				}
+			}
+
 			stepPlan := StepExecutionPlan{
 				UUID:             uuidProvider(),
 				StepID:           stepID,
@@ -322,8 +345,8 @@ func gatherBundleSteps(
 				StepBundleUUID:   bundleUUID,
 				StepBundleRunIfs: runIfs,
 				StepBundleEnvs:   bundleEnvs,
-				ContainerID:      containerID,
-				ServiceIDs:       serviceContainerIDs,
+				ContainerID:      stepContainerID,
+				ServiceIDs:       stepServiceIDs,
 			}
 
 			stepPlans = append(stepPlans, stepPlan)

@@ -53,10 +53,10 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:                 cliVersion(),
-				LogFormatVersion:        "2",
-				WithGroupPlans:          map[string]WithGroupPlan{},
-				StepBundlePlans:         map[string]StepBundlePlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 				},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
@@ -105,9 +105,9 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -150,9 +150,9 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -214,9 +214,9 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -270,9 +270,9 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -336,9 +336,9 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -401,9 +401,9 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -441,9 +441,9 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{},
 				ServiceContainerPlans:   map[string]ContainerPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
@@ -651,9 +651,9 @@ func TestNewWorkflowRunPlan_StepAndStepBundleContainers(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:                 cliVersion(),
-				LogFormatVersion:        "2",
-				WithGroupPlans:          map[string]WithGroupPlan{},
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 				},
@@ -744,9 +744,9 @@ func TestNewWorkflowRunPlan_StepAndStepBundleContainers(t *testing.T) {
 				},
 			},
 			want: WorkflowRunPlan{
-				Version:                 cliVersion(),
-				LogFormatVersion:        "2",
-				WithGroupPlans:          map[string]WithGroupPlan{},
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 				},
