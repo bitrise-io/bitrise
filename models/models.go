@@ -31,7 +31,11 @@ type StepBundleModel struct {
 	RunIf        string                              `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
+	// References to execution container to be used to run steps
+	ContainerID string `json:"container,omitempty" yaml:"container,omitempty"`
+	// References to service containers to be started before running the steps
+	ServiceIDs []string                        `json:"services,omitempty" yaml:"services,omitempty"`
+	Steps      []StepListItemStepOrBundleModel `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 type StepListItemStepOrBundleModel map[string]any

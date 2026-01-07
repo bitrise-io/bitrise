@@ -76,9 +76,11 @@ type WorkflowRunPlan struct {
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
 
-	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
-	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
-	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
+	WithGroupPlans            map[string]WithGroupPlan  `json:"with_groups,omitempty"`
+	StepBundlePlans           map[string]StepBundlePlan `json:"step_bundles,omitempty"`
+	ExecutionContainerPlans   map[string]ContainerPlan  `json:"execution_containers,omitempty"`
+	ServiceContainerPlans     map[string]ContainerPlan  `json:"service_containers,omitempty"`
+	ExecutionPlan             []WorkflowExecutionPlan   `json:"execution_plan"`
 }
 
 func NewWorkflowRunPlan(
@@ -89,6 +91,8 @@ func NewWorkflowRunPlan(
 	var executionPlan []WorkflowExecutionPlan
 	withGroupPlans := map[string]WithGroupPlan{}
 	stepBundlePlans := map[string]StepBundlePlan{}
+	executionContainerPlans := map[string]ContainerPlan{}
+	serviceContainerPlans := map[string]ContainerPlan{}
 
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
@@ -108,11 +112,25 @@ func NewWorkflowRunPlan(
 					return WorkflowRunPlan{}, err
 				}
 
+				// Add container definitions to the plan maps
+				if step.ContainerID != "" {
+					if _, exists := executionContainerPlans[step.ContainerID]; !exists {
+						executionContainerPlans[step.ContainerID] = ContainerPlan{Image: containers[step.ContainerID].Image}
+					}
+				}
+				for _, serviceID := range step.ServiceIDs {
+					if _, exists := serviceContainerPlans[serviceID]; !exists {
+						serviceContainerPlans[serviceID] = ContainerPlan{Image: services[serviceID].Image}
+					}
+				}
+
 				stepID := key
 				stepPlans = append(stepPlans, StepExecutionPlan{
-					UUID:   uuidProvider(),
-					StepID: stepID,
-					Step:   *step,
+					UUID:        uuidProvider(),
+					StepID:      stepID,
+					Step:        *step,
+					ContainerID: step.ContainerID,
+					ServiceIDs:  step.ServiceIDs,
 				})
 			} else if t == StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
@@ -189,7 +207,23 @@ func NewWorkflowRunPlan(
 					runIfs = []string{runIf}
 				}
 
-				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
+				// TODO: currently container_id and service_ids can't be overridden
+				containerID := bundleDefinition.ContainerID
+				serviceIDs := bundleDefinition.ServiceIDs
+
+				// Add bundle container definitions to the plan maps
+				if containerID != "" {
+					if _, exists := executionContainerPlans[containerID]; !exists {
+						executionContainerPlans[containerID] = ContainerPlan{Image: containers[containerID].Image}
+					}
+				}
+				for _, serviceID := range serviceIDs {
+					if _, exists := serviceContainerPlans[serviceID]; !exists {
+						serviceContainerPlans[serviceID] = ContainerPlan{Image: services[serviceID].Image}
+					}
+				}
+
+				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, containerID, serviceIDs, stepBundles, stepBundlePlans, containers, services, executionContainerPlans, serviceContainerPlans, uuidProvider)
 				if err != nil {
 					return WorkflowRunPlan{}, err
 				}
@@ -229,6 +263,8 @@ func NewWorkflowRunPlan(
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
 		WithGroupPlans:          withGroupPlans,
 		StepBundlePlans:         stepBundlePlans,
+		ExecutionContainerPlans: executionContainerPlans,
+		ServiceContainerPlans:   serviceContainerPlans,
 		ExecutionPlan:           executionPlan,
 	}, nil
 }
@@ -253,8 +289,14 @@ func gatherBundleSteps(
 	bundleUUID string,
 	bundleEnvs []envmanModels.EnvironmentItemModel,
 	runIfs []string,
+	containerID string,
+	serviceContainerIDs []string,
 	stepBundles map[string]StepBundleModel,
 	stepBundlePlans map[string]StepBundlePlan,
+	containers map[string]Container,
+	services map[string]Container,
+	executionContainerPlans map[string]ContainerPlan,
+	serviceContainerPlans map[string]ContainerPlan,
 	uuidProvider func() string,
 ) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
@@ -280,6 +322,8 @@ func gatherBundleSteps(
 				StepBundleUUID:   bundleUUID,
 				StepBundleRunIfs: runIfs,
 				StepBundleEnvs:   bundleEnvs,
+				ContainerID:      containerID,
+				ServiceIDs:       serviceContainerIDs,
 			}
 
 			stepPlans = append(stepPlans, stepPlan)
@@ -330,7 +374,32 @@ func gatherBundleSteps(
 				newBundleRunIfs = append(newBundleRunIfs, runIf)
 			}
 
-			plans, err := gatherBundleSteps(definition, uuid, envs, newBundleRunIfs, stepBundles, stepBundlePlans, uuidProvider)
+			// TODO: currently container_id can't be overridden
+			newContainerID := definition.ContainerID
+			if newContainerID == "" {
+				// TODO: If no container set on an embedded step bundle, use the parent bundle's container.
+				newContainerID = containerID
+			}
+
+			// TODO: same as above
+			newServiceIDs := definition.ServiceIDs
+			if len(newServiceIDs) == 0 {
+				newServiceIDs = serviceContainerIDs
+			}
+
+			// Add nested bundle container definitions to the plan maps
+			if newContainerID != "" {
+				if _, exists := executionContainerPlans[newContainerID]; !exists {
+					executionContainerPlans[newContainerID] = ContainerPlan{Image: containers[newContainerID].Image}
+				}
+			}
+			for _, serviceID := range newServiceIDs {
+				if _, exists := serviceContainerPlans[serviceID]; !exists {
+					serviceContainerPlans[serviceID] = ContainerPlan{Image: services[serviceID].Image}
+				}
+			}
+
+			plans, err := gatherBundleSteps(definition, uuid, envs, newBundleRunIfs, newContainerID, newServiceIDs, stepBundles, stepBundlePlans, containers, services, executionContainerPlans, serviceContainerPlans, uuidProvider)
 			if err != nil {
 				return nil, err
 			}
