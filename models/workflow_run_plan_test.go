@@ -470,6 +470,497 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 	}
 }
 
+func TestNewWorkflowRunPlan_StepAndStepBundleContainers(t *testing.T) {
+	tests := []struct {
+		name           string
+		modes          WorkflowRunModes
+		targetWorkflow string
+		workflows      map[string]WorkflowModel
+		stepBundles    map[string]StepBundleModel
+		containers     map[string]Container
+		services       map[string]Container
+		want           WorkflowRunPlan
+	}{
+		{
+			name:           "step with container stores container in execution plan",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"step-container": {Image: "alpine:latest"},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step1": stepmanModels.StepModel{
+							ContainerID: "step-container",
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans:  map[string]StepBundlePlan{},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"step-container": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{ContainerID: "step-container"}, ContainerID: "step-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with services stores services in execution plan",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			services: map[string]Container{
+				"service1": {Image: "postgres:latest"},
+				"service2": {Image: "redis:latest"},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step1": stepmanModels.StepModel{
+							ServiceIDs: []string{"service1", "service2"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
+				StepBundlePlans:         map[string]StepBundlePlan{},
+				ExecutionContainerPlans: map[string]ContainerPlan{},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"service1": {Image: "postgres:latest"},
+					"service2": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{ServiceIDs: []string{"service1", "service2"}}, ServiceIDs: []string{"service1", "service2"}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with both container and services",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"step-container": {Image: "alpine:latest"},
+			},
+			services: map[string]Container{
+				"service1": {Image: "postgres:latest"},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step1": stepmanModels.StepModel{
+							ContainerID: "step-container",
+							ServiceIDs:  []string{"service1"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans:  map[string]StepBundlePlan{},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"step-container": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"service1": {Image: "postgres:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{ContainerID: "step-container", ServiceIDs: []string{"service1"}}, ContainerID: "step-container", ServiceIDs: []string{"service1"}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundle with container propagates to bundle steps",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"bundle-container": {Image: "alpine:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					ContainerID: "bundle-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"bundle-container": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ContainerID: "bundle-container"},
+						{UUID: "uuid_3", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ContainerID: "bundle-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundle with services propagates to bundle steps",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			services: map[string]Container{
+				"service1": {Image: "postgres:latest"},
+				"service2": {Image: "redis:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					ServiceIDs: []string{"service1", "service2"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"service1": {Image: "postgres:latest"},
+					"service2": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ServiceIDs: []string{"service1", "service2"}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step in bundle with own container overrides bundle container",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"bundle-container": {Image: "alpine:latest"},
+				"step-container":   {Image: "ubuntu:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					ContainerID: "bundle-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{
+							ContainerID: "step-container",
+						}},
+						{"bundle1-step3": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"bundle-container": {Image: "alpine:latest"},
+					"step-container":   {Image: "ubuntu:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ContainerID: "bundle-container"},
+						{UUID: "uuid_3", StepID: "bundle1-step2", Step: stepmanModels.StepModel{ContainerID: "step-container"}, StepBundleUUID: "uuid_1", ContainerID: "step-container"},
+						{UUID: "uuid_4", StepID: "bundle1-step3", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ContainerID: "bundle-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step in bundle with own services overrides bundle services",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			services: map[string]Container{
+				"bundle-service": {Image: "postgres:latest"},
+				"step-service":   {Image: "redis:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					ServiceIDs: []string{"bundle-service"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{
+							ServiceIDs: []string{"step-service"},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:                 cliVersion(),
+				LogFormatVersion:        "2",
+				WithGroupPlans:          map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"bundle-service": {Image: "postgres:latest"},
+					"step-service":   {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", ServiceIDs: []string{"bundle-service"}},
+						{UUID: "uuid_3", StepID: "bundle1-step2", Step: stepmanModels.StepModel{ServiceIDs: []string{"step-service"}}, StepBundleUUID: "uuid_1", ServiceIDs: []string{"step-service"}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested bundle inherits parent bundle container when not defined",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"parent-container": {Image: "alpine:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"parent-bundle": {
+					ContainerID: "parent-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::child-bundle": StepBundleListItemModel{}},
+					},
+				},
+				"child-bundle": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"child-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::parent-bundle": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "parent-bundle"},
+					"uuid_2": {ID: "child-bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"parent-container": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "child-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", ContainerID: "parent-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested bundle with own container overrides parent bundle container",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"parent-container": {Image: "alpine:latest"},
+				"child-container":  {Image: "ubuntu:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"parent-bundle": {
+					ContainerID: "parent-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::child-bundle": StepBundleListItemModel{}},
+					},
+				},
+				"child-bundle": {
+					ContainerID: "child-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"child-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::parent-bundle": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "parent-bundle"},
+					"uuid_2": {ID: "child-bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"parent-container": {Image: "alpine:latest"},
+					"child-container":  {Image: "ubuntu:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "child-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", ContainerID: "child-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step in nested bundle with own container overrides all parent containers",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"parent-container": {Image: "alpine:latest"},
+				"child-container":  {Image: "ubuntu:latest"},
+				"step-container":   {Image: "debian:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"parent-bundle": {
+					ContainerID: "parent-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::child-bundle": StepBundleListItemModel{}},
+					},
+				},
+				"child-bundle": {
+					ContainerID: "child-container",
+					Steps: []StepListItemStepOrBundleModel{
+						{"child-step1": stepmanModels.StepModel{}},
+						{"child-step2": stepmanModels.StepModel{
+							ContainerID: "step-container",
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::parent-bundle": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "parent-bundle"},
+					"uuid_2": {ID: "child-bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"parent-container": {Image: "alpine:latest"},
+					"child-container":  {Image: "ubuntu:latest"},
+					"step-container":   {Image: "debian:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "child-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", ContainerID: "child-container"},
+						{UUID: "uuid_4", StepID: "child-step2", Step: stepmanModels.StepModel{ContainerID: "step-container"}, StepBundleUUID: "uuid_2", ContainerID: "step-container"},
+					}},
+				},
+			},
+		},
+		{
+			name:           "mixed steps with and without containers",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"step1-container": {Image: "alpine:latest"},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step1": stepmanModels.StepModel{
+							ContainerID: "step1-container",
+						}},
+						{"step2": stepmanModels.StepModel{}},
+						{"step3": stepmanModels.StepModel{
+							ContainerID: "step1-container",
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans:  map[string]StepBundlePlan{},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"step1-container": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{ContainerID: "step1-container"}, ContainerID: "step1-container"},
+						{UUID: "uuid_2", StepID: "step2", Step: stepmanModels.StepModel{}},
+						{UUID: "uuid_3", StepID: "step3", Step: stepmanModels.StepModel{ContainerID: "step1-container"}, ContainerID: "step1-container"},
+					}},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 type MockUUIDProvider struct {
 	i int
 }
