@@ -335,6 +335,14 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 // exposeEnvsWithEnvman calls envman to expose the given env vars for subsequent steps in the workflow.
 // Returns true if successful (since envman is not always available, e.g. in local runs).
 func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent bool) bool {
+	// Initialize envman envstore if it doesn't exist yet
+	if err := tools.EnvmanInit(configs.InputEnvstorePath, false); err != nil {
+		if !silent {
+			log.Warnf("! Failed to initialize envman: %s", err)
+		}
+		return false
+	}
+
 	envs := toolprovider.ConvertToEnvmanEnvs(activations)
 	err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, envs)
 	if err != nil {
