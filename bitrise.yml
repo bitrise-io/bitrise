@@ -472,7 +472,7 @@ step_bundles:
     - bitrise-run@0:
         inputs:
         - workflow_id: unpin-go-version
-        run_if: '{{ not (enveq "IGNORE_CUSTOM_GOLANG" "true") }}'
+        run_if: '{{ enveq "IGNORE_CUSTOM_GOLANG" "true" }}'
     - script@1:
         inputs:
         - content: >-
