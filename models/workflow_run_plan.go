@@ -317,9 +317,11 @@ func gatherBundleSteps(
 			stepID := key
 
 			// Determine which container and services to use
-			// Step's own config overrides bundle config (per design decision Q1)
+			// REVISED: Bundle's container config always takes precedence
+			// Steps can only use their own config if bundle has NO container config
 			stepContainerID := containerID
-			if step.ContainerID != "" {
+			if containerID == "" && step.ContainerID != "" {
+				// Bundle has no container, so step can use its own
 				stepContainerID = step.ContainerID
 				// Add step's container to the plan maps
 				if _, exists := executionContainerPlans[stepContainerID]; !exists {
@@ -328,7 +330,8 @@ func gatherBundleSteps(
 			}
 
 			stepServiceIDs := serviceContainerIDs
-			if len(step.ServiceIDs) > 0 {
+			if len(serviceContainerIDs) == 0 && len(step.ServiceIDs) > 0 {
+				// Bundle has no services, so step can use its own
 				stepServiceIDs = step.ServiceIDs
 				// Add step's services to the plan maps
 				for _, serviceID := range stepServiceIDs {
@@ -397,17 +400,19 @@ func gatherBundleSteps(
 				newBundleRunIfs = append(newBundleRunIfs, runIf)
 			}
 
-			// TODO: currently container_id can't be overridden
-			newContainerID := definition.ContainerID
-			if newContainerID == "" {
-				// TODO: If no container set on an embedded step bundle, use the parent bundle's container.
-				newContainerID = containerID
+			// REVISED: Parent bundle's container always takes precedence
+			// Nested bundle can only use its own container if parent has NO container
+			newContainerID := containerID
+			if containerID == "" {
+				// Parent has no container, so nested bundle can use its own
+				newContainerID = definition.ContainerID
 			}
 
-			// TODO: same as above
-			newServiceIDs := definition.ServiceIDs
-			if len(newServiceIDs) == 0 {
-				newServiceIDs = serviceContainerIDs
+			// Same logic for services
+			newServiceIDs := serviceContainerIDs
+			if len(serviceContainerIDs) == 0 {
+				// Parent has no services, so nested bundle can use its own
+				newServiceIDs = definition.ServiceIDs
 			}
 
 			// Add nested bundle container definitions to the plan maps
