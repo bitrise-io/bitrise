@@ -466,12 +466,13 @@ step_bundles:
             set -ex
             go install github.com/goreleaser/goreleaser/v2@latest
             asdf reshim golang
+
   install_dependencies:
     steps:
     - bitrise-run@0:
         inputs:
         - workflow_id: unpin-go-version
-        run_if: "{{ not (enveq \"IGNORE_CUSTOM_GOLANG\" \"true\") }}"
+        run_if: '{{ not (enveq "IGNORE_CUSTOM_GOLANG" "true") }}'
     - script@1:
         inputs:
         - content: >-
