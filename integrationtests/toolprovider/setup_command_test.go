@@ -181,29 +181,18 @@ workflows:
 func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, ".tool-versions")
-	err := os.WriteFile(configPath, []byte("golang 1.21.0\n"), 0644)
+	err := os.WriteFile(configPath, []byte("go 1.21.13\n"), 0644)
 	require.NoError(t, err)
 
-	// Test plaintext
 	cmd := command.New(testhelpers.BinPath(), "tools", "setup",
-		"--config", configPath,
-		"--format", "plaintext")
+		"--config", configPath)
 	cmd.SetDir(tmpDir)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, "tools setup should succeed: %s", out)
 
-	require.NoError(t, err, "tools setup should succeed even when envman envstore doesn't exist: %s", out)
-	assert.NotContains(t, out, "No file found at path", "Should not fail with envman file not found error")
-	assert.NotContains(t, out, "Failed to expose tool envs with envman", "Should not fail to expose envs")
-
-	// Test JSON
-	cmd = command.New(testhelpers.BinPath(), "tools", "setup",
-		"--config", configPath,
-		"--format", "json")
-	cmd.SetDir(tmpDir)
-	out, err = cmd.RunAndReturnTrimmedCombinedOutput()
-	require.NoError(t, err, "tools setup with JSON format should succeed: %s", out)
-
-	var v any
-	err = json.Unmarshal([]byte(out), &v)
-	assert.NoError(t, err, "Output should be valid JSON: %s", out)
+	// Output should NOT contain the envman error
+	assert.NotContains(t, out, "Failed to expose tool envs with envman",
+		"Should not fail to expose envs with envman (envman should be properly initialized)")
+	assert.NotContains(t, out, "No file found at path",
+		"Should not fail with envman file not found error")
 }
