@@ -250,12 +250,19 @@ func GetSecretKeysAndValues(secrets []envmanModels.EnvironmentItemModel) ([]stri
 			continue
 		}
 
+		// Skip built-in configuration parameters
 		if IsBuiltInFlagTypeKey(key) {
 			continue
 		}
 
+		// Skip empty values without warning
+		if len(value) == 0 {
+			continue
+		}
+
+		// Skip whitespace-only values with a warning
 		if strings.TrimSpace(value) == "" {
-			log.Warnf("Secret %q has empty or whitespace-only value", key)
+			log.Warnf("Secret %q has a whitespace-only value", key)
 			continue
 		}
 

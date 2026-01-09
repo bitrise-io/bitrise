@@ -230,7 +230,7 @@ func TestGetSecretKeysAndValues(t *testing.T) {
 			expectedValues: []string{"secret_value_1", "secret_value_2", "token123"},
 		},
 		{
-			name: "empty string values are skipped with warning",
+			name: "empty string values are skipped",
 			secrets: []models.EnvironmentItemModel{
 				{"VALID_SECRET": "valid_value"},
 				{"EMPTY_SECRET": ""},
@@ -240,7 +240,7 @@ func TestGetSecretKeysAndValues(t *testing.T) {
 			expectedValues: []string{"valid_value", "another_value"},
 		},
 		{
-			name: "whitespace-only values are skipped with warning",
+			name: "whitespace-only values are skipped",
 			secrets: []models.EnvironmentItemModel{
 				{"VALID_SECRET": "valid_value"},
 				{"WHITESPACE_SECRET": "   "},
