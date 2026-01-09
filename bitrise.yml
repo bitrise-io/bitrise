@@ -16,20 +16,16 @@ pipelines:
       - branch: master
       pull_request:
       - source_branch: "*"
-    stages:
-    - run_tests: { }
-
-stages:
-  run_tests:
     workflows:
-    - run_lint: { }
-    - run_unit_tests_macos: { }
-    - run_unit_tests_linux: { }
-    - run_integration_tests_macos: { }
-    - run_integration_tests_linux: { }
-    - run_docker_integration_tests_linux: { }
-    - test_binary_build_macos: { }
-    - test_binary_build_linux: { }
+      run_lint: { }
+      run_unit_tests_macos: { }
+      run_unit_tests_linux: { }
+      run_integration_tests_macos: { }
+      run_integration_tests_linux: { }
+      run_docker_integration_tests_linux: { }
+      test_binary_build_macos: { }
+      test_binary_build_linux: { }
+      generate_reference_docs: { }
 
 workflows:
   release:
@@ -180,6 +176,20 @@ workflows:
             set -ex
 
             goreleaser release
+
+  generate_reference_docs:
+    description: Generates reference documentation and uploads to Bitrise.io
+    steps:
+    - script@1:
+        title: Generate reference docs
+        inputs:
+        - content: |-
+            go run ./_docs/cmd/generate_reference/main.go
+
+    - deploy-to-bitrise-io@2:
+        inputs:
+        - deploy_path: ./docs/reference/generated
+        - zip_deploy_path: "false"
 
   noop:
     title: Noop
