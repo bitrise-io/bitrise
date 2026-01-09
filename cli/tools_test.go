@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
 )
@@ -262,4 +265,64 @@ func TestParseToolSpec(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExposeEnvsWithEnvman(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "bitrise_test_")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	configs.BitriseWorkDirPath = tempDir
+
+	envstorePath := filepath.Join(tempDir, "input_envstore.yml")
+	configs.InputEnvstorePath = envstorePath
+
+	t.Run("successfully initializes and exposes envs", func(t *testing.T) {
+		_, err := os.Stat(envstorePath)
+		require.True(t, os.IsNotExist(err), "envstore should not exist before test")
+
+		activations := []provider.EnvironmentActivation{
+			{
+				ContributedEnvVars: map[string]string{
+					"TEST_VAR":     "test_value",
+					"NODE_VERSION": "20.0.0",
+				},
+				ContributedPaths: []string{"/test/path"},
+			},
+		}
+
+		result := exposeEnvsWithEnvman(activations, false)
+		require.True(t, result, "exposeEnvsWithEnvman should return true")
+
+		_, err = os.Stat(envstorePath)
+		require.NoError(t, err, "envstore file should exist after call")
+	})
+
+	t.Run("handles empty activations gracefully", func(t *testing.T) {
+		os.Remove(envstorePath)
+
+		activations := []provider.EnvironmentActivation{}
+
+		result := exposeEnvsWithEnvman(activations, true)
+
+		require.True(t, result, "exposeEnvsWithEnvman should return true even with empty activations")
+
+		_, err := os.Stat(envstorePath)
+		require.NoError(t, err, "envstore file should exist after initialization")
+	})
+
+	t.Run("silent mode suppresses warnings", func(t *testing.T) {
+		originalPath := configs.InputEnvstorePath
+		configs.InputEnvstorePath = "/path/to/invalid/nonexistent/envstore.yml"
+		defer func() { configs.InputEnvstorePath = originalPath }()
+
+		activations := []provider.EnvironmentActivation{
+			{
+				ContributedEnvVars: map[string]string{"KEY": "value"},
+			},
+		}
+
+		result := exposeEnvsWithEnvman(activations, true)
+		require.False(t, result, "should return false when initialization fails")
+	})
 }

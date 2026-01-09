@@ -100,7 +100,7 @@ workflows:
 			fileName:     ".tool-versions",
 			outputFormat: "json",
 			validateOutput: func(t *testing.T, output string) {
-				var v interface{}
+				var v any
 				err := json.Unmarshal([]byte(output), &v)
 				assert.NoError(t, err, "Output should be valid JSON")
 			},
@@ -176,4 +176,23 @@ workflows:
 
 	require.Error(t, err)
 	assert.Contains(t, out, "multiple bitrise config files")
+}
+
+func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, ".tool-versions")
+	err := os.WriteFile(configPath, []byte("go 1.21.13\n"), 0644)
+	require.NoError(t, err)
+
+	cmd := command.New(testhelpers.BinPath(), "tools", "setup",
+		"--config", configPath)
+	cmd.SetDir(tmpDir)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, "tools setup should succeed: %s", out)
+
+	// Output should NOT contain the envman error
+	assert.NotContains(t, out, "Failed to expose tool envs with envman",
+		"Should not fail to expose envs with envman (envman should be properly initialized)")
+	assert.NotContains(t, out, "No file found at path",
+		"Should not fail with envman file not found error")
 }
