@@ -161,6 +161,7 @@ func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.S
 		stepID:  stepID,
 		version: latestVersionNumber,
 		status:  "OK",
+		err:     nil,
 	})
 
 	filteredSteps, err := filterPreloadedStepVersions(stepID, step.Versions, opts)
@@ -181,6 +182,7 @@ func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.S
 				stepID:  stepID,
 				version: version,
 				err:     fmt.Errorf("failed to preload step %s@%s: %w", stepID, version, err),
+				status:  "FAILED",
 			})
 
 			continue
@@ -190,6 +192,7 @@ func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.S
 			stepID:  stepID,
 			version: version,
 			status:  "OK (source)",
+			err:     nil,
 		})
 
 		continue

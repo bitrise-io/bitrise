@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -103,7 +104,8 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	useNix := canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
+	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
+	useNix := runtime.GOOS =="darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -114,7 +116,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	installRequest := installRequest(tool, useNix)
 
 	// Note: tools get reinstalled with Nix even if they are already installed with the core plugin for consistency.
-	isAlreadyInstalled, err := isAlreadyInstalled(installRequest, m.resolveToLatestInstalled)
+	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}

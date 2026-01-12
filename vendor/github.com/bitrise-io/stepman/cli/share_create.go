@@ -75,7 +75,10 @@ func validateTag(tag string) error {
 
 func getDefaultStepGroupSpec() models.StepGroupInfoModel {
 	return models.StepGroupInfoModel{
-		Maintainer: "community",
+		RemovalDate:    "",
+		DeprecateNotes: "",
+		AssetURLs:      nil,
+		Maintainer:     "community",
 	}
 }
 
