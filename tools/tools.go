@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -243,12 +244,28 @@ func GetSecretKeysAndValues(secrets []envmanModels.EnvironmentItemModel) ([]stri
 	var secretValues []string
 	for _, secret := range secrets {
 		key, value, err := secret.GetKeyValuePair()
-		if err != nil || len(value) < 1 || IsBuiltInFlagTypeKey(key) {
-			if err != nil {
-				log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
-			}
+
+		if err != nil {
+			log.Warnf("Error getting key-value pair from secret (%v): %s", secret, err)
 			continue
 		}
+
+		// Skip built-in configuration parameters
+		if IsBuiltInFlagTypeKey(key) {
+			continue
+		}
+
+		// Skip empty values without warning
+		if len(value) == 0 {
+			continue
+		}
+
+		// Skip whitespace-only values with a warning
+		if strings.TrimSpace(value) == "" {
+			log.Warnf("Secret %q has a whitespace-only value", key)
+			continue
+		}
+
 		secretKeys = append(secretKeys, key)
 		secretValues = append(secretValues, value)
 	}

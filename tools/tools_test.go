@@ -211,3 +211,108 @@ func Test_createGitHubBinDownloadURL(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSecretKeysAndValues(t *testing.T) {
+	tests := []struct {
+		name           string
+		secrets        []models.EnvironmentItemModel
+		expectedKeys   []string
+		expectedValues []string
+	}{
+		{
+			name: "valid secrets only",
+			secrets: []models.EnvironmentItemModel{
+				{"SECRET_KEY_1": "secret_value_1"},
+				{"SECRET_KEY_2": "secret_value_2"},
+				{"MY_TOKEN": "token123"},
+			},
+			expectedKeys:   []string{"SECRET_KEY_1", "SECRET_KEY_2", "MY_TOKEN"},
+			expectedValues: []string{"secret_value_1", "secret_value_2", "token123"},
+		},
+		{
+			name: "empty string values are skipped",
+			secrets: []models.EnvironmentItemModel{
+				{"VALID_SECRET": "valid_value"},
+				{"EMPTY_SECRET": ""},
+				{"ANOTHER_VALID": "another_value"},
+			},
+			expectedKeys:   []string{"VALID_SECRET", "ANOTHER_VALID"},
+			expectedValues: []string{"valid_value", "another_value"},
+		},
+		{
+			name: "whitespace-only values are skipped",
+			secrets: []models.EnvironmentItemModel{
+				{"VALID_SECRET": "valid_value"},
+				{"WHITESPACE_SECRET": "   "},
+				{"TAB_SECRET": "\t"},
+				{"NEWLINE_SECRET": "\n"},
+				{"MIXED_WHITESPACE": " \t\n "},
+			},
+			expectedKeys:   []string{"VALID_SECRET"},
+			expectedValues: []string{"valid_value"},
+		},
+		{
+			name: "built-in keys are filtered out",
+			secrets: []models.EnvironmentItemModel{
+				{"VALID_SECRET": "valid_value"},
+				{"BITRISE_SECRET_FILTERING": "true"},       // IsSecretFilteringKey
+				{"BITRISE_SECRET_ENVS_FILTERING": "false"}, // IsSecretEnvsFilteringKey
+				{"CI": "true"},             // CIModeEnvKey
+				{"PR": "false"},            // PRModeEnvKey
+				{"DEBUG": "true"},          // DebugModeEnvKey
+				{"PULL_REQUEST_ID": "123"}, // PullRequestIDEnvKey
+				{"ANOTHER_VALID": "another_value"},
+			},
+			expectedKeys:   []string{"VALID_SECRET", "ANOTHER_VALID"},
+			expectedValues: []string{"valid_value", "another_value"},
+		},
+		{
+			name: "mixed valid, empty, whitespace, and built-in keys",
+			secrets: []models.EnvironmentItemModel{
+				{"VALID_SECRET_1": "value1"},
+				{"EMPTY_SECRET": ""},
+				{"WHITESPACE_SECRET": "  "},
+				{"BITRISE_SECRET_FILTERING": "true"},
+				{"VALID_SECRET_2": "value2"},
+				{"TAB_SECRET": "\t\t"},
+			},
+			expectedKeys:   []string{"VALID_SECRET_1", "VALID_SECRET_2"},
+			expectedValues: []string{"value1", "value2"},
+		},
+		{
+			name: "secret with leading/trailing whitespace is kept",
+			secrets: []models.EnvironmentItemModel{
+				{"SECRET_WITH_SPACES": "  has spaces  "},
+				{"SECRET_WITH_NEWLINE": "\nhas newline\n"},
+			},
+			expectedKeys:   []string{"SECRET_WITH_SPACES", "SECRET_WITH_NEWLINE"},
+			expectedValues: []string{"  has spaces  ", "\nhas newline\n"},
+		},
+		{
+			name:           "empty secret list",
+			secrets:        []models.EnvironmentItemModel{},
+			expectedKeys:   nil, // Go returns nil for empty slices
+			expectedValues: nil,
+		},
+		{
+			name: "malformed environment item",
+			secrets: []models.EnvironmentItemModel{
+				{"VALID_SECRET": "valid_value"},
+				{}, // Empty map - will cause GetKeyValuePair to fail
+				{"ANOTHER_VALID": "another_value"},
+			},
+			expectedKeys:   []string{"VALID_SECRET", "ANOTHER_VALID"},
+			expectedValues: []string{"valid_value", "another_value"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			keys, values := GetSecretKeysAndValues(tt.secrets)
+
+			require.Equal(t, tt.expectedKeys, keys, "Secret keys don't match")
+			require.Equal(t, tt.expectedValues, values, "Secret values don't match")
+			require.Equal(t, len(keys), len(values), "Keys and values should have same length")
+		})
+	}
+}
