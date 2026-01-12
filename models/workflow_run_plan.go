@@ -11,17 +11,48 @@ import (
 
 const LogFormatVersion = "2"
 
-type WorkflowRunModes struct {
-	CIMode                  bool
-	PRMode                  bool
-	DebugMode               bool
-	SecretFilteringMode     bool
-	SecretEnvsFilteringMode bool
-	NoOutputTimeout         time.Duration
-	IsSteplibOfflineMode    bool
+// TODO: WorkflowRunPlan is used for both structured logging (bitrise_started event content) and for coordinating step execution.
+//  The bitrise_started event has a strict structure, this is why some of the properties are annotated with `json:"-"` to avoid their serialization.
+//  Models for these two usages should be separated in future.
+
+type WorkflowRunPlan struct {
+	Version          string `json:"version"`
+	LogFormatVersion string `json:"log_format_version"`
+
+	CIMode                  bool `json:"ci_mode"`
+	PRMode                  bool `json:"pr_mode"`
+	DebugMode               bool `json:"debug_mode"`
+	IsSteplibOfflineMode    bool `json:"-"`
+	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
+	SecretFilteringMode     bool `json:"secret_filtering_mode"`
+	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
+
+	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
+	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
+	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
 }
 
-// TODO: separate Plans from JSON event logging and actual workflow execution
+type WithGroupPlan struct {
+	Services  []ContainerPlan `json:"services,omitempty"`
+	Container ContainerPlan   `json:"container,omitempty"`
+}
+
+type StepBundlePlan struct {
+	ID    string `json:"id"`
+	Title string `json:"title,omitempty"`
+}
+
+type WorkflowExecutionPlan struct {
+	UUID                 string              `json:"uuid"`
+	WorkflowID           string              `json:"workflow_id"`
+	Steps                []StepExecutionPlan `json:"steps"`
+	WorkflowTitle        string              `json:"-"`
+	IsSteplibOfflineMode bool                `json:"-"`
+}
+
+type ContainerPlan struct {
+	Image string `json:"image"`
+}
 
 type StepExecutionPlan struct {
 	UUID   string `json:"uuid"`
@@ -42,43 +73,14 @@ type StepExecutionPlan struct {
 	StepBundleRunIfs []string `json:"-"`
 }
 
-type WorkflowExecutionPlan struct {
-	UUID                 string              `json:"uuid"`
-	WorkflowID           string              `json:"workflow_id"`
-	Steps                []StepExecutionPlan `json:"steps"`
-	WorkflowTitle        string              `json:"-"`
-	IsSteplibOfflineMode bool                `json:"-"`
-}
-
-type ContainerPlan struct {
-	Image string `json:"image"`
-}
-
-type WithGroupPlan struct {
-	Services  []ContainerPlan `json:"services,omitempty"`
-	Container ContainerPlan   `json:"container,omitempty"`
-}
-
-type StepBundlePlan struct {
-	ID    string `json:"id"`
-	Title string `json:"title,omitempty"`
-}
-
-type WorkflowRunPlan struct {
-	Version          string `json:"version"`
-	LogFormatVersion string `json:"log_format_version"`
-
-	CIMode                  bool `json:"ci_mode"`
-	PRMode                  bool `json:"pr_mode"`
-	DebugMode               bool `json:"debug_mode"`
-	IsSteplibOfflineMode    bool `json:"-"`
-	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
-	SecretFilteringMode     bool `json:"secret_filtering_mode"`
-	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
-
-	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
-	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
-	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
+type WorkflowRunModes struct {
+	CIMode                  bool
+	PRMode                  bool
+	DebugMode               bool
+	SecretFilteringMode     bool
+	SecretEnvsFilteringMode bool
+	NoOutputTimeout         time.Duration
+	IsSteplibOfflineMode    bool
 }
 
 func NewWorkflowRunPlan(
@@ -86,151 +88,16 @@ func NewWorkflowRunPlan(
 	stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container,
 	uuidProvider func() string,
 ) (WorkflowRunPlan, error) {
-	var executionPlan []WorkflowExecutionPlan
-	withGroupPlans := map[string]WithGroupPlan{}
-	stepBundlePlans := map[string]StepBundlePlan{}
+	builder := newWorkflowPlanBuilder(modes, workflows, stepBundles, containers, services, uuidProvider)
 
 	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
 	for _, workflowID := range workflowList {
-		workflow := workflows[workflowID]
-
-		var stepPlans []StepExecutionPlan
-
-		for _, stepListItem := range workflow.Steps {
-			key, t, err := stepListItem.GetKeyAndType()
-			if err != nil {
-				return WorkflowRunPlan{}, err
-			}
-
-			if t == StepListItemTypeStep {
-				step, err := stepListItem.GetStep()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				stepID := key
-				stepPlans = append(stepPlans, StepExecutionPlan{
-					UUID:   uuidProvider(),
-					StepID: stepID,
-					Step:   *step,
-				})
-			} else if t == StepListItemTypeWith {
-				with, err := stepListItem.GetWith()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				groupID := uuidProvider()
-
-				var containerPlan ContainerPlan
-				if with.ContainerID != "" {
-					containerPlan.Image = containers[with.ContainerID].Image
-				}
-
-				var servicePlans []ContainerPlan
-				for _, serviceID := range with.ServiceIDs {
-					servicePlans = append(servicePlans, ContainerPlan{Image: services[serviceID].Image})
-				}
-
-				withGroupPlans[groupID] = WithGroupPlan{
-					Services:  servicePlans,
-					Container: containerPlan,
-				}
-
-				for _, stepListStepItem := range with.Steps {
-					stepID, step, err := stepListStepItem.GetStepIDAndStep()
-					if err != nil {
-						return WorkflowRunPlan{}, err
-					}
-
-					stepPlans = append(stepPlans, StepExecutionPlan{
-						UUID:          uuidProvider(),
-						StepID:        stepID,
-						Step:          step,
-						WithGroupUUID: groupID,
-						ContainerID:   with.ContainerID,
-						ServiceIDs:    with.ServiceIDs,
-					})
-				}
-			} else if t == StepListItemTypeBundle {
-				bundleID := key
-				bundleOverride, err := stepListItem.GetBundle()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				bundleDefinition, ok := stepBundles[bundleID]
-				if !ok {
-					return WorkflowRunPlan{}, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
-				}
-
-				bundleEnvs, err := gatherBundleEnvs(*bundleOverride, bundleDefinition)
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				bundleUUID := uuidProvider()
-				title := bundleDefinition.Title
-				if bundleOverride.Title != "" {
-					title = bundleOverride.Title
-				}
-
-				stepBundlePlans[bundleUUID] = StepBundlePlan{
-					ID:    bundleID,
-					Title: title,
-				}
-
-				runIf := bundleDefinition.RunIf
-				if bundleOverride.RunIf != nil {
-					runIf = *bundleOverride.RunIf
-				}
-				var runIfs []string
-				if runIf != "" {
-					runIfs = []string{runIf}
-				}
-
-				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				stepPlans = append(stepPlans, plans...)
-			}
+		if err := builder.processWorkflow(workflowID); err != nil {
+			return WorkflowRunPlan{}, err
 		}
-
-		workflowTitle := workflow.Title
-		if workflowTitle == "" {
-			workflowTitle = workflowID
-		}
-
-		executionPlan = append(executionPlan, WorkflowExecutionPlan{
-			UUID:                 uuidProvider(),
-			WorkflowID:           workflowID,
-			Steps:                stepPlans,
-			WorkflowTitle:        workflowTitle,
-			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
-		})
 	}
 
-	cliVersion := version.VERSION
-	if version.IsAlternativeInstallation {
-		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
-	}
-
-	return WorkflowRunPlan{
-		Version:                 cliVersion,
-		LogFormatVersion:        LogFormatVersion,
-		CIMode:                  modes.CIMode,
-		PRMode:                  modes.PRMode,
-		DebugMode:               modes.DebugMode,
-		IsSteplibOfflineMode:    modes.IsSteplibOfflineMode,
-		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
-		SecretFilteringMode:     modes.SecretFilteringMode,
-		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
-		WithGroupPlans:          withGroupPlans,
-		StepBundlePlans:         stepBundlePlans,
-		ExecutionPlan:           executionPlan,
-	}, nil
+	return builder.build(), nil
 }
 
 func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
@@ -246,6 +113,227 @@ func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workfl
 	}
 
 	return workflowStack
+}
+
+// workflowPlanBuilder encapsulates the state and logic for building a WorkflowRunPlan
+type workflowPlanBuilder struct {
+	modes        WorkflowRunModes
+	workflows    map[string]WorkflowModel
+	stepBundles  map[string]StepBundleModel
+	containers   map[string]Container
+	services     map[string]Container
+	uuidProvider func() string
+
+	// Collected state
+	executionPlans  []WorkflowExecutionPlan
+	withGroupPlans  map[string]WithGroupPlan
+	stepBundlePlans map[string]StepBundlePlan
+}
+
+// newWorkflowPlanBuilder creates a new workflow plan builder
+func newWorkflowPlanBuilder(
+	modes WorkflowRunModes,
+	workflows map[string]WorkflowModel,
+	stepBundles map[string]StepBundleModel,
+	containers, services map[string]Container,
+	uuidProvider func() string,
+) *workflowPlanBuilder {
+	return &workflowPlanBuilder{
+		modes:           modes,
+		workflows:       workflows,
+		stepBundles:     stepBundles,
+		containers:      containers,
+		services:        services,
+		uuidProvider:    uuidProvider,
+		executionPlans:  []WorkflowExecutionPlan{},
+		withGroupPlans:  make(map[string]WithGroupPlan),
+		stepBundlePlans: make(map[string]StepBundlePlan),
+	}
+}
+
+// processWorkflow processes a single workflow and adds its execution plan
+func (b *workflowPlanBuilder) processWorkflow(workflowID string) error {
+	workflow := b.workflows[workflowID]
+	var stepPlans []StepExecutionPlan
+
+	for _, stepListItem := range workflow.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			return err
+		}
+
+		if t == StepListItemTypeStep {
+			plan, err := processRegularStep(key, stepListItem, b.uuidProvider)
+			if err != nil {
+				return err
+			}
+			stepPlans = append(stepPlans, plan)
+		} else if t == StepListItemTypeWith {
+			plans, groupID, err := processWithGroup(stepListItem, b.uuidProvider)
+			if err != nil {
+				return err
+			}
+
+			with, _ := stepListItem.GetWith()
+			b.addWithGroup(groupID, with)
+
+			stepPlans = append(stepPlans, plans...)
+		} else if t == StepListItemTypeBundle {
+			plans, err := processStepBundle(key, stepListItem, b.stepBundles, b.stepBundlePlans, b.uuidProvider)
+			if err != nil {
+				return err
+			}
+			stepPlans = append(stepPlans, plans...)
+		}
+	}
+
+	workflowTitle := workflow.Title
+	if workflowTitle == "" {
+		workflowTitle = workflowID
+	}
+
+	b.executionPlans = append(b.executionPlans, WorkflowExecutionPlan{
+		UUID:                 b.uuidProvider(),
+		WorkflowID:           workflowID,
+		Steps:                stepPlans,
+		WorkflowTitle:        workflowTitle,
+		IsSteplibOfflineMode: b.modes.IsSteplibOfflineMode,
+	})
+
+	return nil
+}
+
+// addWithGroup creates and stores a with group plan for the given group ID
+func (b *workflowPlanBuilder) addWithGroup(groupID string, with *WithModel) {
+	var containerPlan ContainerPlan
+	if with.ContainerID != "" {
+		containerPlan.Image = b.containers[with.ContainerID].Image
+	}
+
+	var servicePlans []ContainerPlan
+	for _, serviceID := range with.ServiceIDs {
+		servicePlans = append(servicePlans, ContainerPlan{Image: b.services[serviceID].Image})
+	}
+
+	b.withGroupPlans[groupID] = WithGroupPlan{
+		Services:  servicePlans,
+		Container: containerPlan,
+	}
+}
+
+// build constructs the final WorkflowRunPlan
+func (b *workflowPlanBuilder) build() WorkflowRunPlan {
+	cliVersion := version.VERSION
+	if version.IsAlternativeInstallation {
+		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
+	}
+
+	return WorkflowRunPlan{
+		Version:                 cliVersion,
+		LogFormatVersion:        LogFormatVersion,
+		CIMode:                  b.modes.CIMode,
+		PRMode:                  b.modes.PRMode,
+		DebugMode:               b.modes.DebugMode,
+		IsSteplibOfflineMode:    b.modes.IsSteplibOfflineMode,
+		NoOutputTimeoutMode:     b.modes.NoOutputTimeout > 0,
+		SecretFilteringMode:     b.modes.SecretFilteringMode,
+		SecretEnvsFilteringMode: b.modes.SecretEnvsFilteringMode,
+		WithGroupPlans:          b.withGroupPlans,
+		StepBundlePlans:         b.stepBundlePlans,
+		ExecutionPlan:           b.executionPlans,
+	}
+}
+
+// processRegularStep handles a single step (not in a with group or bundle)
+func processRegularStep(stepID string, stepListItem StepListItemModel, uuidProvider func() string) (StepExecutionPlan, error) {
+	step, err := stepListItem.GetStep()
+	if err != nil {
+		return StepExecutionPlan{}, err
+	}
+
+	return StepExecutionPlan{
+		UUID:   uuidProvider(),
+		StepID: stepID,
+		Step:   *step,
+	}, nil
+}
+
+// processWithGroup handles a 'with' group containing steps with containers/services
+func processWithGroup(
+	stepListItem StepListItemModel,
+	uuidProvider func() string,
+) ([]StepExecutionPlan, string, error) {
+	with, err := stepListItem.GetWith()
+	if err != nil {
+		return nil, "", err
+	}
+
+	groupID := uuidProvider()
+	var stepPlans []StepExecutionPlan
+
+	for _, stepListStepItem := range with.Steps {
+		stepID, step, err := stepListStepItem.GetStepIDAndStep()
+		if err != nil {
+			return nil, "", err
+		}
+
+		stepPlans = append(stepPlans, StepExecutionPlan{
+			UUID:          uuidProvider(),
+			StepID:        stepID,
+			Step:          step,
+			WithGroupUUID: groupID,
+			ContainerID:   with.ContainerID,
+			ServiceIDs:    with.ServiceIDs,
+		})
+	}
+
+	return stepPlans, groupID, nil
+}
+
+// processStepBundle handles a step bundle and its nested steps
+func processStepBundle(
+	bundleID string,
+	stepListItem StepListItemModel,
+	stepBundles map[string]StepBundleModel,
+	stepBundlePlans map[string]StepBundlePlan,
+	uuidProvider func() string,
+) ([]StepExecutionPlan, error) {
+	bundleOverride, err := stepListItem.GetBundle()
+	if err != nil {
+		return nil, err
+	}
+
+	bundleDefinition, ok := stepBundles[bundleID]
+	if !ok {
+		return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
+	}
+
+	bundleEnvs, err := gatherBundleEnvs(*bundleOverride, bundleDefinition)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleUUID := uuidProvider()
+	title := bundleDefinition.Title
+	if bundleOverride.Title != "" {
+		title = bundleOverride.Title
+	}
+
+	stepBundlePlans[bundleUUID] = StepBundlePlan{
+		ID:    bundleID,
+		Title: title,
+	}
+
+	runIf := bundleDefinition.RunIf
+	if bundleOverride.RunIf != nil {
+		runIf = *bundleOverride.RunIf
+	}
+	var runIfs []string
+	if runIf != "" {
+		runIfs = []string{runIf}
+	}
+
+	return gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
 }
 
 func gatherBundleSteps(
