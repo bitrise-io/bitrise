@@ -91,7 +91,7 @@ var toolsInfoSubcommand = cli.Command{
 	Description: `Display information about development tools managed by the tool provider.
 
 By default, shows all installed tool versions. Use --active to show only the tools
-that are currently active in the shell context (based on .tool-versions, mise.toml,
+that are currently active in the shell context (based on your bitrise.yml, .tool-versions, mise.toml,
 or other config files in the current directory).
 
 EXAMPLES:
