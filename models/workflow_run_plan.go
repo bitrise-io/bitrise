@@ -11,17 +11,44 @@ import (
 
 const LogFormatVersion = "2"
 
-type WorkflowRunModes struct {
-	CIMode                  bool
-	PRMode                  bool
-	DebugMode               bool
-	SecretFilteringMode     bool
-	SecretEnvsFilteringMode bool
-	NoOutputTimeout         time.Duration
-	IsSteplibOfflineMode    bool
+// TODO: WorkflowRunPlan is used coordinate Steps' execution (cli/run.go) and also to log JSON events (PrintBitriseStartedEvent in log/log.go).
+//  Some fields are only relevant for one of these purposes, that's why they have `json:"-"` struct tags.
+//  Consider splitting this struct into two separate structs to separate these concerns.
+
+type WorkflowRunPlan struct {
+	Version          string `json:"version"`
+	LogFormatVersion string `json:"log_format_version"`
+
+	CIMode                  bool `json:"ci_mode"`
+	PRMode                  bool `json:"pr_mode"`
+	DebugMode               bool `json:"debug_mode"`
+	IsSteplibOfflineMode    bool `json:"-"`
+	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
+	SecretFilteringMode     bool `json:"secret_filtering_mode"`
+	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
+
+	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
+	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
+	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
 }
 
-// TODO: separate Plans from JSON event logging and actual workflow execution
+type WorkflowExecutionPlan struct {
+	UUID                 string              `json:"uuid"`
+	WorkflowID           string              `json:"workflow_id"`
+	Steps                []StepExecutionPlan `json:"steps"`
+	WorkflowTitle        string              `json:"-"`
+	IsSteplibOfflineMode bool                `json:"-"`
+}
+
+type WithGroupPlan struct {
+	Services  []ContainerPlan `json:"services,omitempty"`
+	Container ContainerPlan   `json:"container,omitempty"`
+}
+
+type StepBundlePlan struct {
+	ID    string `json:"id"`
+	Title string `json:"title,omitempty"`
+}
 
 type StepExecutionPlan struct {
 	UUID   string `json:"uuid"`
@@ -42,43 +69,18 @@ type StepExecutionPlan struct {
 	StepBundleRunIfs []string `json:"-"`
 }
 
-type WorkflowExecutionPlan struct {
-	UUID                 string              `json:"uuid"`
-	WorkflowID           string              `json:"workflow_id"`
-	Steps                []StepExecutionPlan `json:"steps"`
-	WorkflowTitle        string              `json:"-"`
-	IsSteplibOfflineMode bool                `json:"-"`
-}
-
 type ContainerPlan struct {
 	Image string `json:"image"`
 }
 
-type WithGroupPlan struct {
-	Services  []ContainerPlan `json:"services,omitempty"`
-	Container ContainerPlan   `json:"container,omitempty"`
-}
-
-type StepBundlePlan struct {
-	ID    string `json:"id"`
-	Title string `json:"title,omitempty"`
-}
-
-type WorkflowRunPlan struct {
-	Version          string `json:"version"`
-	LogFormatVersion string `json:"log_format_version"`
-
-	CIMode                  bool `json:"ci_mode"`
-	PRMode                  bool `json:"pr_mode"`
-	DebugMode               bool `json:"debug_mode"`
-	IsSteplibOfflineMode    bool `json:"-"`
-	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
-	SecretFilteringMode     bool `json:"secret_filtering_mode"`
-	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
-
-	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
-	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
-	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
+type WorkflowRunModes struct {
+	CIMode                  bool
+	PRMode                  bool
+	DebugMode               bool
+	SecretFilteringMode     bool
+	SecretEnvsFilteringMode bool
+	NoOutputTimeout         time.Duration
+	IsSteplibOfflineMode    bool
 }
 
 func NewWorkflowRunPlan(
