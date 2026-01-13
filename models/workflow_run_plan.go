@@ -260,7 +260,6 @@ func gatherBundleSteps(
 	uuidProvider func() string,
 ) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
-	stepIDX := -1
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
 		key, t, err := stepListStepOrBundleItem.GetKeyAndType()
 		if err != nil {
@@ -268,7 +267,6 @@ func gatherBundleSteps(
 		}
 
 		if t == StepListItemTypeStep {
-			stepIDX++
 			step, err := stepListStepOrBundleItem.GetStep()
 			if err != nil {
 				return nil, err
