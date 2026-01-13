@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/version"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -23,10 +24,10 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 		name           string
 		modes          WorkflowRunModes
 		targetWorkflow string
-		workflows      map[string]WorkflowModel
-		stepBundles    map[string]StepBundleModel
-		containers     map[string]Container
-		services       map[string]Container
+		workflows      map[string]yml.WorkflowModel
+		stepBundles    map[string]yml.StepBundleModel
+		containers     map[string]yml.Container
+		services       map[string]yml.Container
 		want           WorkflowRunPlan
 		wantErr        assert.ErrorAssertionFunc
 	}{
@@ -34,20 +35,20 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			name:           "steps within a bundle inherit the bundle's run_if condition",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
 					RunIf: "{{.IsCI}}",
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 						{"bundle1-step2": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
+					Steps: []yml.StepListItemModel{
 						{"step1": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 						{"step2": stepmanModels.StepModel{}},
 					},
 				},
@@ -73,32 +74,32 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			name:           "steps within embedded bundles inherit the all the parent bundles' run_if condition",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
 					RunIf: `{{enveq "RUN_IF_1" "true"}}`,
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle2": StepBundleListItemModel{}},
+						{"bundle::bundle2": yml.StepBundleListItemModel{}},
 					},
 				},
 				"bundle2": {
 					RunIf: `{{enveq "RUN_IF_2" "true"}}`,
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle2-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle3": StepBundleListItemModel{}},
+						{"bundle::bundle3": yml.StepBundleListItemModel{}},
 					},
 				},
 				"bundle3": {
 					RunIf: `{{enveq "RUN_IF_3" "true"}}`,
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle3-step1": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 					},
 				},
 			},
@@ -124,24 +125,24 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			name:           "steps mixed with embedded bundles inside bundle",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
-					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle2": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemStepOrBundleModel{
+						{"bundle::bundle2": yml.StepBundleListItemModel{}},
 						{"bundle1-step1": stepmanModels.StepModel{}},
 					},
 				},
 				"bundle2": {
 					RunIf: `{{enveq "RUN_IF_1" "true"}}`,
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle2-step1": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 					},
 				},
 			},
@@ -176,10 +177,10 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 		name           string
 		modes          WorkflowRunModes
 		targetWorkflow string
-		workflows      map[string]WorkflowModel
-		stepBundles    map[string]StepBundleModel
-		containers     map[string]Container
-		services       map[string]Container
+		workflows      map[string]yml.WorkflowModel
+		stepBundles    map[string]yml.StepBundleModel
+		containers     map[string]yml.Container
+		services       map[string]yml.Container
 		uuidProvider   func() string
 		want           WorkflowRunPlan
 		wantErr        assert.ErrorAssertionFunc
@@ -189,21 +190,21 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 						{"bundle1-step2": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
+					Steps: []yml.StepListItemModel{
 						{"step1": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 						{"step2": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 					},
 				},
 			},
@@ -232,32 +233,32 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 						{"bundle1-step2": stepmanModels.StepModel{}},
 					},
 				},
 				"bundle2": {
-					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemStepOrBundleModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 						{"bundle2-step1": stepmanModels.StepModel{}},
 						{"bundle2-step2": stepmanModels.StepModel{}},
 					},
 				},
 				"bundle3": {
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle3-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle2": StepBundleListItemModel{}},
+						{"bundle::bundle2": yml.StepBundleListItemModel{}},
 						{"bundle3-step2": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle3": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle3": yml.StepBundleListItemModel{}},
 					},
 				},
 			},
@@ -287,13 +288,13 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
 					Inputs: []envmanModels.EnvironmentItemModel{
 						{"input1": "value1"},
 						{"input2": ""},
 					},
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 						{"bundle1-step2": stepmanModels.StepModel{}},
 					},
@@ -303,8 +304,8 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 						{"input1": "value3"},
 						{"input3": ""},
 					},
-					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle1": StepBundleListItemModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{
 							Inputs: []envmanModels.EnvironmentItemModel{
 								{"input2": "value2"},
 							},
@@ -314,10 +315,10 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle2": StepBundleListItemModel{
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle2": yml.StepBundleListItemModel{
 							Inputs: []envmanModels.EnvironmentItemModel{
 								{"input3": "value3"},
 							},
@@ -372,19 +373,19 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
 					Title: "My Bundle 1",
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
 					},
 				},
 			},
@@ -409,20 +410,20 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			modes:          WorkflowRunModes{},
 			uuidProvider:   (&MockUUIDProvider{}).UUID,
 			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
+			stepBundles: map[string]yml.StepBundleModel{
 				"bundle1": {
 					Title: "My Bundle 1",
-					Steps: []StepListItemStepOrBundleModel{
+					Steps: []yml.StepListItemStepOrBundleModel{
 						{"bundle1-step1": stepmanModels.StepModel{}},
 					},
 				},
 			},
-			workflows: map[string]WorkflowModel{
+			workflows: map[string]yml.WorkflowModel{
 				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 1"}},
-						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 2"}},
+					Steps: []yml.StepListItemModel{
+						{"bundle::bundle1": yml.StepBundleListItemModel{}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{Title: "My Bundle Override 1"}},
+						{"bundle::bundle1": yml.StepBundleListItemModel{Title: "My Bundle Override 2"}},
 					},
 				},
 			},

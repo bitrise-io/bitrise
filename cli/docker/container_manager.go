@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
@@ -18,7 +19,6 @@ import (
 	"github.com/docker/docker/client"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/v2/redactwriter"
 )
@@ -126,7 +126,7 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 }
 
 func (cm *ContainerManager) StartContainerForStepGroup(
-	container models.Container,
+	container yml.Container,
 	groupID string,
 	envs map[string]string,
 ) (*RunningContainer, error) {
@@ -168,7 +168,7 @@ func (cm *ContainerManager) StartContainerForStepGroup(
 }
 
 func (cm *ContainerManager) StartServiceContainersForStepGroup(
-	services map[string]models.Container,
+	services map[string]yml.Container,
 	groupID string,
 	envs map[string]string,
 ) ([]*RunningContainer, error) {
@@ -252,7 +252,7 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	return nil
 }
 
-func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
+func (cm *ContainerManager) login(container yml.Container, envs map[string]string) error {
 	if container.Credentials.Username != "" && container.Credentials.Password != "" {
 		cm.logger.Infof("ℹ️ Logging into docker registry: %s", container.Image)
 
@@ -285,7 +285,7 @@ func (cm *ContainerManager) login(container models.Container, envs map[string]st
 //   - SDK differs from the CLI in some cases, for example pulling from private registry requires the exact token
 //     it can't automatically use the docker config
 func (cm *ContainerManager) runContainer(
-	container models.Container,
+	container yml.Container,
 	options containerCreateOptions,
 	envs map[string]string,
 ) (*RunningContainer, error) {
@@ -348,7 +348,7 @@ func (cm *ContainerManager) startContainer(options containerCreateOptions) (*Run
 }
 
 func (cm *ContainerManager) createContainer(
-	container models.Container,
+	container yml.Container,
 	options containerCreateOptions,
 	envs map[string]string,
 ) error {
@@ -417,7 +417,7 @@ func (cm *ContainerManager) createContainer(
 	return nil
 }
 
-func (cm *ContainerManager) pullImageWithRetry(container models.Container) error {
+func (cm *ContainerManager) pullImageWithRetry(container yml.Container) error {
 	pulling := true
 	defer func() {
 		pulling = false
@@ -449,7 +449,7 @@ func (cm *ContainerManager) pullImageWithRetry(container models.Container) error
 	return err
 }
 
-func (cm *ContainerManager) pullImage(container models.Container) error {
+func (cm *ContainerManager) pullImage(container yml.Container) error {
 	images, err := cm.client.ImageList(context.Background(), image.ListOptions{
 		Filters: filters.NewArgs(filters.Arg("reference", container.Image)),
 	})

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -13,11 +13,11 @@ import (
 func ParseVersionString(versionString string) (string, provider.ResolutionStrategy, error) {
 	versionString = strings.TrimSpace(versionString)
 
-	latestSyntaxPattern, err := regexp.Compile(models.ToolSyntaxPatternLatest)
+	latestSyntaxPattern, err := regexp.Compile(yml.ToolSyntaxPatternLatest)
 	if err != nil {
 		return "", 0, fmt.Errorf("compile regex pattern: %v", err)
 	}
-	preinstalledSyntaxPattern, err := regexp.Compile(models.ToolSyntaxPatternInstalled)
+	preinstalledSyntaxPattern, err := regexp.Compile(yml.ToolSyntaxPatternInstalled)
 	if err != nil {
 		return "", 0, fmt.Errorf("compile regex pattern: %v", err)
 	}

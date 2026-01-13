@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,16 +12,16 @@ import (
 func TestGetToolRequests(t *testing.T) {
 	tests := []struct {
 		name       string
-		config     models.BitriseDataModel
+		config     yml.BitriseDataModel
 		workflowID string
 		expected   []provider.ToolRequest
 		wantErr    bool
 	}{
 		{
 			name: "global tools only - empty tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: nil,
 					},
@@ -32,13 +33,13 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "global tools only - multiple tools with different version strategies",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"golang": "1.20.3",
 					"nodejs": "20:installed",
 					"ruby":   "3.2:latest",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: nil,
 					},
@@ -69,9 +70,9 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "workflow tools only - no global tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: nil,
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"python": "3.9.0",
@@ -99,12 +100,12 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "workflow tools override global tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"python": "3.8.0",
 					"ruby":   "2.7.0",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"python": "3.9.0",     // Override global python version
@@ -138,12 +139,12 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "workflow tools unset some global tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"python": "3.8.0",
 					"ruby":   "2.7.0",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"python": "3.9.0",     // Override global python version
@@ -172,12 +173,12 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "tools with plugin identifiers",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"golang":      "1.20.3",
 					"custom-tool": "1.0.0",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"nodejs": "20:installed",
@@ -216,9 +217,9 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "no global tools with workflow tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: nil,
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"deploy": {
 						Tools: models.ToolsModel{
 							"ruby": "2.7:installed",
@@ -246,9 +247,9 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "empty global tools with workflow tools",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"java": "11.0.16",
@@ -269,11 +270,11 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "tool with no ToolConfig",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"golang": "1.20.3",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {},
 				},
 				ToolConfig: nil,
@@ -291,11 +292,11 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "tool with ToolConfig but nil ExtraPlugins",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"golang": "1.20.3",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {},
 				},
 				ToolConfig: &models.ToolConfigModel{
@@ -316,9 +317,9 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "both global and workflow tools empty",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{},
 					},
@@ -330,9 +331,9 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "both global and workflow tools nil",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: nil,
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: nil,
 					},
@@ -344,11 +345,11 @@ func TestGetToolRequests(t *testing.T) {
 		},
 		{
 			name: "whitespace in version strings",
-			config: models.BitriseDataModel{
+			config: yml.BitriseDataModel{
 				Tools: models.ToolsModel{
 					"python": "  3.9.0  ",
 				},
-				Workflows: map[string]models.WorkflowModel{
+				Workflows: map[string]yml.WorkflowModel{
 					"test": {
 						Tools: models.ToolsModel{
 							"node": "\t16:latest\n",

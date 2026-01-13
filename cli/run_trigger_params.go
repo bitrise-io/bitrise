@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 )
 
 // --------------------
@@ -19,11 +19,11 @@ type RunAndTriggerParamsModel struct {
 	// Trigger Params
 	TriggerPattern string `json:"pattern"`
 
-	PushBranch     string                       `json:"push-branch"`
-	PRSourceBranch string                       `json:"pr-source-branch"`
-	PRTargetBranch string                       `json:"pr-target-branch"`
-	PRReadyState   models.PullRequestReadyState `json:"pr-ready-state"`
-	Tag            string                       `json:"tag"`
+	PushBranch     string                    `json:"push-branch"`
+	PRSourceBranch string                    `json:"pr-source-branch"`
+	PRTargetBranch string                    `json:"pr-target-branch"`
+	PRReadyState   yml.PullRequestReadyState `json:"pr-ready-state"`
+	Tag            string                    `json:"tag"`
 
 	// Trigger Check Params
 	Format string `json:"format"`
@@ -47,7 +47,7 @@ func parseRunAndTriggerJSONParams(jsonParams string) (RunAndTriggerParamsModel, 
 func parseRunAndTriggerParams(
 	workflowToRunID,
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState yml.PullRequestReadyState, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
@@ -126,7 +126,7 @@ func parseRunParams(
 
 func parseTriggerParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState yml.PullRequestReadyState, tag,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
@@ -135,7 +135,7 @@ func parseTriggerParams(
 
 func parseTriggerCheckParams(
 	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
+	pushBranch, prSourceBranch, prTargetBranch string, prReadyState yml.PullRequestReadyState, tag,
 	format,
 	bitriseConfigPath, bitriseConfigBase64Data,
 	inventoryPath, inventoryBase64Data,

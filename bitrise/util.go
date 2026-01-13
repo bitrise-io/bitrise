@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/command"
@@ -213,7 +214,7 @@ func FailedStepEnvs(failedStepRunResult models.StepRunResultsModel) []envmanMode
 	}
 }
 
-func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, validation ValidationType) ([]string, error) {
+func normalizeValidateFillMissingDefaults(bitriseData *yml.BitriseDataModel, validation ValidationType) ([]string, error) {
 	if err := bitriseData.Normalize(); err != nil {
 		return []string{}, err
 	}
@@ -237,7 +238,7 @@ func normalizeValidateFillMissingDefaults(bitriseData *models.BitriseDataModel, 
 	return warnings, nil
 }
 
-func ConfigModelFromFileContent(configBytes []byte, isJSON bool, validation ValidationType) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromFileContent(configBytes []byte, isJSON bool, validation ValidationType) (bitriseData yml.BitriseDataModel, warnings []string, err error) {
 	if isJSON {
 		bitriseData, err = jsonBytesToConfig(configBytes)
 	} else {
@@ -252,7 +253,7 @@ func ConfigModelFromFileContent(configBytes []byte, isJSON bool, validation Vali
 	return
 }
 
-func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData yml.BitriseDataModel, warnings []string, err error) {
 	bitriseData, err = yamlBytesToConfig(configBytes)
 	if err != nil {
 		return
@@ -262,7 +263,7 @@ func ConfigModelFromYAMLBytes(configBytes []byte) (bitriseData models.BitriseDat
 	return
 }
 
-func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, validation ValidationType) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, validation ValidationType) (bitriseData yml.BitriseDataModel, warnings []string, err error) {
 	bitriseData, err = yamlBytesToConfig(configBytes)
 	if err != nil {
 		return
@@ -272,7 +273,7 @@ func ConfigModelFromYAMLBytesWithValidation(configBytes []byte, validation Valid
 	return
 }
 
-func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDataModel, warnings []string, err error) {
+func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData yml.BitriseDataModel, warnings []string, err error) {
 	bitriseData, err = jsonBytesToConfig(configBytes)
 	if err != nil {
 		return
@@ -282,38 +283,38 @@ func ConfigModelFromJSONBytes(configBytes []byte) (bitriseData models.BitriseDat
 	return
 }
 
-func jsonBytesToConfig(bytes []byte) (models.BitriseDataModel, error) {
-	var config models.BitriseDataModel
+func jsonBytesToConfig(bytes []byte) (yml.BitriseDataModel, error) {
+	var config yml.BitriseDataModel
 	if err := json.Unmarshal(bytes, &config); err != nil {
-		return models.BitriseDataModel{}, err
+		return yml.BitriseDataModel{}, err
 	}
 
 	return config, nil
 }
 
-func yamlBytesToConfig(bytes []byte) (models.BitriseDataModel, error) {
-	var config models.BitriseDataModel
+func yamlBytesToConfig(bytes []byte) (yml.BitriseDataModel, error) {
+	var config yml.BitriseDataModel
 	if err := yaml.Unmarshal(bytes, &config); err != nil {
-		return models.BitriseDataModel{}, err
+		return yml.BitriseDataModel{}, err
 	}
 
 	return config, nil
 }
 
-func ReadBitriseConfig(pth string, validation ValidationType) (models.BitriseDataModel, []string, error) {
+func ReadBitriseConfig(pth string, validation ValidationType) (yml.BitriseDataModel, []string, error) {
 	if isExists, err := pathutil.IsPathExists(pth); err != nil {
-		return models.BitriseDataModel{}, []string{}, err
+		return yml.BitriseDataModel{}, []string{}, err
 	} else if !isExists {
-		return models.BitriseDataModel{}, []string{}, fmt.Errorf("no file found at path: %s", pth)
+		return yml.BitriseDataModel{}, []string{}, fmt.Errorf("no file found at path: %s", pth)
 	}
 
 	bytes, err := fileutil.ReadBytesFromFile(pth)
 	if err != nil {
-		return models.BitriseDataModel{}, []string{}, err
+		return yml.BitriseDataModel{}, []string{}, err
 	}
 
 	if len(bytes) == 0 {
-		return models.BitriseDataModel{}, []string{}, errors.New("empty config")
+		return yml.BitriseDataModel{}, []string{}, errors.New("empty config")
 	}
 
 	return ConfigModelFromFileContent(bytes, strings.HasSuffix(pth, ".json"), validation)

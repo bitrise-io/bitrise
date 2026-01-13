@@ -7,7 +7,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
@@ -61,7 +61,7 @@ func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode b
 
 // migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
 // and returns the triggered workflow id
-func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, string, error) {
+func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap yml.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, string, error) {
 	if params.TriggerPattern != "" {
 		params = migratePatternToParams(params, isPullRequestMode)
 	}
@@ -93,7 +93,7 @@ func triggerCheck(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
+	prReadyState := yml.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)

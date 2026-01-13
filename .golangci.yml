@@ -8,6 +8,9 @@ linters:
       rules:
         - name: empty-block
           disabled: true
+    godoclint:
+      disable:
+        - start-with-name
   exclusions:
     generated: lax
     presets:

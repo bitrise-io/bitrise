@@ -14,7 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/go-utils/fileutil"
@@ -1044,12 +1044,12 @@ workflows:
 
 // If workflow contains no steps
 func Test0Steps1Workflows(t *testing.T) {
-	workflow := models.WorkflowModel{}
+	workflow := yml.WorkflowModel{}
 
-	config := models.BitriseDataModel{
+	config := yml.BitriseDataModel{
 		FormatVersion:        "1.0.0",
 		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
+		Workflows: map[string]yml.WorkflowModel{
 			"zero_steps": workflow,
 		},
 	}
@@ -1071,18 +1071,18 @@ func Test0Steps1Workflows(t *testing.T) {
 
 // Workflow contains before and after workflow, and no one contains steps
 func Test0Steps3WorkflowsBeforeAfter(t *testing.T) {
-	beforeWorkflow := models.WorkflowModel{}
-	afterWorkflow := models.WorkflowModel{}
+	beforeWorkflow := yml.WorkflowModel{}
+	afterWorkflow := yml.WorkflowModel{}
 
-	workflow := models.WorkflowModel{
+	workflow := yml.WorkflowModel{
 		BeforeRun: []string{"before"},
 		AfterRun:  []string{"after"},
 	}
 
-	config := models.BitriseDataModel{
+	config := yml.BitriseDataModel{
 		FormatVersion:        "1.0.0",
 		DefaultStepLibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
-		Workflows: map[string]models.WorkflowModel{
+		Workflows: map[string]yml.WorkflowModel{
 			"target": workflow,
 			"before": beforeWorkflow,
 			"after":  afterWorkflow,
@@ -2039,7 +2039,7 @@ route_map:
 	}
 }
 
-func givenWorkflowLoaded(t *testing.T, workflow string) models.BitriseDataModel {
+func givenWorkflowLoaded(t *testing.T, workflow string) yml.BitriseDataModel {
 	require.NoError(t, configs.InitPaths())
 	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(workflow))
 	require.NoError(t, err)

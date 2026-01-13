@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/urfave/cli"
 )
@@ -41,7 +42,7 @@ var triggerCommand = cli.Command{
 	},
 }
 
-func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
+func printAvailableTriggerFilters(triggerMap []yml.TriggerMapItemModel) {
 	log.Info("The following trigger filters are available:")
 
 	for _, triggerItem := range triggerMap {
@@ -103,7 +104,7 @@ func trigger(c *cli.Context) error {
 	pushBranch := c.String(PushBranchKey)
 	prSourceBranch := c.String(PRSourceBranchKey)
 	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
+	prReadyState := yml.PullRequestReadyState(c.String(PRReadyStateKey))
 	tag := c.String(TagKey)
 
 	bitriseConfigBase64Data := c.String(ConfigBase64Key)

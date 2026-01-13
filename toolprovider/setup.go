@@ -7,7 +7,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/versionfile"
 )
@@ -20,7 +20,7 @@ func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, s
 	}
 
 	// TODO: we might want to make these configurable via CLI flags later
-	dummyConfig := models.BitriseDataModel{}
+	dummyConfig := yml.BitriseDataModel{}
 	provider := selectProvider(dummyConfig)
 	useFastInstall := selectFastInstall(dummyConfig)
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)

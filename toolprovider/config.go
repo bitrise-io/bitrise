@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provider.ToolRequest, error) {
+func getToolRequests(config yml.BitriseDataModel, workflowID string) ([]provider.ToolRequest, error) {
 	globalTools := config.Tools
 	workflow, ok := config.Workflows[workflowID]
 	if !ok {
@@ -53,14 +53,14 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 	return toolRequests, nil
 }
 
-func selectProvider(bitriseConfig models.BitriseDataModel) string {
+func selectProvider(bitriseConfig yml.BitriseDataModel) string {
 	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.Provider != "" {
 		return bitriseConfig.ToolConfig.Provider
 	}
 	return "mise"
 }
 
-func selectFastInstall(bitriseConfig models.BitriseDataModel) bool {
+func selectFastInstall(bitriseConfig yml.BitriseDataModel) bool {
 	// If explicitly set in the config, use that value.
 	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.FastInstall != nil {
 		return *bitriseConfig.ToolConfig.FastInstall

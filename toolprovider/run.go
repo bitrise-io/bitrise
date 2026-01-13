@@ -6,11 +6,11 @@ import (
 	"slices"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/colorstring"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
@@ -18,7 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
+func RunDeclarativeSetup(config yml.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)

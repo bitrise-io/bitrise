@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -240,7 +241,7 @@ workflows:
 	}
 
 	for _, testCase := range testCases {
-		config := BitriseDataModel{}
+		config := yml.BitriseDataModel{}
 		err := yaml.Unmarshal([]byte(testCase.rawYML), &config)
 		if testCase.errorExpected {
 			require.Error(t, err)

@@ -18,6 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	"github.com/bitrise-io/bitrise/v2/tools"
@@ -45,7 +46,7 @@ var errWorkflowRunFailed = errors.New("workflow run failed")
 
 type RunConfig struct {
 	Modes    models.WorkflowRunModes
-	Config   models.BitriseDataModel
+	Config   yml.BitriseDataModel
 	Workflow string
 	Secrets  []envmanModels.EnvironmentItemModel
 }
@@ -168,8 +169,8 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 }
 
 type DockerManager interface {
-	StartContainerForStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainersForStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
+	StartContainerForStepGroup(yml.Container, string, map[string]string) (*docker.RunningContainer, error)
+	StartServiceContainersForStepGroup(services map[string]yml.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
 	GetContainerForStepGroup(string) *docker.RunningContainer
 	GetServiceContainersForStepGroup(string) []*docker.RunningContainer
 	DestroyAllContainers() error
@@ -361,7 +362,7 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	return buildRunResults, nil
 }
 
-func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
+func (r WorkflowRunner) ContainerDefinition(id string) *yml.Container {
 	container, ok := r.config.Config.Containers[id]
 	if ok {
 		return &container
@@ -369,8 +370,8 @@ func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
 	return nil
 }
 
-func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
-	services := map[string]models.Container{}
+func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]yml.Container {
+	services := map[string]yml.Container{}
 	for _, id := range ids {
 		service, ok := r.config.Config.Services[id]
 		if ok {
@@ -509,7 +510,7 @@ func registerRunModes(modes models.WorkflowRunModes) error {
 	return nil
 }
 
-func printAvailableWorkflows(config models.BitriseDataModel) {
+func printAvailableWorkflows(config yml.BitriseDataModel) {
 	workflowNames := []string{}
 	utilityWorkflowNames := []string{}
 

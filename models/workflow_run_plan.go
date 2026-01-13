@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/models/yml"
 	"github.com/bitrise-io/bitrise/v2/version"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
@@ -82,8 +83,8 @@ type WorkflowRunPlan struct {
 }
 
 func NewWorkflowRunPlan(
-	modes WorkflowRunModes, targetWorkflow string, workflows map[string]WorkflowModel,
-	stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container,
+	modes WorkflowRunModes, targetWorkflow string, workflows map[string]yml.WorkflowModel,
+	stepBundles map[string]yml.StepBundleModel, containers map[string]yml.Container, services map[string]yml.Container,
 	uuidProvider func() string,
 ) (WorkflowRunPlan, error) {
 	var executionPlan []WorkflowExecutionPlan
@@ -102,7 +103,7 @@ func NewWorkflowRunPlan(
 				return WorkflowRunPlan{}, err
 			}
 
-			if t == StepListItemTypeStep {
+			if t == yml.StepListItemTypeStep {
 				step, err := stepListItem.GetStep()
 				if err != nil {
 					return WorkflowRunPlan{}, err
@@ -114,7 +115,7 @@ func NewWorkflowRunPlan(
 					StepID: stepID,
 					Step:   *step,
 				})
-			} else if t == StepListItemTypeWith {
+			} else if t == yml.StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
 				if err != nil {
 					return WorkflowRunPlan{}, err
@@ -152,7 +153,7 @@ func NewWorkflowRunPlan(
 						ServiceIDs:    with.ServiceIDs,
 					})
 				}
-			} else if t == StepListItemTypeBundle {
+			} else if t == yml.StepListItemTypeBundle {
 				bundleID := key
 				bundleOverride, err := stepListItem.GetBundle()
 				if err != nil {
@@ -233,7 +234,7 @@ func NewWorkflowRunPlan(
 	}, nil
 }
 
-func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
+func walkWorkflows(workflowID string, workflows map[string]yml.WorkflowModel, workflowStack []string) []string {
 	workflow := workflows[workflowID]
 	for _, before := range workflow.BeforeRun {
 		workflowStack = walkWorkflows(before, workflows, workflowStack)
@@ -249,11 +250,11 @@ func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workfl
 }
 
 func gatherBundleSteps(
-	bundleDefinition StepBundleModel,
+	bundleDefinition yml.StepBundleModel,
 	bundleUUID string,
 	bundleEnvs []envmanModels.EnvironmentItemModel,
 	runIfs []string,
-	stepBundles map[string]StepBundleModel,
+	stepBundles map[string]yml.StepBundleModel,
 	stepBundlePlans map[string]StepBundlePlan,
 	uuidProvider func() string,
 ) ([]StepExecutionPlan, error) {
@@ -265,7 +266,7 @@ func gatherBundleSteps(
 			return nil, err
 		}
 
-		if t == StepListItemTypeStep {
+		if t == yml.StepListItemTypeStep {
 			stepIDX++
 			step, err := stepListStepOrBundleItem.GetStep()
 			if err != nil {
@@ -283,7 +284,7 @@ func gatherBundleSteps(
 			}
 
 			stepPlans = append(stepPlans, stepPlan)
-		} else if t == StepListItemTypeBundle {
+		} else if t == yml.StepListItemTypeBundle {
 			bundleID := key
 			override, err := stepListStepOrBundleItem.GetBundle()
 			if err != nil {
@@ -342,7 +343,7 @@ func gatherBundleSteps(
 	return stepPlans, nil
 }
 
-func gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition StepBundleModel) ([]envmanModels.EnvironmentItemModel, error) {
+func gatherBundleEnvs(bundleOverride yml.StepBundleListItemModel, bundleDefinition yml.StepBundleModel) ([]envmanModels.EnvironmentItemModel, error) {
 	var bundleEnvs []envmanModels.EnvironmentItemModel
 
 	bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)
