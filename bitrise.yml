@@ -469,27 +469,6 @@ step_bundles:
 
   install_dependencies:
     steps:
-    - script@1:
-        inputs:
-        - content: >-
-            #!/usr/bin/env bash
-
-            # fail if any commands fails
-
-            set -e
-
-            # make pipelines' return status equal the last command to exit with
-            a non-zero status, or zero if all commands exit successfully
-
-            set -o pipefail
-
-            # debug log
-
-            set -x
-
-
-            go version
-        title: Check go version
     - bitrise-run@0:
         inputs:
         - workflow_id: unpin-go-version
