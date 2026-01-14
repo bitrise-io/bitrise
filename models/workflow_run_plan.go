@@ -105,7 +105,7 @@ func NewWorkflowRunPlan(
 			}
 
 			if t == StepListItemTypeStep {
-				step, err := stepListItem.GetStep()
+				_, step, err := stepListItem.GetStep()
 				if err != nil {
 					return WorkflowRunPlan{}, err
 				}
@@ -140,7 +140,7 @@ func NewWorkflowRunPlan(
 				}
 
 				for _, stepListStepItem := range with.Steps {
-					stepID, step, err := stepListStepItem.GetStepIDAndStep()
+					stepID, step, err := stepListStepItem.GetStep()
 					if err != nil {
 						return WorkflowRunPlan{}, err
 					}
@@ -148,7 +148,7 @@ func NewWorkflowRunPlan(
 					stepPlans = append(stepPlans, StepExecutionPlan{
 						UUID:          uuidProvider(),
 						StepID:        stepID,
-						Step:          step,
+						Step:          *step,
 						WithGroupUUID: groupID,
 						ContainerID:   with.ContainerID,
 						ServiceIDs:    with.ServiceIDs,
@@ -267,7 +267,7 @@ func gatherBundleSteps(
 		}
 
 		if t == StepListItemTypeStep {
-			step, err := stepListStepOrBundleItem.GetStep()
+			_, step, err := stepListStepOrBundleItem.GetStep()
 			if err != nil {
 				return nil, err
 			}

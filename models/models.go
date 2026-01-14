@@ -8,7 +8,6 @@ import (
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 type GraphPipelineAlwaysRunMode string
@@ -19,9 +18,7 @@ const (
 )
 
 const (
-	FormatVersion                   = "25"
-	StepListItemWithKey             = "with"
-	StepListItemStepBundleKeyPrefix = "bundle::"
+	FormatVersion = "25"
 )
 
 type StepBundleModel struct {
@@ -33,8 +30,6 @@ type StepBundleModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
-
-type StepListItemStepOrBundleModel map[string]any
 
 type StepBundleListItemModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -54,10 +49,6 @@ type WithModel struct {
 }
 
 type StepListWithItemModel map[string]WithModel
-
-type StepListStepItemModel map[string]stepmanModels.StepModel
-
-type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
 	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`
