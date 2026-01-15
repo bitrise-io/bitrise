@@ -239,6 +239,52 @@ workflows:
             # Remove lines with golang from .tool-versions
             grep -v '^golang ' "$TOOL_VERSIONS_FILE" > "$TOOL_VERSIONS_FILE.tmp" || true
             mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
+  testme:
+    steps:
+    - bundle::setup_repo: {}
+    - script@1:
+        inputs:
+        - content: >-
+            #!/usr/bin/env bash
+
+            # fail if any commands fails
+
+            set -e
+
+            # make pipelines' return status equal the last command to exit with
+            a non-zero status, or zero if all commands exit successfully
+
+            set -o pipefail
+
+            # debug log
+
+            set -x
+
+
+            go run tools setup --config .tool-versions
+    - script@1:
+        inputs:
+        - content: >-
+            #!/usr/bin/env bash
+
+            # fail if any commands fails
+
+            set -e
+
+            # make pipelines' return status equal the last command to exit with
+            a non-zero status, or zero if all commands exit successfully
+
+            set -o pipefail
+
+            # debug log
+
+            set -x
+
+
+            go version
+    triggers:
+      push:
+      - branch: "*"
 
 step_bundles:
   run_lint:
@@ -378,7 +424,8 @@ step_bundles:
         title: Docker login for pulls
         run_if: .IsCI
         inputs:
-          - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
+        - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev
+            --password-stdin
     - script@1:
         title: Run integration tests
         inputs:
