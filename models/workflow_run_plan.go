@@ -83,6 +83,12 @@ type WorkflowRunModes struct {
 	IsSteplibOfflineMode    bool
 }
 
+type BundleContext struct {
+	UUID   string
+	Envs   []envmanModels.EnvironmentItemModel
+	RunIfs []string
+}
+
 type WorkflowRunPlanBuilder struct {
 	workflows    map[string]WorkflowModel
 	stepBundles  map[string]StepBundleModel
@@ -106,10 +112,10 @@ func NewWorkflowRunPlanBuilder(workflows map[string]WorkflowModel, stepBundles m
 	}
 }
 
-func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, workflowID string) (WorkflowRunPlan, error) {
+func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkflowID string) (WorkflowRunPlan, error) {
 	var executionPlan []WorkflowExecutionPlan
 
-	workflowList := builder.walkWorkflows(workflowID, builder.workflows, nil)
+	workflowList := builder.walkWorkflows(targetWorkflowID, builder.workflows, nil)
 	for _, workflowID := range workflowList {
 		workflow := builder.workflows[workflowID]
 
@@ -180,7 +186,7 @@ func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]Ste
 		}
 
 		if t == StepListItemTypeStep {
-			plan, err := builder.processStep(key, &stepListItem)
+			plan, err := builder.processStep(key, &stepListItem, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -194,7 +200,7 @@ func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]Ste
 
 			stepPlans = append(stepPlans, plans...)
 		} else if t == StepListItemTypeBundle {
-			plans, err := builder.processStepBundle(key, &stepListItem)
+			plans, err := builder.processStepBundle(key, &stepListItem, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -206,17 +212,23 @@ func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]Ste
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem) (*StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext) (*StepExecutionPlan, error) {
 	_, step, err := stepListItem.GetStep()
 	if err != nil {
 		return nil, err
 	}
 
-	return &StepExecutionPlan{
+	plan := StepExecutionPlan{
 		UUID:   builder.uuidProvider(),
 		StepID: stepID,
 		Step:   *step,
-	}, nil
+	}
+	if bundleContext != nil {
+		plan.StepBundleUUID = bundleContext.UUID
+		plan.StepBundleEnvs = bundleContext.Envs
+		plan.StepBundleRunIfs = bundleContext.RunIfs
+	}
+	return &plan, nil
 }
 
 func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListItem) ([]StepExecutionPlan, error) {
@@ -262,7 +274,7 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext) ([]StepExecutionPlan, error) {
 	bundleOverride, err := stepListItem.GetBundle()
 	if err != nil {
 		return nil, err
@@ -273,11 +285,35 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
 	}
 
+	// Collect Bundle Envs
 	bundleEnvs, err := builder.gatherBundleEnvs(*bundleOverride, bundleDefinition)
 	if err != nil {
 		return nil, err
 	}
+	if bundleContext != nil {
+		bundleEnvs = append(bundleContext.Envs, bundleEnvs...)
+	}
 
+	// Collect Bundle runIfs
+	runIf := bundleDefinition.RunIf
+	if bundleOverride.RunIf != nil {
+		runIf = *bundleOverride.RunIf
+	}
+
+	// Create a new runIfs slice that includes the runIf of the current bundle, instead of modifying the original slice.
+	// This is necessary to ensure that the runIfs of the current bundle are evaluated correctly in the context of the parent bundle.
+	// The Go slice wraps a pointer to the actual data inside.
+	// So passing it around and adding items to it would update all the slices internal data storage.
+	var runIfs []string
+	if bundleContext != nil && len(bundleContext.RunIfs) > 0 {
+		runIfs = make([]string, len(bundleContext.RunIfs))
+		copy(runIfs, bundleContext.RunIfs)
+	}
+	if runIf != "" {
+		runIfs = append(runIfs, runIf)
+	}
+
+	// Register Bundle Plan
 	bundleUUID := builder.uuidProvider()
 	title := bundleDefinition.Title
 	if bundleOverride.Title != "" {
@@ -289,16 +325,13 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		Title: title,
 	}
 
-	runIf := bundleDefinition.RunIf
-	if bundleOverride.RunIf != nil {
-		runIf = *bundleOverride.RunIf
+	// Process Bundle Steps
+	newBundleContext := BundleContext{
+		UUID:   bundleUUID,
+		Envs:   bundleEnvs,
+		RunIfs: runIfs,
 	}
-	var runIfs []string
-	if runIf != "" {
-		runIfs = []string{runIf}
-	}
-
-	plans, err := builder.gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs)
+	plans, err := builder.gatherBundleSteps(bundleDefinition, newBundleContext)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +339,7 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	return plans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, runIfs []string) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleContext BundleContext) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
 		key, t, err := stepListStepOrBundleItem.GetKeyAndType()
@@ -315,70 +348,14 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 		}
 
 		if t == StepListItemTypeStep {
-			_, step, err := stepListStepOrBundleItem.GetStep()
+			plan, err := builder.processStep(key, &stepListStepOrBundleItem, &bundleContext)
 			if err != nil {
 				return nil, err
 			}
 
-			stepID := key
-			stepPlan := StepExecutionPlan{
-				UUID:             builder.uuidProvider(),
-				StepID:           stepID,
-				Step:             *step,
-				StepBundleUUID:   bundleUUID,
-				StepBundleRunIfs: runIfs,
-				StepBundleEnvs:   bundleEnvs,
-			}
-
-			stepPlans = append(stepPlans, stepPlan)
+			stepPlans = append(stepPlans, *plan)
 		} else if t == StepListItemTypeBundle {
-			bundleID := key
-			override, err := stepListStepOrBundleItem.GetBundle()
-			if err != nil {
-				return nil, err
-			}
-
-			definition, ok := builder.stepBundles[bundleID]
-			if !ok {
-				return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
-			}
-
-			envs, err := builder.gatherBundleEnvs(*override, definition)
-			if err != nil {
-				return nil, err
-			}
-			envs = append(bundleEnvs, envs...)
-
-			uuid := builder.uuidProvider()
-			title := definition.Title
-			if override.Title != "" {
-				title = override.Title
-			}
-
-			builder.stepBundlePlans[uuid] = StepBundlePlan{
-				ID:    bundleID,
-				Title: title,
-			}
-
-			runIf := definition.RunIf
-			if override.RunIf != nil {
-				runIf = *override.RunIf
-			}
-
-			// Create a new runIfs slice that includes the runIf of the current bundle, instead of modifying the original slice.
-			// This is necessary to ensure that the runIfs of the current bundle are evaluated correctly in the context of the parent bundle.
-			// The Go slice wraps a pointer to the actual data inside.
-			// So passing it around and adding items to it would update all the slices internal data storage.
-			var newBundleRunIfs []string
-			if len(runIfs) > 0 {
-				newBundleRunIfs = make([]string, len(runIfs))
-				copy(newBundleRunIfs, runIfs)
-			}
-			if runIf != "" {
-				newBundleRunIfs = append(newBundleRunIfs, runIf)
-			}
-
-			plans, err := builder.gatherBundleSteps(definition, uuid, envs, newBundleRunIfs)
+			plans, err := builder.processStepBundle(key, &stepListStepOrBundleItem, &bundleContext)
 			if err != nil {
 				return nil, err
 			}

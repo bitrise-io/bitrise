@@ -294,6 +294,10 @@ func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListI
 	return &stepBundle, nil
 }
 
+func (stepListItem *StepListItemStepOrBundleModel) GetWith() (*WithModel, error) {
+	return nil, fmt.Errorf("step list item of step bundle cannot be a with group")
+}
+
 func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
 	var raw map[string]any
 	if err := json.Unmarshal(b, &raw); err != nil {
