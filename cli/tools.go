@@ -396,11 +396,6 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 		}
 		return false
 	}
-		if !silent {
-			log.Warnf("! Envstore not found at %s - envman is not available to store installation paths", envstorePath)
-		}
-		return false
-	}
 
 	envs := toolprovider.ConvertToEnvmanEnvs(activations)
 	err := tools.EnvmanAddEnvs(envstorePath, envs)
