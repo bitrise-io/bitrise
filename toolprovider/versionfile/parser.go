@@ -18,7 +18,7 @@ type ToolVersion struct {
 }
 
 func Parse(path string) ([]ToolVersion, error) {
-	if filepath.Base(path) == ".tool-versions" {
+	if filepath.Base(path) == ".zzztool-versions" {
 		return parseToolVersionsFile(path)
 	}
 
