@@ -83,121 +83,39 @@ type WorkflowRunModes struct {
 	IsSteplibOfflineMode    bool
 }
 
-func NewWorkflowRunPlan(
-	modes WorkflowRunModes, targetWorkflow string, workflows map[string]WorkflowModel,
-	stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container,
-	uuidProvider func() string,
-) (WorkflowRunPlan, error) {
+type WorkflowRunPlanBuilder struct {
+	workflows    map[string]WorkflowModel
+	stepBundles  map[string]StepBundleModel
+	containers   map[string]Container
+	services     map[string]Container
+	uuidProvider func() string
+
+	withGroupPlans  map[string]WithGroupPlan
+	stepBundlePlans map[string]StepBundlePlan
+}
+
+func NewWorkflowRunPlanBuilder(workflows map[string]WorkflowModel, stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container, uuidProvider func() string) *WorkflowRunPlanBuilder {
+	return &WorkflowRunPlanBuilder{
+		workflows:       workflows,
+		stepBundles:     stepBundles,
+		containers:      containers,
+		services:        services,
+		uuidProvider:    uuidProvider,
+		withGroupPlans:  map[string]WithGroupPlan{},
+		stepBundlePlans: map[string]StepBundlePlan{},
+	}
+}
+
+func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, workflowID string) (WorkflowRunPlan, error) {
 	var executionPlan []WorkflowExecutionPlan
-	withGroupPlans := map[string]WithGroupPlan{}
-	stepBundlePlans := map[string]StepBundlePlan{}
 
-	workflowList := walkWorkflows(targetWorkflow, workflows, nil)
+	workflowList := builder.walkWorkflows(workflowID, builder.workflows, nil)
 	for _, workflowID := range workflowList {
-		workflow := workflows[workflowID]
+		workflow := builder.workflows[workflowID]
 
-		var stepPlans []StepExecutionPlan
-
-		for _, stepListItem := range workflow.Steps {
-			key, t, err := stepListItem.GetKeyAndType()
-			if err != nil {
-				return WorkflowRunPlan{}, err
-			}
-
-			if t == StepListItemTypeStep {
-				_, step, err := stepListItem.GetStep()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				stepID := key
-				stepPlans = append(stepPlans, StepExecutionPlan{
-					UUID:   uuidProvider(),
-					StepID: stepID,
-					Step:   *step,
-				})
-			} else if t == StepListItemTypeWith {
-				with, err := stepListItem.GetWith()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				groupID := uuidProvider()
-
-				var containerPlan ContainerPlan
-				if with.ContainerID != "" {
-					containerPlan.Image = containers[with.ContainerID].Image
-				}
-
-				var servicePlans []ContainerPlan
-				for _, serviceID := range with.ServiceIDs {
-					servicePlans = append(servicePlans, ContainerPlan{Image: services[serviceID].Image})
-				}
-
-				withGroupPlans[groupID] = WithGroupPlan{
-					Services:  servicePlans,
-					Container: containerPlan,
-				}
-
-				for _, stepListStepItem := range with.Steps {
-					stepID, step, err := stepListStepItem.GetStep()
-					if err != nil {
-						return WorkflowRunPlan{}, err
-					}
-
-					stepPlans = append(stepPlans, StepExecutionPlan{
-						UUID:          uuidProvider(),
-						StepID:        stepID,
-						Step:          *step,
-						WithGroupUUID: groupID,
-						ContainerID:   with.ContainerID,
-						ServiceIDs:    with.ServiceIDs,
-					})
-				}
-			} else if t == StepListItemTypeBundle {
-				bundleID := key
-				bundleOverride, err := stepListItem.GetBundle()
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				bundleDefinition, ok := stepBundles[bundleID]
-				if !ok {
-					return WorkflowRunPlan{}, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
-				}
-
-				bundleEnvs, err := gatherBundleEnvs(*bundleOverride, bundleDefinition)
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				bundleUUID := uuidProvider()
-				title := bundleDefinition.Title
-				if bundleOverride.Title != "" {
-					title = bundleOverride.Title
-				}
-
-				stepBundlePlans[bundleUUID] = StepBundlePlan{
-					ID:    bundleID,
-					Title: title,
-				}
-
-				runIf := bundleDefinition.RunIf
-				if bundleOverride.RunIf != nil {
-					runIf = *bundleOverride.RunIf
-				}
-				var runIfs []string
-				if runIf != "" {
-					runIfs = []string{runIf}
-				}
-
-				plans, err := gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs, stepBundles, stepBundlePlans, uuidProvider)
-				if err != nil {
-					return WorkflowRunPlan{}, err
-				}
-
-				stepPlans = append(stepPlans, plans...)
-			}
+		stepPlans, err := builder.processStepList(workflowID)
+		if err != nil {
+			return WorkflowRunPlan{}, err
 		}
 
 		workflowTitle := workflow.Title
@@ -206,7 +124,7 @@ func NewWorkflowRunPlan(
 		}
 
 		executionPlan = append(executionPlan, WorkflowExecutionPlan{
-			UUID:                 uuidProvider(),
+			UUID:                 builder.uuidProvider(),
 			WorkflowID:           workflowID,
 			Steps:                stepPlans,
 			WorkflowTitle:        workflowTitle,
@@ -229,36 +147,166 @@ func NewWorkflowRunPlan(
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
-		WithGroupPlans:          withGroupPlans,
-		StepBundlePlans:         stepBundlePlans,
+		WithGroupPlans:          builder.withGroupPlans,
+		StepBundlePlans:         builder.stepBundlePlans,
 		ExecutionPlan:           executionPlan,
 	}, nil
 }
 
-func walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
+func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
 	workflow := workflows[workflowID]
 	for _, before := range workflow.BeforeRun {
-		workflowStack = walkWorkflows(before, workflows, workflowStack)
+		workflowStack = builder.walkWorkflows(before, workflows, workflowStack)
 	}
 
 	workflowStack = append(workflowStack, workflowID)
 
 	for _, after := range workflow.AfterRun {
-		workflowStack = walkWorkflows(after, workflows, workflowStack)
+		workflowStack = builder.walkWorkflows(after, workflows, workflowStack)
 	}
 
 	return workflowStack
 }
 
-func gatherBundleSteps(
-	bundleDefinition StepBundleModel,
-	bundleUUID string,
-	bundleEnvs []envmanModels.EnvironmentItemModel,
-	runIfs []string,
-	stepBundles map[string]StepBundleModel,
-	stepBundlePlans map[string]StepBundlePlan,
-	uuidProvider func() string,
-) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]StepExecutionPlan, error) {
+
+	var stepPlans []StepExecutionPlan
+
+	workflow := builder.workflows[workflowID]
+	for _, stepListItem := range workflow.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			return nil, err
+		}
+
+		if t == StepListItemTypeStep {
+			plan, err := builder.processStep(key, &stepListItem)
+			if err != nil {
+				return nil, err
+			}
+
+			stepPlans = append(stepPlans, *plan)
+		} else if t == StepListItemTypeWith {
+			plans, err := builder.processWithGroup(&stepListItem)
+			if err != nil {
+				return nil, err
+			}
+
+			stepPlans = append(stepPlans, plans...)
+		} else if t == StepListItemTypeBundle {
+			plans, err := builder.processStepBundle(key, &stepListItem)
+			if err != nil {
+				return nil, err
+			}
+
+			stepPlans = append(stepPlans, plans...)
+		}
+	}
+
+	return stepPlans, nil
+}
+
+func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem) (*StepExecutionPlan, error) {
+	_, step, err := stepListItem.GetStep()
+	if err != nil {
+		return nil, err
+	}
+
+	return &StepExecutionPlan{
+		UUID:   builder.uuidProvider(),
+		StepID: stepID,
+		Step:   *step,
+	}, nil
+}
+
+func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListItem) ([]StepExecutionPlan, error) {
+	with, err := stepListItem.GetWith()
+	if err != nil {
+		return nil, err
+	}
+
+	groupID := builder.uuidProvider()
+
+	var containerPlan ContainerPlan
+	if with.ContainerID != "" {
+		containerPlan.Image = builder.containers[with.ContainerID].Image
+	}
+
+	var servicePlans []ContainerPlan
+	for _, serviceID := range with.ServiceIDs {
+		servicePlans = append(servicePlans, ContainerPlan{Image: builder.services[serviceID].Image})
+	}
+
+	builder.withGroupPlans[groupID] = WithGroupPlan{
+		Services:  servicePlans,
+		Container: containerPlan,
+	}
+
+	var stepPlans []StepExecutionPlan
+	for _, stepListStepItem := range with.Steps {
+		stepID, step, err := stepListStepItem.GetStep()
+		if err != nil {
+			return nil, err
+		}
+
+		stepPlans = append(stepPlans, StepExecutionPlan{
+			UUID:          builder.uuidProvider(),
+			StepID:        stepID,
+			Step:          *step,
+			WithGroupUUID: groupID,
+			ContainerID:   with.ContainerID,
+			ServiceIDs:    with.ServiceIDs,
+		})
+	}
+
+	return stepPlans, nil
+}
+
+func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem) ([]StepExecutionPlan, error) {
+	bundleOverride, err := stepListItem.GetBundle()
+	if err != nil {
+		return nil, err
+	}
+
+	bundleDefinition, ok := builder.stepBundles[bundleID]
+	if !ok {
+		return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
+	}
+
+	bundleEnvs, err := builder.gatherBundleEnvs(*bundleOverride, bundleDefinition)
+	if err != nil {
+		return nil, err
+	}
+
+	bundleUUID := builder.uuidProvider()
+	title := bundleDefinition.Title
+	if bundleOverride.Title != "" {
+		title = bundleOverride.Title
+	}
+
+	builder.stepBundlePlans[bundleUUID] = StepBundlePlan{
+		ID:    bundleID,
+		Title: title,
+	}
+
+	runIf := bundleDefinition.RunIf
+	if bundleOverride.RunIf != nil {
+		runIf = *bundleOverride.RunIf
+	}
+	var runIfs []string
+	if runIf != "" {
+		runIfs = []string{runIf}
+	}
+
+	plans, err := builder.gatherBundleSteps(bundleDefinition, bundleUUID, bundleEnvs, runIfs)
+	if err != nil {
+		return nil, err
+	}
+
+	return plans, nil
+}
+
+func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleUUID string, bundleEnvs []envmanModels.EnvironmentItemModel, runIfs []string) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
 		key, t, err := stepListStepOrBundleItem.GetKeyAndType()
@@ -274,7 +322,7 @@ func gatherBundleSteps(
 
 			stepID := key
 			stepPlan := StepExecutionPlan{
-				UUID:             uuidProvider(),
+				UUID:             builder.uuidProvider(),
 				StepID:           stepID,
 				Step:             *step,
 				StepBundleUUID:   bundleUUID,
@@ -290,24 +338,24 @@ func gatherBundleSteps(
 				return nil, err
 			}
 
-			definition, ok := stepBundles[bundleID]
+			definition, ok := builder.stepBundles[bundleID]
 			if !ok {
 				return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
 			}
 
-			envs, err := gatherBundleEnvs(*override, definition)
+			envs, err := builder.gatherBundleEnvs(*override, definition)
 			if err != nil {
 				return nil, err
 			}
 			envs = append(bundleEnvs, envs...)
 
-			uuid := uuidProvider()
+			uuid := builder.uuidProvider()
 			title := definition.Title
 			if override.Title != "" {
 				title = override.Title
 			}
 
-			stepBundlePlans[uuid] = StepBundlePlan{
+			builder.stepBundlePlans[uuid] = StepBundlePlan{
 				ID:    bundleID,
 				Title: title,
 			}
@@ -330,7 +378,7 @@ func gatherBundleSteps(
 				newBundleRunIfs = append(newBundleRunIfs, runIf)
 			}
 
-			plans, err := gatherBundleSteps(definition, uuid, envs, newBundleRunIfs, stepBundles, stepBundlePlans, uuidProvider)
+			plans, err := builder.gatherBundleSteps(definition, uuid, envs, newBundleRunIfs)
 			if err != nil {
 				return nil, err
 			}
@@ -342,7 +390,7 @@ func gatherBundleSteps(
 	return stepPlans, nil
 }
 
-func gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition StepBundleModel) ([]envmanModels.EnvironmentItemModel, error) {
+func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition StepBundleModel) ([]envmanModels.EnvironmentItemModel, error) {
 	var bundleEnvs []envmanModels.EnvironmentItemModel
 
 	bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)

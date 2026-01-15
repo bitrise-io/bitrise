@@ -307,11 +307,11 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 
 	// Prepare workflow run parameters
 	buildRunResults := models.NewBuildRunResultsModel(r.config.Workflow, startTime, r.config.Config.ProjectType)
-	plan, err := models.NewWorkflowRunPlan(
-		r.config.Modes, r.config.Workflow, r.config.Config.Workflows,
-		r.config.Config.StepBundles, r.config.Config.Containers, r.config.Config.Services,
+	plan, err := models.NewWorkflowRunPlanBuilder(
+		r.config.Config.Workflows, r.config.Config.StepBundles,
+		r.config.Config.Containers, r.config.Config.Services,
 		func() string { return uuid.Must(uuid.NewV4()).String() },
-	)
+	).Build(r.config.Modes, r.config.Workflow)
 	if err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to create workflow execution plan: %w", err)
 	}
