@@ -27,6 +27,7 @@ const (
 	toolsSetupSubcommandName   = "setup"
 	toolsInstallSubcommandName = "install"
 	toolsLatestSubcommandName  = "latest"
+	toolsInfoCommandName       = "info"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -41,6 +42,9 @@ const (
 
 	toolsProviderKey      = "provider"
 	toolsProviderShortKey = "p"
+
+	toolsActiveKey      = "active"
+	toolsActiveShortKey = "a"
 )
 
 var (
@@ -60,6 +64,11 @@ var (
 		Usage: `Install the latest already installed version instead of the latest available release`,
 	}
 
+	flToolsActive = cli.BoolFlag{
+		Name:  toolsActiveKey + ", " + toolsActiveShortKey,
+		Usage: `Show only currently active tools in the shell context (based on config files in current directory)`,
+	}
+
 	flToolsConfig = cli.StringSliceFlag{
 		Name: toolsConfigKey + ", " + toolsConfigShortKey,
 		Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
@@ -74,6 +83,39 @@ var (
 		Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
 	}
 )
+
+var toolsInfoSubcommand = cli.Command{
+	Name:      toolsInfoCommandName,
+	Usage:     "Show information about installed or active tools.",
+	UsageText: "bitrise tools info [--active] [--format FORMAT]",
+	Description: `Display information about development tools managed by the tool provider.
+
+By default, shows all installed tool versions. Use --active to show only the tools
+that are currently active in the shell context (based on your bitrise.yml, .tool-versions, mise.toml,
+or other config files in the current directory).
+
+EXAMPLES:
+   Show all installed tools:
+   bitrise tools info
+
+   Show currently active tools:
+   bitrise tools info --active
+
+   Output as JSON:
+   bitrise tools info --active --format json`,
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsInfo(c); err != nil {
+			log.Errorf("Failed to get tool info: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		flToolsActive,
+		flToolsOutputFormat,
+	},
+}
 
 var toolsInstallSubcommand = cli.Command{
 	Name:      toolsInstallSubcommandName,
@@ -189,6 +231,7 @@ var toolsCommand = cli.Command{
 	Name:  "tools",
 	Usage: "Manage available tools from inside the workflow.",
 	Subcommands: []cli.Command{
+		toolsInfoSubcommand,
 		toolsSetupSubcommand,
 		toolsInstallSubcommand,
 		toolsLatestSubcommand,
@@ -352,6 +395,97 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 		return false
 	}
 	return true
+}
+
+func toolsInfo(c *cli.Context) error {
+	format := c.String("format")
+	activeOnly := c.Bool("active")
+
+	tools, err := toolprovider.ListInstalledTools("mise", activeOnly)
+	if err != nil {
+		return err
+	}
+
+	if format == outputFormatJSON {
+		data, err := json.MarshalIndent(tools, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal JSON: %w", err)
+		}
+		fmt.Println(string(data))
+		return nil
+	}
+
+	if len(tools) == 0 {
+		if activeOnly {
+			log.Infof("No active tools in current context")
+		} else {
+			log.Infof("No tools installed")
+		}
+		return nil
+	}
+
+	printToolsInfo(tools, activeOnly)
+	return nil
+}
+
+func printToolsInfo(tools []toolprovider.InstalledTool, activeOnly bool) {
+	// Colun width calculation.
+	maxNameLen := len("Tool")
+	maxVersionLen := len("Version")
+	for _, tool := range tools {
+		if len(tool.Name) > maxNameLen {
+			maxNameLen = len(tool.Name)
+		}
+		version := tool.ActiveVersion
+		if version == "" && len(tool.InstalledVersions) > 0 {
+			version = tool.InstalledVersions[0]
+		}
+		if len(version) > maxVersionLen {
+			maxVersionLen = len(version)
+		}
+	}
+
+	namePad := strings.Repeat(" ", maxNameLen+2)
+	versionPad := strings.Repeat(" ", maxVersionLen+2)
+
+	if activeOnly {
+		log.Infof("Active tools:")
+	} else {
+		log.Infof("Installed tools:")
+	}
+	log.Printf("")
+
+	// Header.
+	toolHeader := colorstring.Blue("Tool")
+	versionHeader := colorstring.Blue("Version")
+	sourceHeader := colorstring.Blue("Source")
+	log.Printf("  %s%s%s%s%s", toolHeader, namePad[:maxNameLen-len("Tool")+2], versionHeader, versionPad[:maxVersionLen-len("Version")+2], sourceHeader)
+
+	for _, tool := range tools {
+		if activeOnly {
+			version := tool.ActiveVersion
+			log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], colorstring.Green("%s", version), versionPad[:maxVersionLen-len(version)+2], tool.Source)
+			continue
+		}
+
+		if tool.ActiveVersion != "" {
+			log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], colorstring.Green("%s", tool.ActiveVersion), versionPad[:maxVersionLen-len(tool.ActiveVersion)+2], tool.Source)
+			continue
+		}
+
+		if len(tool.InstalledVersions) == 0 {
+			log.Printf("  %s%s(no versions installed)", tool.Name, namePad[:maxNameLen-len(tool.Name)+2])
+			continue
+		}
+
+		version := tool.InstalledVersions[0]
+		log.Printf("  %s%s%s%s%s", tool.Name, namePad[:maxNameLen-len(tool.Name)+2], version, versionPad[:maxVersionLen-len(version)+2], tool.Source)
+		for i := 1; i < len(tool.InstalledVersions); i++ {
+			log.Printf("  %s%s%s", namePad[:len(tool.Name)], namePad[:maxNameLen-len(tool.Name)+2], tool.InstalledVersions[i])
+		}
+	}
+
+	log.Printf("")
 }
 
 func toolsInstall(c *cli.Context, isLatest bool) error {
