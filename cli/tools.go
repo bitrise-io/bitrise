@@ -386,7 +386,16 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 	}
 
 	// Check if envstore exists - it should be initialized by the workflow runner
-	if _, err := os.Stat(envstorePath); os.IsNotExist(err) {
+	if _, err := os.Stat(envstorePath); err != nil {
+		if !silent {
+			if os.IsNotExist(err) {
+				log.Warnf("! Envstore not found at %s - envman is not available to store installation paths", envstorePath)
+			} else {
+				log.Warnf("! Failed to access envstore at %s: %s", envstorePath, err)
+			}
+		}
+		return false
+	}
 		if !silent {
 			log.Warnf("! Envstore not found at %s - envman is not available to store installation paths", envstorePath)
 		}
