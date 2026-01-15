@@ -303,7 +303,7 @@ workflows:
             set -x
 
 
-            echo "golang 1.25.5" > .zzztool-versions
+            echo "golang 1.25.6" > .zzztool-versions
 
             go run main.go tools setup --config .zzztool-versions
     - script@1:
