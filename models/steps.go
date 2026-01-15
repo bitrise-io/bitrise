@@ -375,6 +375,14 @@ func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(
 // StepListStepItemModel represents a step list items for a With group (can be a step)
 type StepListStepItemModel StepListItemRaw
 
+func (stepListItem *StepListStepItemModel) GetKeyAndType() (string, StepListItemType, error) {
+	if stepListItem == nil {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+	}
+
+	return StepListItemRaw(*stepListItem).GetKeyAndType()
+}
+
 func (stepListItem *StepListStepItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
 	if stepListItem == nil {
 		return "", nil, fmt.Errorf("step list item is nil")
@@ -387,6 +395,14 @@ func (stepListItem *StepListStepItemModel) GetStep() (string, *stepmanModels.Ste
 	}
 
 	return stepID, &step, nil
+}
+
+func (stepListItem *StepListStepItemModel) GetBundle() (*StepBundleListItemModel, error) {
+	return nil, fmt.Errorf("step list item of a with group cannot be a step bundle")
+}
+
+func (stepListItem *StepListStepItemModel) GetWith() (*WithModel, error) {
+	return nil, fmt.Errorf("step list item of a with group cannot be a with group")
 }
 
 func (stepListItem *StepListStepItemModel) UnmarshalJSON(b []byte) error {

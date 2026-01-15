@@ -89,6 +89,12 @@ type BundleContext struct {
 	RunIfs []string
 }
 
+type WithGroupContext struct {
+	UUID        string
+	ContainerID string
+	ServiceIDs  []string
+}
+
 type WorkflowRunPlanBuilder struct {
 	workflows    map[string]WorkflowModel
 	stepBundles  map[string]StepBundleModel
@@ -186,7 +192,7 @@ func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]Ste
 		}
 
 		if t == StepListItemTypeStep {
-			plan, err := builder.processStep(key, &stepListItem, nil)
+			plan, err := builder.processStep(key, &stepListItem, nil, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -212,7 +218,7 @@ func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]Ste
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext) (*StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext) (*StepExecutionPlan, error) {
 	_, step, err := stepListItem.GetStep()
 	if err != nil {
 		return nil, err
@@ -227,6 +233,11 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.StepBundleUUID = bundleContext.UUID
 		plan.StepBundleEnvs = bundleContext.Envs
 		plan.StepBundleRunIfs = bundleContext.RunIfs
+	}
+	if withGroupContext != nil {
+		plan.WithGroupUUID = withGroupContext.UUID
+		plan.ContainerID = withGroupContext.ContainerID
+		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
 	return &plan, nil
 }
@@ -256,19 +267,24 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 
 	var stepPlans []StepExecutionPlan
 	for _, stepListStepItem := range with.Steps {
-		stepID, step, err := stepListStepItem.GetStep()
+		key, t, err := stepListStepItem.GetKeyAndType()
 		if err != nil {
 			return nil, err
 		}
 
-		stepPlans = append(stepPlans, StepExecutionPlan{
-			UUID:          builder.uuidProvider(),
-			StepID:        stepID,
-			Step:          *step,
-			WithGroupUUID: groupID,
-			ContainerID:   with.ContainerID,
-			ServiceIDs:    with.ServiceIDs,
-		})
+		if t == StepListItemTypeStep {
+			withGroupContext := &WithGroupContext{
+				UUID:        groupID,
+				ContainerID: with.ContainerID,
+				ServiceIDs:  with.ServiceIDs,
+			}
+			plan, err := builder.processStep(key, &stepListStepItem, nil, withGroupContext)
+			if err != nil {
+				return nil, err
+			}
+
+			stepPlans = append(stepPlans, *plan)
+		}
 	}
 
 	return stepPlans, nil
@@ -348,7 +364,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 		}
 
 		if t == StepListItemTypeStep {
-			plan, err := builder.processStep(key, &stepListStepOrBundleItem, &bundleContext)
+			plan, err := builder.processStep(key, &stepListStepOrBundleItem, &bundleContext, nil)
 			if err != nil {
 				return nil, err
 			}
