@@ -284,7 +284,7 @@ workflows:
 
             echo "golang 1.25.5" > .zzztool-versions
 
-            go run tools setup --config .zzztool-versions
+            go run main.go tools setup --config .zzztool-versions
     - script@1:
         inputs:
         - content: >-
