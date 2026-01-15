@@ -140,36 +140,15 @@ func (config *BitriseDataModel) getPipelineIDs() []string {
 // --- Normalize
 
 func (bundle *StepBundleModel) Normalize() error {
-	for idx, stepListItem := range bundle.Steps {
-		key, t, err := stepListItem.GetKeyAndType()
-		if err != nil {
-			return err
-		}
-
-		if t == StepListItemTypeStep {
-			step, err := stepListItem.GetStep()
-			if err != nil {
-				return err
-			}
-
+	for _, stepListItem := range bundle.Steps {
+		if step, err := stepListItem.GetStep(); err == nil {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
-
-			stepListItem[key] = *step
-			bundle.Steps[idx] = stepListItem
-		} else if t == StepListItemTypeBundle {
-			b, err := stepListItem.GetBundle()
-			if err != nil {
+		} else if bundleItem, err := stepListItem.GetBundle(); err == nil {
+			if err := bundleItem.Normalize(); err != nil {
 				return err
 			}
-
-			if err := b.Normalize(); err != nil {
-				return err
-			}
-
-			stepListItem[StepListItemStepBundleKeyPrefix+key] = *b
-			bundle.Steps[idx] = stepListItem
 		}
 	}
 
@@ -209,17 +188,12 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 }
 
 func (with *WithModel) Normalize() error {
-	for idx, stepListItem := range with.Steps {
-		stepID, step, err := stepListItem.GetStepIDAndStep()
-		if err != nil {
-			return err
+	for _, stepListItem := range with.Steps {
+		if _, step, err := stepListItem.GetStepIDAndStep(); err == nil {
+			if err := step.Normalize(); err != nil {
+				return err
+			}
 		}
-
-		if err := step.Normalize(); err != nil {
-			return err
-		}
-		stepListItem[stepID] = step
-		with.Steps[idx] = stepListItem
 	}
 	return nil
 }
@@ -241,47 +215,19 @@ func (workflow *WorkflowModel) Normalize() error {
 		}
 	}
 
-	for idx, stepListItem := range workflow.Steps {
-		key, t, err := stepListItem.GetKeyAndType()
-		if err != nil {
-			return err
-		}
-		if t == StepListItemTypeStep {
-			step, err := stepListItem.GetStep()
-			if err != nil {
-				return err
-			}
-
+	for _, stepListItem := range workflow.Steps {
+		if step, err := stepListItem.GetStep(); err == nil {
 			if err := step.Normalize(); err != nil {
 				return err
 			}
-
-			stepListItem[key] = *step
-			workflow.Steps[idx] = stepListItem
-		} else if t == StepListItemTypeBundle {
-			bundle, err := stepListItem.GetBundle()
-			if err != nil {
+		} else if bundleItem, err := stepListItem.GetBundle(); err == nil {
+			if err := bundleItem.Normalize(); err != nil {
 				return err
 			}
-
-			if err := bundle.Normalize(); err != nil {
+		} else if withItem, err := stepListItem.GetWith(); err == nil {
+			if err := withItem.Normalize(); err != nil {
 				return err
 			}
-
-			stepListItem[StepListItemStepBundleKeyPrefix+key] = *bundle
-			workflow.Steps[idx] = stepListItem
-		} else if t == StepListItemTypeWith {
-			with, err := stepListItem.GetWith()
-			if err != nil {
-				return err
-			}
-
-			if err := with.Normalize(); err != nil {
-				return err
-			}
-
-			stepListItem[key] = *with
-			workflow.Steps[idx] = stepListItem
 		}
 	}
 
@@ -1033,7 +979,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				}
 
 				// TODO: Why is this assignment needed?
-				stepListItem[stepID] = *step
+				stepListItem.Step = &StepListStepItemModel{stepID: *step}
 			} else if t == StepListItemTypeWith {
 				with, err := stepListItem.GetWith()
 				if err != nil {
@@ -1503,29 +1449,35 @@ func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error
 		break
 	}
 
+	if key == StepListItemWithKey {
+		return errors.New("'with group' is not allowed in a step bundle's step list")
+	}
+
 	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
 		var stepBundleItem StepListStepBundleItemModel
 		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.StepBundle = &stepBundleItem
 	} else {
 		var stepItem StepListStepItemModel
 		if err := json.Unmarshal(b, &stepItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.Step = &stepItem
 	}
 
 	return nil
+}
+
+func (stepListItem StepListItemStepOrBundleModel) MarshalJSON() ([]byte, error) {
+	if stepListItem.StepBundle != nil {
+		return json.Marshal(stepListItem.StepBundle)
+	}
+	if stepListItem.Step != nil {
+		return json.Marshal(stepListItem.Step)
+	}
+	return nil, nil
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -1540,29 +1492,35 @@ func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(
 		break
 	}
 
+	if key == StepListItemWithKey {
+		return errors.New("'with group' is not allowed in a step bundle's step list")
+	}
+
 	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
 		var stepBundleItem StepListStepBundleItemModel
 		if err := unmarshal(&stepBundleItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.StepBundle = &stepBundleItem
 	} else {
 		var stepItem StepListStepItemModel
 		if err := unmarshal(&stepItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.Step = &stepItem
 	}
 
 	return nil
+}
+
+func (stepListItem StepListItemStepOrBundleModel) MarshalYAML() (interface{}, error) {
+	if stepListItem.StepBundle != nil {
+		return stepListItem.StepBundle, nil
+	}
+	if stepListItem.Step != nil {
+		return stepListItem.Step, nil
+	}
+	return nil, nil
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
@@ -1570,26 +1528,26 @@ func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, Step
 		return "", StepListItemTypeUnknown, nil
 	}
 
-	if len(*stepListItem) == 0 {
-		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
-	}
+	if stepListItem.StepBundle != nil {
+		if len(*stepListItem.StepBundle) > 1 {
+			return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+		}
 
-	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
-	}
-
-	for key := range *stepListItem {
-		switch {
-		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+		for key := range *stepListItem.StepBundle {
 			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
-		case key == StepListItemWithKey:
-			return key, StepListItemTypeWith, fmt.Errorf("'with group' is not allowed in a step bundle's step list")
-		default:
+		}
+	}
+	if stepListItem.Step != nil {
+		if len(*stepListItem.Step) > 1 {
+			return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+		}
+
+		for key := range *stepListItem.Step {
 			return key, StepListItemTypeStep, nil
 		}
 	}
 
-	return "", StepListItemTypeUnknown, nil
+	return "", StepListItemTypeUnknown, errors.New("StepListItemStepOrBundle does not contain a key-value pair")
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
@@ -1597,12 +1555,10 @@ func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListI
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	for _, value := range *stepListItem {
-		bundle, ok := value.(StepBundleListItemModel)
-		if ok {
-			return &bundle, nil
+	if stepListItem.StepBundle != nil {
+		for _, value := range *stepListItem.StepBundle {
+			return &value, nil
 		}
-		break
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a StepBundle")
@@ -1613,12 +1569,10 @@ func (stepListItem *StepListItemStepOrBundleModel) GetStep() (*stepmanModels.Ste
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	for _, value := range *stepListItem {
-		s, ok := value.(stepmanModels.StepModel)
-		if ok {
-			return &s, nil
+	if stepListItem.Step != nil {
+		for _, value := range *stepListItem.Step {
+			return &value, nil
 		}
-		break
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a Step")
@@ -1641,34 +1595,35 @@ func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
 		if err := json.Unmarshal(b, &withItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.With = &withItem
 	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
 		var stepBundleItem StepListStepBundleItemModel
 		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.StepBundle = &stepBundleItem
 	} else {
 		var stepItem StepListStepItemModel
 		if err := json.Unmarshal(b, &stepItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.Step = &stepItem
 	}
 
 	return nil
+}
+
+func (stepListItem StepListItemModel) MarshalJSON() ([]byte, error) {
+	if stepListItem.With != nil {
+		return json.Marshal(stepListItem.With)
+	}
+	if stepListItem.StepBundle != nil {
+		return json.Marshal(stepListItem.StepBundle)
+	}
+	if stepListItem.Step != nil {
+		return json.Marshal(stepListItem.Step)
+	}
+	return nil, nil
 }
 
 func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -1688,34 +1643,35 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(interface{})
 		if err := unmarshal(&withItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.With = &withItem
 	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
 		var stepBundleItem StepListStepBundleItemModel
 		if err := unmarshal(&stepBundleItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.StepBundle = &stepBundleItem
 	} else {
 		var stepItem StepListStepItemModel
 		if err := unmarshal(&stepItem); err != nil {
 			return err
 		}
-
-		*stepListItem = map[string]interface{}{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
+		stepListItem.Step = &stepItem
 	}
 
 	return nil
+}
+
+func (stepListItem StepListItemModel) MarshalYAML() (interface{}, error) {
+	if stepListItem.With != nil {
+		return stepListItem.With, nil
+	}
+	if stepListItem.StepBundle != nil {
+		return stepListItem.StepBundle, nil
+	}
+	if stepListItem.Step != nil {
+		return stepListItem.Step, nil
+	}
+	return nil, nil
 }
 
 // ----------------------------
@@ -1759,26 +1715,33 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 		return "", StepListItemTypeUnknown, nil
 	}
 
-	if len(*stepListItem) == 0 {
-		return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
-	}
+	if stepListItem.StepBundle != nil {
+		if len(*stepListItem.StepBundle) > 1 {
+			return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+		}
 
-	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
-	}
-
-	for key := range *stepListItem {
-		switch {
-		case strings.HasPrefix(key, StepListItemStepBundleKeyPrefix):
+		for key := range *stepListItem.StepBundle {
 			return strings.TrimPrefix(key, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
-		case key == StepListItemWithKey:
-			return key, StepListItemTypeWith, nil
-		default:
+		}
+	}
+	if stepListItem.With != nil {
+		if len(*stepListItem.With) > 1 {
+			return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+		}
+
+		return StepListItemWithKey, StepListItemTypeWith, nil
+	}
+	if stepListItem.Step != nil {
+		if len(*stepListItem.Step) > 1 {
+			return "", StepListItemTypeUnknown, fmt.Errorf("StepListItem contains more than 1 key-value pair: %#v", *stepListItem)
+		}
+
+		for key := range *stepListItem.Step {
 			return key, StepListItemTypeStep, nil
 		}
 	}
 
-	return "", StepListItemTypeUnknown, nil
+	return "", StepListItemTypeUnknown, errors.New("StepListItem does not contain a key-value pair")
 }
 
 func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, error) {
@@ -1786,12 +1749,10 @@ func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, er
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	for _, value := range *stepListItem {
-		bundle, ok := value.(StepBundleListItemModel)
-		if ok {
-			return &bundle, nil
+	if stepListItem.StepBundle != nil {
+		for _, value := range *stepListItem.StepBundle {
+			return &value, nil
 		}
-		break
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a StepBundle")
@@ -1802,12 +1763,10 @@ func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	for _, value := range *stepListItem {
-		with, ok := value.(WithModel)
-		if ok {
-			return &with, nil
+	if stepListItem.With != nil {
+		for _, value := range *stepListItem.With {
+			return &value, nil
 		}
-		break
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a With")
@@ -1818,12 +1777,10 @@ func (stepListItem *StepListItemModel) GetStep() (*stepmanModels.StepModel, erro
 		return nil, fmt.Errorf("empty stepListItem")
 	}
 
-	for _, value := range *stepListItem {
-		s, ok := value.(stepmanModels.StepModel)
-		if ok {
-			return &s, nil
+	if stepListItem.Step != nil {
+		for _, value := range *stepListItem.Step {
+			return &value, nil
 		}
-		break
 	}
 
 	return nil, fmt.Errorf("stepListItem is not a Step")

@@ -34,7 +34,10 @@ type StepBundleModel struct {
 	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
-type StepListItemStepOrBundleModel map[string]any
+type StepListItemStepOrBundleModel struct {
+	Step       *StepListStepItemModel
+	StepBundle *StepListStepBundleItemModel
+}
 
 type StepBundleListItemModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -57,7 +60,11 @@ type StepListWithItemModel map[string]WithModel
 
 type StepListStepItemModel map[string]stepmanModels.StepModel
 
-type StepListItemModel map[string]interface{}
+type StepListItemModel struct {
+	Step       *StepListStepItemModel
+	With       *StepListWithItemModel
+	StepBundle *StepListStepBundleItemModel
+}
 
 type PipelineModel struct {
 	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`

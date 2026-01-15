@@ -326,7 +326,7 @@ step_bundles:
   test:
     steps:
     - with: {}`,
-			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
+			wantErr: "'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
@@ -398,7 +398,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
+			wantErr: "'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",

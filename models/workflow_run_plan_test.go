@@ -38,17 +38,17 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				"bundle1": {
 					RunIf: "{{.IsCI}}",
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle1-step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle1-step2": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"step1": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"step1": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
+						{Step: &StepListStepItemModel{"step2": stepmanModels.StepModel{}}},
 					},
 				},
 			},
@@ -77,28 +77,28 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				"bundle1": {
 					RunIf: `{{enveq "RUN_IF_1" "true"}}`,
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle2": StepBundleListItemModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle2": StepBundleListItemModel{}}},
 					},
 				},
 				"bundle2": {
 					RunIf: `{{enveq "RUN_IF_2" "true"}}`,
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle2-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle3": StepBundleListItemModel{}},
+						{Step: &StepListStepItemModel{"bundle2-step1": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle3": StepBundleListItemModel{}}},
 					},
 				},
 				"bundle3": {
 					RunIf: `{{enveq "RUN_IF_3" "true"}}`,
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle3-step1": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle3-step1": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
 					},
 				},
 			},
@@ -127,21 +127,21 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			stepBundles: map[string]StepBundleModel{
 				"bundle1": {
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle2": StepBundleListItemModel{}},
-						{"bundle1-step1": stepmanModels.StepModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle2": StepBundleListItemModel{}}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
 					},
 				},
 				"bundle2": {
 					RunIf: `{{enveq "RUN_IF_1" "true"}}`,
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle2-step1": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle2-step1": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
 					},
 				},
 			},
@@ -192,18 +192,18 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			stepBundles: map[string]StepBundleModel{
 				"bundle1": {
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle1-step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle1-step2": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"step1": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"step2": stepmanModels.StepModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{Step: &StepListStepItemModel{"step1": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
+						{Step: &StepListStepItemModel{"step2": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
 					},
 				},
 			},
@@ -235,29 +235,29 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			stepBundles: map[string]StepBundleModel{
 				"bundle1": {
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle1-step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle1-step2": stepmanModels.StepModel{}}},
 					},
 				},
 				"bundle2": {
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"bundle2-step1": stepmanModels.StepModel{}},
-						{"bundle2-step2": stepmanModels.StepModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
+						{Step: &StepListStepItemModel{"bundle2-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle2-step2": stepmanModels.StepModel{}}},
 					},
 				},
 				"bundle3": {
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle3-step1": stepmanModels.StepModel{}},
-						{"bundle::bundle2": StepBundleListItemModel{}},
-						{"bundle3-step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle3-step1": stepmanModels.StepModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle2": StepBundleListItemModel{}}},
+						{Step: &StepListStepItemModel{"bundle3-step2": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle3": StepBundleListItemModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle3": StepBundleListItemModel{}}},
 					},
 				},
 			},
@@ -294,8 +294,8 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 						{"input2": ""},
 					},
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle1-step2": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle1-step2": stepmanModels.StepModel{}}},
 					},
 				},
 				"bundle2": {
@@ -304,24 +304,24 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 						{"input3": ""},
 					},
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle1": StepBundleListItemModel{
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{
 							Inputs: []envmanModels.EnvironmentItemModel{
 								{"input2": "value2"},
 							},
-						}},
-						{"bundle2-step1": stepmanModels.StepModel{}},
-						{"bundle2-step2": stepmanModels.StepModel{}},
+						}}},
+						{Step: &StepListStepItemModel{"bundle2-step1": stepmanModels.StepModel{}}},
+						{Step: &StepListStepItemModel{"bundle2-step2": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle2": StepBundleListItemModel{
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle2": StepBundleListItemModel{
 							Inputs: []envmanModels.EnvironmentItemModel{
 								{"input3": "value3"},
 							},
-						}},
+						}}},
 					},
 				},
 			},
@@ -376,15 +376,15 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				"bundle1": {
 					Title: "My Bundle 1",
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
 					},
 				},
 			},
@@ -413,16 +413,16 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 				"bundle1": {
 					Title: "My Bundle 1",
 					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
+						{Step: &StepListStepItemModel{"bundle1-step1": stepmanModels.StepModel{}}},
 					},
 				},
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {
 					Steps: []StepListItemModel{
-						{"bundle::bundle1": StepBundleListItemModel{}},
-						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 1"}},
-						{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 2"}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 1"}}},
+						{StepBundle: &StepListStepBundleItemModel{"bundle::bundle1": StepBundleListItemModel{Title: "My Bundle Override 2"}}},
 					},
 				},
 			},

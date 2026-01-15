@@ -1742,7 +1742,9 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	t.Log("valid steplist item")
 	{
 		stepListItem := StepListItemModel{
-			"step1": stepData,
+			Step: &StepListStepItemModel{
+				"step1": stepData,
+			},
 		}
 
 		key, itemType, err := stepListItem.GetKeyAndType()
@@ -1759,8 +1761,10 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 	t.Log("invalid steplist item - more than 1 step")
 	{
 		stepListItem := StepListItemModel{
-			"step1": stepData,
-			"step2": stepData,
+			Step: &StepListStepItemModel{
+				"step1": stepData,
+				"step2": stepData,
+			},
 		}
 
 		key, itemType, err := stepListItem.GetKeyAndType()
