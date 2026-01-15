@@ -261,6 +261,8 @@ workflows:
             set -x
 
 
+            echo "golang 1.25.5" > .tool-versions
+
             go run tools setup --config .tool-versions
     - script@1:
         inputs:
