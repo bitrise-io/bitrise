@@ -38,13 +38,13 @@ workflows:
 
   run_lint:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::run_lint: {}
 
   run_unit_tests_macos:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::setup_go_junit_report: {}
     - bundle::run_unit_tests: {}
@@ -55,7 +55,7 @@ workflows:
 
   run_unit_tests_linux:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies:
         inputs:
         - IGNORE_CUSTOM_GOLANG: "true"
@@ -64,7 +64,7 @@ workflows:
 
   run_integration_tests_macos:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::setup_go_junit_report: {}
     - bundle::run_integration_tests: {}
@@ -76,7 +76,7 @@ workflows:
 
   run_integration_tests_linux:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies:
         inputs:
         - IGNORE_CUSTOM_GOLANG: "true"
@@ -90,7 +90,7 @@ workflows:
 
   run_docker_integration_tests_linux:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies:
         inputs:
         - IGNORE_CUSTOM_GOLANG: "true"
@@ -102,7 +102,7 @@ workflows:
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_asdf_tests:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::setup_go_junit_report: {}
     - bundle::run_system_asdf_integration_tests: {}
@@ -110,14 +110,14 @@ workflows:
   # Note: this workflow is triggered externally during stack testing, do not remove or break.
   run_system_mise_tests:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::setup_go_junit_report: {}
     - bundle::run_system_mise_integration_tests: {}
 
   test_binary_build_macos:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies: {}
     - bundle::setup_goreleaser: {}
     - bundle::test_binary_build: {}
@@ -128,7 +128,7 @@ workflows:
 
   test_binary_build_linux:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
     - bundle::install_dependencies:
         inputs:
         - IGNORE_CUSTOM_GOLANG: "true"
@@ -241,7 +241,28 @@ workflows:
             mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
   testme:
     steps:
-    - bundle::setup_repo: {}
+    - bundle::goversion: {}
+    - script@1:
+        inputs:
+        - content: >-
+            #!/usr/bin/env bash
+
+            # fail if any commands fails
+
+            set -e
+
+            # make pipelines' return status equal the last command to exit with
+            a non-zero status, or zero if all commands exit successfully
+
+            set -o pipefail
+
+            # debug log
+
+            set -x
+
+
+            go version
+        title: go version
     - script@1:
         inputs:
         - content: >-
@@ -284,6 +305,7 @@ workflows:
 
 
             go version
+        title: go version
     triggers:
       push:
       - branch: "*"
@@ -488,8 +510,7 @@ step_bundles:
 
             goreleaser release --snapshot --clean
     - deploy-to-bitrise-io@2: {}
-
-  setup_repo:
+  goversion:
     steps:
     - git-clone@8:
         inputs:
