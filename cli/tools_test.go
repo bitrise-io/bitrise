@@ -318,6 +318,7 @@ func TestExposeEnvsWithEnvman(t *testing.T) {
 	})
 
 	t.Run("returns false when envstore does not exist", func(t *testing.T) {
+		t.Setenv(configs.EnvstorePathEnvKey, "")
 		originalPath := configs.InputEnvstorePath
 		configs.InputEnvstorePath = "/path/to/nonexistent/envstore.yml"
 		defer func() { configs.InputEnvstorePath = originalPath }()
