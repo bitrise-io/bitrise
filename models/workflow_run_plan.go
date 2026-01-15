@@ -125,9 +125,14 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 	for _, workflowID := range workflowList {
 		workflow := builder.workflows[workflowID]
 
-		stepPlans, err := builder.processStepList(workflowID)
-		if err != nil {
-			return WorkflowRunPlan{}, err
+		var stepPlans []StepExecutionPlan
+		for _, stepListItem := range workflow.Steps {
+			plans, err := builder.processStepListItem(&stepListItem, nil, nil)
+			if err != nil {
+				return WorkflowRunPlan{}, err
+			}
+
+			stepPlans = append(stepPlans, plans...)
 		}
 
 		workflowTitle := workflow.Title
@@ -180,39 +185,36 @@ func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflow
 	return workflowStack
 }
 
-func (builder *WorkflowRunPlanBuilder) processStepList(workflowID string) ([]StepExecutionPlan, error) {
-
+func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepListItem, stepBundleContext *BundleContext, withGroupContext *WithGroupContext) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 
-	workflow := builder.workflows[workflowID]
-	for _, stepListItem := range workflow.Steps {
-		key, t, err := stepListItem.GetKeyAndType()
+	key, t, err := stepListItem.GetKeyAndType()
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case StepListItemTypeStep:
+		plan, err := builder.processStep(key, stepListItem, stepBundleContext, withGroupContext)
 		if err != nil {
 			return nil, err
 		}
 
-		if t == StepListItemTypeStep {
-			plan, err := builder.processStep(key, &stepListItem, nil, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			stepPlans = append(stepPlans, *plan)
-		} else if t == StepListItemTypeWith {
-			plans, err := builder.processWithGroup(&stepListItem)
-			if err != nil {
-				return nil, err
-			}
-
-			stepPlans = append(stepPlans, plans...)
-		} else if t == StepListItemTypeBundle {
-			plans, err := builder.processStepBundle(key, &stepListItem, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			stepPlans = append(stepPlans, plans...)
+		stepPlans = append(stepPlans, *plan)
+	case StepListItemTypeWith:
+		plans, err := builder.processWithGroup(stepListItem)
+		if err != nil {
+			return nil, err
 		}
+
+		stepPlans = append(stepPlans, plans...)
+	case StepListItemTypeBundle:
+		plans, err := builder.processStepBundle(key, stepListItem, stepBundleContext)
+		if err != nil {
+			return nil, err
+		}
+
+		stepPlans = append(stepPlans, plans...)
 	}
 
 	return stepPlans, nil
@@ -240,54 +242,6 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
 	return &plan, nil
-}
-
-func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListItem) ([]StepExecutionPlan, error) {
-	with, err := stepListItem.GetWith()
-	if err != nil {
-		return nil, err
-	}
-
-	groupID := builder.uuidProvider()
-
-	var containerPlan ContainerPlan
-	if with.ContainerID != "" {
-		containerPlan.Image = builder.containers[with.ContainerID].Image
-	}
-
-	var servicePlans []ContainerPlan
-	for _, serviceID := range with.ServiceIDs {
-		servicePlans = append(servicePlans, ContainerPlan{Image: builder.services[serviceID].Image})
-	}
-
-	builder.withGroupPlans[groupID] = WithGroupPlan{
-		Services:  servicePlans,
-		Container: containerPlan,
-	}
-
-	var stepPlans []StepExecutionPlan
-	for _, stepListStepItem := range with.Steps {
-		key, t, err := stepListStepItem.GetKeyAndType()
-		if err != nil {
-			return nil, err
-		}
-
-		if t == StepListItemTypeStep {
-			withGroupContext := &WithGroupContext{
-				UUID:        groupID,
-				ContainerID: with.ContainerID,
-				ServiceIDs:  with.ServiceIDs,
-			}
-			plan, err := builder.processStep(key, &stepListStepItem, nil, withGroupContext)
-			if err != nil {
-				return nil, err
-			}
-
-			stepPlans = append(stepPlans, *plan)
-		}
-	}
-
-	return stepPlans, nil
 }
 
 func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext) ([]StepExecutionPlan, error) {
@@ -355,29 +309,57 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	return plans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleContext BundleContext) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListItem) ([]StepExecutionPlan, error) {
+	with, err := stepListItem.GetWith()
+	if err != nil {
+		return nil, err
+	}
+
+	groupID := builder.uuidProvider()
+
+	var containerPlan ContainerPlan
+	if with.ContainerID != "" {
+		containerPlan.Image = builder.containers[with.ContainerID].Image
+	}
+
+	var servicePlans []ContainerPlan
+	for _, serviceID := range with.ServiceIDs {
+		servicePlans = append(servicePlans, ContainerPlan{Image: builder.services[serviceID].Image})
+	}
+
+	builder.withGroupPlans[groupID] = WithGroupPlan{
+		Services:  servicePlans,
+		Container: containerPlan,
+	}
+
+	withGroupContext := &WithGroupContext{
+		UUID:        groupID,
+		ContainerID: with.ContainerID,
+		ServiceIDs:  with.ServiceIDs,
+	}
+
 	var stepPlans []StepExecutionPlan
-	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
-		key, t, err := stepListStepOrBundleItem.GetKeyAndType()
+	for _, stepListStepItem := range with.Steps {
+		plans, err := builder.processStepListItem(&stepListStepItem, nil, withGroupContext)
 		if err != nil {
 			return nil, err
 		}
 
-		if t == StepListItemTypeStep {
-			plan, err := builder.processStep(key, &stepListStepOrBundleItem, &bundleContext, nil)
-			if err != nil {
-				return nil, err
-			}
+		stepPlans = append(stepPlans, plans...)
+	}
 
-			stepPlans = append(stepPlans, *plan)
-		} else if t == StepListItemTypeBundle {
-			plans, err := builder.processStepBundle(key, &stepListStepOrBundleItem, &bundleContext)
-			if err != nil {
-				return nil, err
-			}
+	return stepPlans, nil
+}
 
-			stepPlans = append(stepPlans, plans...)
+func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleContext BundleContext) ([]StepExecutionPlan, error) {
+	var stepPlans []StepExecutionPlan
+	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
+		plans, err := builder.processStepListItem(&stepListStepOrBundleItem, &bundleContext, nil)
+		if err != nil {
+			return nil, err
 		}
+
+		stepPlans = append(stepPlans, plans...)
 	}
 
 	return stepPlans, nil
