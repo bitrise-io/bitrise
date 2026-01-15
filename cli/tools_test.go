@@ -156,7 +156,7 @@ func TestIsYMLConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
-			got := isYMLConfig(tt.path)
+			got := isBitriseConfig(tt.path)
 			require.Equal(t, tt.want, got)
 		})
 	}

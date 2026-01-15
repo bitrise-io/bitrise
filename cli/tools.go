@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -264,7 +265,7 @@ func toolsSetup(c *cli.Context) error {
 			continue
 		}
 
-		if isYMLConfig(file) {
+		if isBitriseConfig(file) {
 			if bitriseConfigPath != "" {
 				return fmt.Errorf("multiple bitrise config files specified: %s and %s (only one bitrise.yml can be used)", bitriseConfigPath, file)
 			}
@@ -318,9 +319,15 @@ func toolsSetup(c *cli.Context) error {
 	return nil
 }
 
-func isYMLConfig(path string) bool {
+func isBitriseConfig(path string) bool {
 	base := strings.ToLower(filepath.Base(path))
-	return strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
+	isYML := strings.HasSuffix(base, ".yml") || strings.HasSuffix(base, ".yaml")
+	if !isYML {
+		return false
+	}
+
+	cmd := exec.Command("bitrise", "validate", "--config", path)
+	return cmd.Run() == nil
 }
 
 func convertToOutputFormat(envs []provider.EnvironmentActivation, format string, exposedWithEnvman bool) (string, error) {
