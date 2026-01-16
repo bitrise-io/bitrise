@@ -317,11 +317,140 @@ func TestConfigModelFromYAMLFileContent_StepListValidation(t *testing.T) {
 		config  string
 		wantErr string
 	}{
+		// Success cases
+		{
+			name: "Valid workflow with step",
+			config: `
+format_version: '11'
+workflows:
+  test:
+    steps:
+    - script: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid workflow with with group",
+			config: `
+format_version: '11'
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid workflow with step bundle",
+			config: `
+format_version: '11'
+step_bundles:
+  bundle:
+    steps:
+    - script: {}
+workflows:
+  test:
+    steps:
+    - bundle::bundle: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid workflow with step, with group, and step bundle",
+			config: `
+format_version: '11'
+containers:
+  ruby:
+    image: ruby:3.2
+step_bundles:
+  bundle:
+    steps:
+    - script: {}
+workflows:
+  test:
+    steps:
+    - script: {}
+    - with:
+        container: ruby
+        steps:
+        - script: {}
+    - bundle::bundle: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid with group with multiple steps",
+			config: `
+format_version: '11'
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script: {}
+        - script: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid step bundle with step",
+			config: `
+format_version: '11'
+step_bundles:
+  test:
+    steps:
+    - script: {}
+workflows:
+  test:
+    steps:
+    - bundle::test: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid step bundle with nested step bundle",
+			config: `
+format_version: '11'
+step_bundles:
+  inner:
+    steps:
+    - script: {}
+  outer:
+    steps:
+    - bundle::inner: {}
+workflows:
+  test:
+    steps:
+    - bundle::outer: {}`,
+			wantErr: "",
+		},
+		{
+			name: "Valid step bundle with step and nested bundle",
+			config: `
+format_version: '11'
+step_bundles:
+  inner:
+    steps:
+    - script: {}
+  outer:
+    steps:
+    - script: {}
+    - bundle::inner: {}
+workflows:
+  test:
+    steps:
+    - bundle::outer: {}`,
+			wantErr: "",
+		},
+		// Error cases
 		{
 			name: "Invalid bitrise.yml: with group in a step bundle's steps list",
 			config: `
 format_version: '11'
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   test:
     steps:
@@ -332,7 +461,6 @@ step_bundles:
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
 			config: `
 format_version: '11'
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 services:
   postgres:
     image: postgres:13
@@ -350,7 +478,6 @@ workflows:
 			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
 			config: `
 format_version: '11'
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 services:
   postgres:
     image: postgres:13

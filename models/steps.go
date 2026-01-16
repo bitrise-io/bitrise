@@ -32,21 +32,21 @@ type StepListItem interface {
 
 type StepListItemRaw map[string]any
 
-func (raw StepListItemRaw) GetKeyAndType() (string, StepListItemType, error) {
-	if raw == nil {
+func (stepListItem *StepListItemRaw) GetKeyAndType() (string, StepListItemType, error) {
+	if stepListItem == nil {
 		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
 	}
 
-	if len(raw) == 0 {
+	if len(*stepListItem) == 0 {
 		return "", StepListItemTypeUnknown, errors.New("empty step list item")
 	}
 
-	if len(raw) > 1 {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item has more than 1 key: %#v", raw)
+	if len(*stepListItem) > 1 {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item has more than 1 key: %#v", stepListItem)
 	}
 
 	var itemID string
-	for key := range raw {
+	for key := range *stepListItem {
 		itemID = key
 		break
 	}
@@ -61,51 +61,157 @@ func (raw StepListItemRaw) GetKeyAndType() (string, StepListItemType, error) {
 	}
 }
 
-func (raw StepListItemRaw) GetItem(target interface{}) (string, error) {
-	if raw == nil {
-		return "", fmt.Errorf("step list item is nil")
+func (stepListItem *StepListItemRaw) GetItem(target interface{}) (string, error) {
+	key, t, err := stepListItem.GetKeyAndType()
+	if err != nil {
+		return "", err
 	}
 
-	if len(raw) == 0 {
-		return "", fmt.Errorf("step list item is empty")
-	}
-
-	if len(raw) > 1 {
-		return "", fmt.Errorf("step list item has more than 1 key: %#v", raw)
-	}
-
-	var itemID string
 	var value any
-	for key, val := range raw {
-		itemID = key
-		value = val
+	for _, v := range *stepListItem {
+		value = v
 		break
 	}
 
 	switch ptr := target.(type) {
 	case *stepmanModels.StepModel:
+		if t != StepListItemTypeStep {
+			return "", fmt.Errorf("step list item (%s) is not a step", key)
+		}
+
 		step, ok := value.(stepmanModels.StepModel)
 		if !ok {
-			return "", fmt.Errorf("step list item value is not a step")
+			// TODO: why is this needed?
+			stepPtr, ok := value.(*stepmanModels.StepModel)
+			if !ok {
+				return "", fmt.Errorf("step list item value is not a step")
+			}
+			step = *stepPtr
 		}
 		*ptr = step
 	case *StepBundleListItemModel:
+		if t != StepListItemTypeBundle {
+			return "", fmt.Errorf("step list item (%s) is not a step bundle", key)
+		}
+
 		bundle, ok := value.(StepBundleListItemModel)
 		if !ok {
-			return "", fmt.Errorf("step list item value is not a Step Bundle")
+			bundlePtr, ok := value.(*StepBundleListItemModel)
+			if !ok {
+				return "", fmt.Errorf("step list item value is not a Step Bundle")
+			}
+			bundle = *bundlePtr
 		}
 		*ptr = bundle
 	case *WithModel:
+		if t != StepListItemTypeWith {
+			return "", fmt.Errorf("step list item (%s) is not a With group", key)
+		}
+
 		with, ok := value.(WithModel)
 		if !ok {
-			return "", fmt.Errorf("step list item value is not a With group")
+			withPtr, ok := value.(*WithModel)
+			if !ok {
+				return "", fmt.Errorf("step list item value is not a With group")
+			}
+			with = *withPtr
 		}
 		*ptr = with
 	default:
 		return "", fmt.Errorf("unsupported target type: %T", target)
 	}
 
-	return itemID, nil
+	return key, nil
+}
+
+func (stepListItem *StepListItemRaw) UnmarshalJSON(b []byte) error {
+	var raw map[string]any
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	*stepListItem = map[string]any{}
+	if key == StepListItemWithKey {
+		var withItem map[string]WithModel
+		if err := json.Unmarshal(b, &withItem); err != nil {
+			return err
+		}
+
+		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem map[string]StepBundleListItemModel
+		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
+			return err
+		}
+
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem map[string]stepmanModels.StepModel
+		if err := json.Unmarshal(b, &stepItem); err != nil {
+			return err
+		}
+
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
+}
+
+func (stepListItem *StepListItemRaw) UnmarshalYAML(unmarshal func(any) error) error {
+	var raw map[string]any
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	var key string
+	for k := range raw {
+		key = k
+		break
+	}
+
+	*stepListItem = map[string]any{}
+	if key == StepListItemWithKey {
+		var withItem map[string]WithModel
+		if err := unmarshal(&withItem); err != nil {
+			return err
+		}
+
+		for k, v := range withItem {
+			(*stepListItem)[k] = v
+		}
+	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
+		var stepBundleItem map[string]StepBundleListItemModel
+		if err := unmarshal(&stepBundleItem); err != nil {
+			return err
+		}
+
+		for k, v := range stepBundleItem {
+			(*stepListItem)[k] = v
+		}
+	} else {
+		var stepItem map[string]stepmanModels.StepModel
+		if err := unmarshal(&stepItem); err != nil {
+			return err
+		}
+
+		for k, v := range stepItem {
+			(*stepListItem)[k] = v
+		}
+	}
+
+	return nil
 }
 
 // StepListItemModel represents a step list items for a Workflow (can be a step, step bundle and with group)
@@ -116,7 +222,8 @@ func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType
 		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
 	}
 
-	return StepListItemRaw(*stepListItem).GetKeyAndType()
+	raw := StepListItemRaw(*stepListItem)
+	return raw.GetKeyAndType()
 }
 
 func (stepListItem *StepListItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
@@ -125,7 +232,8 @@ func (stepListItem *StepListItemModel) GetStep() (string, *stepmanModels.StepMod
 	}
 
 	var step stepmanModels.StepModel
-	stepID, err := StepListItemRaw(*stepListItem).GetItem(&step)
+	raw := StepListItemRaw(*stepListItem)
+	stepID, err := raw.GetItem(&step)
 	if err != nil {
 		return "", nil, err
 	}
@@ -139,7 +247,8 @@ func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, er
 	}
 
 	var stepBundle StepBundleListItemModel
-	_, err := StepListItemRaw(*stepListItem).GetItem(&stepBundle)
+	raw := StepListItemRaw(*stepListItem)
+	_, err := raw.GetItem(&stepBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +262,8 @@ func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
 	}
 
 	var withGroup WithModel
-	_, err := StepListItemRaw(*stepListItem).GetItem(&withGroup)
+	raw := StepListItemRaw(*stepListItem)
+	_, err := raw.GetItem(&withGroup)
 	if err != nil {
 		return nil, err
 	}
@@ -162,96 +272,22 @@ func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
 }
 
 func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
-	var raw map[string]any
-	if err := json.Unmarshal(b, &raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalJSON(b); err != nil {
 		return err
 	}
 
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	if key == StepListItemWithKey {
-		var withItem StepListWithItemModel
-		if err := json.Unmarshal(b, &withItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
-	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem StepListStepBundleItemModel
-		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem map[string]stepmanModels.StepModel
-		if err := json.Unmarshal(b, &stepItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
+	*stepListItem = StepListItemModel(raw)
 	return nil
 }
 
 func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw map[string]any
-	if err := unmarshal(&raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalYAML(unmarshal); err != nil {
 		return err
 	}
 
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	if key == StepListItemWithKey {
-		var withItem StepListWithItemModel
-		if err := unmarshal(&withItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
-	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem StepListStepBundleItemModel
-		if err := unmarshal(&stepBundleItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem map[string]stepmanModels.StepModel
-		if err := unmarshal(&stepItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
+	*stepListItem = StepListItemModel(raw)
 	return nil
 }
 
@@ -259,7 +295,12 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(any) error) 
 type StepListItemStepOrBundleModel StepListItemRaw
 
 func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
-	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if stepListItem == nil {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+	}
+
+	raw := StepListItemRaw(*stepListItem)
+	key, t, err := raw.GetKeyAndType()
 	if err != nil {
 		return "", StepListItemTypeUnknown, err
 	}
@@ -271,16 +312,13 @@ func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, Step
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
-	if err != nil {
-		return "", nil, err
-	}
-	if t != StepListItemTypeStep {
-		return "", nil, fmt.Errorf("step list item (%s) is not a step", key)
+	if stepListItem == nil {
+		return "", nil, fmt.Errorf("step list item is nil")
 	}
 
 	var step stepmanModels.StepModel
-	stepID, err := StepListItemRaw(*stepListItem).GetItem(&step)
+	raw := StepListItemRaw(*stepListItem)
+	stepID, err := raw.GetItem(&step)
 	if err != nil {
 		return "", nil, err
 	}
@@ -289,16 +327,13 @@ func (stepListItem *StepListItemStepOrBundleModel) GetStep() (string, *stepmanMo
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
-	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
-	if err != nil {
-		return nil, err
-	}
-	if t != StepListItemTypeBundle {
-		return nil, fmt.Errorf("step list item (%s) is not a step bundle", key)
+	if stepListItem == nil {
+		return nil, fmt.Errorf("step list item is nil")
 	}
 
 	var stepBundle StepBundleListItemModel
-	_, err = StepListItemRaw(*stepListItem).GetItem(&stepBundle)
+	raw := StepListItemRaw(*stepListItem)
+	_, err := raw.GetItem(&stepBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -311,76 +346,22 @@ func (stepListItem *StepListItemStepOrBundleModel) GetWith() (*WithModel, error)
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
-	var raw map[string]any
-	if err := json.Unmarshal(b, &raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalJSON(b); err != nil {
 		return err
 	}
 
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem StepListStepBundleItemModel
-		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem map[string]stepmanModels.StepModel
-		if err := json.Unmarshal(b, &stepItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
+	*stepListItem = StepListItemStepOrBundleModel(raw)
 	return nil
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw map[string]any
-	if err := unmarshal(&raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalYAML(unmarshal); err != nil {
 		return err
 	}
 
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem StepListStepBundleItemModel
-		if err := unmarshal(&stepBundleItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem StepListStepItemModel
-		if err := unmarshal(&stepItem); err != nil {
-			return err
-		}
-
-		*stepListItem = map[string]any{}
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
+	*stepListItem = StepListItemStepOrBundleModel(raw)
 	return nil
 }
 
@@ -388,7 +369,12 @@ func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(
 type StepListStepItemModel StepListItemRaw
 
 func (stepListItem *StepListStepItemModel) GetKeyAndType() (string, StepListItemType, error) {
-	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if stepListItem == nil {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+	}
+
+	raw := StepListItemRaw(*stepListItem)
+	key, t, err := raw.GetKeyAndType()
 	if err != nil {
 		return "", StepListItemTypeUnknown, err
 	}
@@ -402,16 +388,13 @@ func (stepListItem *StepListStepItemModel) GetKeyAndType() (string, StepListItem
 }
 
 func (stepListItem *StepListStepItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
-	if err != nil {
-		return "", nil, err
-	}
-	if t != StepListItemTypeStep {
-		return "", nil, fmt.Errorf("step list item (%s) is not a step", key)
+	if stepListItem == nil {
+		return "", nil, fmt.Errorf("step list item is nil")
 	}
 
 	var step stepmanModels.StepModel
-	stepID, err := StepListItemRaw(*stepListItem).GetItem(&step)
+	raw := StepListItemRaw(*stepListItem)
+	stepID, err := raw.GetItem(&step)
 	if err != nil {
 		return "", nil, err
 	}
@@ -428,39 +411,21 @@ func (stepListItem *StepListStepItemModel) GetWith() (*WithModel, error) {
 }
 
 func (stepListItem *StepListStepItemModel) UnmarshalJSON(b []byte) error {
-	var raw map[string]any
-	if err := json.Unmarshal(b, &raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalJSON(b); err != nil {
 		return err
 	}
 
-	var stepItem map[string]stepmanModels.StepModel
-	if err := json.Unmarshal(b, &stepItem); err != nil {
-		return err
-	}
-
-	*stepListItem = map[string]any{}
-	for k, v := range stepItem {
-		(*stepListItem)[k] = v
-	}
-
+	*stepListItem = StepListStepItemModel(raw)
 	return nil
 }
 
 func (stepListItem *StepListStepItemModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw map[string]any
-	if err := unmarshal(&raw); err != nil {
+	var raw StepListItemRaw
+	if err := raw.UnmarshalYAML(unmarshal); err != nil {
 		return err
 	}
 
-	var stepItem map[string]stepmanModels.StepModel
-	if err := unmarshal(&stepItem); err != nil {
-		return err
-	}
-
-	*stepListItem = map[string]any{}
-	for k, v := range stepItem {
-		(*stepListItem)[k] = v
-	}
-
+	*stepListItem = StepListStepItemModel(raw)
 	return nil
 }
