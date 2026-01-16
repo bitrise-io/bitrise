@@ -378,16 +378,27 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 // exposeEnvsWithEnvman calls envman to expose the given env vars for subsequent steps in the workflow.
 // Returns true if successful (since envman is not always available, e.g. in local runs).
 func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent bool) bool {
-	// Initialize envman envstore if it doesn't exist yet
-	if err := tools.EnvmanInit(configs.InputEnvstorePath, false); err != nil {
+	// When running inside a workflow step, ENVMAN_ENVSTORE_PATH will be set to OutputEnvstorePath.
+	// When running locally/standalone, we fall back to InputEnvstorePath.
+	envstorePath := os.Getenv(configs.EnvstorePathEnvKey)
+	if envstorePath == "" {
+		envstorePath = configs.InputEnvstorePath
+	}
+
+	// Check if envstore exists - it should be initialized by the workflow runner
+	if _, err := os.Stat(envstorePath); err != nil {
 		if !silent {
-			log.Warnf("! Failed to initialize envman: %s", err)
+			if os.IsNotExist(err) {
+				log.Warnf("! Envstore not found at %s - envman is not available to store installation paths", envstorePath)
+			} else {
+				log.Warnf("! Failed to access envstore at %s: %s", envstorePath, err)
+			}
 		}
 		return false
 	}
 
 	envs := toolprovider.ConvertToEnvmanEnvs(activations)
-	err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, envs)
+	err := tools.EnvmanAddEnvs(envstorePath, envs)
 	if err != nil {
 		if !silent {
 			log.Warnf("! Failed to expose tool envs with envman: %s", err)

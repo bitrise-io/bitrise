@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/stretchr/testify/require"
 )
@@ -277,9 +279,10 @@ func TestExposeEnvsWithEnvman(t *testing.T) {
 	envstorePath := filepath.Join(tempDir, "input_envstore.yml")
 	configs.InputEnvstorePath = envstorePath
 
-	t.Run("successfully initializes and exposes envs", func(t *testing.T) {
-		_, err := os.Stat(envstorePath)
-		require.True(t, os.IsNotExist(err), "envstore should not exist before test")
+	t.Run("successfully exposes envs to existing envstore", func(t *testing.T) {
+		// Create the envstore first (simulating workflow initialization)
+		err := os.WriteFile(envstorePath, []byte("envs: []\n"), 0644)
+		require.NoError(t, err, "should create envstore file")
 
 		activations := []provider.EnvironmentActivation{
 			{
@@ -295,11 +298,14 @@ func TestExposeEnvsWithEnvman(t *testing.T) {
 		require.True(t, result, "exposeEnvsWithEnvman should return true")
 
 		_, err = os.Stat(envstorePath)
-		require.NoError(t, err, "envstore file should exist after call")
+		require.NoError(t, err, "envstore file should still exist")
 	})
 
 	t.Run("handles empty activations gracefully", func(t *testing.T) {
 		os.Remove(envstorePath)
+		// Create the envstore first
+		err := os.WriteFile(envstorePath, []byte("envs: []\n"), 0644)
+		require.NoError(t, err)
 
 		activations := []provider.EnvironmentActivation{}
 
@@ -307,13 +313,14 @@ func TestExposeEnvsWithEnvman(t *testing.T) {
 
 		require.True(t, result, "exposeEnvsWithEnvman should return true even with empty activations")
 
-		_, err := os.Stat(envstorePath)
-		require.NoError(t, err, "envstore file should exist after initialization")
+		_, err = os.Stat(envstorePath)
+		require.NoError(t, err, "envstore file should still exist")
 	})
 
-	t.Run("silent mode suppresses warnings", func(t *testing.T) {
+	t.Run("returns false when envstore does not exist", func(t *testing.T) {
+		t.Setenv(configs.EnvstorePathEnvKey, "")
 		originalPath := configs.InputEnvstorePath
-		configs.InputEnvstorePath = "/path/to/invalid/nonexistent/envstore.yml"
+		configs.InputEnvstorePath = "/path/to/nonexistent/envstore.yml"
 		defer func() { configs.InputEnvstorePath = originalPath }()
 
 		activations := []provider.EnvironmentActivation{
@@ -322,7 +329,49 @@ func TestExposeEnvsWithEnvman(t *testing.T) {
 			},
 		}
 
+		// Test with silent=true (no warnings)
 		result := exposeEnvsWithEnvman(activations, true)
-		require.False(t, result, "should return false when initialization fails")
+		require.False(t, result, "should return false when envstore does not exist")
+
+		// Test with silent=false and verify warning is logged
+		var buf bytes.Buffer
+		log.InitGlobalLogger(log.LoggerOpts{
+			LoggerType:      log.ConsoleLogger,
+			Producer:        log.BitriseCLI,
+			DebugLogEnabled: false,
+			Writer:          &buf,
+		})
+
+		result = exposeEnvsWithEnvman(activations, false)
+		require.False(t, result, "should return false when envstore does not exist")
+
+		// Verify warning message was logged
+		logOutput := buf.String()
+		require.Contains(t, logOutput, "Envstore not found", "should log warning about missing envstore")
+		require.Contains(t, logOutput, "/path/to/nonexistent/envstore.yml", "should include the envstore path in warning")
+	})
+
+	t.Run("respects ENVMAN_ENVSTORE_PATH environment variable", func(t *testing.T) {
+		customEnvstorePath := filepath.Join(tempDir, "custom_envstore.yml")
+		// Create the custom envstore first
+		err := os.WriteFile(customEnvstorePath, []byte("envs: []\n"), 0644)
+		require.NoError(t, err)
+
+		t.Setenv(configs.EnvstorePathEnvKey, customEnvstorePath)
+
+		activations := []provider.EnvironmentActivation{
+			{
+				ContributedEnvVars: map[string]string{
+					"GOPATH": "/go",
+				},
+			},
+		}
+
+		result := exposeEnvsWithEnvman(activations, false)
+		require.True(t, result, "exposeEnvsWithEnvman should return true")
+
+		// Verify custom envstore was used (still exists)
+		_, err = os.Stat(customEnvstorePath)
+		require.NoError(t, err, "custom envstore file should exist")
 	})
 }
