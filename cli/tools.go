@@ -142,7 +142,7 @@ EXAMPLES:
    bitrise tools install go@1.21.5 --provider mise`,
 	Action: func(c *cli.Context) error {
 		logCommandParameters(c)
-		if err := toolsInstall(c, false); err != nil {
+		if err := toolsInstall(c); err != nil {
 			log.Errorf("Tool install failed: %s", err)
 			os.Exit(1)
 		}
@@ -183,8 +183,8 @@ EXAMPLES:
    bitrise tools latest --installed go@1.21 --provider mise`,
 	Action: func(c *cli.Context) error {
 		logCommandParameters(c)
-		if err := toolsInstall(c, true); err != nil {
-			log.Errorf("Tool install failed: %s", err)
+		if err := toolsLatest(c); err != nil {
+			log.Errorf("Tool latest failed: %s", err)
 			os.Exit(1)
 		}
 		return nil
@@ -495,12 +495,93 @@ func printToolsInfo(tools []toolprovider.InstalledTool, activeOnly bool) {
 	log.Printf("")
 }
 
-func toolsInstall(c *cli.Context, isLatest bool) error {
+func toolsLatest(c *cli.Context) error {
 	args := c.Args()
 	if len(args) != 1 {
-		if isLatest {
-			return fmt.Errorf("requires exactly 1 argument: <TOOL[@VERSION]>\nUsage: bitrise tools latest <TOOL[@VERSION]>")
+		return fmt.Errorf("requires exactly 1 argument: <TOOL[@VERSION]>\nUsage: bitrise tools latest <TOOL[@VERSION]> [--installed] [--provider PROVIDER] [--format FORMAT]")
+	}
+
+	toolSpec := args[0]
+	providerID := c.String(toolsProviderKey)
+	format := c.String(toolsOutputFormatKey)
+	checkInstalled := c.Bool(toolsInstalledKey)
+	silent := false
+
+	switch format {
+	case outputFormatJSON, outputFormatBash:
+		silent = true
+	case outputFormatPlaintext:
+		// valid format
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	toolName, versionStr, err := parseToolSpecForLatest(toolSpec)
+	if err != nil {
+		return err
+	}
+
+	// Default provider to mise
+	if providerID == "" {
+		providerID = "mise"
+	}
+
+	if providerID != "mise" {
+		return fmt.Errorf("invalid provider: %s (only 'mise' is supported for latest command)", providerID)
+	}
+
+	// Create tool request
+	// For latest command, we use LatestReleased strategy by default
+	strategy := provider.ResolutionStrategyLatestReleased
+	if checkInstalled {
+		strategy = provider.ResolutionStrategyLatestInstalled
+	}
+
+	toolRequest := provider.ToolRequest{
+		ToolName:           provider.ToolID(toolName),
+		UnparsedVersion:    versionStr,
+		ResolutionStrategy: strategy,
+		PluginURL:          nil,
+	}
+
+	// For tools latest, we'll use fast install regardless of the stack type
+	useFastInstall := true
+
+	version, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, checkInstalled, silent)
+	if err != nil {
+		return err
+	}
+
+	// Output the version in the requested format
+	switch format {
+	case outputFormatJSON:
+		data := map[string]string{
+			"tool":    toolName,
+			"version": version,
 		}
+		jsonData, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal JSON: %w", err)
+		}
+		fmt.Println(string(jsonData))
+	case outputFormatBash:
+		// For bash, just output the version string
+		fmt.Println(version)
+	case outputFormatPlaintext:
+		// For plaintext, output a user-friendly message
+		if checkInstalled {
+			log.Infof("Latest installed version of %s: %s", toolName, colorstring.Green("%s", version))
+		} else {
+			log.Infof("Latest available version of %s: %s", toolName, colorstring.Green("%s", version))
+		}
+	}
+
+	return nil
+}
+
+func toolsInstall(c *cli.Context) error {
+	args := c.Args()
+	if len(args) != 1 {
 		return fmt.Errorf("requires exactly 1 argument: <TOOL@VERSION>\nUsage: bitrise tools install <TOOL@VERSION>")
 	}
 
@@ -518,21 +599,12 @@ func toolsInstall(c *cli.Context, isLatest bool) error {
 		return fmt.Errorf("invalid --format: %s", format)
 	}
 
-	toolName, versionStr, err := parseToolSpec(toolSpec, isLatest)
+	toolName, versionStr, err := parseToolSpec(toolSpec)
 	if err != nil {
 		return err
 	}
 
-	var strategy provider.ResolutionStrategy
-	if isLatest {
-		if c.Bool(toolsInstalledKey) {
-			strategy = provider.ResolutionStrategyLatestInstalled
-		} else {
-			strategy = provider.ResolutionStrategyLatestReleased
-		}
-	} else {
-		strategy = provider.ResolutionStrategyStrict
-	}
+	var strategy = provider.ResolutionStrategyStrict
 
 	toolRequest := provider.ToolRequest{
 		ToolName:           provider.ToolID(toolName),
@@ -571,7 +643,7 @@ func toolsInstall(c *cli.Context, isLatest bool) error {
 
 // parseToolSpec parses a tool specification in the format TOOL@VERSION or just TOOL.
 // For install command, VERSION is required. For latest command, VERSION is optional.
-func parseToolSpec(toolSpec string, isLatest bool) (toolName string, version string, err error) {
+func parseToolSpec(toolSpec string) (toolName string, version string, err error) {
 	parts := strings.Split(toolSpec, "@")
 
 	if len(parts) > 2 {
@@ -580,10 +652,7 @@ func parseToolSpec(toolSpec string, isLatest bool) (toolName string, version str
 
 	if len(parts) == 1 {
 		// No version specified
-		if !isLatest {
-			return "", "", fmt.Errorf("version required for install command: %s (use format TOOL@VERSION)", toolSpec)
-		}
-		return parts[0], "", nil
+		return "", "", fmt.Errorf("version required for install command: %s (use format TOOL@VERSION)", toolSpec)
 	}
 
 	// parts[0] is tool name, parts[1] is version
@@ -594,8 +663,29 @@ func parseToolSpec(toolSpec string, isLatest bool) (toolName string, version str
 		return "", "", fmt.Errorf("tool name cannot be empty in: %s", toolSpec)
 	}
 
-	if version == "" && !isLatest {
+	if version == "" {
 		return "", "", fmt.Errorf("version cannot be empty for install command in: %s", toolSpec)
+	}
+
+	return toolName, version, nil
+}
+
+// parseToolSpecForLatest parses a tool specification for the latest command where version is optional.
+// Returns toolName and version (which may be empty string).
+func parseToolSpecForLatest(toolSpec string) (toolName string, version string, err error) {
+	parts := strings.Split(toolSpec, "@")
+
+	if len(parts) > 2 {
+		return "", "", fmt.Errorf("invalid tool specification: %s (expected TOOL@VERSION or TOOL)", toolSpec)
+	}
+
+	toolName = parts[0]
+	if toolName == "" {
+		return "", "", fmt.Errorf("tool name cannot be empty in: %s", toolSpec)
+	}
+
+	if len(parts) == 2 {
+		version = parts[1]
 	}
 
 	return toolName, version, nil

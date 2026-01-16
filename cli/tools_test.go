@@ -251,7 +251,14 @@ func TestParseToolSpec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTool, gotVersion, err := parseToolSpec(tt.toolSpec, tt.isLatest)
+			var gotTool, gotVersion string
+			var err error
+
+			if tt.isLatest {
+				gotTool, gotVersion, err = parseToolSpecForLatest(tt.toolSpec)
+			} else {
+				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec)
+			}
 
 			if tt.wantErr {
 				require.Error(t, err)

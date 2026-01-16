@@ -105,7 +105,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
-	useNix := runtime.GOOS =="darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
+	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -166,6 +166,53 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	miseExecPath := filepath.Join(m.ExecEnv.InstallDir(), "bin")
 	activationResult.ContributedPaths = append(activationResult.ContributedPaths, miseExecPath)
 	return activationResult, nil
+}
+
+// ResolveLatestVersion resolves a tool to its latest version without installing it.
+// If checkInstalled is true, returns the latest installed version. Otherwise, returns the latest released version.
+func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest, checkInstalled bool) (string, error) {
+	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
+	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
+	if !useNix {
+		err := m.InstallPlugin(tool)
+		if err != nil {
+			return "", fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+		}
+	}
+
+	installRequest := installRequest(tool, useNix)
+
+	if checkInstalled {
+		// For --installed flag, check if any version is installed
+		existsLocally, err := versionExistsLocal(m.ExecEnv, installRequest.ToolName, tool.UnparsedVersion)
+		if err != nil {
+			return "", fmt.Errorf("check if version exists locally: %w", err)
+		}
+		if !existsLocally {
+			return "", fmt.Errorf("no installed versions found for %s", tool.ToolName)
+		}
+
+		// Resolve to latest installed
+		return m.resolveToLatestInstalled(installRequest.ToolName, tool.UnparsedVersion)
+	}
+
+	// For latest released, check if version exists in remote
+	if !useNix {
+		versionExists, err := m.versionExists(installRequest.ToolName, tool.UnparsedVersion)
+		if err != nil {
+			return "", fmt.Errorf("check if version exists: %w", err)
+		}
+		if !versionExists {
+			return "", provider.ToolInstallError{
+				ToolName:         tool.ToolName,
+				RequestedVersion: tool.UnparsedVersion,
+				Cause:            fmt.Sprintf("no match for requested version %s", tool.UnparsedVersion),
+			}
+		}
+	}
+
+	// Resolve to latest released
+	return m.resolveToLatestReleased(installRequest.ToolName, tool.UnparsedVersion)
 }
 
 func GetMiseVersion() string {
