@@ -67,7 +67,7 @@ include:
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 include:
-%s`, strings.Repeat("- path: path_1.yml\n", 10))),
+%s`, strings.Repeat("- path: path_1.yml\n", MaxFilesCountTotal+1))),
 					"path_1.yml": []byte(`include:
 - path: path_2.yml`),
 					"path_2.yml": []byte(``),
