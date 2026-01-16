@@ -86,7 +86,7 @@ func (raw StepListItemRaw) GetItem(target interface{}) (string, error) {
 	case *stepmanModels.StepModel:
 		step, ok := value.(stepmanModels.StepModel)
 		if !ok {
-			return "", fmt.Errorf("step list item value is not a Step (got %T)", value)
+			return "", fmt.Errorf("step list item value is not a step")
 		}
 		*ptr = step
 	case *StepBundleListItemModel:
@@ -259,16 +259,24 @@ func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(any) error) 
 type StepListItemStepOrBundleModel StepListItemRaw
 
 func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if err != nil {
+		return "", StepListItemTypeUnknown, err
+	}
+	if t == StepListItemTypeWith {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of step bundle cannot be a with group")
 	}
 
-	return StepListItemRaw(*stepListItem).GetKeyAndType()
+	return key, t, nil
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	if stepListItem == nil {
-		return "", nil, fmt.Errorf("step list item is nil")
+	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if err != nil {
+		return "", nil, err
+	}
+	if t != StepListItemTypeStep {
+		return "", nil, fmt.Errorf("step list item (%s) is not a step", key)
 	}
 
 	var step stepmanModels.StepModel
@@ -281,12 +289,16 @@ func (stepListItem *StepListItemStepOrBundleModel) GetStep() (string, *stepmanMo
 }
 
 func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
-	if stepListItem == nil {
-		return nil, fmt.Errorf("step list item is nil")
+	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if err != nil {
+		return nil, err
+	}
+	if t != StepListItemTypeBundle {
+		return nil, fmt.Errorf("step list item (%s) is not a step bundle", key)
 	}
 
 	var stepBundle StepBundleListItemModel
-	_, err := StepListItemRaw(*stepListItem).GetItem(&stepBundle)
+	_, err = StepListItemRaw(*stepListItem).GetItem(&stepBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -376,16 +388,26 @@ func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(
 type StepListStepItemModel StepListItemRaw
 
 func (stepListItem *StepListStepItemModel) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if err != nil {
+		return "", StepListItemTypeUnknown, err
+	}
+	if t == StepListItemTypeWith {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of a with group cannot be a with group")
+	} else if t == StepListItemTypeBundle {
+		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of a with group cannot be a step bundle")
 	}
 
-	return StepListItemRaw(*stepListItem).GetKeyAndType()
+	return key, t, nil
 }
 
 func (stepListItem *StepListStepItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	if stepListItem == nil {
-		return "", nil, fmt.Errorf("step list item is nil")
+	key, t, err := StepListItemRaw(*stepListItem).GetKeyAndType()
+	if err != nil {
+		return "", nil, err
+	}
+	if t != StepListItemTypeStep {
+		return "", nil, fmt.Errorf("step list item (%s) is not a step", key)
 	}
 
 	var step stepmanModels.StepModel

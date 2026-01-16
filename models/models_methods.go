@@ -209,16 +209,24 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 
 func (with *WithModel) Normalize() error {
 	for idx, stepListItem := range with.Steps {
-		stepID, step, err := stepListItem.GetStep()
+		_, t, err := stepListItem.GetKeyAndType()
 		if err != nil {
 			return err
 		}
 
-		if err := step.Normalize(); err != nil {
-			return err
+		if t == StepListItemTypeStep {
+			stepID, step, err := stepListItem.GetStep()
+			if err != nil {
+				return err
+			}
+
+			if err := step.Normalize(); err != nil {
+				return err
+			}
+			stepListItem[stepID] = step
+			with.Steps[idx] = stepListItem
 		}
-		stepListItem[stepID] = step
-		with.Steps[idx] = stepListItem
+
 	}
 	return nil
 }
@@ -330,14 +338,14 @@ func (config *BitriseDataModel) Normalize() error {
 
 	for stepBundleID, stepBundle := range config.StepBundles {
 		if err := stepBundle.Normalize(); err != nil {
-			return fmt.Errorf("failed to normalize step_bundle: %w", err)
+			return fmt.Errorf("failed to normalize step bundle (%s): %w", stepBundleID, err)
 		}
 		config.StepBundles[stepBundleID] = stepBundle
 	}
 
 	for workflowID, workflow := range config.Workflows {
 		if err := workflow.Normalize(); err != nil {
-			return fmt.Errorf("failed to normalize workflow: %w", err)
+			return fmt.Errorf("failed to normalize workflow (%s): %w", workflowID, err)
 		}
 		config.Workflows[workflowID] = workflow
 	}
