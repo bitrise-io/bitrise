@@ -266,54 +266,54 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
+				"pipeline1": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage1": StageModel{}},
-						StageListItemModel{"stage2": StageModel{}},
+						{"stage1": StageModel{}},
+						{"stage2": StageModel{}},
 					},
 				},
-				"pipeline2": PipelineModel{
+				"pipeline2": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage3": StageModel{}},
-						StageListItemModel{"stage4": StageModel{}},
+						{"stage3": StageModel{}},
+						{"stage4": StageModel{}},
 					},
 				},
 			},
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
-						StageWorkflowListItemModel{"workflow2": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
+						{"workflow2": StageWorkflowModel{}},
 					},
 				},
-				"stage2": StageModel{
+				"stage2": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow3": StageWorkflowModel{}},
-						StageWorkflowListItemModel{"workflow4": StageWorkflowModel{}},
+						{"workflow3": StageWorkflowModel{}},
+						{"workflow4": StageWorkflowModel{}},
 					},
 				},
-				"stage3": StageModel{
+				"stage3": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow5": StageWorkflowModel{}},
-						StageWorkflowListItemModel{"workflow6": StageWorkflowModel{}},
+						{"workflow5": StageWorkflowModel{}},
+						{"workflow6": StageWorkflowModel{}},
 					},
 				},
-				"stage4": StageModel{
+				"stage4": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow7": StageWorkflowModel{}},
-						StageWorkflowListItemModel{"workflow8": StageWorkflowModel{}},
+						{"workflow7": StageWorkflowModel{}},
+						{"workflow8": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
-				"workflow2": WorkflowModel{},
-				"workflow3": WorkflowModel{},
-				"workflow4": WorkflowModel{},
-				"workflow5": WorkflowModel{},
-				"workflow6": WorkflowModel{},
-				"workflow7": WorkflowModel{},
-				"workflow8": WorkflowModel{},
+				"workflow1": {},
+				"workflow2": {},
+				"workflow3": {},
+				"workflow4": {},
+				"workflow5": {},
+				"workflow6": {},
+				"workflow7": {},
+				"workflow8": {},
 			},
 		}
 
@@ -357,7 +357,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"": PipelineModel{},
+				"": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -370,21 +370,21 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"pi/id": PipelineModel{
+				"pi/id": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage1": StageModel{}},
+						{"stage1": StageModel{}},
 					},
 				},
 			},
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -398,21 +398,21 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
+				"pipeline1": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage2": StageModel{}},
+						{"stage2": StageModel{}},
 					},
 				},
 			},
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 
@@ -426,7 +426,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				"": StageModel{},
+				"": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -439,14 +439,14 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				"st/id": StageModel{
+				"st/id": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -460,7 +460,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{},
 				},
 			},
@@ -476,7 +476,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				"stage1": StageModel{},
+				"stage1": {},
 			},
 		}
 
@@ -490,14 +490,14 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow2": StageWorkflowModel{}},
+						{"workflow2": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 
@@ -511,14 +511,14 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "12",
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"_utility_workflow": StageWorkflowModel{}},
+						{"_utility_workflow": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 
@@ -532,7 +532,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
-				"": WorkflowModel{},
+				"": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -545,7 +545,7 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Workflows: map[string]WorkflowModel{
-				"wf/id": WorkflowModel{},
+				"wf/id": {},
 			},
 		}
 		warnings, err := bitriseData.Validate()
@@ -559,21 +559,21 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
+				"pipeline1": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage1": StageModel{}},
+						{"stage1": StageModel{}},
 					},
 				},
 			},
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 		pipeline := bitriseData.Pipelines["pipeline1"]
@@ -594,21 +594,21 @@ func TestValidateConfig(t *testing.T) {
 		bitriseData := BitriseDataModel{
 			FormatVersion: "1.4.0",
 			Pipelines: map[string]PipelineModel{
-				"pipeline1": PipelineModel{
+				"pipeline1": {
 					Stages: []StageListItemModel{
-						StageListItemModel{"stage1": StageModel{}},
+						{"stage1": StageModel{}},
 					},
 				},
 			},
 			Stages: map[string]StageModel{
-				"stage1": StageModel{
+				"stage1": {
 					Workflows: []StageWorkflowListItemModel{
-						StageWorkflowListItemModel{"workflow1": StageWorkflowModel{}},
+						{"workflow1": StageWorkflowModel{}},
 					},
 				},
 			},
 			Workflows: map[string]WorkflowModel{
-				"workflow1": WorkflowModel{},
+				"workflow1": {},
 			},
 		}
 		pipeline := bitriseData.Pipelines["pipeline1"]
@@ -1564,10 +1564,10 @@ func TestMergeStepWith(t *testing.T) {
 		TypeTags:            []string{"test"},
 		IsRequiresAdminUser: pointers.NewBoolPtr(true),
 		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
+			{
 				"KEY_1": "Value 1",
 			},
-			envmanModels.EnvironmentItemModel{
+			{
 				"KEY_2": "Value 2",
 			},
 		},
@@ -1584,7 +1584,7 @@ func TestMergeStepWith(t *testing.T) {
 			Git: "https://git.url",
 		},
 		Dependencies: []stepmanModels.DependencyModel{
-			stepmanModels.DependencyModel{
+			{
 				Manager: "brew",
 				Name:    "test",
 			},
@@ -1592,7 +1592,7 @@ func TestMergeStepWith(t *testing.T) {
 		SupportURL: pointers.NewStringPtr(newSuppURL),
 		RunIf:      pointers.NewStringPtr(runIfStr),
 		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
+			{
 				"KEY_2": "Value 2 CHANGED",
 			},
 		},
@@ -1642,10 +1642,10 @@ func TestMergeStepWith(t *testing.T) {
 func TestGetInputByKey(t *testing.T) {
 	stepData := stepmanModels.StepModel{
 		Inputs: []envmanModels.EnvironmentItemModel{
-			envmanModels.EnvironmentItemModel{
+			{
 				"KEY_1": "Value 1",
 			},
-			envmanModels.EnvironmentItemModel{
+			{
 				"KEY_2": "Value 2",
 			},
 		},
@@ -1749,7 +1749,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, StepListItemTypeStep, itemType)
 
-		_, err = stepListItem.GetStep()
+		_, _, err = stepListItem.GetStep()
 		require.NoError(t, err)
 
 		require.NoError(t, err)
@@ -1966,7 +1966,7 @@ workflows:
 			require.NoError(t, err)
 			require.Equal(t, StepListItemTypeStep, itemType)
 
-			step, err := stepListItem.GetStep()
+			_, step, err := stepListItem.GetStep()
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)

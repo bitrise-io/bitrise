@@ -164,7 +164,7 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID)
+			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID).Build(tt.modes, tt.targetWorkflow)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
@@ -447,7 +447,7 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewWorkflowRunPlan(tt.modes, tt.targetWorkflow, tt.workflows, tt.stepBundles, tt.containers, tt.services, tt.uuidProvider)
+			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, tt.services, tt.uuidProvider).Build(tt.modes, tt.targetWorkflow)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
