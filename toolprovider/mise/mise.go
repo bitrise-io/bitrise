@@ -115,34 +115,60 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 
 	installRequest := installRequest(tool, useNix)
 
-	// Note: tools get reinstalled with Nix even if they are already installed with the core plugin for consistency.
-	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest)
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
 
+	concreteVersion, err := resolveToConcreteVersion(
+		m.ExecEnv,
+		normalizedRequest.ToolName,
+		normalizedRequest.UnparsedVersion,
+		normalizedRequest.ResolutionStrategy,
+	)
+	if err != nil {
+		if errors.Is(err, errNoMatchingVersion) {
+			return provider.ToolInstallResult{}, provider.ToolInstallError{
+				ToolName:         installRequest.ToolName,
+				RequestedVersion: installRequest.UnparsedVersion,
+				Cause:            fmt.Sprintf("no match for requested version %s", installRequest.UnparsedVersion),
+			}
+		}
+		return provider.ToolInstallResult{}, fmt.Errorf("resolve %s@%s: %w", installRequest.ToolName, installRequest.UnparsedVersion, err)
+	}
+	log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
+		installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
+
 	if !useNix {
-		versionExists, err := m.versionExists(tool.ToolName, tool.UnparsedVersion)
+		versionExists, err := versionExistsRemote(m.ExecEnv, installRequest.ToolName, concreteVersion)
 		if err != nil {
-			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists: %w", err)
+			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists for %s@%s: %w", installRequest.ToolName, concreteVersion, err)
 		}
 		if !versionExists {
 			return provider.ToolInstallResult{}, provider.ToolInstallError{
-				ToolName:         tool.ToolName,
-				RequestedVersion: tool.UnparsedVersion,
-				Cause:            fmt.Sprintf("no match for requested version %s", tool.UnparsedVersion),
+				ToolName:         installRequest.ToolName,
+				RequestedVersion: installRequest.UnparsedVersion,
+				Cause:            fmt.Sprintf("no match for requested version %s", installRequest.UnparsedVersion),
 			}
 		}
-	} // else: version existence is already checked in canBeInstalledWithNix()
+	} // else: canBeInstalledWithNix() already verified version existence
 
-	err = m.installToolVersion(installRequest)
+	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
 
-	concreteVersion, err := m.resolveToConcreteVersionAfterInstall(installRequest)
-	if err != nil {
-		return provider.ToolInstallResult{}, fmt.Errorf("resolve exact version after install: %w", err)
+	if !isAlreadyInstalled {
+		err = m.installToolVersion(installRequest.ToolName, concreteVersion)
+		if err != nil {
+			return provider.ToolInstallResult{}, err
+		}
+	}
+
+	installedVersion, err := resolveToLatestInstalled(m.ExecEnv, installRequest.ToolName, concreteVersion)
+	if err != nil || installedVersion != concreteVersion {
+		return provider.ToolInstallResult{}, fmt.Errorf(
+			"install verification failed: expected %s, got %s", concreteVersion, installedVersion)
 	}
 
 	return provider.ToolInstallResult{

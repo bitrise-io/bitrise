@@ -18,7 +18,7 @@ func TestMiseInstallFlutter(t *testing.T) {
 		resolutionStrategy provider.ResolutionStrategy
 		expectedVersion    string
 	}{
-		{"Install specific version", "3.32.1-stable", provider.ResolutionStrategyStrict, "3.32.1-stable"},
+		{"Install specific version", "3.32.1", provider.ResolutionStrategyStrict, "3.32.1"},
 	}
 
 	for _, tt := range tests {
